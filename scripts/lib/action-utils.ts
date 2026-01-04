@@ -69,7 +69,7 @@ async function askForNewPackageName(): Promise<string> {
 
 // Release Please Helpers
 export async function registerActionInReleasePlease(packageName: string, subAction: string) {
-    const configPath = path.join(ROOT_DIR, '.release-please-config.json');
+    const configPath = path.join(ROOT_DIR, 'release-please-config.json');
     const manifestPath = path.join(ROOT_DIR, '.release-please-manifest.json');
     const key = `actions/${packageName}/${subAction}`;
 
@@ -126,7 +126,7 @@ export async function registerActionInReleasePlease(packageName: string, subActi
 }
 
 export async function removeActionFromReleasePlease(packageName: string, subAction: string) {
-    const configPath = path.join(ROOT_DIR, '.release-please-config.json');
+    const configPath = path.join(ROOT_DIR, 'release-please-config.json');
     const manifestPath = path.join(ROOT_DIR, '.release-please-manifest.json');
     const key = `actions/${packageName}/${subAction}`;
 
