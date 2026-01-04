@@ -1,0 +1,23 @@
+name: Verify {{capitalizedPackageName}} {{capitalizedSubAction}}
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'actions/{{packageName}}/{{subAction}}/**'
+      - '.github/workflows/verify-action-{{packageName}}-{{subAction}}.yaml'
+  pull_request:
+    paths:
+      - 'actions/{{packageName}}/{{subAction}}/**'
+      - '.github/workflows/verify-action-{{packageName}}-{{subAction}}.yaml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Test {{subAction}}
+        uses: ./actions/{{packageName}}/{{subAction}}

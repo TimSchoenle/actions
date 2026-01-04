@@ -1,0 +1,8 @@
+name: '{{capitalizedPackageName}} {{capitalizedSubAction}}'
+description: '{{description}}'
+
+runs:
+  using: 'composite'
+  steps:
+    - run: echo "Hello {{packageName}} {{subAction}}"
+      shell: bash

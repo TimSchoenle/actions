@@ -1,0 +1,61 @@
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.sublime-workspace
+
+# Node / TypeScript
+node_modules/
+dist/
+coverage/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tsbuildinfo
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+build/
+.gradle/
+out/
+target/
+
+# Rust
+/target/
+**/*.rs.bk
+Cargo.lock # Usually committed for bins/actions, ignored for libs. Typically for actions we might want it if we have a CLI tool.
+# For now, we don't have a rust project root, just action definition.
+# If we add a rust project later, we decide. Standard is to ignore target.
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.terraform.lock.hcl # Debateable, usually committed. Keeping unignored by default.
+crash.log
+override.tf
+override.tf.json
+.tflint.d/
+
+# Helm
+*.tgz
+*.lock # Chart.lock is often committed.
+
+# Trivy
+.trivyignore # We might want to commit this! It's in configs/trivy/.trivyignore
+# So don't ignore it globaly.
+
+# Misc
+.env
+.env.local
+tmp/
