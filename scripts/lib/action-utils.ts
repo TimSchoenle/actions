@@ -86,7 +86,7 @@ export async function registerActionInReleasePlease(packageName: string, subActi
         if (!config.packages) config.packages = {};
         if (!config.packages[key]) {
             config.packages[key] = {
-                'release-type': 'action',
+                'release-type': 'simple',
                 component: `actions/${packageName}/${subAction}`,
                 'include-component-in-tag': true,
             };
