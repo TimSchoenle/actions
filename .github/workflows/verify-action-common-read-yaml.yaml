@@ -7,6 +7,9 @@ on:
       - 'actions/common/read-yaml/**'
       - '.github/workflows/verify-action-common-read-yaml.yaml'
 
+permissions:
+  contents: read
+
 jobs:
   verify-read-yaml:
     runs-on: ubuntu-latest
