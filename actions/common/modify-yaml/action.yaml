@@ -43,47 +43,60 @@ runs:
         echo "Old value: $OLD_VALUE"
     
     - name: Modify YAML
-      shell: bash
+      shell: python
+      env:
+        FILE: ${{ inputs.file }}
+        KEY: ${{ inputs.key }}
+        VALUE: ${{ inputs.value }}
       run: |
-        FILE="${{ inputs.file }}"
-        KEY="${{ inputs.key }}"
-        VALUE="${{ inputs.value }}"
+        import os
+        import re
         
-        # Extract the final key name from dot notation
-        FINAL_KEY="${KEY##*.}"
+        file_path = os.environ['FILE']
+        key_path = os.environ['KEY']
+        value = os.environ['VALUE']
         
-        # Detect value type and format appropriately
-        if [ "$VALUE" == "true" ] || [ "$VALUE" == "false" ]; then
-          FORMATTED_VALUE="$VALUE"
-        elif [[ "$VALUE" =~ ^-?[0-9]+\.?[0-9]*$ ]]; then
-          FORMATTED_VALUE="$VALUE"
-        else
-          # String - check if it needs quotes (contains special YAML characters)
-          # Simple approach: quote if it contains spaces, colons, or common special chars
-          case "$VALUE" in
-            *[\ :{}[\],\&*#?|\-\<\>=!%@\`]*)
-              FORMATTED_VALUE="\"${VALUE//\"/\\\"}\""
-              ;;
-            *)
-              FORMATTED_VALUE="$VALUE"
-              ;;
-          esac
-        fi
+        # Extract final key from dot notation
+        final_key = key_path.split('.')[-1]
         
-        # Use perl for in-place editing with perfect preservation
-        perl -i -pe "
-          if (/^(\s*)${FINAL_KEY}\s*:\s*(.*)$/) {
-            my \$indent = \$1;
-            my \$rest = \$2;
-            my \$comment = '';
-            if (\$rest =~ /(#.*)$/) {
-              \$comment = '  ' . \$1;
-            }
-            \$_ = \$indent . '${FINAL_KEY}: ${FORMATTED_VALUE}' . \$comment . \"\\n\";
-          }
-        " "$FILE"
+        # Detect value type
+        if value in ('true', 'false'):
+            formatted_value = value
+        elif re.match(r'^-?[0-9]+\.?[0-9]*$', value):
+            formatted_value = value
+        else:
+            # String - quote if needed
+            if any(c in value for c in ' :{}[],&*#?|-<>=!%@`'):
+                formatted_value = f'"{value.replace(chr(34), chr(92)+chr(34))}"'
+            else:
+                formatted_value = value
         
-        echo "✅ Modified $KEY to: $VALUE"
+        # Read ALL lines (preserves blank lines perfectly)
+        with open(file_path, 'r') as f:
+            lines = f.readlines()
+        
+        # Process each line
+        pattern = re.compile(rf'^(\s*){re.escape(final_key)}\s*:\s*(.*)$')
+        
+        for i, line in enumerate(lines):
+            match = pattern.match(line)
+            if match:
+                indent = match.group(1)
+                rest = match.group(2)
+                
+                # Extract inline comment if present
+                comment_match = re.search(r'(#.*)$', rest)
+                comment = ('  ' + comment_match.group(1)) if comment_match else ''
+                
+                # Replace line
+                lines[i] = f'{indent}{final_key}: {formatted_value}{comment}\n'
+                break
+        
+        # Write ALL lines back (preserves everything)
+        with open(file_path, 'w') as f:
+            f.writelines(lines)
+        
+        print(f'✅ Modified {key_path} to: {value}')
     
     - name: Set Outputs
       id: set-outputs
