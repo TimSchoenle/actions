@@ -24,10 +24,25 @@ jobs:
             value: 'db.internal'
             check_grep: 'host: db.internal'
 
-          - name: 'Modify Boolean'
+          - name: 'Modify Boolean False'
             key: 'app.debug'
             value: 'false'
             check_grep: 'debug: false'
+
+          - name: 'Modify Boolean True'
+            key: 'app.debug'
+            value: 'true'
+            check_grep: 'debug: true'
+
+          - name: 'Modify Integer'
+            key: 'app.database.port'
+            value: '3306'
+            check_grep: 'port: 3306'
+
+          - name: 'Modify Float'
+            key: 'app.resources.cpu_ratio'
+            value: '2.5'
+            check_grep: 'cpu_ratio: 2.5'
 
           - name: 'Preserve Comments'
             key: 'app.name'
@@ -52,6 +67,10 @@ jobs:
             database:
               host: localhost
               port: 5432
+            resources:
+              cpu_ratio: 1.0
+              limits:
+                cpu: 500m432
           EOF
 
       - name: Run Test (${{ matrix.name }})

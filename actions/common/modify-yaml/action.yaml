@@ -41,11 +41,19 @@ runs:
 
         file_path = os.environ['FILE']
         key_path = os.environ['KEY']
-        new_value = os.environ['VALUE']
+        new_value_raw = os.environ['VALUE']
 
         if not os.path.exists(file_path):
              print(f"Error: File {file_path} not found")
              sys.exit(1)
+
+        # Attempt to parse the value as YAML to support booleans, numbers, etc.
+        try:
+             # We use the same YAML instance to load the scalar
+             new_value = yaml.load(new_value_raw)
+        except Exception as e:
+             print(f"Warning: Failed to parse value as YAML, using as string. Error: {e}")
+             new_value = new_value_raw
 
         with open(file_path) as f:
             data = yaml.load(f)
