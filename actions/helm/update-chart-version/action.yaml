@@ -62,7 +62,7 @@ runs:
         repositories: ${{ steps.parse.outputs.repo }}
 
     - name: Checkout Helm Charts
-      uses: actions/checkout@v6
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       with:
         repository: ${{ inputs.helm-repo }}
         token: ${{ steps.generate_token.outputs.token }}
