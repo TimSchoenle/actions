@@ -1,5 +1,7 @@
 name: 'Update Helm Chart Version'
-description: 'Updates a Helm chart version/APP tag and creates a PR. Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag).'
+description: 'Updates a Helm chart version/APP tag and creates a PR. 
+              This action requires a bot account with access to the charts repo. 
+              Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag).'
 inputs:
   app-id:
     description: 'GitHub App ID'
