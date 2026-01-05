@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.2.1...actions-helm-update-chart-version-v1.2.2) (2026-01-05)
+
+
+### Bug Fixes
+
+* **Actions-UpdateChartVersion:** maintain spaces/empty lines inside v… ([#22](https://github.com/TimSchoenle/actions/issues/22)) ([87a26dc](https://github.com/TimSchoenle/actions/commit/87a26dc614889dcea7e80a2bdd881abd57d3c599))
+
 ## [1.2.1](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.2.0...actions-helm-update-chart-version-v1.2.1) (2026-01-05)
 
 
