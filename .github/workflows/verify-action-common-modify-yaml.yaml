@@ -1,0 +1,79 @@
+name: Verify Action Common Modify YAML
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'actions/common/modify-yaml/**'
+      - '.github/workflows/verify-action-common-modify-yaml.yaml'
+
+jobs:
+  verify-modify-yaml:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 'Modify Root Key'
+            key: 'version'
+            value: '2.0.0'
+            check_grep: 'version: 2.0.0'
+          
+          - name: 'Modify Nested Key'
+            key: 'app.database.host'
+            value: 'db.internal'
+            check_grep: 'host: db.internal'
+
+          - name: 'Modify Boolean'
+            key: 'app.debug'
+            value: 'false'
+            check_grep: 'debug: false'
+
+          - name: 'Preserve Comments'
+            key: 'app.name'
+            value: 'new-name'
+            # Check value AND ensure comment still exists
+            check_grep: 'name: new-name.*inline comment' 
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Complex Test Data
+        run: |
+          cat <<EOF > complex.yaml
+          version: 1.0.0
+          
+          # Application Metadata
+          app:
+            name: test-app # inline comment
+            debug: true
+            
+            # Database Configuration
+            database:
+              host: localhost
+              port: 5432
+          EOF
+
+      - name: Run Test (${{ matrix.name }})
+        id: modify
+        uses: ./actions/common/modify-yaml
+        with:
+          file: complex.yaml
+          key: ${{ matrix.key }}
+          value: ${{ matrix.value }}
+
+      - name: Assert Change
+        run: |
+          # Use grep to verify the file content matches expectations
+          # We use -E for extended regex support if needed
+          if ! grep -q "${{ matrix.check_grep }}" complex.yaml; then
+            echo "::error::Match not found for pattern: ${{ matrix.check_grep }}"
+            cat complex.yaml
+            exit 1
+          fi
+          
+          # Assert that unrelated comments are preserved
+          if ! grep -q "# Database Configuration" complex.yaml; then
+             echo "::error::Block comment lost!"
+             exit 1
+          fi

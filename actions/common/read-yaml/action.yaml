@@ -1,0 +1,54 @@
+name: 'Common Read YAML'
+description: 'A action to read a value from a YAML file using dot notation'
+inputs:
+  file:
+    description: 'Path to the YAML file'
+    required: true
+  key:
+    description: 'Dot-notation key path (e.g. image.tag)'
+    required: true
+outputs:
+  value:
+    description: 'The value of the key'
+    value: ${{ steps.read.outputs.value }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Python Dependencies
+      shell: bash
+      run: pip install ruamel.yaml
+
+    - name: Read YAML Value
+      id: read
+      shell: python
+      env:
+        FILE: ${{ inputs.file }}
+        KEY: ${{ inputs.key }}
+      run: |
+        import os
+        import sys
+        from ruamel.yaml import YAML
+
+        yaml = YAML()
+        file_path = os.environ['FILE']
+        key_path = os.environ['KEY']
+
+        if not os.path.exists(file_path):
+            print(f"Error: File {file_path} not found")
+            sys.exit(1)
+
+        with open(file_path) as f:
+            data = yaml.load(f)
+
+        keys = key_path.split('.')
+        value = data
+        try:
+            for k in keys:
+                value = value[k]
+        except (KeyError, TypeError) as e:
+            print(f"Error: Key {key_path} not found in {file_path}")
+            sys.exit(1)
+
+        print(f"Value: {value}")
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as gh_out:
+            gh_out.write(f"value={value}\n")
