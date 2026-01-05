@@ -58,12 +58,16 @@ runs:
         elif [[ "$VALUE" =~ ^-?[0-9]+\.?[0-9]*$ ]]; then
           FORMATTED_VALUE="$VALUE"
         else
-          # String - check if it needs quotes
-          if [[ "$VALUE" =~ [:{}[\],\&*#?|<>=!%@\`\ ] ]]; then
-            FORMATTED_VALUE="\"${VALUE//\"/\\\"}\""
-          else
-            FORMATTED_VALUE="$VALUE"
-          fi
+          # String - check if it needs quotes (contains special YAML characters)
+          # Simple approach: quote if it contains spaces, colons, or common special chars
+          case "$VALUE" in
+            *[\ :{}[\],\&*#?|\-\<\>=!%@\`]*)
+              FORMATTED_VALUE="\"${VALUE//\"/\\\"}\""
+              ;;
+            *)
+              FORMATTED_VALUE="$VALUE"
+              ;;
+          esac
         fi
         
         # Use awk to replace ONLY the target line, preserving everything else

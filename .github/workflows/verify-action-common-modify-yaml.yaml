@@ -45,6 +45,11 @@ jobs:
             key: 'app.resources.cpu_ratio'
             value: '2.5'
             check_grep: 'cpu_ratio: 2.5'
+          
+          - name: 'Preserve Inline Comment'
+            key: 'app.name'
+            value: 'updated-app'
+            check_grep: 'name: updated-app # inline comment'
 
           - name: 'Preserve Comments'
             key: 'app.name'
@@ -112,6 +117,15 @@ jobs:
           if ! grep -q "# inline comment" complex.yaml; then
             echo "::error::Inline comment lost!"
             exit 1
+          fi
+          
+          # Special check for inline comment spacing (with value)
+          if [ "${{ matrix.name }}" == "Preserve Inline Comment" ]; then
+            if ! grep -E 'name: updated-app\s+# inline comment' complex.yaml; then
+              echo "::error::Inline comment spacing not preserved!"
+              cat complex.yaml | grep "name:"
+              exit 1
+            fi
           fi
           
           echo "✅ All comments preserved"
