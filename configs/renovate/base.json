@@ -29,21 +29,21 @@
         },
         {
             "description": "Versioning for action common/modify-yaml",
-            "matchPackageNames": [
+            "matchDepNames": [
                 "TimSchoenle/actions/actions/common/modify-yaml"
             ],
             "versioning": "regex:^actions-common-modify-yaml-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
         },
         {
             "description": "Versioning for action common/read-yaml",
-            "matchPackageNames": [
+            "matchDepNames": [
                 "TimSchoenle/actions/actions/common/read-yaml"
             ],
             "versioning": "regex:^actions-common-read-yaml-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
         },
         {
             "description": "Versioning for action helm/update-chart-version",
-            "matchPackageNames": [
+            "matchDepNames": [
                 "TimSchoenle/actions/actions/helm/update-chart-version"
             ],
             "versioning": "regex:^actions-helm-update-chart-version-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
