@@ -43,11 +43,23 @@ runs:
     - name: Modify YAML
       shell: bash
       run: |
-        # Use yq's in-place edit with comment/formatting preservation
-        yq eval -i ".${{ inputs.key }} = \"${{ inputs.value }}\"" "${{ inputs.file }}"
+        # Detect value type and set appropriately
+        VALUE="${{ inputs.value }}"
+        
+        # Check if it's a boolean
+        if [ "$VALUE" == "true" ] || [ "$VALUE" == "false" ]; then
+          yq eval -i ".${{ inputs.key }} = $VALUE" "${{ inputs.file }}"
+        # Check if it's a number
+        elif [[ "$VALUE" =~ ^-?[0-9]+\.?[0-9]*$ ]]; then
+          yq eval -i ".${{ inputs.key }} = $VALUE" "${{ inputs.file }}"
+        # Otherwise treat as string (with quotes)
+        else
+          yq eval -i ".${{ inputs.key }} = \"$VALUE\"" "${{ inputs.file }}"
+        fi
+        
         echo "✅ Modified ${{ inputs.key }}"
         echo "  From: ${{ steps.old.outputs.value }}"
-        echo "  To:   ${{ inputs.value }}"
+        echo "  To:   $VALUE"
     
     - name: Set Outputs
       id: set-outputs
