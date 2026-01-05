@@ -109,15 +109,26 @@ runs:
         NEW_TAG: ${{ inputs.new-tag }}
         IMAGE_DIGEST: ${{ inputs.image-digest }}
       run: |
+        # Use yq to get the current value, then grep for the line number
+        # This is more robust than yq | line and preserves formatting via sed
         OLD_TAG_VAL=$(yq '.image.tag' values.yaml)
         echo "Old Tag Value: $OLD_TAG_VAL"
-        
-        # Construct new tag format: tag@digest
+
+        # Find line number searching for "tag:" and the value
+        TAG_LINE=$(grep -n "tag:.*$OLD_TAG_VAL" values.yaml | cut -d: -f1 | head -n 1)
+        echo "Line number: $TAG_LINE"
+
+        if [ -z "$TAG_LINE" ]; then
+          echo "Error: Could not find line for image.tag" >&2
+          exit 1
+        fi
+
+        # Format: [TAG]@[DIGEST]
         FULL_TAG="${NEW_TAG}@${IMAGE_DIGEST}"
         echo "New Image Tag: $FULL_TAG"
 
-        # Update values.yaml securely using yq
-        yq -i ".image.tag = \"$FULL_TAG\"" values.yaml
+        # Replace only on the found line, replacing the old value with the new one
+        sed -i "${TAG_LINE}s|${OLD_TAG_VAL}|${FULL_TAG}|" values.yaml
 
     - name: Create Pull Request
       id: create-pr
