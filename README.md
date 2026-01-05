@@ -6,7 +6,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 |--------|-------------|---------|-------|
-| [Update Helm Chart Version](./actions/helm/update-chart-version) | Updates a Helm chart version/APP tag and creates a PR.  This action requires a bot account with access to the charts repo.  Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag). | 75a2175 | `uses: TimSchoenle/actions/actions/helm/update-chart-version@75a2175` |
+| [Update Helm Chart Version](./actions/helm/update-chart-version) | Updates a Helm chart version/APP tag and creates a PR.  This action requires a bot account with access to the charts repo.  Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag). | vactions-helm-update-chart-version-v1.2.0 | `uses: TimSchoenle/actions/actions/helm/update-chart-version@vactions-helm-update-chart-version-v1.2.0` |
 
 
 ## 📦 Development
