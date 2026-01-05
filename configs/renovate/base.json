@@ -9,7 +9,8 @@
                 "^\\.github/workflows/.*\\.ya?ml$"
             ],
             "matchStrings": [
-                "uses: (?<depName>TimSchoenle/actions/(?<subPath>[\\w\\/-]+))@(?<currentValue>[^ \\n\\r]+)(?:\\s+#\\s+(?<currentTag>.*))?"
+                "uses: (?<depName>TimSchoenle/actions/(?<subPath>[\\w\\/-]+))@(?<currentDigest>[0-9a-f]{40})\\s+#\\s+(?<currentValue>.*)",
+                "uses: (?<depName>TimSchoenle/actions/(?<subPath>[\\w\\/-]+))@(?<currentValue>actions-[^ #\\n\\r]+)"
             ],
             "lookupNameTemplate": "TimSchoenle/actions",
             "datasourceTemplate": "github-tags"
