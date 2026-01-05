@@ -1,10 +1,7 @@
 import path from 'node:path';
 import chalk from 'chalk';
-import inquirer from 'inquirer';
-import autocompletePrompt from 'inquirer-autocomplete-prompt';
-import { ACTIONS_DIR, Sys, ROOT_DIR, capitalize, createFromTemplate, START_VERSION } from './utils.js';
-
-inquirer.registerPrompt('autocomplete', autocompletePrompt);
+import {input, search} from '@inquirer/prompts';
+import {ACTIONS_DIR, capitalize, createFromTemplate, ROOT_DIR, START_VERSION, Sys} from './utils.js';
 
 export async function getPackages(): Promise<string[]> {
     if (!Sys.exists(ACTIONS_DIR)) return [];
@@ -22,24 +19,19 @@ export async function selectPackage(allowCreate = false): Promise<string> {
     let packageName: string;
 
     if (existingPackages.length > 0) {
-        const { selectedPackage } = await inquirer.prompt([
-            {
-                type: 'autocomplete',
-                name: 'selectedPackage',
-                message: allowCreate ? 'Select Package (or create new):' : 'Select Package:',
-                source: async (_answers: unknown, input = '') => {
-                    const matches = existingPackages.filter((pkg) => pkg.includes(input));
-                    if (allowCreate) {
-                        return [
-                            ...matches,
-                            new inquirer.Separator(),
-                            { name: chalk.green('+ Create New Package'), value: '__NEW__' },
-                        ];
-                    }
-                    return matches;
-                },
+        const selectedPackage = await search({
+            message: allowCreate ? 'Select Package (or create new):' : 'Select Package:',
+            source: async (input) => {
+                const matches = existingPackages.filter((pkg) => pkg.includes(input || ''));
+                if (allowCreate) {
+                    return [
+                        ...matches.map((pkg) => ({ name: pkg, value: pkg })),
+                        { name: chalk.green('+ Create New Package'), value: '__NEW__' },
+                    ];
+                }
+                return matches.map((pkg) => ({ name: pkg, value: pkg }));
             },
-        ] as any);
+        });
 
         if (selectedPackage === '__NEW__') {
             packageName = await askForNewPackageName();
@@ -56,15 +48,10 @@ export async function selectPackage(allowCreate = false): Promise<string> {
 }
 
 async function askForNewPackageName(): Promise<string> {
-    const { name } = await inquirer.prompt([
-        {
-            type: 'input',
-            name: 'name',
-            message: 'New Package Name (e.g., python, ruby):',
-            validate: (input) => /^[a-z0-9-]+$/.test(input) || 'Lowercase, numbers, and hyphens only.',
-        },
-    ]);
-    return name;
+    return await input({
+        message: 'New Package Name (e.g., python, ruby):',
+        validate: (input) => /^[a-z0-9-]+$/.test(input) || 'Lowercase, numbers, and hyphens only.',
+    });
 }
 
 // Release Please Helpers

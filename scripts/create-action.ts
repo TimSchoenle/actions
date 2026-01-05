@@ -1,11 +1,8 @@
-import inquirer from 'inquirer';
-import autocompletePrompt from 'inquirer-autocomplete-prompt';
+import { input } from '@inquirer/prompts';
 import chalk from 'chalk';
 import path from 'node:path';
 import { ACTIONS_DIR, Sys, capitalize, createFromTemplate, START_VERSION } from './lib/utils.js';
 import { selectPackage, registerActionInReleasePlease, createVerifyWorkflow } from './lib/action-utils.js';
-
-inquirer.registerPrompt('autocomplete', autocompletePrompt);
 
 export async function main() {
   console.log(chalk.blue('🚀 Shared CI Action Generator'));
@@ -13,21 +10,16 @@ export async function main() {
   // 1. Determine Package Name (New or Existing)
   const packageName = await selectPackage(true);
 
-  const { subAction, description } = await inquirer.prompt([
-    {
-      type: 'input',
-      name: 'subAction',
-      message: 'Sub-Action Name (e.g., setup, validate):',
-      default: 'setup',
-      validate: (input) => /^[a-z0-9-]+$/.test(input) || 'Lowercase, numbers, and hyphens only.',
-    },
-    {
-      type: 'input',
-      name: 'description',
-      message: 'Description:',
-      default: 'A reusable action.',
-    },
-  ]);
+  const subAction = await input({
+    message: 'Sub-Action Name (e.g., setup, validate):',
+    default: 'setup',
+    validate: (input) => /^[a-z0-9-]+$/.test(input) || 'Lowercase, numbers, and hyphens only.',
+  });
+
+  const description = await input({
+    message: 'Description:',
+    default: 'A reusable action.',
+  });
 
   const packagePath = path.join(ACTIONS_DIR, packageName);
   const actionPath = path.join(packagePath, subAction);

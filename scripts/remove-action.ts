@@ -1,6 +1,5 @@
 import path from 'node:path';
-import inquirer from 'inquirer';
-import autocompletePrompt from 'inquirer-autocomplete-prompt';
+import { confirm, search } from '@inquirer/prompts';
 import chalk from 'chalk';
 import { ACTIONS_DIR, Sys } from './lib/utils.js';
 import {
@@ -9,8 +8,6 @@ import {
   removeVerifyWorkflow,
   selectPackage,
 } from './lib/action-utils.js';
-
-inquirer.registerPrompt('autocomplete', autocompletePrompt);
 
 export async function main() {
   console.log(chalk.red('🗑️  Shared CI Action Remover'));
@@ -22,41 +19,30 @@ export async function main() {
 
   if (subActions.length === 0) {
     // Just remove the package dir if empty of sub-actions (maybe just config files)
-    const { confirm } = await inquirer.prompt([
-      {
-        type: 'confirm',
-        name: 'confirm',
-        message: `Package ${packageName} has no sub-actions. Remove entire directory?`,
-        default: true,
-      },
-    ]);
-    if (confirm) {
+    const shouldRemove = await confirm({
+      message: `Package ${packageName} has no sub-actions. Remove entire directory?`,
+      default: true,
+    });
+
+    if (shouldRemove) {
       await removePackage(packageName);
     }
     return;
   }
 
-  const { subAction } = await inquirer.prompt([
-    {
-      type: 'autocomplete',
-      name: 'subAction',
-      message: 'Select Sub-Action to remove:',
-      source: async (_: unknown, input = '') => {
-        return subActions.filter((sub) => sub.includes(input));
-      },
-    } as any,
-  ]);
-
-  const { confirm } = await inquirer.prompt([
-    {
-      type: 'confirm',
-      name: 'confirm',
-      message: `Are you sure you want to remove actions/${packageName}/${subAction}? This cannot be undone.`,
-      default: false,
+  const subAction = await search({
+    message: 'Select Sub-Action to remove:',
+    source: async (input) => {
+      return subActions.filter((sub) => sub.includes(input || '')).map((sub) => ({ name: sub, value: sub }));
     },
-  ]);
+  });
 
-  if (!confirm) {
+  const shouldRemoveAction = await confirm({
+    message: `Are you sure you want to remove actions/${packageName}/${subAction}? This cannot be undone.`,
+    default: false,
+  });
+
+  if (!shouldRemoveAction) {
     console.log('Cancelled.');
     return;
   }
@@ -75,16 +61,12 @@ export async function main() {
 
   if (remaining.length === 0) {
     console.log(chalk.yellow(`Package ${packageName} is now empty of sub-actions.`));
-    const { removePkg } = await inquirer.prompt([
-      {
-        type: 'confirm',
-        name: 'removePkg',
-        message: `Remove package root ${packageName} (including configs/tests)?`,
-        default: true,
-      },
-    ]);
+    const shouldRemovePkg = await confirm({
+      message: `Remove package root ${packageName} (including configs/tests)?`,
+      default: true,
+    });
 
-    if (removePkg) {
+    if (shouldRemovePkg) {
       await removePackage(packageName);
     } else {
       console.log(chalk.blue('Skipping package root removal.'));
