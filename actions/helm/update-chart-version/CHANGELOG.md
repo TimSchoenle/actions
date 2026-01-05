@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.2.0...actions-helm-update-chart-version-v1.2.1) (2026-01-05)
+
+
+### Bug Fixes
+
+* **Actions-UpdateChartVersion:** duplicate header auth ([#18](https://github.com/TimSchoenle/actions/issues/18)) ([aa617e4](https://github.com/TimSchoenle/actions/commit/aa617e4fa9dc953fe9f07a328ba770a3af3034d8))
+
 ## [1.2.0](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.1.0...actions-helm-update-chart-version-v1.2.0) (2026-01-05)
 
 
