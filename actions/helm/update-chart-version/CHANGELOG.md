@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.2.2...actions-helm-update-chart-version-v1.2.3) (2026-01-05)
+
+
+### Bug Fixes
+
+* **Actions-UpdateChartVersion:** relative action path issue ([#25](https://github.com/TimSchoenle/actions/issues/25)) ([2fec1b2](https://github.com/TimSchoenle/actions/commit/2fec1b2a6437fe9d3e3c44326db9bc8a377d58eb))
+
 ## [1.2.2](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.2.1...actions-helm-update-chart-version-v1.2.2) (2026-01-05)
 
 
