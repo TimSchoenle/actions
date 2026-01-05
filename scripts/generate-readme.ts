@@ -174,17 +174,8 @@ async function main() {
         let displayVersion = action.sha;
 
         if (action.version !== 'N/A') {
-            // It's either a tag (component-v1.0.0) or package.json version fallback (1.0.0)
-            if (action.version.startsWith('actions/')) {
-                // It is a tag
-                versionRef = action.version;
-                // Actually, let's just show the tag.
-                displayVersion = action.version;
-            } else {
-                // It's a package.json version (1.0.0)
-                versionRef = `v${action.version}`;
-                displayVersion = `v${action.version}`;
-            }
+            versionRef = `${action.version}`;
+            displayVersion = `${action.version}`;
         }
 
         const usage = `\`uses: ${repoId}/${dirPath}@${versionRef}\``;
