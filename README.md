@@ -8,8 +8,8 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 |--------|-------------|---------|-------|
-| [Common Modify YAML](./actions/common/modify-yaml) | A action to modify a value in a YAML file while strictly preserving comments and structure | actions-common-modify-yaml-v1.0.1 | `uses: TimSchoenle/actions/actions/common/modify-yaml@actions-common-modify-yaml-v1.0.1` |
-| [Common Read YAML](./actions/common/read-yaml) | A action to read a value from a YAML file using dot notation | actions-common-read-yaml-v1.0.1 | `uses: TimSchoenle/actions/actions/common/read-yaml@actions-common-read-yaml-v1.0.1` |
+| [Common Modify YAML](./actions/common/modify-yaml) | A action to modify a value in a YAML file while strictly preserving comments and structure | actions-common-modify-yaml-v1.0.2 | `uses: TimSchoenle/actions/actions/common/modify-yaml@actions-common-modify-yaml-v1.0.2` |
+| [Common Read YAML](./actions/common/read-yaml) | A action to read a value from a YAML file using dot notation | actions-common-read-yaml-v1.0.2 | `uses: TimSchoenle/actions/actions/common/read-yaml@actions-common-read-yaml-v1.0.2` |
 
 ### Helm
 
