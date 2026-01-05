@@ -13,93 +13,103 @@ inputs:
 outputs:
   old-value:
     description: 'Value before modification'
-    value: ${{ steps.set-outputs.outputs.old-value }}
+    value: ${{ steps.modify.outputs.old-value }}
   new-value:
     description: 'Value after modification'
-    value: ${{ steps.set-outputs.outputs.new-value }}
+    value: ${{ steps.modify.outputs.new-value }}
 runs:
   using: 'composite'
   steps:
-    - name: Validate and Get Old Value
-      id: old
-      shell: bash
-      run: |
-        FILE="${{ inputs.file }}"
-        KEY="${{ inputs.key }}"
-        
-        if [ ! -f "$FILE" ]; then
-          echo "::error::File not found: $FILE"
-          exit 1
-        fi
-        
-        # Use yq to validate structure and get old value
-        OLD_VALUE=$(yq eval ".$KEY" "$FILE")
-        if [ "$OLD_VALUE" == "null" ]; then
-          echo "::error::Key '$KEY' not found in $FILE"
-          exit 1
-        fi
-        
-        echo "value=$OLD_VALUE" >> "$GITHUB_OUTPUT"
-        echo "Old value: $OLD_VALUE"
-
     - name: Modify YAML
-      shell: bash
+      id: modify
+      shell: python
+      env:
+        INPUT_FILE: ${{ inputs.file }}
+        INPUT_KEY: ${{ inputs.key }}
+        INPUT_VALUE: ${{ inputs.value }}
       run: |
-        FILE="${{ inputs.file }}"
-        KEY="${{ inputs.key }}"
-        VALUE="${{ inputs.value }}"
+        import os
+        import sys
+        import subprocess
+        import re
         
-        # Use yq to find the EXACT line number for this key path
-        # yq eval --unwrapScalar gives us line:col info with -oj (output as JSON)
-        LINE_INFO=$(yq eval ".$KEY | line" "$FILE")
+        file_path = os.environ['INPUT_FILE']
+        key_path = os.environ['INPUT_KEY']
+        new_value = os.environ['INPUT_VALUE']
         
-        if [ -z "$LINE_INFO" ] || [ "$LINE_INFO" == "null" ]; then
-          echo "::error::Could not find line number for key: $KEY"
-          exit 1
-        fi
+        # Validate file exists
+        if not os.path.exists(file_path):
+            print(f"::error::File not found: {file_path}")
+            sys.exit(1)
         
-        # Extract final key name
-        FINAL_KEY="${KEY##*.}"
+        # Use yq to validate and get old value
+        result = subprocess.run(['yq', 'eval', f'.{key_path}', file_path], 
+                              capture_output=True, text=True)
+        old_value = result.stdout.strip()
         
-        # Detect value type and format appropriately
-        if [ "$VALUE" == "true" ] || [ "$VALUE" == "false" ]; then
-          FORMATTED_VALUE="$VALUE"
-        elif [[ "$VALUE" =~ ^-?[0-9]+\.?[0-9]*$ ]]; then
-          FORMATTED_VALUE="$VALUE"
-        else
-          # String - minimal quoting
-          case "$VALUE" in
-            *[\ :{}[\],\&*#?|\<\>=!%@\`]*)
-              FORMATTED_VALUE="\"${VALUE//\"/\\\"}\""
-              ;;
-            *)
-              FORMATTED_VALUE="$VALUE"
-              ;;
-          esac
-        fi
+        if old_value == 'null' or result.returncode != 0:
+            print(f"::error::Key '{key_path}' not found in {file_path}")
+            sys.exit(1)
         
-        # Use sed to modify ONLY the specific line number
-        # Pattern explanation:
-        # - Capture group 1: leading whitespace (indent)
-        # - Match: key name, colon, spaces, old value
-        # - Capture group 2: optional comment (everything from # to end)
-        # - Replace with: indent + key + new value + comment (if present)
+        print(f"Old value: {old_value}")
         
-        # Read the line to extract comment
-        ORIGINAL_LINE=$(sed -n "${LINE_INFO}p" "$FILE")
-        COMMENT=""
-        if [[ "$ORIGINAL_LINE" =~ (#.*) ]]; then
-          COMMENT="  ${BASH_REMATCH[1]}"
-        fi
+        # Get line number using yq
+        result = subprocess.run(['yq', 'eval', f'.{key_path} | line', file_path],
+                              capture_output=True, text=True)
+        line_num_str = result.stdout.strip()
         
-        # Use sed to replace the line while preserving indent
-        sed -i "${LINE_INFO}s|^\([[:space:]]*\)${FINAL_KEY}[[:space:]]*:.*$|\1${FINAL_KEY}: ${FORMATTED_VALUE}${COMMENT}|" "$FILE"
+        if not line_num_str or line_num_str == 'null':
+            print(f"::error::Could not determine line number for key: {key_path}")
+            sys.exit(1)
         
-        echo "✅ Modified $KEY (line $LINE_INFO) to: $VALUE"
-
-    - name: Set Outputs
-      id: set-outputs
-      shell: bash
-      run: |
-        echo "old-value=${{ steps.old.outputs.value }}" >> "$GITHUB_OUTPUT"
-        echo "new-value=${{ inputs.value }}" >> "$GITHUB_OUTPUT"
+        line_num = int(line_num_str)
+        final_key = key_path.split('.')[-1]
+        
+        # Detect value type
+        if new_value in ('true', 'false'):
+            formatted_value = new_value
+        elif re.match(r'^-?[0-9]+\.?[0-9]*$', new_value):
+            formatted_value = new_value
+        else:
+            # String - only quote if it contains characters that require quoting
+            # YAML needs quotes for: leading/trailing spaces, ": " sequence, certain special chars at start
+            needs_quotes = (
+                new_value != new_value.strip() or  # leading/trailing whitespace
+                ': ' in new_value or           # colon-space is a key-value separator
+                new_value.startswith(('#', '&', '*', '!', '|', '>', '@', '`', '%', '-')) or  # special start chars
+                any(c in new_value for c in ':{}[]#,*&?') or # Special chars that might confuse parsers
+                new_value.lower() in ('yes', 'no', 'on', 'off', 'null', '~')  # reserved words
+            )
+            
+            if needs_quotes:
+                formatted_value = f'"{new_value.replace(chr(34), chr(92)+chr(34))}"'
+            else:
+                formatted_value = new_value
+        
+        # Read all lines
+        with open(file_path, 'r') as f:
+            lines = f.readlines()
+        
+        # Modify the specific line
+        target_line = lines[line_num - 1]  # line_num is 1-indexed
+        
+        # Extract indent and comment
+        indent_match = re.match(r'^(\s*)', target_line)
+        indent = indent_match.group(1) if indent_match else ''
+        
+        comment_match = re.search(r'(#.*)$', target_line)
+        comment = '  ' + comment_match.group(1) if comment_match else ''
+        
+        # Replace the line
+        lines[line_num - 1] = f'{indent}{final_key}: {formatted_value}{comment}\n'
+        
+        # Write back
+        with open(file_path, 'w') as f:
+            f.writelines(lines)
+        
+        print(f"✅ Modified {key_path} (line {line_num}) to: {new_value}")
+        
+        # Set outputs
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            f.write(f'old-value={old_value}\n')
+            f.write(f'new-value={new_value}\n')
