@@ -21,8 +21,8 @@ jobs:
             value: '2.0.0'
             check_grep: 'version: 2.0.0'
           
-          - name: 'Modify Nested Key'
-            key: 'app.database.host'
+          - name: 'Modify Nested Key (3 levels)'
+            key: 'app.database.primary.host'
             value: 'db.internal'
             check_grep: 'host: db.internal'
 
@@ -37,7 +37,7 @@ jobs:
             check_grep: 'debug: true'
 
           - name: 'Modify Integer'
-            key: 'app.database.port'
+            key: 'app.database.primary.port'
             value: '3306'
             check_grep: 'port: 3306'
 
@@ -49,13 +49,40 @@ jobs:
           - name: 'Preserve Inline Comment'
             key: 'app.name'
             value: 'updated-app'
-            check_grep: 'name: updated-app # inline comment'
+            check_grep: 'name: updated-app  # inline comment'
 
           - name: 'Preserve Comments'
             key: 'app.name'
             value: 'new-name'
             # Check value AND ensure comment still exists
-            check_grep: 'name: new-name.*inline comment' 
+            check_grep: 'name: new-name  # inline comment'
+          
+          - name: 'Deep Nesting (5 levels)'
+            key: 'app.database.primary.credentials.options.timeout'
+            value: '60'
+            check_grep: 'timeout: 60'
+          
+          - name: 'Weird Indentation'
+            key: 'config.deeply.nested.value'
+            value: 'modified'
+            check_grep: 'value: modified'
+          
+          - name: 'Similar Key Names'
+            key: 'api.api_key'
+            value: 'new-secret'
+            check_grep: 'api_key: new-secret'
+          
+          - name: 'Value with Unit'
+            key: 'app.resources.memory'
+            value: '1024Mi'
+            check_grep: 'memory: 1024Mi' 
+          
+          - name: 'Duplicate Key Names (Different Parents)'
+            key: 'app.database.primary.host'
+            value: 'primary-changed'
+            check_grep: 'host: primary-changed'
+            # CRITICAL: Ensure secondary.host is NOT modified
+            verify_unchanged: 'secondary:\s+host: backup-db'
 
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
@@ -63,21 +90,76 @@ jobs:
       - name: Setup Complex Test Data
         run: |
           cat <<EOF > complex.yaml
+          # Top-level comment with special chars: @#$%
           version: 1.0.0
           
           # Application Metadata
           app:
             name: test-app # inline comment
             debug: true
+            enabled: false  # another inline comment
             
-            # Database Configuration
+            
+            # Database Configuration (multiple blank lines above)
             database:
-              host: localhost
-              port: 5432
+              primary:
+                host: localhost
+                port: 5432  # default postgres port
+                credentials:
+                  username: admin
+                  password: secret123
+                  # Nested config
+                  options:
+                    timeout: 30
+                    retry: 3
+                    connection:
+                      pool:
+                        min: 5  # minimum connections
+                        max: 20
+              
+              # Secondary database
+              secondary:
+                host: backup-db
+                port: 5433
+            
+            # Resource limits
             resources:
               cpu_ratio: 1.0
+              memory: 512Mi  # with unit
               limits:
                 cpu: 500m
+                memory: 1Gi
+          
+          # Feature flags
+          features:
+            feature-a: true
+            feature-b: false  # disabled for now
+            feature-c: true
+          
+          # Arrays section
+          tags:
+            - production
+            - critical
+            - backend
+          
+          # Varied indentation (weird but valid)
+          config:
+              deeply:   # 6 spaces indent
+                  nested:  # 10 spaces
+                      value: test
+                      another: data
+          
+          # Keys with similar names
+          api:
+            endpoint: https://api.example.com
+            api_key: secret
+            api_version: v2
+          
+          # Numbers and strings
+          ports:
+            http: 80
+            https: 443
+            custom: 8080
           EOF
 
       - name: Capture Pre-Modification State
@@ -121,6 +203,17 @@ jobs:
           fi
           
           echo "✅ Value change verified"
+          
+          # Check that other values weren't accidentally modified
+          if [ -n "${{ matrix.verify_unchanged || '' }}" ]; then
+            if ! grep -Pzo "${{ matrix.verify_unchanged }}" complex.yaml > /dev/null; then
+              echo "::error::Verification failed - another value was incorrectly modified!"
+              echo "Expected to find unchanged: ${{ matrix.verify_unchanged }}"
+              cat complex.yaml
+              exit 1
+            fi
+            echo "✅ Other duplicate keys verified unchanged"
+          fi
       
       - name: Verify Formatting Preservation
         run: |
