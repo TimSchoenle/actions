@@ -104,6 +104,7 @@ runs:
         
         # Modify the specific line
         target_line = lines[line_num - 1]  # line_num is 1-indexed
+        final_key = key_path.split('.')[-1]
         
         # Extract indent and comment
         indent_match = re.match(r'^(\s*)', target_line)
