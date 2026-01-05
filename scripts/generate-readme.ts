@@ -21,6 +21,7 @@ interface ActionInfo {
     version: string;
     sha: string;
     path: string; // Relative path to action dir
+    category: string;
 }
 
 async function getGitSha(dir: string): Promise<string> {
@@ -32,38 +33,20 @@ async function getGitSha(dir: string): Promise<string> {
     return output.trim();
 }
 
-async function getVersion(dir: string): Promise<string> {
-    // 1. Try package.json
-    const pkgPath = path.join(ROOT_DIR, dir, 'package.json');
-    const pkgFile = Bun.file(pkgPath);
-    if (await pkgFile.exists()) {
+async function getManifestVersions(): Promise<Record<string, string>> {
+    const manifestPath = path.join(ROOT_DIR, '.release-please-manifest.json');
+    const file = Bun.file(manifestPath);
+    if (await file.exists()) {
         try {
-            const pkg = await pkgFile.json();
-            return pkg.version || 'N/A';
-        } catch {
-            // ignore
+            return await file.json();
+        } catch (e) {
+            console.warn('⚠️ Failed to parse .release-please-manifest.json:', e);
         }
     }
-    // 2. Try to find a git tag? (Simplified: return N/A if no package.json)
-    return 'N/A';
+    return {};
 }
 
 const RELEASE_PLEASE_CONFIG = path.join(ROOT_DIR, 'release-please-config.json');
-
-async function getLatestTag(component: string): Promise<string | null> {
-    const pattern = `${component}-v*`;
-    // Sort by version descending
-    const proc = Bun.spawn(['git', 'tag', '--list', pattern, '--sort=-v:refname'], {
-        cwd: ROOT_DIR,
-        stdout: 'pipe',
-    });
-    const output = await new Response(proc.stdout).text();
-    const tags = output.split('\n').filter(Boolean);
-    if (tags.length > 0) {
-        return tags[0];
-    }
-    return null;
-}
 
 async function getReleaseComponent(dir: string): Promise<string | null> {
     const file = Bun.file(RELEASE_PLEASE_CONFIG);
@@ -71,7 +54,7 @@ async function getReleaseComponent(dir: string): Promise<string | null> {
         try {
             const config = await file.json();
             const normalizedDir = dir.replaceAll('\\', '/');
-            if (config.packages && config.packages[normalizedDir]) {
+            if (config.packages?.[normalizedDir]) {
                 return config.packages[normalizedDir].component;
             }
         } catch (e) {
@@ -91,7 +74,7 @@ async function getRepoInfo(): Promise<string> {
         // Support HTTPS and SSH
         // https://github.com/owner/repo.git
         // git@github.com:owner/repo.git
-        const match = url.trim().match(/github\.com[:/]([^/]+)\/([^.]+)/);
+        const match = new RegExp(/github\.com[:/]([^/]+)\/([^.]+)/).exec(url.trim());
         if (match) {
             return `${match[1]}/${match[2]}`;
         }
@@ -108,6 +91,8 @@ async function main() {
     const glob = new Glob('actions/**/action.{yml,yaml}');
     const actions: ActionInfo[] = [];
 
+    const manifestShortVersions = await getManifestVersions();
+
     for await (const file of glob.scan({ cwd: ROOT_DIR })) {
         // file is relative to ROOT_DIR, e.g. actions/custom/action.yml
         const absPath = path.join(ROOT_DIR, file);
@@ -123,64 +108,83 @@ async function main() {
             continue;
         }
 
-        if (!config || !config.name) {
+        if (!config?.name) {
             console.warn(`⚠️ Skiping ${file}: missing name`);
             continue;
         }
 
         const sha = await getGitSha(dir);
-        let version = await getVersion(dir);
+        let version = 'N/A';
 
         // Try to get released tag
         const component = await getReleaseComponent(dir);
-        let tag: string | null = null;
         if (component) {
-            tag = await getLatestTag(component);
-            if (tag) {
-                // Tag is like "component-v1.0.0"
-                // Check if we want to strip component? usually usage uses the full tag ref or v1.0.0
-                // If the tag is specific to this component, we can use the tag directly.
-                version = tag;
+            const normalizedDir = dir.replaceAll('\\', '/');
+            const shortVersion = manifestShortVersions[normalizedDir];
+            if (shortVersion) {
+                // Construct tag: component-vX.Y.Z
+                version = `${component}-v${shortVersion}`;
             }
         }
+        if (version === 'N/A') {
+            console.log(`⚠️ Skipping ${file}: no version found`);
+            continue;
+        }
+
+        // Extract category from path: actions/<category>/<name>/action.yml
+        const parts = dir.replaceAll('\\', '/').split('/');
+        const category = parts.length >= 3 ? parts[1] : 'Other';
 
         actions.push({
             name: config.name,
             description: config.description || '',
-            version: tag || (version !== 'N/A' ? version : 'N/A'),
+            version: version,
             sha,
             path: dir,
+            category: category.charAt(0).toUpperCase() + category.slice(1),
         });
     }
 
-    // Sort by name
-    actions.sort((a, b) => a.name.localeCompare(b.name));
+    // Sort by category then name
+    actions.sort((a, b) => {
+        if (a.category !== b.category) {
+            return a.category.localeCompare(b.category);
+        }
+        return a.name.localeCompare(b.name);
+    });
 
     console.log(`✅ Found ${actions.length} actions.`);
 
-    // Generate Table
-    let table = '| Action | Description | Version | Usage |\n|--------|-------------|---------|-------|\n';
+    // Group by category
+    const actionsByCategory: Record<string, ActionInfo[]> = {};
     for (const action of actions) {
-        // Link the name to the directory (using forward slashes)
-        const dirPath = action.path.replaceAll('\\', '/');
-        const link = `[${action.name}](./${dirPath})`;
-        const desc = action.description.replaceAll('\n', ' ').trim();
-
-        // Construct usage string
-        // uses: owner/repo/path@version
-        // If we have a tag, use it. If not, use SHA.
-        // action.version holds the tag if found.
-        let versionRef = action.sha;
-        let displayVersion = action.sha;
-
-        if (action.version !== 'N/A') {
-            versionRef = `${action.version}`;
-            displayVersion = `${action.version}`;
+        if (!actionsByCategory[action.category]) {
+            actionsByCategory[action.category] = [];
         }
+        actionsByCategory[action.category].push(action);
+    }
 
-        const usage = `\`uses: ${repoId}/${dirPath}@${versionRef}\``;
+    // Generate Markdown
+    let markdownOutput = '';
+    const sortedCategories = Object.keys(actionsByCategory).sort((a, b) => a.localeCompare(b));
 
-        table += `| ${link} | ${desc} | ${displayVersion} | ${usage} |\n`;
+    for (const category of sortedCategories) {
+        markdownOutput += `### ${category}\n\n`;
+        markdownOutput += '| Action | Description | Version | Usage |\n|--------|-------------|---------|-------|\n';
+
+        for (const action of actionsByCategory[category]) {
+            // Link the name to the directory (using forward slashes)
+            const dirPath = action.path.replaceAll('\\', '/');
+            const link = `[${action.name}](./${dirPath})`;
+            const desc = action.description.replaceAll('\n', ' ').trim();
+
+            const versionRef = action.version;
+
+            const usage = `\`uses: ${repoId}/${dirPath}@${versionRef}\``;
+
+            markdownOutput += `| ${link} | ${desc} | ${versionRef} | ${usage} |\n`;
+        }
+        markdownOutput += '\n';
     }
 
     // Read Template
@@ -192,7 +196,7 @@ async function main() {
     let readmeContent = await templateFile.text();
 
     // Replace Placeholder
-    readmeContent = readmeContent.replace('<!-- ACTIONS_TABLE -->', table);
+    readmeContent = readmeContent.replace('<!-- ACTIONS_TABLE -->', markdownOutput);
 
     // Write README
     await Bun.write(README_PATH, readmeContent);
