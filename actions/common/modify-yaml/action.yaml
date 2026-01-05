@@ -20,46 +20,72 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Validate File Exists
-      shell: bash
-      run: |
-        if [ ! -f "${{ inputs.file }}" ]; then
-          echo "::error::File not found: ${{ inputs.file }}"
-          exit 1
-        fi
-    
-    - name: Get Old Value
+    - name: Validate and Get Old Value
       id: old
       shell: bash
       run: |
-        OLD_VALUE=$(yq eval ".${{ inputs.key }}" "${{ inputs.file }}")
-        if [ "$OLD_VALUE" == "null" ]; then
-          echo "::error::Key '${{ inputs.key }}' not found in ${{ inputs.file }}"
+        FILE="${{ inputs.file }}"
+        KEY="${{ inputs.key }}"
+        
+        if [ ! -f "$FILE" ]; then
+          echo "::error::File not found: $FILE"
           exit 1
         fi
+        
+        # Use yq to validate structure and get old value
+        OLD_VALUE=$(yq eval ".$KEY" "$FILE")
+        if [ "$OLD_VALUE" == "null" ]; then
+          echo "::error::Key '$KEY' not found in $FILE"
+          exit 1
+        fi
+        
         echo "value=$OLD_VALUE" >> "$GITHUB_OUTPUT"
         echo "Old value: $OLD_VALUE"
     
-    - name: Modify YAML
+    - name: Modify YAML (Text-Based for Perfect Preservation)
       shell: bash
       run: |
-        # Detect value type and set appropriately
+        FILE="${{ inputs.file }}"
+        KEY="${{ inputs.key }}"
         VALUE="${{ inputs.value }}"
         
-        # Check if it's a boolean
+        # Extract the final key name from dot notation
+        FINAL_KEY="${KEY##*.}"
+        
+        # Detect value type and format appropriately
         if [ "$VALUE" == "true" ] || [ "$VALUE" == "false" ]; then
-          yq eval -i ".${{ inputs.key }} = $VALUE" "${{ inputs.file }}"
-        # Check if it's a number
+          FORMATTED_VALUE="$VALUE"
         elif [[ "$VALUE" =~ ^-?[0-9]+\.?[0-9]*$ ]]; then
-          yq eval -i ".${{ inputs.key }} = $VALUE" "${{ inputs.file }}"
-        # Otherwise treat as string (with quotes)
+          FORMATTED_VALUE="$VALUE"
         else
-          yq eval -i ".${{ inputs.key }} = \"$VALUE\"" "${{ inputs.file }}"
+          # String - check if it needs quotes
+          if [[ "$VALUE" =~ [:{}[\],\&*#?|<>=!%@\`\ ] ]]; then
+            FORMATTED_VALUE="\"${VALUE//\"/\\\"}\""
+          else
+            FORMATTED_VALUE="$VALUE"
+          fi
         fi
         
-        echo "✅ Modified ${{ inputs.key }}"
-        echo "  From: ${{ steps.old.outputs.value }}"
-        echo "  To:   $VALUE"
+        # Use awk to replace ONLY the target line, preserving everything else
+        # This keeps ALL formatting: blank lines, comments, indentation
+        awk -v key="$FINAL_KEY" -v val="$FORMATTED_VALUE" '
+        {
+          if ($0 ~ "^[[:space:]]*" key "[[:space:]]*:") {
+            # Found the key line - extract indent and any inline comment
+            match($0, /^([[:space:]]*)/, indent)
+            match($0, /(#.*)$/, comment)
+            if (comment[1]) {
+              print indent[1] key ": " val "  " comment[1]
+            } else {
+              print indent[1] key ": " val
+            }
+          } else {
+            print $0
+          }
+        }
+        ' "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
+        
+        echo "✅ Modified $KEY to: $VALUE"
     
     - name: Set Outputs
       id: set-outputs
