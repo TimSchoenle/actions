@@ -53,42 +53,54 @@ runs:
         
         print(f"Old value: {old_value}")
         
-        # Get line number using yq
-        result = subprocess.run(['yq', 'eval', f'.{key_path} | line', file_path],
-                              capture_output=True, text=True)
-        line_num_str = result.stdout.strip()
-        
-        if not line_num_str or line_num_str == 'null':
-            print(f"::error::Could not determine line number for key: {key_path}")
-            sys.exit(1)
-        
-        line_num = int(line_num_str)
-        final_key = key_path.split('.')[-1]
-        
-        # Detect value type
-        if new_value in ('true', 'false'):
-            formatted_value = new_value
-        elif re.match(r'^-?[0-9]+\.?[0-9]*$', new_value):
-            formatted_value = new_value
-        else:
-            # String - only quote if it contains characters that require quoting
-            # YAML needs quotes for: leading/trailing spaces, ": " sequence, certain special chars at start
-            needs_quotes = (
-                new_value != new_value.strip() or  # leading/trailing whitespace
-                ': ' in new_value or           # colon-space is a key-value separator
-                new_value.startswith(('#', '&', '*', '!', '|', '>', '@', '`', '%', '-')) or  # special start chars
-                any(c in new_value for c in ':{}[]#,*&?') or # Special chars that might confuse parsers
-                new_value.lower() in ('yes', 'no', 'on', 'off', 'null', '~')  # reserved words
-            )
+        # Get line number by parsing the file structure in Python
+        # This is more reliable than yq for nested keys and duplicate names
+        def find_line_number(lines, key_path):
+            parts = key_path.split('.')
+            current_idx = 0
+            parent_indents = [] # Stack of indents for matched path parts
             
-            if needs_quotes:
-                formatted_value = f'"{new_value.replace(chr(34), chr(92)+chr(34))}"'
-            else:
-                formatted_value = new_value
-        
-        # Read all lines
+            for i, line in enumerate(lines):
+                stripped = line.lstrip()
+                # Skip comments and empty lines
+                if not stripped or stripped.startswith('#'):
+                    continue
+                    
+                indent = len(line) - len(stripped)
+                
+                # Check if we left the scope of previous parents
+                # If indent <= last matched parent's indent, we popped out of that block
+                while parent_indents and indent <= parent_indents[-1]:
+                    parent_indents.pop()
+                    current_idx -= 1
+                
+                # Match the current expected part
+                target = parts[current_idx]
+                
+                # Regex matches "key:" or "key: value"
+                # STRICT match on key name to avoid partial matches (e.g. 'api' vs 'api_key')
+                if re.match(rf'^{re.escape(target)}\s*:', stripped):
+                    # If this is the final part of the key
+                    if current_idx == len(parts) - 1:
+                        return i + 1 # Return 1-based line number (to match prev logic)
+                    
+                    # Found a parent, go deeper
+                    parent_indents.append(indent)
+                    current_idx += 1
+            
+            return -1
+
+        # Read all lines first
         with open(file_path, 'r') as f:
             lines = f.readlines()
+            
+        line_num = find_line_number(lines, key_path)
+        
+        if line_num == -1:
+            print(f"::error::Could not find line number for key: {key_path}")
+            sys.exit(1)
+            
+        print(f"Found '{key_path}' on line {line_num}")
         
         # Modify the specific line
         target_line = lines[line_num - 1]  # line_num is 1-indexed
