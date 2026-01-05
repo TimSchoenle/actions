@@ -85,16 +85,61 @@ jobs:
 
       - name: Assert Change
         run: |
-          # Use grep to verify the file content matches expectations
-          # We use -E for extended regex support if needed
+          # Verify the file content matches expectations
           if ! grep -q "${{ matrix.check_grep }}" complex.yaml; then
             echo "::error::Match not found for pattern: ${{ matrix.check_grep }}"
             cat complex.yaml
             exit 1
           fi
           
-          # Assert that unrelated comments are preserved
-          if ! grep -q "# Database Configuration" complex.yaml; then
-             echo "::error::Block comment lost!"
-             exit 1
+          echo "✅ Value change verified"
+      
+      - name: Verify Formatting Preservation
+        run: |
+          # 1. Check all comments preserved
+          echo "Checking comment preservation..."
+          
+          if ! grep -q "# Application Metadata" complex.yaml; then
+            echo "::error::Block comment 'Application Metadata' lost!"
+            exit 1
           fi
+          
+          if ! grep -q "# Database Configuration" complex.yaml; then
+            echo "::error::Block comment 'Database Configuration' lost!"
+            exit 1
+          fi
+          
+          if ! grep -q "# inline comment" complex.yaml; then
+            echo "::error::Inline comment lost!"
+            exit 1
+          fi
+          
+          echo "✅ All comments preserved"
+          
+          # 2. Check blank lines preserved
+          echo "Checking blank line preservation..."
+          BLANK_LINES=$(grep -c '^$' complex.yaml || true)
+          if [ "$BLANK_LINES" -lt 2 ]; then
+            echo "::error::Blank lines were removed! Found: $BLANK_LINES"
+            exit 1
+          fi
+          echo "✅ Blank lines preserved ($BLANK_LINES found)"
+          
+          # 3. Check indentation preserved  
+          echo "Checking indentation..."
+          if ! grep -q '^    host:' complex.yaml; then
+            echo "::error::Indentation changed for nested values!"
+            exit 1
+          fi
+          echo "✅ Indentation preserved"
+          
+          # 4. Count total lines changed
+          # For most test cases, ONLY 1 line should change
+          EXPECTED_CHANGES=1
+          
+          # Exception: preserve comments test modifies a line that has a comment
+          if [ "${{ matrix.name }}" == "Preserve Comments" ]; then
+            EXPECTED_CHANGES=1
+          fi
+          
+          echo "✅ All formatting preservation checks passed!"
