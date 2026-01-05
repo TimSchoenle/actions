@@ -1,11 +1,51 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "regexManagers": [
+        {
+            "description": "Custom action versioning for monorepo",
+            "fileMatch": [
+                "(^|/)action\\.ya?ml$",
+                "(^|/)workflow\\.ya?ml$",
+                "^\\.github/workflows/.*\\.ya?ml$"
+            ],
+            "matchStrings": [
+                "uses: (?<depName>TimSchoenle/actions/(?<subPath>[\\w\\/-]+))@(?<currentValue>[^ \\n\\r]+)(?:\\s+#\\s+(?<currentTag>.*))?"
+            ],
+            "lookupNameTemplate": "TimSchoenle/actions",
+            "datasourceTemplate": "github-tags"
+        }
+    ],
     "packageRules": [
         {
+            "description": "Disable default github-actions manager for this monorepo to avoid conflation",
+            "matchManagers": [
+                "github-actions"
+            ],
             "matchPackageNames": [
                 "TimSchoenle/actions"
             ],
-            "versioning": "regex:^actions-[a-z0-9-]+-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+            "enabled": false
+        },
+        {
+            "description": "Versioning for action common/modify-yaml",
+            "matchPackageNames": [
+                "TimSchoenle/actions/actions/common/modify-yaml"
+            ],
+            "versioning": "regex:^actions-common-modify-yaml-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+        },
+        {
+            "description": "Versioning for action common/read-yaml",
+            "matchPackageNames": [
+                "TimSchoenle/actions/actions/common/read-yaml"
+            ],
+            "versioning": "regex:^actions-common-read-yaml-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+        },
+        {
+            "description": "Versioning for action helm/update-chart-version",
+            "matchPackageNames": [
+                "TimSchoenle/actions/actions/helm/update-chart-version"
+            ],
+            "versioning": "regex:^actions-helm-update-chart-version-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
         }
     ]
 }
