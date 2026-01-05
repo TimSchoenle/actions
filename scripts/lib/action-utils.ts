@@ -72,6 +72,8 @@ export async function registerActionInReleasePlease(packageName: string, subActi
     const configPath = path.join(ROOT_DIR, 'release-please-config.json');
     const manifestPath = path.join(ROOT_DIR, '.release-please-manifest.json');
     const key = `actions/${packageName}/${subAction}`;
+    // Use hyphens for the component name to avoid issues with Renovate pinning
+    const componentName = `actions-${packageName}-${subAction}`;
 
     // Update Config
     try {
@@ -87,7 +89,7 @@ export async function registerActionInReleasePlease(packageName: string, subActi
         if (!config.packages[key]) {
             config.packages[key] = {
                 'release-type': 'simple',
-                component: `actions/${packageName}/${subAction}`,
+                component: componentName,
                 'include-component-in-tag': true,
             };
             await Sys.write(configPath, JSON.stringify(config, null, 2));

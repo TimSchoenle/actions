@@ -2,7 +2,7 @@
   "packages": {
     "actions/helm/update-chart-version": {
       "release-type": "simple",
-      "component": "actions/helm/update-chart-version",
+      "component": "actions-helm-update-chart-version",
       "include-component-in-tag": true
     }
   },
