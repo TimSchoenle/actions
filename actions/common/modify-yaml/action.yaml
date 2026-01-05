@@ -41,63 +41,55 @@ runs:
         
         echo "value=$OLD_VALUE" >> "$GITHUB_OUTPUT"
         echo "Old value: $OLD_VALUE"
-    
+
     - name: Modify YAML
-      shell: python
-      env:
-        FILE: ${{ inputs.file }}
-        KEY: ${{ inputs.key }}
-        VALUE: ${{ inputs.value }}
+      shell: bash
       run: |
-        import os
-        import re
+        FILE="${{ inputs.file }}"
+        KEY="${{ inputs.key }}"
+        VALUE="${{ inputs.value }}"
         
-        file_path = os.environ['FILE']
-        key_path = os.environ['KEY']
-        value = os.environ['VALUE']
+        # Extract the final key name from dot notation
+        FINAL_KEY="${KEY##*.}"
         
-        # Extract final key from dot notation
-        final_key = key_path.split('.')[-1]
+        # Detect value type and format appropriately
+        if [ "$VALUE" == "true" ] || [ "$VALUE" == "false" ]; then
+          FORMATTED_VALUE="$VALUE"
+        elif [[ "$VALUE" =~ ^-?[0-9]+\.?[0-9]*$ ]]; then
+          FORMATTED_VALUE="$VALUE"
+        else
+          # String - check if it needs quotes (contains special YAML characters)
+          # Simple approach: quote if it contains spaces, colons, or common special chars
+          case "$VALUE" in
+            *[\ :{}[\],\&*#?|\-\<\>=!%@\`]*)
+              FORMATTED_VALUE="\"${VALUE//\"/\\\"}\""
+              ;;
+            *)
+              FORMATTED_VALUE="$VALUE"
+              ;;
+          esac
+        fi
         
-        # Detect value type
-        if value in ('true', 'false'):
-            formatted_value = value
-        elif re.match(r'^-?[0-9]+\.?[0-9]*$', value):
-            formatted_value = value
-        else:
-            # String - quote if needed
-            if any(c in value for c in ' :{}[],&*#?|-<>=!%@`'):
-                formatted_value = f'"{value.replace(chr(34), chr(92)+chr(34))}"'
-            else:
-                formatted_value = value
+        # Use awk to replace ONLY the target line
+        awk -v key="$FINAL_KEY" -v val="$FORMATTED_VALUE" '
+        {
+          if ($0 ~ "^[[:space:]]*" key "[[:space:]]*:") {
+            # Found the key line - extract indent and any inline comment
+            match($0, /^([[:space:]]*)/, indent)
+            match($0, /(#.*)$/, comment)
+            if (comment[1]) {
+              print indent[1] key ": " val "  " comment[1]
+            } else {
+              print indent[1] key ": " val
+            }
+          } else {
+            print $0
+          }
+        }
+        ' "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
         
-        # Read ALL lines (preserves blank lines perfectly)
-        with open(file_path, 'r') as f:
-            lines = f.readlines()
-        
-        # Process each line
-        pattern = re.compile(rf'^(\s*){re.escape(final_key)}\s*:\s*(.*)$')
-        
-        for i, line in enumerate(lines):
-            match = pattern.match(line)
-            if match:
-                indent = match.group(1)
-                rest = match.group(2)
-                
-                # Extract inline comment if present
-                comment_match = re.search(r'(#.*)$', rest)
-                comment = ('  ' + comment_match.group(1)) if comment_match else ''
-                
-                # Replace line
-                lines[i] = f'{indent}{final_key}: {formatted_value}{comment}\n'
-                break
-        
-        # Write ALL lines back (preserves everything)
-        with open(file_path, 'w') as f:
-            f.writelines(lines)
-        
-        print(f'✅ Modified {key_path} to: {value}')
-    
+        echo "✅ Modified $KEY to: $VALUE"
+
     - name: Set Outputs
       id: set-outputs
       shell: bash
