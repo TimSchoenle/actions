@@ -6,7 +6,9 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 |--------|-------------|---------|-------|
-| [Update Helm Chart Version](./actions/helm/update-chart-version) | Updates a Helm chart version/APP tag and creates a PR.  This action requires a bot account with access to the charts repo.  Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag). | actions-helm-update-chart-version-v1.2.0 | `uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.2.0` |
+| [Common Modify YAML](./actions/common/modify-yaml) | A action to modify a value in a YAML file while strictly preserving comments and structure | 6a72d77 | `uses: TimSchoenle/actions/actions/common/modify-yaml@6a72d77` |
+| [Common Read YAML](./actions/common/read-yaml) | A action to read a value from a YAML file using dot notation | 273ebae | `uses: TimSchoenle/actions/actions/common/read-yaml@273ebae` |
+| [Update Helm Chart Version](./actions/helm/update-chart-version) | Updates a Helm chart version, appVersion, and image tag, then creates a Pull Request. This action requires a bot account with access to the charts repo. Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag). | actions-helm-update-chart-version-v1.2.1 | `uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.2.1` |
 
 
 

@@ -1,0 +1,85 @@
+name: 'Common Modify YAML'
+description: 'A action to modify a value in a YAML file while strictly preserving comments and structure'
+inputs:
+  file:
+    description: 'Path to the YAML file'
+    required: true
+  key:
+    description: 'Dot-notation key path'
+    required: true
+  value:
+    description: 'Value to set'
+    required: true
+outputs:
+  old-value:
+    description: 'Value before modification'
+    value: ${{ steps.modify.outputs.old-value }}
+  new-value:
+    description: 'Value after modification'
+    value: ${{ steps.modify.outputs.new-value }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Python Dependencies
+      shell: bash
+      run: pip install ruamel.yaml
+
+    - name: Modify YAML
+      id: modify
+      shell: python
+      env:
+        FILE: ${{ inputs.file }}
+        KEY: ${{ inputs.key }}
+        VALUE: ${{ inputs.value }}
+      run: |
+        import os
+        import sys
+        from ruamel.yaml import YAML
+
+        yaml = YAML()
+        yaml.preserve_quotes = True
+
+        file_path = os.environ['FILE']
+        key_path = os.environ['KEY']
+        new_value_raw = os.environ['VALUE']
+
+        if not os.path.exists(file_path):
+             print(f"Error: File {file_path} not found")
+             sys.exit(1)
+
+        # Attempt to parse the value as YAML to support booleans, numbers, etc.
+        try:
+             # We use the same YAML instance to load the scalar
+             new_value = yaml.load(new_value_raw)
+        except Exception as e:
+             print(f"Warning: Failed to parse value as YAML, using as string. Error: {e}")
+             new_value = new_value_raw
+
+        with open(file_path) as f:
+            data = yaml.load(f)
+
+        keys = key_path.split('.')
+        
+        # Navigate to the parent of the target key
+        obj = data
+        try:
+            for k in keys[:-1]:
+                obj = obj[k]
+            target_key = keys[-1]
+            old_value = obj[target_key]
+        except (KeyError, TypeError):
+             print(f"Error: Key path {key_path} invalid")
+             sys.exit(1)
+
+        print(f"Old Value: {old_value}")
+
+        obj[target_key] = new_value
+        
+        print(f"New Value: {new_value}")
+
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as gh_out:
+            gh_out.write(f"old-value={old_value}\n")
+            gh_out.write(f"new-value={new_value}\n")
+
+        with open(file_path, "w") as f:
+            yaml.dump(data, f)

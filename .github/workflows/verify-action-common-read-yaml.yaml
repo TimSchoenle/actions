@@ -1,0 +1,69 @@
+name: Verify Action Common Read YAML
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'actions/common/read-yaml/**'
+      - '.github/workflows/verify-action-common-read-yaml.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-read-yaml:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - key: 'version'
+            expected: '1.0.0'
+            desc: 'Root key'
+          - key: 'app.name'
+            expected: 'test-app'
+            desc: 'Nested key'
+          - key: 'app.database.host'
+            expected: 'localhost'
+            desc: 'Deep nested key'
+          - key: 'app.resources.limits.cpu'
+            expected: '500m'
+            desc: 'Mixed type value (string)'
+          - key: 'app.debug'
+            expected: 'true'
+            desc: 'Boolean value'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Complex Test Data
+        run: |
+          cat <<EOF > complex.yaml
+          version: 1.0.0
+          
+          # Application Metadata
+          app:
+            name: test-app # inline comment
+            debug: true
+            
+            # Database Configuration
+            database:
+              host: localhost
+              port: 5432
+              
+            resources:
+              limits:
+                cpu: 500m
+          EOF
+
+      - name: Test Read YAML (${{ matrix.desc }})
+        id: read
+        uses: ./actions/common/read-yaml
+        with:
+          file: complex.yaml
+          key: ${{ matrix.key }}
+      
+      - name: Assert Value
+        if: steps.read.outputs.value != matrix.expected
+        run: |
+          echo "Expected '${{ matrix.expected }}', got '${{ steps.read.outputs.value }}'"
+          exit 1
