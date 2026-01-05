@@ -102,6 +102,27 @@ runs:
             
         print(f"Found '{key_path}' on line {line_num}")
         
+        # Detect value type and apply quoting if needed
+        # We modify 'new_value' directly to avoid variable name confusion
+        if new_value in ('true', 'false'):
+            pass # Keep as is
+        elif re.match(r'^-?[0-9]+\.?[0-9]*$', new_value):
+            pass # Keep as is
+        else:
+            # String - only quote if it contains characters that require quoting
+            # YAML needs quotes for: leading/trailing spaces, ": " sequence, certain special chars at start
+            needs_quotes = (
+                new_value != new_value.strip() or  # leading/trailing whitespace
+                ': ' in new_value or           # colon-space is a key-value separator
+                new_value.startswith(('#', '&', '*', '!', '|', '>', '@', '`', '%', '-')) or  # special start chars
+                any(c in new_value for c in ':{}[]#,*&?') or # Special chars that might confuse parsers
+                new_value.lower() in ('yes', 'no', 'on', 'off', 'null', '~')  # reserved words
+            )
+            
+            if needs_quotes:
+                # Add quotes and escape existing quotes
+                new_value = f'"{new_value.replace(chr(34), chr(92)+chr(34))}"'
+        
         # Modify the specific line
         target_line = lines[line_num - 1]  # line_num is 1-indexed
         final_key = key_path.split('.')[-1]
@@ -114,7 +135,7 @@ runs:
         comment = '  ' + comment_match.group(1) if comment_match else ''
         
         # Replace the line
-        lines[line_num - 1] = f'{indent}{final_key}: {formatted_value}{comment}\n'
+        lines[line_num - 1] = f'{indent}{final_key}: {new_value}{comment}\n'
         
         # Write back
         with open(file_path, 'w') as f:
