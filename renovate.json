@@ -3,7 +3,8 @@
     "extends": [
         "config:best-practices",
         "helpers:pinGitHubActionDigests",
-        "workarounds:all"
+        "workarounds:all",
+        "github>TimSchoenle/actions//configs/renovate/base"
     ],
     "dependencyDashboard": true,
     "semanticCommits": "enabled",
