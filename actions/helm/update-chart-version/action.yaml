@@ -1,6 +1,6 @@
 name: 'Update Helm Chart Version'
-description: 'Updates a Helm chart version/APP tag and creates a PR. 
-              This action requires a bot account with access to the charts repo. 
+description: 'Updates a Helm chart version, appVersion, and image tag, then creates a Pull Request.
+              This action requires a bot account with access to the charts repo.
               Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag).'
 inputs:
   app-id:
@@ -77,58 +77,56 @@ runs:
         GH_TOKEN: ${{ steps.generate_token.outputs.token }}
       run: echo "user-id=$(gh api "/users/${{ steps.generate_token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
 
-    - name: Install yq
-      uses: dcarbone/install-yq-action@4075b4dca348d74bd83f2bf82d30f25d7c54539b # v1.3.1
+    - name: Read Current Version
+      id: read-version
+      uses: ./actions/common/read-yaml
       with:
-        version: 'v4.44.1'
+        file: ${{ inputs.checkout-path }}/${{ inputs.chart-path }}/Chart.yaml
+        key: version
 
-    - name: Update Chart Version
-      id: update-version
+    - name: Calculate New Version
+      id: calc-version
       shell: bash
-      working-directory: ${{ inputs.checkout-path }}/${{ inputs.chart-path }}
       env:
-        NEW_TAG: ${{ inputs.new-tag }}
+        CURRENT_VERSION: ${{ steps.read-version.outputs.value }}
       run: |
-        # Bump patch version
-        CURRENT_VERSION=$(yq '.version' Chart.yaml)
-        echo "Current Version: $CURRENT_VERSION"
-
-        # Increment patch version (simple awk script)
+        # Increment patch version (simple awk script logic)
         NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
-        echo "New Version: $NEW_VERSION"
+        echo "Calculated New Version: $NEW_VERSION"
         echo "new-version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
 
-        # Update Chart.yaml
-        yq -i ".version = \"$NEW_VERSION\"" Chart.yaml
-        yq -i ".appVersion = \"$NEW_TAG\"" Chart.yaml
+    - name: Set Chart Version
+      uses: ./actions/common/modify-yaml
+      with:
+        file: ${{ inputs.checkout-path }}/${{ inputs.chart-path }}/Chart.yaml
+        key: version
+        value: ${{ steps.calc-version.outputs.new-version }}
+
+    - name: Set App Version
+      uses: ./actions/common/modify-yaml
+      with:
+        file: ${{ inputs.checkout-path }}/${{ inputs.chart-path }}/Chart.yaml
+        key: appVersion
+        value: ${{ inputs.new-tag }}
+
+    - name: Construct Full Image Tag
+      id: construct-tag
+      shell: bash
+      env:
+         NEW_TAG: ${{ inputs.new-tag }}
+         IMAGE_DIGEST: ${{ inputs.image-digest }}
+      run: |
+         # We need to construct the full tag: TAG@DIGEST
+         FULL_TAG="${NEW_TAG}@${IMAGE_DIGEST}"
+         echo "Full Tag: $FULL_TAG"
+         echo "full-tag=$FULL_TAG" >> "$GITHUB_OUTPUT"
 
     - name: Update Image Tag
-      shell: bash
-      working-directory: ${{ inputs.checkout-path }}/${{ inputs.chart-path }}
-      env:
-        NEW_TAG: ${{ inputs.new-tag }}
-        IMAGE_DIGEST: ${{ inputs.image-digest }}
-      run: |
-        # Use yq to get the current value, then grep for the line number
-        # This is more robust than yq | line and preserves formatting via sed
-        OLD_TAG_VAL=$(yq '.image.tag' values.yaml)
-        echo "Old Tag Value: $OLD_TAG_VAL"
-
-        # Find line number searching for "tag:" and the value
-        TAG_LINE=$(grep -n "tag:.*$OLD_TAG_VAL" values.yaml | cut -d: -f1 | head -n 1)
-        echo "Line number: $TAG_LINE"
-
-        if [ -z "$TAG_LINE" ]; then
-          echo "Error: Could not find line for image.tag" >&2
-          exit 1
-        fi
-
-        # Format: [TAG]@[DIGEST]
-        FULL_TAG="${NEW_TAG}@${IMAGE_DIGEST}"
-        echo "New Image Tag: $FULL_TAG"
-
-        # Replace only on the found line, replacing the old value with the new one
-        sed -i "${TAG_LINE}s|${OLD_TAG_VAL}|${FULL_TAG}|" values.yaml
+      uses: ./actions/common/modify-yaml
+      with:
+        file: ${{ inputs.checkout-path }}/${{ inputs.chart-path }}/values.yaml
+        key: image.tag
+        value: ${{ steps.construct-tag.outputs.full-tag }}
 
     - name: Create Pull Request
       id: create-pr
@@ -137,11 +135,11 @@ runs:
         token: ${{ steps.generate_token.outputs.token }}
         path: ${{ inputs.checkout-path }}
         branch: ${{ inputs.pr-branch-prefix }}/${{ steps.parse.outputs.chart-name }}/${{ inputs.new-tag }}
-        title: 'chore(${{ steps.parse.outputs.chart-name }}): update chart to ${{ steps.update-version.outputs.new-version }}'
+        title: 'chore(${{ steps.parse.outputs.chart-name }}): update chart to ${{ steps.calc-version.outputs.new-version }}'
         body: |
           Automated update for **${{ steps.parse.outputs.chart-name }}** chart.
           
-          - **New Chart Version**: `${{ steps.update-version.outputs.new-version }}`
+          - **New Chart Version**: `${{ steps.calc-version.outputs.new-version }}`
           - **New App Version**: `${{ inputs.new-tag }}`
           - **Docker Digest**: `${{ inputs.image-digest }}`
 
@@ -149,7 +147,7 @@ runs:
           This action assumes the following structure in the chart directory:
           - `Chart.yaml`: Contains `version` and `appVersion` fields.
           - `values.yaml`: Contains `image.tag` field.
-        commit-message: 'chore(${{ steps.parse.outputs.chart-name }}): update chart to ${{ steps.update-version.outputs.new-version }}'
+        commit-message: 'chore(${{ steps.parse.outputs.chart-name }}): update chart to ${{ steps.calc-version.outputs.new-version }}'
         committer: '${{ steps.generate_token.outputs.app-slug }}[bot] <${{ steps.get-user-id.outputs.user-id }}+${{ steps.generate_token.outputs.app-slug }}[bot]@users.noreply.github.com>'
         author: '${{ steps.generate_token.outputs.app-slug }}[bot] <${{ steps.get-user-id.outputs.user-id }}+${{ steps.generate_token.outputs.app-slug }}[bot]@users.noreply.github.com>'
         delete-branch: true
