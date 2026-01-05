@@ -49,7 +49,16 @@ runs:
         KEY="${{ inputs.key }}"
         VALUE="${{ inputs.value }}"
         
-        # Extract the final key name from dot notation
+        # Use yq to find the EXACT line number for this key path
+        # yq eval --unwrapScalar gives us line:col info with -oj (output as JSON)
+        LINE_INFO=$(yq eval ".$KEY | line" "$FILE")
+        
+        if [ -z "$LINE_INFO" ] || [ "$LINE_INFO" == "null" ]; then
+          echo "::error::Could not find line number for key: $KEY"
+          exit 1
+        fi
+        
+        # Extract final key name
         FINAL_KEY="${KEY##*.}"
         
         # Detect value type and format appropriately
@@ -58,10 +67,9 @@ runs:
         elif [[ "$VALUE" =~ ^-?[0-9]+\.?[0-9]*$ ]]; then
           FORMATTED_VALUE="$VALUE"
         else
-          # String - check if it needs quotes (contains special YAML characters)
-          # Simple approach: quote if it contains spaces, colons, or common special chars
+          # String - minimal quoting
           case "$VALUE" in
-            *[\ :{}[\],\&*#?|\-\<\>=!%@\`]*)
+            *[\ :{}[\],\&*#?|\<\>=!%@\`]*)
               FORMATTED_VALUE="\"${VALUE//\"/\\\"}\""
               ;;
             *)
@@ -70,25 +78,24 @@ runs:
           esac
         fi
         
-        # Use awk to replace ONLY the target line
-        awk -v key="$FINAL_KEY" -v val="$FORMATTED_VALUE" '
-        {
-          if ($0 ~ "^[[:space:]]*" key "[[:space:]]*:") {
-            # Found the key line - extract indent and any inline comment
-            match($0, /^([[:space:]]*)/, indent)
-            match($0, /(#.*)$/, comment)
-            if (comment[1]) {
-              print indent[1] key ": " val "  " comment[1]
-            } else {
-              print indent[1] key ": " val
-            }
-          } else {
-            print $0
-          }
-        }
-        ' "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
+        # Use sed to modify ONLY the specific line number
+        # Pattern explanation:
+        # - Capture group 1: leading whitespace (indent)
+        # - Match: key name, colon, spaces, old value
+        # - Capture group 2: optional comment (everything from # to end)
+        # - Replace with: indent + key + new value + comment (if present)
         
-        echo "✅ Modified $KEY to: $VALUE"
+        # Read the line to extract comment
+        ORIGINAL_LINE=$(sed -n "${LINE_INFO}p" "$FILE")
+        COMMENT=""
+        if [[ "$ORIGINAL_LINE" =~ (#.*) ]]; then
+          COMMENT="  ${BASH_REMATCH[1]}"
+        fi
+        
+        # Use sed to replace the line while preserving indent
+        sed -i "${LINE_INFO}s|^\([[:space:]]*\)${FINAL_KEY}[[:space:]]*:.*$|\1${FINAL_KEY}: ${FORMATTED_VALUE}${COMMENT}|" "$FILE"
+        
+        echo "✅ Modified $KEY (line $LINE_INFO) to: $VALUE"
 
     - name: Set Outputs
       id: set-outputs
