@@ -68,6 +68,7 @@ runs:
         token: ${{ steps.generate_token.outputs.token }}
         path: ${{ inputs.checkout-path }}
         fetch-depth: 0
+        persist-credentials: false
 
     - name: Get GitHub App User ID
       id: get-user-id
