@@ -42,7 +42,7 @@ runs:
         echo "value=$OLD_VALUE" >> "$GITHUB_OUTPUT"
         echo "Old value: $OLD_VALUE"
     
-    - name: Modify YAML (Text-Based for Perfect Preservation)
+    - name: Modify YAML
       shell: bash
       run: |
         FILE="${{ inputs.file }}"
@@ -70,24 +70,18 @@ runs:
           esac
         fi
         
-        # Use awk to replace ONLY the target line, preserving everything else
-        # This keeps ALL formatting: blank lines, comments, indentation
-        awk -v key="$FINAL_KEY" -v val="$FORMATTED_VALUE" '
-        {
-          if ($0 ~ "^[[:space:]]*" key "[[:space:]]*:") {
-            # Found the key line - extract indent and any inline comment
-            match($0, /^([[:space:]]*)/, indent)
-            match($0, /(#.*)$/, comment)
-            if (comment[1]) {
-              print indent[1] key ": " val "  " comment[1]
-            } else {
-              print indent[1] key ": " val
+        # Use perl for in-place editing with perfect preservation
+        perl -i -pe "
+          if (/^(\s*)${FINAL_KEY}\s*:\s*(.*)$/) {
+            my \$indent = \$1;
+            my \$rest = \$2;
+            my \$comment = '';
+            if (\$rest =~ /(#.*)$/) {
+              \$comment = '  ' . \$1;
             }
-          } else {
-            print $0
+            \$_ = \$indent . '${FINAL_KEY}: ${FORMATTED_VALUE}' . \$comment . \"\\n\";
           }
-        }
-        ' "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
+        " "$FILE"
         
         echo "✅ Modified $KEY to: $VALUE"
     
