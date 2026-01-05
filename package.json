@@ -24,7 +24,7 @@
     "typescript-eslint": "^8.51.0"
   },
   "dependencies": {
-    "chalk": "4",
+    "chalk": "5",
     "inquirer": "^9.2.0",
     "inquirer-autocomplete-prompt": "^3.0.1"
   }
