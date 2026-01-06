@@ -72,6 +72,13 @@
             ],
             "semanticCommitType": "fix",
             "automerge": true
+        },
+        {
+            "description": "Ensure action updates are marked as fixes",
+            "matchPackagePatterns": [
+                "^TimSchoenle/actions/"
+            ],
+            "semanticCommitType": "fix"
         }
     ]
 }
