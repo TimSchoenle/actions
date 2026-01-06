@@ -10,7 +10,8 @@
         "uses: (?<depName>TimSchoenle/actions/(?<subPath>[\\w\\/-]+))@(?<currentValue>actions-[^ #\\n\\r]+)"
       ],
       "lookupNameTemplate": "TimSchoenle/actions",
-      "datasourceTemplate": "github-tags"
+      "datasourceTemplate": "github-tags",
+      "autoReplaceStringTemplate": "uses: {{{depName}}}@{{#if newDigest}}{{{newDigest}}} # {{{newValue}}}{{/if}}{{#unless newDigest}}{{{newValue}}}{{/unless}}"
     }
   ],
   "packageRules": [
