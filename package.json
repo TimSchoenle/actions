@@ -6,7 +6,8 @@
     "remove-action": "bun scripts/remove-action.ts",
     "generate-readme": "bun scripts/generate-readme.ts",
     "lint": "eslint scripts/**/*.ts",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test": "vitest run --coverage"
   },
   "type": "module",
   "devDependencies": {
@@ -15,11 +16,13 @@
     "@types/node": "25.0.3",
     "@typescript-eslint/eslint-plugin": "8.51.0",
     "@typescript-eslint/parser": "8.51.0",
+    "@vitest/coverage-v8": "^4.0.16",
     "eslint": "9.39.2",
     "js-yaml": "4.1.1",
     "prettier": "3.7.4",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.51.0"
+    "typescript-eslint": "8.51.0",
+    "vitest": "^4.0.16"
   },
   "dependencies": {
     "chalk": "5",
