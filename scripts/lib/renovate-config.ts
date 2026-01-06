@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { ROOT_DIR, Sys, getRepoName } from './utils.js';
 
-const RENOVATE_CONFIG_PATH = path.join(ROOT_DIR, 'configs', 'renovate', 'base.json');
+const RENOVATE_CONFIG_PATH = path.join(ROOT_DIR, 'configs', 'renovate', 'actions.json');
 
 export interface RenovatePackageRule {
   matchDepNames?: string[];

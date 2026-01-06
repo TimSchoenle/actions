@@ -4,7 +4,8 @@
     "config:best-practices",
     "helpers:pinGitHubActionDigests",
     "workarounds:all",
-    "github>TimSchoenle/actions//configs/renovate/base"
+    "github>TimSchoenle/actions//configs/renovate/base",
+    "github>TimSchoenle/actions//configs/renovate/ci-automerge"
   ],
   "dependencyDashboard": true,
   "semanticCommits": "enabled",
@@ -39,12 +40,6 @@
       "matchPackageNames": ["typescript"],
       "matchUpdateTypes": ["major"],
       "automerge": false
-    },
-    {
-      "description": "CI actions: safe to auto-merge",
-      "matchManagers": ["github-actions"],
-      "matchUpdateTypes": ["minor", "patch", "digest", "pin"],
-      "automerge": true
     }
   ]
 }
