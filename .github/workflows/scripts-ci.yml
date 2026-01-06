@@ -8,11 +8,13 @@ on:
       - 'scripts/**'
       - 'package.json'
       - 'bun.lock'
+      - 'bunfig.toml'
   pull_request:
     paths:
       - 'scripts/**'
       - 'package.json'
       - 'bun.lock'
+      - 'bunfig.toml'
 
 jobs:
   lint-and-test:
