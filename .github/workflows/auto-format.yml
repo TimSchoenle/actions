@@ -1,15 +1,14 @@
-name: Update README
+name: Auto Format
 
 on:
   pull_request:
-  workflow_dispatch:
 
 permissions:
   contents: write
   pull-requests: write
 
 jobs:
-  update-readme:
+  auto-format:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -26,15 +25,14 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      - name: Generate README
-        run: bun run generate-readme
+      - name: Format
+        run: npm run format
 
       - name: Commit and Push if changed
         id: auto-commit
         uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7
         with:
-          commit_message: 'docs: auto-update README.md'
-          file_pattern: README.md
+          commit_message: 'style: auto-format code'
 
       - name: Comment on PR
         if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request'
@@ -45,5 +43,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: '📝 `README.md` has been auto-updated with the latest action details.'
+              body: '🎨 Code has been auto-formatted to adhere to the style guide.'
             })

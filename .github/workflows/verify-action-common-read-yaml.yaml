@@ -39,7 +39,7 @@ jobs:
         run: |
           cat <<EOF > complex.yaml
           version: 1.0.0
-          
+
           # Application Metadata
           app:
             name: test-app # inline comment
@@ -61,7 +61,7 @@ jobs:
         with:
           file: complex.yaml
           key: ${{ matrix.key }}
-      
+
       - name: Assert Value
         if: steps.read.outputs.value != matrix.expected
         run: |

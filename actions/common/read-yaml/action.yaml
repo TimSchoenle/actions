@@ -21,17 +21,17 @@ runs:
           echo "::error::File not found: ${{ inputs.file }}"
           exit 1
         fi
-    
+
     - name: Read YAML Value
       id: read
       shell: bash
       run: |
         VALUE=$(yq eval ".${{ inputs.key }}" "${{ inputs.file }}")
-        
+
         if [ "$VALUE" == "null" ]; then
           echo "::error::Key '${{ inputs.key }}' not found in ${{ inputs.file }}"
           exit 1
         fi
-        
+
         echo "value=$VALUE" >> "$GITHUB_OUTPUT"
         echo "✅ Read value: $VALUE"

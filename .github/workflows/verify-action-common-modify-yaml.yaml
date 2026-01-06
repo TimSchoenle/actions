@@ -20,7 +20,7 @@ jobs:
             key: 'version'
             value: '2.0.0'
             check_grep: 'version: 2.0.0'
-          
+
           - name: 'Modify Nested Key (3 levels)'
             key: 'app.database.primary.host'
             value: 'db.internal'
@@ -45,7 +45,7 @@ jobs:
             key: 'app.resources.cpu_ratio'
             value: '2.5'
             check_grep: 'cpu_ratio: 2.5'
-          
+
           - name: 'Preserve Inline Comment'
             key: 'app.name'
             value: 'updated-app'
@@ -56,27 +56,27 @@ jobs:
             value: 'new-name'
             # Check value AND ensure comment still exists
             check_grep: 'name: new-name  # inline comment'
-          
+
           - name: 'Deep Nesting (5 levels)'
             key: 'app.database.primary.credentials.options.timeout'
             value: '60'
             check_grep: 'timeout: 60'
-          
+
           - name: 'Weird Indentation'
             key: 'config.deeply.nested.value'
             value: 'modified'
             check_grep: 'value: modified'
-          
+
           - name: 'Similar Key Names'
             key: 'api.api_key'
             value: 'new-secret'
             check_grep: 'api_key: new-secret'
-          
+
           - name: 'Value with Unit'
             key: 'app.resources.memory'
             value: '1024Mi'
-            check_grep: 'memory: 1024Mi' 
-          
+            check_grep: 'memory: 1024Mi'
+
           - name: 'Duplicate Key Names (Different Parents)'
             key: 'app.database.primary.host'
             value: 'primary-changed'
@@ -92,7 +92,7 @@ jobs:
           cat <<EOF > complex.yaml
           # Top-level comment with special chars: @#$%
           version: 1.0.0
-          
+
           # Application Metadata
           app:
             name: test-app # inline comment
@@ -129,32 +129,32 @@ jobs:
               limits:
                 cpu: 500m
                 memory: 1Gi
-          
+
           # Feature flags
           features:
             feature-a: true
             feature-b: false  # disabled for now
             feature-c: true
-          
+
           # Arrays section
           tags:
             - production
             - critical
             - backend
-          
+
           # Varied indentation (weird but valid)
           config:
               deeply:   # 6 spaces indent
                   nested:  # 10 spaces
                       value: test
                       another: data
-          
+
           # Keys with similar names
           api:
             endpoint: https://api.example.com
             api_key: secret
             api_version: v2
-          
+
           # Numbers and strings
           ports:
             http: 80
@@ -168,19 +168,19 @@ jobs:
           # Count blank lines
           BLANK_LINES=$(grep -c '^$' complex.yaml || echo "0")
           echo "blank-lines=$BLANK_LINES" >> "$GITHUB_OUTPUT"
-          
+
           # Count total lines
           TOTAL_LINES=$(wc -l < complex.yaml)
           echo "total-lines=$TOTAL_LINES" >> "$GITHUB_OUTPUT"
-          
+
           # Check comments exist
           grep -q "# Application Metadata" complex.yaml && echo "has-app-comment=true" >> "$GITHUB_OUTPUT" || echo "has-app-comment=false" >> "$GITHUB_OUTPUT"
           grep -q "# Database Configuration" complex.yaml && echo "has-db-comment=true" >> "$GITHUB_OUTPUT" || echo "has-db-comment=false" >> "$GITHUB_OUTPUT"
           grep -q "# inline comment" complex.yaml && echo "has-inline-comment=true" >> "$GITHUB_OUTPUT" || echo "has-inline-comment=false" >> "$GITHUB_OUTPUT"
-          
+
           # Check indentation exists
           grep -q '^    host:' complex.yaml && echo "has-indent=true" >> "$GITHUB_OUTPUT" || echo "has-indent=false" >> "$GITHUB_OUTPUT"
-          
+
           echo "📊 Pre-modification state:"
           echo "  Blank lines: $BLANK_LINES"
           echo "  Total lines: $TOTAL_LINES"
@@ -201,9 +201,9 @@ jobs:
             cat complex.yaml
             exit 1
           fi
-          
+
           echo "✅ Value change verified"
-          
+
           # Check that other values weren't accidentally modified
           if [ -n "${{ matrix.verify_unchanged || '' }}" ]; then
             if ! grep -Pzo "${{ matrix.verify_unchanged }}" complex.yaml > /dev/null; then
@@ -214,11 +214,11 @@ jobs:
             fi
             echo "✅ Other duplicate keys verified unchanged"
           fi
-      
+
       - name: Verify Formatting Preservation
         run: |
           echo "🔍 Verifying preservation..."
-          
+
           # 1. Check all comments still present (if they were before)
           if [ "${{ steps.before.outputs.has-app-comment }}" == "true" ]; then
             if ! grep -q "# Application Metadata" complex.yaml; then
@@ -226,23 +226,23 @@ jobs:
               exit 1
             fi
           fi
-          
+
           if [ "${{ steps.before.outputs.has-db-comment }}" == "true" ]; then
             if ! grep -q "# Database Configuration" complex.yaml; then
               echo "::error::Block comment 'Database Configuration' was removed!"
               exit 1
             fi
           fi
-          
+
           if [ "${{ steps.before.outputs.has-inline-comment }}" == "true" ]; then
             if ! grep -q "# inline comment" complex.yaml; then
               echo "::error::Inline comment was removed!"
               exit 1
             fi
           fi
-          
+
           echo "✅ All comments preserved"
-          
+
           # 2. Check blank lines preserved (same count as before)
           BLANK_LINES_AFTER=$(grep -c '^$' complex.yaml || echo "0")
           if [ "$BLANK_LINES_AFTER" -ne "${{ steps.before.outputs.blank-lines }}" ]; then
@@ -250,7 +250,7 @@ jobs:
             exit 1
           fi
           echo "✅ Blank lines preserved ($BLANK_LINES_AFTER)"
-          
+
           # 3. Check indentation preserved (if it was there before)
           if [ "${{ steps.before.outputs.has-indent }}" == "true" ]; then
             if ! grep -q '^    host:' complex.yaml; then
@@ -259,7 +259,7 @@ jobs:
             fi
           fi
           echo "✅ Indentation preserved"
-          
+
           # 4. Check total line count (should be same, we only modify values)
           TOTAL_LINES_AFTER=$(wc -l < complex.yaml)
           if [ "$TOTAL_LINES_AFTER" -ne "${{ steps.before.outputs.total-lines }}" ]; then
@@ -267,7 +267,7 @@ jobs:
             exit 1
           fi
           echo "✅ Total lines preserved ($TOTAL_LINES_AFTER)"
-          
+
           # Special check for inline comment spacing (only for that specific test)
           if [ "${{ matrix.name }}" == "Preserve Inline Comment" ]; then
             if ! grep -E 'name: updated-app\s+# inline comment' complex.yaml; then
@@ -277,5 +277,5 @@ jobs:
             fi
             echo "✅ Inline comment spacing preserved"
           fi
-          
+
           echo "✅ All formatting preservation checks passed!"
