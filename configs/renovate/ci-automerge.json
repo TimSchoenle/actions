@@ -1,5 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Auto-merge rules for all none major Github Actions including custom actions defined in this repository.",
   "packageRules": [
     {
       "description": "CI actions: safe to auto-merge",

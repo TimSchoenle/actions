@@ -16,10 +16,15 @@ To ensure **Renovate** can correctly detect new versions and auto-merge updates,
 ```json
 {
   "extends": [
-    "github>TimSchoenle/actions//configs/renovate/base"
+    "github>{{REPO}}//configs/renovate/base"
   ]
 }
 ```
+\
+
+## ⚙️ Shared Configurations
+
+<!-- CONFIGS_TABLE -->
 
 ## 📦 Development
 
