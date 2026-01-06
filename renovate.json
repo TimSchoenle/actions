@@ -45,10 +45,6 @@
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["minor", "patch", "digest", "pin"],
       "automerge": true
-    },
-    {
-      "matchPackageNames": ["mpalmer/action-validator"],
-      "pinDigests": false
     }
   ]
 }
