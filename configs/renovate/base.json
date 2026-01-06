@@ -12,7 +12,7 @@
       ],
       "lookupNameTemplate": "TimSchoenle/actions",
       "datasourceTemplate": "github-tags",
-      "autoReplaceStringTemplate": "uses: {{depName}}@{{#if newDigest}}{{{newDigest}}}{{else}}{{{newValue}}}{{/if}}{{#if newDigest}} # {{{newValue}}}{{/if}}"
+      "autoReplaceStringTemplate": "uses: {{depName}}@{{#if isPinDigest}}{{{newDigest}}} # {{{newValue}}}{{else}}{{{newValue}}}{{/if}}"
     }
   ],
   "packageRules": [
