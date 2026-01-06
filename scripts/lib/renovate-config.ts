@@ -3,11 +3,24 @@ import { ROOT_DIR, Sys, getRepoName } from './utils.js';
 
 const RENOVATE_CONFIG_PATH = path.join(ROOT_DIR, 'configs', 'renovate', 'base.json');
 
+export interface RenovatePackageRule {
+    matchDepNames?: string[];
+    matchPackageNames?: string[];
+    description?: string;
+    versioning?: string;
+    [key: string]: unknown;
+}
+
+export interface RenovateConfig {
+    packageRules: RenovatePackageRule[];
+    [key: string]: unknown;
+}
+
 export class RenovateConfigManager {
     /**
      * Reads the Renovate config file.
      */
-    static async readConfig(): Promise<any> {
+    static async readConfig(): Promise<RenovateConfig> {
         if (!Sys.exists(RENOVATE_CONFIG_PATH)) {
             throw new Error(`Renovate config not found at ${RENOVATE_CONFIG_PATH}`);
         }
@@ -18,7 +31,7 @@ export class RenovateConfigManager {
     /**
      * Writes the Renovate config file.
      */
-    static async writeConfig(config: any): Promise<void> {
+    static async writeConfig(config: RenovateConfig): Promise<void> {
         const content = JSON.stringify(config, null, 4) + '\n';
         await Sys.write(RENOVATE_CONFIG_PATH, content);
     }
@@ -36,7 +49,7 @@ export class RenovateConfigManager {
         const tagPrefix = `actions-${packageName}-${subAction}`.replaceAll('/', '-');
         const versioningRegex = String.raw`^${tagPrefix}-v(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$`;
 
-        const newRule = {
+        const newRule: RenovatePackageRule = {
             description: `Versioning for action ${packageName}/${subAction}`,
             matchDepNames: [fullActionName],
             versioning: `regex:${versioningRegex}`,
@@ -44,7 +57,7 @@ export class RenovateConfigManager {
 
         // Check if rule already exists to avoid duplicates
         const exists = config.packageRules.some(
-            (rule: any) =>
+            (rule) =>
                 (rule.matchDepNames?.includes(fullActionName)) ||
                 (rule.matchPackageNames?.includes(fullActionName))
         );
@@ -68,7 +81,7 @@ export class RenovateConfigManager {
 
         const originalLength = config.packageRules.length;
         config.packageRules = config.packageRules.filter(
-            (rule: any) =>
+            (rule) =>
                 (!rule.matchDepNames?.includes(fullActionName)) &&
                 (!rule.matchPackageNames?.includes(fullActionName))
         );

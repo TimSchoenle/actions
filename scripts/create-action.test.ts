@@ -6,8 +6,9 @@ import { RenovateConfigManager } from './lib/renovate-config';
 import { input } from '@inquirer/prompts';
 
 // Mock dependencies
+import type * as UtilsTypes from './lib/utils';
 vi.mock('./lib/utils', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('./lib/utils')>();
+    const actual = await importOriginal<typeof UtilsTypes>();
     return {
         ...actual,
         Sys: {

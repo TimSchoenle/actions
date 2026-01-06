@@ -3,8 +3,9 @@ import * as actionUtils from './action-utils';
 import { Sys } from './utils';
 
 // Mock utils
+import type * as UtilsTypes from './utils';
 vi.mock('./utils', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('./utils')>();
+    const actual = await importOriginal<typeof UtilsTypes>();
     return {
         ...actual,
         Sys: {
@@ -39,7 +40,7 @@ describe('action-utils', () => {
             vi.mocked(Sys.readdir).mockReturnValue(['pkg1', 'file.txt']);
             vi.mocked(Sys.stat).mockImplementation((p) => ({
                 isDirectory: () => !p.endsWith('file.txt'),
-            } as any));
+            } as unknown as ReturnType<typeof Sys.stat>));
 
             const packages = await actionUtils.getPackages();
             expect(packages).toEqual(['pkg1']);
@@ -58,7 +59,7 @@ describe('action-utils', () => {
             vi.mocked(Sys.readdir).mockReturnValue(['sub1', 'file.txt']);
             vi.mocked(Sys.stat).mockImplementation((p) => ({
                 isDirectory: () => !p.endsWith('file.txt'),
-            } as any));
+            } as unknown as ReturnType<typeof Sys.stat>));
 
             const subActions = await actionUtils.getSubActions('pkg1');
             expect(subActions).toEqual(['sub1']);
@@ -78,7 +79,7 @@ describe('action-utils', () => {
             vi.mocked(Sys.readdir).mockReturnValue(['pkg1', 'file.txt']);
             vi.mocked(Sys.stat).mockImplementation((p) => ({
                 isDirectory: () => !p.endsWith('file.txt'),
-            } as any));
+            } as unknown as ReturnType<typeof Sys.stat>));
 
             vi.mocked(search).mockResolvedValue('pkg1');
 
@@ -89,7 +90,7 @@ describe('action-utils', () => {
         it('should allow creating new package', async () => {
             vi.mocked(Sys.exists).mockReturnValue(true);
             vi.mocked(Sys.readdir).mockReturnValue(['pkg1']);
-            vi.mocked(Sys.stat).mockReturnValue({ isDirectory: () => true } as any);
+            vi.mocked(Sys.stat).mockReturnValue({ isDirectory: () => true } as unknown as ReturnType<typeof Sys.stat>);
 
             vi.mocked(search).mockResolvedValue('__NEW__');
             vi.mocked(input).mockResolvedValue('new-pkg');
@@ -116,10 +117,10 @@ describe('action-utils', () => {
             // Mock config file read
             vi.mocked(Sys.file).mockReturnValueOnce({
                 json: vi.fn().mockResolvedValue({ packages: {} }),
-            } as any) // config
+            } as unknown as ReturnType<typeof Sys.file>) // config
                 .mockReturnValueOnce({
                     json: vi.fn().mockResolvedValue({}),
-                } as any); // manifest
+                } as unknown as ReturnType<typeof Sys.file>); // manifest
 
             await actionUtils.registerActionInReleasePlease('pkg', 'sub');
 
@@ -135,7 +136,7 @@ describe('action-utils', () => {
         it('should handle missing config/manifest gracefully (create new)', async () => {
             vi.mocked(Sys.file).mockReturnValue({
                 json: vi.fn().mockRejectedValue(new Error('File not found')),
-            } as any);
+            } as unknown as ReturnType<typeof Sys.file>);
 
             await actionUtils.registerActionInReleasePlease('pkg', 'sub');
 
@@ -146,7 +147,7 @@ describe('action-utils', () => {
         it('should handle write errors gracefully', async () => {
             vi.mocked(Sys.file).mockReturnValue({
                 json: vi.fn().mockResolvedValue({}),
-            } as any);
+            } as unknown as ReturnType<typeof Sys.file>);
             vi.mocked(Sys.write).mockRejectedValue(new Error('Write failed'));
 
             // Should not throw, but log warning (which we can spy on console if strict)
@@ -158,10 +159,10 @@ describe('action-utils', () => {
         it('should remove action from config and manifest', async () => {
             vi.mocked(Sys.file).mockReturnValueOnce({
                 json: vi.fn().mockResolvedValue({ packages: { 'actions/pkg/sub': {} } }),
-            } as any)
+            } as unknown as ReturnType<typeof Sys.file>)
                 .mockReturnValueOnce({
                     json: vi.fn().mockResolvedValue({ 'actions/pkg/sub': '1.0.0' }),
-                } as any);
+                } as unknown as ReturnType<typeof Sys.file>);
 
             await actionUtils.removeActionFromReleasePlease('pkg', 'sub');
 
@@ -176,7 +177,7 @@ describe('action-utils', () => {
         it('should handle missing entries gracefully', async () => {
             vi.mocked(Sys.file).mockReturnValue({
                 json: vi.fn().mockResolvedValue({ packages: {} }),
-            } as any);
+            } as unknown as ReturnType<typeof Sys.file>);
 
             await actionUtils.removeActionFromReleasePlease('pkg', 'sub');
 

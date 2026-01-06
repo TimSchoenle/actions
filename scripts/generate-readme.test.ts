@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as generateReadme from './generate-readme';
 import { Sys } from './lib/utils';
-import path from 'node:path';
 
 // Mock utils
+import type * as UtilsTypes from './lib/utils';
 vi.mock('./lib/utils', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('./lib/utils')>();
+    const actual = await importOriginal<typeof UtilsTypes>();
     return {
         ...actual,
         Sys: {
@@ -38,7 +38,7 @@ describe('generate-readme', () => {
                 return {
                     json: async () => ({ "actions/pkg/sub": "1.2.3" }),
                     exists: async () => true
-                } as any;
+                } as unknown as ReturnType<typeof Sys.file>;
             }
             if (p.endsWith('release-please-config.json')) {
                 return {
@@ -46,19 +46,19 @@ describe('generate-readme', () => {
                         packages: { 'actions/pkg/sub': { component: 'actions-pkg-sub' } }
                     }),
                     exists: async () => true
-                } as any;
+                } as unknown as ReturnType<typeof Sys.file>;
             }
             if (p.endsWith('README.md')) { // Template
-                return { text: async () => 'Header\n<!-- ACTIONS_TABLE -->\nFooter', exists: async () => true } as any;
+                return { text: async () => 'Header\n<!-- ACTIONS_TABLE -->\nFooter', exists: async () => true } as unknown as ReturnType<typeof Sys.file>;
             }
             // Action file
             if (p.endsWith('action.yml')) {
                 return {
                     text: async () => 'name: My Action\ndescription: A test action',
                     exists: async () => true
-                } as any;
+                } as unknown as ReturnType<typeof Sys.file>;
             }
-            return { text: async () => '', exists: async () => false } as any;
+            return { text: async () => '', exists: async () => false } as unknown as ReturnType<typeof Sys.file>;
         });
 
         // Mock Glob
@@ -67,7 +67,7 @@ describe('generate-readme', () => {
                 yield 'actions/pkg/sub/action.yml';
             }
         };
-        vi.mocked(Sys.glob).mockReturnValue(mockScan as any);
+        vi.mocked(Sys.glob).mockReturnValue(mockScan as unknown as ReturnType<typeof Sys.glob>);
 
         await generateReadme.main();
 
@@ -84,9 +84,9 @@ describe('generate-readme', () => {
         // Mock Manifest (Empty)
         vi.mocked(Sys.exists).mockResolvedValue(true);
         vi.mocked(Sys.file).mockImplementation((p) => {
-            if (p.endsWith('README.md')) return { text: async () => '<!-- ACTIONS_TABLE -->', exists: async () => true } as any;
-            if (p.endsWith('action.yml')) return { text: async () => 'name: No Version Action', exists: async () => true } as any;
-            return { text: async () => '{}', exists: async () => false } as any;
+            if (p.endsWith('README.md')) return { text: async () => '<!-- ACTIONS_TABLE -->', exists: async () => true } as unknown as ReturnType<typeof Sys.file>;
+            if (p.endsWith('action.yml')) return { text: async () => 'name: No Version Action', exists: async () => true } as unknown as ReturnType<typeof Sys.file>;
+            return { text: async () => '{}', exists: async () => false } as unknown as ReturnType<typeof Sys.file>;
         });
 
         const mockScan = {
@@ -94,7 +94,7 @@ describe('generate-readme', () => {
                 yield 'actions/pkg/no-version/action.yml';
             }
         };
-        vi.mocked(Sys.glob).mockReturnValue(mockScan as any);
+        vi.mocked(Sys.glob).mockReturnValue(mockScan as unknown as ReturnType<typeof Sys.glob>);
 
         await generateReadme.main();
 

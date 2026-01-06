@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import * as utils from './utils';
 import { Sys } from './sys';
 
@@ -45,7 +45,7 @@ describe('utils', () => {
             const mockFile = {
                 text: vi.fn().mockResolvedValue('Hello {{name}}!'),
             };
-            vi.mocked(Sys.file).mockReturnValue(mockFile as any);
+            vi.mocked(Sys.file).mockReturnValue(mockFile as unknown as ReturnType<typeof Sys.file>);
 
             await utils.createFromTemplate('test-template', 'dest/path', { name: 'World' });
 

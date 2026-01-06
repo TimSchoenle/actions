@@ -3,8 +3,9 @@ import { RenovateConfigManager } from './renovate-config';
 import { Sys } from './utils';
 
 // Mock utils module partially
+import type * as UtilsTypes from './utils';
 vi.mock('./utils', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('./utils')>();
+    const actual = await importOriginal<typeof UtilsTypes>();
     return {
         ...actual,
         Sys: {
@@ -36,7 +37,7 @@ describe('RenovateConfigManager', () => {
             vi.mocked(Sys.exists).mockReturnValue(true);
             vi.mocked(Sys.file).mockReturnValue({
                 text: vi.fn().mockResolvedValue('{"packageRules": []}'),
-            } as any);
+            } as unknown as ReturnType<typeof Sys.file>);
 
             const config = await RenovateConfigManager.readConfig();
             expect(config).toEqual({ packageRules: [] });
@@ -54,7 +55,7 @@ describe('RenovateConfigManager', () => {
             vi.mocked(Sys.exists).mockReturnValue(true);
             vi.mocked(Sys.file).mockReturnValue({
                 text: vi.fn().mockResolvedValue('{"packageRules": []}'),
-            } as any);
+            } as unknown as ReturnType<typeof Sys.file>);
 
             await RenovateConfigManager.addPackageRule('pkg', 'sub');
 
@@ -79,7 +80,7 @@ describe('RenovateConfigManager', () => {
             vi.mocked(Sys.exists).mockReturnValue(true);
             vi.mocked(Sys.file).mockReturnValue({
                 text: vi.fn().mockResolvedValue(JSON.stringify({ packageRules: [existingRule] })),
-            } as any);
+            } as unknown as ReturnType<typeof Sys.file>);
 
             await RenovateConfigManager.addPackageRule('pkg', 'sub');
 
@@ -98,7 +99,7 @@ describe('RenovateConfigManager', () => {
             vi.mocked(Sys.exists).mockReturnValue(true);
             vi.mocked(Sys.file).mockReturnValue({
                 text: vi.fn().mockResolvedValue(JSON.stringify({ packageRules: [existingRule] })),
-            } as any);
+            } as unknown as ReturnType<typeof Sys.file>);
 
             await RenovateConfigManager.removePackageRule('pkg', 'sub');
 
