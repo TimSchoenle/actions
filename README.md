@@ -33,7 +33,6 @@ To ensure **Renovate** can correctly detect new versions and auto-merge updates,
   ]
 }
 ```
-\
 
 ## ⚙️ Shared Configurations
 

@@ -4,15 +4,24 @@
   "extends": ["github>TimSchoenle/actions//configs/renovate/actions"],
   "regexManagers": [
     {
-      "description": "Custom action versioning for monorepo",
+      "description": "Custom action versioning - already pinned with digest",
       "fileMatch": ["(^|/)action\\.ya?ml$", "(^|/)workflow\\.ya?ml$", "^\\.github/workflows/.*\\.ya?ml$"],
       "matchStrings": [
-        "uses: (?<depName>TimSchoenle/actions/(?<subPath>[\\w\\/-]+))@(?<currentDigest>[0-9a-f]{40})\\s+#\\s+(?<currentValue>.*)",
+        "uses: (?<depName>TimSchoenle/actions/(?<subPath>[\\w\\/-]+))@(?<currentDigest>[0-9a-f]{40})\\s+#\\s+(?<currentValue>.*)"
+      ],
+      "lookupNameTemplate": "TimSchoenle/actions",
+      "datasourceTemplate": "github-tags",
+      "autoReplaceStringTemplate": "uses: {{{depName}}}@{{{newDigest}}} # {{{newValue}}}"
+    },
+    {
+      "description": "Custom action versioning - unpinned (will be pinned)",
+      "fileMatch": ["(^|/)action\\.ya?ml$", "(^|/)workflow\\.ya?ml$", "^\\.github/workflows/.*\\.ya?ml$"],
+      "matchStrings": [
         "uses: (?<depName>TimSchoenle/actions/(?<subPath>[\\w\\/-]+))@(?<currentValue>actions-[^ #\\n\\r]+)"
       ],
       "lookupNameTemplate": "TimSchoenle/actions",
       "datasourceTemplate": "github-tags",
-      "autoReplaceStringTemplate": "uses: {{depName}}@{{#if isPinDigest}}{{{newDigest}}} # {{{newValue}}}{{else}}{{{newValue}}}{{/if}}"
+      "autoReplaceStringTemplate": "uses: {{{depName}}}@{{{newDigest}}} # {{{newValue}}}"
     }
   ],
   "packageRules": [
