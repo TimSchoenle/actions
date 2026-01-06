@@ -7,12 +7,12 @@
       "description": "Custom action versioning for monorepo",
       "fileMatch": ["(^|/)action\\.ya?ml$", "(^|/)workflow\\.ya?ml$", "^\\.github/workflows/.*\\.ya?ml$"],
       "matchStrings": [
-        "uses: (?<depName>TimSchoenle/actions/(?<subPath>[\\w\\/-]+))@(?<currentDigest>[0-9a-f]{40})\\s+#\\s+(?<currentValue>.*)",
+        "uses: (?<depName>TimSchoenle/actions/(?<subPath>[\\w\\/-]+))@(?<currentValue>[0-9a-f]{40})\\s+#\\s+(?<currentDigest>.*)",
         "uses: (?<depName>TimSchoenle/actions/(?<subPath>[\\w\\/-]+))@(?<currentValue>actions-[^ #\\n\\r]+)"
       ],
       "lookupNameTemplate": "TimSchoenle/actions",
       "datasourceTemplate": "github-tags",
-      "autoReplaceStringTemplate": "uses: {{depName}}@{{#if newDigest}}{{newDigest}} # {{newValue}}{{else}}{{newValue}}{{/if}}"
+      "autoReplaceStringTemplate": "uses: {{depName}}@{{#if newValue}}{{newValue}}{{#if newDigest}} # {{newDigest}}{{/if}}{{/if}}"
     }
   ],
   "packageRules": [
