@@ -1,118 +1,191 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as generateReadme from './generate-readme';
-import { Sys } from './lib/utils';
+import type { DocumentationItem } from './lib/readme/types.js';
 
-// Mock utils
-import type * as UtilsTypes from './lib/utils';
-vi.mock('./lib/utils', async (importOriginal) => {
-  const actual = await importOriginal<typeof UtilsTypes>();
-  return {
-    ...actual,
-    Sys: {
-      exec: vi.fn(),
-      glob: vi.fn(),
-      file: vi.fn(),
-      exists: vi.fn(),
-      write: vi.fn(),
-    },
-  };
-});
+// Setup mocks using vi.hoisted to ensure they're available in module scope
+const mocks = vi.hoisted(() => ({
+  actionParse: vi.fn(),
+  renovateParse: vi.fn(),
+  generateSection: vi.fn(),
+  getRepoInfo: vi.fn(),
+  sysFile: vi.fn(),
+  sysWrite: vi.fn(),
+  sysExec: vi.fn(),
+  sysGlob: vi.fn(),
+}));
 
-describe('generate-readme', () => {
+// Mock all dependencies
+vi.mock('./lib/utils.js', () => ({
+  Sys: {
+    file: mocks.sysFile,
+    write: mocks.sysWrite,
+    exec: mocks.sysExec,
+    glob: mocks.sysGlob,
+  },
+  ROOT_DIR: 'E:\\actions',
+}));
+
+vi.mock('./lib/readme/parsers/action-parser.js', () => ({
+  ActionParser: class {
+    async parse() {
+      return mocks.actionParse();
+    }
+  },
+}));
+
+vi.mock('./lib/readme/parsers/renovate-parser.js', () => ({
+  RenovateParser: class {
+    async parse() {
+      return mocks.renovateParse();
+    }
+  },
+}));
+
+vi.mock('./lib/readme/generator.js', () => ({
+  generateSection: mocks.generateSection,
+}));
+
+vi.mock('./lib/readme/git-utils.js', () => ({
+  getRepoInfo: mocks.getRepoInfo,
+}));
+
+describe('Generate Readme Script', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Setup default mock behaviors
+    mocks.actionParse.mockResolvedValue([]);
+    mocks.renovateParse.mockResolvedValue([]);
+    mocks.generateSection.mockResolvedValue('');
+    mocks.getRepoInfo.mockResolvedValue('owner/repo');
+
+    // Mock process.exit to prevent actual exit
+    vi.spyOn(process, 'exit').mockImplementation((() => {}) as any);
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('should generate README with found actions', async () => {
-    // Mock Git Repo Info
-    vi.mocked(Sys.exec).mockImplementation(async (cmd) => {
-      if (cmd.includes('remote.origin.url')) return 'git@github.com:user/repo.git';
-      if (cmd.includes('git log')) return 'abcdef1';
-      return '';
-    });
-
-    // Mock Manifest
-    vi.mocked(Sys.exists).mockResolvedValue(true);
-    vi.mocked(Sys.file).mockImplementation((p) => {
-      if (p.endsWith('.release-please-manifest.json')) {
-        return {
-          json: async () => ({ 'actions/pkg/sub': '1.2.3' }),
-          exists: async () => true,
-        } as unknown as ReturnType<typeof Sys.file>;
-      }
-      if (p.endsWith('release-please-config.json')) {
-        return {
-          json: async () => ({
-            packages: { 'actions/pkg/sub': { component: 'actions-pkg-sub' } },
-          }),
-          exists: async () => true,
-        } as unknown as ReturnType<typeof Sys.file>;
-      }
-      if (p.endsWith('README.md')) {
-        // Template
-        return {
-          text: async () => 'Header\n<!-- ACTIONS_TABLE -->\nFooter',
-          exists: async () => true,
-        } as unknown as ReturnType<typeof Sys.file>;
-      }
-      // Action file
-      if (p.endsWith('action.yml')) {
-        return {
-          text: async () => 'name: My Action\ndescription: A test action',
-          exists: async () => true,
-        } as unknown as ReturnType<typeof Sys.file>;
-      }
-      return { text: async () => '', exists: async () => false } as unknown as ReturnType<typeof Sys.file>;
-    });
-
-    // Mock Glob
-    const mockScan = {
-      scan: async function* () {
-        yield 'actions/pkg/sub/action.yml';
+  it('should parse actions and generate sections', async () => {
+    const mockActions: DocumentationItem[] = [
+      {
+        name: 'Test Action',
+        description: 'Test Description',
+        version: 'test-v1.0.0',
+        usage: 'uses: owner/repo/test@test-v1.0.0',
+        category: 'Test',
+        path: 'actions/test',
       },
-    };
-    vi.mocked(Sys.glob).mockReturnValue(mockScan as unknown as ReturnType<typeof Sys.glob>);
+    ];
 
-    await generateReadme.main();
+    const mockConfigs: DocumentationItem[] = [
+      {
+        name: 'base',
+        description: 'Base Config',
+        usage: '"extends": ["github>owner/repo//configs/renovate/base"]',
+        category: 'Renovate',
+        path: 'configs/renovate/base.json',
+      },
+    ];
 
-    expect(Sys.write).toHaveBeenCalledWith(
-      expect.stringMatching(/README\.md$/),
-      expect.stringContaining(
-        '| [My Action](./actions/pkg/sub) | A test action | actions-pkg-sub-v1.2.3 | `uses: user/repo/actions/pkg/sub@actions-pkg-sub-v1.2.3` |',
-      ),
+    mocks.actionParse.mockResolvedValue(mockActions);
+    mocks.renovateParse.mockResolvedValue(mockConfigs);
+    mocks.generateSection
+      .mockResolvedValueOnce('### Test\n\n| Action | Version |\n| --- | --- |\n| Test Action | test-v1.0.0 |\n')
+      .mockResolvedValueOnce('### Renovate\n\n| Config | Description |\n| --- | --- |\n| base | Base Config |\n');
+
+    mocks.sysFile.mockReturnValue({
+      exists: async () => true,
+      text: async () => 'Template\n{{REPO}}\n<!-- ACTIONS_TABLE -->\n<!-- CONFIGS_TABLE -->\nEnd',
+    });
+
+    const { main } = await import('./generate-readme.js');
+    await main();
+
+    // Verify parsers were called
+    expect(mocks.actionParse).toHaveBeenCalledTimes(1);
+    expect(mocks.renovateParse).toHaveBeenCalledTimes(1);
+
+    // Verify generateSection was called with correct arguments
+    expect(mocks.generateSection).toHaveBeenCalledTimes(2);
+    expect(mocks.generateSection).toHaveBeenNthCalledWith(
+      1,
+      mockActions,
+      ['Action', 'Description', 'Version', 'Usage'],
+      expect.any(Function),
     );
+    expect(mocks.generateSection).toHaveBeenNthCalledWith(
+      2,
+      mockConfigs,
+      ['Config', 'Description', 'Usage'],
+      expect.any(Function),
+    );
+
+    // Verify getRepoInfo was called
+    expect(mocks.getRepoInfo).toHaveBeenCalledTimes(1);
+
+    // Verify file operations
+    expect(mocks.sysFile).toHaveBeenCalled();
+    expect(mocks.sysWrite).toHaveBeenCalledTimes(1);
+
+    // Verify the content written
+    const writtenContent = mocks.sysWrite.mock.calls[0][1] as string;
+    expect(writtenContent).toContain('owner/repo'); // {{REPO}} replaced
+    expect(writtenContent).not.toContain('{{REPO}}');
+    expect(writtenContent).not.toContain('<!-- ACTIONS_TABLE -->');
+    expect(writtenContent).not.toContain('<!-- CONFIGS_TABLE -->');
+    expect(writtenContent).toContain('Test Action');
+    expect(writtenContent).toContain('Base Config');
   });
 
-  it('should skip actions with no version', async () => {
-    // Mock Git Repo Info
-    vi.mocked(Sys.exec).mockResolvedValue('url');
+  it('should handle template not found', async () => {
+    // Mock process.exit to throw so we can catch it
+    const exitError = new Error('Process exit called');
+    vi.spyOn(process, 'exit').mockImplementation(((code: number) => {
+      throw exitError;
+    }) as any);
 
-    // Mock Manifest (Empty)
-    vi.mocked(Sys.exists).mockResolvedValue(true);
-    vi.mocked(Sys.file).mockImplementation((p) => {
-      if (p.endsWith('README.md'))
-        return { text: async () => '<!-- ACTIONS_TABLE -->', exists: async () => true } as unknown as ReturnType<
-          typeof Sys.file
-        >;
-      if (p.endsWith('action.yml'))
-        return { text: async () => 'name: No Version Action', exists: async () => true } as unknown as ReturnType<
-          typeof Sys.file
-        >;
-      return { text: async () => '{}', exists: async () => false } as unknown as ReturnType<typeof Sys.file>;
+    mocks.sysFile.mockReturnValue({
+      exists: async () => false,
     });
 
-    const mockScan = {
-      scan: async function* () {
-        yield 'actions/pkg/no-version/action.yml';
-      },
-    };
-    vi.mocked(Sys.glob).mockReturnValue(mockScan as unknown as ReturnType<typeof Sys.glob>);
+    const { main } = await import('./generate-readme.js');
 
-    await generateReadme.main();
+    // Expect the function to throw due to process.exit
+    await expect(main()).rejects.toThrow('Process exit called');
 
-    expect(Sys.write).toHaveBeenCalled();
-    const call = vi.mocked(Sys.write).mock.calls[0];
-    // Should not contain the action row
-    expect(call[1]).not.toContain('No Version Action');
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Template not found'));
+  });
+
+  it('should replace {{REPO}} placeholder with actual repo name', async () => {
+    mocks.getRepoInfo.mockResolvedValue('test-owner/test-repo');
+    mocks.sysFile.mockReturnValue({
+      exists: async () => true,
+      text: async () => 'Repo: {{REPO}}\n<!-- ACTIONS_TABLE -->\n<!-- CONFIGS_TABLE -->',
+    });
+
+    const { main } = await import('./generate-readme.js');
+    await main();
+
+    const writtenContent = mocks.sysWrite.mock.calls[0][1] as string;
+    expect(writtenContent).toContain('test-owner/test-repo');
+    expect(writtenContent).not.toContain('{{REPO}}');
+  });
+
+  it('should handle empty actions and configs', async () => {
+    mocks.actionParse.mockResolvedValue([]);
+    mocks.renovateParse.mockResolvedValue([]);
+    mocks.generateSection.mockResolvedValue('');
+
+    mocks.sysFile.mockReturnValue({
+      exists: async () => true,
+      text: async () => '<!-- ACTIONS_TABLE -->\n<!-- CONFIGS_TABLE -->',
+    });
+
+    const { main } = await import('./generate-readme.js');
+    await main();
+
+    expect(mocks.sysWrite).toHaveBeenCalledTimes(1);
+    const writtenContent = mocks.sysWrite.mock.calls[0][1] as string;
+    expect(writtenContent).not.toContain('<!-- ACTIONS_TABLE -->');
+    expect(writtenContent).not.toContain('<!-- CONFIGS_TABLE -->');
   });
 });

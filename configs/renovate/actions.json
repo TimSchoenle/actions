@@ -1,5 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Versioning rules for all custom Github Actions defined in this repository",
   "packageRules": [
     {
       "description": "Versioning for action common/modify-yaml",
