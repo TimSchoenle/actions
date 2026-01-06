@@ -1,5 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>TimSchoenle/actions//configs/renovate/actions"],
   "regexManagers": [
     {
       "description": "Custom action versioning for monorepo",
@@ -20,19 +21,9 @@
       "enabled": false
     },
     {
-      "description": "Versioning for action common/modify-yaml",
-      "matchDepNames": ["TimSchoenle/actions/actions/common/modify-yaml"],
-      "versioning": "regex:^actions-common-modify-yaml-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
-    },
-    {
-      "description": "Versioning for action common/read-yaml",
-      "matchDepNames": ["TimSchoenle/actions/actions/common/read-yaml"],
-      "versioning": "regex:^actions-common-read-yaml-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
-    },
-    {
-      "description": "Versioning for action helm/update-chart-version",
-      "matchDepNames": ["TimSchoenle/actions/actions/helm/update-chart-version"],
-      "versioning": "regex:^actions-helm-update-chart-version-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+      "description": "Enable pinning for custom actions used via regex manager",
+      "matchPackageNames": ["TimSchoenle/actions"],
+      "pinDigests": true
     }
   ]
 }
