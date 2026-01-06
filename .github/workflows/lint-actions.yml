@@ -1,0 +1,31 @@
+name: Lint Actions
+
+on:
+  push:
+    paths:
+      - 'actions/**/action.yml'
+      - 'actions/**/action.yaml'
+      - '.github/workflows/lint-actions.yml'
+  pull_request:
+    paths:
+      - 'actions/**/action.yml'
+      - 'actions/**/action.yaml'
+      - '.github/workflows/lint-actions.yml'
+
+jobs:
+  action-validator:
+    name: Validate Actions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Action Files
+        uses: mpalmer/action-validator@main
+        with:
+          patterns: |
+            :(glob).github/**/action.yml
+            :(glob).github/**/action.yaml
+            .github/workflows/*.yml
+            .github/workflows/*.yaml
+            'actions/**/action.yaml'
+            'actions/**/action.yml'
