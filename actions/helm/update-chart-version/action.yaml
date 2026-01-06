@@ -41,12 +41,15 @@ runs:
     - name: Parse Inputs
       id: parse
       shell: bash
+      env:
+        CHART_PATH: ${{ inputs.chart-path }}
+        HELM_REPO: ${{ inputs.helm-repo }}
       run: |
         # Extract chart name from path (basename)
-        CHART_NAME=$(basename "${{ inputs.chart-path }}")
+        CHART_NAME=$(basename "$CHART_PATH")
         echo "chart-name=$CHART_NAME" >> "$GITHUB_OUTPUT"
 
-        FULL_REPO="${{ inputs.helm-repo }}"
+        FULL_REPO="$HELM_REPO"
         OWNER="${FULL_REPO%%/*}"
         REPO="${FULL_REPO#*/}"
         echo "owner=$OWNER" >> "$GITHUB_OUTPUT"
@@ -75,7 +78,8 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ steps.generate_token.outputs.token }}
-      run: echo "user-id=$(gh api "/users/${{ steps.generate_token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        APP_SLUG: ${{ steps.generate_token.outputs.app-slug }}
+      run: echo "user-id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
 
     - name: Read Current Version
       id: read-version

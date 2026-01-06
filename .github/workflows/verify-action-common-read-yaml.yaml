@@ -67,6 +67,9 @@ jobs:
 
       - name: Assert Value
         if: steps.read.outputs.value != matrix.expected
+        env:
+          EXPECTED: ${{ matrix.expected }}
+          ACTUAL: ${{ steps.read.outputs.value }}
         run: |
-          echo "Expected '${{ matrix.expected }}', got '${{ steps.read.outputs.value }}'"
+          echo "Expected '$EXPECTED', got '$ACTUAL'"
           exit 1
