@@ -38,3 +38,6 @@ jobs:
 
       - name: Format Check
         run: bun run format --check
+
+      - name: Test
+        run: bun run test

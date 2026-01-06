@@ -1,7 +1,8 @@
-import { Glob } from 'bun';
 import yaml from 'js-yaml';
-import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { Sys } from './lib/utils.js';
+import path from 'node:path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,17 +26,13 @@ interface ActionInfo {
 }
 
 async function getGitSha(dir: string): Promise<string> {
-    const proc = Bun.spawn(['git', 'log', '-n', '1', '--pretty=format:%h', dir], {
-        cwd: ROOT_DIR,
-        stdout: 'pipe',
-    });
-    const output = await new Response(proc.stdout).text();
+    const output = await Sys.exec(`git log -n 1 --pretty=format:%h ${dir}`);
     return output.trim();
 }
 
 async function getManifestVersions(): Promise<Record<string, string>> {
     const manifestPath = path.join(ROOT_DIR, '.release-please-manifest.json');
-    const file = Bun.file(manifestPath);
+    const file = Sys.file(manifestPath);
     if (await file.exists()) {
         try {
             return await file.json();
@@ -49,7 +46,7 @@ async function getManifestVersions(): Promise<Record<string, string>> {
 const RELEASE_PLEASE_CONFIG = path.join(ROOT_DIR, 'release-please-config.json');
 
 async function getReleaseComponent(dir: string): Promise<string | null> {
-    const file = Bun.file(RELEASE_PLEASE_CONFIG);
+    const file = Sys.file(RELEASE_PLEASE_CONFIG);
     if (await file.exists()) {
         try {
             const config = await file.json();
@@ -66,11 +63,7 @@ async function getReleaseComponent(dir: string): Promise<string | null> {
 
 async function getRepoInfo(): Promise<string> {
     try {
-        const proc = Bun.spawn(['git', 'config', '--get', 'remote.origin.url'], {
-            cwd: ROOT_DIR,
-            stdout: 'pipe',
-        });
-        const url = await new Response(proc.stdout).text();
+        const url = await Sys.exec('git config --get remote.origin.url');
         // Support HTTPS and SSH
         // https://github.com/owner/repo.git
         // git@github.com:owner/repo.git
@@ -84,11 +77,11 @@ async function getRepoInfo(): Promise<string> {
     return 'owner/repo'; // Fallback
 }
 
-async function main() {
+export async function main() {
     console.log('🔍 Scanning available actions...');
     const repoId = await getRepoInfo();
 
-    const glob = new Glob('actions/**/action.{yml,yaml}');
+    const glob = Sys.glob('actions/**/action.{yml,yaml}');
     const actions: ActionInfo[] = [];
 
     const manifestShortVersions = await getManifestVersions();
@@ -99,7 +92,7 @@ async function main() {
         const dir = path.dirname(file);
 
         // Parse action.yml
-        const content = await Bun.file(absPath).text();
+        const content = await Sys.file(absPath).text();
         let config: ActionConfig;
         try {
             config = yaml.load(content) as ActionConfig;
@@ -188,7 +181,7 @@ async function main() {
     }
 
     // Read Template
-    const templateFile = Bun.file(TEMPLATE_PATH);
+    const templateFile = Sys.file(TEMPLATE_PATH);
     if (!(await templateFile.exists())) {
         console.error(`❌ Template not found at ${TEMPLATE_PATH}`);
         process.exit(1);
@@ -199,7 +192,7 @@ async function main() {
     readmeContent = readmeContent.replace('<!-- ACTIONS_TABLE -->', markdownOutput);
 
     // Write README
-    await Bun.write(README_PATH, readmeContent);
+    await Sys.write(README_PATH, readmeContent);
     console.log(`🎉 Generated README.md at ${README_PATH}`);
 }
 

@@ -1,4 +1,4 @@
-import fs, {type MakeDirectoryOptions, type PathLike, type RmOptions} from 'node:fs';
+import fs, { type MakeDirectoryOptions, type PathLike, type RmOptions } from 'node:fs';
 
 // System Abstraction for Testability
 export const Sys = {
@@ -13,4 +13,5 @@ export const Sys = {
         const proc = Bun.spawn(command.split(' '), { stdout: 'pipe' });
         return await new Response(proc.stdout).text();
     },
+    glob: (pattern: string) => new Bun.Glob(pattern),
 };

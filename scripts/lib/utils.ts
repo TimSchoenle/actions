@@ -1,9 +1,11 @@
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Sys } from './sys';
 
 export { Sys };
 
-const ROOT_DIR = path.resolve(import.meta.dir, '..', '..');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT_DIR = path.resolve(__dirname, '..', '..');
 export { ROOT_DIR };
 export const ACTIONS_DIR = path.join(ROOT_DIR, 'actions');
 export const START_VERSION = '1.0.0';
@@ -27,7 +29,7 @@ export async function createFromTemplate(
   destPath: string,
   replacements: Record<string, string>,
 ) {
-  const templatePath = path.join(import.meta.dir, '..', 'templates', templateName);
+  const templatePath = path.join(__dirname, '..', 'templates', templateName);
   const templateFile = Sys.file(templatePath);
   let content = await templateFile.text();
 
