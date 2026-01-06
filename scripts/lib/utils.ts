@@ -12,6 +12,16 @@ export function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+export async function getRepoName(): Promise<string> {
+  const origin = await Sys.exec('git remote get-url origin');
+  // Handle git@github.com:User/repo.git or https://github.com/User/repo.git
+  const match = new RegExp(/[:/]([^/]+\/[^/.]+)(\.git)?$/).exec(origin.trim());
+  if (!match) {
+    throw new Error(`Could not parse repo name from origin: ${origin}`);
+  }
+  return match[1];
+}
+
 export async function createFromTemplate(
   templateName: string,
   destPath: string,
