@@ -7,6 +7,8 @@ on:
       - 'actions/common/modify-yaml/**'
       - '.github/workflows/verify-action-common-modify-yaml.yaml'
 
+permissions: {}
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

@@ -11,12 +11,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read # to fetch code
+permissions: {}
 
 jobs:
   verify-read-yaml:
     name: Verify Read YAML
+    permissions:
+      contents: read # to fetch code
     runs-on: ubuntu-latest
     strategy:
       matrix:
