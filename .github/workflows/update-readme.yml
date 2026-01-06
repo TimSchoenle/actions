@@ -4,17 +4,24 @@ on:
   pull_request:
   workflow_dispatch:
 
-permissions:
-  contents: write
-  pull-requests: write
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
 
 jobs:
   update-readme:
+    name: Update README
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # to push readme changes
+      pull-requests: write # to comment on PRs
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
+          persist-credentials: false
           fetch-depth: 0
           ref: ${{ github.head_ref }}
 

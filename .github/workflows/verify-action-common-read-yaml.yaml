@@ -7,11 +7,17 @@ on:
       - 'actions/common/read-yaml/**'
       - '.github/workflows/verify-action-common-read-yaml.yaml'
 
-permissions:
-  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
 
 jobs:
   verify-read-yaml:
+    name: Verify Read YAML
+    permissions:
+      contents: read # to fetch code
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -33,7 +39,10 @@ jobs:
             desc: 'Boolean value'
 
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          persist-credentials: false
 
       - name: Setup Complex Test Data
         run: |
@@ -64,6 +73,9 @@ jobs:
 
       - name: Assert Value
         if: steps.read.outputs.value != matrix.expected
+        env:
+          EXPECTED: ${{ matrix.expected }}
+          ACTUAL: ${{ steps.read.outputs.value }}
         run: |
-          echo "Expected '${{ matrix.expected }}', got '${{ steps.read.outputs.value }}'"
+          echo "Expected '$EXPECTED', got '$ACTUAL'"
           exit 1

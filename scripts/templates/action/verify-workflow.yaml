@@ -12,12 +12,19 @@ on:
       - 'actions/{{packageName}}/{{subAction}}/**'
       - '.github/workflows/verify-action-{{packageName}}-{{subAction}}.yaml'
 
+permissions: {}
+
 jobs:
   verify:
+    name: Verify {{capitalizedSubAction}}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Test {{subAction}}
         uses: ./actions/{{packageName}}/{{subAction}}

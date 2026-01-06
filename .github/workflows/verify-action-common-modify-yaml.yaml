@@ -7,10 +7,17 @@ on:
       - 'actions/common/modify-yaml/**'
       - '.github/workflows/verify-action-common-modify-yaml.yaml'
 
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify-modify-yaml:
+    name: Verify Modify YAML
     permissions:
-      contents: read
+      contents: read # to fetch code
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -85,7 +92,10 @@ jobs:
             verify_unchanged: 'secondary:\s+host: backup-db'
 
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          persist-credentials: false
 
       - name: Setup Complex Test Data
         run: |
@@ -194,10 +204,13 @@ jobs:
           value: ${{ matrix.value }}
 
       - name: Assert Change
+        env:
+          CHECK_GREP: ${{ matrix.check_grep }}
+          VERIFY_UNCHANGED: ${{ matrix.verify_unchanged || '' }}
         run: |
           # Verify the file content matches expectations
-          if ! grep -q "${{ matrix.check_grep }}" complex.yaml; then
-            echo "::error::Match not found for pattern: ${{ matrix.check_grep }}"
+          if ! grep -q "$CHECK_GREP" complex.yaml; then
+            echo "::error::Match not found for pattern: $CHECK_GREP"
             cat complex.yaml
             exit 1
           fi
@@ -205,10 +218,10 @@ jobs:
           echo "✅ Value change verified"
 
           # Check that other values weren't accidentally modified
-          if [ -n "${{ matrix.verify_unchanged || '' }}" ]; then
-            if ! grep -Pzo "${{ matrix.verify_unchanged }}" complex.yaml > /dev/null; then
+          if [ -n "$VERIFY_UNCHANGED" ]; then
+            if ! grep -Pzo "$VERIFY_UNCHANGED" complex.yaml > /dev/null; then
               echo "::error::Verification failed - another value was incorrectly modified!"
-              echo "Expected to find unchanged: ${{ matrix.verify_unchanged }}"
+              echo "Expected to find unchanged: $VERIFY_UNCHANGED"
               cat complex.yaml
               exit 1
             fi
@@ -216,25 +229,33 @@ jobs:
           fi
 
       - name: Verify Formatting Preservation
+        env:
+          HAS_APP_COMMENT: ${{ steps.before.outputs.has-app-comment }}
+          HAS_DB_COMMENT: ${{ steps.before.outputs.has-db-comment }}
+          HAS_INLINE_COMMENT: ${{ steps.before.outputs.has-inline-comment }}
+          HAS_INDENT: ${{ steps.before.outputs.has-indent }}
+          BEFORE_BLANK_LINES: ${{ steps.before.outputs.blank-lines }}
+          BEFORE_TOTAL_LINES: ${{ steps.before.outputs.total-lines }}
+          MATRIX_NAME: ${{ matrix.name }}
         run: |
           echo "🔍 Verifying preservation..."
 
           # 1. Check all comments still present (if they were before)
-          if [ "${{ steps.before.outputs.has-app-comment }}" == "true" ]; then
+          if [ "$HAS_APP_COMMENT" == "true" ]; then
             if ! grep -q "# Application Metadata" complex.yaml; then
               echo "::error::Block comment 'Application Metadata' was removed!"
               exit 1
             fi
           fi
 
-          if [ "${{ steps.before.outputs.has-db-comment }}" == "true" ]; then
+          if [ "$HAS_DB_COMMENT" == "true" ]; then
             if ! grep -q "# Database Configuration" complex.yaml; then
               echo "::error::Block comment 'Database Configuration' was removed!"
               exit 1
             fi
           fi
 
-          if [ "${{ steps.before.outputs.has-inline-comment }}" == "true" ]; then
+          if [ "$HAS_INLINE_COMMENT" == "true" ]; then
             if ! grep -q "# inline comment" complex.yaml; then
               echo "::error::Inline comment was removed!"
               exit 1
@@ -245,14 +266,14 @@ jobs:
 
           # 2. Check blank lines preserved (same count as before)
           BLANK_LINES_AFTER=$(grep -c '^$' complex.yaml || echo "0")
-          if [ "$BLANK_LINES_AFTER" -ne "${{ steps.before.outputs.blank-lines }}" ]; then
-            echo "::error::Blank line count changed! Before: ${{ steps.before.outputs.blank-lines }}, After: $BLANK_LINES_AFTER"
+          if [ "$BLANK_LINES_AFTER" -ne "$BEFORE_BLANK_LINES" ]; then
+            echo "::error::Blank line count changed! Before: $BEFORE_BLANK_LINES, After: $BLANK_LINES_AFTER"
             exit 1
           fi
           echo "✅ Blank lines preserved ($BLANK_LINES_AFTER)"
 
           # 3. Check indentation preserved (if it was there before)
-          if [ "${{ steps.before.outputs.has-indent }}" == "true" ]; then
+          if [ "$HAS_INDENT" == "true" ]; then
             if ! grep -q '^    host:' complex.yaml; then
               echo "::error::Indentation was changed!"
               exit 1
@@ -262,14 +283,14 @@ jobs:
 
           # 4. Check total line count (should be same, we only modify values)
           TOTAL_LINES_AFTER=$(wc -l < complex.yaml)
-          if [ "$TOTAL_LINES_AFTER" -ne "${{ steps.before.outputs.total-lines }}" ]; then
-            echo "::error::Line count changed! Before: ${{ steps.before.outputs.total-lines }}, After: $TOTAL_LINES_AFTER"
+          if [ "$TOTAL_LINES_AFTER" -ne "$BEFORE_TOTAL_LINES" ]; then
+            echo "::error::Line count changed! Before: $BEFORE_TOTAL_LINES, After: $TOTAL_LINES_AFTER"
             exit 1
           fi
           echo "✅ Total lines preserved ($TOTAL_LINES_AFTER)"
 
           # Special check for inline comment spacing (only for that specific test)
-          if [ "${{ matrix.name }}" == "Preserve Inline Comment" ]; then
+          if [ "$MATRIX_NAME" == "Preserve Inline Comment" ]; then
             if ! grep -E 'name: updated-app\s+# inline comment' complex.yaml; then
               echo "::error::Inline comment spacing not preserved!"
               cat complex.yaml | grep "name:"
