@@ -24,11 +24,7 @@ export async function getRepoName(): Promise<string> {
   return match[1];
 }
 
-export async function createFromTemplate(
-  templateName: string,
-  destPath: string,
-  replacements: Record<string, string>,
-) {
+export async function createFromTemplate(templateName: string, destPath: string, replacements: Record<string, string>) {
   const templatePath = path.join(__dirname, '..', 'templates', templateName);
   const templateFile = Sys.file(templatePath);
   let content = await templateFile.text();
@@ -39,4 +35,3 @@ export async function createFromTemplate(
 
   await Sys.write(destPath, content);
 }
-

@@ -3,12 +3,8 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": [
-      "ESNext"
-    ],
-    "types": [
-      "bun"
-    ],
+    "lib": ["ESNext"],
+    "types": ["bun"],
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "strict": true,
@@ -17,12 +13,6 @@
     "verbatimModuleSyntax": true,
     "resolveJsonModule": true
   },
-  "include": [
-    "scripts/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "actions",
-    "configs"
-  ]
+  "include": ["scripts/**/*"],
+  "exclude": ["node_modules", "actions", "configs"]
 }
