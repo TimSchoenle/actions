@@ -6,14 +6,18 @@ on:
   pull_request:
     branches: ['**']
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   zizmor:
     name: Zizmor
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      actions: read
-      security-events: write
+      contents: read # to fetch code
+      actions: read # to read action configurations
+      security-events: write # to upload SARIF results
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6

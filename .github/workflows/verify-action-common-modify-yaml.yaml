@@ -7,10 +7,15 @@ on:
       - 'actions/common/modify-yaml/**'
       - '.github/workflows/verify-action-common-modify-yaml.yaml'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify-modify-yaml:
+    name: Verify Modify YAML
     permissions:
-      contents: read
+      contents: read # to fetch code
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

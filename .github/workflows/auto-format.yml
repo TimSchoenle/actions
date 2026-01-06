@@ -3,12 +3,17 @@ name: Auto Format
 on:
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
-  contents: write
-  pull-requests: write
+  contents: write # to push code changes
+  pull-requests: write # to comment on PRs
 
 jobs:
   auto-format:
+    name: Auto Format
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

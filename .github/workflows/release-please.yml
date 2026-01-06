@@ -5,12 +5,17 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
-  contents: write
-  pull-requests: write
+  contents: write # to create release commits and tags
+  pull-requests: write # to manage release PRs
 
 jobs:
   release-please:
+    name: Release Please
     runs-on: ubuntu-latest
     steps:
       - name: Generate Bot Token

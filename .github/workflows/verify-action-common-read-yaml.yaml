@@ -7,11 +7,16 @@ on:
       - 'actions/common/read-yaml/**'
       - '.github/workflows/verify-action-common-read-yaml.yaml'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
-  contents: read
+  contents: read # to fetch code
 
 jobs:
   verify-read-yaml:
+    name: Verify Read YAML
     runs-on: ubuntu-latest
     strategy:
       matrix:

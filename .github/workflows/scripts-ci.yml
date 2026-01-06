@@ -16,11 +16,15 @@ on:
       - 'bun.lock'
       - 'bunfig.toml'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint-and-test:
     name: Lint & Test
     permissions:
-      contents: read
+      contents: read # to fetch code
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
