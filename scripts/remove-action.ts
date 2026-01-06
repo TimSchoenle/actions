@@ -8,6 +8,7 @@ import {
   removeVerifyWorkflow,
   selectPackage,
 } from './lib/action-utils.js';
+import { RenovateConfigManager } from './lib/renovate-config.js';
 
 export async function main() {
   console.log(chalk.red('🗑️  Shared CI Action Remover'));
@@ -56,7 +57,10 @@ export async function main() {
   await removeActionFromReleasePlease(packageName, subAction);
   await removeVerifyWorkflow(packageName, subAction);
 
-  // 3. Check if Package is now empty (ignoring non-directories or standard files)
+  // 3. Remove Renovate Config Rule
+  await RenovateConfigManager.removePackageRule(packageName, subAction);
+
+  // 4. Check if Package is now empty (ignoring non-directories or standard files)
   const remaining = await getSubActions(packageName);
 
   if (remaining.length === 0) {

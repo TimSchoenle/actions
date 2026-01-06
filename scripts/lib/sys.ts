@@ -1,4 +1,4 @@
-import fs, { type PathLike, type MakeDirectoryOptions, type RmOptions } from 'node:fs';
+import fs, {type MakeDirectoryOptions, type PathLike, type RmOptions} from 'node:fs';
 
 // System Abstraction for Testability
 export const Sys = {
@@ -9,4 +9,8 @@ export const Sys = {
     readdir: (path: string) => fs.readdirSync(path),
     stat: (path: string) => fs.statSync(path),
     rm: (path: string, options?: RmOptions) => fs.promises.rm(path, options),
+    exec: async (command: string) => {
+        const proc = Bun.spawn(command.split(' '), { stdout: 'pipe' });
+        return await new Response(proc.stdout).text();
+    },
 };

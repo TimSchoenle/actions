@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import path from 'node:path';
 import { ACTIONS_DIR, Sys, capitalize, createFromTemplate, START_VERSION } from './lib/utils.js';
 import { selectPackage, registerActionInReleasePlease, createVerifyWorkflow } from './lib/action-utils.js';
+import { RenovateConfigManager } from './lib/renovate-config.js';
 
 export async function main() {
   console.log(chalk.blue('🚀 Shared CI Action Generator'));
@@ -52,6 +53,9 @@ export async function main() {
 
   // 6. Update Release Please Config
   await registerActionInReleasePlease(packageName, subAction);
+
+  // 7. Update Renovate Config
+  await RenovateConfigManager.addPackageRule(packageName, subAction);
 
   console.log(chalk.blue('\nDone! 🚀'));
 }
