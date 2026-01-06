@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.4](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.2.3...actions-helm-update-chart-version-v1.2.4) (2026-01-06)
+
+
+### Bug Fixes
+
+* **deps:** update dependency timschoenle/actions/actions/common/read-yaml to actions-common-read-yaml-v1.0.2 ([#42](https://github.com/TimSchoenle/actions/issues/42)) ([f4ca428](https://github.com/TimSchoenle/actions/commit/f4ca4288a57f6012dfdb3b7bd4c618b79e42c2c6))
+* **deps:** update timschoenle/actions action to actions-helm-update-chart-version-v1.2.3 ([#32](https://github.com/TimSchoenle/actions/issues/32)) ([1785d8a](https://github.com/TimSchoenle/actions/commit/1785d8a4feadad92bde781a89366a40006fce0ab))
+
 ## [1.2.3](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.2.2...actions-helm-update-chart-version-v1.2.3) (2026-01-05)
 
 
