@@ -8,8 +8,10 @@
     ],
     "dependencyDashboard": true,
     "semanticCommits": "enabled",
-    "semanticCommitType": "fix",
-    "labels": ["dependencies"],
+    "semanticCommitType": "deps",
+    "labels": [
+        "dependencies"
+    ],
     "rebaseWhen": "auto",
     "timezone": "Europe/Berlin",
     "minimumReleaseAge": null,
@@ -23,34 +25,51 @@
     "packageRules": [
         {
             "description": "Auto-merge safe dev updates",
-            "matchDepTypes": ["devDependencies"],
-            "matchUpdateTypes": ["major", "minor", "patch", "digest"],
+            "matchDepTypes": [
+                "devDependencies"
+            ],
+            "matchUpdateTypes": [
+                "major",
+                "minor",
+                "patch",
+                "digest"
+            ],
             "automerge": true
         },
         {
             "description": "Auto-merge @types/* (non-major)",
-            "matchUpdateTypes": ["minor", "patch"],
+            "matchUpdateTypes": [
+                "minor",
+                "patch"
+            ],
             "automerge": true,
-            "matchPackageNames": ["/^@types//"]
+            "matchPackageNames": [
+                "/^@types//"
+            ]
         },
         {
             "description": "Review majors for TypeScript",
             "groupName": "typescript major",
-            "matchPackageNames": ["typescript"],
-            "matchUpdateTypes": ["major"],
+            "matchPackageNames": [
+                "typescript"
+            ],
+            "matchUpdateTypes": [
+                "major"
+            ],
             "automerge": false
         },
         {
             "description": "CI actions: safe to auto-merge",
-            "matchManagers": ["github-actions"],
-            "matchUpdateTypes": ["minor", "patch", "digest", "major", "pin"],
-            "semanticCommitType": "fix",
+            "matchManagers": [
+                "github-actions"
+            ],
+            "matchUpdateTypes": [
+                "minor",
+                "patch",
+                "digest",
+                "pin"
+            ],
             "automerge": true
-        },
-        {
-            "description": "Ensure action updates are marked as fixes",
-            "semanticCommitType": "fix",
-            "matchPackageNames": ["/^TimSchoenle/actions//"]
         }
     ]
 }
