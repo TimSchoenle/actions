@@ -25,10 +25,6 @@ To ensure **Renovate** can correctly detect new versions and auto-merge updates,
 
 <!-- CONFIGS_TABLE -->
 
-## 🔄 Reusable Workflows
-
-<!-- WORKFLOWS_TABLE -->
-
 ## 📦 Development
 
 ### Prerequisites
