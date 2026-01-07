@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.0](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.2.4...actions-helm-update-chart-version-v1.3.0) (2026-01-07)
+
+
+### Features
+
+* add security scanners ([#47](https://github.com/TimSchoenle/actions/issues/47)) ([2b5a8c4](https://github.com/TimSchoenle/actions/commit/2b5a8c4f6bf997927a87439ceaf295a2658acce9))
+
+
+### Miscellaneous
+
+* **deps:** update dependency timschoenle/actions/actions/common/modify-yaml to actions-common-modify-yaml-v1.1.0 ([#71](https://github.com/TimSchoenle/actions/issues/71)) ([b3c70bd](https://github.com/TimSchoenle/actions/commit/b3c70bdfdb01e6b9bac0c4ab5b46697eddd7c199))
+* **deps:** update dependency timschoenle/actions/actions/common/read-yaml to actions-common-read-yaml-v1.1.0 ([#70](https://github.com/TimSchoenle/actions/issues/70)) ([7542c0f](https://github.com/TimSchoenle/actions/commit/7542c0f93971282fd9512d63badfdaa18840169a))
+
 ## [1.2.4](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.2.3...actions-helm-update-chart-version-v1.2.4) (2026-01-06)
 
 
