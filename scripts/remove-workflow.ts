@@ -1,5 +1,5 @@
 import { selectWorkflowToRemove, removeWorkflow } from './lib/workflow-utils.js';
-import chalk from "chalk";
+import chalk from 'chalk';
 
 export async function main() {
   console.log(chalk.red('🗑️  Reusable Workflow Remover'));
