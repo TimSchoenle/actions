@@ -18,6 +18,9 @@ jobs:
     permissions:
       contents: write # to create release commits and tags
       pull-requests: write # to manage release PRs
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      paths_released: ${{ steps.release.outputs.paths_released }}
     steps:
       - name: Generate Bot Token
         id: generate_token
@@ -31,3 +34,157 @@ jobs:
         uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4
         with:
           token: ${{ steps.generate_token.outputs.token }}
+
+  prepare-workflow-matrix:
+    name: Prepare Workflow Matrix
+    needs: release-please
+    runs-on: ubuntu-latest
+    if: ${{ needs.release-please.outputs.releases_created == 'true' && contains(needs.release-please.outputs.paths_released, 'workflows/') }}
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        env:
+          PATHS_RELEASED: ${{ needs.release-please.outputs.paths_released }}
+        run: |
+          # Filter paths to only include those starting with workflows/
+          # output a JSON list like ["workflows/test-workflow", "workflows/another"]
+          workflows=$(echo $PATHS_RELEASED | jq -c '[.[] | select(startswith("workflows/"))]')
+          echo "matrix=$workflows" >> $GITHUB_OUTPUT
+
+  publish-workflow:
+    name: Publish Workflow
+    needs: [release-please, prepare-workflow-matrix]
+    runs-on: ubuntu-latest
+    if: ${{ needs.prepare-workflow-matrix.outputs.matrix != '[]' && needs.prepare-workflow-matrix.outputs.matrix != '' }}
+    strategy:
+      matrix:
+        path: ${{ fromJson(needs.prepare-workflow-matrix.outputs.matrix) }}
+      fail-fast: false
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Generate Bot Token
+        id: generate_token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ secrets.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+
+      - name: Get GitHub App User ID
+        id: get-user-id
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+          APP_SLUG: ${{ steps.generate_token.outputs.app-slug }}
+        run: echo "user-id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+
+      - name: Configure Git
+        env:
+          APP_SLUG: ${{ steps.generate_token.outputs.app-slug }}
+          USER_ID: ${{ steps.get-user-id.outputs.user-id }}
+        run: |
+          git config --global user.name "${APP_SLUG}[bot]"
+          git config --global user.email "${USER_ID}+${APP_SLUG}[bot]@users.noreply.github.com"
+
+      - name: Resolve Version and Tags
+        id: resolve_version
+        env:
+          WORKFLOW_PATH: ${{ matrix.path }}
+        run: |
+          path="$WORKFLOW_PATH"
+          workflow_name=$(basename "$path")
+          # Handle nested workflows: workflows/rust/test -> rust-test
+          # Remove 'workflows/' prefix and replace remaining '/' with '-'
+          normalized_name=$(echo "${path#workflows/}" | tr '/' '-')
+
+          echo "Resolving version for $normalized_name (source: $workflow_name)..."
+
+          if [[ ! -f .release-please-manifest.json ]]; then
+             echo "Error: .release-please-manifest.json not found!"
+             exit 1
+          fi
+
+          new_version=$(jq -r --arg key "$path" '.[$key]' .release-please-manifest.json)
+
+          if [[ "$new_version" == "null" ]]; then
+            echo "::warning::Could not find version for $path in manifest. Skipping."
+            echo "SKIP_WORKFLOW=true" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          echo "Found version: $new_version"
+
+          # Export variables for subsequent steps
+          echo "WORKFLOW_SOURCENAME=$workflow_name" >> $GITHUB_ENV
+          echo "WORKFLOW_NAME=$normalized_name" >> $GITHUB_ENV
+          echo "NEW_VERSION=$new_version" >> $GITHUB_ENV
+          echo "TAG_V=workflows/${workflow_name}-v${new_version}" >> $GITHUB_ENV
+          echo "SKIP_WORKFLOW=false" >> $GITHUB_ENV
+
+      - name: Prepare Distribution
+        if: env.SKIP_WORKFLOW != 'true'
+        env:
+          WORKFLOW_PATH: ${{ matrix.path }}
+        run: |
+          # Ensure clean state
+          rm -rf dist
+          mkdir -p dist/.github/workflows
+
+          # 1. Copy everything from source to dist root
+          cp -r "$WORKFLOW_PATH/"* dist/
+
+          # 2. Move and rename the main workflow file
+          # Convention: Source must contain workflow.yml or workflow.yaml
+          if [[ -f "dist/workflow.yml" ]]; then
+              mv "dist/workflow.yml" "dist/.github/workflows/$WORKFLOW_NAME.yaml"
+          elif [[ -f "dist/workflow.yaml" ]]; then
+              mv "dist/workflow.yaml" "dist/.github/workflows/$WORKFLOW_NAME.yaml"
+          else
+              echo "::error::workflow.yaml or workflow.yml not found in $WORKFLOW_PATH."
+              # Clean up
+              rm -rf dist
+              exit 1
+          fi
+
+          echo "Distribution prepared: Main workflow at .github/workflows/$WORKFLOW_NAME.yaml, other files at root."
+
+      - name: Create Release Commit
+        if: env.SKIP_WORKFLOW != 'true'
+        working-directory: dist
+        run: |
+          git init
+          git add .
+          git commit -m "chore: release $WORKFLOW_NAME $NEW_VERSION"
+
+      - name: Push Tags
+        if: env.SKIP_WORKFLOW != 'true'
+        working-directory: dist
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+        run: |
+          git tag -f "$TAG_V"
+
+          git remote add origin "https://x-access-token:$GITHUB_TOKEN@github.com/${{ github.repository }}.git"
+          git push origin -f --tags
+
+      - name: Create GitHub Release
+        if: env.SKIP_WORKFLOW != 'true'
+        working-directory: dist
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+        run: |
+          # Use GITHUB_TOKEN for gh cli
+          if gh release view "$TAG_V" > /dev/null 2>&1; then
+             echo "Release $TAG_V already exists. Updating..."
+             gh release edit "$TAG_V" --title "$WORKFLOW_NAME v$NEW_VERSION" --notes "Release $WORKFLOW_NAME v$NEW_VERSION" --target $(git rev-parse HEAD)
+          else
+             echo "Creating release $TAG_V..."
+             gh release create "$TAG_V" --title "$WORKFLOW_NAME v$NEW_VERSION" --notes "Release $WORKFLOW_NAME v$NEW_VERSION" --target $(git rev-parse HEAD)
+          fi

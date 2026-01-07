@@ -1,0 +1,17 @@
+name: { { name } }
+description: { { description } }
+
+on:
+  workflow_call:
+    # inputs:
+    #   example_input:
+    #     description: 'An example input'
+    #     required: true
+    #     type: string
+
+jobs:
+  example-job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Hello from reusable workflow {{name}}"

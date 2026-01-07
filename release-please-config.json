@@ -16,6 +16,12 @@
       "release-type": "simple",
       "component": "actions-common-modify-yaml",
       "include-component-in-tag": true
+    },
+    "workflows/common/test": {
+      "release-type": "simple",
+      "component": "workflows-common-test",
+      "include-component-in-tag": true,
+      "skip-github-release": true
     }
   },
   "changelog-sections": [
