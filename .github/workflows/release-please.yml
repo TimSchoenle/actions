@@ -40,46 +40,56 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v6
         with:
+          token: ${{ steps.generate_token.outputs.token }}
           fetch-depth: 0 # We need history for diffing manifests
 
       - name: Publish Custom Releases
         env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
         shell: bash
         run: |
-          # 1. Get Manifests
-          # Use HEAD~1 for previous, or empty object if it fails (e.g. first commit)
-          PREV_MANIFEST=$(git show HEAD~1:.release-please-manifest.json 2>/dev/null || echo "{}")
+          # 1. Get Manifest
           CURR_MANIFEST=$(git show HEAD:.release-please-manifest.json)
 
-          # 2. Extract Changes using jq
-          # Logic: Find keys starting with 'workflows/' where value in CURR != value in PREV
-          CHANGES=$(echo "$CURR_MANIFEST" | jq -r --argjson prev "$PREV_MANIFEST" '
+          # 2. Get all workflow packages
+          # Logic: Find all keys starting with 'workflows/'
+          PACKAGES=$(echo "$CURR_MANIFEST" | jq -r '
             to_entries | .[] | 
             select(.key | startswith("workflows/")) | 
-            select(.value != ($prev[.key] // "")) | 
             "\(.key)|\(.value)"
           ')
 
-          if [ -z "$CHANGES" ]; then
-            echo "No workflow changes detected."
+          if [ -z "$PACKAGES" ]; then
+            echo "No workflow packages configured."
             exit 0
           fi
 
-          # 3. Loop through changes
-          echo "$CHANGES" | while IFS="|" read -r PKG VERSION; do
+          # 3. Loop through packages and reconcile
+          echo "$PACKAGES" | while IFS="|" read -r PKG VERSION; do
             if [ -z "$PKG" ]; then continue; fi
-            
-            echo "Processing ${PKG} ${VERSION}"
             
             # Helper Variables
             # PKG: workflows/common/test
-            # COMPONENT_NAME: common-test
+            # COMPONENT_NAME: workflows-common-test (as per config) but we need logic to derive it
+            # The config now sends "component": "workflows-common-test".
+            # But here we are deriving it from path?
+            # Path: workflows/common/test -> common-test
+            # Tag: workflows-common-test-v1.1.0
+            
             COMPONENT_NAME=$(echo "$PKG" | cut -d'/' -f2- | tr '/' '-')
             TAG_NAME="workflows-${COMPONENT_NAME}-v${VERSION}"
             
+            echo "Checking ${PKG} ${VERSION} (Tag: ${TAG_NAME})"
+            
+            # Check if tag exists remotely
+            if git ls-remote --exit-code --tags origin "refs/tags/${TAG_NAME}" >/dev/null 2>&1; then
+              echo "Tag ${TAG_NAME} already exists. Skipping."
+              continue
+            fi
+            
+            echo "Tag ${TAG_NAME} missing. Proceeding with release."
+            
             SOURCE_FILE="${PKG}/workflow.yaml"
-            TARGET_FILE=".github/workflows/${COMPONENT_NAME}.yaml"
             
             if [ ! -f "$SOURCE_FILE" ]; then
               echo "Error: Source file $SOURCE_FILE not found!"
@@ -115,17 +125,15 @@ jobs:
             
             # Re-create structure
             mkdir -p .github/workflows
-            mv /tmp/workflow_content.yaml "$TARGET_FILE"
+            mv /tmp/workflow_content.yaml ".github/workflows/${COMPONENT_NAME}.yaml"
             
             # Commit
-            git add "$TARGET_FILE"
+            git add ".github/workflows/${COMPONENT_NAME}.yaml"
             git commit -m "chore: release ${PKG} ${VERSION}"
             
             # Tag
-            # Check if tag exists? Force update it? User said "immutable", so assuming new tag?
-            # But script said "force update". 
-            # Step 35 "We must also ensure we move... if it was updated".
-            # Step 45 "We can not use tag modifications... immutable".
+            # We must also ensure we move... if it was updated
+            # We can not use tag modifications... immutable
             # So we just CREATE the tag. If it exists, it fails (good).
             
             git tag "$TAG_NAME"
@@ -151,7 +159,7 @@ jobs:
             # If NOTES empty, default
             if [ -z "$NOTES" ]; then NOTES="Release ${PKG} ${VERSION}"; fi
             
-            gh release create "$TAG_NAME" --title "${COMPONENT_NAME} ${VERSION}" --notes "$NOTES"
+            gh release create "$TAG_NAME" --title "${COMPONENT_NAME} ${VERSION}" --notes "$NOTES" -R "${{ github.repository }}"
             
             # Cleanup
             git checkout -
