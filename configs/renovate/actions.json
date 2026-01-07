@@ -3,19 +3,12 @@
   "description": "Versioning rules for all custom Github Actions defined in this repository",
   "packageRules": [
     {
-      "description": "Versioning for action common/modify-yaml",
-      "matchDepNames": ["TimSchoenle/actions/actions/common/modify-yaml"],
-      "versioning": "regex:^actions-common-modify-yaml-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
-    },
-    {
-      "description": "Versioning for action common/read-yaml",
-      "matchDepNames": ["TimSchoenle/actions/actions/common/read-yaml"],
-      "versioning": "regex:^actions-common-read-yaml-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
-    },
-    {
-      "description": "Versioning for action helm/update-chart-version",
-      "matchDepNames": ["TimSchoenle/actions/actions/helm/update-chart-version"],
-      "versioning": "regex:^actions-helm-update-chart-version-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+      "description": "Versioning for internal actions",
+      "matchPackageNames": ["TimSchoenle/actions"],
+      "versioning": "regex:^(?<compatibility>actions-.*)[-/]v?(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)?$",
+      "commitMessageTopic": "{{compatibility}}",
+      "commitMessageExtra": "to v{{newVersion}}",
+      "additionalBranchPrefix": "{{compatibility}}-"
     }
   ]
 }
