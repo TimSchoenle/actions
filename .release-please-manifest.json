@@ -1,5 +1,6 @@
 {
   "actions/helm/update-chart-version": "1.2.4",
   "actions/common/read-yaml": "1.1.0",
-  "actions/common/modify-yaml": "1.1.0"
+  "actions/common/modify-yaml": "1.1.0",
+  "workflows/common/test": "1.0.0"
 }

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { Sys } from './lib/utils.js';
 import { ActionParser } from './lib/readme/parsers/action-parser.js';
 import { RenovateParser } from './lib/readme/parsers/renovate-parser.js';
+import { WorkflowParser } from './lib/readme/parsers/workflow-parser.js';
 import { generateSection } from './lib/readme/generator.js';
 import { getRepoInfo } from './lib/readme/git-utils.js';
 
@@ -20,17 +21,29 @@ export async function main() {
   const actionParser = new ActionParser();
   const actions = await actionParser.parse();
   const actionsOutput = await generateSection(actions, ['Action', 'Description', 'Version', 'Usage'], (item) => {
-    const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;
-    const desc = item.description.replaceAll('\n', ' ').trim();
+    const p = item.path ? item.path.replaceAll('\\', '/') : '';
+    const link = `[${item.name}](./${p})`;
+    const desc = item.description ? String(item.description).replaceAll('\n', ' ').trim() : '';
     return [link, desc, item.version ?? 'N/A', item.usage || ''];
   });
 
-  // 2. Renovate Configs
+  // 2. Reusable Workflows
+  const workflowParser = new WorkflowParser();
+  const workflows = await workflowParser.parse();
+  const workflowsOutput = await generateSection(workflows, ['Workflow', 'Description', 'Version', 'Usage'], (item) => {
+    const p = item.path ? item.path.replaceAll('\\', '/') : '';
+    const link = `[${item.name}](./${p})`;
+    const desc = item.description ? String(item.description).replaceAll('\n', ' ').trim() : '';
+    return [link, desc, item.version ?? 'Latest', item.usage || ''];
+  });
+
+  // 3. Renovate Configs
   const renovateParser = new RenovateParser();
   const renovateConfigs = await renovateParser.parse();
   const configsOutput = await generateSection(renovateConfigs, ['Config', 'Description', 'Usage'], (item) => {
-    const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;
-    const desc = item.description.replaceAll('\n', ' ').trim();
+    const p = item.path ? item.path.replaceAll('\\', '/') : '';
+    const link = `[${item.name}](./${p})`;
+    const desc = item.description ? String(item.description).replaceAll('\n', ' ').trim() : '';
     return [link, desc, item.usage || ''];
   });
 
@@ -47,6 +60,7 @@ export async function main() {
   readmeContent = readmeContent.replaceAll('{{REPO}}', repoId);
 
   readmeContent = readmeContent.replace('<!-- ACTIONS_TABLE -->', actionsOutput);
+  readmeContent = readmeContent.replace('<!-- WORKFLOWS_TABLE -->', workflowsOutput);
   readmeContent = readmeContent.replace('<!-- CONFIGS_TABLE -->', configsOutput);
 
   await Sys.write(README_PATH, readmeContent);

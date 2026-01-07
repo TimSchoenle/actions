@@ -31,8 +31,13 @@ export async function generateSection(
 
   for (const category of categories) {
     output += `### ${category}\n\n`;
-    const categoryItems = byCategory[category].toSorted((a, b) => a.name.localeCompare(b.name));
-    output += await generateMarkdownTable(categoryItems, headers, rowMapper);
+    try {
+      const categoryItems = byCategory[category].slice().sort((a, b) => a.name.localeCompare(b.name));
+      output += await generateMarkdownTable(categoryItems, headers, rowMapper);
+    } catch (e) {
+      console.error(`Error generating section for ${category}:`, e);
+      throw e;
+    }
     output += '\n';
   }
 
