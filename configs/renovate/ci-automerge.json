@@ -7,13 +7,6 @@
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["minor", "patch", "digest", "pin"],
       "automerge": true
-    },
-    {
-      "description": "Custom CI actions: safe to auto-merge",
-      "matchManagers": ["regex"],
-      "matchPackageNames": ["TimSchoenle/actions"],
-      "matchUpdateTypes": ["minor", "patch", "digest", "pin"],
-      "automerge": true
     }
   ]
 }
