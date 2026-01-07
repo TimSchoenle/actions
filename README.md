@@ -52,7 +52,7 @@ To ensure **Renovate** can correctly detect new versions and auto-merge updates,
 
 | Workflow | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [[object Object]](./workflows/common/test) | [object Object] | v1.0.0 | `uses: TimSchoenle/actions/.github/workflows/common-test.yaml@workflows/test-v1.0.0` |
+| [[object Object]](./workflows/common/test) | [object Object] | v1.1.0 | `uses: TimSchoenle/actions/.github/workflows/common-test.yaml@workflows/test-v1.1.0` |
 
 
 
