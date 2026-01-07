@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.0.2...actions-common-modify-yaml-v1.1.0) (2026-01-07)
+
+
+### Features
+
+* add security scanners ([#47](https://github.com/TimSchoenle/actions/issues/47)) ([2b5a8c4](https://github.com/TimSchoenle/actions/commit/2b5a8c4f6bf997927a87439ceaf295a2658acce9))
+
 ## [1.0.2](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.0.1...actions-common-modify-yaml-v1.0.2) (2026-01-05)
 
 

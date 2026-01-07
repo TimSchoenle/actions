@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.2.4...actions-helm-update-chart-version-v1.3.0) (2026-01-07)
+
+
+### Features
+
+* add security scanners ([#47](https://github.com/TimSchoenle/actions/issues/47)) ([2b5a8c4](https://github.com/TimSchoenle/actions/commit/2b5a8c4f6bf997927a87439ceaf295a2658acce9))
+
 ## [1.2.4](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.2.3...actions-helm-update-chart-version-v1.2.4) (2026-01-06)
 
 
