@@ -46,16 +46,6 @@ To ensure **Renovate** can correctly detect new versions and auto-merge updates,
 
 
 
-## 🔄 Reusable Workflows
-
-### Workflow
-
-| Workflow | Description | Version | Usage |
-| --- | --- | --- | --- |
-| [Test](./workflows/common/test) | Test | v1.1.0 | `uses: TimSchoenle/actions/.github/workflows/common-test.yaml@workflows/test-v1.1.0` |
-
-
-
 ## 📦 Development
 
 ### Prerequisites
