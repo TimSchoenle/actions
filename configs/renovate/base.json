@@ -23,9 +23,9 @@
       "enabled": false
     },
     {
-      "description": "Enable pinning for custom actions used via regex manager",
+      "description": "Disable pinning for custom actions used via regex manager. It is sadly a nightmare trying to get this to work with the custom regex manager-",
       "matchPackageNames": ["TimSchoenle/actions"],
-      "pinDigests": true
+      "pinDigests": false
     }
   ]
 }
