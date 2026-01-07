@@ -7,12 +7,12 @@
       "description": "Custom action versioning",
       "fileMatch": ["(^|/)action\\.ya?ml$", "(^|/)workflow\\.ya?ml$", "^\\.github/workflows/.*\\.ya?ml$"],
       "matchStrings": [
-        "uses: (?<depName>TimSchoenle/actions/(?<subPath>[\\w\\/-]+))@(?<currentDigest>[0-9a-f]{40})(?:\\s+#.*)?",
+        "uses: (?<depName>TimSchoenle/actions/(?<subPath>[\\w\\/-]+))@(?<currentDigest>[0-9a-f]{40})\\s+# (?<currentValue>actions-[^ \\n\\r]+)",
         "uses: (?<depName>TimSchoenle/actions/(?<subPath>[\\w\\/-]+))@(?<currentValue>actions-[^ #\\n\\r]+)"
       ],
       "lookupNameTemplate": "TimSchoenle/actions",
       "datasourceTemplate": "github-tags",
-      "autoReplaceStringTemplate": "uses: {{{depName}}}@{{{newDigest}}}"
+      "autoReplaceStringTemplate": "uses: {{{depName}}}@{{#if currentDigest}}{{{newDigest}}} # {{{newValue}}}{{else}}{{{newValue}}}{{/if}}"
     }
   ],
   "packageRules": [
