@@ -36,3 +36,125 @@ jobs:
         uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4
         with:
           token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # We need history for diffing manifests
+
+      - name: Publish Custom Releases
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+        shell: bash
+        run: |
+          # 1. Get Manifests
+          # Use HEAD~1 for previous, or empty object if it fails (e.g. first commit)
+          PREV_MANIFEST=$(git show HEAD~1:.release-please-manifest.json 2>/dev/null || echo "{}")
+          CURR_MANIFEST=$(git show HEAD:.release-please-manifest.json)
+
+          # 2. Extract Changes using jq
+          # Logic: Find keys starting with 'workflows/' where value in CURR != value in PREV
+          CHANGES=$(echo "$CURR_MANIFEST" | jq -r --argjson prev "$PREV_MANIFEST" '
+            to_entries | .[] | 
+            select(.key | startswith("workflows/")) | 
+            select(.value != ($prev[.key] // "")) | 
+            "\(.key)|\(.value)"
+          ')
+
+          if [ -z "$CHANGES" ]; then
+            echo "No workflow changes detected."
+            exit 0
+          fi
+
+          # 3. Loop through changes
+          echo "$CHANGES" | while IFS="|" read -r PKG VERSION; do
+            if [ -z "$PKG" ]; then continue; fi
+            
+            echo "Processing ${PKG} ${VERSION}"
+            
+            # Helper Variables
+            # PKG: workflows/common/test
+            # COMPONENT_NAME: common-test
+            COMPONENT_NAME=$(echo "$PKG" | cut -d'/' -f2- | tr '/' '-')
+            TAG_NAME="workflows-${COMPONENT_NAME}-v${VERSION}"
+            
+            SOURCE_FILE="${PKG}/workflow.yaml"
+            TARGET_FILE=".github/workflows/${COMPONENT_NAME}.yaml"
+            
+            if [ ! -f "$SOURCE_FILE" ]; then
+              echo "Error: Source file $SOURCE_FILE not found!"
+              continue
+            fi
+            
+            echo "Releasing $TAG_NAME"
+
+            # 4. Git Operations
+            # Create a temp branch to do the clean work
+            TEMP_BRANCH="temp-release-${COMPONENT_NAME}-${VERSION}"
+            
+            # Setup User (Restoring proper bot identity)
+            # Fetch currently authenticated user (the bot)
+            BOT_LOGIN=$(gh api user --jq .login)
+            BOT_ID=$(gh api user --jq .id)
+            BOT_EMAIL="${BOT_ID}+${BOT_LOGIN}@users.noreply.github.com"
+            
+            echo "Configuring git user: ${BOT_LOGIN} <${BOT_EMAIL}>"
+            git config user.name "$BOT_LOGIN"
+            git config user.email "$BOT_EMAIL"
+
+            # Checkout temp branch
+            git checkout -b "$TEMP_BRANCH"
+            
+            # Capture content we want to preserve
+            # (We are on fresh branch)
+            cat "$SOURCE_FILE" > /tmp/workflow_content.yaml
+            
+            # Remove EVERYTHING from git index and tree
+            git rm -rf .
+            git clean -fdx
+            
+            # Re-create structure
+            mkdir -p .github/workflows
+            mv /tmp/workflow_content.yaml "$TARGET_FILE"
+            
+            # Commit
+            git add "$TARGET_FILE"
+            git commit -m "chore: release ${PKG} ${VERSION}"
+            
+            # Tag
+            # Check if tag exists? Force update it? User said "immutable", so assuming new tag?
+            # But script said "force update". 
+            # Step 35 "We must also ensure we move... if it was updated".
+            # Step 45 "We can not use tag modifications... immutable".
+            # So we just CREATE the tag. If it exists, it fails (good).
+            
+            git tag "$TAG_NAME"
+            git push origin "$TAG_NAME"
+            
+            # Release
+            # Extract Changelog Entry (Simplistic regex approach)
+            # We need to read CHANGELOG from the main branch/HEAD, because we just deleted it in this branch!
+            # So we should have read it BEFORE `git rm`.
+            # Let's extract it now using git show main:...
+            
+            CHANGELOG_PATH="${PKG}/CHANGELOG.md"
+            # Attempt to extract section. 
+            # Using sed/awk is brittle. defaulting to title.
+            NOTES="Release ${PKG} ${VERSION}"
+            if git show "HEAD:${CHANGELOG_PATH}" > /dev/null 2>&1; then
+               # try to get content
+               # Extract lines between "## [Version]" and next "## "
+               # Escaping brackets for regex
+               NOTES=$(git show "HEAD:${CHANGELOG_PATH}" | awk "/^## \[?${VERSION}\]?/{flag=1; next} /^## /{flag=0} flag")
+            fi
+            
+            # If NOTES empty, default
+            if [ -z "$NOTES" ]; then NOTES="Release ${PKG} ${VERSION}"; fi
+            
+            gh release create "$TAG_NAME" --title "${COMPONENT_NAME} ${VERSION}" --notes "$NOTES"
+            
+            # Cleanup
+            git checkout -
+            git branch -D "$TEMP_BRANCH"
+            
+          done
