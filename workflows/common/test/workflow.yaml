@@ -4,7 +4,7 @@ description: { { description } }
 on:
   workflow_call:
     # inputs:
-    #   example_input:
+    #   example_input:1
     #     description: 'An example input'
     #     required: true
     #     type: string
