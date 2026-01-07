@@ -4,8 +4,6 @@
   "scripts": {
     "create-action": "bun scripts/create-action.ts",
     "remove-action": "bun scripts/remove-action.ts",
-    "create-workflow": "bun scripts/create-workflow.ts",
-    "remove-workflow": "bun scripts/remove-workflow.ts",
     "generate-readme": "bun scripts/generate-readme.ts",
     "lint": "eslint scripts/**/*.ts",
     "format": "prettier --write .",
