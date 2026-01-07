@@ -8,14 +8,14 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Common Modify YAML](./actions/common/modify-yaml) | A action to modify a value in a YAML file while strictly preserving comments and structure | actions-common-modify-yaml-v1.0.2 | `uses: TimSchoenle/actions/actions/common/modify-yaml@actions-common-modify-yaml-v1.0.2` |
-| [Common Read YAML](./actions/common/read-yaml) | A action to read a value from a YAML file using dot notation | actions-common-read-yaml-v1.0.2 | `uses: TimSchoenle/actions/actions/common/read-yaml@actions-common-read-yaml-v1.0.2` |
+| [Common Modify YAML](./actions/common/modify-yaml) | A action to modify a value in a YAML file while strictly preserving comments and structure | actions-common-modify-yaml-v1.1.0 | `uses: TimSchoenle/actions/actions/common/modify-yaml@actions-common-modify-yaml-v1.1.0` |
+| [Common Read YAML](./actions/common/read-yaml) | A action to read a value from a YAML file using dot notation | actions-common-read-yaml-v1.1.0 | `uses: TimSchoenle/actions/actions/common/read-yaml@actions-common-read-yaml-v1.1.0` |
 
 ### Helm
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Update Helm Chart Version](./actions/helm/update-chart-version) | Updates a Helm chart version, appVersion, and image tag, then creates a Pull Request. This action requires a bot account with access to the charts repo. Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag). | actions-helm-update-chart-version-v1.2.4 | `uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.2.4` |
+| [Update Helm Chart Version](./actions/helm/update-chart-version) | Updates a Helm chart version, appVersion, and image tag, then creates a Pull Request. This action requires a bot account with access to the charts repo. Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag). | actions-helm-update-chart-version-v1.3.0 | `uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.3.0` |
 
 
 
