@@ -1,4 +1,4 @@
-name: Common Test Workflow
+name: Common Test Workflow2
 
 on:
   workflow_call:
