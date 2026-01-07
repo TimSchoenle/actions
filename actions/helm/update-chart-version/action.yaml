@@ -83,7 +83,7 @@ runs:
 
     - name: Read Current Version
       id: read-version
-      uses: TimSchoenle/actions/actions/common/read-yaml@actions-common-read-yaml-v1.1.0
+      uses: TimSchoenle/actions/actions/common/read-yaml@8278a5b0b944ee55bcfa361b60373c803154e3d3 # actions-common-read-yaml-v1.1.0
       with:
         file: ${{ inputs.checkout-path }}/${{ inputs.chart-path }}/Chart.yaml
         key: version
@@ -100,14 +100,14 @@ runs:
         echo "new-version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
 
     - name: Set Chart Version
-      uses: TimSchoenle/actions/actions/common/modify-yaml@actions-common-modify-yaml-v1.1.0
+      uses: TimSchoenle/actions/actions/common/modify-yaml@d179573231cde66c70b41be25a679d45b02590fc # actions-common-modify-yaml-v1.1.0
       with:
         file: ${{ inputs.checkout-path }}/${{ inputs.chart-path }}/Chart.yaml
         key: version
         value: ${{ steps.calc-version.outputs.new-version }}
 
     - name: Set App Version
-      uses: TimSchoenle/actions/actions/common/modify-yaml@actions-common-modify-yaml-v1.1.0
+      uses: TimSchoenle/actions/actions/common/modify-yaml@d179573231cde66c70b41be25a679d45b02590fc # actions-common-modify-yaml-v1.1.0
       with:
         file: ${{ inputs.checkout-path }}/${{ inputs.chart-path }}/Chart.yaml
         key: appVersion
@@ -126,7 +126,7 @@ runs:
         echo "full-tag=$FULL_TAG" >> "$GITHUB_OUTPUT"
 
     - name: Update Image Tag
-      uses: TimSchoenle/actions/actions/common/modify-yaml@actions-common-modify-yaml-v1.1.0
+      uses: TimSchoenle/actions/actions/common/modify-yaml@d179573231cde66c70b41be25a679d45b02590fc # actions-common-modify-yaml-v1.1.0
       with:
         file: ${{ inputs.checkout-path }}/${{ inputs.chart-path }}/values.yaml
         key: image.tag
