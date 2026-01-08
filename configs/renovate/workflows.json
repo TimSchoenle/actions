@@ -1,0 +1,14 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Versioning rules for all custom Reusable Workflows defined in this repository",
+  "packageRules": [
+    {
+      "description": "Versioning for internal workflows",
+      "matchPackageNames": ["TimSchoenle/actions"],
+      "versioning": "regex:^(?<compatibility>workflows-.*)[-/]v?(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)?$",
+      "commitMessageTopic": "{{compatibility}}",
+      "commitMessageExtra": "to v{{newVersion}}",
+      "additionalBranchPrefix": "{{compatibility}}-"
+    }
+  ]
+}
