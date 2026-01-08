@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.3.0](https://github.com/TimSchoenle/actions/compare/workflows-common-test2-v2.2.0...workflows-common-test2-v2.3.0) (2026-01-08)
+
+
+### Features
+
+* **Workflow:** more tests  ([#88](https://github.com/TimSchoenle/actions/issues/88)) ([802527b](https://github.com/TimSchoenle/actions/commit/802527b790d0d0c034d52370ae944bab7877005c))
+* **Workflow:** more tests ([#93](https://github.com/TimSchoenle/actions/issues/93)) ([e0df3fa](https://github.com/TimSchoenle/actions/commit/e0df3fafbebbe2f42ec6582448205eea7c93ee62))
+
+
+### Miscellaneous
+
+* **main:** release workflows-common-test2 2.1.0 ([#90](https://github.com/TimSchoenle/actions/issues/90)) ([a7cfb93](https://github.com/TimSchoenle/actions/commit/a7cfb93ab1419d01d62d27f00669005ec3068de2))
+* **main:** release workflows-common-test2 2.2.0 ([#92](https://github.com/TimSchoenle/actions/issues/92)) ([5309d51](https://github.com/TimSchoenle/actions/commit/5309d516646ccfa18212104148c6e84fe1709911))
+
 ## [2.2.0](https://github.com/TimSchoenle/actions/compare/workflows-common-test2-v2.1.0...workflows-common-test2-v2.2.0) (2026-01-08)
 
 
