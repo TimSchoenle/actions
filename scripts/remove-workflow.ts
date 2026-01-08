@@ -1,23 +1,25 @@
 import path from 'node:path';
 import { confirm, search } from '@inquirer/prompts';
 import chalk from 'chalk';
-import { ACTIONS_DIR, Sys } from './lib/utils.js';
+import { ROOT_DIR, Sys } from './lib/utils.js';
 import {
-  getSubActions,
-  removeActionFromReleasePlease,
+  getSubResources,
+  removeResourceFromReleasePlease,
   removeVerifyWorkflow,
   selectPackage,
-} from './lib/action-utils.js';
+} from './lib/resource-utils.js';
 import { RenovateConfigManager } from './lib/renovate-config.js';
 import { main as generateReadme } from './generate-readme.js';
 
+const WORKFLOWS_DIR = path.join(ROOT_DIR, 'workflows');
+
 export async function main() {
-  console.log(chalk.red('🗑️  Shared CI Action Remover'));
+  console.log(chalk.red('🗑️  Reusable Workflow Remover'));
 
-  const packageName = await selectPackage(false);
+  const packageName = await selectPackage('workflow', false);
 
-  const packagePath = path.join(ACTIONS_DIR, packageName);
-  const subActions = await getSubActions(packageName);
+  const packagePath = path.join(WORKFLOWS_DIR, packageName);
+  const subActions = await getSubResources('workflow', packageName);
 
   if (subActions.length === 0) {
     // Just remove the package dir if empty of sub-actions (maybe just config files)
@@ -33,14 +35,14 @@ export async function main() {
   }
 
   const subAction = await search({
-    message: 'Select Sub-Action to remove:',
+    message: 'Select Workflow to remove:',
     source: async (input) => {
       return subActions.filter((sub) => sub.includes(input || '')).map((sub) => ({ name: sub, value: sub }));
     },
   });
 
   const shouldRemoveAction = await confirm({
-    message: `Are you sure you want to remove actions/${packageName}/${subAction}? This cannot be undone.`,
+    message: `Are you sure you want to remove workflows/${packageName}/${subAction}? This cannot be undone.`,
     default: false,
   });
 
@@ -55,19 +57,19 @@ export async function main() {
   await Sys.rm(actionPath, { recursive: true, force: true });
 
   // 2. Update Release Please Config & Manifest
-  await removeActionFromReleasePlease(packageName, subAction);
-  await removeVerifyWorkflow(packageName, subAction);
+  await removeResourceFromReleasePlease('workflow', packageName, subAction);
+  await removeVerifyWorkflow('workflow', packageName, subAction);
 
   // 3. Remove Renovate Config Rule
   await RenovateConfigManager.removePackageRule(packageName, subAction);
 
-  // 4. Check if Package is now empty (ignoring non-directories or standard files)
-  const remaining = await getSubActions(packageName);
+  // 4. Check if Package is now empty
+  const remaining = await getSubResources('workflow', packageName);
 
   if (remaining.length === 0) {
-    console.log(chalk.yellow(`Package ${packageName} is now empty of sub-actions.`));
+    console.log(chalk.yellow(`Package ${packageName} is now empty of workflows.`));
     const shouldRemovePkg = await confirm({
-      message: `Remove package root ${packageName} (including configs/tests)?`,
+      message: `Remove package root ${packageName} (including configs)?`,
       default: true,
     });
 
@@ -77,7 +79,7 @@ export async function main() {
       console.log(chalk.blue('Skipping package root removal.'));
     }
   } else {
-    console.log(chalk.blue(`Package ${packageName} still has ${remaining.length} sub-actions.`));
+    console.log(chalk.blue(`Package ${packageName} still has ${remaining.length} workflows.`));
   }
 
   // 5. Regenerate README
@@ -88,7 +90,7 @@ export async function main() {
 }
 
 async function removePackage(packageName: string) {
-  const packagePath = path.join(ACTIONS_DIR, packageName);
+  const packagePath = path.join(WORKFLOWS_DIR, packageName);
   console.log(chalk.yellow(`Removing package root ${packagePath}...`));
 
   if (Sys.exists(packagePath)) {
@@ -97,7 +99,7 @@ async function removePackage(packageName: string) {
 
   // Check parent directory for emptiness if nested
   let parentDir = path.dirname(packagePath);
-  while (parentDir !== ACTIONS_DIR && parentDir.startsWith(ACTIONS_DIR)) {
+  while (parentDir !== WORKFLOWS_DIR && parentDir.startsWith(WORKFLOWS_DIR)) {
     const parentContents = Sys.readdir(parentDir);
     if (parentContents.length === 0) {
       console.log(chalk.yellow(`Removing empty parent directory ${parentDir}...`));
@@ -107,8 +109,6 @@ async function removePackage(packageName: string) {
       break;
     }
   }
-
-  // Verify jobs are per-action and removed above.
 }
 
 if (import.meta.main) {

@@ -1,0 +1,21 @@
+name: Verify {{capitalizedPackageName}} {{capitalizedSubAction}}
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'workflows/{{packageName}}/{{subName}}/**'
+      - '.github/workflows/verify-workflow-{{packageName}}-{{subName}}.yaml'
+  pull_request:
+    paths:
+      - 'workflows/{{packageName}}/{{subName}}/**'
+      - '.github/workflows/verify-workflow-{{packageName}}-{{subName}}.yaml'
+
+permissions: {}
+
+jobs:
+  verify:
+    uses: ./workflows/{{packageName}}/{{subName}}/workflow.yaml
+    with:
+      example_input: 'test-verification'

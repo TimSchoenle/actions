@@ -1,0 +1,19 @@
+name: '{{capitalizedPackageName}} {{capitalizedSubAction}}'
+
+on:
+  workflow_call:
+    inputs:
+      example_input:
+        description: 'Example input'
+        required: false
+        type: string
+        default: 'default'
+
+jobs:
+  { { subAction } }:
+    name: { { capitalizedSubAction } }
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Logic
+        shell: bash
+        run: echo "Hello from reusable workflow {{packageName}}/{{subAction}}"
