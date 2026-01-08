@@ -58,6 +58,7 @@ jobs:
           private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
           permission-contents: write
           permission-workflows: write
+          permission-pull-requests: write
           permission-metadata: read
 
       - name: Checkout Repository
@@ -186,6 +187,12 @@ jobs:
             # 3. Release Creation
             gh release create "$TAG_NAME" --title "${COMPONENT_NAME} ${VERSION}" --notes "$NOTES" -R "${{ github.repository }}"
             
+            # --- Cleanup PR Labels ---
+            if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
+                echo "Removing 'autorelease: pending' label from PR #$PR_NUMBER"
+                gh pr edit "$PR_NUMBER" --remove-label "autorelease: pending" || echo "Failed to remove label, but continuing."
+            fi
+
             # Cleanup
             git checkout -
             git branch -D "$TEMP_BRANCH"
