@@ -53,7 +53,7 @@ jobs:
           egress-policy: audit
 
       - name: Checkout Repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -135,7 +135,7 @@ jobs:
           permission-metadata: read
 
       - name: Checkout Repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           token: ${{ steps.generate_token.outputs.token }}
           fetch-depth: 0
