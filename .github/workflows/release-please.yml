@@ -58,6 +58,7 @@ jobs:
           private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
           permission-contents: write
           permission-workflows: write
+          permission-pull-requests: write
           permission-metadata: read
 
       - name: Checkout Repository
@@ -161,22 +162,43 @@ jobs:
             # 1. Clean Release Build
             # Branch off current HEAD (main) to preserve history
             TEMP_BRANCH="temp-release-${COMPONENT_NAME}-${VERSION}"
-            git checkout -b "$TEMP_BRANCH"
             
-            # Prepare content
-            cat "$SOURCE_FILE" > /tmp/workflow_content.yaml
+            # Prepare content in a safe temp dir (outside of repo)
+            rm -rf /tmp/pkg_content
+            mkdir -p /tmp/pkg_content
+            cp -r "${PKG}/." /tmp/pkg_content/
+            
+            git checkout -b "$TEMP_BRANCH"
             
             # Clean Tree 
             git rm -rf .
             git clean -fdx
             
-            # Restore Target
-            # Filename: workflows-common-test.yaml (Standardized to component name)
+            # Create destination dirs
             mkdir -p .github/workflows
-            mv /tmp/workflow_content.yaml ".github/workflows/${COMPONENT_NAME#workflows-}.yaml"
             
-            # Commit
-            git add ".github/workflows/${COMPONENT_NAME#workflows-}.yaml"
+            # Process Files
+            # Use dotglob to include hidden files if any
+            shopt -s dotglob
+            for FILE in /tmp/pkg_content/*; do
+                BASENAME=$(basename "$FILE")
+                
+                if [ "$BASENAME" == "README.md" ] || [ "$BASENAME" == "CHANGELOG.md" ]; then
+                    echo "Moving $BASENAME to root"
+                    cp -r "$FILE" .
+                elif [ "$BASENAME" == "workflow.yaml" ]; then
+                    TARGET_NAME="${COMPONENT_NAME#workflows-}.yaml"
+                    echo "Moving workflow.yaml to .github/workflows/$TARGET_NAME"
+                    cp "$FILE" ".github/workflows/$TARGET_NAME"
+                else
+                    echo "Moving $BASENAME to .github/workflows/"
+                    cp -r "$FILE" .github/workflows/
+                fi
+            done
+            shopt -u dotglob
+            
+            # Commit contents
+            git add .
             git commit -m "chore: release ${PKG} ${VERSION}"
             
             # 2. Tagging
@@ -186,6 +208,12 @@ jobs:
             # 3. Release Creation
             gh release create "$TAG_NAME" --title "${COMPONENT_NAME} ${VERSION}" --notes "$NOTES" -R "${{ github.repository }}"
             
+            # --- Cleanup PR Labels ---
+            if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
+                echo "Removing 'autorelease: pending' label from PR #$PR_NUMBER"
+                gh pr edit "$PR_NUMBER" --remove-label "autorelease: pending" || echo "Failed to remove label, but continuing."
+            fi
+
             # Cleanup
             git checkout -
             git branch -D "$TEMP_BRANCH"
