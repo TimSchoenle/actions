@@ -101,7 +101,8 @@ jobs:
           echo "]}" >> "$MATRIX_FILE"
 
           # Output
-          MATRIX_JSON=$(cat "$MATRIX_FILE")
+          # Must be single line for GITHUB_OUTPUT, use jq -c to minify
+          MATRIX_JSON=$(jq -c . "$MATRIX_FILE")
           echo "Generated Matrix: $MATRIX_JSON"
           echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
 
