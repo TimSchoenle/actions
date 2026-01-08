@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.0](https://github.com/TimSchoenle/actions/compare/workflows-common-test2-meta-v2.7.0...workflows-common-test2-meta-v2.8.0) (2026-01-08)
+
+
+### Features
+
+* **Workflow:** more tests ([#104](https://github.com/TimSchoenle/actions/issues/104)) ([438e713](https://github.com/TimSchoenle/actions/commit/438e713e11fb0c702980560f35e0c1210c0b6f22))
+
 ## [2.7.0](https://github.com/TimSchoenle/actions/compare/workflows-common-test2-meta-v2.6.0...workflows-common-test2-meta-v2.7.0) (2026-01-08)
 
 
