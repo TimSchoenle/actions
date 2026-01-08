@@ -17,9 +17,9 @@
       "component": "actions-common-modify-yaml",
       "include-component-in-tag": true
     },
-    "workflows/common/test": {
+    "workflows/common/test2": {
       "release-type": "simple",
-      "component": "workflows-common-test",
+      "component": "workflows-common-test2",
       "skip-github-release": true
     }
   },
