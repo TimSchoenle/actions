@@ -68,12 +68,14 @@ jobs:
             exit 1
           fi
 
-          # Initialize matrix JSON
-          MATRIX_JSON="{\"include\":["
-          FIRST=true
+          # Initialize matrix JSON using a temp file to avoid subshell variable loss
+          MATRIX_FILE=$(mktemp)
+          echo "{\"include\":[" > "$MATRIX_FILE"
+
+          # We need to track if we've added an item for commas, but logic is easier if we just build a list then join
+          ITEMS_FILE=$(mktemp)
 
           # Iterate over workflow packages
-          # We use jq to output pipe-delimited lines of "path|version"
           jq -r 'to_entries[] | select(.key | startswith("workflows/")) | "\(.key)|\(.value)"' "$MANIFEST_FILE" | while IFS="|" read -r PKG VERSION; do
             if [ -z "$PKG" ]; then continue; fi
             
@@ -86,22 +88,20 @@ jobs:
               echo "Skipping $PKG $VERSION (Tag $TAG_NAME exists)"
             else
               echo "Queueing $PKG $VERSION (Tag $TAG_NAME missing)"
-              
-              if [ "$FIRST" = true ]; then
-                  FIRST=false
-              else
-                  MATRIX_JSON="${MATRIX_JSON},"
-              fi
-              
-              # Append to JSON
-              MATRIX_JSON="${MATRIX_JSON}{\"path\":\"${PKG}\",\"version\":\"${VERSION}\"}"
+              echo "{\"path\":\"${PKG}\",\"version\":\"${VERSION}\"}" >> "$ITEMS_FILE"
             fi
           done
 
+          # Join items with commas
+          if [ -s "$ITEMS_FILE" ]; then
+            paste -sd "," "$ITEMS_FILE" >> "$MATRIX_FILE"
+          fi
+
           # Close JSON
-          MATRIX_JSON="${MATRIX_JSON}]}"
+          echo "]}" >> "$MATRIX_FILE"
 
           # Output
+          MATRIX_JSON=$(cat "$MATRIX_FILE")
           echo "Generated Matrix: $MATRIX_JSON"
           echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
 
