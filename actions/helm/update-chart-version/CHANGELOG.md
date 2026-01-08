@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.3.0...actions-helm-update-chart-version-v1.3.1) (2026-01-08)
+
+
+### Miscellaneous
+
+* **deps:** pin dependencies ([#79](https://github.com/TimSchoenle/actions/issues/79)) ([add6c7e](https://github.com/TimSchoenle/actions/commit/add6c7e81ce9b633e4e5f2896797e09a2dea1469))
+
 ## [1.3.0](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.2.4...actions-helm-update-chart-version-v1.3.0) (2026-01-07)
 
 
