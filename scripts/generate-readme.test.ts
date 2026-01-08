@@ -4,6 +4,7 @@ import type { DocumentationItem } from './lib/readme/types.js';
 // Setup mocks using vi.hoisted to ensure they're available in module scope
 const mocks = vi.hoisted(() => ({
   actionParse: vi.fn(),
+  workflowParse: vi.fn(),
   renovateParse: vi.fn(),
   generateSection: vi.fn(),
   getRepoInfo: vi.fn(),
@@ -32,6 +33,14 @@ vi.mock('./lib/readme/parsers/action-parser.js', () => ({
   },
 }));
 
+vi.mock('./lib/readme/parsers/workflow-parser.js', () => ({
+  WorkflowParser: class {
+    async parse() {
+      return mocks.workflowParse();
+    }
+  },
+}));
+
 vi.mock('./lib/readme/parsers/renovate-parser.js', () => ({
   RenovateParser: class {
     async parse() {
@@ -54,6 +63,7 @@ describe('Generate Readme Script', () => {
 
     // Setup default mock behaviors
     mocks.actionParse.mockResolvedValue([]);
+    mocks.workflowParse.mockResolvedValue([]);
     mocks.renovateParse.mockResolvedValue([]);
     mocks.generateSection.mockResolvedValue('');
     mocks.getRepoInfo.mockResolvedValue('owner/repo');
@@ -76,6 +86,17 @@ describe('Generate Readme Script', () => {
       },
     ];
 
+    const mockWorkflows: DocumentationItem[] = [
+      {
+        name: 'Test Workflow',
+        description: 'Test Workflow Desc',
+        version: 'workflow-v1.0.0',
+        usage: 'uses: owner/repo/workflow@workflow-v1.0.0',
+        category: 'Workflow',
+        path: 'workflows/test',
+      },
+    ];
+
     const mockConfigs: DocumentationItem[] = [
       {
         name: 'base',
@@ -87,14 +108,17 @@ describe('Generate Readme Script', () => {
     ];
 
     mocks.actionParse.mockResolvedValue(mockActions);
+    mocks.workflowParse.mockResolvedValue(mockWorkflows);
     mocks.renovateParse.mockResolvedValue(mockConfigs);
     mocks.generateSection
-      .mockResolvedValueOnce('### Test\n\n| Action | Version |\n| --- | --- |\n| Test Action | test-v1.0.0 |\n')
-      .mockResolvedValueOnce('### Renovate\n\n| Config | Description |\n| --- | --- |\n| base | Base Config |\n');
+      .mockResolvedValueOnce('### Test Action Table')
+      .mockResolvedValueOnce('### Test Workflow Table')
+      .mockResolvedValueOnce('### Test Config Table');
 
     mocks.sysFile.mockReturnValue({
       exists: async () => true,
-      text: async () => 'Template\n{{REPO}}\n<!-- ACTIONS_TABLE -->\n<!-- CONFIGS_TABLE -->\nEnd',
+      text: async () =>
+        'Template\n{{REPO}}\n<!-- ACTIONS_TABLE -->\n<!-- WORKFLOWS_TABLE -->\n<!-- CONFIGS_TABLE -->\nEnd',
     });
 
     const { main } = await import('./generate-readme.js');
@@ -102,18 +126,31 @@ describe('Generate Readme Script', () => {
 
     // Verify parsers were called
     expect(mocks.actionParse).toHaveBeenCalledTimes(1);
+    expect(mocks.workflowParse).toHaveBeenCalledTimes(1);
     expect(mocks.renovateParse).toHaveBeenCalledTimes(1);
 
     // Verify generateSection was called with correct arguments
-    expect(mocks.generateSection).toHaveBeenCalledTimes(2);
+    expect(mocks.generateSection).toHaveBeenCalledTimes(3);
+
+    // Actions
     expect(mocks.generateSection).toHaveBeenNthCalledWith(
       1,
       mockActions,
       ['Action', 'Description', 'Version', 'Usage'],
       expect.any(Function),
     );
+
+    // Workflows
     expect(mocks.generateSection).toHaveBeenNthCalledWith(
       2,
+      mockWorkflows,
+      ['Workflow', 'Description', 'Version', 'Usage'],
+      expect.any(Function),
+    );
+
+    // Configs
+    expect(mocks.generateSection).toHaveBeenNthCalledWith(
+      3,
       mockConfigs,
       ['Config', 'Description', 'Usage'],
       expect.any(Function),
@@ -130,10 +167,9 @@ describe('Generate Readme Script', () => {
     const writtenContent = mocks.sysWrite.mock.calls[0][1] as string;
     expect(writtenContent).toContain('owner/repo'); // {{REPO}} replaced
     expect(writtenContent).not.toContain('{{REPO}}');
-    expect(writtenContent).not.toContain('<!-- ACTIONS_TABLE -->');
-    expect(writtenContent).not.toContain('<!-- CONFIGS_TABLE -->');
-    expect(writtenContent).toContain('Test Action');
-    expect(writtenContent).toContain('Base Config');
+    expect(writtenContent).toContain('Test Action Table');
+    expect(writtenContent).toContain('Test Workflow Table');
+    expect(writtenContent).toContain('Test Config Table');
   });
 
   it('should handle template not found', async () => {
@@ -177,7 +213,7 @@ describe('Generate Readme Script', () => {
 
     mocks.sysFile.mockReturnValue({
       exists: async () => true,
-      text: async () => '<!-- ACTIONS_TABLE -->\n<!-- CONFIGS_TABLE -->',
+      text: async () => '<!-- ACTIONS_TABLE -->\n<!-- WORKFLOWS_TABLE -->\n<!-- CONFIGS_TABLE -->',
     });
 
     const { main } = await import('./generate-readme.js');
@@ -186,6 +222,7 @@ describe('Generate Readme Script', () => {
     expect(mocks.sysWrite).toHaveBeenCalledTimes(1);
     const writtenContent = mocks.sysWrite.mock.calls[0][1] as string;
     expect(writtenContent).not.toContain('<!-- ACTIONS_TABLE -->');
+    expect(writtenContent).not.toContain('<!-- WORKFLOWS_TABLE -->');
     expect(writtenContent).not.toContain('<!-- CONFIGS_TABLE -->');
   });
 });

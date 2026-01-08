@@ -1,12 +1,5 @@
 # CI Repository
 
-## 🚀 Available Actions
-
-Here is a list of all currently maintained actions in this repository:
-
-<!-- ACTIONS_TABLE -->
-
-
 ## 🤖 Keep Actions Up-to-Date
 
 These actions use a specific versioning format (e.g. `actions-name-v1.0.0`) to support multiple actions in one repository.
@@ -20,6 +13,15 @@ To ensure **Renovate** can correctly detect new versions and auto-merge updates,
   ]
 }
 ```
+
+## 🚀 Available Actions
+
+Here is a list of all currently maintained actions in this repository:
+
+<!-- ACTIONS_TABLE -->
+
+## 🔄 Reusable Workflows
+<!-- WORKFLOWS_TABLE -->
 
 ## ⚙️ Shared Configurations
 

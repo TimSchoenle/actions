@@ -1,5 +1,19 @@
 # CI Repository
 
+## 🤖 Keep Actions Up-to-Date
+
+These actions use a specific versioning format (e.g. `actions-name-v1.0.0`) to support multiple actions in one repository.
+
+To ensure **Renovate** can correctly detect new versions and auto-merge updates, simply extend our shared configuration in your `renovate.json`:
+
+```json
+{
+  "extends": [
+    "github>TimSchoenle/actions//configs/renovate/base"
+  ]
+}
+```
+
 ## 🚀 Available Actions
 
 Here is a list of all currently maintained actions in this repository:
@@ -19,20 +33,14 @@ Here is a list of all currently maintained actions in this repository:
 
 
 
+## 🔄 Reusable Workflows
+### Common
 
-## 🤖 Keep Actions Up-to-Date
+| Workflow | Description | Version | Usage |
+| --- | --- | --- | --- |
+| [Common Test Workflow21345](./workflows/common/test2) | Reusable workflow for common-test2 | workflows-common-test2-v2.9.0 | `uses: TimSchoenle/actions/.github/workflows/common-test2.yaml@workflows-common-test2-v2.9.0` |
 
-These actions use a specific versioning format (e.g. `actions-name-v1.0.0`) to support multiple actions in one repository.
 
-To ensure **Renovate** can correctly detect new versions and auto-merge updates, simply extend our shared configuration in your `renovate.json`:
-
-```json
-{
-  "extends": [
-    "github>TimSchoenle/actions//configs/renovate/base"
-  ]
-}
-```
 
 ## ⚙️ Shared Configurations
 

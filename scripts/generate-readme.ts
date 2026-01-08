@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { Sys } from './lib/utils.js';
 import { ActionParser } from './lib/readme/parsers/action-parser.js';
+import { WorkflowParser } from './lib/readme/parsers/workflow-parser.js';
 import { RenovateParser } from './lib/readme/parsers/renovate-parser.js';
 import { generateSection } from './lib/readme/generator.js';
 import { getRepoInfo } from './lib/readme/git-utils.js';
@@ -25,7 +26,16 @@ export async function main() {
     return [link, desc, item.version ?? 'N/A', item.usage || ''];
   });
 
-  // 2. Renovate Configs
+  // 2. Workflows
+  const workflowParser = new WorkflowParser();
+  const workflows = await workflowParser.parse();
+  const workflowsOutput = await generateSection(workflows, ['Workflow', 'Description', 'Version', 'Usage'], (item) => {
+    const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;
+    const desc = item.description.replaceAll('\n', ' ').trim();
+    return [link, desc, item.version ?? 'N/A', item.usage || ''];
+  });
+
+  // 3. Renovate Configs
   const renovateParser = new RenovateParser();
   const renovateConfigs = await renovateParser.parse();
   const configsOutput = await generateSection(renovateConfigs, ['Config', 'Description', 'Usage'], (item) => {
@@ -34,7 +44,7 @@ export async function main() {
     return [link, desc, item.usage || ''];
   });
 
-  // 3. Update README
+  // 4. Update README
   const templateFile = Sys.file(TEMPLATE_PATH);
   if (!(await templateFile.exists())) {
     console.error(`❌ Template not found at ${TEMPLATE_PATH}`);
@@ -47,6 +57,7 @@ export async function main() {
   readmeContent = readmeContent.replaceAll('{{REPO}}', repoId);
 
   readmeContent = readmeContent.replace('<!-- ACTIONS_TABLE -->', actionsOutput);
+  readmeContent = readmeContent.replace('<!-- WORKFLOWS_TABLE -->', workflowsOutput);
   readmeContent = readmeContent.replace('<!-- CONFIGS_TABLE -->', configsOutput);
 
   await Sys.write(README_PATH, readmeContent);
