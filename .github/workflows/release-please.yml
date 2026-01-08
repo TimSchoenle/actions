@@ -258,14 +258,20 @@ jobs:
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
 
           # 1. Push the Clean Tag (currently on HEAD of temp branch)
+          # We know this is missing because the job only runs if it is missing (matrix filter)
           echo "Pushing clean tag: $TAG_NAME"
           git tag "$TAG_NAME"
           git push origin "$TAG_NAME" -v
 
           # 2. Push the Meta Tag (on original Main SHA)
-          echo "Pushing meta tag: $META_TAG_NAME on $MAIN_SHA"
-          git tag "$META_TAG_NAME" "$MAIN_SHA"
-          git push origin "$META_TAG_NAME" -v
+          # We check if this exists first to handle cases where a run might have partially succeeded
+          if git ls-remote --exit-code --tags origin "refs/tags/$META_TAG_NAME" >/dev/null 2>&1; then
+            echo "Meta tag $META_TAG_NAME already exists. Skipping."
+          else
+            echo "Pushing meta tag: $META_TAG_NAME on $MAIN_SHA"
+            git tag "$META_TAG_NAME" "$MAIN_SHA"
+            git push origin "$META_TAG_NAME" -v
+          fi
 
       - name: Create Release
         env:
