@@ -30,6 +30,11 @@ jobs:
         with:
           app-id: ${{ secrets.RELEASE_BOT_APP_ID }}
           private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          # Explicitly request the permissions we need using granular inputs.
+          permission-contents: write
+          permission-workflows: write
+          permission-pull-requests: write
+          permission-metadata: read
 
       - name: Run release-please
         id: release
@@ -48,6 +53,14 @@ jobs:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
         shell: bash
         run: |
+          set -e
+          set -x  # Verbose execution to see commands
+
+          # Debug Auth
+          unset GITHUB_TOKEN # Ensure we don't accidentally use the workflow token
+          echo "Verifying gh auth:"
+          gh auth status
+
           # 1. Get Manifest
           CURR_MANIFEST=$(git show HEAD:.release-please-manifest.json)
 
@@ -137,7 +150,7 @@ jobs:
             # So we just CREATE the tag. If it exists, it fails (good).
             
             git tag "$TAG_NAME"
-            git push origin "$TAG_NAME"
+            git push origin "$TAG_NAME" -v
             
             # Release
             # Extract Changelog Entry (Simplistic regex approach)
