@@ -7,6 +7,7 @@ import * as GitUtils from '../git-utils';
 // Mock Sys
 vi.mock('../../utils', () => {
   return {
+    ROOT_DIR: '/mock/root',
     Sys: {
       glob: vi.fn(),
       file: vi.fn(),
