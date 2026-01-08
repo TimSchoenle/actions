@@ -34,6 +34,15 @@ To ensure **Renovate** can correctly detect new versions and auto-merge updates,
 }
 ```
 
+## 🔄 Reusable Workflows
+### Common
+
+| Workflow | Description | Version | Usage |
+| --- | --- | --- | --- |
+| [Common Test Workflow21345](./workflows/common/test2) | Reusable workflow for common-test2 | workflows-common-test2-v2.9.0 | `uses: TimSchoenle/actions/.github/workflows/common-test2.yaml@workflows-common-test2-v2.9.0` |
+
+
+
 ## ⚙️ Shared Configurations
 
 ### Renovate
