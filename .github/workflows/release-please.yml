@@ -159,12 +159,14 @@ jobs:
           VERSION="${{ matrix.version }}"
           COMPONENT_NAME="workflows-$(echo "$PKG" | cut -d'/' -f2- | tr '/' '-')"
           TAG_NAME="${COMPONENT_NAME}-v${VERSION}"
+          META_TAG_NAME="${COMPONENT_NAME}-meta-v${VERSION}"
           TARGET_FILE="${COMPONENT_NAME#workflows-}.yaml"
 
           echo "pkg=$PKG" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "component_name=$COMPONENT_NAME" >> $GITHUB_OUTPUT
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "meta_tag_name=$META_TAG_NAME" >> $GITHUB_OUTPUT
           echo "target_file=$TARGET_FILE" >> $GITHUB_OUTPUT
 
       - name: Get Release Notes
@@ -195,6 +197,9 @@ jobs:
           if [ -z "$PR_BODY" ]; then
               echo "release_notes=$NOTES" >> $GITHUB_OUTPUT
           fi
+
+          # Capture the SHA of main (HEAD) before we switch branches for the clean release
+          echo "main_sha=$CURRENT_SHA" >> $GITHUB_OUTPUT
 
       - name: Prepare Release Branch and Files
         env:
@@ -243,12 +248,24 @@ jobs:
           git add .
           git commit -m "chore: release $PKG $VERSION"
 
-      - name: Push Tag
+      - name: Push Tags
         env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
           TAG_NAME: ${{ steps.vars.outputs.tag_name }}
+          META_TAG_NAME: ${{ steps.vars.outputs.meta_tag_name }}
+          MAIN_SHA: ${{ steps.notes.outputs.main_sha }}
         run: |
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+
+          # 1. Push the Clean Tag (currently on HEAD of temp branch)
+          echo "Pushing clean tag: $TAG_NAME"
           git tag "$TAG_NAME"
           git push origin "$TAG_NAME" -v
+
+          # 2. Push the Meta Tag (on original Main SHA)
+          echo "Pushing meta tag: $META_TAG_NAME on $MAIN_SHA"
+          git tag "$META_TAG_NAME" "$MAIN_SHA"
+          git push origin "$META_TAG_NAME" -v
 
       - name: Create Release
         env:

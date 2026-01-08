@@ -19,7 +19,7 @@
     },
     "workflows/common/test2": {
       "release-type": "simple",
-      "component": "workflows-common-test2",
+      "component": "workflows-common-test2-meta",
       "skip-github-release": true
     }
   },
