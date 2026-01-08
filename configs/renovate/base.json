@@ -1,5 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "description": "Base configuration to handle custom versioning for all resources in this repository.",
-  "extends": ["github>TimSchoenle/actions//configs/renovate/actions"]
+  "extends": [
+    "github>TimSchoenle/actions//configs/renovate/actions",
+    "github>TimSchoenle/actions//configs/renovate/workflows"
+  ]
 }
