@@ -47,17 +47,20 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - name: Debug Release Outputs
-        run: |
-          echo "Release Please Output 'paths_released': ${{ needs.release-please.outputs.paths_released }}"
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
 
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Generate Matrix
         id: set-matrix
+        shell: bash
         run: |
           MANIFEST_FILE=".release-please-manifest.json"
           if [ ! -f "$MANIFEST_FILE" ]; then
@@ -65,12 +68,42 @@ jobs:
             exit 1
           fi
 
-          # Select entries starting with workflows/
-          # Output format: {"include": [{"path": "workflows/foo", "version": "1.0.0"}, ...]}
-          MATRIX=$(jq -c '{include: [to_entries[] | select(.key | startswith("workflows/")) | {path: .key, version: .value}]}' "$MANIFEST_FILE")
+          # Initialize matrix JSON
+          MATRIX_JSON="{\"include\":["
+          FIRST=true
 
-          echo "Generated Matrix: $MATRIX"
-          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+          # Iterate over workflow packages
+          # We use jq to output pipe-delimited lines of "path|version"
+          jq -r 'to_entries[] | select(.key | startswith("workflows/")) | "\(.key)|\(.value)"' "$MANIFEST_FILE" | while IFS="|" read -r PKG VERSION; do
+            if [ -z "$PKG" ]; then continue; fi
+            
+            # Derive Component & Tag
+            COMPONENT_NAME="workflows-$(echo "$PKG" | cut -d'/' -f2- | tr '/' '-')"
+            TAG_NAME="${COMPONENT_NAME}-v${VERSION}"
+            
+            # Check if tag exists remotely
+            if git ls-remote --exit-code --tags origin "refs/tags/$TAG_NAME" >/dev/null 2>&1; then
+              echo "Skipping $PKG $VERSION (Tag $TAG_NAME exists)"
+            else
+              echo "Queueing $PKG $VERSION (Tag $TAG_NAME missing)"
+              
+              if [ "$FIRST" = true ]; then
+                  FIRST=false
+              else
+                  MATRIX_JSON="${MATRIX_JSON},"
+              fi
+              
+              # Append to JSON
+              MATRIX_JSON="${MATRIX_JSON}{\"path\":\"${PKG}\",\"version\":\"${VERSION}\"}"
+            fi
+          done
+
+          # Close JSON
+          MATRIX_JSON="${MATRIX_JSON}]}"
+
+          # Output
+          echo "Generated Matrix: $MATRIX_JSON"
+          echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
 
   publish-workflow:
     name: Publish ${{ matrix.path }}
@@ -105,6 +138,7 @@ jobs:
         with:
           token: ${{ steps.generate_token.outputs.token }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Configure Git Identity
         env:
@@ -132,21 +166,7 @@ jobs:
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "target_file=$TARGET_FILE" >> $GITHUB_OUTPUT
 
-      - name: Check if Tag Exists
-        id: check_tag
-        env:
-          TAG_NAME: ${{ steps.vars.outputs.tag_name }}
-        run: |
-          if git ls-remote --exit-code --tags origin "refs/tags/$TAG_NAME" >/dev/null 2>&1; then
-            echo "Tag $TAG_NAME already exists."
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "Tag $TAG_NAME missing."
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Get Release Notes
-        if: steps.check_tag.outputs.exists == 'false'
         id: notes
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
@@ -176,7 +196,6 @@ jobs:
           fi
 
       - name: Prepare Release Branch and Files
-        if: steps.check_tag.outputs.exists == 'false'
         env:
           PKG: ${{ steps.vars.outputs.pkg }}
           COMPONENT_NAME: ${{ steps.vars.outputs.component_name }}
@@ -224,7 +243,6 @@ jobs:
           git commit -m "chore: release $PKG $VERSION"
 
       - name: Push Tag
-        if: steps.check_tag.outputs.exists == 'false'
         env:
           TAG_NAME: ${{ steps.vars.outputs.tag_name }}
         run: |
@@ -232,7 +250,6 @@ jobs:
           git push origin "$TAG_NAME" -v
 
       - name: Create Release
-        if: steps.check_tag.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
           TAG_NAME: ${{ steps.vars.outputs.tag_name }}
@@ -242,11 +259,11 @@ jobs:
         run: |
           gh release create "$TAG_NAME" --title "${COMPONENT_NAME} ${VERSION}" --notes "$NOTES" -R "${{ github.repository }}"
 
-      - name: Remove PR Label
-        if: steps.check_tag.outputs.exists == 'false' && steps.notes.outputs.pr_number != ''
+      - name: Update PR Labels
+        if: steps.notes.outputs.pr_number != ''
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
           PR_NUMBER: ${{ steps.notes.outputs.pr_number }}
         run: |
-          echo "Removing 'autorelease: pending' label from PR #$PR_NUMBER"
-          gh pr edit "$PR_NUMBER" --remove-label "autorelease: pending" || echo "Label removal failed/skipped"
+          echo "Updating labels for PR #$PR_NUMBER"
+          gh pr edit "$PR_NUMBER" --remove-label "autorelease: pending" --add-label "autorelease: tagged" || echo "Label update failed/skipped"
