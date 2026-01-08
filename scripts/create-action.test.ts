@@ -26,12 +26,6 @@ vi.mock('./lib/action-utils', () => ({
   createVerifyWorkflow: vi.fn(),
 }));
 
-vi.mock('./lib/renovate-config', () => ({
-  RenovateConfigManager: {
-    addPackageRule: vi.fn(),
-  },
-}));
-
 vi.mock('@inquirer/prompts', () => ({
   input: vi.fn(),
 }));
@@ -72,7 +66,6 @@ describe('create-action', () => {
     // Verify Config Updates
     expect(createVerifyWorkflow).toHaveBeenCalledWith('existing-pkg', 'new-sub');
     expect(registerActionInReleasePlease).toHaveBeenCalledWith('existing-pkg', 'new-sub');
-    expect(RenovateConfigManager.addPackageRule).toHaveBeenCalledWith('existing-pkg', 'new-sub');
     expect(generateReadme).toHaveBeenCalled();
   });
 

@@ -26,12 +26,6 @@ vi.mock('./lib/action-utils', () => ({
   removeVerifyWorkflow: vi.fn(),
 }));
 
-vi.mock('./lib/renovate-config', () => ({
-  RenovateConfigManager: {
-    removePackageRule: vi.fn(),
-  },
-}));
-
 vi.mock('@inquirer/prompts', () => ({
   confirm: vi.fn(),
   search: vi.fn(),

@@ -34,12 +34,6 @@ vi.mock('./lib/resource-utils', () => ({
   removeVerifyWorkflow: vi.fn(),
 }));
 
-vi.mock('./lib/renovate-config', () => ({
-  RenovateConfigManager: {
-    removePackageRule: vi.fn(),
-  },
-}));
-
 vi.mock('@inquirer/prompts', () => ({
   confirm: vi.fn(),
   search: vi.fn(),
@@ -68,7 +62,6 @@ describe('remove-workflow', () => {
     expect(Sys.rm).toHaveBeenCalledWith(expect.stringContaining('sub1'), { recursive: true, force: true });
     expect(removeResourceFromReleasePlease).toHaveBeenCalledWith('workflow', 'pkg', 'sub1');
     expect(removeVerifyWorkflow).toHaveBeenCalledWith('workflow', 'pkg', 'sub1');
-    expect(RenovateConfigManager.removePackageRule).toHaveBeenCalledWith('pkg', 'sub1');
     expect(generateReadme).toHaveBeenCalled();
   });
 

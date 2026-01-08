@@ -3,7 +3,6 @@ import chalk from 'chalk';
 import path from 'node:path';
 import { ACTIONS_DIR, Sys, capitalize, createFromTemplate, START_VERSION } from './lib/utils.js';
 import { selectPackage, registerActionInReleasePlease, createVerifyWorkflow } from './lib/action-utils.js';
-import { RenovateConfigManager } from './lib/renovate-config.js';
 import { main as generateReadme } from './generate-readme.js';
 
 export async function main() {
@@ -57,10 +56,7 @@ export async function main() {
   // 6. Update Release Please Config
   await registerActionInReleasePlease(packageName, subAction);
 
-  // 7. Update Renovate Config
-  await RenovateConfigManager.addPackageRule(packageName, subAction);
-
-  // 8. Regenerate README
+  // 7. Regenerate README
   console.log(chalk.blue('\nUpdating README.md...'));
   await generateReadme();
 

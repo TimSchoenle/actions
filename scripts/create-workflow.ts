@@ -3,7 +3,6 @@ import chalk from 'chalk';
 import path from 'node:path';
 import { Sys, capitalize, createFromTemplate, START_VERSION, ROOT_DIR } from './lib/utils.js';
 import { selectPackage, registerResourceInReleasePlease, createVerifyWorkflow } from './lib/resource-utils.js';
-import { RenovateConfigManager } from './lib/renovate-config.js';
 import { getRepoInfo } from './lib/readme/git-utils.js';
 import { main as generateReadme } from './generate-readme.js';
 
@@ -78,10 +77,7 @@ export async function main() {
   // 6. Update Release Please Config
   await registerResourceInReleasePlease('workflow', packageName, subAction);
 
-  // 7. Update Renovate Config
-  await RenovateConfigManager.addPackageRule(packageName, subAction);
-
-  // 8. Regenerate README
+  // 7. Regenerate README
   console.log(chalk.blue('\nUpdating README.md...'));
   await generateReadme();
 

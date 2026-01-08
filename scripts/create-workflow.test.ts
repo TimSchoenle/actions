@@ -27,12 +27,6 @@ vi.mock('./lib/resource-utils', () => ({
   createVerifyWorkflow: vi.fn(),
 }));
 
-vi.mock('./lib/renovate-config', () => ({
-  RenovateConfigManager: {
-    addPackageRule: vi.fn(),
-  },
-}));
-
 vi.mock('./lib/readme/git-utils', () => ({
   getRepoInfo: vi.fn(),
 }));
@@ -73,7 +67,6 @@ describe('create-workflow', () => {
     // Verify Config Updates
     expect(createVerifyWorkflow).toHaveBeenCalledWith('workflow', 'existing-pkg', 'new-sub');
     expect(registerResourceInReleasePlease).toHaveBeenCalledWith('workflow', 'existing-pkg', 'new-sub');
-    expect(RenovateConfigManager.addPackageRule).toHaveBeenCalledWith('existing-pkg', 'new-sub');
     expect(generateReadme).toHaveBeenCalled();
   });
 

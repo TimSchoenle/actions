@@ -8,7 +8,6 @@ import {
   removeVerifyWorkflow,
   selectPackage,
 } from './lib/resource-utils.js';
-import { RenovateConfigManager } from './lib/renovate-config.js';
 import { main as generateReadme } from './generate-readme.js';
 
 const WORKFLOWS_DIR = path.join(ROOT_DIR, 'workflows');
@@ -60,10 +59,7 @@ export async function main() {
   await removeResourceFromReleasePlease('workflow', packageName, subAction);
   await removeVerifyWorkflow('workflow', packageName, subAction);
 
-  // 3. Remove Renovate Config Rule
-  await RenovateConfigManager.removePackageRule(packageName, subAction);
-
-  // 4. Check if Package is now empty
+  // 3. Check if Package is now empty
   const remaining = await getSubResources('workflow', packageName);
 
   if (remaining.length === 0) {

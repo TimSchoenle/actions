@@ -8,7 +8,6 @@ import {
   removeVerifyWorkflow,
   selectPackage,
 } from './lib/action-utils.js';
-import { RenovateConfigManager } from './lib/renovate-config.js';
 import { main as generateReadme } from './generate-readme.js';
 
 export async function main() {
@@ -58,10 +57,7 @@ export async function main() {
   await removeActionFromReleasePlease(packageName, subAction);
   await removeVerifyWorkflow(packageName, subAction);
 
-  // 3. Remove Renovate Config Rule
-  await RenovateConfigManager.removePackageRule(packageName, subAction);
-
-  // 4. Check if Package is now empty (ignoring non-directories or standard files)
+  // 3. Check if Package is now empty (ignoring non-directories or standard files)
   const remaining = await getSubActions(packageName);
 
   if (remaining.length === 0) {
