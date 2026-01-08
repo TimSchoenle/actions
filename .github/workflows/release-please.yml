@@ -140,32 +140,53 @@ jobs:
             echo "Releasing $TAG_NAME"
 
             # 4. Git Operations
+            # Branch off current HEAD (main) to preserve history
             TEMP_BRANCH="temp-release-${COMPONENT_NAME}-${VERSION}"
-            
             git checkout -b "$TEMP_BRANCH"
             
+            # --- Release Notes Extraction ---
+            NOTES="Release ${PKG} ${VERSION}"
+            
+            # Identify the PR that merged this commit (the one that triggered this workflow)
+            # 'git rev-parse HEAD' gives the current commit SHA
+            CURRENT_SHA=$(git rev-parse HEAD)
+            
+            # Find merged PR associated with this SHA
+            PR_NUMBER=$(gh pr list --search "$CURRENT_SHA" --state merged --json number --jq '.[0].number')
+            
+            if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
+                echo "Found PR #${PR_NUMBER} for commit $CURRENT_SHA"
+                # Fetch Body
+                PR_BODY=$(gh pr view "$PR_NUMBER" --json body --jq .body)
+                if [ -n "$PR_BODY" ]; then
+                    NOTES="$PR_BODY"
+                fi
+            else
+                echo "No PR found for commit $CURRENT_SHA. Using default notes."
+            fi
+            # -------------------------------
+
+            # Prepare content
             cat "$SOURCE_FILE" > /tmp/workflow_content.yaml
             
+            # Clean Tree Strategy (Preserve History)
+            # Remove all files from index and working tree
             git rm -rf .
             git clean -fdx
             
+            # Restore Target
             mkdir -p .github/workflows
             mv /tmp/workflow_content.yaml ".github/workflows/${COMPONENT_NAME}.yaml"
             
-            git add ".github/workflows/${COMPONENT_NAME}.yaml"
+            # Commit
+            git add "`.github/workflows/${COMPONENT_NAME}.yaml"
             git commit -m "chore: release ${PKG} ${VERSION}"
             
+            # Tag
             git tag "$TAG_NAME"
             git push origin "$TAG_NAME" -v
             
             # Release
-            CHANGELOG_PATH="${PKG}/CHANGELOG.md"
-            NOTES="Release ${PKG} ${VERSION}"
-            if git show "HEAD:${CHANGELOG_PATH}" > /dev/null 2>&1; then
-               NOTES=$(git show "HEAD:${CHANGELOG_PATH}" | awk "/^## \[?${VERSION}\]?/{flag=1; next} /^## /{flag=0} flag")
-            fi
-            if [ -z "$NOTES" ]; then NOTES="Release ${PKG} ${VERSION}"; fi
-            
             gh release create "$TAG_NAME" --title "${COMPONENT_NAME} ${VERSION}" --notes "$NOTES" -R "${{ github.repository }}"
             
             # Cleanup
