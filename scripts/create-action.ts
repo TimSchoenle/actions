@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import path from 'node:path';
 import { ACTIONS_DIR, Sys, capitalize, createFromTemplate, START_VERSION } from './lib/utils.js';
 import { selectPackage, registerActionInReleasePlease, createVerifyWorkflow } from './lib/action-utils.js';
-import { RenovateConfigManager } from './lib/renovate-config.js';
+import { main as generateReadme } from './generate-readme.js';
 
 export async function main() {
   console.log(chalk.blue('🚀 Shared CI Action Generator'));
@@ -42,9 +42,11 @@ export async function main() {
   const changelogPath = path.join(actionPath, 'CHANGELOG.md');
   if (!Sys.exists(changelogPath)) {
     console.log(chalk.green('Creating CHANGELOG.md...'));
-    await createFromTemplate('action/CHANGELOG.md', changelogPath, {
+    await createFromTemplate('common/CHANGELOG.md', changelogPath, {
       date: new Date().toISOString().split('T')[0],
       version: START_VERSION,
+      packageName,
+      subAction, // Needed for template
     });
   }
 
@@ -54,8 +56,9 @@ export async function main() {
   // 6. Update Release Please Config
   await registerActionInReleasePlease(packageName, subAction);
 
-  // 7. Update Renovate Config
-  await RenovateConfigManager.addPackageRule(packageName, subAction);
+  // 7. Regenerate README
+  console.log(chalk.blue('\nUpdating README.md...'));
+  await generateReadme();
 
   console.log(chalk.blue('\nDone! 🚀'));
 }

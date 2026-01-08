@@ -3,6 +3,7 @@ import * as removeAction from './remove-action';
 import { Sys } from './lib/utils';
 import { selectPackage, getSubActions } from './lib/action-utils';
 import { confirm, search } from '@inquirer/prompts';
+import { main as generateReadme } from './generate-readme';
 
 // Mock Dependencies
 import type * as UtilsTypes from './lib/utils';
@@ -25,15 +26,13 @@ vi.mock('./lib/action-utils', () => ({
   removeVerifyWorkflow: vi.fn(),
 }));
 
-vi.mock('./lib/renovate-config', () => ({
-  RenovateConfigManager: {
-    removePackageRule: vi.fn(),
-  },
-}));
-
 vi.mock('@inquirer/prompts', () => ({
   confirm: vi.fn(),
   search: vi.fn(),
+}));
+
+vi.mock('./generate-readme', () => ({
+  main: vi.fn(),
 }));
 
 describe('remove-action', () => {
@@ -57,6 +56,7 @@ describe('remove-action', () => {
     await removeAction.main();
 
     expect(Sys.rm).toHaveBeenCalledWith(expect.stringContaining('sub1'), { recursive: true, force: true });
+    expect(generateReadme).toHaveBeenCalled();
   });
 
   it('should remove package if last sub-action removed', async () => {

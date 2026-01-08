@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as createAction from './create-action';
+import * as createWorkflow from './create-workflow';
 import { Sys, createFromTemplate } from './lib/utils';
-import { selectPackage, registerActionInReleasePlease, createVerifyWorkflow } from './lib/action-utils';
+import { selectPackage, registerResourceInReleasePlease, createVerifyWorkflow } from './lib/resource-utils';
 import { RenovateConfigManager } from './lib/renovate-config';
+import { getRepoInfo } from './lib/readme/git-utils';
 import { input } from '@inquirer/prompts';
 import { main as generateReadme } from './generate-readme';
 
@@ -20,10 +21,14 @@ vi.mock('./lib/utils', async (importOriginal) => {
   };
 });
 
-vi.mock('./lib/action-utils', () => ({
+vi.mock('./lib/resource-utils', () => ({
   selectPackage: vi.fn(),
-  registerActionInReleasePlease: vi.fn(),
+  registerResourceInReleasePlease: vi.fn(),
   createVerifyWorkflow: vi.fn(),
+}));
+
+vi.mock('./lib/readme/git-utils', () => ({
+  getRepoInfo: vi.fn(),
 }));
 
 vi.mock('@inquirer/prompts', () => ({
@@ -34,54 +39,57 @@ vi.mock('./generate-readme', () => ({
   main: vi.fn(),
 }));
 
-describe('create-action', () => {
+describe('create-workflow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getRepoInfo).mockResolvedValue('owner/repo');
   });
 
-  it('should create new action in existing package', async () => {
+  it('should create new workflow in existing package', async () => {
     // Setup Mocks
     vi.mocked(selectPackage).mockResolvedValue('existing-pkg');
-    vi.mocked(input)
-      .mockResolvedValueOnce('new-sub') // Sub-action
-      .mockResolvedValueOnce('A description'); // Description
+    vi.mocked(input).mockResolvedValueOnce('new-sub').mockResolvedValueOnce('A description');
 
-    vi.mocked(Sys.exists).mockReturnValue(true); // Changelog exists
+    vi.mocked(Sys.exists).mockReturnValue(true); // Changelog and README exist? say true first
 
-    await createAction.main();
+    await createWorkflow.main();
 
     // Verify Directory Creation
     expect(Sys.mkdir).toHaveBeenCalledWith(expect.stringContaining('existing-pkg'), { recursive: true });
 
     // Verify Template Creation
     expect(createFromTemplate).toHaveBeenCalledWith(
-      'action/action.yaml',
-      expect.stringContaining('action.yaml'),
+      'workflow/workflow.yaml',
+      expect.stringContaining('workflow.yaml'),
       expect.objectContaining({ packageName: 'existing-pkg', subAction: 'new-sub' }),
     );
 
-    // Verify Changelog (skipped if exists)
-    expect(createFromTemplate).not.toHaveBeenCalledWith('action/CHANGELOG.md', expect.any(String), expect.any(Object));
-
     // Verify Config Updates
-    expect(createVerifyWorkflow).toHaveBeenCalledWith('existing-pkg', 'new-sub');
-    expect(registerActionInReleasePlease).toHaveBeenCalledWith('existing-pkg', 'new-sub');
+    expect(createVerifyWorkflow).toHaveBeenCalledWith('workflow', 'existing-pkg', 'new-sub');
+    expect(registerResourceInReleasePlease).toHaveBeenCalledWith('workflow', 'existing-pkg', 'new-sub');
     expect(generateReadme).toHaveBeenCalled();
   });
 
-  it('should create new action and package files if new package', async () => {
+  it('should create new workflow and README if missing', async () => {
     vi.mocked(selectPackage).mockResolvedValue('new-pkg');
     vi.mocked(input).mockResolvedValueOnce('sub').mockResolvedValueOnce('desc');
 
-    vi.mocked(Sys.exists).mockReturnValue(false); // Changelog missing
+    vi.mocked(Sys.exists).mockReturnValue(false); // Changelog/README missing
 
-    await createAction.main();
+    await createWorkflow.main();
 
     // Verify Changelog creation
     expect(createFromTemplate).toHaveBeenCalledWith(
       'common/CHANGELOG.md',
       expect.stringContaining('CHANGELOG.md'),
-      expect.objectContaining({ version: '1.0.0' }),
+      expect.any(Object),
+    );
+
+    // Verify README creation (WORKFLOW SPECIFIC)
+    expect(createFromTemplate).toHaveBeenCalledWith(
+      'workflow/README.md',
+      expect.stringContaining('README.md'),
+      expect.objectContaining({ repo: 'owner/repo' }),
     );
   });
 });

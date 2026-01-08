@@ -77,5 +77,20 @@ bun run remove-action
 ```
 This ensures all related files and configurations are properly cleaned up.
 
+### Creating a New Workflow
+To create a new reusable workflow, run:
+
+```bash
+bun run create-workflow
+```
+This will set up the workflow structure, `workflow.yaml`, `README.md`, and configs.
+
+### Removing a Workflow
+To remove a reusable workflow:
+
+```bash
+bun run remove-workflow
+```
+
 > [!NOTE]
 > The documentation (this README) is automatically generated and updated via CI on every push and PR. You do not need to manually update it.
