@@ -117,14 +117,18 @@ jobs:
           echo "$PACKAGES" | while IFS="|" read -r PKG VERSION; do
             if [ -z "$PKG" ]; then continue; fi
             
-            COMPONENT_NAME=$(echo "$PKG" | cut -d'/' -f2- | tr '/' '-')
-            TAG_NAME="workflows-${COMPONENT_NAME}-v${VERSION}"
+            # Derive Component Name from Path
+            # Path: workflows/common/test -> workflows-common-test
+            COMPONENT_NAME="workflows-$(echo "$PKG" | cut -d'/' -f2- | tr '/' '-')"
+            TAG_NAME="${COMPONENT_NAME}-v${VERSION}"
             
-            echo "Checking ${PKG} ${VERSION} (Tag: ${TAG_NAME})"
+            echo "Processing $PKG $VERSION"
+            echo "  Component: $COMPONENT_NAME"
+            echo "  Tag: $TAG_NAME"
             
-            # Check if tag exists remotely
+            # Check if Tag Exists
             if git ls-remote --exit-code --tags origin "refs/tags/${TAG_NAME}" >/dev/null 2>&1; then
-              echo "Tag ${TAG_NAME} already exists. Skipping."
+              echo "Tag ${TAG_NAME} already exists. Skipping release."
               continue
             fi
             
@@ -139,54 +143,47 @@ jobs:
             
             echo "Releasing $TAG_NAME"
 
-            # 4. Git Operations
-            # Branch off current HEAD (main) to preserve history
-            TEMP_BRANCH="temp-release-${COMPONENT_NAME}-${VERSION}"
-            git checkout -b "$TEMP_BRANCH"
-            
             # --- Release Notes Extraction ---
             NOTES="Release ${PKG} ${VERSION}"
-            
-            # Identify the PR that merged this commit (the one that triggered this workflow)
-            # 'git rev-parse HEAD' gives the current commit SHA
             CURRENT_SHA=$(git rev-parse HEAD)
-            
-            # Find merged PR associated with this SHA
             PR_NUMBER=$(gh pr list --search "$CURRENT_SHA" --state merged --json number --jq '.[0].number')
             
             if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
                 echo "Found PR #${PR_NUMBER} for commit $CURRENT_SHA"
-                # Fetch Body
                 PR_BODY=$(gh pr view "$PR_NUMBER" --json body --jq .body)
-                if [ -n "$PR_BODY" ]; then
-                    NOTES="$PR_BODY"
-                fi
+                if [ -n "$PR_BODY" ]; then NOTES="$PR_BODY"; fi
             else
-                echo "No PR found for commit $CURRENT_SHA. Using default notes."
+                echo "No PR found. Using default notes."
             fi
-            # -------------------------------
 
+            # --- Git Operations ---
+            
+            # 1. Clean Release Build
+            # Branch off current HEAD (main) to preserve history
+            TEMP_BRANCH="temp-release-${COMPONENT_NAME}-${VERSION}"
+            git checkout -b "$TEMP_BRANCH"
+            
             # Prepare content
             cat "$SOURCE_FILE" > /tmp/workflow_content.yaml
             
-            # Clean Tree Strategy (Preserve History)
-            # Remove all files from index and working tree
+            # Clean Tree 
             git rm -rf .
             git clean -fdx
             
             # Restore Target
+            # Filename: workflows-common-test.yaml (Standardized to component name)
             mkdir -p .github/workflows
-            mv /tmp/workflow_content.yaml ".github/workflows/${COMPONENT_NAME}.yaml"
+            mv /tmp/workflow_content.yaml ".github/workflows/${COMPONENT_NAME#workflows-}.yaml"
             
             # Commit
-            git add "`.github/workflows/${COMPONENT_NAME}.yaml"
+            git add ".github/workflows/${COMPONENT_NAME#workflows-}.yaml"
             git commit -m "chore: release ${PKG} ${VERSION}"
             
-            # Tag
+            # 2. Tagging
             git tag "$TAG_NAME"
             git push origin "$TAG_NAME" -v
             
-            # Release
+            # 3. Release Creation
             gh release create "$TAG_NAME" --title "${COMPONENT_NAME} ${VERSION}" --notes "$NOTES" -R "${{ github.repository }}"
             
             # Cleanup
