@@ -29,7 +29,10 @@ jobs:
             api.github.com:443
             github.com:443
 
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          persist-credentials: false
 
       # Using 'github-actions' as the slug since it is a known bot
       - name: Run get-app-git-identity
