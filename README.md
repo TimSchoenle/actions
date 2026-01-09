@@ -18,6 +18,12 @@ To ensure **Renovate** can correctly detect new versions and auto-merge updates,
 
 Here is a list of all currently maintained actions in this repository:
 
+### Bun
+
+| Action | Description | Version | Usage |
+| --- | --- | --- | --- |
+| [Bun Setup-cached](./actions/bun/setup-cached) | A reusable action. | actions-bun-setup-cached-v1.0.0 | `uses: TimSchoenle/actions/actions/bun/setup-cached@actions-bun-setup-cached-v1.0.0` |
+
 ### Common
 
 | Action | Description | Version | Usage |
