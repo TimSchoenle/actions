@@ -45,7 +45,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Bun
-        uses: TimSchoenle/actions/actions/bun/setup-cached@06fb396522acd532d5a73d0d13db6875055eceda # actions-bun-setup-cached-v1.1.0
+        uses: TimSchoenle/actions/actions/bun/setup-cached@5480c26f4f5c3d5f0c28ed90391410274a67d241 # actions-bun-setup-cached-v1.1.1
 
       - name: Format Check
         run: bun run format --check
