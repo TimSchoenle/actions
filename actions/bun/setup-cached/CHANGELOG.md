@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-bun-setup-cached-v1.1.0...actions-bun-setup-cached-v1.1.1) (2026-01-09)
+
+
+### Bug Fixes
+
+* **Actions:** ensure cache integrity & remove lookup only mode ([#128](https://github.com/TimSchoenle/actions/issues/128)) ([f408423](https://github.com/TimSchoenle/actions/commit/f40842311a98c37e57db2de5d46f89775167175a))
+
 ## [1.1.0](https://github.com/TimSchoenle/actions/compare/actions-bun-setup-cached-v1.0.0...actions-bun-setup-cached-v1.1.0) (2026-01-09)
 
 
