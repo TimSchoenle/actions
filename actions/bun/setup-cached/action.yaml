@@ -13,12 +13,6 @@ inputs:
     description: 'The working directory to run commands in.'
     required: false
     default: '.'
-  lookup-only:
-    description: >
-      Check if the dependency exists without actually downloading it.
-      This can be useful if we only care that the cache is actually populated and we don't need to consume it in the next steps.
-    required: false
-    default: 'false'
   cache-key-prefix:
     description: 'Optional prefix for the cache key.'
     required: false
@@ -54,12 +48,12 @@ runs:
       with:
         path: ${{ inputs.working-directory }}/node_modules
         key: ${{ steps.keys.outputs.key }}
-        lookup-only: ${{ inputs.lookup-only }}
 
     - name: Install dependencies
-      if: steps.cache-check.outputs.cache-hit != 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
+      # We always run install to validate the integrity of the cache/lockfile.
+      # If the cache is corrupted or inconsistent with the lockfile, this will fail.
       run: bun install --frozen-lockfile
 
     - name: Save node_modules cache
