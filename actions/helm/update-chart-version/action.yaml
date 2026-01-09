@@ -73,13 +73,12 @@ runs:
         fetch-depth: 0
         persist-credentials: false
 
-    - name: Get GitHub App User ID
-      id: get-user-id
-      shell: bash
-      env:
-        GH_TOKEN: ${{ steps.generate_token.outputs.token }}
-        APP_SLUG: ${{ steps.generate_token.outputs.app-slug }}
-      run: echo "user-id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+    - name: Setup App Identity
+      id: get-bot-info
+      uses: TimSchoenle/actions/actions/common/get-app-git-identity@26754381479003bd81b51fffecc97f1faa20a9bf # actions-common-get-app-git-identity-v1.1.0
+      with:
+        app-slug: ${{ steps.generate_token.outputs.app-slug }}
+        token: ${{ steps.generate_token.outputs.token }}
 
     - name: Read Current Version
       id: read-version
@@ -152,6 +151,6 @@ runs:
           - `Chart.yaml`: Contains `version` and `appVersion` fields.
           - `values.yaml`: Contains `image.tag` field.
         commit-message: 'chore(${{ steps.parse.outputs.chart-name }}): update chart to ${{ steps.calc-version.outputs.new-version }}'
-        committer: '${{ steps.generate_token.outputs.app-slug }}[bot] <${{ steps.get-user-id.outputs.user-id }}+${{ steps.generate_token.outputs.app-slug }}[bot]@users.noreply.github.com>'
-        author: '${{ steps.generate_token.outputs.app-slug }}[bot] <${{ steps.get-user-id.outputs.user-id }}+${{ steps.generate_token.outputs.app-slug }}[bot]@users.noreply.github.com>'
+        committer: '${{ steps.get-bot-info.outputs.bot-name }} <${{ steps.get-bot-info.outputs.bot-email }}>'
+        author: '${{ steps.get-bot-info.outputs.bot-name }} <${{ steps.get-bot-info.outputs.bot-email }}>'
         delete-branch: true

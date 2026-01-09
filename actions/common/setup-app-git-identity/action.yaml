@@ -15,7 +15,7 @@ outputs:
     value: ${{ steps.get-bot-info.outputs.bot-name }}
   bot-email:
     description: 'The email of the bot'
-    value: ${{ steps.configure-git.outputs.bot-email }}
+    value: ${{ steps.get-bot-info.outputs.bot-email }}
   bot-id:
     description: 'The ID of the bot user'
     value: ${{ steps.get-bot-info.outputs.bot-id }}
@@ -25,35 +25,18 @@ runs:
   steps:
     - name: Get Bot User Info
       id: get-bot-info
-      shell: bash
-      env:
-        GH_TOKEN: ${{ inputs.token }}
-        APP_SLUG: ${{ inputs.app-slug }}
-      run: |
-        BOT_USERNAME="${APP_SLUG}[bot]"
-        echo "Resolving ID for $BOT_USERNAME..."
-
-        BOT_ID=$(gh api "/users/${BOT_USERNAME}" --jq .id)
-
-        if [ -z "$BOT_ID" ]; then
-          echo "::error::Could not find user ID for ${BOT_USERNAME}"
-          exit 1
-        fi
-
-        echo "bot-id=$BOT_ID" >> $GITHUB_OUTPUT
-        echo "bot-name=$BOT_USERNAME" >> $GITHUB_OUTPUT
+      uses: TimSchoenle/actions/actions/common/get-app-git-identity@26754381479003bd81b51fffecc97f1faa20a9bf # actions-common-get-app-git-identity-v1.1.0
+      with:
+        app-slug: ${{ inputs.app-slug }}
+        token: ${{ inputs.token }}
 
     - name: Configure Git Identity
       id: configure-git
       shell: bash
       env:
-        BOT_ID: ${{ steps.get-bot-info.outputs.bot-id }}
         BOT_NAME: ${{ steps.get-bot-info.outputs.bot-name }}
+        BOT_EMAIL: ${{ steps.get-bot-info.outputs.bot-email }}
       run: |
-        BOT_EMAIL="${BOT_ID}+${BOT_NAME}@users.noreply.github.com"
-
         echo "Configuring git user as $BOT_NAME <$BOT_EMAIL>..."
         git config user.name "$BOT_NAME"
         git config user.email "$BOT_EMAIL"
-
-        echo "bot-email=$BOT_EMAIL" >> $GITHUB_OUTPUT

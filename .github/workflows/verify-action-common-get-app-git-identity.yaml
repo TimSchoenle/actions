@@ -15,11 +15,16 @@ on:
       - '.github/workflows/verify-action-common-get-app-git-identity.yaml'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
 jobs:
   verify:
     name: Verify Action
     runs-on: ubuntu-latest
-    permissions: {} # Ensure the token has no permissions to prevent leakage
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
