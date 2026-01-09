@@ -20,8 +20,8 @@ permissions: {}
 
 env:
   TEST_DIR: test-project
-  TEST_PKG: is-odd
-  TEST_VERSION: 3.0.1
+  DEP_DIR: unique-dep
+  TEST_PKG: unique-dep
 
 jobs:
   prime-cache:
@@ -49,12 +49,15 @@ jobs:
         id: generate
         run: |
           mkdir "$TEST_DIR"
+          mkdir "$DEP_DIR"
           SEED=$RANDOM
           echo "seed=$SEED" >> $GITHUB_OUTPUT
 
-          # Create package.json
-          echo "{\"name\": \"$TEST_DIR\", \"dependencies\": {\"$TEST_PKG\": \"$TEST_VERSION\"}}" > "$TEST_DIR/package.json"
-          echo "// seed: $SEED" >> "$TEST_DIR/package.json"
+          # Create unique dependency package
+          echo "{\"name\": \"$TEST_PKG\", \"version\": \"1.0.0-$SEED\"}" > "$DEP_DIR/package.json"
+
+          # Create main package using file dependency
+          echo "{\"name\": \"$TEST_DIR\", \"dependencies\": {\"$TEST_PKG\": \"file:../$DEP_DIR\"}}" > "$TEST_DIR/package.json"
 
       - name: Install Dependencies (Generate Lockfile)
         working-directory: ${{ env.TEST_DIR }}
@@ -107,8 +110,13 @@ jobs:
           SEED: ${{ needs.prime-cache.outputs.seed }}
         run: |
           mkdir "$TEST_DIR"
-          echo "{\"name\": \"$TEST_DIR\", \"dependencies\": {\"$TEST_PKG\": \"$TEST_VERSION\"}}" > "$TEST_DIR/package.json"
-          echo "// seed: $SEED" >> "$TEST_DIR/package.json"
+          mkdir "$DEP_DIR"
+
+          # Re-create unique dependency package
+          echo "{\"name\": \"$TEST_PKG\", \"version\": \"1.0.0-$SEED\"}" > "$DEP_DIR/package.json"
+
+          # Re-create main package
+          echo "{\"name\": \"$TEST_DIR\", \"dependencies\": {\"$TEST_PKG\": \"file:../$DEP_DIR\"}}" > "$TEST_DIR/package.json"
 
       - name: Generate Lockfile & Clean
         working-directory: ${{ env.TEST_DIR }}
@@ -138,5 +146,6 @@ jobs:
         working-directory: ${{ env.TEST_DIR }}
         run: |
           test -d "node_modules" || (echo "::error::node_modules not restored" && exit 1)
+          # Check if the unique dependency is present (it might be symlinked or copied depending on bun)
           test -d "node_modules/$TEST_PKG" || (echo "::error::dependency $TEST_PKG not found" && exit 1)
           echo "Cache restored successfully"
