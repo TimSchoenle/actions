@@ -142,15 +142,10 @@ jobs:
           persist-credentials: true
 
       - name: Configure Git Identity
-        env:
-          APP_SLUG: ${{ steps.generate_token.outputs.app-slug }}
-          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
-        run: |
-          BOT_USERNAME="${APP_SLUG}[bot]"
-          BOT_ID=$(gh api "/users/${BOT_USERNAME}" --jq .id)
-          BOT_EMAIL="${BOT_ID}+${BOT_USERNAME}@users.noreply.github.com"
-          git config user.name "$BOT_USERNAME"
-          git config user.email "$BOT_EMAIL"
+        uses: TimSchoenle/actions/actions/common/setup-app-git-identity@5e76fd2889fa615725953e0a4a06d5bb5f893e86 # actions-common-setup-app-git-identity-v1.1.0
+        with:
+          app-slug: ${{ steps.generate_token.outputs.app-slug }}
+          token: ${{ steps.generate_token.outputs.token }}
 
       - name: Define Variables
         id: vars
