@@ -17,6 +17,7 @@ on:
 
 jobs:
   verify:
+    name: Verify Action
     runs-on: ubuntu-latest
     permissions: {} # Ensure the token has no permissions to prevent leakage
     steps:
