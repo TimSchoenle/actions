@@ -1,0 +1,76 @@
+name: Verify Common Get App Git Identity
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'actions/common/get-app-git-identity/**'
+      - '.github/workflows/verify-action-common-get-app-git-identity.yaml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'actions/common/get-app-git-identity/**'
+      - '.github/workflows/verify-action-common-get-app-git-identity.yaml'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: Verify Action
+    runs-on: ubuntu-latest
+    permissions: {} # Ensure the token has no permissions to prevent leakage
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+            github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          persist-credentials: false
+
+      # Using 'github-actions' as the slug since it is a known bot
+      - name: Run get-app-git-identity
+        id: setup
+        uses: ./actions/common/get-app-git-identity
+        env:
+          TEST_APP_SLUG: 'github-actions'
+        with:
+          app-slug: ${{ env.TEST_APP_SLUG }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify Outputs
+        shell: bash
+        env:
+          BOT_NAME: ${{ steps.setup.outputs.bot-name }}
+          BOT_EMAIL: ${{ steps.setup.outputs.bot-email }}
+          BOT_ID: ${{ steps.setup.outputs.bot-id }}
+          EXPECTED_SLUG: 'github-actions'
+          EXPECTED_ID: '41898282'
+        run: |
+          echo "Verifying outputs..."
+          echo "Bot Name: $BOT_NAME"
+          echo "Bot Email: $BOT_EMAIL"
+          echo "Bot ID: $BOT_ID"
+
+          EXPECTED_USERNAME="${EXPECTED_SLUG}[bot]"
+          if [[ "$BOT_NAME" != "$EXPECTED_USERNAME" ]]; then
+            echo "::error::Unexpected bot name: $BOT_NAME"
+            exit 1
+          fi
+
+          # github-actions bot ID is typically 41898282
+          if [[ "$BOT_ID" != "$EXPECTED_ID" ]]; then
+             echo "::warning::Unexpected bot ID for $EXPECTED_SLUG: $BOT_ID. This might change, but usually stays static."
+          fi
+
+          EXPECTED_EMAIL="${BOT_ID}+${EXPECTED_USERNAME}@users.noreply.github.com"
+          if [[ "$BOT_EMAIL" != "$EXPECTED_EMAIL" ]]; then
+            echo "::error::Unexpected bot email. Expected $EXPECTED_EMAIL, got $BOT_EMAIL"
+            exit 1
+          fi
