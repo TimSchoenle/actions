@@ -13,6 +13,12 @@ inputs:
     description: 'The working directory to run commands in.'
     required: false
     default: '.'
+  lookup-only:
+    description: >
+      Check if the dependency exists without actually downloading it.
+      This can be useful if we only care that the cache is actually populated and we don't need to consume it in the next steps.
+    required: false
+    default: 'false'
 
 outputs:
   cache-hit:
@@ -44,7 +50,7 @@ runs:
       with:
         path: ${{ inputs.working-directory }}/node_modules
         key: ${{ steps.keys.outputs.key }}
-        lookup-only: true
+        lookup-only: ${{ inputs.lookup-only }}
 
     - name: Install dependencies
       if: steps.cache-check.outputs.cache-hit != 'true'

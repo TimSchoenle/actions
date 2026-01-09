@@ -149,3 +149,64 @@ jobs:
           # Check if the unique dependency is present (it might be symlinked or copied depending on bun)
           test -d "node_modules/$TEST_PKG" || (echo "::error::dependency $TEST_PKG not found" && exit 1)
           echo "Cache restored successfully"
+
+  verify-lookup-only:
+    name: Verify Lookup Only
+    needs: prime-cache
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@b7a1c7ccf290d58743029c4f6903da283811b979 # v2
+        with:
+          bun-version: latest
+
+      - name: Re-Generate Project
+        env:
+          SEED: ${{ needs.prime-cache.outputs.seed }}
+        run: |
+          mkdir "$TEST_DIR"
+          mkdir "$DEP_DIR"
+
+          # Re-create unique dependency package
+          echo "{\"name\": \"$TEST_PKG\", \"version\": \"1.0.0-$SEED\"}" > "$DEP_DIR/package.json"
+
+          # Re-create main package
+          echo "{\"name\": \"$TEST_DIR\", \"dependencies\": {\"$TEST_PKG\": \"file:../$DEP_DIR\"}}" > "$TEST_DIR/package.json"
+
+      - name: Generate Lockfile & Clean
+        working-directory: ${{ env.TEST_DIR }}
+        run: |
+          bun install
+          rm -rf node_modules
+
+      - name: Run Setup Cached (Lookup Only)
+        id: setup
+        uses: ./actions/bun/setup-cached
+        with:
+          working-directory: ${{ env.TEST_DIR }}
+          lookup-only: true
+
+      - name: Verify Cache Hit
+        if: steps.setup.outputs.cache-hit != 'true'
+        run: |
+          echo "::error::Expected cache hit on lookup-only run, got miss"
+          exit 1
+
+      - name: Verify No Restore
+        working-directory: ${{ env.TEST_DIR }}
+        run: |
+          if [ -d "node_modules" ]; then
+            echo "::error::node_modules restored when lookup-only was true"
+            exit 1
+          fi
+          echo "Lookup only successful: cache hit but not restored"
