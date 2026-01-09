@@ -45,12 +45,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@b7a1c7ccf290d58743029c4f6903da283811b979 # v2
-        with:
-          bun-version: latest
-
-      - name: Install Dependencies
-        run: bun install --frozen-lockfile
+        uses: TimSchoenle/actions/actions/bun/setup-cached@actions-bun-setup-cached-v1.1.0
 
       - name: Format Check
         run: bun run format --check
