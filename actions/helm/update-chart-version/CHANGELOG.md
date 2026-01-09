@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.3.1...actions-helm-update-chart-version-v1.3.2) (2026-01-09)
+
+
+### Code Refactoring
+
+* **Actions:** correctly use new  actions-common-get-app-git-iden… ([#118](https://github.com/TimSchoenle/actions/issues/118)) ([42c2fee](https://github.com/TimSchoenle/actions/commit/42c2fee9b915d21ab2aea90aab2baf634e8ce102))
+
 ## [1.3.1](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.3.0...actions-helm-update-chart-version-v1.3.1) (2026-01-08)
 
 
