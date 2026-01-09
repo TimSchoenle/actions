@@ -35,7 +35,7 @@ jobs:
           ref: ${{ github.head_ref }}
 
       - name: Setup Bun
-        uses: TimSchoenle/actions/actions/bun/setup-cached@actions-bun-setup-cached-v1.1.0
+        uses: TimSchoenle/actions/actions/bun/setup-cached@06fb396522acd532d5a73d0d13db6875055eceda # actions-bun-setup-cached-v1.1.0
 
       - name: Format
         run: bun run format
