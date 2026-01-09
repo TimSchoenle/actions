@@ -1,5 +1,5 @@
 name: 'Bun Setup-cached'
-description: 'A reusable action.'
+description: 'Sets up Bun and manages dependency caching.'
 
 inputs:
   bun-version:
