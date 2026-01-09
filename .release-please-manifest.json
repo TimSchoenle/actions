@@ -4,5 +4,5 @@
   "actions/common/modify-yaml": "1.1.0",
   "workflows/common/test2": "2.9.0",
   "actions/common/setup-app-git-identity": "1.0.0",
-  "actions/common/get-app-git-identity": "1.0.0"
+  "actions/common/get-app-git-identity": "1.1.0"
 }
