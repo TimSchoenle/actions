@@ -3,9 +3,16 @@
   "description": "Versioning rules for all custom Reusable Workflows defined in this repository",
   "packageRules": [
     {
-      "description": "Versioning for internal workflows",
+      "description": "Versioning Strategy: Parsing tags for internal workflows",
       "matchPackageNames": ["TimSchoenle/actions"],
-      "versioning": "regex:^(?<compatibility>workflows-.*)[-/]v?(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)?$",
+      "matchCurrentVersion": "/^workflows-/",
+      "versioning": "regex:^(?<compatibility>workflows-.*)[-/]v?(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)?$"
+    },
+    {
+      "description": "Commit Message Templates: Custom naming for internal workflows updates (excluding pins)",
+      "matchPackageNames": ["TimSchoenle/actions"],
+      "matchCurrentVersion": "/^workflows-/",
+      "matchUpdateTypes": ["major", "minor", "patch"],
       "commitMessageTopic": "{{compatibility}}",
       "commitMessageExtra": "to v{{newVersion}}",
       "additionalBranchPrefix": "{{compatibility}}-"
