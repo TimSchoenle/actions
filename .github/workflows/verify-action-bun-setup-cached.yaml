@@ -1,0 +1,138 @@
+name: Verify Bun Setup Cached
+on:
+  push:
+    branches: ['main']
+    paths:
+      - 'actions/bun/setup-cached/**'
+      - '.github/workflows/verify-action-bun-setup-cached.yaml'
+  pull_request:
+    branches: ['main']
+    paths:
+      - 'actions/bun/setup-cached/**'
+      - '.github/workflows/verify-action-bun-setup-cached.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+env:
+  TEST_DIR: test-project
+  TEST_PKG: is-odd
+  TEST_VERSION: 3.0.1
+
+jobs:
+  prime-cache:
+    name: Prime Cache
+    runs-on: ubuntu-latest
+    outputs:
+      seed: ${{ steps.generate.outputs.seed }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun (Raw)
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Generate Project
+        id: generate
+        run: |
+          mkdir "$TEST_DIR"
+          SEED=$RANDOM
+          echo "seed=$SEED" >> $GITHUB_OUTPUT
+
+          # Create package.json
+          echo "{\"name\": \"$TEST_DIR\", \"dependencies\": {\"$TEST_PKG\": \"$TEST_VERSION\"}}" > "$TEST_DIR/package.json"
+          echo "// seed: $SEED" >> "$TEST_DIR/package.json"
+
+      - name: Install Dependencies (Generate Lockfile)
+        working-directory: ${{ env.TEST_DIR }}
+        run: bun install
+
+      - name: Run Setup Cached (Expect Miss)
+        id: setup
+        uses: ./actions/bun/setup-cached
+        with:
+          working-directory: ${{ env.TEST_DIR }}
+
+      - name: Verify Cache Miss
+        if: steps.setup.outputs.cache-hit == 'true'
+        run: |
+          echo "::error::Expected cache miss on first run, got hit"
+          exit 1
+
+      - name: Verify Outputs
+        run: |
+          echo "Cache Key: ${{ steps.setup.outputs.cache-key }}"
+          if [ -z "${{ steps.setup.outputs.cache-key }}" ]; then
+            echo "::error::Cache key output is empty"
+            exit 1
+          fi
+
+  verify-cache:
+    name: Verify Cache Hit
+    needs: prime-cache
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun (Raw)
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Re-Generate Project
+        env:
+          SEED: ${{ needs.prime-cache.outputs.seed }}
+        run: |
+          mkdir "$TEST_DIR"
+          echo "{\"name\": \"$TEST_DIR\", \"dependencies\": {\"$TEST_PKG\": \"$TEST_VERSION\"}}" > "$TEST_DIR/package.json"
+          echo "// seed: $SEED" >> "$TEST_DIR/package.json"
+
+      - name: Generate Lockfile & Clean
+        working-directory: ${{ env.TEST_DIR }}
+        run: |
+          bun install
+          rm -rf node_modules
+
+      - name: Run Setup Cached (Expect Hit)
+        id: setup
+        uses: ./actions/bun/setup-cached
+        with:
+          working-directory: ${{ env.TEST_DIR }}
+
+      - name: Verify Cache Hit
+        if: steps.setup.outputs.cache-hit != 'true'
+        run: |
+          echo "::error::Expected cache hit on second run, got miss"
+          exit 1
+
+      - name: Verify Outputs
+        run: |
+          echo "Cache Key: ${{ steps.setup.outputs.cache-key }}"
+
+      - name: Verify Dependencies
+        working-directory: ${{ env.TEST_DIR }}
+        run: |
+          test -d "node_modules" || (echo "::error::node_modules not restored" && exit 1)
+          test -d "node_modules/$TEST_PKG" || (echo "::error::dependency $TEST_PKG not found" && exit 1)
+          echo "Cache restored successfully"

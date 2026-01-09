@@ -1,0 +1,60 @@
+name: 'Bun Setup-cached'
+description: 'A reusable action.'
+
+inputs:
+  bun-version:
+    description: 'The version of Bun to install (e.g. "latest", "1.0.0").'
+    required: false
+    default: 'latest'
+  bun-version-file:
+    description: 'The file to read the Bun version from (e.g. "package.json", ".bun-version").'
+    required: false
+  working-directory:
+    description: 'The working directory to run commands in.'
+    required: false
+    default: '.'
+
+outputs:
+  cache-hit:
+    description: 'Whether the node_modules cache was hit'
+    value: ${{ steps.cache-check.outputs.cache-hit }}
+  cache-key:
+    description: 'The cache key used'
+    value: ${{ steps.keys.outputs.key }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@b7a1c7ccf290d58743029c4f6903da283811b979 # v2
+      with:
+        bun-version: ${{ inputs.bun-version }}
+        bun-version-file: ${{ inputs.bun-version-file }}
+
+    - name: Compute Cache Key
+      id: keys
+      shell: bash
+      env:
+        CACHE_KEY: bun-modules-${{ runner.os }}-${{ hashFiles(format('{0}/bun.lock', inputs.working-directory)) }}
+      run: echo "key=$CACHE_KEY" >> $GITHUB_OUTPUT
+
+    - name: Check for existing node_modules cache
+      id: cache-check
+      uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5
+      with:
+        path: ${{ inputs.working-directory }}/node_modules
+        key: ${{ steps.keys.outputs.key }}
+        lookup-only: true
+
+    - name: Install dependencies
+      if: steps.cache-check.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: bun install --frozen-lockfile
+
+    - name: Save node_modules cache
+      if: steps.cache-check.outputs.cache-hit != 'true'
+      uses: actions/cache/save@9255dc7a253b0ccc959486e2bca901246202afeb # v5
+      with:
+        path: ${{ inputs.working-directory }}/node_modules
+        key: ${{ steps.keys.outputs.key }}
