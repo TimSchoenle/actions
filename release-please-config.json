@@ -26,6 +26,11 @@
       "release-type": "simple",
       "component": "actions-common-setup-app-git-identity",
       "include-component-in-tag": true
+    },
+    "actions/common/get-app-git-identity": {
+      "release-type": "simple",
+      "component": "actions-common-get-app-git-identity",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
