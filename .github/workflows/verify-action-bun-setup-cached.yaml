@@ -40,8 +40,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Bun (Raw)
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@b7a1c7ccf290d58743029c4f6903da283811b979 # v2
         with:
           bun-version: latest
 
@@ -73,9 +73,11 @@ jobs:
           exit 1
 
       - name: Verify Outputs
+        env:
+          CACHE_KEY: ${{ steps.setup.outputs.cache-key }}
         run: |
-          echo "Cache Key: ${{ steps.setup.outputs.cache-key }}"
-          if [ -z "${{ steps.setup.outputs.cache-key }}" ]; then
+          echo "Cache Key: $CACHE_KEY"
+          if [ -z "$CACHE_KEY" ]; then
             echo "::error::Cache key output is empty"
             exit 1
           fi
@@ -95,8 +97,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Bun (Raw)
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@b7a1c7ccf290d58743029c4f6903da283811b979 # v2
         with:
           bun-version: latest
 
@@ -127,8 +129,10 @@ jobs:
           exit 1
 
       - name: Verify Outputs
+        env:
+          CACHE_KEY: ${{ steps.setup.outputs.cache-key }}
         run: |
-          echo "Cache Key: ${{ steps.setup.outputs.cache-key }}"
+          echo "Cache Key: $CACHE_KEY"
 
       - name: Verify Dependencies
         working-directory: ${{ env.TEST_DIR }}
