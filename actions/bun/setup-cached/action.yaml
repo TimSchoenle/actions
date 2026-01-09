@@ -19,6 +19,10 @@ inputs:
       This can be useful if we only care that the cache is actually populated and we don't need to consume it in the next steps.
     required: false
     default: 'false'
+  cache-key-prefix:
+    description: 'Optional prefix for the cache key.'
+    required: false
+    default: ''
 
 outputs:
   cache-hit:
@@ -41,7 +45,7 @@ runs:
       id: keys
       shell: bash
       env:
-        CACHE_KEY: bun-modules-${{ runner.os }}-${{ hashFiles(format('{0}/bun.lock', inputs.working-directory)) }}
+        CACHE_KEY: ${{ inputs.cache-key-prefix }}bun-modules-${{ runner.os }}-${{ hashFiles(format('{0}/bun.lock', inputs.working-directory)) }}
       run: echo "key=$CACHE_KEY" >> $GITHUB_OUTPUT
 
     - name: Check for existing node_modules cache

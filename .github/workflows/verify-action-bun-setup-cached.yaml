@@ -68,6 +68,7 @@ jobs:
         uses: ./actions/bun/setup-cached
         with:
           working-directory: ${{ env.TEST_DIR }}
+          cache-key-prefix: 'verify-${{ steps.generate.outputs.seed }}-'
 
       - name: Verify Cache Miss
         if: steps.setup.outputs.cache-hit == 'true'
@@ -129,6 +130,7 @@ jobs:
         uses: ./actions/bun/setup-cached
         with:
           working-directory: ${{ env.TEST_DIR }}
+          cache-key-prefix: 'verify-${{ needs.prime-cache.outputs.seed }}-'
 
       - name: Verify Cache Hit
         if: steps.setup.outputs.cache-hit != 'true'
@@ -194,6 +196,7 @@ jobs:
         uses: ./actions/bun/setup-cached
         with:
           working-directory: ${{ env.TEST_DIR }}
+          cache-key-prefix: 'verify-${{ needs.prime-cache.outputs.seed }}-'
           lookup-only: true
 
       - name: Verify Cache Hit
