@@ -1,11 +1,11 @@
 import { describe, expect } from 'vitest';
-import { test as fcTest, fc } from '@fast-check/vitest';
+import { fc, test } from '@fast-check/vitest';
 import { generateMarkdownTable, generateSection } from '../generator';
 import type { DocumentationItem } from '../types';
 
 describe('generator fuzzing', () => {
   describe('generateMarkdownTable', () => {
-    fcTest.prop([
+    test.prop([
       fc.array(
         fc.record({
           name: fc.string({ minLength: 1 }),
@@ -32,7 +32,7 @@ describe('generator fuzzing', () => {
       expect(lines.length).toBeGreaterThanOrEqual(2); // At least headers + separator
     });
 
-    fcTest.prop([
+    test.prop([
       fc.array(
         fc.record({
           name: fc.string(),
@@ -58,7 +58,7 @@ describe('generator fuzzing', () => {
       }
     });
 
-    fcTest.prop([fc.array(fc.string({ minLength: 1 }), { minLength: 1, maxLength: 5 })])(
+    test.prop([fc.array(fc.string({ minLength: 1 }), { minLength: 1, maxLength: 5 })])(
       'should handle varying number of headers',
       async (headers) => {
         const items: DocumentationItem[] = [
@@ -84,7 +84,7 @@ describe('generator fuzzing', () => {
   });
 
   describe('generateSection', () => {
-    fcTest.prop([
+    test.prop([
       fc.array(
         fc.record({
           name: fc.string({ minLength: 1 }),
@@ -111,7 +111,7 @@ describe('generator fuzzing', () => {
       }
     });
 
-    fcTest.prop([
+    test.prop([
       fc.array(
         fc.record({
           name: fc.string({ minLength: 1 }),
@@ -141,7 +141,7 @@ describe('generator fuzzing', () => {
       }
     });
 
-    fcTest.prop([fc.string({ minLength: 1 }), fc.string({ minLength: 1 })])(
+    test.prop([fc.string({ minLength: 1 }), fc.string({ minLength: 1 })])(
       'should handle single-item categories',
       async (category, name) => {
         const items: DocumentationItem[] = [

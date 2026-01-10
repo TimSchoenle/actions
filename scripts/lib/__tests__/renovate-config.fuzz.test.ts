@@ -1,17 +1,17 @@
 import { describe, expect } from 'vitest';
-import { test as fcTest, fc } from '@fast-check/vitest';
+import { fc, test } from '@fast-check/vitest';
 import { generateFullActionName, generateTagPrefix, generateVersioningRegex } from '../renovate-config';
 
 const safeString = fc.stringMatching(/^[a-zA-Z0-9-]+$/);
 
 describe('renovate-config fuzzing', () => {
   describe('generateFullActionName', () => {
-    fcTest.prop([safeString, safeString, safeString])('should correctly join parts with slashes', (repo, pkg, sub) => {
+    test.prop([safeString, safeString, safeString])('should correctly join parts with slashes', (repo, pkg, sub) => {
       const result = generateFullActionName(repo, pkg, sub);
       return result === `${repo}/actions/${pkg}/${sub}`;
     });
 
-    fcTest.prop([safeString, safeString, safeString])(
+    test.prop([safeString, safeString, safeString])(
       'should always contain /actions/ in the middle',
       (repo, pkg, sub) => {
         const result = generateFullActionName(repo, pkg, sub);
@@ -19,7 +19,7 @@ describe('renovate-config fuzzing', () => {
       },
     );
 
-    fcTest.prop([safeString, safeString, safeString])('should have exactly 4 path segments', (repo, pkg, sub) => {
+    test.prop([safeString, safeString, safeString])('should have exactly 4 path segments', (repo, pkg, sub) => {
       const result = generateFullActionName(repo, pkg, sub);
       const segments = result.split('/');
       expect(segments.length).toBe(4); // repo, actions, pkg, sub
@@ -31,17 +31,17 @@ describe('renovate-config fuzzing', () => {
   });
 
   describe('generateTagPrefix', () => {
-    fcTest.prop([safeString, safeString])('should start with actions-', (pkg, sub) => {
+    test.prop([safeString, safeString])('should start with actions-', (pkg, sub) => {
       const result = generateTagPrefix(pkg, sub);
       return result.startsWith('actions-');
     });
 
-    fcTest.prop([safeString, safeString])('should never contain slashes', (pkg, sub) => {
+    test.prop([safeString, safeString])('should never contain slashes', (pkg, sub) => {
       const result = generateTagPrefix(pkg, sub);
       expect(result).not.toContain('/');
     });
 
-    fcTest.prop([safeString, safeString])('should have consistent format', (pkg, sub) => {
+    test.prop([safeString, safeString])('should have consistent format', (pkg, sub) => {
       const result = generateTagPrefix(pkg, sub);
       // Should be: actions-{pkg}-{sub}
       const expected = `actions-${pkg}-${sub}`.replaceAll('/', '-');
@@ -50,7 +50,7 @@ describe('renovate-config fuzzing', () => {
   });
 
   describe('generateVersioningRegex', () => {
-    fcTest.prop([safeString])('should generate a valid regex string', (prefix) => {
+    test.prop([safeString])('should generate a valid regex string', (prefix) => {
       const regexStr = generateVersioningRegex(prefix);
       try {
         new RegExp(regexStr);
@@ -60,7 +60,7 @@ describe('renovate-config fuzzing', () => {
       }
     });
 
-    fcTest.prop([safeString, fc.nat(), fc.nat(), fc.nat()])(
+    test.prop([safeString, fc.nat(), fc.nat(), fc.nat()])(
       'should match a valid version string created from the prefix',
       (prefix, major, minor, patch) => {
         const regexStr = generateVersioningRegex(prefix);
@@ -70,7 +70,7 @@ describe('renovate-config fuzzing', () => {
       },
     );
 
-    fcTest.prop([safeString, fc.nat({ max: 100 }), fc.nat({ max: 100 }), fc.nat({ max: 100 })])(
+    test.prop([safeString, fc.nat({ max: 100 }), fc.nat({ max: 100 }), fc.nat({ max: 100 })])(
       'should capture major, minor, and patch groups',
       (prefix, major, minor, patch) => {
         const regexStr = generateVersioningRegex(prefix);
@@ -87,7 +87,7 @@ describe('renovate-config fuzzing', () => {
       },
     );
 
-    fcTest.prop([safeString, safeString])(
+    test.prop([safeString, safeString])(
       'should NOT match strings without the correct prefix',
       (prefix, wrongPrefix) => {
         // Skip if they're the same
@@ -101,7 +101,7 @@ describe('renovate-config fuzzing', () => {
       },
     );
 
-    fcTest.prop([safeString, fc.nat(), fc.nat(), fc.nat()])(
+    test.prop([safeString, fc.nat(), fc.nat(), fc.nat()])(
       'should NOT match versions without -v prefix',
       (prefix, major, minor, patch) => {
         const regexStr = generateVersioningRegex(prefix);
