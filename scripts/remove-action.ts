@@ -26,7 +26,7 @@ export async function main() {
     });
 
     if (shouldRemove) {
-        await removePackage(packageName);
+      await removePackage(packageName);
     }
     return;
   }
