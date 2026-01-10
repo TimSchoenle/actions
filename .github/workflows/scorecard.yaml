@@ -21,6 +21,8 @@ jobs:
     permissions:
       security-events: write # Needed to upload the results to code-scanning
       id-token: write # Needed to publish results
+      contents: read # Needs to checkout
+      actions: read # Needs to scan
 
     steps:
       - name: Harden Runner
@@ -36,7 +38,7 @@ jobs:
       - name: Run analysis
         uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
         with:
-          # repo_token: ${{ secrets.SCORECARD_TOKEN }}
+          repo_token: ${{ secrets.SCORECARD_TOKEN }}
           results_file: results.sarif
           results_format: sarif
           publish_results: true
