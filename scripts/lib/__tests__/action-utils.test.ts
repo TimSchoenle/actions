@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as actionUtils from './action-utils';
-import { Sys } from './utils';
+import * as actionUtils from '../action-utils';
+import { Sys } from '../utils';
 
 // Mock utils
-import type * as UtilsTypes from './utils';
-vi.mock('./utils', async (importOriginal) => {
+import type * as UtilsTypes from '../utils';
+vi.mock('../utils', async (importOriginal) => {
   const actual = await importOriginal<typeof UtilsTypes>();
   return {
     ...actual,
@@ -27,7 +27,7 @@ vi.mock('@inquirer/prompts', () => ({
 }));
 
 import { search, input } from '@inquirer/prompts';
-import { createFromTemplate } from './utils';
+import { createFromTemplate } from '../utils';
 
 describe('action-utils', () => {
   beforeEach(() => {

@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as removeAction from './remove-action';
-import { Sys } from './lib/utils';
-import { selectPackage, getSubActions } from './lib/action-utils';
+import * as removeAction from '../remove-action';
+import { Sys } from '../lib/utils';
+import { selectPackage, getSubActions } from '../lib/action-utils';
 import { confirm, search } from '@inquirer/prompts';
-import { main as generateReadme } from './generate-readme';
+import { main as generateReadme } from '../generate-readme';
 
 // Mock Dependencies
-import type * as UtilsTypes from './lib/utils';
-vi.mock('./lib/utils', async (importOriginal) => {
+import type * as UtilsTypes from '../lib/utils';
+vi.mock('../lib/utils', async (importOriginal) => {
   const actual = await importOriginal<typeof UtilsTypes>();
   return {
     ...actual,
@@ -19,7 +19,7 @@ vi.mock('./lib/utils', async (importOriginal) => {
   };
 });
 
-vi.mock('./lib/action-utils', () => ({
+vi.mock('../lib/action-utils', () => ({
   selectPackage: vi.fn(),
   getSubActions: vi.fn(),
   removeActionFromReleasePlease: vi.fn(),
@@ -31,7 +31,7 @@ vi.mock('@inquirer/prompts', () => ({
   search: vi.fn(),
 }));
 
-vi.mock('./generate-readme', () => ({
+vi.mock('../generate-readme', () => ({
   main: vi.fn(),
 }));
 

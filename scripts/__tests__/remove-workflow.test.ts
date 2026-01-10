@@ -1,19 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as removeWorkflow from './remove-workflow';
-import { Sys } from './lib/utils';
+import * as removeWorkflow from '../remove-workflow';
+import { Sys } from '../lib/utils';
 import {
   selectPackage,
   getSubResources,
   removeResourceFromReleasePlease,
   removeVerifyWorkflow,
-} from './lib/resource-utils';
-import { RenovateConfigManager } from './lib/renovate-config';
+} from '../lib/resource-utils';
+import { RenovateConfigManager } from '../lib/renovate-config';
 import { confirm, search } from '@inquirer/prompts';
-import { main as generateReadme } from './generate-readme';
+import { main as generateReadme } from '../generate-readme';
 
 // Mock Dependencies
-import type * as UtilsTypes from './lib/utils';
-vi.mock('./lib/utils', async (importOriginal) => {
+import type * as UtilsTypes from '../lib/utils';
+vi.mock('../lib/utils', async (importOriginal) => {
   const actual = await importOriginal<typeof UtilsTypes>();
   return {
     ...actual,
@@ -27,7 +27,7 @@ vi.mock('./lib/utils', async (importOriginal) => {
   };
 });
 
-vi.mock('./lib/resource-utils', () => ({
+vi.mock('../lib/resource-utils', () => ({
   selectPackage: vi.fn(),
   getSubResources: vi.fn(),
   removeResourceFromReleasePlease: vi.fn(),
@@ -39,7 +39,7 @@ vi.mock('@inquirer/prompts', () => ({
   search: vi.fn(),
 }));
 
-vi.mock('./generate-readme', () => ({
+vi.mock('../generate-readme', () => ({
   main: vi.fn(),
 }));
 

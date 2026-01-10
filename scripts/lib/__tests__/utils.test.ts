@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import * as utils from './utils';
-import { Sys } from './sys';
+import * as utils from '../utils';
+import { Sys } from '../sys';
 
 // Mock Sys module
-vi.mock('./sys', () => ({
+vi.mock('../sys', () => ({
   Sys: {
     exec: vi.fn(),
     file: vi.fn(),

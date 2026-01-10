@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { RenovateConfigManager } from './renovate-config';
-import { Sys } from './utils';
+import { RenovateConfigManager } from '../renovate-config';
+import { Sys } from '../utils';
 
 // Mock utils module partially
-import type * as UtilsTypes from './utils';
-vi.mock('./utils', async (importOriginal) => {
+import type * as UtilsTypes from '../utils';
+vi.mock('../utils', async (importOriginal) => {
   const actual = await importOriginal<typeof UtilsTypes>();
   return {
     ...actual,
@@ -23,7 +23,7 @@ vi.mock('./utils', async (importOriginal) => {
   };
 });
 
-import { getRepoName } from './utils';
+import { getRepoName } from '../utils';
 
 describe('RenovateConfigManager', () => {
   beforeEach(() => {

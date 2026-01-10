@@ -11,6 +11,46 @@ interface WorkflowConfig {
   on?: Record<string, unknown>; // Trigger
 }
 
+export interface WorkflowMetadata {
+  name: string;
+  description: string;
+  version: string;
+  usage: string;
+  category: string;
+}
+
+export function deriveWorkflowMetadata(
+  dir: string,
+  shortVersion: string,
+  repoId: string,
+  configName?: string,
+  configDescription?: string,
+): WorkflowMetadata | null {
+  const normalizedDir = dir.replaceAll('\\', '/');
+
+  // Derivation Logic (Matches publish-workflow job)
+  // Path: workflows/common/test2
+  // Component Name (Clean): workflows-common-test2
+  const parts = normalizedDir.split('/'); // ["workflows", "common", "test2"]
+  if (parts.length < 3 || parts[0] !== 'workflows') return null;
+
+  const componentSuffix = parts.slice(1).join('-'); // "common-test2"
+  const cleanComponentName = `workflows-${componentSuffix}`; // "workflows-common-test2"
+  const targetFileName = `${componentSuffix}.yaml`; // "common-test2.yaml"
+  const tag = `${cleanComponentName}-v${shortVersion}`; // "workflows-common-test2-v2.5.0"
+
+  const category = parts.length >= 3 ? parts[1] : 'Other'; // "common"
+
+  return {
+    name: configName || componentSuffix,
+    description: configDescription || `Reusable workflow for ${componentSuffix}`,
+    version: tag,
+    // Correct Usage for Clean Release
+    usage: `\`uses: ${repoId}/.github/workflows/${targetFileName}@${tag}\``,
+    category: category.charAt(0).toUpperCase() + category.slice(1),
+  };
+}
+
 export class WorkflowParser implements Parser {
   async parse(): Promise<DocumentationItem[]> {
     const items: DocumentationItem[] = [];
@@ -40,26 +80,15 @@ export class WorkflowParser implements Parser {
         continue;
       }
 
-      // Derivation Logic (Matches publish-workflow job)
-      // Path: workflows/common/test2
-      // Component Name (Clean): workflows-common-test2
-      const parts = normalizedDir.split('/'); // ["workflows", "common", "test2"]
-      if (parts[0] !== 'workflows') continue;
-
-      const componentSuffix = parts.slice(1).join('-'); // "common-test2"
-      const cleanComponentName = `workflows-${componentSuffix}`; // "workflows-common-test2"
-      const targetFileName = `${componentSuffix}.yaml`; // "common-test2.yaml"
-      const tag = `${cleanComponentName}-v${shortVersion}`; // "workflows-common-test2-v2.5.0"
-
-      const category = parts.length >= 3 ? parts[1] : 'Other'; // "common"
+      const metadata = deriveWorkflowMetadata(dir, shortVersion, repoId, config.name, config.description);
+      if (!metadata) continue;
 
       items.push({
-        name: config.name || componentSuffix,
-        description: config.description || `Reusable workflow for ${componentSuffix}`,
-        version: tag,
-        // Correct Usage for Clean Release
-        usage: `\`uses: ${repoId}/.github/workflows/${targetFileName}@${tag}\``,
-        category: category.charAt(0).toUpperCase() + category.slice(1),
+        name: metadata.name,
+        description: metadata.description,
+        version: metadata.version,
+        usage: metadata.usage,
+        category: metadata.category,
         path: dir,
       });
     }

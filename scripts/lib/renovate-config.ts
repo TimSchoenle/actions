@@ -16,6 +16,18 @@ export interface RenovateConfig {
   [key: string]: unknown;
 }
 
+export function generateFullActionName(repoName: string, packageName: string, subAction: string): string {
+  return `${repoName}/actions/${packageName}/${subAction}`;
+}
+
+export function generateTagPrefix(packageName: string, subAction: string): string {
+  return `actions-${packageName}-${subAction}`.replaceAll('/', '-');
+}
+
+export function generateVersioningRegex(tagPrefix: string): string {
+  return String.raw`^${tagPrefix}-v(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$`;
+}
+
 export class RenovateConfigManager {
   /**
    * Reads the Renovate config file.
@@ -42,12 +54,12 @@ export class RenovateConfigManager {
   static async addPackageRule(packageName: string, subAction: string): Promise<void> {
     const config = await this.readConfig();
     const repoName = await getRepoName();
-    const fullActionName = `${repoName}/actions/${packageName}/${subAction}`;
+    const fullActionName = generateFullActionName(repoName, packageName, subAction);
 
     // Construct the regex pattern dynamically
     // Logic: replace slashes with hyphens for the tag prefix
-    const tagPrefix = `actions-${packageName}-${subAction}`.replaceAll('/', '-');
-    const versioningRegex = String.raw`^${tagPrefix}-v(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$`;
+    const tagPrefix = generateTagPrefix(packageName, subAction);
+    const versioningRegex = generateVersioningRegex(tagPrefix);
 
     const newRule: RenovatePackageRule = {
       description: `Versioning for action ${packageName}/${subAction}`,
@@ -75,7 +87,7 @@ export class RenovateConfigManager {
   static async removePackageRule(packageName: string, subAction: string): Promise<void> {
     const config = await this.readConfig();
     const repoName = await getRepoName();
-    const fullActionName = `${repoName}/actions/${packageName}/${subAction}`;
+    const fullActionName = generateFullActionName(repoName, packageName, subAction);
 
     const originalLength = config.packageRules.length;
     config.packageRules = config.packageRules.filter(

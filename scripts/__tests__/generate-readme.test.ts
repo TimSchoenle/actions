@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { DocumentationItem } from './lib/readme/types.js';
+import type { DocumentationItem } from '../lib/readme/types.js';
 
 // Setup mocks using vi.hoisted to ensure they're available in module scope
 const mocks = vi.hoisted(() => ({
@@ -15,7 +15,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 // Mock all dependencies
-vi.mock('./lib/utils.js', () => ({
+vi.mock('../lib/utils.js', () => ({
   Sys: {
     file: mocks.sysFile,
     write: mocks.sysWrite,
@@ -25,7 +25,7 @@ vi.mock('./lib/utils.js', () => ({
   ROOT_DIR: 'E:\\actions',
 }));
 
-vi.mock('./lib/readme/parsers/action-parser.js', () => ({
+vi.mock('../lib/readme/parsers/action-parser.js', () => ({
   ActionParser: class {
     async parse() {
       return mocks.actionParse();
@@ -33,7 +33,7 @@ vi.mock('./lib/readme/parsers/action-parser.js', () => ({
   },
 }));
 
-vi.mock('./lib/readme/parsers/workflow-parser.js', () => ({
+vi.mock('../lib/readme/parsers/workflow-parser.js', () => ({
   WorkflowParser: class {
     async parse() {
       return mocks.workflowParse();
@@ -41,7 +41,7 @@ vi.mock('./lib/readme/parsers/workflow-parser.js', () => ({
   },
 }));
 
-vi.mock('./lib/readme/parsers/renovate-parser.js', () => ({
+vi.mock('../lib/readme/parsers/renovate-parser.js', () => ({
   RenovateParser: class {
     async parse() {
       return mocks.renovateParse();
@@ -49,11 +49,11 @@ vi.mock('./lib/readme/parsers/renovate-parser.js', () => ({
   },
 }));
 
-vi.mock('./lib/readme/generator.js', () => ({
+vi.mock('../lib/readme/generator.js', () => ({
   generateSection: mocks.generateSection,
 }));
 
-vi.mock('./lib/readme/git-utils.js', () => ({
+vi.mock('../lib/readme/git-utils.js', () => ({
   getRepoInfo: mocks.getRepoInfo,
 }));
 
@@ -121,7 +121,7 @@ describe('Generate Readme Script', () => {
         'Template\n{{REPO}}\n<!-- ACTIONS_TABLE -->\n<!-- WORKFLOWS_TABLE -->\n<!-- CONFIGS_TABLE -->\nEnd',
     });
 
-    const { main } = await import('./generate-readme.js');
+    const { main } = await import('../generate-readme.js');
     await main();
 
     // Verify parsers were called
@@ -183,7 +183,7 @@ describe('Generate Readme Script', () => {
       exists: async () => false,
     });
 
-    const { main } = await import('./generate-readme.js');
+    const { main } = await import('../generate-readme.js');
 
     // Expect the function to throw due to process.exit
     await expect(main()).rejects.toThrow('Process exit called');
@@ -198,7 +198,7 @@ describe('Generate Readme Script', () => {
       text: async () => 'Repo: {{REPO}}\n<!-- ACTIONS_TABLE -->\n<!-- CONFIGS_TABLE -->',
     });
 
-    const { main } = await import('./generate-readme.js');
+    const { main } = await import('../generate-readme.js');
     await main();
 
     const writtenContent = mocks.sysWrite.mock.calls[0][1] as string;
@@ -216,7 +216,7 @@ describe('Generate Readme Script', () => {
       text: async () => '<!-- ACTIONS_TABLE -->\n<!-- WORKFLOWS_TABLE -->\n<!-- CONFIGS_TABLE -->',
     });
 
-    const { main } = await import('./generate-readme.js');
+    const { main } = await import('../generate-readme.js');
     await main();
 
     expect(mocks.sysWrite).toHaveBeenCalledTimes(1);

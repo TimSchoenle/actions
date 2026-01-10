@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { RenovateParser } from './renovate-parser';
-import { Sys } from '../../utils';
-import * as GitUtils from '../git-utils';
+import { RenovateParser } from '../renovate-parser';
+import { Sys } from '../../../utils';
+import * as GitUtils from '../../git-utils';
 
-vi.mock('../../utils', async (importOriginal) => {
+vi.mock('../../../utils', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../utils')>();
   return {
     ...actual,
@@ -14,7 +14,7 @@ vi.mock('../../utils', async (importOriginal) => {
   };
 });
 
-vi.mock('../git-utils', () => ({
+vi.mock('../../git-utils', () => ({
   getRepoInfo: vi.fn(),
 }));
 

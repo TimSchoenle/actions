@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { WorkflowParser } from './workflow-parser';
-import { Sys } from '../../utils';
-import * as ReadmeUtils from '../utils';
-import * as GitUtils from '../git-utils';
+import { WorkflowParser } from '../workflow-parser';
+import { Sys } from '../../../utils';
+import * as ReadmeUtils from '../../utils';
+import * as GitUtils from '../../git-utils';
 
 // Mock Sys
-vi.mock('../../utils', () => {
+vi.mock('../../../utils', () => {
   return {
     ROOT_DIR: '/mock/root',
     Sys: {
@@ -16,13 +16,13 @@ vi.mock('../../utils', () => {
 });
 
 // Mock ReadmeUtils
-vi.mock('../utils', () => ({
+vi.mock('../../utils', () => ({
   getManifestVersions: vi.fn(),
   getReleaseComponent: vi.fn(),
 }));
 
 // Mock GitUtils
-vi.mock('../git-utils', () => ({
+vi.mock('../../git-utils', () => ({
   getRepoInfo: vi.fn(),
 }));
 

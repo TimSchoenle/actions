@@ -10,6 +10,16 @@ const RESOURCE_DIRS = {
   workflow: path.join(ROOT_DIR, 'workflows'),
 };
 
+// Naming Conventions Helpers
+export function generateResourceKey(type: ResourceType, packageName: string, subName: string): string {
+  return `${type}s/${packageName}/${subName}`;
+}
+
+export function generateComponentName(type: ResourceType, packageName: string, subName: string): string {
+  const baseName = `${type}s-${packageName}-${subName}`;
+  return type === 'workflow' ? `${baseName}-meta` : baseName;
+}
+
 export async function getPackages(type: ResourceType): Promise<string[]> {
   const dir = RESOURCE_DIRS[type];
   if (!Sys.exists(dir)) return [];
@@ -67,12 +77,8 @@ export async function registerResourceInReleasePlease(type: ResourceType, packag
   const configPath = path.join(ROOT_DIR, 'release-please-config.json');
   const manifestPath = path.join(ROOT_DIR, '.release-please-manifest.json');
 
-  // Naming Conventions:
-  // Action: actions/<pkg>/<sub> -> actions-<pkg>-<sub>
-  // Workflow: workflows/<pkg>/<sub> -> workflows-<pkg>-<sub>-meta (Dual tag strategy)
-  const key = `${type}s/${packageName}/${subName}`;
-  const baseName = `${type}s-${packageName}-${subName}`;
-  const componentName = type === 'workflow' ? `${baseName}-meta` : baseName;
+  const key = generateResourceKey(type, packageName, subName);
+  const componentName = generateComponentName(type, packageName, subName);
 
   // Update Config
   try {
@@ -129,7 +135,7 @@ export async function registerResourceInReleasePlease(type: ResourceType, packag
 export async function removeResourceFromReleasePlease(type: ResourceType, packageName: string, subName: string) {
   const configPath = path.join(ROOT_DIR, 'release-please-config.json');
   const manifestPath = path.join(ROOT_DIR, '.release-please-manifest.json');
-  const key = `${type}s/${packageName}/${subName}`;
+  const key = generateResourceKey(type, packageName, subName);
 
   try {
     const configFile = Sys.file(configPath);
