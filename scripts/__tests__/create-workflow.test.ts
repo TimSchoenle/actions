@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as createWorkflow from './create-workflow';
-import { Sys, createFromTemplate } from './lib/utils';
-import { selectPackage, registerResourceInReleasePlease, createVerifyWorkflow } from './lib/resource-utils';
-import { RenovateConfigManager } from './lib/renovate-config';
-import { getRepoInfo } from './lib/readme/git-utils';
+import * as createWorkflow from '../create-workflow';
+import { Sys, createFromTemplate } from '../lib/utils';
+import { selectPackage, registerResourceInReleasePlease, createVerifyWorkflow } from '../lib/resource-utils';
+import { RenovateConfigManager } from '../lib/renovate-config';
+import { getRepoInfo } from '../lib/readme/git-utils';
 import { input } from '@inquirer/prompts';
-import { main as generateReadme } from './generate-readme';
+import { main as generateReadme } from '../generate-readme';
 
 // Mock dependencies
-import type * as UtilsTypes from './lib/utils';
-vi.mock('./lib/utils', async (importOriginal) => {
+import type * as UtilsTypes from '../lib/utils';
+vi.mock('../lib/utils', async (importOriginal) => {
   const actual = await importOriginal<typeof UtilsTypes>();
   return {
     ...actual,
@@ -21,13 +21,13 @@ vi.mock('./lib/utils', async (importOriginal) => {
   };
 });
 
-vi.mock('./lib/resource-utils', () => ({
+vi.mock('../lib/resource-utils', () => ({
   selectPackage: vi.fn(),
   registerResourceInReleasePlease: vi.fn(),
   createVerifyWorkflow: vi.fn(),
 }));
 
-vi.mock('./lib/readme/git-utils', () => ({
+vi.mock('../lib/readme/git-utils', () => ({
   getRepoInfo: vi.fn(),
 }));
 
@@ -35,7 +35,7 @@ vi.mock('@inquirer/prompts', () => ({
   input: vi.fn(),
 }));
 
-vi.mock('./generate-readme', () => ({
+vi.mock('../generate-readme', () => ({
   main: vi.fn(),
 }));
 

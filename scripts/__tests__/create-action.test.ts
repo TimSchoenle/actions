@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as createAction from './create-action';
-import { Sys, createFromTemplate } from './lib/utils';
-import { selectPackage, registerActionInReleasePlease, createVerifyWorkflow } from './lib/action-utils';
-import { RenovateConfigManager } from './lib/renovate-config';
+import * as createAction from '../create-action';
+import { Sys, createFromTemplate } from '../lib/utils';
+import { selectPackage, registerActionInReleasePlease, createVerifyWorkflow } from '../lib/action-utils';
+import { RenovateConfigManager } from '../lib/renovate-config';
 import { input } from '@inquirer/prompts';
-import { main as generateReadme } from './generate-readme';
+import { main as generateReadme } from '../generate-readme';
 
 // Mock dependencies
-import type * as UtilsTypes from './lib/utils';
-vi.mock('./lib/utils', async (importOriginal) => {
+import type * as UtilsTypes from '../lib/utils';
+vi.mock('../lib/utils', async (importOriginal) => {
   const actual = await importOriginal<typeof UtilsTypes>();
   return {
     ...actual,
@@ -20,7 +20,7 @@ vi.mock('./lib/utils', async (importOriginal) => {
   };
 });
 
-vi.mock('./lib/action-utils', () => ({
+vi.mock('../lib/action-utils', () => ({
   selectPackage: vi.fn(),
   registerActionInReleasePlease: vi.fn(),
   createVerifyWorkflow: vi.fn(),
@@ -30,7 +30,7 @@ vi.mock('@inquirer/prompts', () => ({
   input: vi.fn(),
 }));
 
-vi.mock('./generate-readme', () => ({
+vi.mock('../generate-readme', () => ({
   main: vi.fn(),
 }));
 

@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ActionParser } from './action-parser';
-import { Sys } from '../../utils';
-import * as ReadmeUtils from '../utils';
-import * as GitUtils from '../git-utils';
+import { ActionParser } from '../action-parser';
+import { Sys } from '../../../utils';
+import * as ReadmeUtils from '../../utils';
+import * as GitUtils from '../../git-utils';
 
 // Mock Sys
-vi.mock('../../utils', async (importOriginal) => {
+vi.mock('../../../utils', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../utils')>();
   return {
     ...actual,
@@ -17,13 +17,13 @@ vi.mock('../../utils', async (importOriginal) => {
 });
 
 // Mock ReadmeUtils
-vi.mock('../utils', () => ({
+vi.mock('../../utils', () => ({
   getManifestVersions: vi.fn(),
   getReleaseComponent: vi.fn(),
 }));
 
 // Mock GitUtils
-vi.mock('../git-utils', () => ({
+vi.mock('../../git-utils', () => ({
   getRepoInfo: vi.fn(),
 }));
 

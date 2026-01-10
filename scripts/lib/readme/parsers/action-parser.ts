@@ -10,6 +10,34 @@ interface ActionConfig {
   description: string;
 }
 
+export interface ActionMetadata {
+  name: string;
+  description: string;
+  version: string;
+  usage: string;
+  category: string;
+}
+
+export function deriveActionMetadata(
+  dir: string,
+  version: string,
+  repoId: string,
+  configName: string,
+  configDescription?: string,
+): ActionMetadata {
+  const parts = dir.replaceAll('\\', '/').split('/');
+  const category = parts.length >= 3 ? parts[1] : 'Other';
+  const dirPath = dir.replaceAll('\\', '/');
+
+  return {
+    name: configName,
+    description: configDescription || '',
+    version,
+    usage: `\`uses: ${repoId}/${dirPath}@${version}\``,
+    category: category.charAt(0).toUpperCase() + category.slice(1),
+  };
+}
+
 export class ActionParser implements Parser {
   async parse(): Promise<DocumentationItem[]> {
     const items: DocumentationItem[] = [];
@@ -47,16 +75,14 @@ export class ActionParser implements Parser {
         continue;
       }
 
-      const parts = dir.replaceAll('\\', '/').split('/');
-      const category = parts.length >= 3 ? parts[1] : 'Other';
-      const dirPath = dir.replaceAll('\\', '/');
+      const metadata = deriveActionMetadata(dir, version, repoId, config.name, config.description);
 
       items.push({
-        name: config.name,
-        description: config.description || '',
-        version,
-        usage: `\`uses: ${repoId}/${dirPath}@${version}\``,
-        category: category.charAt(0).toUpperCase() + category.slice(1),
+        name: metadata.name,
+        description: metadata.description,
+        version: metadata.version,
+        usage: metadata.usage,
+        category: metadata.category,
         path: dir,
       });
     }

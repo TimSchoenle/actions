@@ -7,11 +7,11 @@ import {
   removeResourceFromReleasePlease,
   createVerifyWorkflow,
   removeVerifyWorkflow,
-} from './resource-utils';
-import { Sys } from './utils';
+} from '../resource-utils';
+import { Sys } from '../utils';
 
 // Mock utils
-vi.mock('./utils', () => ({
+vi.mock('../utils', () => ({
   Sys: {
     exists: vi.fn(),
     readdir: vi.fn(),
@@ -35,7 +35,7 @@ vi.mock('@inquirer/prompts', () => ({
 }));
 
 import { search, input } from '@inquirer/prompts';
-import { createFromTemplate } from './utils';
+import { createFromTemplate } from '../utils';
 
 describe('resource-utils', () => {
   beforeEach(() => {
