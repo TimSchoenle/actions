@@ -1,5 +1,5 @@
 import { describe, expect } from 'vitest';
-import { test as fcTest, fc } from '@fast-check/vitest';
+import { fc, test } from '@fast-check/vitest';
 import { deriveWorkflowMetadata } from '../workflow-parser';
 import { deriveActionMetadata } from '../action-parser';
 
@@ -8,7 +8,7 @@ const versionString = fc.stringMatching(/^[0-9.]+$/);
 
 describe('parsers fuzzing', () => {
   describe('deriveWorkflowMetadata', () => {
-    fcTest.prop([fc.string(), fc.string(), fc.string()])(
+    test.prop([fc.string(), fc.string(), fc.string()])(
       'should return null if path does not start with workflows/',
       (dir, ver, repo) => {
         if (dir.startsWith('workflows/') || dir.startsWith('workflows\\')) return true;
@@ -17,7 +17,7 @@ describe('parsers fuzzing', () => {
       },
     );
 
-    fcTest.prop([safeString, safeString, safeString, versionString])(
+    test.prop([safeString, safeString, safeString, versionString])(
       'should correctly derive metadata for valid paths',
       (repoId, pkg, sub, ver) => {
         const dir = `workflows/${pkg}/${sub}`;
@@ -31,7 +31,7 @@ describe('parsers fuzzing', () => {
       },
     );
 
-    fcTest.prop([safeString, safeString, versionString, safeString])(
+    test.prop([safeString, safeString, versionString, safeString])(
       'should handle path normalization with backslashes',
       (repoId, pkg, ver, sub) => {
         const dirWindows = `workflows\\${pkg}\\${sub}`;
@@ -48,7 +48,7 @@ describe('parsers fuzzing', () => {
       },
     );
 
-    fcTest.prop([safeString, safeString, safeString, versionString])(
+    test.prop([safeString, safeString, safeString, versionString])(
       'should generate correct usage string format',
       (repoId, pkg, sub, ver) => {
         const dir = `workflows/${pkg}/${sub}`;
@@ -62,7 +62,7 @@ describe('parsers fuzzing', () => {
       },
     );
 
-    fcTest.prop([safeString, versionString, safeString])(
+    test.prop([safeString, versionString, safeString])(
       'should handle single-level workflow paths',
       (pkg, ver, repo) => {
         const dir = `workflows/${pkg}`;
@@ -75,7 +75,7 @@ describe('parsers fuzzing', () => {
   });
 
   describe('deriveActionMetadata', () => {
-    fcTest.prop([safeString, safeString, versionString, fc.string()])(
+    test.prop([safeString, safeString, versionString, fc.string()])(
       'should correctly derive category',
       (repoId, pkg, ver, name) => {
         const dir = `actions/${pkg}`;
@@ -90,7 +90,7 @@ describe('parsers fuzzing', () => {
       },
     );
 
-    fcTest.prop([safeString, safeString, versionString, fc.string()])(
+    test.prop([safeString, safeString, versionString, fc.string()])(
       'should generate correct usage string format',
       (repoId, pkg, ver, name) => {
         const dir = `actions/${pkg}`;
@@ -103,7 +103,7 @@ describe('parsers fuzzing', () => {
       },
     );
 
-    fcTest.prop([safeString, safeString, versionString, fc.string({ minLength: 1 })])(
+    test.prop([safeString, safeString, versionString, fc.string({ minLength: 1 })])(
       'should preserve provided name',
       (repoId, pkg, ver, name) => {
         const dir = `actions/${pkg}`;
@@ -113,7 +113,7 @@ describe('parsers fuzzing', () => {
       },
     );
 
-    fcTest.prop([safeString, versionString, fc.string(), fc.string()])(
+    test.prop([safeString, versionString, fc.string(), fc.string()])(
       'should include description when provided',
       (pkg, ver, name, desc) => {
         const result = deriveActionMetadata(`actions/${pkg}`, ver, 'repo', name, desc);

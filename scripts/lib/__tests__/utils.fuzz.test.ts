@@ -1,10 +1,10 @@
 import { describe, expect } from 'vitest';
-import { test as fcTest, fc } from '@fast-check/vitest';
+import { fc, test } from '@fast-check/vitest';
 import { capitalize, replaceTemplateVariables, parseRepoName } from '../utils';
 
 describe('utils fuzzing', () => {
   describe('capitalize', () => {
-    fcTest.prop([fc.string({ minLength: 1 })])(
+    test.prop([fc.string({ minLength: 1 })])(
       'should always start with an uppercase letter if input is not empty',
       (str) => {
         const result = capitalize(str);
@@ -14,24 +14,24 @@ describe('utils fuzzing', () => {
       },
     );
 
-    fcTest.prop([fc.string()])('should not change the length of the string', (str) => {
+    test.prop([fc.string()])('should not change the length of the string', (str) => {
       const result = capitalize(str);
       expect(result.length).toBe(str.length);
     });
 
-    fcTest.prop([fc.string()])('should be idempotent (applying twice gives same result as once)', (str) => {
+    test.prop([fc.string()])('should be idempotent (applying twice gives same result as once)', (str) => {
       const once = capitalize(str);
       const twice = capitalize(once);
       expect(once).toBe(twice);
     });
 
-    fcTest.prop([fc.string({ minLength: 2 })])('should only change the first character', (str) => {
+    test.prop([fc.string({ minLength: 2 })])('should only change the first character', (str) => {
       const result = capitalize(str);
       // All characters after first should remain unchanged
       expect(result.slice(1)).toBe(str.slice(1));
     });
 
-    fcTest.prop([fc.string({ minLength: 1, maxLength: 1 })])('should handle single characters', (char) => {
+    test.prop([fc.string({ minLength: 1, maxLength: 1 })])('should handle single characters', (char) => {
       const result = capitalize(char);
       expect(result).toBe(char.toUpperCase());
     });
@@ -40,7 +40,7 @@ describe('utils fuzzing', () => {
   const safeStringGenerator = () => fc.stringMatching(/^[a-zA-Z0-9_]+$/);
 
   describe('replaceTemplateVariables', () => {
-    fcTest.prop([fc.string(), safeStringGenerator(), fc.string()])(
+    test.prop([fc.string(), safeStringGenerator(), fc.string()])(
       'should correctly replace variables',
       (prefix, key, value) => {
         // Avoid accidental double substitution or recursive substitution in this simple test
@@ -54,7 +54,7 @@ describe('utils fuzzing', () => {
       },
     );
 
-    fcTest.prop([fc.string(), fc.dictionary(fc.string({ minLength: 1 }), fc.string())])(
+    test.prop([fc.string(), fc.dictionary(fc.string({ minLength: 1 }), fc.string())])(
       'should not change content if keys are not present',
       (content, replacements) => {
         // Start with simple case: content doesn't have {{
@@ -65,7 +65,7 @@ describe('utils fuzzing', () => {
       },
     );
 
-    fcTest.prop([fc.dictionary(safeStringGenerator(), fc.string(), { minKeys: 2, maxKeys: 5 })])(
+    test.prop([fc.dictionary(safeStringGenerator(), fc.string(), { minKeys: 2, maxKeys: 5 })])(
       'should handle multiple replacements',
       (replacements) => {
         const keys = Object.keys(replacements);
@@ -81,7 +81,7 @@ describe('utils fuzzing', () => {
   });
 
   describe('parseRepoName', () => {
-    fcTest.prop([fc.stringMatching(/^[a-zA-Z0-9-_]+$/), fc.stringMatching(/^[a-zA-Z0-9-_.]{1,50}$/)])(
+    test.prop([fc.stringMatching(/^[a-zA-Z0-9-_]+$/), fc.stringMatching(/^[a-zA-Z0-9-_.]{1,50}$/)])(
       'should parse valid git urls',
       (user, repo) => {
         const urlHttps = `https://github.com/${user}/${repo}`;
