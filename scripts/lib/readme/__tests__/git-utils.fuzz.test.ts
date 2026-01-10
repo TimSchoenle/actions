@@ -66,8 +66,13 @@ describe('git-utils fuzzing', () => {
     it('should throw on invalid URLs', () => {
       fc.assert(
         fc.property(fc.string(), (invalidUrl) => {
-          // Skip valid-looking URLs
-          if (invalidUrl.includes('github.com')) return true;
+          // Skip valid-looking GitHub URLs based on hostname
+          try {
+            const parsed = new URL(invalidUrl);
+            if (parsed.hostname === 'github.com') return true;
+          } catch {
+            // Ignore parsing errors here; they will be handled by parseGitUrl
+          }
 
           expect(() => parseGitUrl(invalidUrl)).toThrow('Could not parse git remote url');
         }),
