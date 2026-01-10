@@ -44,6 +44,9 @@ jobs:
           ref: ${{ github.head_ref }}
           token: ${{ steps.generate_token.outputs.token }}
 
+      - name: Setup Gitsign
+        uses: chainguard-dev/actions/setup-gitsign@3e8a2a226fad9e1ecbf2d359b8a7697554a4ac6d # v1.15.10
+
       - name: Get Bot User Info
         id: get-bot-info
         uses: TimSchoenle/actions/actions/common/get-app-git-identity@26754381479003bd81b51fffecc97f1faa20a9bf # actions-common-get-app-git-identity-v1.1.0
