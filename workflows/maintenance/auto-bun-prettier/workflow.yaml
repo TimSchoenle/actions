@@ -5,10 +5,10 @@ on:
   workflow_call:
     inputs:
       format_command:
-        description: 'Command to run for formatting code'
+        description: 'Script name to run via "bun run"'
         required: false
         type: string
-        default: 'bun run format'
+        default: 'format'
       commit_message:
         description: 'Commit message for auto-formatted changes'
         required: false
@@ -19,18 +19,13 @@ on:
         required: false
         type: string
         default: '🎨 Code has been auto-formatted to adhere to the style guide.'
-      skip_commit:
-        description: 'Skip committing changes (useful for verification/dry-run)'
-        required: false
-        type: boolean
-        default: false
     secrets:
       APP_ID:
         required: true
         description: 'GitHub App ID for bot authentication'
       PRIVATE_KEY:
         required: true
-        description: 'GitHub App Private Key for bot authentication'
+        description: 'GitHub App Private Key (Requires permissions: contents:write, pull-requests:write)'
 
 jobs:
   auto-format:
@@ -78,18 +73,19 @@ jobs:
         uses: TimSchoenle/actions/actions/bun/setup-cached@5480c26f4f5c3d5f0c28ed90391410274a67d241 # actions-bun-setup-cached-v1.1.1
 
       - name: Format
-        run: ${{ inputs.format_command }}
+        env:
+          FORMAT_COMMAND: ${{ inputs.format_command }}
+        run: bun run "$FORMAT_COMMAND"
 
       - name: Commit and Push if changed
         id: auto-commit
-        if: ${{ inputs.skip_commit == false }}
         uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7
         with:
           commit_message: ${{ inputs.commit_message }}
           commit_author: '${{ steps.get-bot-info.outputs.bot-name }} <${{ steps.get-bot-info.outputs.bot-email }}>'
 
       - name: Comment on PR
-        if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request' && inputs.skip_commit == false
+        if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request' && inputs.pr_comment != ''
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           github-token: ${{ steps.generate_token.outputs.token }}
