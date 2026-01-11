@@ -87,6 +87,8 @@ jobs:
         with:
           commit_message: ${{ inputs.commit_message }}
           commit_author: '${{ steps.get-bot-info.outputs.bot-name }} <${{ steps.get-bot-info.outputs.bot-email }}>'
+          commit_user_name: ${{ steps.get-bot-info.outputs.bot-name }}
+          commit_user_email: ${{ steps.get-bot-info.outputs.bot-email }}
 
       - name: Comment on PR
         if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request' && inputs.pr_comment != ''
