@@ -14,6 +14,11 @@ on:
         required: false
         type: string
         default: 'style: auto-format code'
+      workflow_files_permission:
+        description: 'Grant the bot write permission to workflow files (.github/workflows)'
+        required: false
+        type: boolean
+        default: true
       pr_comment:
         description: 'Comment to post on the Pull Request'
         required: false
@@ -25,7 +30,7 @@ on:
         description: 'GitHub App ID for bot authentication'
       PRIVATE_KEY:
         required: true
-        description: 'GitHub App Private Key (Requires permissions: contents:write, pull-requests:write)'
+        description: 'GitHub App Private Key (Requires permissions: contents:write, pull-requests:write, workflows:write)'
 
 jobs:
   auto-format:
@@ -51,6 +56,7 @@ jobs:
           private-key: ${{ secrets.PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
+          permission-workflows: ${{ inputs.workflow_files_permission && 'write' || 'none' }} # To allow updating formatted action files
 
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
