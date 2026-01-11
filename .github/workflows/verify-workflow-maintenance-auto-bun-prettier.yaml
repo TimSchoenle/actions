@@ -26,15 +26,28 @@ jobs:
     if: ${{ !startsWith(github.ref_name, 'ci-test/verify-auto-format-') }}
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      actions: write
+      contents: write # To push the test branch
+      actions: write # To trigger the workflow run
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+            github.com:443
+
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          persist-credentials: false
 
       - name: Define Branch Name
         id: branch-name
-        run: echo "branch=ci-test/verify-auto-format-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
+        env:
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: echo "branch=ci-test/verify-auto-format-${RUN_ID}-${RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
 
       - name: Create Test Branch and Content
         env:
@@ -43,6 +56,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          # Using manual auth to avoid credential persistence in .git/config
           git checkout -b "$BRANCH_NAME"
 
           # Create an unformatted file
@@ -54,27 +68,27 @@ jobs:
           git add unformatted-test-file.ts package.json
           git commit -m "setup: add unformatted file for testing"
 
-          git push origin "$BRANCH_NAME"
+          git push "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" "$BRANCH_NAME"
 
       - name: Trigger Self on Test Branch
         env:
           BRANCH_NAME: ${{ steps.branch-name.outputs.branch }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WORKFLOW_NAME: ${{ github.workflow }}
         run: |
           echo "🔹 Triggering workflow on $BRANCH_NAME..."
-          gh workflow run "${{ github.workflow }}" --ref "$BRANCH_NAME"
+          gh workflow run "$WORKFLOW_NAME" --ref "$BRANCH_NAME"
 
       - name: Wait for Test Run
         env:
           BRANCH_NAME: ${{ steps.branch-name.outputs.branch }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WORKFLOW_NAME: ${{ github.workflow }}
         run: |
           echo "🔹 Waiting for workflow run on $BRANCH_NAME to complete..."
-          # Sleep briefly to ensure the API sees the new run
           sleep 10
 
-          # Find the run ID for the run triggered on our branch
-          RUN_ID=$(gh run list --workflow "${{ github.workflow }}" --branch "$BRANCH_NAME" --limit 1 --json databaseId --jq '.[0].databaseId')
+          RUN_ID=$(gh run list --workflow "$WORKFLOW_NAME" --branch "$BRANCH_NAME" --limit 1 --json databaseId --jq '.[0].databaseId')
 
           if [[ -z "$RUN_ID" ]]; then
             echo "❌ Could not find triggered run on branch $BRANCH_NAME"
@@ -90,7 +104,7 @@ jobs:
           BRANCH_NAME: ${{ steps.branch-name.outputs.branch }}
         run: |
           if [[ -n "$BRANCH_NAME" ]]; then
-             git push origin --delete "$BRANCH_NAME" || echo "Branch $BRANCH_NAME already deleted"
+             git push "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" --delete "$BRANCH_NAME" || echo "Branch $BRANCH_NAME already deleted"
           fi
 
   # =================================================================================
@@ -107,7 +121,6 @@ jobs:
       PRIVATE_KEY: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
     with:
       skip_commit: false
-      # We install prettier here because the bare repo doesn't have it
       format_command: 'bun add -d prettier && bun run format'
 
   verify:
@@ -115,9 +128,20 @@ jobs:
     if: ${{ startsWith(github.ref_name, 'ci-test/verify-auto-format-') }}
     needs: test_workflow
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+
       - name: Checkout Test Branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          persist-credentials: false
 
       - name: Verify Formatting
         run: |
