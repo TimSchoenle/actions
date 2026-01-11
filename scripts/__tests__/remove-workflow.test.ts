@@ -9,7 +9,7 @@ import {
 } from '../lib/resource-utils';
 import { RenovateConfigManager } from '../lib/renovate-config';
 import { confirm, search } from '@inquirer/prompts';
-import { main as generateReadme } from '../generate-readme';
+import { main as generateDocs } from '../generate-docs';
 
 // Mock Dependencies
 import type * as UtilsTypes from '../lib/utils';
@@ -39,7 +39,7 @@ vi.mock('@inquirer/prompts', () => ({
   search: vi.fn(),
 }));
 
-vi.mock('../generate-readme', () => ({
+vi.mock('../generate-docs', () => ({
   main: vi.fn(),
 }));
 
@@ -62,7 +62,7 @@ describe('remove-workflow', () => {
     expect(Sys.rm).toHaveBeenCalledWith(expect.stringContaining('sub1'), { recursive: true, force: true });
     expect(removeResourceFromReleasePlease).toHaveBeenCalledWith('workflow', 'pkg', 'sub1');
     expect(removeVerifyWorkflow).toHaveBeenCalledWith('workflow', 'pkg', 'sub1');
-    expect(generateReadme).toHaveBeenCalled();
+    expect(generateDocs).toHaveBeenCalled();
   });
 
   it('should remove package if last workflow removed', async () => {

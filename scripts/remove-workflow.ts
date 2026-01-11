@@ -8,7 +8,7 @@ import {
   removeVerifyWorkflow,
   selectPackage,
 } from './lib/resource-utils.js';
-import { main as generateReadme } from './generate-readme.js';
+import { main as generateDocs } from './generate-docs.js';
 
 const WORKFLOWS_DIR = path.join(ROOT_DIR, 'workflows');
 
@@ -80,7 +80,7 @@ export async function main() {
 
   // 5. Regenerate README
   console.log(chalk.blue('\nUpdating README.md...'));
-  await generateReadme();
+  await generateDocs();
 
   console.log(chalk.blue('\nDone! 🗑️'));
 }

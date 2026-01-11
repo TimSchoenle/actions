@@ -8,7 +8,7 @@ import {
   removeVerifyWorkflow,
   selectPackage,
 } from './lib/action-utils.js';
-import { main as generateReadme } from './generate-readme.js';
+import { main as generateDocs } from './generate-docs.js';
 
 export async function main() {
   console.log(chalk.red('🗑️  Shared CI Action Remover'));
@@ -78,7 +78,7 @@ export async function main() {
 
   // 5. Regenerate README
   console.log(chalk.blue('\nUpdating README.md...'));
-  await generateReadme();
+  await generateDocs();
 
   console.log(chalk.blue('\nDone! 🗑️'));
 }

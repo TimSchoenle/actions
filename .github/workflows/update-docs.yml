@@ -55,16 +55,16 @@ jobs:
       - name: Setup Bun
         uses: TimSchoenle/actions/actions/bun/setup-cached@5480c26f4f5c3d5f0c28ed90391410274a67d241 # actions-bun-setup-cached-v1.1.1
 
-      - name: Generate README
-        run: bun run generate-readme
+      - name: Generate Docs
+        run: bun run generate-docs
 
       - name: Commit and Push if changed
         id: auto-commit
         uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7
         with:
-          commit_message: 'docs: auto-update README.md'
+          commit_message: 'docs: auto-update documentation'
           commit_author: '${{ steps.get-bot-info.outputs.bot-name }} <${{ steps.get-bot-info.outputs.bot-email }}>'
-          file_pattern: README.md
+          file_pattern: 'README.md SECURITY.md'
 
       - name: Comment on PR
         if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request'
@@ -76,5 +76,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: '📝 `README.md` has been auto-updated with the latest action details.'
+              body: '📝 `README.md` and `SECURITY.md` have been auto-updated with the latest details.'
             })

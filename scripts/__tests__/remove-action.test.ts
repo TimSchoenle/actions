@@ -3,7 +3,7 @@ import * as removeAction from '../remove-action';
 import { Sys } from '../lib/utils';
 import { selectPackage, getSubActions } from '../lib/action-utils';
 import { confirm, search } from '@inquirer/prompts';
-import { main as generateReadme } from '../generate-readme';
+import { main as generateDocs } from '../generate-docs';
 
 // Mock Dependencies
 import type * as UtilsTypes from '../lib/utils';
@@ -31,7 +31,7 @@ vi.mock('@inquirer/prompts', () => ({
   search: vi.fn(),
 }));
 
-vi.mock('../generate-readme', () => ({
+vi.mock('../generate-docs', () => ({
   main: vi.fn(),
 }));
 
@@ -56,7 +56,7 @@ describe('remove-action', () => {
     await removeAction.main();
 
     expect(Sys.rm).toHaveBeenCalledWith(expect.stringContaining('sub1'), { recursive: true, force: true });
-    expect(generateReadme).toHaveBeenCalled();
+    expect(generateDocs).toHaveBeenCalled();
   });
 
   it('should remove package if last sub-action removed', async () => {

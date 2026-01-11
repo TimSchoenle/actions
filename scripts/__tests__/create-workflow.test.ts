@@ -5,7 +5,7 @@ import { selectPackage, registerResourceInReleasePlease, createVerifyWorkflow } 
 import { RenovateConfigManager } from '../lib/renovate-config';
 import { getRepoInfo } from '../lib/readme/git-utils';
 import { input } from '@inquirer/prompts';
-import { main as generateReadme } from '../generate-readme';
+import { main as generateDocs } from '../generate-docs';
 
 // Mock dependencies
 import type * as UtilsTypes from '../lib/utils';
@@ -35,7 +35,7 @@ vi.mock('@inquirer/prompts', () => ({
   input: vi.fn(),
 }));
 
-vi.mock('../generate-readme', () => ({
+vi.mock('../generate-docs', () => ({
   main: vi.fn(),
 }));
 
@@ -67,7 +67,7 @@ describe('create-workflow', () => {
     // Verify Config Updates
     expect(createVerifyWorkflow).toHaveBeenCalledWith('workflow', 'existing-pkg', 'new-sub');
     expect(registerResourceInReleasePlease).toHaveBeenCalledWith('workflow', 'existing-pkg', 'new-sub');
-    expect(generateReadme).toHaveBeenCalled();
+    expect(generateDocs).toHaveBeenCalled();
   });
 
   it('should create new workflow and README if missing', async () => {

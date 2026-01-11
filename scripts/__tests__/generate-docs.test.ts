@@ -121,7 +121,7 @@ describe('Generate Readme Script', () => {
         'Template\n{{REPO}}\n<!-- ACTIONS_TABLE -->\n<!-- WORKFLOWS_TABLE -->\n<!-- CONFIGS_TABLE -->\nEnd',
     });
 
-    const { main } = await import('../generate-readme.js');
+    const { main } = await import('../generate-docs.js');
     await main();
 
     // Verify parsers were called
@@ -130,9 +130,9 @@ describe('Generate Readme Script', () => {
     expect(mocks.renovateParse).toHaveBeenCalledTimes(1);
 
     // Verify generateSection was called with correct arguments
-    expect(mocks.generateSection).toHaveBeenCalledTimes(3);
+    expect(mocks.generateSection).toHaveBeenCalledTimes(5);
 
-    // Actions
+    // Actions (README)
     expect(mocks.generateSection).toHaveBeenNthCalledWith(
       1,
       mockActions,
@@ -140,7 +140,7 @@ describe('Generate Readme Script', () => {
       expect.any(Function),
     );
 
-    // Workflows
+    // Workflows (README)
     expect(mocks.generateSection).toHaveBeenNthCalledWith(
       2,
       mockWorkflows,
@@ -148,11 +148,27 @@ describe('Generate Readme Script', () => {
       expect.any(Function),
     );
 
-    // Configs
+    // Configs (README)
     expect(mocks.generateSection).toHaveBeenNthCalledWith(
       3,
       mockConfigs,
       ['Config', 'Description', 'Usage'],
+      expect.any(Function),
+    );
+
+    // Actions (SECURITY)
+    expect(mocks.generateSection).toHaveBeenNthCalledWith(
+      4,
+      mockActions,
+      ['Component', 'Version', 'Supported'],
+      expect.any(Function),
+    );
+
+    // Workflows (SECURITY)
+    expect(mocks.generateSection).toHaveBeenNthCalledWith(
+      5,
+      mockWorkflows,
+      ['Component', 'Version', 'Supported'],
       expect.any(Function),
     );
 
@@ -161,7 +177,7 @@ describe('Generate Readme Script', () => {
 
     // Verify file operations
     expect(mocks.sysFile).toHaveBeenCalled();
-    expect(mocks.sysWrite).toHaveBeenCalledTimes(1);
+    expect(mocks.sysWrite).toHaveBeenCalledTimes(2);
 
     // Verify the content written
     const writtenContent = mocks.sysWrite.mock.calls[0][1] as string;
@@ -183,7 +199,7 @@ describe('Generate Readme Script', () => {
       exists: async () => false,
     });
 
-    const { main } = await import('../generate-readme.js');
+    const { main } = await import('../generate-docs.js');
 
     // Expect the function to throw due to process.exit
     await expect(main()).rejects.toThrow('Process exit called');
@@ -198,7 +214,7 @@ describe('Generate Readme Script', () => {
       text: async () => 'Repo: {{REPO}}\n<!-- ACTIONS_TABLE -->\n<!-- CONFIGS_TABLE -->',
     });
 
-    const { main } = await import('../generate-readme.js');
+    const { main } = await import('../generate-docs.js');
     await main();
 
     const writtenContent = mocks.sysWrite.mock.calls[0][1] as string;
@@ -216,10 +232,10 @@ describe('Generate Readme Script', () => {
       text: async () => '<!-- ACTIONS_TABLE -->\n<!-- WORKFLOWS_TABLE -->\n<!-- CONFIGS_TABLE -->',
     });
 
-    const { main } = await import('../generate-readme.js');
+    const { main } = await import('../generate-docs.js');
     await main();
 
-    expect(mocks.sysWrite).toHaveBeenCalledTimes(1);
+    expect(mocks.sysWrite).toHaveBeenCalledTimes(2);
     const writtenContent = mocks.sysWrite.mock.calls[0][1] as string;
     expect(writtenContent).not.toContain('<!-- ACTIONS_TABLE -->');
     expect(writtenContent).not.toContain('<!-- WORKFLOWS_TABLE -->');

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { Sys, capitalize, createFromTemplate, START_VERSION, ROOT_DIR } from './lib/utils.js';
 import { selectPackage, registerResourceInReleasePlease, createVerifyWorkflow } from './lib/resource-utils.js';
 import { getRepoInfo } from './lib/readme/git-utils.js';
-import { main as generateReadme } from './generate-readme.js';
+import { main as generateDocs } from './generate-docs.js';
 
 const WORKFLOWS_DIR = path.join(ROOT_DIR, 'workflows');
 
@@ -79,7 +79,7 @@ export async function main() {
 
   // 7. Regenerate README
   console.log(chalk.blue('\nUpdating README.md...'));
-  await generateReadme();
+  await generateDocs();
 
   console.log(chalk.blue('\nDone! 🚀'));
 }

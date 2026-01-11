@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import path from 'node:path';
 import { ACTIONS_DIR, Sys, capitalize, createFromTemplate, START_VERSION } from './lib/utils.js';
 import { selectPackage, registerActionInReleasePlease, createVerifyWorkflow } from './lib/action-utils.js';
-import { main as generateReadme } from './generate-readme.js';
+import { main as generateDocs } from './generate-docs.js';
 
 export async function main() {
   console.log(chalk.blue('🚀 Shared CI Action Generator'));
@@ -58,7 +58,7 @@ export async function main() {
 
   // 7. Regenerate README
   console.log(chalk.blue('\nUpdating README.md...'));
-  await generateReadme();
+  await generateDocs();
 
   console.log(chalk.blue('\nDone! 🚀'));
 }
