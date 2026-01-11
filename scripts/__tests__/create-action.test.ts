@@ -4,7 +4,7 @@ import { Sys, createFromTemplate } from '../lib/utils';
 import { selectPackage, registerActionInReleasePlease, createVerifyWorkflow } from '../lib/action-utils';
 import { RenovateConfigManager } from '../lib/renovate-config';
 import { input } from '@inquirer/prompts';
-import { main as generateReadme } from '../generate-readme';
+import { main as generateDocs } from '../generate-docs';
 
 // Mock dependencies
 import type * as UtilsTypes from '../lib/utils';
@@ -30,7 +30,7 @@ vi.mock('@inquirer/prompts', () => ({
   input: vi.fn(),
 }));
 
-vi.mock('../generate-readme', () => ({
+vi.mock('../generate-docs', () => ({
   main: vi.fn(),
 }));
 
@@ -66,7 +66,7 @@ describe('create-action', () => {
     // Verify Config Updates
     expect(createVerifyWorkflow).toHaveBeenCalledWith('existing-pkg', 'new-sub');
     expect(registerActionInReleasePlease).toHaveBeenCalledWith('existing-pkg', 'new-sub');
-    expect(generateReadme).toHaveBeenCalled();
+    expect(generateDocs).toHaveBeenCalled();
   });
 
   it('should create new action and package files if new package', async () => {
