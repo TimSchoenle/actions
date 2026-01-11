@@ -48,6 +48,12 @@ Here is a list of all currently maintained actions in this repository:
 | --- | --- | --- | --- |
 | [Common Test Workflow21345](./workflows/common/test2) | Reusable workflow for common-test2 | workflows-common-test2-v2.9.0 | `uses: TimSchoenle/actions/.github/workflows/common-test2.yaml@workflows-common-test2-v2.9.0` |
 
+### Maintenance
+
+| Workflow | Description | Version | Usage |
+| --- | --- | --- | --- |
+| [Auto Format](./workflows/maintenance/auto-bun-prettier) | Reusable workflow to auto-format code using Bun (Prettier) and commit changes. | workflows-maintenance-auto-bun-prettier-v1.0.0 | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@workflows-maintenance-auto-bun-prettier-v1.0.0` |
+
 
 
 ## ⚙️ Shared Configurations
