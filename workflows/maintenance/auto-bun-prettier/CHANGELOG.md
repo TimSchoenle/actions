@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.2...workflows-maintenance-auto-bun-prettier-meta-v1.1.3) (2026-01-11)
+
+
+### Bug Fixes
+
+* **Workflow:** correctly set commiter ([#156](https://github.com/TimSchoenle/actions/issues/156)) ([d465ccc](https://github.com/TimSchoenle/actions/commit/d465ccc709c0d19f45f868ea7ef0c45172737496))
+
 ## [1.1.2](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.1...workflows-maintenance-auto-bun-prettier-meta-v1.1.2) (2026-01-11)
 
 

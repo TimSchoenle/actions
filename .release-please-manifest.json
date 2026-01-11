@@ -6,5 +6,5 @@
   "actions/common/setup-app-git-identity": "1.1.0",
   "actions/common/get-app-git-identity": "1.1.0",
   "actions/bun/setup-cached": "1.1.1",
-  "workflows/maintenance/auto-bun-prettier": "1.1.2"
+  "workflows/maintenance/auto-bun-prettier": "1.1.3"
 }
