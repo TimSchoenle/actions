@@ -36,6 +36,11 @@
       "release-type": "simple",
       "component": "actions-bun-setup-cached",
       "include-component-in-tag": true
+    },
+    "workflows/maintenance/auto-bun-prettier": {
+      "release-type": "simple",
+      "component": "workflows-maintenance-auto-bun-prettier-meta",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

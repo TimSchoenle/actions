@@ -1,0 +1,102 @@
+name: Auto Format
+description: 'Reusable workflow to auto-format code using Bun (Prettier) and commit changes.'
+
+on:
+  workflow_call:
+    inputs:
+      format_command:
+        description: 'Command to run for formatting code'
+        required: false
+        type: string
+        default: 'bun run format'
+      commit_message:
+        description: 'Commit message for auto-formatted changes'
+        required: false
+        type: string
+        default: 'style: auto-format code'
+      pr_comment:
+        description: 'Comment to post on the Pull Request'
+        required: false
+        type: string
+        default: '🎨 Code has been auto-formatted to adhere to the style guide.'
+      skip_commit:
+        description: 'Skip committing changes (useful for verification/dry-run)'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      APP_ID:
+        required: true
+        description: 'GitHub App ID for bot authentication'
+      PRIVATE_KEY:
+        required: true
+        description: 'GitHub App Private Key for bot authentication'
+
+jobs:
+  auto-format:
+    name: Auto Format
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # to push code changes
+      pull-requests: write # to comment on PRs
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            bun.sh:443
+            github.com:443
+            registry.npmjs.org:443
+            release-assets.githubusercontent.com:443
+
+      - name: Generate Bot Token
+        id: generate_token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+          token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Get Bot User Info
+        id: get-bot-info
+        uses: TimSchoenle/actions/actions/common/get-app-git-identity@26754381479003bd81b51fffecc97f1faa20a9bf # actions-common-get-app-git-identity-v1.1.0
+        with:
+          app-slug: ${{ steps.generate_token.outputs.app-slug }}
+          token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Setup Bun
+        uses: TimSchoenle/actions/actions/bun/setup-cached@5480c26f4f5c3d5f0c28ed90391410274a67d241 # actions-bun-setup-cached-v1.1.1
+
+      - name: Format
+        run: ${{ inputs.format_command }}
+
+      - name: Commit and Push if changed
+        id: auto-commit
+        if: ${{ inputs.skip_commit == false }}
+        uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7
+        with:
+          commit_message: ${{ inputs.commit_message }}
+          commit_author: '${{ steps.get-bot-info.outputs.bot-name }} <${{ steps.get-bot-info.outputs.bot-email }}>'
+
+      - name: Comment on PR
+        if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request' && inputs.skip_commit == false
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          github-token: ${{ steps.generate_token.outputs.token }}
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '${{ inputs.pr_comment }}'
+            })
