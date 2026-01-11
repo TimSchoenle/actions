@@ -11,6 +11,7 @@ permissions: {}
 
 jobs:
   auto-format:
+
     name: Auto Format
     uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@73159d261f2a5f54bf00e8f41f2000a188882465 # workflows-maintenance-auto-bun-prettier-v1.1.1
     secrets:
