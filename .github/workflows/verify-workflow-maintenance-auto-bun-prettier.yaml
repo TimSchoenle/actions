@@ -1,0 +1,135 @@
+name: Verify Workflow Maintenance Auto Bun Prettier
+
+on:
+  push:
+    paths:
+      - 'workflows/maintenance/auto-bun-prettier/**'
+      - '.github/workflows/verify-workflow-maintenance-auto-bun-prettier.yaml'
+  pull_request:
+    paths:
+      - 'workflows/maintenance/auto-bun-prettier/**'
+      - '.github/workflows/verify-workflow-maintenance-auto-bun-prettier.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # =================================================================================
+  # ORCHESTRATOR JOB
+  # This job runs on the main/PR branch. It sets up a temporary branch and triggers
+  # this same workflow on that branch to test the reusable workflow in isolation.
+  # =================================================================================
+  setup_and_trigger:
+    name: Setup & Trigger (Orchestrator)
+    if: ${{ !startsWith(github.ref_name, 'ci-test/verify-auto-format-') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Define Branch Name
+        id: branch-name
+        run: echo "branch=ci-test/verify-auto-format-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
+
+      - name: Create Test Branch and Content
+        env:
+          BRANCH_NAME: ${{ steps.branch-name.outputs.branch }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH_NAME"
+
+          # Create an unformatted file
+          echo "const    testObj   =    { a:1,    b: 2, c:3}" > unformatted-test-file.ts
+
+          # Basic package.json so the format script works
+          echo '{ "scripts": { "format": "prettier --write \"**/*.ts\"" } }' > package.json
+
+          git add unformatted-test-file.ts package.json
+          git commit -m "setup: add unformatted file for testing"
+
+          git push origin "$BRANCH_NAME"
+
+      - name: Trigger Self on Test Branch
+        env:
+          BRANCH_NAME: ${{ steps.branch-name.outputs.branch }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔹 Triggering workflow on $BRANCH_NAME..."
+          gh workflow run "${{ github.workflow }}" --ref "$BRANCH_NAME"
+
+      - name: Wait for Test Run
+        env:
+          BRANCH_NAME: ${{ steps.branch-name.outputs.branch }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔹 Waiting for workflow run on $BRANCH_NAME to complete..."
+          # Sleep briefly to ensure the API sees the new run
+          sleep 10
+
+          # Find the run ID for the run triggered on our branch
+          RUN_ID=$(gh run list --workflow "${{ github.workflow }}" --branch "$BRANCH_NAME" --limit 1 --json databaseId --jq '.[0].databaseId')
+
+          if [[ -z "$RUN_ID" ]]; then
+            echo "❌ Could not find triggered run on branch $BRANCH_NAME"
+            exit 1
+          fi
+
+          echo "🔹 Watching run $RUN_ID..."
+          gh run watch "$RUN_ID" --exit-status
+
+      - name: Cleanup Test Branch
+        if: always()
+        env:
+          BRANCH_NAME: ${{ steps.branch-name.outputs.branch }}
+        run: |
+          if [[ -n "$BRANCH_NAME" ]]; then
+             git push origin --delete "$BRANCH_NAME" || echo "Branch $BRANCH_NAME already deleted"
+          fi
+
+  # =================================================================================
+  # WORKER JOBS
+  # These jobs ONLY run when the workflow is triggered on the test branch.
+  # They function as the actual integration test.
+  # =================================================================================
+  test_workflow:
+    name: Run Auto Format (Worker)
+    if: ${{ startsWith(github.ref_name, 'ci-test/verify-auto-format-') }}
+    uses: ./workflows/maintenance/auto-bun-prettier/workflow.yaml
+    secrets:
+      APP_ID: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
+      PRIVATE_KEY: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
+    with:
+      skip_commit: false
+      # We install prettier here because the bare repo doesn't have it
+      format_command: 'bun add -d prettier && bun run format'
+
+  verify:
+    name: Verify Results (Worker)
+    if: ${{ startsWith(github.ref_name, 'ci-test/verify-auto-format-') }}
+    needs: test_workflow
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Test Branch
+        uses: actions/checkout@v4
+
+      - name: Verify Formatting
+        run: |
+          EXPECTED="const testObj = { a: 1, b: 2, c: 3 };"
+          ACTUAL=$(cat unformatted-test-file.ts)
+
+          echo "Expected: $EXPECTED"
+          echo "Actual:   $ACTUAL"
+
+          if [[ "$ACTUAL" == *"$EXPECTED"* ]]; then
+              echo "✅ Success: File was formatted correctly."
+          else
+              echo "❌ Failure: File was NOT formatted correctly."
+              exit 1
+          fi
