@@ -22,10 +22,10 @@
   "prConcurrentLimit": 0,
   "branchConcurrentLimit": 0,
   "github-actions": {
-    "fileMatch": [
-      "/(^|/)(workflow-templates|\\.(?:github|gitea|forgejo)/(?:workflows|actions))/.+\\.ya?ml$/",
-      "/(^|/)action\\.ya?ml$/",
-      "^workflows/.+/workflow\\.ya?ml$"
+    "managerFilePatterns": [
+      "//(^|/)(workflow-templates|\\.(?:github|gitea|forgejo)/(?:workflows|actions))/.+\\.ya?ml$//",
+      "//(^|/)action\\.ya?ml$//",
+      "/^workflows/.+/workflow\\.ya?ml$/"
     ]
   },
   "packageRules": [
