@@ -36,6 +36,12 @@ Any version not listed in the following tables is not supported.
 | --- | --- | --- |
 | [Common Test Workflow21345](./workflows/common/test2) | workflows-common-test2-v2.9.0 | :white_check_mark: |
 
+### Maintenance
+
+| Component | Version | Supported |
+| --- | --- | --- |
+| [Auto Format](./workflows/maintenance/auto-bun-prettier) | workflows-maintenance-auto-bun-prettier-v1.0.0 | :white_check_mark: |
+
 
 
 ## Reporting a Vulnerability
