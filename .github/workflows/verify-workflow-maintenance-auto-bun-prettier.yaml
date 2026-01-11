@@ -15,6 +15,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
   # =================================================================================
   # ORCHESTRATOR JOB
@@ -52,6 +54,8 @@ jobs:
       - name: Create Test Branch and Content
         env:
           BRANCH_NAME: ${{ steps.branch-name.outputs.branch }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -68,7 +72,9 @@ jobs:
           git add unformatted-test-file.ts package.json
           git commit -m "setup: add unformatted file for testing"
 
-          git push "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" "$BRANCH_NAME"
+          # Construct remote URL securely using env variables to avoid injection
+          REMOTE_URL="https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git"
+          git push "$REMOTE_URL" "$BRANCH_NAME"
 
       - name: Trigger Self on Test Branch
         env:
@@ -88,6 +94,7 @@ jobs:
           echo "🔹 Waiting for workflow run on $BRANCH_NAME to complete..."
           sleep 10
 
+          # Use GH CLI to safely find run ID
           RUN_ID=$(gh run list --workflow "$WORKFLOW_NAME" --branch "$BRANCH_NAME" --limit 1 --json databaseId --jq '.[0].databaseId')
 
           if [[ -z "$RUN_ID" ]]; then
@@ -102,9 +109,12 @@ jobs:
         if: always()
         env:
           BRANCH_NAME: ${{ steps.branch-name.outputs.branch }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           if [[ -n "$BRANCH_NAME" ]]; then
-             git push "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" --delete "$BRANCH_NAME" || echo "Branch $BRANCH_NAME already deleted"
+             REMOTE_URL="https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git"
+             git push "$REMOTE_URL" --delete "$BRANCH_NAME" || echo "Branch $BRANCH_NAME already deleted"
           fi
 
   # =================================================================================
@@ -116,6 +126,9 @@ jobs:
     name: Run Auto Format (Worker)
     if: ${{ startsWith(github.ref_name, 'ci-test/verify-auto-format-') }}
     uses: ./workflows/maintenance/auto-bun-prettier/workflow.yaml
+    permissions:
+      contents: write # Required to commit changes
+      pull-requests: write # Required to comment (if PR)
     secrets:
       APP_ID: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
       PRIVATE_KEY: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
