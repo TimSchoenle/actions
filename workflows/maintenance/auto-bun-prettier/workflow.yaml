@@ -14,11 +14,6 @@ on:
         required: false
         type: string
         default: 'style: auto-format code'
-      skip_commit:
-        description: 'Skip committing changes (useful for verification/dry-run)'
-        required: false
-        type: boolean
-        default: false
       workflow_files_permission:
         description: 'Grant the bot write permission to workflow files (.github/workflows)'
         required: false
