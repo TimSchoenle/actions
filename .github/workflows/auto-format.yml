@@ -12,60 +12,7 @@ permissions: {}
 jobs:
   auto-format:
     name: Auto Format
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write # to push code changes
-      pull-requests: write # to comment on PRs
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
-        with:
-          egress-policy: block
-          allowed-endpoints: >
-            bun.sh:443
-            github.com:443
-            registry.npmjs.org:443
-            release-assets.githubusercontent.com:443
-
-      - name: Generate Bot Token
-        id: generate_token
-        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
-        with:
-          app-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
-          permission-contents: write
-          permission-pull-requests: write
-
-      - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-          ref: ${{ github.head_ref }}
-          token: ${{ steps.generate_token.outputs.token }}
-
-      - name: Setup Bun
-        uses: TimSchoenle/actions/actions/bun/setup-cached@5480c26f4f5c3d5f0c28ed90391410274a67d241 # actions-bun-setup-cached-v1.1.1
-
-      - name: Format
-        run: bun run format
-
-      - name: Commit and Push if changed
-        id: auto-commit
-        uses: TimSchoenle/actions/actions/common/commit-changes@85df1583f874da24a2de30e19280e031c25a09c5 # actions-common-commit-changes-v1.1.1
-        with:
-          commit_message: 'style: auto-format code'
-          token: ${{ steps.generate_token.outputs.token }}
-
-      - name: Comment on PR
-        if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request'
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
-        with:
-          github-token: ${{ steps.generate_token.outputs.token }}
-          script: |
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: '🎨 Code has been auto-formatted to adhere to the style guide.'
-            })
+    uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@41e335b0e048ae3d367d6728482d2247ee2fd528 # workflows-maintenance-auto-bun-prettier-v1.1.0
+    secrets:
+      APP_ID: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
+      PRIVATE_KEY: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
