@@ -40,7 +40,7 @@ Any version not listed in the following tables is not supported.
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Auto Format](./workflows/maintenance/auto-bun-prettier) | workflows-maintenance-auto-bun-prettier-v1.1.0 | :white_check_mark: |
+| [Auto Format](./workflows/maintenance/auto-bun-prettier) | workflows-maintenance-auto-bun-prettier-v1.1.1 | :white_check_mark: |
 
 
 

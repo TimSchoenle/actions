@@ -52,7 +52,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Workflow | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Auto Format](./workflows/maintenance/auto-bun-prettier) | Reusable workflow to auto-format code using Bun (Prettier) and commit changes. | workflows-maintenance-auto-bun-prettier-v1.1.0 | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@workflows-maintenance-auto-bun-prettier-v1.1.0` |
+| [Auto Format](./workflows/maintenance/auto-bun-prettier) | Reusable workflow to auto-format code using Bun (Prettier) and commit changes. | workflows-maintenance-auto-bun-prettier-v1.1.1 | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@workflows-maintenance-auto-bun-prettier-v1.1.1` |
 
 
 
