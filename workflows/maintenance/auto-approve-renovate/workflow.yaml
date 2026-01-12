@@ -47,7 +47,7 @@ jobs:
         run: |
           echo "Checking commits for PR: $PR_URL"
 
-          NON_MATCHING_COMMITS=$(gh pr view "$PR_URL" --json commits --jq \
+          NON_MATCHING_COMMITS=$(gh pr view "$PR_URL" --json commits | jq -r \
             --argjson USER_ID "$RENOVATE_USER_ID" \
             '.commits[] | select((.authors | length == 0) or ([.authors[].id] | all(. == $USER_ID) | not)) | .oid')
 
