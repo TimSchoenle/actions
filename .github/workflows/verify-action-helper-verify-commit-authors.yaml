@@ -27,7 +27,7 @@ jobs:
           egress-policy: audit
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           persist-credentials: false
 
@@ -81,8 +81,10 @@ jobs:
 
       - name: Assert Positive Result
         if: steps.test-positive.outputs.verified != 'true'
+        env:
+          VERIFIED: ${{ steps.test-positive.outputs.verified }}
         run: |
-          echo "::error::Positive test failed! Expected verified=true, got ${{ steps.test-positive.outputs.verified }}"
+          echo "::error::Positive test failed! Expected verified=true, got $VERIFIED"
           exit 1
 
       - name: Test verify-commit-authors (Negative - Should Fail)
@@ -95,6 +97,8 @@ jobs:
 
       - name: Assert Negative Result
         if: steps.test-negative.outputs.verified != 'false'
+        env:
+          VERIFIED: ${{ steps.test-negative.outputs.verified }}
         run: |
-          echo "::error::Negative test failed! Expected verified=false, got ${{ steps.test-negative.outputs.verified }}"
+          echo "::error::Negative test failed! Expected verified=false, got $VERIFIED"
           exit 1
