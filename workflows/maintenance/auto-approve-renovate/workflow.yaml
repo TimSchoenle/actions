@@ -1,0 +1,112 @@
+name: 'Maintenance Auto-approve-renovate'
+description: 'Reusable workflow to auto approve Renovate PRs, this is useful to auto merge Renovate PRs which have auto-merge enabled.'
+
+on:
+  workflow_call:
+    inputs:
+      renovate-user-id:
+        description: 'User ID of the renovate bot'
+        required: false
+        type: string
+        default: '29139614'
+    secrets:
+      token:
+        description: 'GitHub Token with permission to approve pull requests'
+        required: true
+
+jobs:
+  auto-approve:
+    name: Auto-approve PR
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Check PR Author
+        id: check_author
+        env:
+          PR_AUTHOR_ID: ${{ github.event.pull_request.user.id }}
+          RENOVATE_USER_ID: ${{ inputs.renovate-user-id }}
+        run: |
+          echo "PR Author ID: $PR_AUTHOR_ID"
+          echo "Expected Renovate User ID: $RENOVATE_USER_ID"
+
+          if [[ "$PR_AUTHOR_ID" != "$RENOVATE_USER_ID" ]]; then
+            echo "PR author ID is '$PR_AUTHOR_ID', not '$RENOVATE_USER_ID'. Skipping."
+            echo "match=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "match=true" >> $GITHUB_OUTPUT
+
+      - name: Check Commits
+        id: check_commits
+        if: steps.check_author.outputs.match == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          RENOVATE_USER_ID: ${{ inputs.renovate-user-id }}
+        run: |
+          echo "Checking commits for PR: $PR_URL"
+
+          NON_MATCHING_COMMITS=$(gh pr view "$PR_URL" --json commits --jq \
+            --argjson USER_ID "$RENOVATE_USER_ID" \
+            '.commits[] | select((.authors | length == 0) or ([.authors[].id] | all(. == $USER_ID) | not)) | .oid')
+
+          if [[ -n "$NON_MATCHING_COMMITS" ]]; then
+             echo "Found commits not exclusively authored by ID $RENOVATE_USER_ID:"
+             echo "$NON_MATCHING_COMMITS"
+             echo "Skipping approval."
+             echo "match=false" >> $GITHUB_OUTPUT
+             exit 0
+          fi
+          echo "match=true" >> $GITHUB_OUTPUT
+
+      - name: Verify Commit Signatures
+        id: verify_signatures
+        if: steps.check_commits.outputs.match == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          echo "Verifying commit signatures for PR: $PR_URL"
+
+          # Query GraphQL for signature status
+          QUERY='
+            query($url: URI!) {
+              resource(url: $url) {
+                ... on PullRequest {
+                  commits(last: 100) {
+                    nodes {
+                      commit {
+                        oid
+                        signature {
+                          isValid
+                          state
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          '
+
+          UNSIGNED_COMMITS=$(gh api graphql -F url="$PR_URL" -f query="$QUERY" --jq \
+            '.data.resource.commits.nodes[] | select((.commit.signature == null) or (.commit.signature.isValid != true)) | .commit.oid')
+            
+          if [[ -n "$UNSIGNED_COMMITS" ]]; then
+             echo "Found unsigned or invalidly signed commits:"
+             echo "$UNSIGNED_COMMITS"
+             echo "Skipping approval."
+             echo "match=false" >> $GITHUB_OUTPUT
+             exit 0
+          fi
+          echo "match=true" >> $GITHUB_OUTPUT
+
+      - name: Auto-approve
+        if: steps.check_commits.outputs.match == 'true' && steps.verify_signatures.outputs.match == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          echo "All checks passed. Approving PR..."
+          gh pr review "$PR_URL" --approve --body "Auto-approved by workflow."
