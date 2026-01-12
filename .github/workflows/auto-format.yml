@@ -7,10 +7,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions: {
-
-               
-}
+permissions: {}
 
 jobs:
   auto-format:
