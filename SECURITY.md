@@ -42,7 +42,7 @@ Any version not listed in the following tables is not supported.
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Auto Format](./workflows/maintenance/auto-bun-prettier) | workflows-maintenance-auto-bun-prettier-v1.1.4 | :white_check_mark: |
-| [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | workflows-maintenance-auto-approve-renovate-v1.1.2 | :white_check_mark: |
+| [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | workflows-maintenance-auto-approve-renovate-v1.1.3 | :white_check_mark: |
 
 
 
