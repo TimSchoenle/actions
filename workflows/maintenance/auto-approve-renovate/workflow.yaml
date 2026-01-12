@@ -37,47 +37,33 @@ jobs:
           fi
           echo "match=true" >> $GITHUB_OUTPUT
 
-      - name: Check Commits
-        id: check_commits
+      - name: Verify Commits and Signatures
+        id: verify_commits
         if: steps.check_author.outputs.match == 'true'
         env:
           GH_TOKEN: ${{ secrets.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
           RENOVATE_USER_ID: ${{ inputs.renovate-user-id }}
         run: |
-          echo "Checking commits for PR: $PR_URL"
+          echo "Verifying commits and signatures for PR: $PR_URL"
 
-          NON_MATCHING_COMMITS=$(gh pr view "$PR_URL" --json commits | jq -r \
-            --argjson USER_ID "$RENOVATE_USER_ID" \
-            '.commits[] | select((.authors | length == 0) or ([.authors[].id] | all(. | tostring == ($USER_ID | tostring)) | not)) | .oid')
-
-          if [[ -n "$NON_MATCHING_COMMITS" ]]; then
-             echo "Found commits not exclusively authored by ID $RENOVATE_USER_ID:"
-             echo "$NON_MATCHING_COMMITS"
-             echo "Skipping approval."
-             echo "match=false" >> $GITHUB_OUTPUT
-             exit 0
-          fi
-          echo "match=true" >> $GITHUB_OUTPUT
-
-      - name: Verify Commit Signatures
-        id: verify_signatures
-        if: steps.check_commits.outputs.match == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.token }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-        run: |
-          echo "Verifying commit signatures for PR: $PR_URL"
-
-          # Query GraphQL for signature status
+          # Query GraphQL for commit authors (databaseId) and signature status
           QUERY='
             query($url: URI!) {
               resource(url: $url) {
                 ... on PullRequest {
                   commits(last: 100) {
+                    totalCount
                     nodes {
                       commit {
                         oid
+                        authors(first: 20) {
+                          nodes {
+                            user {
+                              databaseId
+                            }
+                          }
+                        }
                         signature {
                           isValid
                           state
@@ -90,12 +76,29 @@ jobs:
             }
           '
 
-          UNSIGNED_COMMITS=$(gh api graphql -F url="$PR_URL" -f query="$QUERY" --jq \
-            '.data.resource.commits.nodes[] | select((.commit.signature == null) or (.commit.signature.isValid != true)) | .commit.oid')
+          INVALID_COMMITS=$(gh api graphql -F url="$PR_URL" -f query="$QUERY" | jq -r \
+            --argjson USER_ID "$RENOVATE_USER_ID" \
+            '
+             if .data.resource.commits.totalCount > 100 then
+               "FAILURE_TOO_MANY_COMMITS"
+             else
+               .data.resource.commits.nodes[] | select(
+                 (.commit.authors.nodes | length == 0) or 
+                 (.commit.authors.nodes[] | .user == null or .user.databaseId != $USER_ID) or 
+                 (.commit.signature == null or .commit.signature.isValid != true)
+               ) | .commit.oid
+             end
+            ')
             
-          if [[ -n "$UNSIGNED_COMMITS" ]]; then
-             echo "Found unsigned or invalidly signed commits:"
-             echo "$UNSIGNED_COMMITS"
+          if [[ "$INVALID_COMMITS" == "FAILURE_TOO_MANY_COMMITS" ]]; then
+             echo "PR has more than 100 commits. Auto-approval is unsafe without pagination."
+             echo "match=false" >> $GITHUB_OUTPUT
+             exit 0
+          fi
+
+          if [[ -n "$INVALID_COMMITS" ]]; then
+             echo "Found invalid commits (author check or signature check failed):"
+             echo "$INVALID_COMMITS"
              echo "Skipping approval."
              echo "match=false" >> $GITHUB_OUTPUT
              exit 0
@@ -103,7 +106,7 @@ jobs:
           echo "match=true" >> $GITHUB_OUTPUT
 
       - name: Auto-approve
-        if: steps.check_commits.outputs.match == 'true' && steps.verify_signatures.outputs.match == 'true'
+        if: steps.verify_commits.outputs.match == 'true'
         env:
           GH_TOKEN: ${{ secrets.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
