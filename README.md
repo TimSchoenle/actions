@@ -28,6 +28,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
+| [Commit Changes](./actions/common/commit-changes) | Commits changes using the GitHub API to ensure verified bot commits. | actions-common-commit-changes-v1.0.0 | `uses: TimSchoenle/actions/actions/common/commit-changes@actions-common-commit-changes-v1.0.0` |
 | [Common Modify YAML](./actions/common/modify-yaml) | A action to modify a value in a YAML file while strictly preserving comments and structure | actions-common-modify-yaml-v1.1.0 | `uses: TimSchoenle/actions/actions/common/modify-yaml@actions-common-modify-yaml-v1.1.0` |
 | [Common Read YAML](./actions/common/read-yaml) | A action to read a value from a YAML file using dot notation | actions-common-read-yaml-v1.1.0 | `uses: TimSchoenle/actions/actions/common/read-yaml@actions-common-read-yaml-v1.1.0` |
 | [Get App Git Identity](./actions/common/get-app-git-identity) | Resolves the git identity (username, email, user ID) for a GitHub App bot. | actions-common-get-app-git-identity-v1.1.0 | `uses: TimSchoenle/actions/actions/common/get-app-git-identity@actions-common-get-app-git-identity-v1.1.0` |
