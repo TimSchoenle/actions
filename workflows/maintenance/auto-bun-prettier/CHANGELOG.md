@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.4](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.3...workflows-maintenance-auto-bun-prettier-meta-v1.1.4) (2026-01-12)
+
+
+### Bug Fixes
+
+* migrate auto-format action to new commit action ([#167](https://github.com/TimSchoenle/actions/issues/167)) ([cf1f8fc](https://github.com/TimSchoenle/actions/commit/cf1f8fc5ad4cb1c561a6b9c805292699cce890e7))
+
 ## [1.1.3](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.2...workflows-maintenance-auto-bun-prettier-meta-v1.1.3) (2026-01-11)
 
 
