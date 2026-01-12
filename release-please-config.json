@@ -41,6 +41,11 @@
       "release-type": "simple",
       "component": "workflows-maintenance-auto-bun-prettier-meta",
       "include-component-in-tag": true
+    },
+    "actions/common/commit-changes": {
+      "release-type": "simple",
+      "component": "actions-common-commit-changes",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
