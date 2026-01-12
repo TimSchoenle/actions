@@ -266,6 +266,9 @@ jobs:
 
             // iterate over files and create blobs
             for (const file of files) {
+              const stats = await fs.stat(file);
+              if (stats.isDirectory()) continue;
+
               const relativePath = path.relative(distPath, file).replace(/\\/g, '/'); // Normalize paths
               const content = await fs.readFile(file, { encoding: 'base64' });
               
