@@ -38,25 +38,13 @@ export async function main() {
     description,
   });
 
-  // 3. Create Package-level files if missing
-  const changelogPath = path.join(actionPath, 'CHANGELOG.md');
-  if (!Sys.exists(changelogPath)) {
-    console.log(chalk.green('Creating CHANGELOG.md...'));
-    await createFromTemplate('common/CHANGELOG.md', changelogPath, {
-      date: new Date().toISOString().split('T')[0],
-      version: START_VERSION,
-      packageName,
-      subAction, // Needed for template
-    });
-  }
-
-  // 5. Create Verification Workflow
+  // 4. Create Verification Workflow
   await createVerifyWorkflow(packageName, subAction);
 
-  // 6. Update Release Please Config
+  // 5. Update Release Please Config
   await registerActionInReleasePlease(packageName, subAction);
 
-  // 7. Regenerate README
+  // 6. Regenerate README
   console.log(chalk.blue('\nUpdating README.md...'));
   await generateDocs();
 
