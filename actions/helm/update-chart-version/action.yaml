@@ -15,10 +15,6 @@ inputs:
   chart-path:
     description: 'Path of the chart inside the repo (e.g. charts/my-app)'
     required: true
-  checkout-path:
-    description: 'Path to checkout the helm repo to'
-    default: 'helm-charts'
-    required: false
   new-tag:
     description: 'New app version/tag'
     required: true
@@ -69,7 +65,6 @@ runs:
       with:
         repository: ${{ inputs.helm-repo }}
         token: ${{ steps.generate_token.outputs.token }}
-        path: ${{ inputs.checkout-path }}
         fetch-depth: 0
         persist-credentials: false
 
@@ -84,7 +79,7 @@ runs:
       id: read-version
       uses: TimSchoenle/actions/actions/common/read-yaml@8278a5b0b944ee55bcfa361b60373c803154e3d3 # actions-common-read-yaml-v1.1.0
       with:
-        file: ${{ inputs.checkout-path }}/${{ inputs.chart-path }}/Chart.yaml
+        file: ${{ inputs.chart-path }}/Chart.yaml
         key: version
 
     - name: Calculate New Version
@@ -101,14 +96,14 @@ runs:
     - name: Set Chart Version
       uses: TimSchoenle/actions/actions/common/modify-yaml@d179573231cde66c70b41be25a679d45b02590fc # actions-common-modify-yaml-v1.1.0
       with:
-        file: ${{ inputs.checkout-path }}/${{ inputs.chart-path }}/Chart.yaml
+        file: ${{ inputs.chart-path }}/Chart.yaml
         key: version
         value: ${{ steps.calc-version.outputs.new-version }}
 
     - name: Set App Version
       uses: TimSchoenle/actions/actions/common/modify-yaml@d179573231cde66c70b41be25a679d45b02590fc # actions-common-modify-yaml-v1.1.0
       with:
-        file: ${{ inputs.checkout-path }}/${{ inputs.chart-path }}/Chart.yaml
+        file: ${{ inputs.chart-path }}/Chart.yaml
         key: appVersion
         value: ${{ inputs.new-tag }}
 
@@ -127,7 +122,7 @@ runs:
     - name: Update Image Tag
       uses: TimSchoenle/actions/actions/common/modify-yaml@d179573231cde66c70b41be25a679d45b02590fc # actions-common-modify-yaml-v1.1.0
       with:
-        file: ${{ inputs.checkout-path }}/${{ inputs.chart-path }}/values.yaml
+        file: ${{ inputs.chart-path }}/values.yaml
         key: image.tag
         value: ${{ steps.construct-tag.outputs.full-tag }}
 
@@ -141,6 +136,33 @@ runs:
       run: |
         BRANCH="$PREFIX/$CHART_NAME/$NEW_TAG"
         echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+    - name: Reset Branch
+      shell: bash
+      env:
+        GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+        REPO: ${{ inputs.helm-repo }}
+        BRANCH: ${{ steps.branch-name.outputs.branch }}
+      run: |
+        echo "Resetting branch $BRANCH to default branch..."
+        # Get default branch SHA
+        DEFAULT_BRANCH=$(gh api "/repos/$REPO" --jq .default_branch)
+        SHA=$(gh api "/repos/$REPO/git/refs/heads/$DEFAULT_BRANCH" --jq .object.sha)
+
+        # Check if branch exists
+        if gh api "/repos/$REPO/git/refs/heads/$BRANCH" > /dev/null 2>&1; then
+          # Force update (reset)
+          gh api -X PATCH "/repos/$REPO/git/refs/heads/$BRANCH" \
+            -f sha="$SHA" \
+            -f force=true
+          echo "Branch reset to $SHA"
+        else
+          # Create
+          gh api -X POST "/repos/$REPO/git/refs" \
+            -f ref="refs/heads/$BRANCH" \
+            -f sha="$SHA"
+          echo "Branch created at $SHA"
+        fi
 
     - name: Commit Changes
       uses: TimSchoenle/actions/actions/common/commit-changes@85df1583f874da24a2de30e19280e031c25a09c5 # actions-common-commit-changes-v1.1.1
