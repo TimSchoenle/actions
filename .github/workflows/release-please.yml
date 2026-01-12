@@ -76,10 +76,12 @@ jobs:
           ITEMS_FILE=$(mktemp)
 
           # Iterate over workflow packages
+          # Filter entries starting with "workflows/" and format as "key|value"
           jq -r 'to_entries[] | select(.key | startswith("workflows/")) | "\(.key)|\(.value)"' "$MANIFEST_FILE" | while IFS="|" read -r PKG VERSION; do
             if [ -z "$PKG" ]; then continue; fi
             
             # Derive Component & Tag
+            # Example: workflows/foo/bar -> workflows-foo-bar
             COMPONENT_NAME="workflows-$(echo "$PKG" | cut -d'/' -f2- | tr '/' '-')"
             TAG_NAME="${COMPONENT_NAME}-v${VERSION}"
             
@@ -199,20 +201,20 @@ jobs:
           # Capture the SHA of main (HEAD) before we switch branches for the clean release
           echo "main_sha=$CURRENT_SHA" >> $GITHUB_OUTPUT
 
-      - name: Prepare Release Branch and Files
+      - name: Prepare Release Artifacts
+        id: prepare_artifacts
         env:
           PKG: ${{ steps.vars.outputs.pkg }}
-          COMPONENT_NAME: ${{ steps.vars.outputs.component_name }}
-          VERSION: ${{ steps.vars.outputs.version }}
           TARGET_FILE: ${{ steps.vars.outputs.target_file }}
         run: |
-          TEMP_BRANCH="temp-release-${COMPONENT_NAME}-${VERSION}"
-          echo "Branching to $TEMP_BRANCH"
+          # Create distro directory for release artifacts
+          DIST_DIR="release_dist"
+          mkdir -p "$DIST_DIR"
 
           # safe extract dir
           mkdir -p /tmp/pkg_content
 
-          # Copy content
+          # Copy content to temp dir to avoid polluting workspace
           if [ -d "$PKG" ]; then
             cp -r "${PKG}/." /tmp/pkg_content/
           else
@@ -220,57 +222,171 @@ jobs:
             exit 1
           fi
 
-          # Switch branch
-          git checkout -b "$TEMP_BRANCH"
+          # Distribute Files to DIST_DIR
+          # We reconstruct the file tree here to ensure a clean release
+          mkdir -p "$DIST_DIR/.github/workflows"
 
-          # Clean
-          git rm -rf .
-          git clean -fdx
-
-          # Distribute Files
-          mkdir -p .github/workflows
           shopt -s dotglob
           for FILE in /tmp/pkg_content/*; do
               BASENAME=$(basename "$FILE")
               if [ "$BASENAME" == "README.md" ] || [ "$BASENAME" == "CHANGELOG.md" ]; then
-                  cp -r "$FILE" .
+                  cp -r "$FILE" "$DIST_DIR/"
               elif [ "$BASENAME" == "workflow.yaml" ]; then
-                  cp "$FILE" ".github/workflows/$TARGET_FILE"
+                  cp "$FILE" "$DIST_DIR/.github/workflows/$TARGET_FILE"
               else
-                  cp -r "$FILE" .github/workflows/
+                  cp -r "$FILE" "$DIST_DIR/.github/workflows/"
               fi
           done
           shopt -u dotglob
 
-          # Commit
-          git add .
-          git commit -m "chore: release $PKG $VERSION"
+          echo "dist_dir=$DIST_DIR" >> $GITHUB_OUTPUT
 
-      - name: Push Tags
+      - name: Create Release Tree
+        id: create_tree
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         env:
-          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+          DIST_DIR: ${{ steps.prepare_artifacts.outputs.dist_dir }}
+        with:
+          github-token: ${{ steps.generate_token.outputs.token }}
+          script: |
+            const fs = require('fs/promises');
+            const path = require('path');
+            const glob = require('@actions/glob');
+
+            const { DIST_DIR } = process.env;
+            const context = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            };
+
+            // Helper to list all files recursively
+            async function getFiles(dir) {
+              const globber = await glob.create(`${dir}/**/*`, { followSymbolicLinks: false, implicitDescendants: false });
+              const files = await globber.glob();
+              return files.filter(f => !f.endsWith(path.sep)); // Exclude directories
+            }
+
+            const distPath = path.resolve(DIST_DIR);
+            const files = await getFiles(distPath);
+            const treeItems = [];
+
+            // iterate over files and create blobs
+            for (const file of files) {
+              const relativePath = path.relative(distPath, file).replace(/\\/g, '/'); // Normalize paths
+              const content = await fs.readFile(file, { encoding: 'base64' });
+              
+              const { data: blob } = await github.rest.git.createBlob({
+                ...context,
+                content: content,
+                encoding: 'base64',
+              });
+
+              const stats = await fs.stat(file);
+              const isExecutable = !!(stats.mode & 0o100);
+              const mode = isExecutable ? '100755' : '100644';
+
+              treeItems.push({
+                path: relativePath,
+                mode: mode,
+                type: 'blob',
+                sha: blob.sha,
+              });
+            }
+
+            console.log(`Creating tree with ${treeItems.length} files...`);
+            const { data: tree } = await github.rest.git.createTree({
+              ...context,
+              tree: treeItems,
+            });
+            console.log(`Tree created: ${tree.sha}`);
+            core.setOutput('tree_sha', tree.sha);
+
+      - name: Create Release Commit
+        id: create_commit
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        env:
+          TREE_SHA: ${{ steps.create_tree.outputs.tree_sha }}
+          MAIN_SHA: ${{ steps.notes.outputs.main_sha }}
+          COMPONENT_NAME: ${{ steps.vars.outputs.component_name }}
+          VERSION: ${{ steps.vars.outputs.version }}
+        with:
+          github-token: ${{ steps.generate_token.outputs.token }}
+          script: |
+            const { TREE_SHA, MAIN_SHA, COMPONENT_NAME, VERSION } = process.env;
+            const context = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            };
+
+            console.log(`Creating commit for ${COMPONENT_NAME} ${VERSION}...`);
+            const { data: commit } = await github.rest.git.createCommit({
+              ...context,
+              message: `chore: release ${COMPONENT_NAME} ${VERSION}`,
+              tree: TREE_SHA,
+              parents: [MAIN_SHA], // Parent is the main branch commit to ensure history continuity
+            });
+            console.log(`Commit created: ${commit.sha}`);
+            core.setOutput('commit_sha', commit.sha);
+
+      - name: Create Release Tags
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        env:
+          COMMIT_SHA: ${{ steps.create_commit.outputs.commit_sha }}
           TAG_NAME: ${{ steps.vars.outputs.tag_name }}
+          COMPONENT_NAME: ${{ steps.vars.outputs.component_name }}
+          VERSION: ${{ steps.vars.outputs.version }}
+        with:
+          github-token: ${{ steps.generate_token.outputs.token }}
+          script: |
+            const { COMMIT_SHA, TAG_NAME, COMPONENT_NAME, VERSION } = process.env;
+            const context = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            };
+
+            // 1. Create Annotated Tag for Release
+            console.log(`Creating annotated tag object for ${TAG_NAME}...`);
+            const { data: tagObject } = await github.rest.git.createTag({
+              ...context,
+              tag: TAG_NAME,
+              message: `Release ${COMPONENT_NAME} ${VERSION}`,
+              object: COMMIT_SHA,
+              type: 'commit',
+            });
+
+            console.log(`Creating ref refs/tags/${TAG_NAME}...`);
+            await github.rest.git.createRef({
+              ...context,
+              ref: `refs/tags/${TAG_NAME}`,
+              sha: tagObject.sha,
+            });
+
+      - name: Create Meta Tag
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        env:
           META_TAG_NAME: ${{ steps.vars.outputs.meta_tag_name }}
           MAIN_SHA: ${{ steps.notes.outputs.main_sha }}
-          REPO: ${{ github.repository }}
-        run: |
-          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+        with:
+          github-token: ${{ steps.generate_token.outputs.token }}
+          script: |
+            const { META_TAG_NAME, MAIN_SHA } = process.env;
+            const context = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            };
 
-          # 1. Push the Clean Tag (currently on HEAD of temp branch)
-          # We know this is missing because the job only runs if it is missing (matrix filter)
-          echo "Pushing clean tag: $TAG_NAME"
-          git tag "$TAG_NAME"
-          git push origin "$TAG_NAME" -v
-
-          # 2. Push the Meta Tag (on original Main SHA)
-          # We check if this exists first to handle cases where a run might have partially succeeded
-          if git ls-remote --exit-code --tags origin "refs/tags/$META_TAG_NAME" >/dev/null 2>&1; then
-            echo "Meta tag $META_TAG_NAME already exists. Skipping."
-          else
-            echo "Pushing meta tag: $META_TAG_NAME on $MAIN_SHA"
-            git tag "$META_TAG_NAME" "$MAIN_SHA"
-            git push origin "$META_TAG_NAME" -v
-          fi
+            // 2. Create Meta Tag
+            try {
+               await github.rest.git.getRef({ ...context, ref: `tags/${META_TAG_NAME}` });
+               console.log(`Meta tag ${META_TAG_NAME} already exists.`);
+            } catch (e) {
+               console.log(`Creating meta tag ref ${META_TAG_NAME} on ${MAIN_SHA}...`);
+               await github.rest.git.createRef({
+                 ...context,
+                 ref: `refs/tags/${META_TAG_NAME}`,
+                 sha: MAIN_SHA,
+               });
+            }
 
       - name: Create Release
         env:
