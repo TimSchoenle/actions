@@ -278,7 +278,6 @@ jobs:
                 encoding: 'base64',
               });
 
-              const stats = await fs.stat(file);
               const isExecutable = !!(stats.mode & 0o100);
               const mode = isExecutable ? '100755' : '100644';
 
