@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as createWorkflow from '../create-workflow';
 import { Sys, createFromTemplate } from '../lib/utils';
 import { selectPackage, registerResourceInReleasePlease, createVerifyWorkflow } from '../lib/resource-utils';
-import { RenovateConfigManager } from '../lib/renovate-config';
 import { getRepoInfo } from '../lib/readme/git-utils';
 import { input } from '@inquirer/prompts';
 import { main as generateDocs } from '../generate-docs';
@@ -77,13 +76,6 @@ describe('create-workflow', () => {
     vi.mocked(Sys.exists).mockReturnValue(false); // Changelog/README missing
 
     await createWorkflow.main();
-
-    // Verify Changelog creation
-    expect(createFromTemplate).toHaveBeenCalledWith(
-      'common/CHANGELOG.md',
-      expect.stringContaining('CHANGELOG.md'),
-      expect.any(Object),
-    );
 
     // Verify README creation (WORKFLOW SPECIFIC)
     expect(createFromTemplate).toHaveBeenCalledWith(

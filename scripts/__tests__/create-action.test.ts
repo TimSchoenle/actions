@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as createAction from '../create-action';
 import { Sys, createFromTemplate } from '../lib/utils';
 import { selectPackage, registerActionInReleasePlease, createVerifyWorkflow } from '../lib/action-utils';
-import { RenovateConfigManager } from '../lib/renovate-config';
 import { input } from '@inquirer/prompts';
 import { main as generateDocs } from '../generate-docs';
 
@@ -60,9 +59,6 @@ describe('create-action', () => {
       expect.objectContaining({ packageName: 'existing-pkg', subAction: 'new-sub' }),
     );
 
-    // Verify Changelog (skipped if exists)
-    expect(createFromTemplate).not.toHaveBeenCalledWith('action/CHANGELOG.md', expect.any(String), expect.any(Object));
-
     // Verify Config Updates
     expect(createVerifyWorkflow).toHaveBeenCalledWith('existing-pkg', 'new-sub');
     expect(registerActionInReleasePlease).toHaveBeenCalledWith('existing-pkg', 'new-sub');
@@ -76,12 +72,5 @@ describe('create-action', () => {
     vi.mocked(Sys.exists).mockReturnValue(false); // Changelog missing
 
     await createAction.main();
-
-    // Verify Changelog creation
-    expect(createFromTemplate).toHaveBeenCalledWith(
-      'common/CHANGELOG.md',
-      expect.stringContaining('CHANGELOG.md'),
-      expect.objectContaining({ version: '1.0.0' }),
-    );
   });
 });
