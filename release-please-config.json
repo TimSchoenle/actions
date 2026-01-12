@@ -51,6 +51,11 @@
       "release-type": "simple",
       "component": "workflows-maintenance-auto-approve-renovate-meta",
       "include-component-in-tag": true
+    },
+    "actions/helper/verify-commit-authors": {
+      "release-type": "simple",
+      "component": "actions-helper-verify-commit-authors",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

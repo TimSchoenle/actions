@@ -28,6 +28,12 @@ Any version not listed in the following tables is not supported.
 | --- | --- | --- |
 | [Update Helm Chart Version](./actions/helm/update-chart-version) | actions-helm-update-chart-version-v1.4.1 | :white_check_mark: |
 
+### Helper
+
+| Component | Version | Supported |
+| --- | --- | --- |
+| [Verify Commit Authors](./actions/helper/verify-commit-authors) | actions-helper-verify-commit-authors-v1.0.0 | :white_check_mark: |
+
 
 ### Workflows
 
