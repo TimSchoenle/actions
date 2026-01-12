@@ -61,16 +61,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
-          persist-credentials: true
+          persist-credentials: false
           fetch-depth: 0
           ref: ${{ github.head_ref }}
-          token: ${{ steps.generate_token.outputs.token }}
-
-      - name: Get Bot User Info
-        id: get-bot-info
-        uses: TimSchoenle/actions/actions/common/get-app-git-identity@26754381479003bd81b51fffecc97f1faa20a9bf # actions-common-get-app-git-identity-v1.1.0
-        with:
-          app-slug: ${{ steps.generate_token.outputs.app-slug }}
           token: ${{ steps.generate_token.outputs.token }}
 
       - name: Setup Bun
@@ -83,12 +76,10 @@ jobs:
 
       - name: Commit and Push if changed
         id: auto-commit
-        uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7
+        uses: TimSchoenle/actions/actions/common/commit-changes@85df1583f874da24a2de30e19280e031c25a09c5 # actions-common-commit-changes-v1.1.1
         with:
           commit_message: ${{ inputs.commit_message }}
-          commit_author: '${{ steps.get-bot-info.outputs.bot-name }} <${{ steps.get-bot-info.outputs.bot-email }}>'
-          commit_user_name: ${{ steps.get-bot-info.outputs.bot-name }}
-          commit_user_email: ${{ steps.get-bot-info.outputs.bot-email }}
+          token: ${{ steps.generate_token.outputs.token }}
 
       - name: Comment on PR
         if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request' && inputs.pr_comment != ''
