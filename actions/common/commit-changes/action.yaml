@@ -54,8 +54,10 @@ runs:
     - name: Set Compatibility Outputs
       id: compatibility
       shell: bash
+      env:
+        COMMIT_HASH: ${{ steps.commit.outputs.commit-hash }}
       run: |
-        if [ -n "${{ steps.commit.outputs.commit-hash }}" ]; then
+        if [ -n "$COMMIT_HASH" ]; then
           echo "changes_detected=true" >> $GITHUB_OUTPUT
         else
           echo "changes_detected=false" >> $GITHUB_OUTPUT
