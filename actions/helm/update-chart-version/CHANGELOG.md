@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.4.0...actions-helm-update-chart-version-v1.4.1) (2026-01-12)
+
+
+### Bug Fixes
+
+* **Actions:** fix commits & ensure branch is reset ([#181](https://github.com/TimSchoenle/actions/issues/181)) ([dd0e449](https://github.com/TimSchoenle/actions/commit/dd0e44971b5f72bafccf652300eafa74730a32b4))
+
 ## [1.4.0](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.3.2...actions-helm-update-chart-version-v1.4.0) (2026-01-12)
 
 
