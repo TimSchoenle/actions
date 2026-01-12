@@ -14,7 +14,7 @@ outputs:
   verified:
     description: 'True if all commits are verified, false otherwise.'
     value: ${{ steps.verify.outputs.verified }}
-  invalid-commits:
+  invalid_commits:
     description: 'List of SHAs that failed verification.'
     value: ${{ steps.verify.outputs.invalid-commits }}
 runs:
@@ -24,8 +24,8 @@ runs:
       id: info
       shell: bash
       env:
-        PR_URL: ${{ inputs.pr-url }}
-        ACCEPTED_IDS: ${{ inputs.user-ids }}
+        PR_URL: ${{ inputs.pr_url }}
+        ACCEPTED_IDS: ${{ inputs.user_ids }}
       run: |
         echo "Verifying commits for PR: $PR_URL"
         echo "Accepted User IDs: $ACCEPTED_IDS"
@@ -34,8 +34,8 @@ runs:
       id: fetch
       shell: bash
       env:
-        GH_TOKEN: ${{ inputs.github-token }}
-        PR_URL: ${{ inputs.pr-url }}
+        GH_TOKEN: ${{ inputs.github_token }}
+        PR_URL: ${{ inputs.pr_url }}
       run: |
         # Query GraphQL for commit authors (databaseId) and signature status
         # We fetch max 100 commits. We also fetch totalCount to ensure we aren't missing any.
@@ -74,7 +74,7 @@ runs:
       id: verify
       shell: bash
       env:
-        ACCEPTED_IDS: ${{ inputs.user-ids }}
+        ACCEPTED_IDS: ${{ inputs.user_ids }}
       run: |
         # JQ Logic:
         # 1. Parse accepted IDs into an array.
