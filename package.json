@@ -20,7 +20,7 @@
     "@types/node": "25.0.6",
     "@typescript-eslint/eslint-plugin": "8.52.0",
     "@typescript-eslint/parser": "8.52.0",
-    "@vitest/coverage-v8": "4.0.16",
+    "@vitest/coverage-v8": "4.0.17",
     "eslint": "9.39.2",
     "husky": "9.1.7",
     "js-yaml": "4.1.1",
@@ -28,7 +28,7 @@
     "prettier": "3.7.4",
     "typescript": "5.9.3",
     "typescript-eslint": "8.52.0",
-    "vitest": "4.0.16"
+    "vitest": "4.0.17"
   },
   "dependencies": {
     "chalk": "5",
