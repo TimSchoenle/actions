@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.3.2...actions-helm-update-chart-version-v1.4.0) (2026-01-12)
+
+
+### Features
+
+* **Actions:** implement signed and verified commits for Helm chart updates ([#179](https://github.com/TimSchoenle/actions/issues/179)) ([8166bf2](https://github.com/TimSchoenle/actions/commit/8166bf25eac2050fbd97c99d5bff6271ab7adcf3))
+
 ## [1.3.2](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.3.1...actions-helm-update-chart-version-v1.3.2) (2026-01-09)
 
 
