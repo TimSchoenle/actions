@@ -252,10 +252,6 @@ jobs:
             const fs = require('fs/promises');
             const path = require('path');
             const { DIST_DIR } = process.env;
-            const context = {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            };
 
             // Helper to list all files recursively
             async function getFiles(dir) {
@@ -274,7 +270,7 @@ jobs:
               const content = await fs.readFile(file, { encoding: 'base64' });
               
               const { data: blob } = await github.rest.git.createBlob({
-                ...context,
+                ...context.repo,
                 content: content,
                 encoding: 'base64',
               });
@@ -293,7 +289,7 @@ jobs:
 
             console.log(`Creating tree with ${treeItems.length} files...`);
             const { data: tree } = await github.rest.git.createTree({
-              ...context,
+              ...context.repo,
               tree: treeItems,
             });
             console.log(`Tree created: ${tree.sha}`);
@@ -311,14 +307,10 @@ jobs:
           github-token: ${{ steps.generate_token.outputs.token }}
           script: |
             const { TREE_SHA, MAIN_SHA, COMPONENT_NAME, VERSION } = process.env;
-            const context = {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            };
 
             console.log(`Creating commit for ${COMPONENT_NAME} ${VERSION}...`);
             const { data: commit } = await github.rest.git.createCommit({
-              ...context,
+              ...context.repo,
               message: `chore: release ${COMPONENT_NAME} ${VERSION}`,
               tree: TREE_SHA,
               parents: [MAIN_SHA], // Parent is the main branch commit to ensure history continuity
@@ -337,15 +329,10 @@ jobs:
           github-token: ${{ steps.generate_token.outputs.token }}
           script: |
             const { COMMIT_SHA, TAG_NAME, COMPONENT_NAME, VERSION } = process.env;
-            const context = {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            };
-
             // 1. Create Annotated Tag for Release
             console.log(`Creating annotated tag object for ${TAG_NAME}...`);
             const { data: tagObject } = await github.rest.git.createTag({
-              ...context,
+              ...context.repo,
               tag: TAG_NAME,
               message: `Release ${COMPONENT_NAME} ${VERSION}`,
               object: COMMIT_SHA,
@@ -354,7 +341,7 @@ jobs:
 
             console.log(`Creating ref refs/tags/${TAG_NAME}...`);
             await github.rest.git.createRef({
-              ...context,
+              ...context.repo,
               ref: `refs/tags/${TAG_NAME}`,
               sha: tagObject.sha,
             });
@@ -368,19 +355,14 @@ jobs:
           github-token: ${{ steps.generate_token.outputs.token }}
           script: |
             const { META_TAG_NAME, MAIN_SHA } = process.env;
-            const context = {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            };
-
             // 2. Create Meta Tag
             try {
-               await github.rest.git.getRef({ ...context, ref: `tags/${META_TAG_NAME}` });
+               await github.rest.git.getRef({ ...context.repo, ref: `tags/${META_TAG_NAME}` });
                console.log(`Meta tag ${META_TAG_NAME} already exists.`);
             } catch (e) {
                console.log(`Creating meta tag ref ${META_TAG_NAME} on ${MAIN_SHA}...`);
                await github.rest.git.createRef({
-                 ...context,
+                 ...context.repo,
                  ref: `refs/tags/${META_TAG_NAME}`,
                  sha: MAIN_SHA,
                });
