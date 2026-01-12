@@ -251,8 +251,6 @@ jobs:
           script: |
             const fs = require('fs/promises');
             const path = require('path');
-            const glob = require('@actions/glob');
-
             const { DIST_DIR } = process.env;
             const context = {
               owner: context.repo.owner,
@@ -400,7 +398,7 @@ jobs:
           gh release create "$TAG_NAME" --title "${COMPONENT_NAME} ${VERSION}" --notes "$NOTES" -R "$REPO"
 
       - name: Update PR Labels
-        if: steps.notes.outputs.pr_number != ''
+        if: always() && steps.notes.outputs.pr_number != ''
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
           PR_NUMBER: ${{ steps.notes.outputs.pr_number }}
