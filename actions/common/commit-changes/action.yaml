@@ -2,7 +2,7 @@ name: 'Commit Changes'
 description: 'Commits changes using the GitHub API to ensure verified bot commits.'
 
 inputs:
-  commit-message:
+  commit_message:
     description: 'The commit message'
     required: true
   token:
@@ -20,16 +20,16 @@ inputs:
     description: Allow making an empty commit if there are no changes.
     required: false
     default: 'false'
-  file-pattern:
+  file_pattern:
     description: 'File pattern to commit'
     required: false
     default: '.'
 
 outputs:
-  commit-hash:
+  commit_hash:
     description: 'The SHA of the created commit'
     value: ${{ steps.commit.outputs.commit-hash }}
-  commit-url:
+  commit_url:
     description: 'The URL of the created commit.'
     value: ${{ steps.commit.outputs.commit-url }}
   changes_detected:
@@ -43,11 +43,11 @@ runs:
       id: commit
       uses: planetscale/ghcommit-action@25309d8005ac7c3bcd61d3fe19b69e0fe47dbdde # v0.2.20
       with:
-        commit_message: ${{ inputs.commit-message }}
+        commit_message: ${{ inputs.commit_message }}
         repo: ${{ inputs.repository }}
         branch: ${{ inputs.branch }}
         empty: ${{ inputs.empty }}
-        file_pattern: ${{ inputs.file-pattern }}
+        file_pattern: ${{ inputs.file_pattern }}
       env:
         GITHUB_TOKEN: ${{ inputs.token }}
 
