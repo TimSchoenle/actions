@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.1](https://github.com/TimSchoenle/actions/compare/workflows-common-test2-meta-v2.9.0...workflows-common-test2-meta-v2.9.1) (2026-01-12)
+
+
+### Build System
+
+* correctly sign workflow releaes ([#169](https://github.com/TimSchoenle/actions/issues/169)) ([949b96b](https://github.com/TimSchoenle/actions/commit/949b96bfadfb7b288caddbaf2d160e873dcea839))
+
 ## [2.9.0](https://github.com/TimSchoenle/actions/compare/workflows-common-test2-meta-v2.8.0...workflows-common-test2-meta-v2.9.0) (2026-01-08)
 
 
