@@ -32,7 +32,7 @@ Any version not listed in the following tables is not supported.
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Helper Verify-commit-authers](actions/helper/verify-commit-authors) | actions-helper-verify-commit-authers-v1.0.0 | :white_check_mark: |
+| [Verify Commit Authors](./actions/helper/verify-commit-authors) | actions-helper-verify-commit-authors-v1.0.0 | :white_check_mark: |
 
 
 ### Workflows
