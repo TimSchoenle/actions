@@ -8,5 +8,5 @@
   "actions/bun/setup-cached": "1.1.1",
   "workflows/maintenance/auto-bun-prettier": "1.1.4",
   "actions/common/commit-changes": "1.1.1",
-  "workflows/maintenance/auto-approve-renovate": "1.1.1"
+  "workflows/maintenance/auto-approve-renovate": "1.1.2"
 }
