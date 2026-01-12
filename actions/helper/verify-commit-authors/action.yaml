@@ -1,0 +1,127 @@
+name: 'Verify Commit Authors'
+description: 'Verifies that all commits in a PR are authored by a specific set of users and are signed.'
+inputs:
+  pr_url:
+    description: 'The URL of the Pull Request to verify.'
+    required: true
+  github_token:
+    description: 'GitHub Token with permission to read PRs.'
+    required: true
+  user_ids:
+    description: 'Comma-separated list of Database IDs of accepted authors (e.g. "29139614, 123456").'
+    required: true
+outputs:
+  verified:
+    description: 'True if all commits are verified, false otherwise.'
+    value: ${{ steps.verify.outputs.verified }}
+  invalid-commits:
+    description: 'List of SHAs that failed verification.'
+    value: ${{ steps.verify.outputs.invalid-commits }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Log Inputs
+      id: info
+      shell: bash
+      env:
+        PR_URL: ${{ inputs.pr-url }}
+        ACCEPTED_IDS: ${{ inputs.user-ids }}
+      run: |
+        echo "Verifying commits for PR: $PR_URL"
+        echo "Accepted User IDs: $ACCEPTED_IDS"
+
+    - name: Fetch Commit Data
+      id: fetch
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_URL: ${{ inputs.pr-url }}
+      run: |
+        # Query GraphQL for commit authors (databaseId) and signature status
+        # We fetch max 100 commits. We also fetch totalCount to ensure we aren't missing any.
+        # We fetch max 20 authors per commit.
+        QUERY='
+          query($url: URI!) {
+            resource(url: $url) {
+              ... on PullRequest {
+                commits(last: 100) {
+                  totalCount
+                  nodes {
+                    commit {
+                      oid
+                      authors(first: 20) {
+                        nodes {
+                          user {
+                            databaseId
+                          }
+                        }
+                      }
+                      signature {
+                        isValid
+                        state
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        '
+        gh api graphql -F url="$PR_URL" -f query="$QUERY" > commit_data.json
+        echo "Commit data fetched to commit_data.json"
+
+    - name: Verify Commits
+      id: verify
+      shell: bash
+      env:
+        ACCEPTED_IDS: ${{ inputs.user-ids }}
+      run: |
+        # JQ Logic:
+        # 1. Parse accepted IDs into an array.
+        # 2. Iterate commits.
+        # 3. Fail if pagination needed (>100 commits).
+        # 4. Filter for any invalid commit.
+
+        INVALID_COMMITS=$(jq -r \
+          --arg ACCEPTED_IDS_STR "$ACCEPTED_IDS" \
+          '
+           # Split comma string into array of numbers
+           ($ACCEPTED_IDS_STR | split(",") | map(tonumber?)) as $ALLOWED_IDS |
+           
+           if .data.resource.commits.totalCount > 100 then
+             "FAILURE_TOO_MANY_COMMITS"
+           else
+             .data.resource.commits.nodes[] | select(
+               # Check Authors: Empty list OR Author not linked OR Author ID not in allowed list
+               (.commit.authors.nodes | length == 0) or 
+               (.commit.authors.nodes[] | .user == null or (.user.databaseId as $id | $ALLOWED_IDS | index($id) | not)) or 
+               
+               # Check Signatures: Null OR Invalid
+               (.commit.signature == null or .commit.signature.isValid != true)
+             ) | .commit.oid
+           end
+          ' commit_data.json)
+          
+        if [[ "$INVALID_COMMITS" == "FAILURE_TOO_MANY_COMMITS" ]]; then
+           echo "::error::PR has more than 100 commits. Verification unsafe."
+           echo "verified=false" >> $GITHUB_OUTPUT
+           exit 0
+        fi
+
+        if [[ -n "$INVALID_COMMITS" ]]; then
+           echo "::error::Found invalid commits (author check or signature check failed):"
+           echo "$INVALID_COMMITS"
+           echo "verified=false" >> $GITHUB_OUTPUT
+           
+           {
+             echo "invalid-commits<<EOF"
+             echo "$INVALID_COMMITS"
+             echo "EOF"
+           } >> $GITHUB_OUTPUT
+           
+           exit 0
+        fi
+
+        echo "All commits verified."
+        echo "verified=true" >> $GITHUB_OUTPUT
+        echo "invalid-commits=" >> $GITHUB_OUTPUT

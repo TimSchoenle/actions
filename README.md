@@ -40,6 +40,12 @@ Here is a list of all currently maintained actions in this repository:
 | --- | --- | --- | --- |
 | [Update Helm Chart Version](./actions/helm/update-chart-version) | Updates a Helm chart version, appVersion, and image tag, then creates a Pull Request. This action requires a bot account with access to the charts repo. Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag). | actions-helm-update-chart-version-v1.4.1 | `uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.4.1` |
 
+### Helper
+
+| Action | Description | Version | Usage |
+| --- | --- | --- | --- |
+| [Helper Verify-commit-authers](actions/helper/verify-commit-authors) | A reusable action. | actions-helper-verify-commit-authers-v1.0.0 | `uses: TimSchoenle/actions/actions/helper/verify-commit-authers@actions-helper-verify-commit-authers-v1.0.0` |
+
 
 
 ## 🔄 Reusable Workflows
