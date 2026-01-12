@@ -379,7 +379,7 @@ jobs:
           NOTES: ${{ steps.notes.outputs.release_notes }}
           REPO: ${{ github.repository }}
         run: |
-          gh release create "$TAG_NAME" --title "${COMPONENT_NAME} ${VERSION}" --notes "$NOTES" -R "$REPO"
+          gh release create "$TAG_NAME" --title "${COMPONENT_NAME} ${VERSION}" --notes "$NOTES" -R "$REPO" --latest=false
 
       - name: Update PR Labels
         if: always() && steps.notes.outputs.pr_number != ''
