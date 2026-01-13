@@ -3,3 +3,4 @@ CHANGELOG.md
 SECURITY.md
 .husky
 bun.lock
+index.js

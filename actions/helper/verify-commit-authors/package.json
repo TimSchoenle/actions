@@ -1,0 +1,21 @@
+{
+  "name": "verify-commit-authors",
+  "version": "1.0.0",
+  "description": "Verifies that all commits in a PR are authored by a specific set of users and are signed.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "bun build src/verify.ts --outfile dist/index.js --target node --minify --production",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@actions/core": "1.10.1",
+    "@actions/github": "6.0.1",
+    "@fast-check/vitest": "0.2.4",
+    "fast-check": "4.5.3"
+  },
+  "devDependencies": {
+    "@octokit/graphql-schema": "^15.26.1",
+    "@types/node": "20.19.28",
+    "typescript": "5.9.3"
+  }
+}

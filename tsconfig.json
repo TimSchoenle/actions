@@ -13,6 +13,6 @@
     "verbatimModuleSyntax": true,
     "resolveJsonModule": true
   },
-  "include": ["scripts/**/*"],
-  "exclude": ["node_modules", "actions", "configs"]
+  "include": ["scripts/**/*", "actions/**/*"],
+  "exclude": ["node_modules", "configs"]
 }
