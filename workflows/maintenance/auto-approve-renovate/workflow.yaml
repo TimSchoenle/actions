@@ -4,8 +4,8 @@ description: 'Reusable workflow to auto approve Renovate PRs, this is useful to 
 on:
   workflow_call:
     inputs:
-      renovate-user-id:
-        description: 'User ID of the renovate bot'
+      user_ids:
+        description: 'Comma-separated list of Database IDs of accepted authors (e.g. "29139614, 123456").'
         required: false
         type: string
         default: '29139614'
@@ -44,7 +44,7 @@ jobs:
         with:
           pr_url: ${{ github.event.pull_request.html_url }}
           github_token: ${{ secrets.token }}
-          user_ids: ${{ inputs.renovate-user-id }}
+          user_ids: ${{ inputs.user_ids }}
 
       - name: Auto-approve
         if: steps.verify_commits.outputs.verified == 'true'
