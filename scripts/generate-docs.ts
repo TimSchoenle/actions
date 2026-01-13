@@ -1,11 +1,13 @@
-import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { Sys } from './lib/utils.js';
-import { ActionParser } from './lib/readme/parsers/action-parser.js';
-import { WorkflowParser } from './lib/readme/parsers/workflow-parser.js';
-import { RenovateParser } from './lib/readme/parsers/renovate-parser.js';
+import { fileURLToPath } from 'node:url';
+
 import { generateSection } from './lib/readme/generator.js';
 import { getRepoInfo } from './lib/readme/git-utils.js';
+import { ActionParser } from './lib/readme/parsers/action-parser.js';
+import { RenovateParser } from './lib/readme/parsers/renovate-parser.js';
+import { WorkflowParser } from './lib/readme/parsers/workflow-parser.js';
+import { Sys } from './lib/utils.js';
+
 import type { DocumentationItem } from './lib/readme/types.js';
 
 const __filename = fileURLToPath(import.meta.url);

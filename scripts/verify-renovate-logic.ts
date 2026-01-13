@@ -2,8 +2,31 @@
  * Test script for verify-commit-authors Logic (List Support)
  */
 
+interface CommitAuthor {
+  user: { databaseId: number } | null;
+}
+
+interface CommitNode {
+  commit: {
+    oid: string;
+    authors: { nodes: CommitAuthor[] };
+    signature: { isValid: boolean } | null;
+  };
+}
+
+interface MockData {
+  data: {
+    resource: {
+      commits: {
+        totalCount: number;
+        nodes: CommitNode[];
+      };
+    };
+  };
+}
+
 // Mock Data
-const mockData = {
+const mockData: MockData = {
   data: {
     resource: {
       commits: {
@@ -38,17 +61,17 @@ const mockData = {
 const ALLOWED_IDS_STR = '111, 222'; // Comma separated
 
 // Mock JQ Logic in JS
-function verify(data: any, allowedIdsStr: string) {
+function verify(data: MockData, allowedIdsStr: string): string[] {
   const allowedIds = allowedIdsStr.split(',').map((s) => parseInt(s.trim()));
 
   const nodes = data.data.resource.commits.nodes;
 
-  const invalid = nodes
-    .filter((node: any) => {
+  return nodes
+    .filter((node: CommitNode) => {
       const commit = node.commit;
 
       // Check Authors
-      const hasBadAuthor = commit.authors.nodes.some((author: any) => {
+      const hasBadAuthor = commit.authors.nodes.some((author: CommitAuthor) => {
         if (!author.user) return true;
         return !allowedIds.includes(author.user.databaseId);
       });
@@ -58,9 +81,7 @@ function verify(data: any, allowedIdsStr: string) {
 
       return hasBadAuthor || badSig;
     })
-    .map((n: any) => n.commit.oid);
-
-  return invalid;
+    .map((n: CommitNode) => n.commit.oid);
 }
 
 const result = verify(mockData, ALLOWED_IDS_STR);

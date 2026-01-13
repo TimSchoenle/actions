@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { ROOT_DIR, Sys, getRepoName } from './utils.js';
+
+import { getRepoName, ROOT_DIR, Sys } from './utils.js';
 
 const RENOVATE_CONFIG_PATH = path.join(ROOT_DIR, 'configs', 'renovate', 'actions.json');
 

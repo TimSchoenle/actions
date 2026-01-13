@@ -1,11 +1,11 @@
 import {
+  createVerifyWorkflow as createVerifyWorkflowGeneric,
   getPackages as getPackagesGeneric,
   getSubResources as getSubResourcesGeneric,
-  selectPackage as selectPackageGeneric,
   registerResourceInReleasePlease,
   removeResourceFromReleasePlease,
-  createVerifyWorkflow as createVerifyWorkflowGeneric,
   removeVerifyWorkflow as removeVerifyWorkflowGeneric,
+  selectPackage as selectPackageGeneric,
 } from './resource-utils.js';
 
 export async function getPackages(): Promise<string[]> {

@@ -1,10 +1,12 @@
+import path from 'node:path';
+
 import { input } from '@inquirer/prompts';
 import chalk from 'chalk';
-import path from 'node:path';
-import { Sys, capitalize, createFromTemplate, START_VERSION, ROOT_DIR } from './lib/utils.js';
-import { selectPackage, registerResourceInReleasePlease, createVerifyWorkflow } from './lib/resource-utils.js';
-import { getRepoInfo } from './lib/readme/git-utils.js';
+
 import { main as generateDocs } from './generate-docs.js';
+import { getRepoInfo } from './lib/readme/git-utils.js';
+import { createVerifyWorkflow, registerResourceInReleasePlease, selectPackage } from './lib/resource-utils.js';
+import { capitalize, createFromTemplate, ROOT_DIR, START_VERSION, Sys } from './lib/utils.js';
 
 const WORKFLOWS_DIR = path.join(ROOT_DIR, 'workflows');
 
