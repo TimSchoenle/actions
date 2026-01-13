@@ -1,5 +1,6 @@
 query VerifyCommits($prUrl: URI!) {
   resource(url: $prUrl) {
+    __typename
     ... on PullRequest {
       commits(last: 100) {
         totalCount

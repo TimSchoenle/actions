@@ -32403,37 +32403,37 @@ export type VerifyCommitsQueryVariables = Exact<{
 
 
 export type VerifyCommitsQuery = { __typename?: 'Query', resource?:
-    | { __typename?: 'Bot' }
-    | { __typename?: 'CheckRun' }
-    | { __typename?: 'ClosedEvent' }
-    | { __typename?: 'Commit' }
-    | { __typename?: 'ConvertToDraftEvent' }
-    | { __typename?: 'CrossReferencedEvent' }
-    | { __typename?: 'Gist' }
-    | { __typename?: 'Issue' }
-    | { __typename?: 'Mannequin' }
-    | { __typename?: 'MergedEvent' }
-    | { __typename?: 'Milestone' }
-    | { __typename?: 'Organization' }
-    | { __typename?: 'PullRequest', commits: { __typename?: 'PullRequestCommitConnection', totalCount: number, nodes?: Array<{ __typename?: 'PullRequestCommit', commit: { __typename?: 'Commit', oid: any, authors: { __typename?: 'GitActorConnection', nodes?: Array<{ __typename?: 'GitActor', user?: { __typename?: 'User', databaseId?: number | null } | null } | null> | null }, signature?:
+    | { __typename: 'Bot' }
+    | { __typename: 'CheckRun' }
+    | { __typename: 'ClosedEvent' }
+    | { __typename: 'Commit' }
+    | { __typename: 'ConvertToDraftEvent' }
+    | { __typename: 'CrossReferencedEvent' }
+    | { __typename: 'Gist' }
+    | { __typename: 'Issue' }
+    | { __typename: 'Mannequin' }
+    | { __typename: 'MergedEvent' }
+    | { __typename: 'Milestone' }
+    | { __typename: 'Organization' }
+    | { __typename: 'PullRequest', commits: { __typename?: 'PullRequestCommitConnection', totalCount: number, nodes?: Array<{ __typename?: 'PullRequestCommit', commit: { __typename?: 'Commit', oid: any, authors: { __typename?: 'GitActorConnection', nodes?: Array<{ __typename?: 'GitActor', user?: { __typename?: 'User', databaseId?: number | null } | null } | null> | null }, signature?:
               | { __typename?: 'GpgSignature', isValid: boolean, state: GitSignatureState }
               | { __typename?: 'SmimeSignature', isValid: boolean, state: GitSignatureState }
               | { __typename?: 'SshSignature', isValid: boolean, state: GitSignatureState }
               | { __typename?: 'UnknownSignature', isValid: boolean, state: GitSignatureState }
              | null } } | null> | null } }
-    | { __typename?: 'PullRequestCommit' }
-    | { __typename?: 'ReadyForReviewEvent' }
-    | { __typename?: 'Release' }
-    | { __typename?: 'Repository' }
-    | { __typename?: 'RepositoryTopic' }
-    | { __typename?: 'ReviewDismissedEvent' }
-    | { __typename?: 'TeamDiscussion' }
-    | { __typename?: 'TeamDiscussionComment' }
-    | { __typename?: 'User' }
-    | { __typename?: 'Workflow' }
-    | { __typename?: 'WorkflowRun' }
-    | { __typename?: 'WorkflowRunFile' }
+    | { __typename: 'PullRequestCommit' }
+    | { __typename: 'ReadyForReviewEvent' }
+    | { __typename: 'Release' }
+    | { __typename: 'Repository' }
+    | { __typename: 'RepositoryTopic' }
+    | { __typename: 'ReviewDismissedEvent' }
+    | { __typename: 'TeamDiscussion' }
+    | { __typename: 'TeamDiscussionComment' }
+    | { __typename: 'User' }
+    | { __typename: 'Workflow' }
+    | { __typename: 'WorkflowRun' }
+    | { __typename: 'WorkflowRunFile' }
    | null };
 
 
-export const VerifyCommitsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"VerifyCommits"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"prUrl"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"URI"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"resource"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"url"},"value":{"kind":"Variable","name":{"kind":"Name","value":"prUrl"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PullRequest"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"commits"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"last"},"value":{"kind":"IntValue","value":"100"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}},{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"commit"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"oid"}},{"kind":"Field","name":{"kind":"Name","value":"authors"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"20"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"databaseId"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"signature"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"isValid"}},{"kind":"Field","name":{"kind":"Name","value":"state"}}]}}]}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<VerifyCommitsQuery, VerifyCommitsQueryVariables>;
+export const VerifyCommitsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"VerifyCommits"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"prUrl"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"URI"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"resource"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"url"},"value":{"kind":"Variable","name":{"kind":"Name","value":"prUrl"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PullRequest"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"commits"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"last"},"value":{"kind":"IntValue","value":"100"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalCount"}},{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"commit"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"oid"}},{"kind":"Field","name":{"kind":"Name","value":"authors"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"20"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"databaseId"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"signature"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"isValid"}},{"kind":"Field","name":{"kind":"Name","value":"state"}}]}}]}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<VerifyCommitsQuery, VerifyCommitsQueryVariables>;
