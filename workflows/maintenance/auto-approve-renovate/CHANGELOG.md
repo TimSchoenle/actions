@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.1.3...workflows-maintenance-auto-approve-renovate-meta-v1.2.0) (2026-01-13)
+
+
+### Features
+
+* **Workflows:** allow multiple accounts to be whitelisted for renova… ([#222](https://github.com/TimSchoenle/actions/issues/222)) ([02860cb](https://github.com/TimSchoenle/actions/commit/02860cb9d8f9054ce0126ffc4bfebc75dbbc5052))
+* **Workflows:** deduplicate complex workflow logic ([#203](https://github.com/TimSchoenle/actions/issues/203)) ([a50d9a7](https://github.com/TimSchoenle/actions/commit/a50d9a77bd1304d681ea18b1914b29b796be8807))
+
 ## [1.1.3](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.1.2...workflows-maintenance-auto-approve-renovate-meta-v1.1.3) (2026-01-12)
 
 
