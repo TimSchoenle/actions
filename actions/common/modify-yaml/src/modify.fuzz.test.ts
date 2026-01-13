@@ -101,7 +101,8 @@ describe('Primitive Persistence Fuzzing', () => {
   ])('should persist primitive types correctly', async (originalValue, pathSegments) => {
     const keyPath = pathSegments.join('.');
     // Simulate action input: everything comes in as string
-    const inputString = String(originalValue);
+    // Special case: String(-0) is "0", but we want to test "-0" input preservation
+    const inputString = Object.is(originalValue, -0) ? '-0' : String(originalValue);
 
     // Initial file state: empty object or specific path
     const initialObj = {};
