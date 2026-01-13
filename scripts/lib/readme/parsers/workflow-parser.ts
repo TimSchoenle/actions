@@ -35,7 +35,9 @@ export function deriveWorkflowMetadata(
   // Path: workflows/common/test2
   // Component Name (Clean): workflows-common-test2
   const parts = normalizedDir.split('/'); // ["workflows", "common", "test2"]
-  if (parts.length < 3 || parts[0] !== 'workflows') return null;
+  if (parts.length < 3 || parts[0] !== 'workflows') {
+    return null;
+  }
 
   const componentSuffix = parts.slice(1).join('-'); // "common-test2"
   const cleanComponentName = `workflows-${componentSuffix}`; // "workflows-common-test2"
@@ -84,7 +86,9 @@ export class WorkflowParser implements Parser {
       }
 
       const metadata = deriveWorkflowMetadata(dir, shortVersion, repoId, config.name, config.description);
-      if (!metadata) continue;
+      if (!metadata) {
+        continue;
+      }
 
       items.push({
         name: metadata.name,

@@ -1,0 +1,22 @@
+{
+  "name": "actions-common-modify-yaml",
+  "version": "1.0.0",
+  "description": "Modify YAML files while preserving comments and structure",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "bun build ./src/index.ts --outfile ./dist/index.js --target node  --minify --production",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@actions/core": "2.0.2",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@fast-check/vitest": "0.2.4",
+    "@types/node": "^20.0.0",
+    "fast-check": "^3.23.2",
+    "typescript": "^5.0.0",
+    "vitest": "4.0.17"
+  }
+}

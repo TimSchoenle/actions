@@ -103,7 +103,10 @@ async function updateSecurity(actions: DocumentationItem[], workflows: Documenta
   }
 
   if (versionedWorkflows.length > 0) {
-    if (supportedVersionsOutput) supportedVersionsOutput += '\n'; // spacing
+    // spacing
+    if (supportedVersionsOutput) {
+      supportedVersionsOutput += '\n';
+    }
     supportedVersionsOutput += '### Workflows\n\n';
     supportedVersionsOutput += await generateSection(
       versionedWorkflows,
