@@ -19,6 +19,7 @@ describe('Verify Commit Authors Action', () => {
   let getInputMock: any;
   let setFailedMock: any;
   let setOutputMock: any;
+  let warningMock: any;
   let infoMock: any;
   let octokitMock: any;
 
@@ -41,6 +42,7 @@ describe('Verify Commit Authors Action', () => {
 
     setFailedMock = vi.mocked(core.setFailed);
     setOutputMock = vi.mocked(core.setOutput);
+    warningMock = vi.mocked(core.warning);
     infoMock = vi.mocked(core.info);
 
     // Setup Octokit mock
@@ -100,7 +102,7 @@ describe('Verify Commit Authors Action', () => {
 
     await run();
 
-    expect(setFailedMock).toHaveBeenCalledWith(expect.stringContaining('Found invalid commits'));
+    expect(warningMock).toHaveBeenCalledWith(expect.stringContaining('Found invalid commits'));
     expect(setOutputMock).toHaveBeenCalledWith('verified', 'false');
     expect(setOutputMock).toHaveBeenCalledWith('invalid_commits', 'bad1234');
   });
@@ -118,7 +120,7 @@ describe('Verify Commit Authors Action', () => {
 
     await run();
 
-    expect(setFailedMock).toHaveBeenCalledWith(expect.stringContaining('Found invalid commits'));
+    expect(warningMock).toHaveBeenCalledWith(expect.stringContaining('Found invalid commits'));
     expect(setOutputMock).toHaveBeenCalledWith('verified', 'false');
   });
 
@@ -135,7 +137,7 @@ describe('Verify Commit Authors Action', () => {
 
     await run();
 
-    expect(setFailedMock).toHaveBeenCalledWith(expect.stringContaining('Found invalid commits'));
+    expect(warningMock).toHaveBeenCalledWith(expect.stringContaining('Found invalid commits'));
   });
 
   it('should fail if too many commits (>100)', async () => {
@@ -143,7 +145,7 @@ describe('Verify Commit Authors Action', () => {
 
     await run();
 
-    expect(setFailedMock).toHaveBeenCalledWith(expect.stringContaining('more than 100 commits'));
+    expect(warningMock).toHaveBeenCalledWith(expect.stringContaining('more than 100 commits'));
     expect(setOutputMock).toHaveBeenCalledWith('verified', 'false');
   });
 
