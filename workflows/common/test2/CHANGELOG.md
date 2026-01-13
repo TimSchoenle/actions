@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.1](https://github.com/TimSchoenle/actions/compare/workflows-common-test2-meta-v2.10.0...workflows-common-test2-meta-v2.10.1) (2026-01-13)
+
+
+### Build System
+
+* update renovate auto PR to allow both renovate and our custom CI ([#229](https://github.com/TimSchoenle/actions/issues/229)) ([7dce6d4](https://github.com/TimSchoenle/actions/commit/7dce6d45c64338e3f4221fea50b1dda388dbfe9e))
+
 ## [2.10.0](https://github.com/TimSchoenle/actions/compare/workflows-common-test2-meta-v2.9.1...workflows-common-test2-meta-v2.10.0) (2026-01-12)
 
 
