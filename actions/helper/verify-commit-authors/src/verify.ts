@@ -1,7 +1,9 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { print } from 'graphql';
+
 import { VerifyCommitsDocument } from './generated/graphql.js';
+
 import type { VerifyCommitsQuery } from './generated/graphql.js';
 
 // Type alias for commit node from the query
@@ -150,7 +152,5 @@ export async function run(): Promise<void> {
   }
 }
 
-// execute logic if called directly
-if (require.main === module) {
-  await run();
-}
+// When bundled by bun, this file becomes the entry point
+await run();
