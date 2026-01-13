@@ -1,9 +1,11 @@
+import path from 'node:path';
+
 import { input } from '@inquirer/prompts';
 import chalk from 'chalk';
-import path from 'node:path';
-import { ACTIONS_DIR, Sys, capitalize, createFromTemplate, START_VERSION } from './lib/utils.js';
-import { selectPackage, registerActionInReleasePlease, createVerifyWorkflow } from './lib/action-utils.js';
+
 import { main as generateDocs } from './generate-docs.js';
+import { createVerifyWorkflow, registerActionInReleasePlease, selectPackage } from './lib/action-utils.js';
+import { ACTIONS_DIR, capitalize, createFromTemplate, Sys } from './lib/utils.js';
 
 export async function main() {
   console.log(chalk.blue('🚀 Shared CI Action Generator'));

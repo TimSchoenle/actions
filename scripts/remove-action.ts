@@ -1,14 +1,16 @@
 import path from 'node:path';
+
 import { confirm, search } from '@inquirer/prompts';
 import chalk from 'chalk';
-import { ACTIONS_DIR, Sys } from './lib/utils.js';
+
+import { main as generateDocs } from './generate-docs.js';
 import {
   getSubActions,
   removeActionFromReleasePlease,
   removeVerifyWorkflow,
   selectPackage,
 } from './lib/action-utils.js';
-import { main as generateDocs } from './generate-docs.js';
+import { ACTIONS_DIR, Sys } from './lib/utils.js';
 
 export async function main() {
   console.log(chalk.red('🗑️  Shared CI Action Remover'));

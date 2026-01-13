@@ -1,4 +1,5 @@
 import path from 'node:path';
+
 import { ROOT_DIR, Sys } from '../utils.js';
 
 const MANIFEST_PATH = path.join(ROOT_DIR, '.release-please-manifest.json');

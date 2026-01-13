@@ -1,0 +1,26 @@
+query VerifyCommits($prUrl: URI!) {
+  resource(url: $prUrl) {
+    __typename
+    ... on PullRequest {
+      commits(last: 100) {
+        totalCount
+        nodes {
+          commit {
+            oid
+            authors(first: 20) {
+              nodes {
+                user {
+                  databaseId
+                }
+              }
+            }
+            signature {
+              isValid
+              state
+            }
+          }
+        }
+      }
+    }
+  }
+}

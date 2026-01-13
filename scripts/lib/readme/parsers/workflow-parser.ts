@@ -1,9 +1,12 @@
 import path from 'node:path';
+
 import yaml from 'js-yaml';
+
 import { ROOT_DIR, Sys } from '../../utils.js';
-import type { DocumentationItem, Parser } from '../types.js';
-import { getManifestVersions } from '../utils.js';
 import { getRepoInfo } from '../git-utils.js';
+import { getManifestVersions } from '../utils.js';
+
+import type { DocumentationItem, Parser } from '../types.js';
 
 interface WorkflowConfig {
   name: string;

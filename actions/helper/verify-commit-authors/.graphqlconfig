@@ -1,0 +1,5 @@
+{
+  "name": "Verify Commit Authors",
+  "schemaPath": "node_modules/@octokit/graphql-schema/schema.graphql",
+  "documents": "src/**/*.graphql"
+}

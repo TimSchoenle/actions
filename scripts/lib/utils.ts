@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
 import { Sys } from './sys';
 
 export { Sys };
@@ -37,6 +38,7 @@ export function replaceTemplateVariables(content: string, replacements: Record<s
   for (const [key, value] of Object.entries(replacements)) {
     // Escape special regex characters in the key
     const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // eslint-disable-next-line security/detect-non-literal-regexp -- Key is escaped above to prevent ReDoS
     newContent = newContent.replaceAll(new RegExp(`\\{\\{${escapedKey}\\}\\}`, 'g'), () => value);
   }
   return newContent;

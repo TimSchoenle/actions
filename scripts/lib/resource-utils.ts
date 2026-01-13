@@ -1,6 +1,8 @@
 import path from 'node:path';
-import chalk from 'chalk';
+
 import { input, search } from '@inquirer/prompts';
+import chalk from 'chalk';
+
 import { ACTIONS_DIR, capitalize, createFromTemplate, ROOT_DIR, START_VERSION, Sys } from './utils.js';
 
 export type ResourceType = 'action' | 'workflow';

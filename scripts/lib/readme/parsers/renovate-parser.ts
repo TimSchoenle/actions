@@ -1,7 +1,9 @@
 import path from 'node:path';
+
 import { ROOT_DIR, Sys } from '../../utils.js';
-import type { DocumentationItem, Parser } from '../types.js';
 import { getRepoInfo } from '../git-utils.js';
+
+import type { DocumentationItem, Parser } from '../types.js';
 
 export class RenovateParser implements Parser {
   async parse(): Promise<DocumentationItem[]> {

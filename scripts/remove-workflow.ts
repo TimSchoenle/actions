@@ -1,14 +1,16 @@
 import path from 'node:path';
+
 import { confirm, search } from '@inquirer/prompts';
 import chalk from 'chalk';
-import { ROOT_DIR, Sys } from './lib/utils.js';
+
+import { main as generateDocs } from './generate-docs.js';
 import {
   getSubResources,
   removeResourceFromReleasePlease,
   removeVerifyWorkflow,
   selectPackage,
 } from './lib/resource-utils.js';
-import { main as generateDocs } from './generate-docs.js';
+import { ROOT_DIR, Sys } from './lib/utils.js';
 
 const WORKFLOWS_DIR = path.join(ROOT_DIR, 'workflows');
 
