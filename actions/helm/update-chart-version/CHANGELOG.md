@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.4.1...actions-helm-update-chart-version-v1.4.2) (2026-01-13)
+
+
+### Miscellaneous
+
+* **deps:** update to vactions-common-modify-yaml-v1.1.1 ([#223](https://github.com/TimSchoenle/actions/issues/223)) ([c10d67e](https://github.com/TimSchoenle/actions/commit/c10d67e40f8774fdc685f2cfbde45c181d059a0f))
+
 ## [1.4.1](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.4.0...actions-helm-update-chart-version-v1.4.1) (2026-01-12)
 
 
