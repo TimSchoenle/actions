@@ -97,11 +97,13 @@ describe('Verify Commit Authors Action Fuzzing', () => {
 
           const isFailed = setFailedMock.mock.calls.length > 0;
 
-          // If it failed, it must be because of valid reasons (too many commits, api error, invalid authors)
-          // It should NOT throw.
-          // If it didn't fail, verified must be true.
+          // With the reporter pattern, setFailed is ONLY called for actual errors (API, parsing).
+          // Validation failures just set `verified: 'false'`.
+          // So: either it failed (error), or `verified` output was set.
           if (!isFailed) {
-            expect(setOutputMock).toHaveBeenCalledWith('verified', 'true');
+            // Must have set `verified` to either 'true' or 'false'
+            const verifiedCalls = setOutputMock.mock.calls.filter((call: [string, string]) => call[0] === 'verified');
+            expect(verifiedCalls.length).toBeGreaterThan(0);
           }
         },
       ),
