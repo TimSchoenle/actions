@@ -60,8 +60,8 @@ Here is a list of all currently maintained actions in this repository:
 | Workflow | Description | Version | Usage |
 | --- | --- | --- | --- |
 | [Auto Format](./workflows/maintenance/auto-bun-prettier) | Reusable workflow to auto-format code using Bun (Prettier) and commit changes. | workflows-maintenance-auto-bun-prettier-v1.1.4 | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@workflows-maintenance-auto-bun-prettier-v1.1.4` |
+| [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | Reusable workflow that automatically verifies, approves, and merges Pull Requests that match a specific branch pattern and have been open for a configurable duration. It ensures all commits are signed and authored by trusted users. | workflows-maintenance-timed-auto-pr-approve-v1.0.0 | `uses: TimSchoenle/actions/.github/workflows/maintenance-timed-auto-pr-approve.yaml@workflows-maintenance-timed-auto-pr-approve-v1.0.0` |
 | [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | Reusable workflow to auto approve Renovate PRs, this is useful to auto merge Renovate PRs which have auto-merge enabled. | workflows-maintenance-auto-approve-renovate-v1.2.0 | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-approve-renovate.yaml@workflows-maintenance-auto-approve-renovate-v1.2.0` |
-| [Maintenance Timed-auto-pr-approve](./workflows/maintenance/timed-auto-pr-approve) | Reusable workflow for maintenance-timed-auto-pr-approve | workflows-maintenance-timed-auto-pr-approve-v1.0.0 | `uses: TimSchoenle/actions/.github/workflows/maintenance-timed-auto-pr-approve.yaml@workflows-maintenance-timed-auto-pr-approve-v1.0.0` |
 
 
 
