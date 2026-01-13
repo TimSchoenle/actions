@@ -56,6 +56,11 @@
       "release-type": "simple",
       "component": "actions-helper-verify-commit-authors",
       "include-component-in-tag": true
+    },
+    "workflows/maintenance/timed-auto-pr-approve": {
+      "release-type": "simple",
+      "component": "workflows-maintenance-timed-auto-pr-approve-meta",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
