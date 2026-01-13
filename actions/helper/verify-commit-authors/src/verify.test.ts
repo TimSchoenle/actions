@@ -2,12 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { run } from './verify';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import { print } from 'graphql';
+import { VerifyCommitsDocument } from './generated/graphql';
+import type { VerifyCommitsQuery } from './generated/graphql';
 
 // Mock Modules
 vi.mock('@actions/core');
 vi.mock('@actions/github');
-
-import type { Repository } from '@octokit/graphql-schema';
 
 // Helper type for deep partial mocking
 type DeepPartial<T> = T extends object
@@ -51,15 +52,23 @@ describe('Verify Commit Authors Action', () => {
     (github.getOctokit as any).mockReturnValue(octokitMock);
   });
 
-  const mockGraphQlResponse = (nodes: DeepPartial<Repository['resource']['commits']['nodes']>, totalCount = 1) => {
-    octokitMock.graphql.mockResolvedValue({
+  // Extract 'nodes' type from the query result type for convenience
+  // We know resource is PullRequest in our happy path
+  type ExtractPullRequest<T> = T extends { __typename?: 'PullRequest' } ? T : never;
+  type PullRequest = ExtractPullRequest<NonNullable<VerifyCommitsQuery['resource']>>;
+  type CommitsNodes = NonNullable<NonNullable<PullRequest['commits']['nodes']>>;
+
+  const mockGraphQlResponse = (nodes: DeepPartial<CommitsNodes>, totalCount = 1) => {
+    const mockResponse: DeepPartial<VerifyCommitsQuery> = {
       resource: {
+        __typename: 'PullRequest',
         commits: {
           totalCount,
           nodes,
         },
       },
-    });
+    };
+    octokitMock.graphql.mockResolvedValue(mockResponse);
   };
 
   it('should verify valid commits and output true', async () => {

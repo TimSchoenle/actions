@@ -4,3 +4,4 @@ SECURITY.md
 .husky
 bun.lock
 index.js
+**/src/generated/

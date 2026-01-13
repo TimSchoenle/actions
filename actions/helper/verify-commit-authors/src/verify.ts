@@ -1,7 +1,8 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-
-import type { Repository } from '@octokit/graphql-schema';
+import { print } from 'graphql';
+import { VerifyCommitsDocument } from './generated/graphql';
+import type { VerifyCommitsQuery } from './generated/graphql';
 
 export async function run() {
   try {
@@ -16,41 +17,13 @@ export async function run() {
 
     const octokit = github.getOctokit(token);
 
-    const query = `
-      query($url: URI!) {
-        resource(url: $url) {
-          ... on PullRequest {
-            commits(last: 100) {
-              totalCount
-              nodes {
-                commit {
-                  oid
-                  authors(first: 20) {
-                    nodes {
-                      user {
-                        databaseId
-                      }
-                    }
-                  }
-                  signature {
-                    isValid
-                    state
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    `;
-
-    const response = await octokit.graphql<{ resource: Repository['resource'] }>(query, {
+    const response = await octokit.graphql<VerifyCommitsQuery>(print(VerifyCommitsDocument), {
       url: prUrl,
     });
 
     const pr = response.resource;
 
-    if (!pr || !('commits' in pr)) {
+    if (pr?.__typename !== 'PullRequest' || !pr.commits) {
       throw new Error('Could not find Pull Request data from URL');
     }
 
@@ -64,29 +37,28 @@ export async function run() {
 
     const invalidCommits: string[] = [];
 
-    for (const node of nodes) {
-      // Node can be null/undefined in generated types, though unlikely in practice with this query
-      if (!node || !node.commit) continue;
+    // The type of nodes is inferred from VerifyCommitsQuery
+    if (nodes) {
+      for (const node of nodes) {
+        if (!node?.commit) continue;
 
-      const commit = node.commit;
-      const oid = commit.oid;
+        const commit = node.commit;
+        const oid = commit.oid;
 
-      // Check Authors
-      const authors = commit.authors?.nodes;
-      // authors nodes can be null/undefined
-      const isAuthorValid =
-        !!authors &&
-        authors.length > 0 &&
-        authors.every(
-          (author: { user: { databaseId: number } }) => author?.user && acceptedIds.includes(author.user.databaseId),
-        );
+        // Check Authors
+        const authors = commit.authors?.nodes;
+        const isAuthorValid =
+          !!authors &&
+          authors.length > 0 &&
+          authors.every((author) => author?.user?.databaseId && acceptedIds.includes(author.user.databaseId));
 
-      // Check Signature
-      const isSignatureValid = commit.signature?.isValid === true;
+        // Check Signature
+        const isSignatureValid = commit.signature?.isValid === true;
 
-      if (!isAuthorValid || !isSignatureValid) {
-        core.error(`Invalid commit: ${oid}. Author Valid: ${isAuthorValid}, Signature Valid: ${isSignatureValid}`);
-        invalidCommits.push(oid);
+        if (!isAuthorValid || !isSignatureValid) {
+          core.error(`Invalid commit: ${oid}. Author Valid: ${isAuthorValid}, Signature Valid: ${isSignatureValid}`);
+          invalidCommits.push(oid);
+        }
       }
     }
 

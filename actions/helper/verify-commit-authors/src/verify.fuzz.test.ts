@@ -3,12 +3,12 @@ import fc from 'fast-check';
 import { run } from './verify';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import { print } from 'graphql';
+import type { VerifyCommitsQuery } from './generated/graphql';
 
 // Mock Modules
 vi.mock('@actions/core');
 vi.mock('@actions/github');
-
-import type { Repository } from '@octokit/graphql-schema';
 
 // Helper type for deep partial mocking
 type DeepPartial<T> = T extends object
@@ -81,8 +81,9 @@ describe('Verify Commit Authors Action Fuzzing', () => {
           });
 
           // Mock API Response
-          const mockResponse: { resource: DeepPartial<Repository['resource']> } = {
+          const mockResponse: DeepPartial<VerifyCommitsQuery> = {
             resource: {
+              __typename: 'PullRequest',
               commits: {
                 totalCount: nodes.length,
                 nodes: nodes,
