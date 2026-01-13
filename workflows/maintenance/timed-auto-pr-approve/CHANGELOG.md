@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.1.1...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.0) (2026-01-13)
+
+
+### Features
+
+* **Workflow:** allow merge_method as input to support custom repo settings ([#235](https://github.com/TimSchoenle/actions/issues/235)) ([54301b5](https://github.com/TimSchoenle/actions/commit/54301b57a369d78f0585ed76c651e57956dd7df1))
+
 ## [1.1.1](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.1.0...workflows-maintenance-timed-auto-pr-approve-meta-v1.1.1) (2026-01-13)
 
 
