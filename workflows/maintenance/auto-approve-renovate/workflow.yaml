@@ -40,7 +40,7 @@ jobs:
       - name: Verify Commits and Signatures
         id: verify_commits
         if: steps.check_author.outputs.match == 'true'
-        uses: TimSchoenle/actions/actions/helper/verify-commit-authors@2e1d6fbc0347a1c1cdc666b2b208a9125686bca6 # actions-helper-verify-commit-authors-v1.1.0
+        uses: TimSchoenle/actions/actions/helper/verify-commit-authors@e8cf863e3d920951c02673d8a8a642a4aa7f789c # actions-helper-verify-commit-authors-v1.1.1
         with:
           pr_url: ${{ github.event.pull_request.html_url }}
           github_token: ${{ secrets.token }}
