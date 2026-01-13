@@ -21,6 +21,7 @@
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
   "branchConcurrentLimit": 0,
+  "gitIgnoredAuthors": ["actions-maintenance-bot", "actions-maintenance-bot[bot]@users.noreply.github.com"],
   "github-actions": {
     "managerFilePatterns": [
       "//(^|/)(workflow-templates|\\.(?:github|gitea|forgejo)/(?:workflows|actions))/.+\\.ya?ml$//",
