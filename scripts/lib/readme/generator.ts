@@ -22,7 +22,9 @@ export async function generateSection(
   // Group items by category
   const byCategory: Record<string, DocumentationItem[]> = Object.create(null);
   for (const item of items) {
-    if (!byCategory[item.category]) byCategory[item.category] = [];
+    if (!byCategory[item.category]) {
+      byCategory[item.category] = [];
+    }
     byCategory[item.category].push(item);
   }
 

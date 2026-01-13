@@ -24,13 +24,17 @@ export function generateComponentName(type: ResourceType, packageName: string, s
 
 export async function getPackages(type: ResourceType): Promise<string[]> {
   const dir = RESOURCE_DIRS[type];
-  if (!Sys.exists(dir)) return [];
+  if (!Sys.exists(dir)) {
+    return [];
+  }
   return Sys.readdir(dir).filter((p) => Sys.stat(path.join(dir, p)).isDirectory());
 }
 
 export async function getSubResources(type: ResourceType, packageName: string): Promise<string[]> {
   const dir = path.join(RESOURCE_DIRS[type], packageName);
-  if (!Sys.exists(dir)) return [];
+  if (!Sys.exists(dir)) {
+    return [];
+  }
   return Sys.readdir(dir).filter((p) => Sys.stat(path.join(dir, p)).isDirectory());
 }
 
@@ -92,7 +96,9 @@ export async function registerResourceInReleasePlease(type: ResourceType, packag
       // ignore
     }
 
-    if (!config.packages) config.packages = {};
+    if (!config.packages) {
+      config.packages = {};
+    }
     if (!config.packages[key]) {
       config.packages[key] = {
         'release-type': 'simple',

@@ -16,6 +16,13 @@ export default tseslint.config(
     ignores: ['node_modules/', 'dist/', '**/dist/', 'coverage/', '**/*.test.ts', '**/*.spec.ts', '**/src/generated/'],
   },
 
+  // General Rules
+  {
+    rules: {
+      curly: ['error', 'all'],
+    },
+  },
+
   // Perfectionist - sorting and ordering
   {
     plugins: {

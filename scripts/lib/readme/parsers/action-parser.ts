@@ -61,7 +61,9 @@ export class ActionParser implements Parser {
         continue;
       }
 
-      if (!config?.name) continue;
+      if (!config?.name) {
+        continue;
+      }
 
       let version = 'N/A';
       const component = await getReleaseComponent(dir);

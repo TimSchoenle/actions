@@ -13,20 +13,8 @@ inputs:
 outputs:
   old-value:
     description: 'Value before modification'
-    value: ${{ steps.modify.outputs.old-value }}
   new-value:
     description: 'Value after modification'
-    value: ${{ steps.modify.outputs.new-value }}
 runs:
-  using: 'composite'
-  steps:
-    - name: Modify YAML
-      id: modify
-      shell: bash
-      env:
-        INPUT_FILE: ${{ inputs.file }}
-        INPUT_KEY: ${{ inputs.key }}
-        INPUT_VALUE: ${{ inputs.value }}
-        PYTHONPATH: ${{ github.action_path }}/src
-        ACTION_PATH: ${{ github.action_path }}
-      run: python3 "$ACTION_PATH/src/main.py"
+  using: 'node20'
+  main: 'dist/index.js'
