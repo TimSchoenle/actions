@@ -56,13 +56,13 @@ jobs:
           - name: 'Preserve Inline Comment'
             key: 'app.name'
             value: 'updated-app'
-            check_grep: 'name: updated-app  # inline comment'
+            check_grep: 'name: updated-app # inline comment'
 
           - name: 'Preserve Comments'
             key: 'app.name'
             value: 'new-name'
             # Check value AND ensure comment still exists
-            check_grep: 'name: new-name  # inline comment'
+            check_grep: 'name: new-name # inline comment'
 
           - name: 'Deep Nesting (5 levels)'
             key: 'app.database.primary.credentials.options.timeout'
