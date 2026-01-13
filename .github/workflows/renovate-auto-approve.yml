@@ -17,6 +17,6 @@ jobs:
     permissions:
       pull-requests: write # To approve PRs
     with:
-      user_ids: '29139614,2625109' # Renovate, actions-maintenance-bot
+      user_ids: '29139614,253958393' # Renovate, actions-maintenance-bot
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}

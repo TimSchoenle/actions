@@ -26,6 +26,6 @@ jobs:
     with:
       time_elapsed: ${{ inputs.time_elapsed || '7d' }}
       branch_pattern: 'release-please--branches--%'
-      trusted_authors: '2625109,2427303' # actions-maintenance-bot, automatic-release-manager
+      trusted_authors: '253958393,248313786' # actions-maintenance-bot, automatic-release-manager
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
