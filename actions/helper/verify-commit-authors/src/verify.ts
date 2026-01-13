@@ -1,8 +1,8 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { print } from 'graphql';
-import { VerifyCommitsDocument } from './generated/graphql';
-import type { VerifyCommitsQuery } from './generated/graphql';
+import { VerifyCommitsDocument } from './generated/graphql.js';
+import type { VerifyCommitsQuery } from './generated/graphql.js';
 
 export async function run() {
   try {
@@ -18,7 +18,7 @@ export async function run() {
     const octokit = github.getOctokit(token);
 
     const response = await octokit.graphql<VerifyCommitsQuery>(print(VerifyCommitsDocument), {
-      url: prUrl,
+      prUrl,
     });
 
     const pr = response.resource;

@@ -1,5 +1,5 @@
-query VerifyCommits($url: URI!) {
-  resource(url: $url) {
+query VerifyCommits($prUrl: URI!) {
+  resource(url: $prUrl) {
     ... on PullRequest {
       commits(last: 100) {
         totalCount

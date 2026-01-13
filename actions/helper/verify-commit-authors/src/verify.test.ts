@@ -1,10 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { run } from './verify';
+import { run } from './verify.js';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import { print } from 'graphql';
-import { VerifyCommitsDocument } from './generated/graphql';
-import type { VerifyCommitsQuery } from './generated/graphql';
+import type { VerifyCommitsQuery } from './generated/graphql.js';
 
 // Mock Modules
 vi.mock('@actions/core');

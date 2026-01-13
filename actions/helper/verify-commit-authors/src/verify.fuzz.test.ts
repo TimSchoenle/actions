@@ -1,10 +1,10 @@
 import { describe, test, vi, beforeEach, expect } from 'vitest';
 import fc from 'fast-check';
-import { run } from './verify';
+import { run } from './verify.js';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { print } from 'graphql';
-import type { VerifyCommitsQuery } from './generated/graphql';
+import type { VerifyCommitsQuery } from './generated/graphql.js';
 
 // Mock Modules
 vi.mock('@actions/core');
