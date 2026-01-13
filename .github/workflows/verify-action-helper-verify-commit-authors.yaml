@@ -5,11 +5,11 @@ on:
     branches:
       - main
     paths:
-      - '../../actions/helper/verify-commit-authors/**'
+      - '/actions/helper/verify-commit-authors/**'
       - '.github/workflows/verify-action-helper-verify-commit-authors.yaml'
   pull_request:
     paths:
-      - '../../actions/helper/verify-commit-authors/**'
+      - '/actions/helper/verify-commit-authors/**'
       - '.github/workflows/verify-action-helper-verify-commit-authors.yaml'
 
 concurrency:
