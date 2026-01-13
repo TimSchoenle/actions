@@ -47,14 +47,21 @@ jobs:
           TIME_ELAPSED: ${{ inputs.time_elapsed }}
           BRANCH_PATTERN: ${{ inputs.branch_pattern }}
         run: |
-          CUTOFF_DATE=$(date -d "$TIME_ELAPSED ago" +%Y-%m-%dT%H:%M:%SZ)
+          # Normalize time format: 1d -> 1 day, 24h -> 24 hour (GNU date requires words)          
+          NORMALIZED_TIME=$(echo "$TIME_ELAPSED" | sed -E 's/([0-9]+)d/\1 days/; s/([0-9]+)h/\1 hours/; s/([0-9]+)m/\1 minutes/; s/([0-9]+)s/\1 seconds/')
+          echo "Normalized time: '$NORMALIZED_TIME'"
+
+          # Calculate cutoff date in UTC
+          # ubuntu-latest uses GNU date
+          CUTOFF_DATE=$(date -u -d "$NORMALIZED_TIME ago" +%Y-%m-%dT%H:%M:%SZ)
           echo "Cutoff: $CUTOFF_DATE"
 
           # gh pr list filters
+          # map % to .* and anchor to start (^)
           PRS=$(gh pr list \
+            --repo "${{ github.repository }}" \
             --state open \
             --json number,url,headRefName,createdAt \
-            # map % to .* and anchor to start (^)
             --jq "map(select(.headRefName | test(\"^${BRANCH_PATTERN//%/.*}\"))) | map(select(.createdAt < \"$CUTOFF_DATE\"))")
 
           echo "Found PRs: $PRS"
