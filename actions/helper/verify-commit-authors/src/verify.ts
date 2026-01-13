@@ -30,7 +30,7 @@ export async function run() {
     const { totalCount, nodes } = pr.commits;
 
     if (totalCount > 100) {
-      core.setFailed('PR has more than 100 commits. Verification unsafe.');
+      core.warning('PR has more than 100 commits. Verification unsafe.');
       core.setOutput('verified', 'false');
       return;
     }
@@ -63,7 +63,7 @@ export async function run() {
     }
 
     if (invalidCommits.length > 0) {
-      core.setFailed('Found invalid commits (author check or signature check failed)');
+      core.warning('Found invalid commits (author check or signature check failed)');
       core.setOutput('verified', 'false');
       core.setOutput('invalid_commits', invalidCommits.join('\n'));
     } else {
