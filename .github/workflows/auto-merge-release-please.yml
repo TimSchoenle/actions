@@ -2,13 +2,7 @@ name: Auto-Merge Release PRs
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Run daily at 00:00 UTC
-  workflow_dispatch:
-    inputs:
-      time_elapsed:
-        description: 'Time elapsed since PR creation (e.g. "24h", "1d").'
-        required: true
-        default: '1d'
+    - cron: '0 */6 * * *' # Run every 6 hours
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -24,7 +18,7 @@ jobs:
       pull-requests: write # Required to merge PRs
     uses: TimSchoenle/actions/.github/workflows/maintenance-timed-auto-pr-approve.yaml@workflows-maintenance-timed-auto-pr-approve-v1.2.0
     with:
-      time_elapsed: ${{ inputs.time_elapsed || '7d' }}
+      time_elapsed: '7d'
       branch_pattern: 'release-please--branches--%'
       trusted_authors: '253958393,248313786' # actions-maintenance-bot, automatic-release-manager
     secrets:
