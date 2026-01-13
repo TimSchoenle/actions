@@ -14,6 +14,11 @@ on:
         required: true
         type: string
         default: 'release-please--branches--%'
+      merge_method:
+        description: 'Merge method to use (merge, squash, rebase).'
+        required: false
+        type: string
+        default: 'squash'
       trusted_authors:
         description: 'Comma-separated list of Database IDs of accepted authors.'
         required: true
@@ -100,9 +105,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.token }}
           PR_URL: ${{ matrix.url }}
+          MERGE_METHOD: ${{ inputs.merge_method }}
         run: |
           echo "PR verified. Approving..."
           gh pr review "$PR_URL" --approve --body "Auto-approved verified release PR."
 
-          echo "Enabling auto-merge..."
-          gh pr merge "$PR_URL" --auto --merge || echo "Failed to enable auto-merge (might be already enabled or not allowed)"
+          echo "Enabling auto-merge with method: $MERGE_METHOD..."
+          gh pr merge "$PR_URL" --auto --"$MERGE_METHOD" || echo "Failed to enable auto-merge (might be already enabled or not allowed)"
