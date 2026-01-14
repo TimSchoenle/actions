@@ -21,17 +21,32 @@ jobs:
     permissions:
       pull-requests: write
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
       - name: Check PR Author
         id: check_author
         env:
           PR_AUTHOR_ID: ${{ github.event.pull_request.user.id }}
-          RENOVATE_USER_ID: ${{ inputs.renovate-user-id }}
+          ALLOWED_USER_IDS: ${{ inputs.user_ids }}
         run: |
           echo "PR Author ID: $PR_AUTHOR_ID"
-          echo "Expected Renovate User ID: $RENOVATE_USER_ID"
+          echo "Allowed User IDs: $ALLOWED_USER_IDS"
 
-          if [[ "$PR_AUTHOR_ID" != "$RENOVATE_USER_ID" ]]; then
-            echo "PR author ID is '$PR_AUTHOR_ID', not '$RENOVATE_USER_ID'. Skipping."
+          match=false
+          # Replace commas with spaces to handle mixed delimiters
+          # Then iterate over the space-separated list
+          for id in ${ALLOWED_USER_IDS//,/ }; do
+            if [[ "$id" == "$PR_AUTHOR_ID" ]]; then
+              match=true
+              break
+            fi
+          done
+
+          if [[ "$match" != "true" ]]; then
+            echo "PR author ID '$PR_AUTHOR_ID' is not in the allowed list. Skipping."
             echo "match=false" >> $GITHUB_OUTPUT
             exit 0
           fi
