@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.3](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.2.2...workflows-maintenance-auto-approve-renovate-meta-v1.2.3) (2026-01-14)
+
+
+### Bug Fixes
+
+* security flags ([#257](https://github.com/TimSchoenle/actions/issues/257)) ([f776528](https://github.com/TimSchoenle/actions/commit/f7765280811342855d6df7c78099c20a1d4ebfe5))
+
+
+### Miscellaneous
+
+* **deps:** update ([#271](https://github.com/TimSchoenle/actions/issues/271)) ([974249b](https://github.com/TimSchoenle/actions/commit/974249b4f98a841fe9b08ed9e3b309fe866e9b72))
+
 ## [1.2.2](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.2.1...workflows-maintenance-auto-approve-renovate-meta-v1.2.2) (2026-01-14)
 
 
