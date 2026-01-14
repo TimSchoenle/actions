@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.2...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.3) (2026-01-14)
+
+
+### Bug Fixes
+
+* **Workflows:** fix bot token generation ([#250](https://github.com/TimSchoenle/actions/issues/250)) ([595c03a](https://github.com/TimSchoenle/actions/commit/595c03a400101c74ee1ca6b10bf16e23b9e22221))
+
 ## [1.2.2](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.1...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.2) (2026-01-14)
 
 
