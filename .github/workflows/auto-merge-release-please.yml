@@ -28,5 +28,5 @@ jobs:
       branch_pattern: 'release-please--branches--%'
       trusted_authors: '253958393,248313786' # actions-maintenance-bot, automatic-release-manager
     secrets:
-      app_id: ${{ secrets.RELEASE_BOT_APP_ID }}
-      private_key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+      app_id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
+      private_key: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
