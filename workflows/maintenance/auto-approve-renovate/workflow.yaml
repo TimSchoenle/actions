@@ -14,6 +14,10 @@ on:
         description: 'GitHub Token with permission to approve pull requests'
         required: true
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   auto-approve:
     name: Auto-approve PR

@@ -32,6 +32,10 @@ on:
         required: true
         description: 'GitHub App Private Key (Requires permissions: contents:write, pull-requests:write, workflows:write)'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   auto-format:
     name: Auto Format
