@@ -3,6 +3,8 @@ name: Auto-Merge Release PRs
 on:
   schedule:
     - cron: '0 */6 * * *' # Run every 6 hours
+  pull_request_review:
+    types: [dismissed]
   workflow_dispatch:
     inputs:
       time_elapsed:
