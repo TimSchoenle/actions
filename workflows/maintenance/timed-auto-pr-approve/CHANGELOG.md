@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.0...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.1) (2026-01-14)
+
+
+### Bug Fixes
+
+* **Workflows:** migrate auto timed PR to bot ([#243](https://github.com/TimSchoenle/actions/issues/243)) ([aed216c](https://github.com/TimSchoenle/actions/commit/aed216c7b0078bd22f3047843c2d4c30787694a4))
+
 ## [1.2.0](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.1.1...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.0) (2026-01-13)
 
 
