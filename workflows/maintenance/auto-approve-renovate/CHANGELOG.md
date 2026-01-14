@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.2.1...workflows-maintenance-auto-approve-renovate-meta-v1.2.2) (2026-01-14)
+
+
+### Bug Fixes
+
+* **Workflows:** fix renovate auto approval multi id support & Add har… ([#242](https://github.com/TimSchoenle/actions/issues/242)) ([e8858db](https://github.com/TimSchoenle/actions/commit/e8858dba5fc98d95fd624703060019d7d88cbf57))
+
 ## [1.2.1](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.2.0...workflows-maintenance-auto-approve-renovate-meta-v1.2.1) (2026-01-13)
 
 
