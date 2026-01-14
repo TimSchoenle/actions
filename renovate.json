@@ -1,32 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:best-practices",
-    "helpers:pinGitHubActionDigests",
-    "workarounds:all",
-    "github>TimSchoenle/actions//configs/renovate/base",
-    "github>TimSchoenle/actions//configs/renovate/ci-automerge"
-  ],
-  "dependencyDashboard": true,
-  "semanticCommits": "enabled",
-  "semanticCommitType": "deps",
-  "labels": ["dependencies"],
-  "rebaseWhen": "behind-base-branch",
-  "timezone": "Europe/Berlin",
-  "minimumReleaseAge": null,
-  "lockFileMaintenance": {
-    "enabled": true,
-    "automerge": true
-  },
-  "prHourlyLimit": 0,
-  "prConcurrentLimit": 0,
-  "branchConcurrentLimit": 0,
-  "gitIgnoredAuthors": ["actions-maintenance-bot", "actions-maintenance-bot[bot]@users.noreply.github.com"],
+  "extends": ["github>TimSchoenle/actions//configs/renovate/default"],
   "github-actions": {
     "managerFilePatterns": [
-      "//(^|/)(workflow-templates|\\.(?:github|gitea|forgejo)/(?:workflows|actions))/.+\\.ya?ml$//",
-      "//(^|/)action\\.ya?ml$//",
-      "/^workflows/.+/workflow\\.ya?ml$/"
+      "(^|/)(workflow-templates|\\.(?:github|gitea|forgejo)/(?:workflows|actions))/.+\\.ya?ml$",
+      "(^|/)action\\.ya?ml$",
+      "^workflows/.+/workflow\\.ya?ml$"
     ]
   },
   "packageRules": [
