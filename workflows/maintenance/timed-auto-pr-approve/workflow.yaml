@@ -64,6 +64,7 @@ jobs:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
           TIME_ELAPSED: ${{ inputs.time_elapsed }}
           BRANCH_PATTERN: ${{ inputs.branch_pattern }}
+          GH_REPO: ${{ github.repository }}
         run: |
           # Normalize time format: 1d -> 1 day, 24h -> 24 hour (GNU date requires words)          
           NORMALIZED_TIME=$(echo "$TIME_ELAPSED" | sed -E 's/([0-9]+)d/\1 days/; s/([0-9]+)h/\1 hours/; s/([0-9]+)m/\1 minutes/; s/([0-9]+)s/\1 seconds/')
@@ -77,7 +78,7 @@ jobs:
           # gh pr list filters
           # map % to .* and anchor to start (^)
           PRS=$(gh pr list \
-            --repo "${{ github.repository }}" \
+            --repo "$GH_REPO" \
             --state open \
             --json number,url,headRefName,createdAt \
             --jq "map(select(.headRefName | test(\"^${BRANCH_PATTERN//%/.*}\"))) | map(select(.createdAt < \"$CUTOFF_DATE\"))")
