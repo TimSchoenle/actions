@@ -11,7 +11,7 @@
   "semanticCommits": "enabled",
   "semanticCommitType": "deps",
   "labels": ["dependencies"],
-  "rebaseWhen": "auto",
+  "rebaseWhen": "behind-base-branch",
   "timezone": "Europe/Berlin",
   "minimumReleaseAge": null,
   "lockFileMaintenance": {
