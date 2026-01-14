@@ -11,4 +11,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Hello ${{ inputs.name }}"
+      - env:
+          NAME: ${{ inputs.name }}
+        run: echo "Hello $NAME"
