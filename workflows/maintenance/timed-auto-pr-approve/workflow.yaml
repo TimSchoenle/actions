@@ -49,8 +49,8 @@ jobs:
         id: generate_token
         uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
         with:
-          app-id: ${{ inputs.app_id }}
-          private-key: ${{ inputs.private_key }}
+          app-id: ${{ secrets.app_id }}
+          private-key: ${{ secrets.private_key }}
           permission-contents: read
           permission-pull-requests: read
 
@@ -102,8 +102,8 @@ jobs:
         id: generate_token
         uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
         with:
-          app-id: ${{ inputs.app_id }}
-          private-key: ${{ inputs.private_key }}
+          app-id: ${{ secrets.app_id }}
+          private-key: ${{ secrets.private_key }}
           permission-contents: write
           permission-pull-requests: write
 
