@@ -14,12 +14,18 @@ on:
         description: 'GitHub Token with permission to approve pull requests'
         required: true
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
 jobs:
   auto-approve:
     name: Auto-approve PR
     runs-on: ubuntu-latest
     permissions:
-      pull-requests: write
+      pull-requests: write # to approve PRs
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
