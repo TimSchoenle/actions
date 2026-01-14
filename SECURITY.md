@@ -41,7 +41,7 @@ Any version not listed in the following tables is not supported.
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Common Test Workflow21345](./workflows/common/test2) | workflows-common-test2-v2.10.1 | :white_check_mark: |
+| [Common Test Workflow21345](./workflows/common/test2) | workflows-common-test2-v2.11.0 | :white_check_mark: |
 
 ### Maintenance
 
