@@ -12,10 +12,6 @@ on:
         required: true
         default: '1d'
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 permissions: {}
 
 jobs:
