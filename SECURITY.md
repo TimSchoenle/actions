@@ -48,7 +48,7 @@ Any version not listed in the following tables is not supported.
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Auto Format](./workflows/maintenance/auto-bun-prettier) | workflows-maintenance-auto-bun-prettier-v1.1.5 | :white_check_mark: |
-| [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | workflows-maintenance-timed-auto-pr-approve-v1.2.4 | :white_check_mark: |
+| [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | workflows-maintenance-timed-auto-pr-approve-v1.2.5 | :white_check_mark: |
 | [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | workflows-maintenance-auto-approve-renovate-v1.2.3 | :white_check_mark: |
 
 

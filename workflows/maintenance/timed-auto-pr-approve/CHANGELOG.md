@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.5](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.4...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.5) (2026-01-14)
+
+
+### Bug Fixes
+
+* security flags ([#257](https://github.com/TimSchoenle/actions/issues/257)) ([f776528](https://github.com/TimSchoenle/actions/commit/f7765280811342855d6df7c78099c20a1d4ebfe5))
+* security flags ([#263](https://github.com/TimSchoenle/actions/issues/263)) ([d96213f](https://github.com/TimSchoenle/actions/commit/d96213f443b2e7f3d41c6d1dae2b9c90877fa3ec))
+
+
+### Miscellaneous
+
+* **deps:** update ([#271](https://github.com/TimSchoenle/actions/issues/271)) ([974249b](https://github.com/TimSchoenle/actions/commit/974249b4f98a841fe9b08ed9e3b309fe866e9b72))
+
 ## [1.2.4](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.3...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.4) (2026-01-14)
 
 
