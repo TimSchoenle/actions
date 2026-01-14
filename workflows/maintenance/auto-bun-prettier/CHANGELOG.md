@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.5](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.4...workflows-maintenance-auto-bun-prettier-meta-v1.1.5) (2026-01-14)
+
+
+### Bug Fixes
+
+* security flags ([#257](https://github.com/TimSchoenle/actions/issues/257)) ([f776528](https://github.com/TimSchoenle/actions/commit/f7765280811342855d6df7c78099c20a1d4ebfe5))
+
 ## [1.1.4](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.3...workflows-maintenance-auto-bun-prettier-meta-v1.1.4) (2026-01-12)
 
 
