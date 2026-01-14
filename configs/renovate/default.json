@@ -1,0 +1,25 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Default configuration for Renovate",
+  "extends": [
+    "config:best-practices",
+    "helpers:pinGitHubActionDigests",
+    "workarounds:all",
+    "github>TimSchoenle/actions//configs/renovate/base",
+    "github>TimSchoenle/actions//configs/renovate/ci-automerge"
+  ],
+  "dependencyDashboard": true,
+  "semanticCommits": "enabled",
+  "semanticCommitType": "deps",
+  "labels": ["dependencies"],
+  "rebaseWhen": "behind-base-branch",
+  "timezone": "Europe/Berlin",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true
+  },
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 0,
+  "branchConcurrentLimit": 0,
+  "gitIgnoredAuthors": ["actions-maintenance-bot", "actions-maintenance-bot[bot]@users.noreply.github.com"]
+}
