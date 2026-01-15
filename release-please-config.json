@@ -61,6 +61,11 @@
       "release-type": "simple",
       "component": "workflows-maintenance-timed-auto-pr-approve-meta",
       "include-component-in-tag": true
+    },
+    "workflows/rust/cargo-check": {
+      "release-type": "simple",
+      "component": "workflows-rust-cargo-check-meta",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

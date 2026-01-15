@@ -63,6 +63,12 @@ Here is a list of all currently maintained actions in this repository:
 | [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | Reusable workflow that automatically verifies, approves, and merges Pull Requests that match a specific branch pattern and have been open for a configurable duration. It ensures all commits are signed and authored by trusted users. | workflows-maintenance-timed-auto-pr-approve-v1.2.5 | `uses: TimSchoenle/actions/.github/workflows/maintenance-timed-auto-pr-approve.yaml@workflows-maintenance-timed-auto-pr-approve-v1.2.5` |
 | [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | Reusable workflow to auto approve Renovate PRs, this is useful to auto merge Renovate PRs which have auto-merge enabled. | workflows-maintenance-auto-approve-renovate-v1.2.3 | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-approve-renovate.yaml@workflows-maintenance-auto-approve-renovate-v1.2.3` |
 
+### Rust
+
+| Workflow | Description | Version | Usage |
+| --- | --- | --- | --- |
+| [Rust Cargo-check](./workflows/rust/cargo-check) | Reusable workflow for rust-cargo-check | workflows-rust-cargo-check-v1.0.0 | `uses: TimSchoenle/actions/.github/workflows/rust-cargo-check.yaml@workflows-rust-cargo-check-v1.0.0` |
+
 
 
 ## ⚙️ Shared Configurations
