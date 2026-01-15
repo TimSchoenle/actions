@@ -67,7 +67,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Workflow | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Rust Cargo-check](./workflows/rust/cargo-check) | Reusable workflow for rust-cargo-check | workflows-rust-cargo-check-v1.0.0 | `uses: TimSchoenle/actions/.github/workflows/rust-cargo-check.yaml@workflows-rust-cargo-check-v1.0.0` |
+| [Rust Cargo Check](./workflows/rust/cargo-check) | Reusable workflow that runs cargo check to verify Rust code compiles without errors. | workflows-rust-cargo-check-v1.0.0 | `uses: TimSchoenle/actions/.github/workflows/rust-cargo-check.yaml@workflows-rust-cargo-check-v1.0.0` |
 
 
 
