@@ -12,6 +12,10 @@ on:
       - 'actions/{{packageName}}/{{subAction}}/**'
       - '.github/workflows/verify-action-{{packageName}}-{{subAction}}.yaml'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions: {}
 
 jobs:
