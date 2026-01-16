@@ -163,12 +163,14 @@ jobs:
           META_TAG_NAME="${COMPONENT_NAME}-meta-v${VERSION}"
           TARGET_FILE="${COMPONENT_NAME#workflows-}.yaml"
 
-          echo "pkg=$PKG" >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "component_name=$COMPONENT_NAME" >> "$GITHUB_OUTPUT"
-          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
-          echo "meta_tag_name=$META_TAG_NAME" >> "$GITHUB_OUTPUT"
-          echo "target_file=$TARGET_FILE" >> "$GITHUB_OUTPUT"
+          {
+            echo "pkg=$PKG"
+            echo "version=$VERSION"
+            echo "component_name=$COMPONENT_NAME"
+            echo "tag_name=$TAG_NAME"
+            echo "meta_tag_name=$META_TAG_NAME"
+            echo "target_file=$TARGET_FILE"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Get Release Notes
         id: notes

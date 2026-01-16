@@ -73,7 +73,7 @@ jobs:
           ')
 
           echo "Found Authors: $AUTHORS"
-          echo "authors=$AUTHORS" >> $GITHUB_OUTPUT
+          echo "authors=$AUTHORS" >> "$GITHUB_OUTPUT"
 
       - name: Test verify-commit-authors (Positive - Should Pass)
         id: test-positive

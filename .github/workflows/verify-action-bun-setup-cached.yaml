@@ -57,7 +57,7 @@ jobs:
           mkdir "$TEST_DIR"
           mkdir "$DEP_DIR"
           SEED=$RANDOM
-          echo "seed=$SEED" >> $GITHUB_OUTPUT
+          echo "seed=$SEED" >> "$GITHUB_OUTPUT"
 
           # Create unique dependency package
           echo "{\"name\": \"$TEST_PKG\", \"version\": \"1.0.0-$SEED\"}" > "$DEP_DIR/package.json"

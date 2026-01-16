@@ -53,10 +53,10 @@ jobs:
 
           if [[ "$match" != "true" ]]; then
             echo "PR author ID '$PR_AUTHOR_ID' is not in the allowed list. Skipping."
-            echo "match=false" >> $GITHUB_OUTPUT
+            echo "match=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          echo "match=true" >> $GITHUB_OUTPUT
+          echo "match=true" >> "$GITHUB_OUTPUT"
 
       - name: Verify Commits and Signatures
         id: verify_commits

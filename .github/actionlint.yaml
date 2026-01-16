@@ -1,2 +1,2 @@
 ignore:
-  - 'unexpected key "description"'
+  - 'unexpected key "description".*'
