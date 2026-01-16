@@ -69,5 +69,8 @@ jobs:
       - name: Check workflow files
         env:
           EXECUTABLE: ${{ steps.get_actionlint.outputs.executable }}
-        run: $EXECUTABLE -color
+        run: $EXECUTABLE -color \
+          .github/workflows/*.{yml,yaml} \
+          actions/**/*.{yml,yaml} \
+          workflows/**/*.{yml,yaml}
         shell: bash
