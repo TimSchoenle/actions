@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-bun-setup-cached-v1.1.1...actions-bun-setup-cached-v1.1.2) (2026-01-16)
+
+
+### Miscellaneous
+
+* fix  detects commit SHAs that don't match their version commen… ([#282](https://github.com/TimSchoenle/actions/issues/282)) ([38c6b24](https://github.com/TimSchoenle/actions/commit/38c6b24b73cf1aa1f55baded0d9adb38c0f87b66))
+
 ## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-bun-setup-cached-v1.1.0...actions-bun-setup-cached-v1.1.1) (2026-01-09)
 
 
