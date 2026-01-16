@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/TimSchoenle/actions/compare/workflows-rust-cargo-check-meta-v1.1.1...workflows-rust-cargo-check-meta-v1.1.2) (2026-01-16)
+
+
+### Bug Fixes
+
+* **Workflows:** fix check arguments ([#285](https://github.com/TimSchoenle/actions/issues/285)) ([527754a](https://github.com/TimSchoenle/actions/commit/527754a0aa26d4969dd1ae7f8b6f8f8a4e3c8f8d))
+
 ## [1.1.1](https://github.com/TimSchoenle/actions/compare/workflows-rust-cargo-check-meta-v1.1.0...workflows-rust-cargo-check-meta-v1.1.1) (2026-01-16)
 
 
