@@ -300,7 +300,7 @@ jobs:
           if [ "$MATRIX_NAME" == "Preserve Inline Comment" ]; then
             if ! grep -E 'name: updated-app\s+# inline comment' complex.yaml; then
               echo "::error::Inline comment spacing not preserved!"
-              cat complex.yaml | grep "name:"
+              grep "name:" complex.yaml
               exit 1
             fi
             echo "✅ Inline comment spacing preserved"

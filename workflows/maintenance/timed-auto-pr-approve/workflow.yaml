@@ -6,12 +6,12 @@ on:
     inputs:
       time_elapsed:
         description: 'Time elapsed since PR creation (e.g. "24h", "1d").'
-        required: true
+        required: false
         type: string
         default: '1d'
       branch_pattern:
         description: 'Pattern to match branch names (e.g. "release-please--branches--%").'
-        required: true
+        required: false
         type: string
         default: 'release-please--branches--%'
       merge_method:
@@ -87,7 +87,7 @@ jobs:
 
           # Create matrix include structure
           MATRIX=$(echo "$PRS" | jq -c 'if length > 0 then {include: .} else {include: []} end')
-          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
 
   process-pr:
     name: Process PR #${{ matrix.number }}
