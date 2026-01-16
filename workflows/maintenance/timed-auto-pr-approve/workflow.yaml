@@ -6,12 +6,12 @@ on:
     inputs:
       time_elapsed:
         description: 'Time elapsed since PR creation (e.g. "24h", "1d").'
-        required: true
+        required: false
         type: string
         default: '1d'
       branch_pattern:
         description: 'Pattern to match branch names (e.g. "release-please--branches--%").'
-        required: true
+        required: false
         type: string
         default: 'release-please--branches--%'
       merge_method:

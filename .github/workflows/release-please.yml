@@ -70,43 +70,44 @@ jobs:
 
           # Initialize matrix JSON using a temp file to avoid subshell variable loss
           MATRIX_FILE=$(mktemp)
-          echo "{\"include\":[" > "$MATRIX_FILE"
-
-          # We need to track if we've added an item for commas, but logic is easier if we just build a list then join
-          ITEMS_FILE=$(mktemp)
-
-          # Iterate over workflow packages
-          # Filter entries starting with "workflows/" and format as "key|value"
-          jq -r 'to_entries[] | select(.key | startswith("workflows/")) | "\(.key)|\(.value)"' "$MANIFEST_FILE" | while IFS="|" read -r PKG VERSION; do
-            if [ -z "$PKG" ]; then continue; fi
+          # Generate matrix content
+          {
+            echo "{\"include\":["
+            # We need to track if we've added an item for commas, but logic is easier if we just build a list then join
+            ITEMS_FILE=$(mktemp)
             
-            # Derive Component & Tag
-            # Example: workflows/foo/bar -> workflows-foo-bar
-            COMPONENT_NAME="workflows-$(echo "$PKG" | cut -d'/' -f2- | tr '/' '-')"
-            TAG_NAME="${COMPONENT_NAME}-v${VERSION}"
+            # Iterate over workflow packages
+            # Filter entries starting with "workflows/" and format as "key|value"
+            jq -r 'to_entries[] | select(.key | startswith("workflows/")) | "\(.key)|\(.value)"' "$MANIFEST_FILE" | while IFS="|" read -r PKG VERSION; do
+              if [ -z "$PKG" ]; then continue; fi
+              
+              # Derive Component & Tag
+              # Example: workflows/foo/bar -> workflows-foo-bar
+              COMPONENT_NAME="workflows-$(echo "$PKG" | cut -d'/' -f2- | tr '/' '-')"
+              TAG_NAME="${COMPONENT_NAME}-v${VERSION}"
+              
+              # Check if tag exists remotely
+              if git ls-remote --exit-code --tags origin "refs/tags/$TAG_NAME" >/dev/null 2>&1; then
+                echo "Skipping $PKG $VERSION (Tag $TAG_NAME exists)" >&2
+              else
+                echo "Queueing $PKG $VERSION (Tag $TAG_NAME missing)" >&2
+                echo "{\"path\":\"${PKG}\",\"version\":\"${VERSION}\"}" >> "$ITEMS_FILE"
+              fi
+            done
             
-            # Check if tag exists remotely
-            if git ls-remote --exit-code --tags origin "refs/tags/$TAG_NAME" >/dev/null 2>&1; then
-              echo "Skipping $PKG $VERSION (Tag $TAG_NAME exists)"
-            else
-              echo "Queueing $PKG $VERSION (Tag $TAG_NAME missing)"
-              echo "{\"path\":\"${PKG}\",\"version\":\"${VERSION}\"}" >> "$ITEMS_FILE"
+            # Join items with commas
+            if [ -s "$ITEMS_FILE" ]; then
+              paste -sd "," "$ITEMS_FILE"
             fi
-          done
-
-          # Join items with commas
-          if [ -s "$ITEMS_FILE" ]; then
-            paste -sd "," "$ITEMS_FILE" >> "$MATRIX_FILE"
-          fi
-
-          # Close JSON
-          echo "]}" >> "$MATRIX_FILE"
+            
+            echo "]}"
+          } > "$MATRIX_FILE"
 
           # Output
           # Must be single line for GITHUB_OUTPUT, use jq -c to minify
           MATRIX_JSON=$(jq -c . "$MATRIX_FILE")
           echo "Generated Matrix: $MATRIX_JSON"
-          echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+          echo "matrix=$MATRIX_JSON" >> "$GITHUB_OUTPUT"
 
   publish-workflow:
     name: Publish ${{ matrix.path }}
@@ -162,12 +163,12 @@ jobs:
           META_TAG_NAME="${COMPONENT_NAME}-meta-v${VERSION}"
           TARGET_FILE="${COMPONENT_NAME#workflows-}.yaml"
 
-          echo "pkg=$PKG" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "component_name=$COMPONENT_NAME" >> $GITHUB_OUTPUT
-          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
-          echo "meta_tag_name=$META_TAG_NAME" >> $GITHUB_OUTPUT
-          echo "target_file=$TARGET_FILE" >> $GITHUB_OUTPUT
+          echo "pkg=$PKG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "component_name=$COMPONENT_NAME" >> "$GITHUB_OUTPUT"
+          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+          echo "meta_tag_name=$META_TAG_NAME" >> "$GITHUB_OUTPUT"
+          echo "target_file=$TARGET_FILE" >> "$GITHUB_OUTPUT"
 
       - name: Get Release Notes
         id: notes
