@@ -1,2 +1,4 @@
 ignore:
   - 'unexpected key "description".*'
+  - 'unexpected key "description"'
+  - 'unexpected key "description" for "workflow" section.*'

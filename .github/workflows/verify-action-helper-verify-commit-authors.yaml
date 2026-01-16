@@ -43,6 +43,7 @@ jobs:
         run: |
           echo "Fetching authors for PR: $PR_URL"
 
+          # shellcheck disable=SC2016
           QUERY='
             query($url: URI!) {
               resource(url: $url) {
