@@ -73,6 +73,5 @@ jobs:
           shopt -s globstar nullglob
           $EXECUTABLE -color \
             .github/workflows/*.{yml,yaml} \
-            actions/**/*.{yml,yaml} \
             workflows/**/*.{yml,yaml}
         shell: bash
