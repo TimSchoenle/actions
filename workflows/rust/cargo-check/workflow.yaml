@@ -44,5 +44,6 @@ jobs:
           CHECK_ARGUMENTS: ${{ inputs.check_arguments }}
         working-directory: ${{ inputs.source_directory }}
         run: |
+          # shellcheck disable=SC2206
           args=($CHECK_ARGUMENTS)
           cargo check "${args[@]}"
