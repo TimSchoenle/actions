@@ -79,6 +79,7 @@ jobs:
   update-readme:
     name: Update README
     runs-on: ubuntu-latest
+    needs: update-builds
     if: needs.update-builds.outputs.changes_detected == 'false'
     permissions:
       contents: write # to push readme changes

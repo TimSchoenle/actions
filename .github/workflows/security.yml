@@ -67,5 +67,7 @@ jobs:
         shell: bash
 
       - name: Check workflow files
-        run: ${{ steps.get_actionlint.outputs.executable }} -color
+        env:
+          EXECUTABLE: ${{ steps.get_actionlint.outputs.executable }}
+        run: $EXECUTABLE -color
         shell: bash
