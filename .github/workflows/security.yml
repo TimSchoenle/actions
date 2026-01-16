@@ -71,7 +71,7 @@ jobs:
           EXECUTABLE: ${{ steps.get_actionlint.outputs.executable }}
         run: |
           shopt -s globstar nullglob
-          $EXECUTABLE -color \
+          $EXECUTABLE -color -verbose \
             -config-file .github/actionlint.yaml \
             .github/workflows/*.{yml,yaml} \
             workflows/**/*.{yml,yaml}
