@@ -137,3 +137,11 @@ jobs:
               issue_number: context.issue.number,
               body: '📝 `README.md` and `SECURITY.md` have been auto-updated with the latest details.'
             })
+
+  auto-format:
+    name: Auto Format
+    needs: update-readme
+    uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@8bbe6c44b421556ceabe2a1965482d6be3dca129 # workflows-maintenance-auto-bun-prettier-v1.1.5
+    secrets:
+      APP_ID: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
+      PRIVATE_KEY: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
