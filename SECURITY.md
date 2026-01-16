@@ -55,7 +55,7 @@ Any version not listed in the following tables is not supported.
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Rust Cargo Check](./workflows/rust/cargo-check) | workflows-rust-cargo-check-v1.1.1 | :white_check_mark: |
+| [Rust Cargo Check](./workflows/rust/cargo-check) | workflows-rust-cargo-check-v1.1.2 | :white_check_mark: |
 
 
 
