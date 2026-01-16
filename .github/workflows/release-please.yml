@@ -189,20 +189,21 @@ jobs:
               if [ -n "$PR_BODY" ]; then
                 # Escape output for multiline strings
                 EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-                echo "release_notes<<$EOF" >> $GITHUB_OUTPUT
-                echo "$PR_BODY" >> $GITHUB_OUTPUT
-                echo "$EOF" >> $GITHUB_OUTPUT
-                
-                echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+                {
+                  echo "release_notes<<$EOF"
+                  echo "$PR_BODY"
+                  echo "$EOF"
+                  echo "pr_number=$PR_NUMBER"
+                } >> "$GITHUB_OUTPUT"
               fi
           fi
 
           if [ -z "$PR_BODY" ]; then
-              echo "release_notes=$NOTES" >> $GITHUB_OUTPUT
+              echo "release_notes=$NOTES" >> "$GITHUB_OUTPUT"
           fi
 
           # Capture the SHA of main (HEAD) before we switch branches for the clean release
-          echo "main_sha=$CURRENT_SHA" >> $GITHUB_OUTPUT
+          echo "main_sha=$CURRENT_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Prepare Release Artifacts
         id: prepare_artifacts
@@ -242,7 +243,7 @@ jobs:
           done
           shopt -u dotglob
 
-          echo "dist_dir=$DIST_DIR" >> $GITHUB_OUTPUT
+          echo "dist_dir=$DIST_DIR" >> "$GITHUB_OUTPUT"
 
       - name: Create Release Tree
         id: create_tree
