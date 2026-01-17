@@ -8,7 +8,7 @@ on:
         type: string
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-common-test2
   cancel-in-progress: true
 
 permissions: {}

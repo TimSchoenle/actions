@@ -16,7 +16,7 @@ on:
         default: '--all-features --all-targets'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-rust-clippy
   cancel-in-progress: true
 
 permissions: {}

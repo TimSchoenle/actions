@@ -16,7 +16,7 @@ on:
         default: '--all-features --workspace'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-rust-test
   cancel-in-progress: true
 
 permissions: {}

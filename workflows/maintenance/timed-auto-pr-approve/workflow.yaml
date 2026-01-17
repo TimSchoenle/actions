@@ -32,7 +32,7 @@ on:
         required: true
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-timed-auto-pr-approve
   cancel-in-progress: true
 
 permissions: {}
