@@ -37,6 +37,7 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           fetch-depth: 0
+          persist-credentials: true
           token: ${{ steps.generate_token.outputs.token }}
 
       - name: Reset Dirty Release Branches
@@ -58,7 +59,7 @@ jobs:
             # Check if email contains the bot ID
             if [[ "$LAST_AUTHOR_EMAIL" == "$MAINTENANCE_BOT_ID+"* ]]; then
               echo "Branch $BRANCH is dirty (modified by maintenance bot ID $MAINTENANCE_BOT_ID). Resetting to HEAD..."
-              git push origin HEAD:$BRANCH --force
+              git push origin "HEAD:$BRANCH" --force
             fi
           done
 
