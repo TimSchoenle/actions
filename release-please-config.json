@@ -81,6 +81,11 @@
       "release-type": "simple",
       "component": "workflows-rust-auto-format-meta",
       "include-component-in-tag": true
+    },
+    "workflows/rust/clippy": {
+      "release-type": "simple",
+      "component": "workflows-rust-clippy-meta",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
