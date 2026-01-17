@@ -33,6 +33,37 @@ jobs:
           app-id: ${{ secrets.RELEASE_BOT_APP_ID }}
           private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
 
+      - name: Checkout Repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          fetch-depth: 0
+          token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Reset Dirty Release Branches
+        env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+          BRANCH_PREFIX: 'release-please--branches--main--'
+          MAINTENANCE_BOT_ID: '253958393'
+        run: |
+          # Fetch all branches
+          git fetch origin
+
+          # Find all release-please branches
+          # strip whitespace and "origin/" prefix
+          BRANCHES=$(git branch -r | grep "origin/$BRANCH_PREFIX" | sed 's/^[[:space:]]*origin\///')
+
+          for BRANCH in $BRANCHES; do
+            # Check the last commit author email
+            LAST_AUTHOR_EMAIL=$(git log -1 --format='%ae' "origin/$BRANCH")
+            echo "Checking branch $BRANCH (Last author email: $LAST_AUTHOR_EMAIL)"
+
+            # Check if email contains the bot ID
+            if [[ "$LAST_AUTHOR_EMAIL" == "$MAINTENANCE_BOT_ID+"* ]]; then
+              echo "Branch $BRANCH is dirty (modified by maintenance bot ID $MAINTENANCE_BOT_ID). Resetting to HEAD..."
+              git push origin HEAD:$BRANCH --force
+            fi
+          done
+
       - name: Run release-please
         id: release
         uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4
