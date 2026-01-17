@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/TimSchoenle/actions/compare/workflows-rust-cargo-check-meta-v1.1.2...workflows-rust-cargo-check-meta-v1.1.3) (2026-01-17)
+
+
+### Bug Fixes
+
+* **Workflow:** fix multi environment concurrency conflicts ([#304](https://github.com/TimSchoenle/actions/issues/304)) ([7f741fa](https://github.com/TimSchoenle/actions/commit/7f741fabe76cf21058e433890875a945a6487b7c))
+
 ## [1.1.2](https://github.com/TimSchoenle/actions/compare/workflows-rust-cargo-check-meta-v1.1.1...workflows-rust-cargo-check-meta-v1.1.2) (2026-01-16)
 
 
