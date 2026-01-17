@@ -8,7 +8,7 @@
   "actions/bun/setup-cached": "1.1.3",
   "workflows/maintenance/auto-bun-prettier": "1.1.5",
   "actions/common/commit-changes": "1.1.1",
-  "workflows/maintenance/auto-approve-renovate": "1.2.3",
+  "workflows/maintenance/auto-approve-renovate": "1.2.4",
   "actions/helper/verify-commit-authors": "1.1.2",
   "workflows/maintenance/timed-auto-pr-approve": "1.2.5",
   "workflows/rust/cargo-check": "1.1.2",
