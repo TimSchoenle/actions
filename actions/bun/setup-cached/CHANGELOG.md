@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.3](https://github.com/TimSchoenle/actions/compare/actions-bun-setup-cached-v1.1.2...actions-bun-setup-cached-v1.1.3) (2026-01-17)
+
+
+### Miscellaneous
+
+* **deps:** update actions/cache digest to 8b402f5 ([#287](https://github.com/TimSchoenle/actions/issues/287)) ([b8cda82](https://github.com/TimSchoenle/actions/commit/b8cda826a8a0c3e4e7d7a35dce3f93f88289ebf9))
+* **deps:** update oven-sh/setup-bun action to v2.1.2 ([#288](https://github.com/TimSchoenle/actions/issues/288)) ([92148e8](https://github.com/TimSchoenle/actions/commit/92148e8f2c2a5b42db4af06ddba31be092cb3f6c))
+
 ## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-bun-setup-cached-v1.1.1...actions-bun-setup-cached-v1.1.2) (2026-01-16)
 
 
