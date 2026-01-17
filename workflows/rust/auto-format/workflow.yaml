@@ -27,7 +27,7 @@ on:
         value: ${{ jobs.fmt.outputs.changes_detected }}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-rust-auto-format
   cancel-in-progress: true
 
 permissions: {}
