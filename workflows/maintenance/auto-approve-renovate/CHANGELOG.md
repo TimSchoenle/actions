@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.4](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.2.3...workflows-maintenance-auto-approve-renovate-meta-v1.2.4) (2026-01-17)
+
+
+### Build System
+
+* merge different file update actions ([#278](https://github.com/TimSchoenle/actions/issues/278)) ([0ffd4ba](https://github.com/TimSchoenle/actions/commit/0ffd4ba141912843b207e85fbd20ff243413ba85))
+
 ## [1.2.3](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.2.2...workflows-maintenance-auto-approve-renovate-meta-v1.2.3) (2026-01-14)
 
 
