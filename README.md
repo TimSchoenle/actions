@@ -67,6 +67,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Workflow | Description | Version | Usage |
 | --- | --- | --- | --- |
+| [Rust Auto-format](./workflows/rust/auto-format) | Reusable workflow for rust-auto-format | workflows-rust-auto-format-v1.0.0 | `uses: TimSchoenle/actions/.github/workflows/rust-auto-format.yaml@workflows-rust-auto-format-v1.0.0` |
 | [Rust Cargo Check](./workflows/rust/cargo-check) | Reusable workflow that runs cargo check to verify Rust code compiles without errors. | workflows-rust-cargo-check-v1.1.2 | `uses: TimSchoenle/actions/.github/workflows/rust-cargo-check.yaml@workflows-rust-cargo-check-v1.1.2` |
 | [Rust Coverage (Codecov)](./workflows/rust/coverage-codecov) | Reusable workflow that runs cargo llvm-cov to generate code coverage and uploads to Codecov. | workflows-rust-coverage-codecov-v1.0.0 | `uses: TimSchoenle/actions/.github/workflows/rust-coverage-codecov.yaml@workflows-rust-coverage-codecov-v1.0.0` |
 | [Rust Test](./workflows/rust/test) | Reusable workflow that runs cargo nextest to verify Rust code passes tests. | workflows-rust-test-v1.0.0 | `uses: TimSchoenle/actions/.github/workflows/rust-test.yaml@workflows-rust-test-v1.0.0` |

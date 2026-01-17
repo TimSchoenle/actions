@@ -55,6 +55,7 @@ Any version not listed in the following tables is not supported.
 
 | Component | Version | Supported |
 | --- | --- | --- |
+| [Rust Auto-format](./workflows/rust/auto-format) | workflows-rust-auto-format-v1.0.0 | :white_check_mark: |
 | [Rust Cargo Check](./workflows/rust/cargo-check) | workflows-rust-cargo-check-v1.1.2 | :white_check_mark: |
 | [Rust Coverage (Codecov)](./workflows/rust/coverage-codecov) | workflows-rust-coverage-codecov-v1.0.0 | :white_check_mark: |
 | [Rust Test](./workflows/rust/test) | workflows-rust-test-v1.0.0 | :white_check_mark: |
