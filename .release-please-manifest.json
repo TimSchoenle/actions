@@ -14,5 +14,5 @@
   "workflows/rust/cargo-check": "1.1.2",
   "workflows/rust/test": "1.0.0",
   "workflows/rust/coverage-codecov": "1.0.0",
-  "workflows/rust/auto-format": "1.0.0"
+  "workflows/rust/auto-format": "1.1.0"
 }
