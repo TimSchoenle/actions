@@ -66,6 +66,11 @@
       "release-type": "simple",
       "component": "workflows-rust-cargo-check-meta",
       "include-component-in-tag": true
+    },
+    "workflows/rust/test": {
+      "release-type": "simple",
+      "component": "workflows-rust-test-meta",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
