@@ -10,7 +10,7 @@
   "actions/common/commit-changes": "1.1.1",
   "workflows/maintenance/auto-approve-renovate": "1.2.4",
   "actions/helper/verify-commit-authors": "1.1.2",
-  "workflows/maintenance/timed-auto-pr-approve": "1.2.5",
+  "workflows/maintenance/timed-auto-pr-approve": "1.2.6",
   "workflows/rust/cargo-check": "1.1.2",
   "workflows/rust/test": "1.0.0",
   "workflows/rust/coverage-codecov": "1.0.0",

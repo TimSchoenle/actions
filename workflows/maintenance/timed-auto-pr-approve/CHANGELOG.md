@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.6](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.5...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.6) (2026-01-17)
+
+
+### Build System
+
+* merge different file update actions ([#278](https://github.com/TimSchoenle/actions/issues/278)) ([0ffd4ba](https://github.com/TimSchoenle/actions/commit/0ffd4ba141912843b207e85fbd20ff243413ba85))
+
 ## [1.2.5](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.4...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.5) (2026-01-14)
 
 
