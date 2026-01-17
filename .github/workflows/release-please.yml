@@ -50,9 +50,7 @@ jobs:
 
           # Find all release-please branches
           # strip whitespace and "origin/" prefix
-          BRANCHES=$(git branch -r | grep "origin/$BRANCH_PREFIX" | sed 's/^[[:space:]]*origin\///')
-
-          for BRANCH in $BRANCHES; do
+          git branch -r | grep "origin/$BRANCH_PREFIX" | sed 's/^[[:space:]]*origin\///' | while read -r BRANCH; do
             # Check the last commit author email
             LAST_AUTHOR_EMAIL=$(git log -1 --format='%ae' "origin/$BRANCH")
             echo "Checking branch $BRANCH (Last author email: $LAST_AUTHOR_EMAIL)"
