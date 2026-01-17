@@ -71,6 +71,11 @@
       "release-type": "simple",
       "component": "workflows-rust-test-meta",
       "include-component-in-tag": true
+    },
+    "workflows/rust/coverage-codecov": {
+      "release-type": "simple",
+      "component": "workflows-rust-coverage-codecov-meta",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
