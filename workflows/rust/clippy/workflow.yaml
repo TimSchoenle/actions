@@ -1,0 +1,51 @@
+name: 'Rust Clippy'
+description: 'Reusable workflow that runs clippy to catch common mistakes and improve your Rust code.'
+
+on:
+  workflow_call:
+    inputs:
+      source_directory:
+        description: 'Directory containing the Rust project'
+        required: false
+        type: string
+        default: '.'
+      clippy_arguments:
+        description: 'Arguments to pass to clippy'
+        required: false
+        type: string
+        default: '--all-features --all-targets'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # Required to checkout the code
+      checks: write # Required to annotate the commit with clippy warnings
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          submodules: true
+          persist-credentials: false
+
+      - name: Install stable toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c # v1.15.2
+        with:
+          components: clippy
+
+      - name: Run clippy
+        uses: clechasseur/rs-clippy-check@286fd9545eb133adad54b4af34bcb642e266ddd1 # v5
+        with:
+          args: ${{ inputs.clippy_arguments }}
