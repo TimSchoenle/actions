@@ -44,7 +44,7 @@ runs:
 
     - name: Check for existing node_modules cache
       id: cache-check
-      uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5
+      uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
       with:
         path: ${{ inputs.working-directory }}/node_modules
         key: ${{ steps.keys.outputs.key }}
@@ -58,7 +58,7 @@ runs:
 
     - name: Save node_modules cache
       if: steps.cache-check.outputs.cache-hit != 'true'
-      uses: actions/cache/save@9255dc7a253b0ccc959486e2bca901246202afeb # v5
+      uses: actions/cache/save@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
       with:
         path: ${{ inputs.working-directory }}/node_modules
         key: ${{ steps.keys.outputs.key }}
