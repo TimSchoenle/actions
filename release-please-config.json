@@ -76,6 +76,11 @@
       "release-type": "simple",
       "component": "workflows-rust-coverage-codecov-meta",
       "include-component-in-tag": true
+    },
+    "workflows/rust/auto-format": {
+      "release-type": "simple",
+      "component": "workflows-rust-auto-format-meta",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
