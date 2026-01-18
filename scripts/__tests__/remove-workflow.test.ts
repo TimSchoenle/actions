@@ -13,8 +13,8 @@ import { main as generateDocs } from '../generate-docs';
 
 // Mock Dependencies
 import type * as UtilsTypes from '../lib/utils';
-vi.mock('../lib/utils', async (importOriginal) => {
-  const actual = await importOriginal<typeof UtilsTypes>();
+vi.mock('../lib/utils', async () => {
+  const actual = await vi.importActual<typeof UtilsTypes>('../lib/utils');
   return {
     ...actual,
     Sys: {

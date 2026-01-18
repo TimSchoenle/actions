@@ -1,0 +1,74 @@
+{
+  "id": 11916622,
+  "name": "Renovate Branches: Trusted Bots & Admins Only",
+  "description": "Restricts access to Renovate branches, allowing only trusted bots (Renovate, Automatic Release Manager) and admins to manage them, while enforcing code quality and signature requirements.",
+  "target": "branch",
+  "source_type": "Repository",
+  "source": "TimSchoenle/actions",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "exclude": [],
+      "include": ["refs/heads/renovate/**"]
+    }
+  },
+  "rules": [
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "creation"
+    },
+    {
+      "type": "update"
+    },
+    {
+      "type": "code_scanning",
+      "parameters": {
+        "code_scanning_tools": [
+          {
+            "tool": "CodeQL",
+            "security_alerts_threshold": "high_or_higher",
+            "alerts_threshold": "errors"
+          }
+        ]
+      }
+    },
+    {
+      "type": "code_quality",
+      "parameters": {
+        "severity": "errors"
+      }
+    },
+    {
+      "type": "required_signatures"
+    },
+    {
+      "type": "copilot_code_review_analysis_tools",
+      "parameters": {
+        "tools": [
+          {
+            "name": "CodeQL"
+          }
+        ]
+      }
+    }
+  ],
+  "bypass_actors": [
+    {
+      "actor_id": 5,
+      "actor_type": "RepositoryRole",
+      "bypass_mode": "always"
+    },
+    {
+      "actor_id": 2740,
+      "actor_type": "Integration",
+      "bypass_mode": "always"
+    },
+    {
+      "actor_id": 2427303,
+      "actor_type": "Integration",
+      "bypass_mode": "always"
+    }
+  ]
+}
