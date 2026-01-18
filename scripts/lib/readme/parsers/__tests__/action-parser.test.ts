@@ -5,8 +5,8 @@ import * as ReadmeUtils from '../../utils';
 import * as GitUtils from '../../git-utils';
 
 // Mock Sys
-vi.mock('../../../utils', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../utils')>();
+vi.mock('../../../utils', async () => {
+  const actual = await vi.importActual<typeof import('../../utils')>('../../../utils');
   return {
     ...actual,
     Sys: {

@@ -67,6 +67,9 @@ describe('Generate Readme Script', () => {
     mocks.renovateParse.mockResolvedValue([]);
     mocks.generateSection.mockResolvedValue('');
     mocks.getRepoInfo.mockResolvedValue('owner/repo');
+    mocks.sysGlob.mockReturnValue({
+      scan: function* () {} as any,
+    });
 
     // Mock process.exit to prevent actual exit
     vi.spyOn(process, 'exit').mockImplementation((() => {}) as any);

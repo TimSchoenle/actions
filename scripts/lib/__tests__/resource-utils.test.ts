@@ -34,7 +34,6 @@ vi.mock('@inquirer/prompts', () => ({
   input: vi.fn(),
 }));
 
-import { search, input } from '@inquirer/prompts';
 import { createFromTemplate } from '../utils';
 
 describe('resource-utils', () => {
@@ -44,10 +43,10 @@ describe('resource-utils', () => {
 
   describe('getPackages', () => {
     it('should return list of package directories for actions', async () => {
-      vi.mocked(Sys.exists).mockReturnValue(true);
-      vi.mocked(Sys.readdir).mockReturnValue(['pkg1', 'file.txt']);
-      vi.mocked(Sys.stat).mockImplementation(
-        (path) =>
+      (Sys.exists as any).mockReturnValue(true);
+      (Sys.readdir as any).mockReturnValue(['pkg1', 'file.txt']);
+      (Sys.stat as any).mockImplementation(
+        (path: string) =>
           ({
             isDirectory: () => !path.includes('.txt'),
           }) as any,
@@ -59,10 +58,10 @@ describe('resource-utils', () => {
     });
 
     it('should return list of package directories for workflows', async () => {
-      vi.mocked(Sys.exists).mockReturnValue(true);
-      vi.mocked(Sys.readdir).mockReturnValue(['pkg1', 'file.txt']);
-      vi.mocked(Sys.stat).mockImplementation(
-        (path) =>
+      (Sys.exists as any).mockReturnValue(true);
+      (Sys.readdir as any).mockReturnValue(['pkg1', 'file.txt']);
+      (Sys.stat as any).mockImplementation(
+        (path: string) =>
           ({
             isDirectory: () => !path.includes('.txt'),
           }) as any,
@@ -76,10 +75,10 @@ describe('resource-utils', () => {
 
   describe('getSubResources', () => {
     it('should return list of sub-resources', async () => {
-      vi.mocked(Sys.exists).mockReturnValue(true);
-      vi.mocked(Sys.readdir).mockReturnValue(['sub1', 'file.txt']);
-      vi.mocked(Sys.stat).mockImplementation(
-        (path) =>
+      (Sys.exists as any).mockReturnValue(true);
+      (Sys.readdir as any).mockReturnValue(['sub1', 'file.txt']);
+      (Sys.stat as any).mockImplementation(
+        (path: string) =>
           ({
             isDirectory: () => !path.includes('.txt'),
           }) as any,
@@ -92,7 +91,7 @@ describe('resource-utils', () => {
 
   describe('registerResourceInReleasePlease', () => {
     it('should register action with standard naming', async () => {
-      vi.mocked(Sys.file).mockReturnValue({
+      (Sys.file as any).mockReturnValue({
         json: vi.fn().mockResolvedValue({ packages: {} }),
       } as any);
 
@@ -100,20 +99,20 @@ describe('resource-utils', () => {
 
       expect(Sys.write).toHaveBeenCalledTimes(2); // Config and Manifest
       // Verify Config write
-      const configWrite = vi.mocked(Sys.write).mock.calls[0];
+      const configWrite = (Sys.write as any).mock.calls[0];
       const config = JSON.parse(configWrite[1] as string);
       expect(config.packages['actions/pkg/sub'].component).toBe('actions-pkg-sub');
     });
 
     it('should register workflow with meta suffix', async () => {
-      vi.mocked(Sys.file).mockReturnValue({
+      (Sys.file as any).mockReturnValue({
         json: vi.fn().mockResolvedValue({ packages: {} }),
       } as any);
 
       await registerResourceInReleasePlease('workflow', 'pkg', 'sub');
 
       expect(Sys.write).toHaveBeenCalledTimes(2);
-      const configWrite = vi.mocked(Sys.write).mock.calls[0];
+      const configWrite = (Sys.write as any).mock.calls[0];
       const config = JSON.parse(configWrite[1] as string);
       expect(config.packages['workflows/pkg/sub'].component).toBe('workflows-pkg-sub-meta');
     });

@@ -25,17 +25,17 @@ describe('utils', () => {
 
   describe('getRepoName', () => {
     it('should parse repo name from git/ssh url', async () => {
-      vi.mocked(Sys.exec).mockResolvedValue('git@github.com:User/repo.git\n');
+      (Sys.exec as any).mockResolvedValue('git@github.com:User/repo.git\n');
       expect(await utils.getRepoName()).toBe('User/repo');
     });
 
     it('should parse repo name from https url', async () => {
-      vi.mocked(Sys.exec).mockResolvedValue('https://github.com/User/repo.git\n');
+      (Sys.exec as any).mockResolvedValue('https://github.com/User/repo.git\n');
       expect(await utils.getRepoName()).toBe('User/repo');
     });
 
     it('should throw error if origin cannot be parsed', async () => {
-      vi.mocked(Sys.exec).mockResolvedValue('invalid-url');
+      (Sys.exec as any).mockResolvedValue('invalid-url');
       await expect(utils.getRepoName()).rejects.toThrow('Could not parse repo name from origin');
     });
   });
@@ -45,7 +45,7 @@ describe('utils', () => {
       const mockFile = {
         text: vi.fn().mockResolvedValue('Hello {{name}}!'),
       };
-      vi.mocked(Sys.file).mockReturnValue(mockFile as unknown as ReturnType<typeof Sys.file>);
+      (Sys.file as any).mockReturnValue(mockFile);
 
       await utils.createFromTemplate('test-template', 'dest/path', { name: 'World' });
 

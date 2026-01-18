@@ -4,8 +4,8 @@ import { Sys } from '../utils';
 
 // Mock utils module partially
 import type * as UtilsTypes from '../utils';
-vi.mock('../utils', async (importOriginal) => {
-  const actual = await importOriginal<typeof UtilsTypes>();
+vi.mock('../utils', async () => {
+  const actual = await vi.importActual<typeof UtilsTypes>('../utils');
   return {
     ...actual,
     Sys: {
