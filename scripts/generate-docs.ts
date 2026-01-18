@@ -1,9 +1,10 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { generateSection } from './lib/readme/generator.js';
+import { generateMarkdownTable, generateSection } from './lib/readme/generator.js';
 import { getRepoInfo } from './lib/readme/git-utils.js';
 import { ActionParser } from './lib/readme/parsers/action-parser.js';
+import { GithubConfigParser } from './lib/readme/parsers/github-config-parser.js';
 import { RenovateParser } from './lib/readme/parsers/renovate-parser.js';
 import { WorkflowParser } from './lib/readme/parsers/workflow-parser.js';
 import { Sys } from './lib/utils.js';
@@ -40,10 +41,31 @@ export async function main() {
     return [link, desc, item.version ?? 'N/A', item.usage || ''];
   });
 
-  // 3. Renovate Configs
+  // 3. Configs
+  let configsOutput = '';
+
+  const githubConfigParser = new GithubConfigParser();
+  const githubConfigs = await githubConfigParser.parse();
+
+  if (githubConfigs.length > 0) {
+    configsOutput += '### GitHub Rulesets\n\n';
+    configsOutput += 'To use, you need to download the rules and Import the ruleset.\n\n';
+    configsOutput += await generateMarkdownTable(githubConfigs, ['Config', 'Description'], (item) => {
+      const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;
+      const desc = item.description.replaceAll('\n', ' ').trim();
+      return [link, desc];
+    });
+    configsOutput += '\n';
+  }
+
   const renovateParser = new RenovateParser();
   const renovateConfigs = await renovateParser.parse();
-  const configsOutput = await generateSection(renovateConfigs, ['Config', 'Description', 'Usage'], (item) => {
+
+  if (configsOutput && renovateConfigs.length > 0) {
+    configsOutput += '\n';
+  }
+
+  configsOutput += await generateSection(renovateConfigs, ['Config', 'Description', 'Usage'], (item) => {
     const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;
     const desc = item.description.replaceAll('\n', ' ').trim();
     return [link, desc, item.usage || ''];
