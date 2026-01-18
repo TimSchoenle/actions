@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import fc from 'fast-check';
+import { fc } from '@fast-check/vitest';
 import { generateResourceKey, generateComponentName } from '../resource-utils';
 import type { ResourceType } from '../resource-utils';
 

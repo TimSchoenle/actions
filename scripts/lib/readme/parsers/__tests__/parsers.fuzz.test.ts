@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import fc from 'fast-check';
+import { fc } from '@fast-check/vitest';
 import { deriveWorkflowMetadata } from '../workflow-parser';
 import { deriveActionMetadata } from '../action-parser';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import fc from 'fast-check';
+import { fc } from '@fast-check/vitest';
 import { parseGithubConfig } from '../github-config-parser';
 
 describe('GithubConfigParser Fuzzy', () => {
