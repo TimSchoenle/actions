@@ -8,6 +8,7 @@
     "github>TimSchoenle/actions//configs/renovate/base",
     "github>TimSchoenle/actions//configs/renovate/ci-automerge"
   ],
+  "dependencyDashboardApproval": false,
   "dependencyDashboard": true,
   "semanticCommits": "enabled",
   "semanticCommitType": "deps",
