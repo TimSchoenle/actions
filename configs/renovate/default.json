@@ -28,6 +28,11 @@
       "description": "Auto-merge all non-major updates",
       "matchUpdateTypes": ["minor", "patch", "digest", "pin", "lockFileMaintenance"],
       "automerge": true
+    },
+    {
+      "description": "Disable dependency dashboard approval for all packages",
+      "matchPackageNames": ["*"],
+      "dependencyDashboardApproval": false
     }
   ]
 }
