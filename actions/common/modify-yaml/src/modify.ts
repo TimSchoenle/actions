@@ -56,13 +56,19 @@ export function generateYamlString(value: string | number | boolean | null): str
     newString = tempString.slice(separatorIndex + 2);
   }
 
+  // Remove trailing newline
+  if (newString.endsWith('\n')) {
+    newString = newString.slice(0, -1);
+  }
+
+  // Handle special numeric values that YAML represents differently
+  if (value === Infinity || value === -Infinity || Number.isNaN(value)) {
+    return newString; // Return YAML's representation (.inf, -.inf, .nan)
+  }
+
   // Handle string quoting edge case for empty strings if yaml library didn't quote them
   if (typeof value === 'string' && newString.trim().length === 0) {
     newString = `"${value}"`;
-  }
-
-  if (newString.endsWith('\n')) {
-    newString = newString.slice(0, -1);
   }
 
   return newString;
