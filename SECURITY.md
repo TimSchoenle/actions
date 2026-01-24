@@ -26,7 +26,7 @@ Any version not listed in the following tables is not supported.
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Update Helm Chart Version](./actions/helm/update-chart-version) | actions-helm-update-chart-version-v1.4.3 | :white_check_mark: |
+| [Update Helm Chart Version](./actions/helm/update-chart-version) | actions-helm-update-chart-version-v1.4.4 | :white_check_mark: |
 
 ### Helper
 
