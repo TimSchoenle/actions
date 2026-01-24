@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.2.0](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.1.2...actions-common-modify-yaml-v1.2.0) (2026-01-24)
+
+
+### Features
+
+* **Configs:** ad github rulesets configs ([#313](https://github.com/TimSchoenle/actions/issues/313)) ([5c70f79](https://github.com/TimSchoenle/actions/commit/5c70f79b3a293dfedc8a840c1102a864c630322e))
+
+
+### Bug Fixes
+
+* correctly handle infinity edge cases ([#329](https://github.com/TimSchoenle/actions/issues/329)) ([90677ce](https://github.com/TimSchoenle/actions/commit/90677cefb3358a8efa876f96b823825d799e4980))
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v25.0.9 ([#319](https://github.com/TimSchoenle/actions/issues/319)) ([ba2949a](https://github.com/TimSchoenle/actions/commit/ba2949a72d62674d9f73c794f8b6ed099f4b21b7))
+
 ## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.1.1...actions-common-modify-yaml-v1.1.2) (2026-01-14)
 
 
