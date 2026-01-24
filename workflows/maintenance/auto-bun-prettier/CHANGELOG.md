@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.7](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.6...workflows-maintenance-auto-bun-prettier-meta-v1.1.7) (2026-01-24)
+
+
+### Miscellaneous
+
+* move all harden runner egress policy to audit only ([#325](https://github.com/TimSchoenle/actions/issues/325)) ([b3f6ba3](https://github.com/TimSchoenle/actions/commit/b3f6ba32fa607bff51bc3e8554421173d4c14b78))
+
 ## [1.1.6](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.5...workflows-maintenance-auto-bun-prettier-meta-v1.1.6) (2026-01-17)
 
 
