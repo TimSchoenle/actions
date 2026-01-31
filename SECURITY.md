@@ -10,7 +10,7 @@ Any version not listed in the following tables is not supported.
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Bun Setup-cached](./actions/bun/setup-cached) | actions-bun-setup-cached-v1.1.3 | :white_check_mark: |
+| [Bun Setup-cached](./actions/bun/setup-cached) | actions-bun-setup-cached-v1.1.4 | :white_check_mark: |
 
 ### Common
 
