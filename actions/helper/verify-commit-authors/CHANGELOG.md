@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.1.4](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.3...actions-helper-verify-commit-authors-v1.1.4) (2026-02-01)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @actions/core to v2.0.3 ([#346](https://github.com/TimSchoenle/actions/issues/346)) ([bdd2ebf](https://github.com/TimSchoenle/actions/commit/bdd2ebff0422fc94404a00d3c0cec4ee1706e79c))
+* **deps:** update dependency @actions/github to v9 ([#348](https://github.com/TimSchoenle/actions/issues/348)) ([81969ac](https://github.com/TimSchoenle/actions/commit/81969ac5280a528ba088aeeb47f1103d4ba6fe41))
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v25.0.10 ([#333](https://github.com/TimSchoenle/actions/issues/333)) ([5f9757f](https://github.com/TimSchoenle/actions/commit/5f9757f35d513577e65d1c3e1b36466e916c9751))
+* **deps:** update dependency @types/node to v25.1.0 ([#349](https://github.com/TimSchoenle/actions/issues/349)) ([99690d3](https://github.com/TimSchoenle/actions/commit/99690d31354a5c2c434fa19a4b91f88dd364587d))
+* **deps:** update vitest monorepo to v4.0.18 ([#337](https://github.com/TimSchoenle/actions/issues/337)) ([abe37b3](https://github.com/TimSchoenle/actions/commit/abe37b342675903544300bb44fe7c10bd30b42a4))
+
 ## [1.1.3](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.2...actions-helper-verify-commit-authors-v1.1.3) (2026-01-24)
 
 
