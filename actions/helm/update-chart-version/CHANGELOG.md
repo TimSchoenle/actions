@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.5](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.4.4...actions-helm-update-chart-version-v1.4.5) (2026-02-08)
+
+
+### Miscellaneous
+
+* **deps:** update actions/checkout digest to de0fac2 ([#358](https://github.com/TimSchoenle/actions/issues/358)) ([5a3a04e](https://github.com/TimSchoenle/actions/commit/5a3a04ed6e3337c4b521c94348405df790f96311))
+* **deps:** update to vactions-common-modify-yaml-v1.2.1 ([#351](https://github.com/TimSchoenle/actions/issues/351)) ([6f9a78e](https://github.com/TimSchoenle/actions/commit/6f9a78efa13ca864d207227b8cb08178cba3c840))
+
 ## [1.4.4](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.4.3...actions-helm-update-chart-version-v1.4.4) (2026-01-24)
 
 
