@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.2.5...workflows-maintenance-auto-approve-renovate-meta-v1.3.0) (2026-02-09)
+
+
+### Features
+
+* **Auto-Approve-Renovate:** add option to ignore empty PRs ([#372](https://github.com/TimSchoenle/actions/issues/372)) ([1f0b9db](https://github.com/TimSchoenle/actions/commit/1f0b9db17c54a657630deef9fc4e7f0406ac308b))
+
 ## [1.2.5](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.2.4...workflows-maintenance-auto-approve-renovate-meta-v1.2.5) (2026-01-17)
 
 
