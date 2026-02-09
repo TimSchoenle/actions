@@ -9,6 +9,11 @@ on:
         required: false
         type: string
         default: '29139614'
+      ignore_empty_prs:
+        description: 'Ignore PRs with 0 changes. Renovate seems to sometimes create multiple lock-files PR without changing anything.'
+        required: false
+        type: boolean
+        default: true
     secrets:
       token:
         description: 'GitHub Token with permission to approve pull requests'
@@ -58,9 +63,34 @@ jobs:
           fi
           echo "match=true" >> "$GITHUB_OUTPUT"
 
+      - name: Check Changes
+        id: check_changes
+        env:
+          GH_TOKEN: ${{ secrets.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          IGNORE_ZERO_CHANGES: ${{ inputs.ignore_empty_prs }}
+        run: |
+          if [[ "$IGNORE_ZERO_CHANGES" != "true" ]]; then
+            echo "Skipping check for 0 changes."
+            echo "match=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Get the number of changed files
+          changed_files=$(gh pr view "$PR_URL" --json files --jq '.files | length')
+          echo "Changed files: $changed_files"
+
+          if [[ "$changed_files" -eq 0 ]]; then
+            echo "PR has 0 changed files. Ignoring."
+            echo "match=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "PR has changes. Proceeding."
+            echo "match=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Verify Commits and Signatures
         id: verify_commits
-        if: steps.check_author.outputs.match == 'true'
+        if: steps.check_author.outputs.match == 'true' && steps.check_changes.outputs.match == 'true'
         uses: TimSchoenle/actions/actions/helper/verify-commit-authors@0c26ac162a441046f6d88706c76566986d4fd8c5 # actions-helper-verify-commit-authors-v1.1.2
         with:
           pr_url: ${{ github.event.pull_request.html_url }}
