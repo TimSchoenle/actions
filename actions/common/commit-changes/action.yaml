@@ -39,9 +39,26 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Check for Changes
+      id: check
+      shell: bash
+      env:
+        FILE_PATTERN: ${{ inputs.file_pattern }}
+      # ghcommit seems to struggle with file permissions. This can cause empty commits to be created, even if we disallow it.
+      # This is a tmp workaround to prevent this behavior.
+      run: |
+        # Ignore file permission changes (e.g. chmod +x)
+        git config core.fileMode false
+        if [ -n "$(git status --porcelain "$FILE_PATTERN")" ]; then
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_changes=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Commit Changes
       id: commit
       uses: planetscale/ghcommit-action@25309d8005ac7c3bcd61d3fe19b69e0fe47dbdde # v0.2.20
+      if: steps.check.outputs.has_changes == 'true' || inputs.empty == 'true'
       with:
         commit_message: ${{ inputs.commit_message }}
         repo: ${{ inputs.repository }}
