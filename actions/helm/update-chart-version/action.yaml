@@ -165,7 +165,7 @@ runs:
         fi
 
     - name: Commit Changes
-      uses: TimSchoenle/actions/actions/common/commit-changes@85df1583f874da24a2de30e19280e031c25a09c5 # actions-common-commit-changes-v1.1.1
+      uses: TimSchoenle/actions/actions/common/commit-changes@ccb733de0fa5b01dc39863828392f7fcf76927f0 # actions-common-commit-changes-v1.1.2
       with:
         token: ${{ steps.generate_token.outputs.token }}
         repository: ${{ inputs.helm-repo }}
