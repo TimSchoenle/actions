@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-common-commit-changes-v1.1.1...actions-common-commit-changes-v1.1.2) (2026-02-09)
+
+
+### Bug Fixes
+
+* **Actions/Commit-Changes:** improve empty PR detection ([#376](https://github.com/TimSchoenle/actions/issues/376)) ([57d48d0](https://github.com/TimSchoenle/actions/commit/57d48d09b9f2ea68ac8e323a62ee6748e3812b91))
+
 ## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-common-commit-changes-v1.1.0...actions-common-commit-changes-v1.1.1) (2026-01-12)
 
 
