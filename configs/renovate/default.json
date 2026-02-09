@@ -19,9 +19,9 @@
     "enabled": true,
     "automerge": true
   },
-  "prHourlyLimit": 0,
-  "prConcurrentLimit": 0,
-  "branchConcurrentLimit": 0,
+  "prHourlyLimit": 3,
+  "prConcurrentLimit": 6,
+  "branchConcurrentLimit": 6,
   "gitIgnoredAuthors": ["actions-maintenance-bot", "actions-maintenance-bot[bot]@users.noreply.github.com"],
   "packageRules": [
     {
@@ -33,6 +33,12 @@
       "description": "Disable dependency dashboard approval for all packages",
       "matchPackageNames": ["*"],
       "dependencyDashboardApproval": false
+    },
+    {
+      "description": "Group all minor and patch updates for GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all non-major action updates"
     }
   ]
 }
