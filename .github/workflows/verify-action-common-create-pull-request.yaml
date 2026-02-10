@@ -56,6 +56,12 @@ jobs:
           path: .
           persist-credentials: false
 
+      - name: Checkout Actions Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+          path: actions-code
+
       - name: Create Test File
         env:
           TEST_ID: ${{ env.TEST_ID }}
@@ -173,12 +179,6 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Checkout Actions Code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          persist-credentials: false
-          path: actions-code
-
       - name: Generate Token
         id: generate_token
         uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
@@ -195,6 +195,12 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
           path: .
           persist-credentials: false
+
+      - name: Checkout Actions Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+          path: actions-code
 
       - name: Run create-pull-request (no changes)
         id: create-pr
@@ -234,12 +240,6 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Checkout Actions Code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          persist-credentials: false
-          path: actions-code
-
       - name: Generate Token
         id: generate_token
         uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
@@ -256,6 +256,12 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
           path: .
           persist-credentials: false
+
+      - name: Checkout Actions Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+          path: actions-code
 
       - name: Run create-pull-request (empty_pr true)
         id: create-pr
@@ -330,12 +336,6 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Checkout Actions Code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          persist-credentials: false
-          path: actions-code
-
       - name: Generate Token
         id: generate_token
         uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
@@ -352,6 +352,12 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
           path: .
           persist-credentials: false
+
+      - name: Checkout Actions Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+          path: actions-code
 
       - name: Run create-pull-request (commit should be skipped)
         id: create-pr
@@ -393,12 +399,6 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Checkout Actions Code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          persist-credentials: false
-          path: actions-code
-
       - name: Generate Token
         id: generate_token
         uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
@@ -415,6 +415,12 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
           path: .
           persist-credentials: false
+
+      - name: Checkout Actions Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+          path: actions-code
 
       - name: Create Initial Test File
         env:
