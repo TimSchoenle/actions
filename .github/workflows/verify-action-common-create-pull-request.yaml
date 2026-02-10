@@ -56,15 +56,6 @@ jobs:
           path: .
           persist-credentials: false
 
-      - name: Generate Token
-        id: generate_token
-        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
-        with:
-          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          owner: ${{ env.TEST_OWNER }}
-          repositories: ${{ env.TEST_REPO_NAME }}
-
       - name: Create Test File
         env:
           TEST_ID: ${{ env.TEST_ID }}
