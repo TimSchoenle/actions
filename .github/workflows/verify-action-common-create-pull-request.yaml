@@ -163,14 +163,26 @@ jobs:
           fi
           echo "✅ File content verified"
 
-      - name: Close Test PR
-        if: always() && steps.create-pr.outputs.pr_number
+      - name: Cleanup Test Artifacts
+        if: always() && steps.generate_token.outcome == 'success'
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
-          PR_NUMBER: ${{ steps.create-pr.outputs.pr_number }}
           TEST_REPO: ${{ env.TEST_REPO }}
+          TEST_ID: ${{ env.TEST_ID }}
         run: |
-          gh pr close "$PR_NUMBER" --repo "$TEST_REPO" --delete-branch --comment "Closing test PR from verification workflow"
+          BRANCH_NAME="test/create-pr-with-changes/$TEST_ID"
+          echo "Cleaning up branch: $BRANCH_NAME"
+
+          # Close any open PRs for this branch
+          PRS=$(gh pr list --repo "$TEST_REPO" --head "$BRANCH_NAME" --json number --jq '.[].number')
+          for PR in $PRS; do
+            echo "Closing PR #$PR"
+            gh pr close "$PR" --repo "$TEST_REPO" --delete-branch --comment "Closed by cleanup workflow" || true
+          done
+
+          # Ensure branch is deleted
+          echo "Deleting specific branch ref..."
+          gh api -X DELETE "repos/$TEST_REPO/git/refs/heads/$BRANCH_NAME" || true
 
   test-without-changes:
     name: Test PR Skip with Identical Branches
@@ -235,6 +247,27 @@ jobs:
           fi
 
           echo "✅ PR correctly skipped (branches are identical)"
+
+      - name: Cleanup Test Artifacts
+        if: always() && steps.generate_token.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          TEST_ID: ${{ env.TEST_ID }}
+        run: |
+          BRANCH_NAME="test/create-pr-no-changes/$TEST_ID"
+          echo "Cleaning up branch: $BRANCH_NAME"
+
+          # Close any open PRs for this branch (should be none, but safe to check)
+          PRS=$(gh pr list --repo "$TEST_REPO" --head "$BRANCH_NAME" --json number --jq '.[].number')
+          for PR in $PRS; do
+            echo "Closing PR #$PR"
+            gh pr close "$PR" --repo "$TEST_REPO" --delete-branch --comment "Closed by cleanup workflow" || true
+          done
+
+          # Ensure branch is deleted
+          echo "Deleting specific branch ref..."
+          gh api -X DELETE "repos/$TEST_REPO/git/refs/heads/$BRANCH_NAME" || true
 
   test-commit-skip:
     name: Test Commit Skip with No Changes
@@ -301,6 +334,27 @@ jobs:
           fi
 
           echo "✅ Commit and PR correctly skipped (no local changes)"
+
+      - name: Cleanup Test Artifacts
+        if: always() && steps.generate_token.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          TEST_ID: ${{ env.TEST_ID }}
+        run: |
+          BRANCH_NAME="test/create-pr-commit-skip/$TEST_ID"
+          echo "Cleaning up branch: $BRANCH_NAME"
+
+          # Close any open PRs for this branch (should be none, but safe to check)
+          PRS=$(gh pr list --repo "$TEST_REPO" --head "$BRANCH_NAME" --json number --jq '.[].number')
+          for PR in $PRS; do
+            echo "Closing PR #$PR"
+            gh pr close "$PR" --repo "$TEST_REPO" --delete-branch --comment "Closed by cleanup workflow" || true
+          done
+
+          # Ensure branch is deleted
+          echo "Deleting specific branch ref..."
+          gh api -X DELETE "repos/$TEST_REPO/git/refs/heads/$BRANCH_NAME" || true
 
   test-branch-reset:
     name: Test Branch Reset Behavior
@@ -449,11 +503,23 @@ jobs:
 
           echo "✅ Branch reset behavior verified successfully"
 
-      - name: Close Test PR and Delete Branch
-        if: always() && steps.create-pr-reset.outputs.pr_number
+      - name: Cleanup Test Artifacts
+        if: always() && steps.generate_token.outcome == 'success'
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
-          PR_NUMBER: ${{ steps.create-pr-reset.outputs.pr_number }}
           TEST_REPO: ${{ env.TEST_REPO }}
+          TEST_ID: ${{ env.TEST_ID }}
         run: |
-          gh pr close "$PR_NUMBER" --repo "$TEST_REPO" --delete-branch --comment "Closing branch reset test PR"
+          BRANCH_NAME="test/create-pr-branch-reset/$TEST_ID"
+          echo "Cleaning up branch: $BRANCH_NAME"
+
+          # Close any open PRs for this branch
+          PRS=$(gh pr list --repo "$TEST_REPO" --head "$BRANCH_NAME" --json number --jq '.[].number')
+          for PR in $PRS; do
+            echo "Closing PR #$PR"
+            gh pr close "$PR" --repo "$TEST_REPO" --delete-branch --comment "Closed by cleanup workflow" || true
+          done
+
+          # Ensure branch is deleted
+          echo "Deleting specific branch ref..."
+          gh api -X DELETE "repos/$TEST_REPO/git/refs/heads/$BRANCH_NAME" || true
