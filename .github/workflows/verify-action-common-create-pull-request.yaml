@@ -62,6 +62,9 @@ jobs:
           persist-credentials: false
           path: tmp/actions-code
 
+      - name: Ignore Actions Code
+        run: echo "tmp/actions-code" >> .git/info/exclude
+
       - name: Create Test File
         env:
           TEST_ID: ${{ env.TEST_ID }}
@@ -202,6 +205,9 @@ jobs:
           persist-credentials: false
           path: tmp/actions-code
 
+      - name: Ignore Actions Code
+        run: echo "tmp/actions-code" >> .git/info/exclude
+
       - name: Run create-pull-request (no changes)
         id: create-pr
         uses: ./tmp/actions-code/actions/common/create-pull-request
@@ -262,6 +268,9 @@ jobs:
         with:
           persist-credentials: false
           path: tmp/actions-code
+
+      - name: Ignore Actions Code
+        run: echo "tmp/actions-code" >> .git/info/exclude
 
       - name: Run create-pull-request (empty_pr true)
         id: create-pr
@@ -359,6 +368,9 @@ jobs:
           persist-credentials: false
           path: tmp/actions-code
 
+      - name: Ignore Actions Code
+        run: echo "tmp/actions-code" >> .git/info/exclude
+
       - name: Run create-pull-request (commit should be skipped)
         id: create-pr
         uses: ./tmp/actions-code/actions/common/create-pull-request
@@ -421,6 +433,9 @@ jobs:
         with:
           persist-credentials: false
           path: tmp/actions-code
+
+      - name: Ignore Actions Code
+        run: echo "tmp/actions-code" >> .git/info/exclude
 
       - name: Create Initial Test File
         env:
