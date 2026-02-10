@@ -110,6 +110,7 @@ runs:
         fi
 
     - name: Reset Branch
+      id: reset
       if: inputs.reset_branch == 'true'
       shell: bash
       env:
@@ -137,11 +138,13 @@ runs:
           echo "Branch created at $SHA"
         fi
 
+        echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
     - name: Commit Changes
       if: inputs.commit_changes == 'true'
       uses: TimSchoenle/actions/actions/common/commit-changes@ccb733de0fa5b01dc39863828392f7fcf76927f0 # actions-common-commit-changes-v1.1.2
       env:
-        GITHUB_SHA: '' # Unset GITHUB_SHA to prevent expectedHeadOid mismatch in cross-repo commits
+        GITHUB_SHA: ${{ inputs.reset_branch == 'true' && steps.reset.outputs.sha || '' }}
       with:
         token: ${{ steps.generate_token.outputs.token }}
         repository: ${{ inputs.repository }}
