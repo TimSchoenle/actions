@@ -27,7 +27,7 @@ inputs:
     required: false
     default: ''
   reset_branch:
-    description: 'Whether to reset the head branch to base before creating PR'
+    description: 'Whether to reset the branch to the base branch before committing (force push)'
     required: false
     default: 'true'
   commit_changes:
@@ -140,6 +140,8 @@ runs:
     - name: Commit Changes
       if: inputs.commit_changes == 'true'
       uses: TimSchoenle/actions/actions/common/commit-changes@ccb733de0fa5b01dc39863828392f7fcf76927f0 # actions-common-commit-changes-v1.1.2
+      env:
+        GITHUB_SHA: '' # Unset GITHUB_SHA to prevent expectedHeadOid mismatch in cross-repo commits
       with:
         token: ${{ steps.generate_token.outputs.token }}
         repository: ${{ inputs.repository }}
