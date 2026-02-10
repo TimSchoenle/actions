@@ -54,9 +54,11 @@ jobs:
           repositories: ${{ env.TEST_REPO_NAME }}
 
       - name: Create Test File
+        env:
+          TEST_ID: ${{ env.TEST_ID }}
         run: |
           mkdir -p test-pr-output
-          echo "Test content for ${{ env.TEST_ID }}" > test-pr-output/test-file.txt
+          echo "Test content for $TEST_ID" > test-pr-output/test-file.txt
           echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> test-pr-output/test-file.txt
 
       - name: Run create-pull-request (with changes)
@@ -88,6 +90,7 @@ jobs:
           PR_NUMBER: ${{ steps.create-pr.outputs.pr_number }}
           EXPECTED_TITLE: '[TEST-CREATE-PR] With Changes - ${{ env.TEST_ID }}'
           TEST_ID: ${{ env.TEST_ID }}
+          TEST_REPO: ${{ env.TEST_REPO }}
         run: |
           if [ -z "$PR_URL" ]; then
             echo "::error::PR URL was not set"
@@ -103,7 +106,7 @@ jobs:
           echo "PR Number: $PR_NUMBER"
 
           # Fetch PR details
-          PR_DATA=$(gh pr view $PR_NUMBER --repo ${{ env.TEST_REPO }} --json title,body,headRefName,baseRefName,files)
+          PR_DATA=$(gh pr view "$PR_NUMBER" --repo "$TEST_REPO" --json title,body,headRefName,baseRefName,files)
 
           # Verify title
           ACTUAL_TITLE=$(echo "$PR_DATA" | jq -r '.title')
@@ -142,7 +145,7 @@ jobs:
           echo "✅ File changes verified"
 
           # Verify file content
-          FILE_CONTENT=$(gh api "/repos/${{ env.TEST_REPO }}/contents/test-pr-output/test-file.txt?ref=$HEAD_BRANCH" --jq '.content' | base64 -d)
+          FILE_CONTENT=$(gh api "/repos/$TEST_REPO/contents/test-pr-output/test-file.txt?ref=$HEAD_BRANCH" --jq '.content' | base64 -d)
           if ! echo "$FILE_CONTENT" | grep -q "$TEST_ID"; then
             echo "::error::File content does not contain test ID"
             exit 1
@@ -153,8 +156,10 @@ jobs:
         if: always() && steps.create-pr.outputs.pr_number
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+          PR_NUMBER: ${{ steps.create-pr.outputs.pr_number }}
+          TEST_REPO: ${{ env.TEST_REPO }}
         run: |
-          gh pr close ${{ steps.create-pr.outputs.pr_number }} --repo ${{ env.TEST_REPO }} --delete-branch --comment "Closing test PR from verification workflow"
+          gh pr close "$PR_NUMBER" --repo "$TEST_REPO" --delete-branch --comment "Closing test PR from verification workflow"
 
   test-without-changes:
     name: Test PR Skip with Identical Branches
@@ -250,6 +255,7 @@ jobs:
           PR_NUMBER: ${{ steps.create-pr.outputs.pr_number }}
           EXPECTED_TITLE: '[TEST-CREATE-PR] Empty PR Flag - ${{ env.TEST_ID }}'
           TEST_ID: ${{ env.TEST_ID }}
+          TEST_REPO: ${{ env.TEST_REPO }}
         run: |
           if [ -z "$PR_URL" ]; then
             echo "::error::PR should have been created with empty_pr flag"
@@ -259,7 +265,7 @@ jobs:
           echo "✅ PR created successfully with empty_pr flag: $PR_URL"
 
           # Verify PR title and content
-          PR_DATA=$(gh pr view $PR_NUMBER --repo ${{ env.TEST_REPO }} --json title,body,headRefName)
+          PR_DATA=$(gh pr view "$PR_NUMBER" --repo "$TEST_REPO" --json title,body,headRefName)
           ACTUAL_TITLE=$(echo "$PR_DATA" | jq -r '.title')
 
           if [ "$ACTUAL_TITLE" != "$EXPECTED_TITLE" ]; then
@@ -280,8 +286,10 @@ jobs:
         if: always() && steps.create-pr.outputs.pr_number
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+          PR_NUMBER: ${{ steps.create-pr.outputs.pr_number }}
+          TEST_REPO: ${{ env.TEST_REPO }}
         run: |
-          gh pr close ${{ steps.create-pr.outputs.pr_number }} --repo ${{ env.TEST_REPO }} --delete-branch --comment "Closing test PR from verification workflow"
+          gh pr close "$PR_NUMBER" --repo "$TEST_REPO" --delete-branch --comment "Closing test PR from verification workflow"
 
   test-commit-skip:
     name: Test Commit Skip with No Changes
@@ -361,9 +369,11 @@ jobs:
           repositories: ${{ env.TEST_REPO_NAME }}
 
       - name: Create Initial Test File
+        env:
+          TEST_ID: ${{ env.TEST_ID }}
         run: |
           mkdir -p test-branch-reset
-          echo "Initial content for ${{ env.TEST_ID }}" > test-branch-reset/initial.txt
+          echo "Initial content for $TEST_ID" > test-branch-reset/initial.txt
 
       - name: Create First PR (establish branch history)
         id: create-pr-initial
@@ -387,8 +397,10 @@ jobs:
         if: steps.create-pr-initial.outputs.pr_number
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+          PR_NUMBER: ${{ steps.create-pr-initial.outputs.pr_number }}
+          TEST_REPO: ${{ env.TEST_REPO }}
         run: |
-          gh pr close ${{ steps.create-pr-initial.outputs.pr_number }} --repo ${{ env.TEST_REPO }} --comment "Closing initial PR, keeping branch for reset test"
+          gh pr close "$PR_NUMBER" --repo "$TEST_REPO" --comment "Closing initial PR, keeping branch for reset test"
 
       - name: Add More Content to Test File
         run: |
@@ -422,6 +434,7 @@ jobs:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
           PR_NUMBER: ${{ steps.create-pr-reset.outputs.pr_number }}
           TEST_ID: ${{ env.TEST_ID }}
+          TEST_REPO: ${{ env.TEST_REPO }}
         run: |
           if [ -z "$PR_NUMBER" ]; then
             echo "::error::PR was not created after branch reset"
@@ -434,7 +447,7 @@ jobs:
           BRANCH_NAME="test/create-pr-branch-reset/$TEST_ID"
 
           # Verify the file content matches what we expect AFTER reset
-          FILE_CONTENT=$(gh api "/repos/${{ env.TEST_REPO }}/contents/test-branch-reset/initial.txt?ref=$BRANCH_NAME" --jq '.content' | base64 -d)
+          FILE_CONTENT=$(gh api "/repos/$TEST_REPO/contents/test-branch-reset/initial.txt?ref=$BRANCH_NAME" --jq '.content' | base64 -d)
 
           # Count lines in the file - after reset and new commit, should have exactly 3 lines
           LINE_COUNT=$(echo "$FILE_CONTENT" | wc -l)
@@ -455,7 +468,7 @@ jobs:
           echo "✅ Branch was properly reset - file content verified"
 
           # Check commit history - should only have commits from base + our new commit
-          COMMITS=$(gh api "/repos/${{ env.TEST_REPO }}/pulls/$PR_NUMBER/commits" --jq '.[].commit.message')
+          COMMITS=$(gh api "/repos/$TEST_REPO/pulls/$PR_NUMBER/commits" --jq '.[].commit.message')
           echo "Commits in PR:"
           echo "$COMMITS"
 
@@ -471,5 +484,7 @@ jobs:
         if: always() && steps.create-pr-reset.outputs.pr_number
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+          PR_NUMBER: ${{ steps.create-pr-reset.outputs.pr_number }}
+          TEST_REPO: ${{ env.TEST_REPO }}
         run: |
-          gh pr close ${{ steps.create-pr-reset.outputs.pr_number }} --repo ${{ env.TEST_REPO }} --delete-branch --comment "Closing branch reset test PR"
+          gh pr close "$PR_NUMBER" --repo "$TEST_REPO" --delete-branch --comment "Closing branch reset test PR"
