@@ -60,7 +60,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
-          path: actions-code
+          path: tmp/actions-code
 
       - name: Create Test File
         env:
@@ -72,7 +72,7 @@ jobs:
 
       - name: Run create-pull-request (with changes)
         id: create-pr
-        uses: ./actions-code/actions/common/create-pull-request
+        uses: ./tmp/actions-code/actions/common/create-pull-request
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -200,11 +200,11 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
-          path: actions-code
+          path: tmp/actions-code
 
       - name: Run create-pull-request (no changes)
         id: create-pr
-        uses: ./actions-code/actions/common/create-pull-request
+        uses: ./tmp/actions-code/actions/common/create-pull-request
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -261,11 +261,11 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
-          path: actions-code
+          path: tmp/actions-code
 
       - name: Run create-pull-request (empty_pr true)
         id: create-pr
-        uses: ./actions-code/actions/common/create-pull-request
+        uses: ./tmp/actions-code/actions/common/create-pull-request
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -357,11 +357,11 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
-          path: actions-code
+          path: tmp/actions-code
 
       - name: Run create-pull-request (commit should be skipped)
         id: create-pr
-        uses: ./actions-code/actions/common/create-pull-request
+        uses: ./tmp/actions-code/actions/common/create-pull-request
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -420,7 +420,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
-          path: actions-code
+          path: tmp/actions-code
 
       - name: Create Initial Test File
         env:
@@ -431,7 +431,7 @@ jobs:
 
       - name: Create First PR (establish branch history)
         id: create-pr-initial
-        uses: ./actions-code/actions/common/create-pull-request
+        uses: ./tmp/actions-code/actions/common/create-pull-request
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -463,7 +463,7 @@ jobs:
 
       - name: Create Second PR with Branch Reset
         id: create-pr-reset
-        uses: ./actions-code/actions/common/create-pull-request
+        uses: ./tmp/actions-code/actions/common/create-pull-request
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
