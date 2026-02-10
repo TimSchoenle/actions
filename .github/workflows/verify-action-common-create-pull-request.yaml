@@ -24,6 +24,8 @@ permissions:
   pull-requests: write
 
 env:
+  TEST_OWNER: TimSchoenle
+  TEST_REPO_NAME: actions-testing
   TEST_REPO: TimSchoenle/actions-testing
   TEST_ID: create-pr-test-${{ github.run_number }}-${{ github.run_attempt }}
 
@@ -48,6 +50,8 @@ jobs:
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: ${{ env.TEST_OWNER }}
+          repositories: ${{ env.TEST_REPO_NAME }}
 
       - name: Create Test File
         run: |
@@ -215,6 +219,8 @@ jobs:
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: ${{ env.TEST_OWNER }}
+          repositories: ${{ env.TEST_REPO_NAME }}
 
       - name: Run create-pull-request (empty_pr true)
         id: create-pr
@@ -297,6 +303,8 @@ jobs:
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: ${{ env.TEST_OWNER }}
+          repositories: ${{ env.TEST_REPO_NAME }}
 
       - name: Run create-pull-request (commit should be skipped)
         id: create-pr
@@ -349,6 +357,8 @@ jobs:
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: ${{ env.TEST_OWNER }}
+          repositories: ${{ env.TEST_REPO_NAME }}
 
       - name: Create Initial Test File
         run: |
