@@ -20,8 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read # to read content
 
 env:
   TEST_OWNER: TimSchoenle
