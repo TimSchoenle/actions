@@ -39,9 +39,21 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Checkout
+      - name: Generate Token
+        id: generate_token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: ${{ env.TEST_OWNER }}
+          repositories: ${{ env.TEST_REPO_NAME }}
+
+      - name: Checkout Test Repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
+          repository: ${{ env.TEST_REPO }}
+          token: ${{ steps.generate_token.outputs.token }}
+          path: .
           persist-credentials: false
 
       - name: Generate Token
@@ -63,7 +75,7 @@ jobs:
 
       - name: Run create-pull-request (with changes)
         id: create-pr
-        uses: ./actions/common/create-pull-request
+        uses: ./actions-code/actions/common/create-pull-request
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -170,14 +182,32 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Checkout
+      - name: Checkout Actions Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
+          persist-credentials: false
+          path: actions-code
+
+      - name: Generate Token
+        id: generate_token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: ${{ env.TEST_OWNER }}
+          repositories: ${{ env.TEST_REPO_NAME }}
+
+      - name: Checkout Test Repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          repository: ${{ env.TEST_REPO }}
+          token: ${{ steps.generate_token.outputs.token }}
+          path: .
           persist-credentials: false
 
       - name: Run create-pull-request (no changes)
         id: create-pr
-        uses: ./actions/common/create-pull-request
+        uses: ./actions-code/actions/common/create-pull-request
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -213,10 +243,11 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Checkout
+      - name: Checkout Actions Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
+          path: actions-code
 
       - name: Generate Token
         id: generate_token
@@ -227,9 +258,17 @@ jobs:
           owner: ${{ env.TEST_OWNER }}
           repositories: ${{ env.TEST_REPO_NAME }}
 
+      - name: Checkout Test Repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          repository: ${{ env.TEST_REPO }}
+          token: ${{ steps.generate_token.outputs.token }}
+          path: .
+          persist-credentials: false
+
       - name: Run create-pull-request (empty_pr true)
         id: create-pr
-        uses: ./actions/common/create-pull-request
+        uses: ./actions-code/actions/common/create-pull-request
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -300,10 +339,11 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Checkout
+      - name: Checkout Actions Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
+          path: actions-code
 
       - name: Generate Token
         id: generate_token
@@ -314,9 +354,17 @@ jobs:
           owner: ${{ env.TEST_OWNER }}
           repositories: ${{ env.TEST_REPO_NAME }}
 
+      - name: Checkout Test Repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          repository: ${{ env.TEST_REPO }}
+          token: ${{ steps.generate_token.outputs.token }}
+          path: .
+          persist-credentials: false
+
       - name: Run create-pull-request (commit should be skipped)
         id: create-pr
-        uses: ./actions/common/create-pull-request
+        uses: ./actions-code/actions/common/create-pull-request
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -354,10 +402,11 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Checkout
+      - name: Checkout Actions Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
+          path: actions-code
 
       - name: Generate Token
         id: generate_token
@@ -368,6 +417,14 @@ jobs:
           owner: ${{ env.TEST_OWNER }}
           repositories: ${{ env.TEST_REPO_NAME }}
 
+      - name: Checkout Test Repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          repository: ${{ env.TEST_REPO }}
+          token: ${{ steps.generate_token.outputs.token }}
+          path: .
+          persist-credentials: false
+
       - name: Create Initial Test File
         env:
           TEST_ID: ${{ env.TEST_ID }}
@@ -377,7 +434,7 @@ jobs:
 
       - name: Create First PR (establish branch history)
         id: create-pr-initial
-        uses: ./actions/common/create-pull-request
+        uses: ./actions-code/actions/common/create-pull-request
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -409,7 +466,7 @@ jobs:
 
       - name: Create Second PR with Branch Reset
         id: create-pr-reset
-        uses: ./actions/common/create-pull-request
+        uses: ./actions-code/actions/common/create-pull-request
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
