@@ -1,0 +1,223 @@
+name: 'Create Pull Request'
+description: 'Creates or updates a pull request using GitHub App authentication with optional branch reset.'
+
+inputs:
+  app-id:
+    description: 'GitHub App ID'
+    required: true
+  private-key:
+    description: 'GitHub App Private Key'
+    required: true
+  repository:
+    description: 'Repository name to create PR in (e.g. owner/repo)'
+    required: false
+    default: ${{ github.repository }}
+  branch_name:
+    description: 'The branch name to use for the pull request'
+    required: true
+  base_branch:
+    description: 'The branch to merge into (defaults to repository default branch)'
+    required: false
+    default: ''
+  title:
+    description: 'Pull request title'
+    required: true
+  body:
+    description: 'Pull request body/description'
+    required: false
+    default: ''
+  reset_branch:
+    description: 'Whether to reset the branch to the base branch before committing (force push)'
+    required: false
+    default: 'true'
+  commit_changes:
+    description: 'Whether to commit local changes to the branch before creating PR'
+    required: false
+    default: 'true'
+  commit_message:
+    description: 'Commit message for changes (required if commit_changes is true)'
+    required: false
+    default: ''
+  file_pattern:
+    description: 'File pattern to commit (used when commit_changes is true)'
+    required: false
+    default: '.'
+  empty_commit:
+    description: 'Allow making an empty commit if there are no changes'
+    required: false
+    default: 'false'
+
+outputs:
+  pr_url:
+    description: 'The URL of the created or updated pull request'
+    value: ${{ steps.create-pr.outputs.pr-url }}
+  pr_number:
+    description: 'The pull request number'
+    value: ${{ steps.create-pr.outputs.pr-number }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Parse Repository
+      id: parse
+      shell: bash
+      env:
+        REPO: ${{ inputs.repository }}
+      run: |
+        OWNER="${REPO%%/*}"
+        REPO_NAME="${REPO#*/}"
+        echo "owner=$OWNER" >> "$GITHUB_OUTPUT"
+        echo "repo=$REPO_NAME" >> "$GITHUB_OUTPUT"
+
+    - name: Generate Bot Token
+      id: generate_token
+      uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
+      with:
+        app-id: ${{ inputs.app-id }}
+        private-key: ${{ inputs.private-key }}
+        owner: ${{ steps.parse.outputs.owner }}
+        repositories: ${{ steps.parse.outputs.repo }}
+
+    - name: Set Branch Name
+      id: branch-name
+      shell: bash
+      env:
+        BRANCH_NAME: ${{ inputs.branch_name }}
+      run: |
+        echo "branch=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
+        echo "Using branch: $BRANCH_NAME"
+
+    - name: Get Base Branch
+      id: base
+      shell: bash
+      env:
+        GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+        REPO: ${{ inputs.repository }}
+        BASE_BRANCH_INPUT: ${{ inputs.base_branch }}
+      run: |
+        if [ -z "$BASE_BRANCH_INPUT" ]; then
+          # Fetch default branch from repository
+          DEFAULT_BRANCH=$(gh api "/repos/$REPO" --jq .default_branch)
+          echo "branch=$DEFAULT_BRANCH" >> "$GITHUB_OUTPUT"
+          echo "Using default branch: $DEFAULT_BRANCH"
+        else
+          echo "branch=$BASE_BRANCH_INPUT" >> "$GITHUB_OUTPUT"
+          echo "Using provided base branch: $BASE_BRANCH_INPUT"
+        fi
+
+    - name: Reset Branch
+      id: reset
+      if: inputs.reset_branch == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+        REPO: ${{ inputs.repository }}
+        HEAD_BRANCH: ${{ steps.branch-name.outputs.branch }}
+        BASE_BRANCH: ${{ steps.base.outputs.branch }}
+      run: |
+        echo "Resetting branch $HEAD_BRANCH to $BASE_BRANCH..."
+        # Get base branch SHA
+        SHA=$(gh api "/repos/$REPO/git/refs/heads/$BASE_BRANCH" --jq .object.sha)
+
+        # Check if head branch exists
+        if gh api "/repos/$REPO/git/refs/heads/$HEAD_BRANCH" > /dev/null 2>&1; then
+          # Force update (reset)
+          gh api -X PATCH "/repos/$REPO/git/refs/heads/$HEAD_BRANCH" \
+            -f sha="$SHA" \
+            -F force=true
+          echo "Branch reset to $SHA"
+        else
+          # Create
+          gh api -X POST "/repos/$REPO/git/refs" \
+            -f ref="refs/heads/$HEAD_BRANCH" \
+            -f sha="$SHA"
+          echo "Branch created at $SHA"
+        fi
+
+        echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+    - name: Commit Changes
+      if: inputs.commit_changes == 'true'
+      uses: TimSchoenle/actions/actions/common/commit-changes@ccb733de0fa5b01dc39863828392f7fcf76927f0 # actions-common-commit-changes-v1.1.2
+      env:
+        GITHUB_SHA: ${{ inputs.reset_branch == 'true' && steps.reset.outputs.sha || '' }}
+      with:
+        token: ${{ steps.generate_token.outputs.token }}
+        repository: ${{ inputs.repository }}
+        branch: ${{ steps.branch-name.outputs.branch }}
+        commit_message: ${{ inputs.commit_message }}
+        file_pattern: ${{ inputs.file_pattern }}
+        empty: ${{ inputs.empty_commit }}
+
+    - name: Check for Branch Differences
+      id: diff-check
+      shell: bash
+      env:
+        GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+        REPO: ${{ inputs.repository }}
+        HEAD_BRANCH: ${{ steps.branch-name.outputs.branch }}
+        BASE_BRANCH: ${{ steps.base.outputs.branch }}
+      run: |
+        # Compare the two branches
+        COMPARISON=$(gh api "/repos/$REPO/compare/$BASE_BRANCH...$HEAD_BRANCH" --jq '.status')
+
+        if [ "$COMPARISON" = "identical" ]; then
+          echo "has_differences=false" >> $GITHUB_OUTPUT
+          echo "Branches are identical, no differences to create PR for"
+        else
+          echo "has_differences=true" >> $GITHUB_OUTPUT
+          echo "Branches have differences: $COMPARISON"
+        fi
+
+    - name: Create Pull Request
+      if: steps.diff-check.outputs.has_differences == 'true'
+      id: create-pr
+      shell: bash
+      env:
+        GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+        REPO: ${{ inputs.repository }}
+        HEAD_BRANCH: ${{ steps.branch-name.outputs.branch }}
+        BASE_BRANCH: ${{ steps.base.outputs.branch }}
+        TITLE: ${{ inputs.title }}
+        BODY: ${{ inputs.body }}
+      run: |
+        # Try to create PR, or get existing one
+        if PR_URL=$(gh pr create \
+          --repo "$REPO" \
+          --head "$HEAD_BRANCH" \
+          --base "$BASE_BRANCH" \
+          --title "$TITLE" \
+          --body "$BODY" 2>&1); then
+          echo "pr-url=$PR_URL" >> "$GITHUB_OUTPUT"
+          
+          # Extract PR number from URL
+          PR_NUMBER=$(echo "$PR_URL" | grep -oP '\d+$')
+          echo "pr-number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          
+          echo "Pull request created: $PR_URL"
+        else
+          # Check if PR already exists
+          if echo "$PR_URL" | grep -q "already exists"; then
+            echo "Pull request already exists, fetching URL..."
+            EXISTING_PR_URL=$(gh pr list \
+              --repo "$REPO" \
+              --head "$HEAD_BRANCH" \
+              --base "$BASE_BRANCH" \
+              --json url \
+              --jq '.[0].url')
+            
+            EXISTING_PR_NUMBER=$(gh pr list \
+              --repo "$REPO" \
+              --head "$HEAD_BRANCH" \
+              --base "$BASE_BRANCH" \
+              --json number \
+              --jq '.[0].number')
+            
+            echo "pr-url=$EXISTING_PR_URL" >> "$GITHUB_OUTPUT"
+            echo "pr-number=$EXISTING_PR_NUMBER" >> "$GITHUB_OUTPUT"
+            echo "Existing pull request: $EXISTING_PR_URL"
+          else
+            echo "Error creating pull request: $PR_URL"
+            exit 1
+          fi
+        fi
