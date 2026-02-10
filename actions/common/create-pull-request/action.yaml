@@ -128,7 +128,7 @@ runs:
           # Force update (reset)
           gh api -X PATCH "/repos/$REPO/git/refs/heads/$HEAD_BRANCH" \
             -f sha="$SHA" \
-            -f force=true
+            -F force=true
           echo "Branch reset to $SHA"
         else
           # Create
