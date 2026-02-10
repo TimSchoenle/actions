@@ -137,6 +137,18 @@ runs:
           echo "Branch created at $SHA"
         fi
 
+    - name: Checkout Reset Branch
+      if: inputs.reset_branch == 'true'
+      shell: bash
+      env:
+        HEAD_BRANCH: ${{ steps.branch-name.outputs.branch }}
+      run: |
+        # After resetting the remote branch, we need to sync the local workspace
+        # Fetch the latest state and reset local branch to match remote
+        git fetch origin "$HEAD_BRANCH"
+        git checkout -B "$HEAD_BRANCH" "origin/$HEAD_BRANCH"
+        echo "Local workspace synchronized with reset branch"
+
     - name: Commit Changes
       if: inputs.commit_changes == 'true'
       uses: TimSchoenle/actions/actions/common/commit-changes@ccb733de0fa5b01dc39863828392f7fcf76927f0 # actions-common-commit-changes-v1.1.2
