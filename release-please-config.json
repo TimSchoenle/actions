@@ -86,6 +86,11 @@
       "release-type": "simple",
       "component": "workflows-rust-clippy-meta",
       "include-component-in-tag": true
+    },
+    "actions/common/create-pull-request": {
+      "release-type": "simple",
+      "component": "actions-common-create-pull-request",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
