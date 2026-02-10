@@ -46,10 +46,6 @@ inputs:
     description: 'Allow making an empty commit if there are no changes'
     required: false
     default: 'false'
-  empty_pr:
-    description: 'Allow creating a PR even if branches are identical'
-    required: false
-    default: 'false'
 
 outputs:
   pr_url:
@@ -174,7 +170,7 @@ runs:
         fi
 
     - name: Create Pull Request
-      if: steps.diff-check.outputs.has_differences == 'true' || inputs.empty_pr == 'true'
+      if: steps.diff-check.outputs.has_differences == 'true'
       id: create-pr
       shell: bash
       env:
