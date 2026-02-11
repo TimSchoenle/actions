@@ -101,8 +101,10 @@ jobs:
 
       - name: Verify Output
         if: success()
+        env:
+          CLOSED_OUTPUT: ${{ steps.test-action.outputs.closed }}
         run: |
-          if [ "${{ steps.test-action.outputs.closed }}" != "true" ]; then
+          if [ "$CLOSED_OUTPUT" != "true" ]; then
             echo "::error::Output 'closed' should be 'true'"
             exit 1
           fi
