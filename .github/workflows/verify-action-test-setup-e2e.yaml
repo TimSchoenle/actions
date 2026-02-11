@@ -45,11 +45,12 @@ jobs:
         id: setup
         uses: ./actions/test/setup-e2e
         with:
-          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
           test_repo: ${{ env.TEST_REPO }}
           test_owner: ${{ env.TEST_OWNER }}
           test_repo_name: ${{ env.TEST_REPO_NAME }}
+          test_repo_checkout_path: 'test'
 
       - name: Verify Token Generation
         shell: bash
@@ -66,6 +67,7 @@ jobs:
           # Check if we are in the test repo (based on origin remote or file existence)
           # Since we checked out to '.', the current directory should be the test repo.
           # We can check for a known file or the git remote.
+          cd ${{ inputs.test_repo_checkout_path }}
           REMOTE=$(git remote get-url origin)
           if [[ "$REMOTE" != *"${{ env.TEST_REPO }}"* ]]; then
              echo "::error::Current directory is not the test repository. Remote: $REMOTE"
@@ -76,13 +78,13 @@ jobs:
       - name: Verify Actions Code Checkout
         shell: bash
         run: |
-          if [ ! -d "tmp/actions-code" ]; then
+          if [ ! -d  ${{ inputs.current_repo_checkout_path }} ]; then
             echo "::error::tmp/actions-code directory does not exist"
             exit 1
           fi
 
           # Check if it contains the action we just ran (circular check)
-          if [ ! -f "tmp/actions-code/actions/test/setup-e2e/action.yaml" ]; then
+          if [ ! -f " ${{ inputs.current_repo_checkout_path }}/actions/test/setup-e2e/action.yaml" ]; then
              echo "::error::tmp/actions-code does not appear to contain the actions code"
              exit 1
           fi
@@ -91,7 +93,7 @@ jobs:
       - name: Verify Git Ignore
         shell: bash
         run: |
-          if ! grep -q "tmp/actions-code" .git/info/exclude; then
+          if ! grep -q " ${{ inputs.current_repo_checkout_path }}" .git/info/exclude; then
              echo "::error::tmp/actions-code not found in .git/info/exclude"
              exit 1
           fi
