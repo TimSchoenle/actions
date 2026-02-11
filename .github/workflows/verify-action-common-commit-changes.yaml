@@ -839,9 +839,24 @@ jobs:
           branch_name: test/ignored-file-only/${{ env.TEST_ID }}
           reset_branch: 'true'
 
-      - name: Create Ignored File (.env)
+      - name: Configure Local Ignore + Create Ignored File
+        shell: bash
+        env:
+          TEST_ID: ${{ env.TEST_ID }}
         run: |
-          echo "IGNORED=1" > .env
+          set -euo pipefail
+
+          mkdir -p ignored
+          IGNORED_FILE="ignored/only-${TEST_ID}.txt"
+
+          # Ensure local exclude file exists and ignore just this test file
+          mkdir -p .git/info
+          echo "$IGNORED_FILE" >> .git/info/exclude
+
+          # Create the ignored file
+          echo "IGNORED=1" > "$IGNORED_FILE"
+
+          git check-ignore -q "$IGNORED_FILE"
 
       - name: Run commit-changes (should not commit)
         id: commit
