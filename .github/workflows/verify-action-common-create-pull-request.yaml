@@ -154,7 +154,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          pull_request_id: ${{ steps.create-pr-reset.outputs.pr_number }}
+          pull_request_id: ${{ steps.create-pr.outputs.pr_number }}
 
       - name: Cleanup Test Branch
         if: always()
@@ -219,7 +219,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          pull_request_id: ${{ steps.create-pr-reset.outputs.pr_number }}
+          pull_request_id: ${{ steps.create-pr.outputs.pr_number }}
 
       - name: Cleanup Test Branch
         if: always()
@@ -286,7 +286,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          pull_request_id: ${{ steps.create-pr-reset.outputs.pr_number }}
+          pull_request_id: ${{ steps.create-pr.outputs.pr_number }}
 
       - name: Cleanup Test Branch
         if: always()
