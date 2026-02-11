@@ -29,9 +29,9 @@ Here is a list of all currently maintained actions in this repository:
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
 | [Commit Changes](./actions/common/commit-changes) | Commits changes using the GitHub API to ensure verified bot commits. | actions-common-commit-changes-v1.1.2 | `uses: TimSchoenle/actions/actions/common/commit-changes@actions-common-commit-changes-v1.1.2` |
-| [Common Create-pull-request](./actions/common/create-pull-request) | A reusable action. | actions-common-create-pull-request-v1.0.0 | `uses: TimSchoenle/actions/actions/common/create-pull-request@actions-common-create-pull-request-v1.0.0` |
 | [Common Modify YAML](./actions/common/modify-yaml) | A action to modify a value in a YAML file while strictly preserving comments and structure | actions-common-modify-yaml-v1.2.2 | `uses: TimSchoenle/actions/actions/common/modify-yaml@actions-common-modify-yaml-v1.2.2` |
 | [Common Read YAML](./actions/common/read-yaml) | A action to read a value from a YAML file using dot notation | actions-common-read-yaml-v1.1.0 | `uses: TimSchoenle/actions/actions/common/read-yaml@actions-common-read-yaml-v1.1.0` |
+| [Create Pull Request](./actions/common/create-pull-request) | Creates or updates a pull request using GitHub App authentication with optional branch reset. | actions-common-create-pull-request-v1.0.1 | `uses: TimSchoenle/actions/actions/common/create-pull-request@actions-common-create-pull-request-v1.0.1` |
 | [Get App Git Identity](./actions/common/get-app-git-identity) | Resolves the git identity (username, email, user ID) for a GitHub App bot. | actions-common-get-app-git-identity-v1.1.0 | `uses: TimSchoenle/actions/actions/common/get-app-git-identity@actions-common-get-app-git-identity-v1.1.0` |
 | [Setup App Git Identity](./actions/common/setup-app-git-identity) | Configures git with the identity of a GitHub App bot and outputs the bot details. | actions-common-setup-app-git-identity-v1.1.0 | `uses: TimSchoenle/actions/actions/common/setup-app-git-identity@actions-common-setup-app-git-identity-v1.1.0` |
 
@@ -46,6 +46,12 @@ Here is a list of all currently maintained actions in this repository:
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
 | [Verify Commit Authors](./actions/helper/verify-commit-authors) | Verifies that all commits in a PR are authored by a specific set of users and are signed. | actions-helper-verify-commit-authors-v1.1.5 | `uses: TimSchoenle/actions/actions/helper/verify-commit-authors@actions-helper-verify-commit-authors-v1.1.5` |
+
+### Test
+
+| Action | Description | Version | Usage |
+| --- | --- | --- | --- |
+| [Test Setup-e2e](./actions/test/setup-e2e) | A reusable action. | actions-test-setup-e2e-v1.0.0 | `uses: TimSchoenle/actions/actions/test/setup-e2e@actions-test-setup-e2e-v1.0.0` |
 
 
 

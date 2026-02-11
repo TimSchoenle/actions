@@ -17,9 +17,9 @@ Any version not listed in the following tables is not supported.
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Commit Changes](./actions/common/commit-changes) | actions-common-commit-changes-v1.1.2 | :white_check_mark: |
-| [Common Create-pull-request](./actions/common/create-pull-request) | actions-common-create-pull-request-v1.0.0 | :white_check_mark: |
 | [Common Modify YAML](./actions/common/modify-yaml) | actions-common-modify-yaml-v1.2.2 | :white_check_mark: |
 | [Common Read YAML](./actions/common/read-yaml) | actions-common-read-yaml-v1.1.0 | :white_check_mark: |
+| [Create Pull Request](./actions/common/create-pull-request) | actions-common-create-pull-request-v1.0.1 | :white_check_mark: |
 | [Get App Git Identity](./actions/common/get-app-git-identity) | actions-common-get-app-git-identity-v1.1.0 | :white_check_mark: |
 | [Setup App Git Identity](./actions/common/setup-app-git-identity) | actions-common-setup-app-git-identity-v1.1.0 | :white_check_mark: |
 
@@ -34,6 +34,12 @@ Any version not listed in the following tables is not supported.
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Verify Commit Authors](./actions/helper/verify-commit-authors) | actions-helper-verify-commit-authors-v1.1.5 | :white_check_mark: |
+
+### Test
+
+| Component | Version | Supported |
+| --- | --- | --- |
+| [Test Setup-e2e](./actions/test/setup-e2e) | actions-test-setup-e2e-v1.0.0 | :white_check_mark: |
 
 
 ### Workflows

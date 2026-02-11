@@ -91,6 +91,11 @@
       "release-type": "simple",
       "component": "actions-common-create-pull-request",
       "include-component-in-tag": true
+    },
+    "actions/test/setup-e2e": {
+      "release-type": "simple",
+      "component": "actions-test-setup-e2e",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

@@ -1,0 +1,54 @@
+name: 'Setup E2E Test'
+description: 'Sets up the environment for E2E testing: generates token, checks out test repo, and checks out actions code.'
+
+inputs:
+  app-id:
+    description: 'GitHub App ID'
+    required: true
+  private-key:
+    description: 'GitHub App Private Key'
+    required: true
+  test_repo:
+    description: 'The full repository name (owner/repo) to use for testing'
+    required: true
+  test_owner:
+    description: 'The owner of the test repository'
+    required: true
+  test_repo_name:
+    description: 'The name of the test repository'
+    required: true
+
+outputs:
+  token:
+    description: 'The generated GitHub App token'
+    value: ${{ steps.generate_token.outputs.token }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Generate Token
+      id: generate_token
+      uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
+      with:
+        app-id: ${{ inputs.app-id }}
+        private-key: ${{ inputs.private-key }}
+        owner: ${{ inputs.test_owner }}
+        repositories: ${{ inputs.test_repo_name }}
+
+    - name: Checkout Test Repo
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      with:
+        repository: ${{ inputs.test_repo }}
+        token: ${{ steps.generate_token.outputs.token }}
+        path: .
+        persist-credentials: false
+
+    - name: Checkout Actions Code
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      with:
+        persist-credentials: false
+        path: tmp/actions-code
+
+    - name: Ignore Actions Code
+      shell: bash
+      run: echo "tmp/actions-code" >> .git/info/exclude
