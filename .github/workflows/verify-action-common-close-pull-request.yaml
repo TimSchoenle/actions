@@ -53,7 +53,7 @@ jobs:
         run: |
           mkdir -p test-close-pr
           echo "Test content for closing PR $TEST_ID" > test-close-pr/file.txt
-          echo "$(date)" >> test-close-pr/file.txt
+          date >> test-close-pr/file.txt
 
       - name: Create PR to Close
         id: create-pr
@@ -174,7 +174,7 @@ jobs:
         run: |
           mkdir -p test-close-pr-comment
           echo "Test content for closing PR with comment $TEST_ID" > test-close-pr-comment/file.txt
-          echo "$(date)" >> test-close-pr-comment/file.txt
+          date >> test-close-pr-comment/file.txt
 
       - name: Create PR to Close
         id: create-pr
