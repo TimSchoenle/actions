@@ -306,11 +306,6 @@ jobs:
           TEST_REPO: ${{ env.TEST_REPO }}
           TEST_ID: ${{ env.TEST_ID }}
         run: |
-          # Create a branch and a file
-          BRANCH_NAME="test/chmod-ignored/$TEST_ID"
-
-          # We need to do this via API or checkout another repo to commit to it first
-          # But for simplicity, we can reuse the commit-changes action to create the initial state!
           mkdir -p test-chmod
           echo "echo 'hello'" > test-chmod/script.sh
 
