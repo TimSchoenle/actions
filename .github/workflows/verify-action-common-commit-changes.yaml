@@ -407,6 +407,108 @@ jobs:
           repository: ${{ env.TEST_REPO }}
           branch_name: ${{ steps.branch.outputs.branch }}
 
+  test-existing-file:
+    name: Test Existing File
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/existing-file/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Setup Initial State
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          TEST_ID: ${{ env.TEST_ID }}
+        run: |
+          mkdir -p test-chmod
+          echo "echo 'hello'" > test-chmod/script.sh
+
+      - name: Create Initial Commit
+        id: initial_commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: initial setup ${{ env.TEST_ID }}'
+          file_pattern: 'test-chmod/script.sh'
+
+      - name: Reset to Initial State(The commit action is using the github API to commit changes, so the local git state is out of sync with the remote)
+        env:
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+        run: |
+          git fetch --prune origin "+refs/heads/$BRANCH_NAME:refs/remotes/origin/$BRANCH_NAME"
+          git reset --hard "origin/$BRANCH_NAME"
+
+      - name: Change File content
+        run: |
+          mkdir -p test-chmod
+          echo "echo 'hello2'" > test-chmod/script.sh
+
+      - name: Run commit-changes
+        id: commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: test/chmod-ignored/${{ env.TEST_ID }}
+          commit_message: 'test: chmod change ${{ env.TEST_ID }}'
+          file_pattern: 'test-chmod/script.sh'
+          empty: 'false'
+
+      - name: Verify Commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          EXPECTED_MSG: 'test: chmod change ${{ env.TEST_ID }}'
+        run: |
+          if [ -z "$COMMIT_SHA" ]; then
+            echo "::error::Commit SHA not found in output"
+            exit 1
+          fi
+
+          echo "✅ Commit created: $COMMIT_SHA"
+
+          # Verify commit message
+          MSG=$(gh api "/repos/$TEST_REPO/git/commits/$COMMIT_SHA" --jq '.message')
+          if [ "$MSG" != "$EXPECTED_MSG" ]; then
+            echo "::error::Commit message mismatch. Expected '$EXPECTED_MSG', got '$MSG'"
+            exit 1
+          fi
+          echo "✅ Commit message verified"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
+
   test-custom-branch:
     name: Test Custom Branch
     runs-on: ubuntu-latest
