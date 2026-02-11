@@ -102,9 +102,10 @@ jobs:
         shell: bash
         env:
           CURRENT_REPO_CHECKOUT_PATH: ${{ steps.setup.outputs.current_repo_checkout_path }}
+          TEST_REPO_CHECKOUT_PATH: ${{ steps.setup.outputs.test_repo_checkout_path }}
         run: |
-          if ! grep -q "$CURRENT_REPO_CHECKOUT_PATH" .git/info/exclude; then
-             echo "::error::tmp/actions-code not found in .git/info/exclude"
+          if ! grep -q "$CURRENT_REPO_CHECKOUT_PATH" "$TEST_REPO_CHECKOUT_PATH/.git/info/exclude"; then
+             echo "::error::tmp/actions-code not found in $TEST_REPO_CHECKOUT_PATH/.git/info/exclude"
              exit 1
           fi
           echo "✅ .git/info/exclude updated successfully"
