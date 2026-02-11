@@ -18,5 +18,6 @@
   "workflows/rust/clippy": "1.1.1",
   "actions/common/create-pull-request": "1.0.1",
   "actions/test/setup-e2e": "1.1.0",
-  "actions/common/close-pull-request": "1.1.0"
+  "actions/common/close-pull-request": "1.1.0",
+  "actions/common/create-branch": "1.0.0"
 }
