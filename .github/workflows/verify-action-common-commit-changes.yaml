@@ -368,7 +368,8 @@ jobs:
         env:
           BRANCH_NAME: ${{ steps.branch.outputs.branch }}
         run: |
-          git reset --hard origin/$BRANCH_NAME
+          git fetch --prune origin "+refs/heads/$BRANCH_NAME:refs/remotes/origin/$BRANCH_NAME"
+          git reset --hard "origin/$BRANCH_NAME"
 
       - name: Change Permissions
         run: |
