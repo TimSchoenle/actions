@@ -205,7 +205,7 @@ jobs:
         shell: bash
         env:
           INITIAL_SHA: ${{ steps.create-initial.outputs.sha }}
-          DIVERGED_SHA: ${{ steps.commit-diverge.outputs.sha }}
+          DIVERGED_SHA: ${{ steps.commit-diverge.outputs.commit_hash }}
         run: |
           if [ "$INITIAL_SHA" == "$DIVERGED_SHA" ]; then
             echo "::error::Branch failed to diverge"
@@ -225,7 +225,7 @@ jobs:
       - name: Verify No Reset
         shell: bash
         env:
-          DIVERGED_SHA: ${{ steps.commit-diverge.outputs.sha }}
+          DIVERGED_SHA: ${{ steps.commit-diverge.outputs.commit_hash }}
           CURRENT_SHA: ${{ steps.create-no-reset.outputs.sha }}
           CREATED: ${{ steps.create-no-reset.outputs.created }}
         run: |
