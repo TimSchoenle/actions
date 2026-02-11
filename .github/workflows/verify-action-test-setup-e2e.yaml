@@ -51,6 +51,7 @@ jobs:
           test_owner: ${{ env.TEST_OWNER }}
           test_repo_name: ${{ env.TEST_REPO_NAME }}
           test_repo_checkout_path: 'test'
+          current_repo_checkout_path: 'tmp/actions-code'
 
       - name: Verify Token Generation
         shell: bash
@@ -78,13 +79,13 @@ jobs:
       - name: Verify Actions Code Checkout
         shell: bash
         run: |
-          if [ ! -d  ${{ inputs.current_repo_checkout_path }} ]; then
+          if [ ! -d  ${{ steps.setup.outputs.current_repo_checkout_path }} ]; then
             echo "::error::tmp/actions-code directory does not exist"
             exit 1
           fi
 
           # Check if it contains the action we just ran (circular check)
-          if [ ! -f " ${{ inputs.current_repo_checkout_path }}/actions/test/setup-e2e/action.yaml" ]; then
+          if [ ! -f " ${{ steps.setup.outputs.current_repo_checkout_path }}/actions/test/setup-e2e/action.yaml" ]; then
              echo "::error::tmp/actions-code does not appear to contain the actions code"
              exit 1
           fi
@@ -93,7 +94,7 @@ jobs:
       - name: Verify Git Ignore
         shell: bash
         run: |
-          if ! grep -q " ${{ inputs.current_repo_checkout_path }}" .git/info/exclude; then
+          if ! grep -q " ${{ steps.setup.outputs.current_repo_checkout_path }}" .git/info/exclude; then
              echo "::error::tmp/actions-code not found in .git/info/exclude"
              exit 1
           fi
