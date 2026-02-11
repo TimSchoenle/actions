@@ -1,0 +1,109 @@
+name: Verify Test Setup-e2e
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'actions/test/setup-e2e/**'
+      - '.github/workflows/verify-action-test-setup-e2e.yaml'
+  pull_request:
+    paths:
+      - 'actions/test/setup-e2e/**'
+      - '.github/workflows/verify-action-test-setup-e2e.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+env:
+  TEST_OWNER: TimSchoenle
+  TEST_REPO_NAME: actions-testing
+  TEST_REPO: TimSchoenle/actions-testing
+
+jobs:
+  verify:
+    name: Verify Setup-e2e
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Run setup-e2e
+        id: setup
+        uses: ./actions/test/setup-e2e
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          test_repo_checkout_path: 'test'
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Verify Token Generation
+        shell: bash
+        env:
+          TOKEN: ${{ steps.setup.outputs.token }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::Token was not generated"
+            exit 1
+          fi
+          echo "✅ Token generated successfully"
+
+      - name: Verify Test Repo Checkout
+        shell: bash
+        env:
+          TEST_REPO_CHECKOUT_PATH: ${{ steps.setup.outputs.test_repo_checkout_path }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+        run: |
+          # Check if we are in the test repo (based on origin remote or file existence)
+          cd "$TEST_REPO_CHECKOUT_PATH"
+          REMOTE=$(git remote get-url origin)
+          if [[ "$REMOTE" != *"$TEST_REPO"* ]]; then
+             echo "::error::Current directory is not the test repository. Remote: $REMOTE"
+             exit 1
+          fi
+          echo "✅ Test repo checked out successfully"
+
+      - name: Verify Actions Code Checkout
+        shell: bash
+        env:
+          CURRENT_REPO_CHECKOUT_PATH: ${{ steps.setup.outputs.current_repo_checkout_path }}
+        run: |
+          if [ ! -d  "$CURRENT_REPO_CHECKOUT_PATH" ]; then
+            echo "::error::tmp/actions-code directory does not exist"
+            exit 1
+          fi
+
+          # Check if it contains the action we just ran (circular check)
+          if [ ! -f "$CURRENT_REPO_CHECKOUT_PATH/actions/test/setup-e2e/action.yaml" ]; then
+             echo "::error::tmp/actions-code does not appear to contain the actions code"
+             exit 1
+          fi
+          echo "✅ Actions code checked out successfully"
+
+      - name: Verify Git Ignore
+        shell: bash
+        env:
+          CURRENT_REPO_CHECKOUT_PATH: ${{ steps.setup.outputs.current_repo_checkout_path }}
+          TEST_REPO_CHECKOUT_PATH: ${{ steps.setup.outputs.test_repo_checkout_path }}
+        run: |
+          if ! grep -q "$CURRENT_REPO_CHECKOUT_PATH" "$TEST_REPO_CHECKOUT_PATH/.git/info/exclude"; then
+             echo "::error::tmp/actions-code not found in $TEST_REPO_CHECKOUT_PATH/.git/info/exclude"
+             exit 1
+          fi
+          echo "✅ .git/info/exclude updated successfully"

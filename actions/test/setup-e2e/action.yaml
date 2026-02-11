@@ -1,0 +1,71 @@
+name: 'Setup E2E Test'
+description: 'Sets up the environment for E2E testing: generates token, checks out test repo, and checks out actions code.'
+
+inputs:
+  app_id:
+    description: 'GitHub App ID'
+    required: true
+  private_key:
+    description: 'GitHub App Private Key'
+    required: true
+  current_repo_checkout_path:
+    description: 'The path to checkout the current repository to'
+    required: false
+    default: 'tmp/current-repo'
+  test_repo:
+    description: 'The full repository name (owner/repo) to use for testing'
+    required: true
+  test_repo_checkout_path:
+    description: 'The path to checkout the test repository to'
+    required: false
+    default: '.'
+  test_owner:
+    description: 'The owner of the test repository'
+    required: true
+  test_repo_name:
+    description: 'The name of the test repository'
+    required: true
+
+outputs:
+  token:
+    description: 'The generated GitHub App token'
+    value: ${{ steps.generate_token.outputs.token }}
+  current_repo_checkout_path:
+    description: 'The path to checkout the current repository to'
+    value: ${{ inputs.current_repo_checkout_path }}
+  test_repo_checkout_path:
+    description: 'The path to checkout the test repository to'
+    value: ${{ inputs.test_repo_checkout_path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Generate Token
+      id: generate_token
+      uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
+      with:
+        app-id: ${{ inputs.app_id }}
+        private-key: ${{ inputs.private_key }}
+        owner: ${{ inputs.test_owner }}
+        repositories: ${{ inputs.test_repo_name }}
+
+    - name: Checkout Test Repo
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      with:
+        repository: ${{ inputs.test_repo }}
+        token: ${{ steps.generate_token.outputs.token }}
+        path: ${{ inputs.test_repo_checkout_path }}
+        persist-credentials: false
+
+    - name: Checkout Actions Code
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      with:
+        persist-credentials: false
+        path: ${{ inputs.current_repo_checkout_path }}
+
+    - name: Ignore Actions Code
+      shell: bash
+      env:
+        CURRENT_REPO_CHECKOUT_PATH: ${{ inputs.current_repo_checkout_path }}
+        TEST_REPO_CHECKOUT_PATH: ${{ inputs.test_repo_checkout_path }}
+      run: echo "$CURRENT_REPO_CHECKOUT_PATH" >> $TEST_REPO_CHECKOUT_PATH/.git/info/exclude
