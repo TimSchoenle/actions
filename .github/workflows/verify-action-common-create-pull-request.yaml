@@ -38,22 +38,31 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Checkout Actions Code (Bootstrap)
+      - name: Generate Token
+        id: generate_token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: ${{ env.TEST_OWNER }}
+          repositories: ${{ env.TEST_REPO_NAME }}
+
+      - name: Checkout Test Repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          repository: ${{ env.TEST_REPO }}
+          token: ${{ steps.generate_token.outputs.token }}
+          path: .
+          persist-credentials: false
+
+      - name: Checkout Actions Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
           path: tmp/actions-code
 
-      - name: Setup E2E Test
-        id: setup
-        uses: ./tmp/actions-code/actions/test/setup-e2e
-        with:
-          current_repo_checkout_path: tmp/actions-code
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
+      - name: Ignore Actions Code
+        run: echo "tmp/actions-code" >> .git/info/exclude
 
       - name: Create Test File
         env:
@@ -87,7 +96,7 @@ jobs:
       - name: Verify PR Created and Content
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
           PR_URL: ${{ steps.create-pr.outputs.pr_url }}
           PR_NUMBER: ${{ steps.create-pr.outputs.pr_number }}
           EXPECTED_TITLE: '[TEST-CREATE-PR] With Changes - ${{ env.TEST_ID }}'
@@ -157,7 +166,7 @@ jobs:
       - name: Cleanup Test Artifacts
         if: always() && steps.generate_token.outcome == 'success'
         env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
           TEST_REPO: ${{ env.TEST_REPO }}
           TEST_ID: ${{ env.TEST_ID }}
         run: |
@@ -184,22 +193,31 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Checkout Actions Code (Bootstrap)
+      - name: Generate Token
+        id: generate_token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: ${{ env.TEST_OWNER }}
+          repositories: ${{ env.TEST_REPO_NAME }}
+
+      - name: Checkout Test Repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          repository: ${{ env.TEST_REPO }}
+          token: ${{ steps.generate_token.outputs.token }}
+          path: .
+          persist-credentials: false
+
+      - name: Checkout Actions Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
           path: tmp/actions-code
 
-      - name: Setup E2E Test
-        id: setup
-        uses: ./tmp/actions-code/actions/test/setup-e2e
-        with:
-          current_repo_checkout_path: tmp/actions-code
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
+      - name: Ignore Actions Code
+        run: echo "tmp/actions-code" >> .git/info/exclude
 
       - name: Run create-pull-request (no changes)
         id: create-pr
@@ -233,7 +251,7 @@ jobs:
       - name: Cleanup Test Artifacts
         if: always() && steps.generate_token.outcome == 'success'
         env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
           TEST_REPO: ${{ env.TEST_REPO }}
           TEST_ID: ${{ env.TEST_ID }}
         run: |
@@ -260,22 +278,31 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Checkout Actions Code (Bootstrap)
+      - name: Generate Token
+        id: generate_token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: ${{ env.TEST_OWNER }}
+          repositories: ${{ env.TEST_REPO_NAME }}
+
+      - name: Checkout Test Repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          repository: ${{ env.TEST_REPO }}
+          token: ${{ steps.generate_token.outputs.token }}
+          path: .
+          persist-credentials: false
+
+      - name: Checkout Actions Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
           path: tmp/actions-code
 
-      - name: Setup E2E Test
-        id: setup
-        uses: ./tmp/actions-code/actions/test/setup-e2e
-        with:
-          current_repo_checkout_path: tmp/actions-code
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
+      - name: Ignore Actions Code
+        run: echo "tmp/actions-code" >> .git/info/exclude
 
       - name: Run create-pull-request (commit should be skipped)
         id: create-pr
@@ -311,7 +338,7 @@ jobs:
       - name: Cleanup Test Artifacts
         if: always() && steps.generate_token.outcome == 'success'
         env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
           TEST_REPO: ${{ env.TEST_REPO }}
           TEST_ID: ${{ env.TEST_ID }}
         run: |
@@ -338,22 +365,31 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Checkout Actions Code (Bootstrap)
+      - name: Generate Token
+        id: generate_token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: ${{ env.TEST_OWNER }}
+          repositories: ${{ env.TEST_REPO_NAME }}
+
+      - name: Checkout Test Repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          repository: ${{ env.TEST_REPO }}
+          token: ${{ steps.generate_token.outputs.token }}
+          path: .
+          persist-credentials: false
+
+      - name: Checkout Actions Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
           path: tmp/actions-code
 
-      - name: Setup E2E Test
-        id: setup
-        uses: ./tmp/actions-code/actions/test/setup-e2e
-        with:
-          current_repo_checkout_path: tmp/actions-code
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
+      - name: Ignore Actions Code
+        run: echo "tmp/actions-code" >> .git/info/exclude
 
       - name: Create Initial Test File
         env:
@@ -383,7 +419,7 @@ jobs:
       - name: Close Initial PR (Keep Branch)
         if: steps.create-pr-initial.outputs.pr_number
         env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
           PR_NUMBER: ${{ steps.create-pr-initial.outputs.pr_number }}
           TEST_REPO: ${{ env.TEST_REPO }}
         run: |
@@ -418,7 +454,7 @@ jobs:
       - name: Verify Branch Was Reset
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
           PR_NUMBER: ${{ steps.create-pr-reset.outputs.pr_number }}
           TEST_ID: ${{ env.TEST_ID }}
           TEST_REPO: ${{ env.TEST_REPO }}
@@ -470,7 +506,7 @@ jobs:
       - name: Cleanup Test Artifacts
         if: always() && steps.generate_token.outcome == 'success'
         env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
           TEST_REPO: ${{ env.TEST_REPO }}
           TEST_ID: ${{ env.TEST_ID }}
         run: |
