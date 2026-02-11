@@ -111,14 +111,19 @@ runs:
       run: |
         set -euo pipefail
 
+        CHANGED_Z="${RUNNER_TEMP}/commit-changes-changed-files.z"
+        : > "$CHANGED_Z"
+
         if [ "$USE_FILTER" = "true" ]; then
           mapfile -t SPECS < <(printf '%s\n' "$PATHSPECS_NL")
-          git ls-files -m -o --exclude-standard -z -- "${SPECS[@]}" > changed-files.z
+          git ls-files -m -o --exclude-standard -z -- "${SPECS[@]}" > "$CHANGED_Z"
         else
-          git ls-files -m -o --exclude-standard -z > changed-files.z
+          git ls-files -m -o --exclude-standard -z > "$CHANGED_Z"
         fi
 
-        if [ -s changed-files.z ]; then
+        echo "changed_files_z=$CHANGED_Z" >> "$GITHUB_OUTPUT"
+
+        if [ -s "$CHANGED_Z" ]; then
           echo "has_files=true" >> "$GITHUB_OUTPUT"
         else
           echo "has_files=false" >> "$GITHUB_OUTPUT"
@@ -129,6 +134,7 @@ runs:
       shell: bash
       env:
         HAS_FILES: ${{ steps.files.outputs.has_files }}
+        CHANGED_FILES_Z: ${{ steps.files.outputs.changed_files_z }}
       run: |
         set -euo pipefail
 
@@ -144,7 +150,7 @@ runs:
           [ -z "$f" ] && continue
           [ -d "$f" ] && continue
           files+=("$f")
-        done < changed-files.z
+        done < "$CHANGED_FILES_Z"
 
         if [ "${#files[@]}" -eq 0 ]; then
           echo "has_changes=false" >> "$GITHUB_OUTPUT"
