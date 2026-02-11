@@ -126,7 +126,7 @@ jobs:
           - name: dot-all
             file_pattern: '.'
             expected_files: |
-              test-output/dot-all.txt
+              dot-all.txt
 
     steps:
       - name: Harden Runner
@@ -172,8 +172,7 @@ jobs:
             echo "actions dist $TEST_ID" > actions/foo/dist/a.txt
             echo "workflows dist $TEST_ID" > workflows/bar/dist/b.txt
           elif [ "$CASE" = "dot-all" ]; then
-            mkdir -p test-output
-            echo "dot all $TEST_ID" > test-output/dot-all.txt
+            echo "dot all $TEST_ID" > dot-all.txt
           else
             echo "::error::Unknown matrix case: $CASE"
             exit 1
