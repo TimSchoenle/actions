@@ -106,6 +106,145 @@ jobs:
           repository: ${{ env.TEST_REPO }}
           branch_name: ${{ steps.branch.outputs.branch }}
 
+  test-file-pattern-multiple-files:
+    name: Test File Pattern Variants (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: multiple-files-list
+            file_pattern: 'test-output/README.md test-output/SECURITY.md'
+            expected_files: |
+              test-output/README.md
+              test-output/SECURITY.md
+          - name: multiple-globs
+            file_pattern: 'actions/**/dist/**/* workflows/**/dist/**/*'
+            expected_files: |
+              actions/foo/dist/a.txt
+              workflows/bar/dist/b.txt
+          - name: dot-all
+            file_pattern: '.'
+            expected_files: |
+              dot-all.txt
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/file-pattern-matrix/${{ env.TEST_ID }}/${{ matrix.name }}
+          reset_branch: 'true'
+
+      - name: Create Test Files for Pattern
+        shell: bash
+        env:
+          TEST_ID: ${{ env.TEST_ID }}
+          CASE: ${{ matrix.name }}
+        run: |
+          set -euo pipefail
+
+          if [ "$CASE" = "multiple-files-list" ]; then
+            mkdir -p test-output
+            echo "README $TEST_ID" > test-output/README.md
+            echo "SECURITY $TEST_ID" > test-output/SECURITY.md
+          elif [ "$CASE" = "multiple-globs" ]; then
+            mkdir -p actions/foo/dist
+            mkdir -p workflows/bar/dist
+            echo "actions dist $TEST_ID" > actions/foo/dist/a.txt
+            echo "workflows dist $TEST_ID" > workflows/bar/dist/b.txt
+          elif [ "$CASE" = "dot-all" ]; then
+            echo "dot all $TEST_ID" > dot-all.txt
+          else
+            echo "::error::Unknown matrix case: $CASE"
+            exit 1
+          fi
+
+      - name: Run commit-changes
+        id: commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: file pattern matrix (${{ matrix.name }}) ${{ env.TEST_ID }}'
+          file_pattern: ${{ matrix.file_pattern }}
+
+      - name: Verify Commit Includes Expected Files (and nothing else)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          EXPECTED_FILES: ${{ matrix.expected_files }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$COMMIT_SHA" ]; then
+            echo "::error::Commit SHA not found in output"
+            exit 1
+          fi
+
+          FILES=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files[].filename' | sort || true)
+          EXPECTED_SORTED=$(printf '%s\n' "$EXPECTED_FILES" | sed '/^\s*$/d' | sort)
+
+          echo "Files in commit:"
+          echo "$FILES"
+          echo "Expected files:"
+          echo "$EXPECTED_SORTED"
+
+          # Missing expected files?
+          missing=0
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            if ! echo "$FILES" | grep -Fxq "$f"; then
+              echo "::error::Expected file missing from commit: $f"
+              missing=1
+            fi
+          done <<< "$EXPECTED_SORTED"
+
+          # Unexpected extra files?
+          extra=0
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            if ! echo "$EXPECTED_SORTED" | grep -Fxq "$f"; then
+              echo "::error::Unexpected file present in commit: $f"
+              extra=1
+            fi
+          done <<< "$FILES"
+
+          if [ "$missing" -ne 0 ] || [ "$extra" -ne 0 ]; then
+            exit 1
+          fi
+
+          echo "✅ Expected files verified (no extras)"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
+
   test-empty-commit-allowed:
     name: Test Empty Commit (Allowed)
     runs-on: ubuntu-latest
@@ -151,10 +290,13 @@ jobs:
           GH_TOKEN: ${{ steps.setup.outputs.token }}
           COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
           CHANGES_DETECTED: ${{ steps.commit.outputs.changes_detected }}
+          TEST_REPO: ${{ env.TEST_REPO }}
         run: |
+          set -euo pipefail
+
           if [ "$CHANGES_DETECTED" != "true" ]; then
-             echo "::error::Changes detected should be true for allowed empty commit"
-             exit 1
+            echo "::error::changes_detected should be true for allowed empty commit"
+            exit 1
           fi
 
           if [ -z "$COMMIT_SHA" ]; then
@@ -162,7 +304,16 @@ jobs:
             exit 1
           fi
 
-          echo "✅ Empty commit created successfully"
+          # Empty commit must not include any file changes
+          COUNT=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files | length')
+          if [ "$COUNT" -ne 0 ]; then
+            FILES=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files[].filename' || true)
+            echo "::error::Expected empty commit (0 files), got $COUNT files:"
+            echo "$FILES"
+            exit 1
+          fi
+
+          echo "✅ Empty commit created successfully (0 files changed)"
 
       - name: Cleanup Branch
         if: always()
@@ -582,6 +733,228 @@ jobs:
           fi
 
           echo "✅ Commit verified on custom branch: $BRANCH_NAME"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
+
+  test-empty-directory-only:
+    name: Test Empty Directory Only (should NOT commit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/empty-dir-only/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Create Empty Directory
+        run: |
+          mkdir -p empty-dir-only/subdir
+
+      - name: Run commit-changes (should not commit)
+        id: commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: empty dir only ${{ env.TEST_ID }}'
+          file_pattern: '.'
+          empty: 'false'
+
+      - name: Verify No Commit
+        shell: bash
+        env:
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          CHANGES_DETECTED: ${{ steps.commit.outputs.changes_detected }}
+        run: |
+          if [ "$CHANGES_DETECTED" = "true" ]; then
+            echo "::error::changes_detected should be false for empty dir only"
+            exit 1
+          fi
+          if [ -n "$COMMIT_SHA" ]; then
+            echo "::error::Commit SHA should be empty when no commit is created"
+            exit 1
+          fi
+          echo "✅ No commit created for empty directory"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
+
+  test-ignored-file-only:
+    name: Test Ignored File Only (should NOT commit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/ignored-file-only/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Configure Local Ignore + Create Ignored File
+        shell: bash
+        env:
+          TEST_ID: ${{ env.TEST_ID }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p ignored
+          IGNORED_FILE="ignored/only-${TEST_ID}.txt"
+
+          # Ensure local exclude file exists and ignore just this test file
+          mkdir -p .git/info
+          echo "$IGNORED_FILE" >> .git/info/exclude
+
+          # Create the ignored file
+          echo "IGNORED=1" > "$IGNORED_FILE"
+
+          git check-ignore -q "$IGNORED_FILE"
+
+      - name: Run commit-changes (should not commit)
+        id: commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: ignored file only ${{ env.TEST_ID }}'
+          file_pattern: '.'
+          empty: 'false'
+
+      - name: Verify No Commit
+        shell: bash
+        env:
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          CHANGES_DETECTED: ${{ steps.commit.outputs.changes_detected }}
+        run: |
+          if [ "$CHANGES_DETECTED" = "true" ]; then
+            echo "::error::changes_detected should be false for ignored file only"
+            exit 1
+          fi
+          if [ -n "$COMMIT_SHA" ]; then
+            echo "::error::Commit SHA should be empty when no commit is created"
+            exit 1
+          fi
+          echo "✅ No commit created for ignored-only changes"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
+
+  test-pattern-mismatch:
+    name: Test Pattern Mismatch (changes exist but pattern excludes them)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/pattern-mismatch/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Create a Change Outside the Pattern
+        env:
+          TEST_ID: ${{ env.TEST_ID }}
+        run: |
+          mkdir -p mismatch
+          echo "change $TEST_ID" > mismatch/outside.txt
+
+      - name: Run commit-changes with non-matching pattern
+        id: commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: pattern mismatch ${{ env.TEST_ID }}'
+          file_pattern: 'does-not-exist/**/*.txt'
+          empty: 'false'
+
+      - name: Verify No Commit
+        shell: bash
+        env:
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          CHANGES_DETECTED: ${{ steps.commit.outputs.changes_detected }}
+        run: |
+          if [ "$CHANGES_DETECTED" = "true" ]; then
+            echo "::error::changes_detected should be false when pattern matches nothing"
+            exit 1
+          fi
+          if [ -n "$COMMIT_SHA" ]; then
+            echo "::error::Commit SHA should be empty when no commit is created"
+            exit 1
+          fi
+          echo "✅ No commit created when pattern mismatches"
 
       - name: Cleanup Branch
         if: always()
