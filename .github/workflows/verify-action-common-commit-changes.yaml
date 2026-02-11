@@ -49,6 +49,14 @@ jobs:
           test_repo_name: ${{ env.TEST_REPO_NAME }}
           current_repo_checkout_path: 'tmp/actions-code'
 
+      - name: Create Test Branch
+        uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/basic-commit/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
       - name: Create Test File
         run: |
           mkdir -p test-output
@@ -115,6 +123,14 @@ jobs:
           test_repo_name: ${{ env.TEST_REPO_NAME }}
           current_repo_checkout_path: 'tmp/actions-code'
 
+      - name: Create Test Branch
+        uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/empty-commit-disallowed/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
       - name: Run commit-changes (Empty Allowed)
         id: commit
         uses: ./tmp/actions-code/actions/common/commit-changes
@@ -172,6 +188,14 @@ jobs:
           test_repo_name: ${{ env.TEST_REPO_NAME }}
           current_repo_checkout_path: 'tmp/actions-code'
 
+      - name: Create Test Branch
+        uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/empty-commit-disallowed/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
       - name: Run commit-changes (Empty Disallowed)
         id: commit
         uses: ./tmp/actions-code/actions/common/commit-changes
@@ -228,6 +252,14 @@ jobs:
           test_repo: ${{ env.TEST_REPO }}
           test_repo_name: ${{ env.TEST_REPO_NAME }}
           current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/file-pattern/${{ env.TEST_ID }}
+          reset_branch: 'true'
 
       - name: Create Test Files
         run: |
@@ -299,6 +331,14 @@ jobs:
           test_repo: ${{ env.TEST_REPO }}
           test_repo_name: ${{ env.TEST_REPO_NAME }}
           current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/chmod-ignored/${{ env.TEST_ID }}
+          reset_branch: 'true'
 
       - name: Setup Initial State
         env:
@@ -374,6 +414,14 @@ jobs:
           test_repo: ${{ env.TEST_REPO }}
           test_repo_name: ${{ env.TEST_REPO_NAME }}
           current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/custom-branch/${{ env.TEST_ID }}
+          reset_branch: 'true'
 
       - name: Create Test File
         run: |
