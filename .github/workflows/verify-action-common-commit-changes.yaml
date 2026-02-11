@@ -59,9 +59,11 @@ jobs:
           reset_branch: 'true'
 
       - name: Create Test File
+        env:
+          TEST_ID: ${{ env.TEST_ID }}
         run: |
           mkdir -p test-output
-          echo "Test content for basic commit ${{ env.TEST_ID }}" > test-output/basic-commit.txt
+          echo "Test content for basic commit $TEST_ID" > test-output/basic-commit.txt
 
       - name: Run commit-changes (Basic)
         id: commit
@@ -266,10 +268,12 @@ jobs:
           reset_branch: 'true'
 
       - name: Create Test Files
+        env:
+          TEST_ID: ${{ env.TEST_ID }}
         run: |
           mkdir -p test-pattern
-          echo "Included file ${{ env.TEST_ID }}" > test-pattern/included.txt
-          echo "Ignored file ${{ env.TEST_ID }}" > test-pattern/ignored.txt
+          echo "Included file $TEST_ID" > test-pattern/included.txt
+          echo "Ignored file $TEST_ID" > test-pattern/ignored.txt
 
       - name: Run commit-changes (Pattern)
         id: commit
@@ -539,9 +543,11 @@ jobs:
           reset_branch: 'true'
 
       - name: Create Test File
+        env:
+          TEST_ID: ${{ env.TEST_ID }}
         run: |
           mkdir -p test-custom
-          echo "Custom branch content ${{ env.TEST_ID }}" > test-custom/file.txt
+          echo "Custom branch content $TEST_ID" > test-custom/file.txt
 
       - name: Run commit-changes (Custom Branch)
         id: commit
