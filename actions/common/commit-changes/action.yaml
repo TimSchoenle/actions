@@ -68,6 +68,19 @@ runs:
 
         read -r -a PATHSPECS <<< "$FILE_PATTERN"
 
+        # If a token looks like a glob, force git pathspec globbing via :(glob)
+        # so that patterns like ** behave as expected.
+        PATHSPECS=()
+        for spec in "${RAW_SPECS[@]}"; do
+          if [[ "$spec" == :\(*\)* ]]; then
+            PATHSPECS+=("$spec")
+          elif [[ "$spec" == *"*"* || "$spec" == *"?"* || "$spec" == *"["* ]]; then
+            PATHSPECS+=(":(glob)$spec")
+          else
+            PATHSPECS+=("$spec")
+          fi
+        done
+
         if [ -n "$(git status --porcelain -- "${PATHSPECS[@]}")" ]; then
           echo "has_changes=true" >> "$GITHUB_OUTPUT"
           echo "File change detected!"
