@@ -364,6 +364,12 @@ jobs:
           commit_message: 'test: initial setup ${{ env.TEST_ID }}'
           file_pattern: 'test-chmod/script.sh'
 
+      - name: Pull Changes
+        env:
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+        run: |
+          git pull origin ${{ steps.branch.outputs.branch }}
+
       - name: Change Permissions
         run: |
           chmod +x test-chmod/script.sh
