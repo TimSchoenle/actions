@@ -102,6 +102,11 @@
       "component": "actions-common-close-pull-request",
       "include-component-in-tag": true
     },
+    "actions/common/delete-branch": {
+      "release-type": "simple",
+      "component": "actions-common-delete-branch",
+      "include-component-in-tag": true
+    },
     "actions/common/create-branch": {
       "release-type": "simple",
       "component": "actions-common-create-branch",
