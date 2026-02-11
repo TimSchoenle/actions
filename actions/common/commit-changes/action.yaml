@@ -135,12 +135,28 @@ runs:
       env:
         HAS_FILES: ${{ steps.files.outputs.has_files }}
         CHANGED_FILES_Z: ${{ steps.files.outputs.changed_files_z }}
+        ALLOW_EMPTY: ${{ inputs.empty }}
       run: |
         set -euo pipefail
 
         if [ "$HAS_FILES" != "true" ]; then
+          if [ "$ALLOW_EMPTY" = "true" ]; then
+            # ghcommit-action requires a non-empty file_pattern input.
+            # Provide a *safe, non-directory* fallback that is likely to exist.
+            if [ -f ".gitignore" ]; then
+              echo "resolved_file_pattern=.gitignore" >> "$GITHUB_OUTPUT"
+            elif [ -f "README.md" ]; then
+              echo "resolved_file_pattern=README.md" >> "$GITHUB_OUTPUT"
+            else
+              # Last resort. Should be harmless if there are truly no changes,
+              # but we prefer a concrete file above to avoid directory edge cases.
+              echo "resolved_file_pattern=." >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "resolved_file_pattern=" >> "$GITHUB_OUTPUT"
+          fi
+
           echo "has_changes=false" >> "$GITHUB_OUTPUT"
-          echo "resolved_file_pattern=" >> "$GITHUB_OUTPUT"
           echo "No file changes detected!"
           exit 0
         fi
@@ -153,8 +169,19 @@ runs:
         done < "$CHANGED_FILES_Z"
 
         if [ "${#files[@]}" -eq 0 ]; then
+          if [ "$ALLOW_EMPTY" = "true" ]; then
+            if [ -f ".gitignore" ]; then
+              echo "resolved_file_pattern=.gitignore" >> "$GITHUB_OUTPUT"
+            elif [ -f "README.md" ]; then
+              echo "resolved_file_pattern=README.md" >> "$GITHUB_OUTPUT"
+            else
+              echo "resolved_file_pattern=." >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "resolved_file_pattern=" >> "$GITHUB_OUTPUT"
+          fi
+
           echo "has_changes=false" >> "$GITHUB_OUTPUT"
-          echo "resolved_file_pattern=" >> "$GITHUB_OUTPUT"
           echo "No file changes detected!"
           exit 0
         fi
