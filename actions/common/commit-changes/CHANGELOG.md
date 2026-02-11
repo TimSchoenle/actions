@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/TimSchoenle/actions/compare/actions-common-commit-changes-v1.1.2...actions-common-commit-changes-v1.1.3) (2026-02-11)
+
+
+### Bug Fixes
+
+* **Actions/Commit-Changes:** fix file pattern support ([#400](https://github.com/TimSchoenle/actions/issues/400)) ([c5fa9cc](https://github.com/TimSchoenle/actions/commit/c5fa9ccf31b3499b372cb964e43ac62520b62ec0))
+
 ## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-common-commit-changes-v1.1.1...actions-common-commit-changes-v1.1.2) (2026-02-09)
 
 
