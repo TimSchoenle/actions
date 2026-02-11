@@ -162,8 +162,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          mkdir -p test-output
-
           if [ "$CASE" = "multiple-files-list" ]; then
             mkdir -p test-output
             echo "README $TEST_ID" > test-output/README.md
@@ -174,6 +172,7 @@ jobs:
             echo "actions dist $TEST_ID" > actions/foo/dist/a.txt
             echo "workflows dist $TEST_ID" > workflows/bar/dist/b.txt
           elif [ "$CASE" = "dot-all" ]; then
+            mkdir -p test-output
             echo "dot all $TEST_ID" > test-output/dot-all.txt
           else
             echo "::error::Unknown matrix case: $CASE"
