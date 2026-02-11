@@ -78,73 +78,25 @@ runs:
         owner: ${{ steps.parse.outputs.owner }}
         repositories: ${{ steps.parse.outputs.repo }}
 
-    - name: Set Branch Name
-      id: branch-name
-      shell: bash
-      env:
-        BRANCH_NAME: ${{ inputs.branch_name }}
-      run: |
-        echo "branch=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
-        echo "Using branch: $BRANCH_NAME"
-
-    - name: Get Base Branch
-      id: base
-      shell: bash
-      env:
-        GH_TOKEN: ${{ steps.generate_token.outputs.token }}
-        REPO: ${{ inputs.repository }}
-        BASE_BRANCH_INPUT: ${{ inputs.base_branch }}
-      run: |
-        if [ -z "$BASE_BRANCH_INPUT" ]; then
-          # Fetch default branch from repository
-          DEFAULT_BRANCH=$(gh api "/repos/$REPO" --jq .default_branch)
-          echo "branch=$DEFAULT_BRANCH" >> "$GITHUB_OUTPUT"
-          echo "Using default branch: $DEFAULT_BRANCH"
-        else
-          echo "branch=$BASE_BRANCH_INPUT" >> "$GITHUB_OUTPUT"
-          echo "Using provided base branch: $BASE_BRANCH_INPUT"
-        fi
-
-    - name: Reset Branch
-      id: reset
-      if: inputs.reset_branch == 'true'
-      shell: bash
-      env:
-        GH_TOKEN: ${{ steps.generate_token.outputs.token }}
-        REPO: ${{ inputs.repository }}
-        HEAD_BRANCH: ${{ steps.branch-name.outputs.branch }}
-        BASE_BRANCH: ${{ steps.base.outputs.branch }}
-      run: |
-        echo "Resetting branch $HEAD_BRANCH to $BASE_BRANCH..."
-        # Get base branch SHA
-        SHA=$(gh api "/repos/$REPO/git/refs/heads/$BASE_BRANCH" --jq .object.sha)
-
-        # Check if head branch exists
-        if gh api "/repos/$REPO/git/refs/heads/$HEAD_BRANCH" > /dev/null 2>&1; then
-          # Force update (reset)
-          gh api -X PATCH "/repos/$REPO/git/refs/heads/$HEAD_BRANCH" \
-            -f sha="$SHA" \
-            -F force=true
-          echo "Branch reset to $SHA"
-        else
-          # Create
-          gh api -X POST "/repos/$REPO/git/refs" \
-            -f ref="refs/heads/$HEAD_BRANCH" \
-            -f sha="$SHA"
-          echo "Branch created at $SHA"
-        fi
-
-        echo "sha=$SHA" >> "$GITHUB_OUTPUT"
-
-    - name: Commit Changes
-      if: inputs.commit_changes == 'true'
-      uses: TimSchoenle/actions/actions/common/commit-changes@ccb733de0fa5b01dc39863828392f7fcf76927f0 # actions-common-commit-changes-v1.1.2
-      env:
-        GITHUB_SHA: ${{ inputs.reset_branch == 'true' && steps.reset.outputs.sha || '' }}
+    - name: Create Branch
+      id: branch
+      uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # v1.2.0
       with:
         token: ${{ steps.generate_token.outputs.token }}
         repository: ${{ inputs.repository }}
-        branch: ${{ steps.branch-name.outputs.branch }}
+        branch_name: ${{ inputs.branch_name }}
+        base_branch: ${{ inputs.base_branch }}
+        reset_branch: ${{ inputs.reset_branch }}
+
+    - name: Commit Changes
+      if: inputs.commit_changes == 'true'
+      uses: TimSchoenle/actions/actions/common/commit-changes@ccb733de0fa5b01dc39863828392f7fcf76927f0 # v1.1.2
+      env:
+        GITHUB_SHA: ${{ steps.branch.outputs.sha }}
+      with:
+        token: ${{ steps.generate_token.outputs.token }}
+        repository: ${{ inputs.repository }}
+        branch: ${{ inputs.branch_name }}
         commit_message: ${{ inputs.commit_message }}
         file_pattern: ${{ inputs.file_pattern }}
         empty: ${{ inputs.empty_commit }}
@@ -155,8 +107,8 @@ runs:
       env:
         GH_TOKEN: ${{ steps.generate_token.outputs.token }}
         REPO: ${{ inputs.repository }}
-        HEAD_BRANCH: ${{ steps.branch-name.outputs.branch }}
-        BASE_BRANCH: ${{ steps.base.outputs.branch }}
+        HEAD_BRANCH: ${{ inputs.branch_name }}
+        BASE_BRANCH: ${{ steps.branch.outputs.base_branch }}
       run: |
         # Compare the two branches
         COMPARISON=$(gh api "/repos/$REPO/compare/$BASE_BRANCH...$HEAD_BRANCH" --jq '.status')
@@ -176,8 +128,8 @@ runs:
       env:
         GH_TOKEN: ${{ steps.generate_token.outputs.token }}
         REPO: ${{ inputs.repository }}
-        HEAD_BRANCH: ${{ steps.branch-name.outputs.branch }}
-        BASE_BRANCH: ${{ steps.base.outputs.branch }}
+        HEAD_BRANCH: ${{ inputs.branch_name }}
+        BASE_BRANCH: ${{ steps.branch.outputs.base_branch }}
         TITLE: ${{ inputs.title }}
         BODY: ${{ inputs.body }}
       run: |
