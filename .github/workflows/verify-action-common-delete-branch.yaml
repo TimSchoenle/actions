@@ -38,7 +38,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -98,7 +98,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
