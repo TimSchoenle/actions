@@ -85,7 +85,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch: test/create-branch-default/${{ env.TEST_ID }}
+          branch_name: test/create-branch-default/${{ env.TEST_ID }}
 
   test-create-branch-specific-base:
     name: Test Create Branch (Specific Base)
@@ -146,7 +146,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch: test/child-branch/${{ env.TEST_ID }}
+          branch_name: test/child-branch/${{ env.TEST_ID }}
 
       - name: Cleanup Base Branch
         if: always()
@@ -154,7 +154,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch: test/base-branch/${{ env.TEST_ID }}
+          branch_name: test/base-branch/${{ env.TEST_ID }}
 
   test-reset-branch:
     name: Test Reset Branch (Diverged)
@@ -271,4 +271,4 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch: test/reset-branch/${{ env.TEST_ID }}
+          branch_name: test/reset-branch/${{ env.TEST_ID }}
