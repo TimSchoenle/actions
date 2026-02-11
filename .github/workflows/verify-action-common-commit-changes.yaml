@@ -1,0 +1,586 @@
+name: Verify Common Commit Changes
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'actions/common/commit-changes/**'
+      - '.github/workflows/verify-action-common-commit-changes.yaml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'actions/common/commit-changes/**'
+      - '.github/workflows/verify-action-common-commit-changes.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read # to read content
+
+env:
+  TEST_OWNER: TimSchoenle
+  TEST_REPO_NAME: actions-testing
+  TEST_REPO: TimSchoenle/actions-testing
+  TEST_ID: commit-changes-test-${{ github.run_number }}-${{ github.run_attempt }}
+
+jobs:
+  test-basic-commit:
+    name: Test Basic Commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/basic-commit/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Create Test File
+        run: |
+          mkdir -p test-output
+          echo "Test content for basic commit ${{ env.TEST_ID }}" > test-output/basic-commit.txt
+
+      - name: Run commit-changes (Basic)
+        id: commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: basic commit ${{ env.TEST_ID }}'
+          file_pattern: 'test-output/basic-commit.txt'
+
+      - name: Verify Commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          EXPECTED_MSG: 'test: basic commit ${{ env.TEST_ID }}'
+        run: |
+          if [ -z "$COMMIT_SHA" ]; then
+            echo "::error::Commit SHA not found in output"
+            exit 1
+          fi
+
+          echo "✅ Commit created: $COMMIT_SHA"
+
+          # Verify commit message
+          MSG=$(gh api "/repos/$TEST_REPO/git/commits/$COMMIT_SHA" --jq '.message')
+          if [ "$MSG" != "$EXPECTED_MSG" ]; then
+            echo "::error::Commit message mismatch. Expected '$EXPECTED_MSG', got '$MSG'"
+            exit 1
+          fi
+          echo "✅ Commit message verified"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
+
+  test-empty-commit-allowed:
+    name: Test Empty Commit (Allowed)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/empty-commit-allowed/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Run commit-changes (Empty Allowed)
+        id: commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: empty commit allowed ${{ env.TEST_ID }}'
+          empty: 'true'
+
+      - name: Verify Empty Commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          CHANGES_DETECTED: ${{ steps.commit.outputs.changes_detected }}
+        run: |
+          if [ "$CHANGES_DETECTED" != "true" ]; then
+             echo "::error::Changes detected should be true for allowed empty commit"
+             exit 1
+          fi
+
+          if [ -z "$COMMIT_SHA" ]; then
+            echo "::error::Commit SHA not found for empty commit"
+            exit 1
+          fi
+
+          echo "✅ Empty commit created successfully"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
+
+  test-empty-commit-disallowed:
+    name: Test Empty Commit (Disallowed)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/empty-commit-disallowed/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Run commit-changes (Empty Disallowed)
+        id: commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: empty commit disallowed ${{ env.TEST_ID }}'
+          empty: 'false'
+
+      - name: Verify No Commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          CHANGES_DETECTED: ${{ steps.commit.outputs.changes_detected }}
+        run: |
+          if [ "$CHANGES_DETECTED" == "true" ]; then
+             echo "::error::Changes detected should be false for disallowed empty commit"
+             exit 1
+          fi
+
+          if [ -n "$COMMIT_SHA" ]; then
+            echo "::error::Commit SHA should be empty when no commit is created"
+            exit 1
+          fi
+
+          echo "✅ No commit created as expected"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
+
+  test-file-pattern:
+    name: Test File Pattern
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/file-pattern/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Create Test Files
+        run: |
+          mkdir -p test-pattern
+          echo "Included file ${{ env.TEST_ID }}" > test-pattern/included.txt
+          echo "Ignored file ${{ env.TEST_ID }}" > test-pattern/ignored.txt
+
+      - name: Run commit-changes (Pattern)
+        id: commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: file pattern ${{ env.TEST_ID }}'
+          file_pattern: 'test-pattern/included.txt'
+
+      - name: Verify File Pattern
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+        run: |
+          if [ -z "$COMMIT_SHA" ]; then
+            echo "::error::Commit not created"
+            exit 1
+          fi
+
+          # List files in commit
+          FILES=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files[].filename')
+
+          if ! echo "$FILES" | grep -q "test-pattern/included.txt"; then
+             echo "::error::Included file missing from commit"
+             exit 1
+          fi
+
+          if echo "$FILES" | grep -q "test-pattern/ignored.txt"; then
+             echo "::error::Ignored file present in commit"
+             exit 1
+          fi
+
+          echo "✅ File pattern verified correctly"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}}
+
+  test-chmod-ignored:
+    name: Test CHMOD Changes Ignored
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/chmod-ignored/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Setup Initial State
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          TEST_ID: ${{ env.TEST_ID }}
+        run: |
+          mkdir -p test-chmod
+          echo "echo 'hello'" > test-chmod/script.sh
+
+      - name: Create Initial Commit
+        id: initial_commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: initial setup ${{ env.TEST_ID }}'
+          file_pattern: 'test-chmod/script.sh'
+
+      - name: Reset to Initial State(The commit action is using the github API to commit changes, so the local git state is out of sync with the remote)
+        env:
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+        run: |
+          git fetch --prune origin "+refs/heads/$BRANCH_NAME:refs/remotes/origin/$BRANCH_NAME"
+          git reset --hard "origin/$BRANCH_NAME"
+
+      - name: Change Permissions
+        run: |
+          chmod +x test-chmod/script.sh
+          # Verify local change exists
+          ls -l test-chmod/script.sh
+
+      - name: Run commit-changes (Should Ignore Chmod)
+        id: commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: chmod change ${{ env.TEST_ID }}'
+          file_pattern: 'test-chmod/script.sh'
+          empty: 'false'
+
+      - name: Verify No Commit
+        shell: bash
+        env:
+          CHANGES_DETECTED: ${{ steps.commit.outputs.changes_detected }}
+        run: |
+          if [ "$CHANGES_DETECTED" == "true" ]; then
+             echo "::error::Changes detected for chmod only change - should be ignored"
+             exit 1
+          fi
+          echo "✅ Chmod only change correctly ignored"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
+
+  test-existing-file:
+    name: Test Existing File
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/existing-file/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Setup Initial State
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          TEST_ID: ${{ env.TEST_ID }}
+        run: |
+          mkdir -p test-chmod
+          echo "echo 'hello'" > test-chmod/script.sh
+
+      - name: Create Initial Commit
+        id: initial_commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: initial setup ${{ env.TEST_ID }}'
+          file_pattern: 'test-chmod/script.sh'
+
+      - name: Reset to Initial State(The commit action is using the github API to commit changes, so the local git state is out of sync with the remote)
+        env:
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+        run: |
+          git fetch --prune origin "+refs/heads/$BRANCH_NAME:refs/remotes/origin/$BRANCH_NAME"
+          git reset --hard "origin/$BRANCH_NAME"
+
+      - name: Change File content
+        run: |
+          mkdir -p test-chmod
+          echo "echo 'hello2'" > test-chmod/script.sh
+
+      - name: Run commit-changes
+        id: commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: chmod change ${{ env.TEST_ID }}'
+          file_pattern: 'test-chmod/script.sh'
+          empty: 'false'
+
+      - name: Verify Commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          EXPECTED_MSG: 'test: chmod change ${{ env.TEST_ID }}'
+        run: |
+          if [ -z "$COMMIT_SHA" ]; then
+            echo "::error::Commit SHA not found in output"
+            exit 1
+          fi
+
+          echo "✅ Commit created: $COMMIT_SHA"
+
+          # Verify commit message
+          MSG=$(gh api "/repos/$TEST_REPO/git/commits/$COMMIT_SHA" --jq '.message')
+          if [ "$MSG" != "$EXPECTED_MSG" ]; then
+            echo "::error::Commit message mismatch. Expected '$EXPECTED_MSG', got '$MSG'"
+            exit 1
+          fi
+          echo "✅ Commit message verified"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
+
+  test-custom-branch:
+    name: Test Custom Branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/custom-branch/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Create Test File
+        run: |
+          mkdir -p test-custom
+          echo "Custom branch content ${{ env.TEST_ID }}" > test-custom/file.txt
+
+      - name: Run commit-changes (Custom Branch)
+        id: commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: custom branch commit ${{ env.TEST_ID }}'
+          file_pattern: 'test-custom/file.txt'
+
+      - name: Verify Custom Branch Commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          TEST_ID: ${{ env.TEST_ID }}
+        run: |
+          if [ -z "$COMMIT_SHA" ]; then
+            echo "::error::Commit not created"
+            exit 1
+          fi
+
+          # Verify commit exists on the correct branch
+          BRANCH_NAME="test/custom-branch/$TEST_ID"
+          BRANCH_SHA=$(gh api "/repos/$TEST_REPO/commits/$BRANCH_NAME" --jq '.sha')
+
+          if [ "$COMMIT_SHA" != "$BRANCH_SHA" ]; then
+             echo "::error::Commit SHA does not match branch tip. Got $BRANCH_SHA, expected $COMMIT_SHA"
+             exit 1
+          fi
+
+          echo "✅ Commit verified on custom branch: $BRANCH_NAME"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
