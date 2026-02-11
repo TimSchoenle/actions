@@ -27,70 +27,8 @@ env:
   TEST_ID: create-branch-test-${{ github.run_number }}-${{ github.run_attempt }}
 
 jobs:
-  test-create-branch:
-    name: Test Create Branch
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read # to fetch code
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
-        with:
-          egress-policy: audit
-
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
-        with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
-
-      - name: Run create-branch (New Branch)
-        id: create-new
-        uses: ./tmp/actions-code/actions/common/create-branch
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/create-branch-new/${{ env.TEST_ID }}
-
-      - name: Verify New Branch Created
-        shell: bash
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          BRANCH_NAME: ${{ steps.create-new.outputs.branch }}
-          SHA: ${{ steps.create-new.outputs.sha }}
-          CREATED: ${{ steps.create-new.outputs.created }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-        run: |
-          if [ "$CREATED" != "true" ]; then
-            echo "::error::Branch should have been created"
-            exit 1
-          fi
-
-          # Check if branch exists on remote
-          REMOTE_SHA=$(gh api "/repos/$TEST_REPO/git/refs/heads/$BRANCH_NAME" --jq .object.sha)
-          if [ "$REMOTE_SHA" != "$SHA" ]; then
-             echo "::error::Remote SHA ($REMOTE_SHA) does not match output SHA ($SHA)"
-             exit 1
-          fi
-          echo "✅ Verified new branch created at $SHA"
-
-      - name: Cleanup Test Artifacts (New Branch)
-        if: always()
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-          BRANCH_NAME: test/create-branch-new/${{ env.TEST_ID }}
-        run: |
-          echo "Deleting branch $BRANCH_NAME..."
-          gh api -X DELETE "repos/$TEST_REPO/git/refs/heads/$BRANCH_NAME" || true
-
-  test-reset-branch:
-    name: Test Reset Branch
+  test-create-branch-default:
+    name: Test Create Branch (Default Base)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -111,90 +49,226 @@ jobs:
           test_repo_name: ${{ env.TEST_REPO_NAME }}
           current_repo_checkout_path: 'tmp/actions-code'
 
-      # Create initial branch and diverge it
-      - name: Setup Initial Branch State
-        id: setup-branch
+      - name: Run create-branch
+        id: create
+        uses: ./tmp/actions-code/actions/common/create-branch
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/create-branch-default/${{ env.TEST_ID }}
+
+      - name: Verify Branch Created
         shell: bash
         env:
           GH_TOKEN: ${{ steps.setup.outputs.token }}
+          BRANCH_NAME: ${{ steps.create.outputs.branch }}
+          SHA: ${{ steps.create.outputs.sha }}
+          CREATED: ${{ steps.create.outputs.created }}
           TEST_REPO: ${{ env.TEST_REPO }}
-          BRANCH_NAME: test/create-branch-reset/${{ env.TEST_ID }}
         run: |
-          # Get default branch SHA
-          DEFAULT_BRANCH=$(gh api "/repos/$TEST_REPO" --jq .default_branch)
-          BASE_SHA=$(gh api "/repos/$TEST_REPO/git/refs/heads/$DEFAULT_BRANCH" --jq .object.sha)
+          if [ "$CREATED" != "true" ]; then
+            echo "::error::Branch should have been created"
+            exit 1
+          fi
 
-          # Create branch
-          gh api -X POST "/repos/$TEST_REPO/git/refs" \
-             -f ref="refs/heads/$BRANCH_NAME" \
-             -f sha="$BASE_SHA"
+          # Verify remote SHA
+          REMOTE_SHA=$(gh api "/repos/$TEST_REPO/git/refs/heads/$BRANCH_NAME" --jq .object.sha)
+          if [ "$REMOTE_SHA" != "$SHA" ]; then
+             echo "::error::Remote SHA ($REMOTE_SHA) does not match output SHA ($SHA)"
+             exit 1
+          fi
+          echo "✅ Verified branch created at $SHA"
 
-          # Create a dummy commit to diverge it (we need a file to update)
-          # We can use the commit-changes action or just raw API? 
-          # Raw API is easier for a simple text file update if we don't want to use another action.
-          # But for simplicity let's assume we can just modify a dummy file via API.
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@actions-common-delete-branch-v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: test/create-branch-default/${{ env.TEST_ID }}
 
-          # Actually, let's just use create-branch again with reset=false to verify it DOESNT change first
-          echo "base_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
+  test-create-branch-specific-base:
+    name: Test Create Branch (Specific Base)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
 
-      - name: Run create-branch (No Reset)
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      # We need a predictable base branch. Let's use 'main' explicitly, or create a 'base' branch first.
+      # Let's create a 'base' branch first using the action (defaults to default branch).
+      - name: Create Base Branch
+        id: create-base
+        uses: ./tmp/actions-code/actions/common/create-branch
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/base-branch/${{ env.TEST_ID }}
+
+      - name: Run create-branch (From Specific Base)
+        id: create-child
+        uses: ./tmp/actions-code/actions/common/create-branch
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/child-branch/${{ env.TEST_ID }}
+          base_branch: test/base-branch/${{ env.TEST_ID }}
+
+      - name: Verify Child Branch
+        shell: bash
+        env:
+          BASE_SHA: ${{ steps.create-base.outputs.sha }}
+          CHILD_SHA: ${{ steps.create-child.outputs.sha }}
+        run: |
+          if [ "$CHILD_SHA" != "$BASE_SHA" ]; then
+             echo "::error::Child branch SHA ($CHILD_SHA) does not match Base branch SHA ($BASE_SHA)"
+             exit 1
+          fi
+          echo "✅ Verified child branch created from specific base"
+
+      - name: Cleanup Child Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@actions-common-delete-branch-v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: test/child-branch/${{ env.TEST_ID }}
+
+      - name: Cleanup Base Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@actions-common-delete-branch-v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: test/base-branch/${{ env.TEST_ID }}
+
+  test-reset-branch:
+    name: Test Reset Branch (Diverged)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Initial Branch
+        id: create-initial
+        uses: ./tmp/actions-code/actions/common/create-branch
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/reset-branch/${{ env.TEST_ID }}
+
+      - name: Create Test File for Commit
+        run: |
+          mkdir -p test-data
+          echo "Diverging commit for ${{ env.TEST_ID }}" > test-data/diverge.txt
+
+      - name: Commit Changes (Diverge)
+        id: commit-diverge
+        uses: TimSchoenle/actions/actions/common/commit-changes@actions-common-commit-changes-v1.1.2
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: test/reset-branch/${{ env.TEST_ID }}
+          commit_message: 'test: diverge branch for reset test'
+          file_pattern: 'test-data/diverge.txt'
+
+      - name: Verify Divergence
+        shell: bash
+        env:
+          INITIAL_SHA: ${{ steps.create-initial.outputs.sha }}
+          DIVERGED_SHA: ${{ steps.commit-diverge.outputs.sha }}
+        run: |
+          if [ "$INITIAL_SHA" == "$DIVERGED_SHA" ]; then
+            echo "::error::Branch failed to diverge"
+            exit 1
+          fi
+          echo "✅ Branch diverged: $INITIAL_SHA -> $DIVERGED_SHA"
+
+      - name: Try Create Branch (No Reset)
         id: create-no-reset
         uses: ./tmp/actions-code/actions/common/create-branch
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch_name: test/create-branch-reset/${{ env.TEST_ID }}
-          reset_branch: 'none'
+          branch_name: test/reset-branch/${{ env.TEST_ID }}
+          reset_branch: 'false'
 
-      - name: Verify No Reset Happened
+      - name: Verify No Reset
         shell: bash
         env:
-          OLD_SHA: ${{ steps.setup-branch.outputs.base_sha }}
-          NEW_SHA: ${{ steps.create-no-reset.outputs.sha }}
+          DIVERGED_SHA: ${{ steps.commit-diverge.outputs.sha }}
+          CURRENT_SHA: ${{ steps.create-no-reset.outputs.sha }}
+          CREATED: ${{ steps.create-no-reset.outputs.created }}
         run: |
-          if [ "$OLD_SHA" != "$NEW_SHA" ]; then
-             echo "::error::Branch should not have changed SHA"
+          if [ "$CREATED" == "true" ]; then
+            echo "::error::Branch reported as created/reset even though reset_branch=false"
+            exit 1
+          fi
+          if [ "$CURRENT_SHA" != "$DIVERGED_SHA" ]; then
+             echo "::error::Branch SHA changed! Expected $DIVERGED_SHA, got $CURRENT_SHA"
              exit 1
           fi
-          echo "✅ Verified branch was not reset"
+          echo "✅ Verified branch was NOT reset"
 
-      - name: Run create-branch (With Reset)
+      - name: Reset Branch (Force)
         id: create-reset
         uses: ./tmp/actions-code/actions/common/create-branch
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch_name: test/create-branch-reset/${{ env.TEST_ID }}
+          branch_name: test/reset-branch/${{ env.TEST_ID }}
           reset_branch: 'true'
 
-      - name: Verify Reset Happened
+      - name: Verify Reset
         shell: bash
         env:
-          OLD_SHA: ${{ steps.setup-branch.outputs.base_sha }}
-          NEW_SHA: ${{ steps.create-reset.outputs.sha }}
+          INITIAL_SHA: ${{ steps.create-initial.outputs.sha }}
+          RESET_SHA: ${{ steps.create-reset.outputs.sha }}
           CREATED: ${{ steps.create-reset.outputs.created }}
         run: |
           if [ "$CREATED" != "true" ]; then
-             echo "::error::Branch should have been reset (created=true)"
-             # In my implementation, reset=true sets created=true.
+            echo "::error::Branch should have been reset"
+            exit 1
+          fi
+          if [ "$RESET_SHA" != "$INITIAL_SHA" ]; then
+             echo "::error::Branch reset to wrong SHA! Expected $INITIAL_SHA, got $RESET_SHA"
              exit 1
           fi
+          echo "✅ Verified branch RESET to initial SHA (divergence discarded)"
 
-          # Since we didn't actually diverge, the SHA might be the same. 
-          # Wait, if I didn't diverge, reset just sets it to the same SHA.
-          # I should probably diverge it to really test reset.
-          # But for now, ensuring the action ran successfully is a good first step.
-          # The logic in action.yaml is: 
-          # gh api -X PATCH ... -f sha="$BASE_SHA"
-
-          echo "✅ Verified branch reset action ran successfully"
-
-      - name: Cleanup Test Artifacts (Reset Branch)
+      - name: Cleanup Branch
         if: always()
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-          BRANCH_NAME: test/create-branch-reset/${{ env.TEST_ID }}
-        run: |
-          echo "Deleting branch $BRANCH_NAME..."
-          gh api -X DELETE "repos/$TEST_REPO/git/refs/heads/$BRANCH_NAME" || true
+        uses: TimSchoenle/actions/actions/common/delete-branch@actions-common-delete-branch-v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: test/reset-branch/${{ env.TEST_ID }}
