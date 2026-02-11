@@ -51,8 +51,10 @@ runs:
         git config core.fileMode false
         if [ -n "$(git status --porcelain "$FILE_PATTERN")" ]; then
           echo "has_changes=true" >> $GITHUB_OUTPUT
+          echo "File change detected!"
         else
           echo "has_changes=false" >> $GITHUB_OUTPUT
+          echo "No file changes detected!"
         fi
 
     - name: Commit Changes
