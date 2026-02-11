@@ -50,6 +50,7 @@ jobs:
           current_repo_checkout_path: 'tmp/actions-code'
 
       - name: Create Test Branch
+        id: branch
         uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
@@ -68,7 +69,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch: test/basic-commit/${{ env.TEST_ID }}
+          branch: ${{ steps.branch.outputs.branch }}
           commit_message: 'test: basic commit ${{ env.TEST_ID }}'
           file_pattern: 'test-output/basic-commit.txt'
 
@@ -101,7 +102,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch_name: test/basic-commit/${{ env.TEST_ID }}
+          branch_name: ${{ steps.branch.outputs.branch }}
 
   test-empty-commit-allowed:
     name: Test Empty Commit (Allowed)
@@ -124,11 +125,12 @@ jobs:
           current_repo_checkout_path: 'tmp/actions-code'
 
       - name: Create Test Branch
+        id: branch
         uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch_name: test/empty-commit-disallowed/${{ env.TEST_ID }}
+          branch_name: test/empty-commit-allowed/${{ env.TEST_ID }}
           reset_branch: 'true'
 
       - name: Run commit-changes (Empty Allowed)
@@ -137,7 +139,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch: test/empty-commit-allowed/${{ env.TEST_ID }}
+          branch: ${{ steps.branch.outputs.branch }}
           commit_message: 'test: empty commit allowed ${{ env.TEST_ID }}'
           empty: 'true'
 
@@ -166,7 +168,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch_name: test/empty-commit-allowed/${{ env.TEST_ID }}
+          branch_name: ${{ steps.branch.outputs.branch }}
 
   test-empty-commit-disallowed:
     name: Test Empty Commit (Disallowed)
@@ -189,6 +191,7 @@ jobs:
           current_repo_checkout_path: 'tmp/actions-code'
 
       - name: Create Test Branch
+        id: branch
         uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
@@ -202,7 +205,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch: test/empty-commit-disallowed/${{ env.TEST_ID }}
+          branch: ${{ steps.branch.outputs.branch }}
           commit_message: 'test: empty commit disallowed ${{ env.TEST_ID }}'
           empty: 'false'
 
@@ -231,7 +234,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch_name: test/empty-commit-disallowed/${{ env.TEST_ID }}
+          branch_name: ${{ steps.branch.outputs.branch }}
 
   test-file-pattern:
     name: Test File Pattern
@@ -254,6 +257,7 @@ jobs:
           current_repo_checkout_path: 'tmp/actions-code'
 
       - name: Create Test Branch
+        id: branch
         uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
@@ -273,7 +277,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch: test/file-pattern/${{ env.TEST_ID }}
+          branch: ${{ steps.branch.outputs.branch }}
           commit_message: 'test: file pattern ${{ env.TEST_ID }}'
           file_pattern: 'test-pattern/included.txt'
 
@@ -310,7 +314,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch_name: test/file-pattern/${{ env.TEST_ID }}
+          branch_name: ${{ steps.branch.outputs.branch }}}
 
   test-chmod-ignored:
     name: Test CHMOD Changes Ignored
@@ -333,6 +337,7 @@ jobs:
           current_repo_checkout_path: 'tmp/actions-code'
 
       - name: Create Test Branch
+        id: branch
         uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
@@ -355,7 +360,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch: test/chmod-ignored/${{ env.TEST_ID }}
+          branch: ${{ steps.branch.outputs.branch }}
           commit_message: 'test: initial setup ${{ env.TEST_ID }}'
           file_pattern: 'test-chmod/script.sh'
 
@@ -393,7 +398,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch_name: test/chmod-ignored/${{ env.TEST_ID }}
+          branch_name: ${{ steps.branch.outputs.branch }}
 
   test-custom-branch:
     name: Test Custom Branch
@@ -416,6 +421,7 @@ jobs:
           current_repo_checkout_path: 'tmp/actions-code'
 
       - name: Create Test Branch
+        id: branch
         uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
@@ -468,4 +474,4 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch_name: test/custom-branch/${{ env.TEST_ID }}
+          branch_name: ${{ steps.branch.outputs.branch }}
