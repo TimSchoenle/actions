@@ -67,7 +67,7 @@ jobs:
           # Check if we are in the test repo (based on origin remote or file existence)
           # Since we checked out to '.', the current directory should be the test repo.
           # We can check for a known file or the git remote.
-          cd ${{ inputs.test_repo_checkout_path }}
+          cd ${{ steps.setup.outputs.test_repo_checkout_path }}
           REMOTE=$(git remote get-url origin)
           if [[ "$REMOTE" != *"${{ env.TEST_REPO }}"* ]]; then
              echo "::error::Current directory is not the test repository. Remote: $REMOTE"
