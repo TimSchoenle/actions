@@ -29,6 +29,7 @@ Here is a list of all currently maintained actions in this repository:
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
 | [Commit Changes](./actions/common/commit-changes) | Commits changes using the GitHub API to ensure verified bot commits. | actions-common-commit-changes-v1.1.2 | `uses: TimSchoenle/actions/actions/common/commit-changes@actions-common-commit-changes-v1.1.2` |
+| [Common Close-pull-request](./actions/common/close-pull-request) | A reusable action. | actions-common-close-pull-request-v1.0.0 | `uses: TimSchoenle/actions/actions/common/close-pull-request@actions-common-close-pull-request-v1.0.0` |
 | [Common Modify YAML](./actions/common/modify-yaml) | A action to modify a value in a YAML file while strictly preserving comments and structure | actions-common-modify-yaml-v1.2.2 | `uses: TimSchoenle/actions/actions/common/modify-yaml@actions-common-modify-yaml-v1.2.2` |
 | [Common Read YAML](./actions/common/read-yaml) | A action to read a value from a YAML file using dot notation | actions-common-read-yaml-v1.1.0 | `uses: TimSchoenle/actions/actions/common/read-yaml@actions-common-read-yaml-v1.1.0` |
 | [Create Pull Request](./actions/common/create-pull-request) | Creates or updates a pull request using GitHub App authentication with optional branch reset. | actions-common-create-pull-request-v1.0.1 | `uses: TimSchoenle/actions/actions/common/create-pull-request@actions-common-create-pull-request-v1.0.1` |
@@ -51,7 +52,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Test Setup-e2e](./actions/test/setup-e2e) | A reusable action. | actions-test-setup-e2e-v1.0.0 | `uses: TimSchoenle/actions/actions/test/setup-e2e@actions-test-setup-e2e-v1.0.0` |
+| [Setup E2E Test](./actions/test/setup-e2e) | Sets up the environment for E2E testing: generates token, checks out test repo, and checks out actions code. | actions-test-setup-e2e-v1.1.0 | `uses: TimSchoenle/actions/actions/test/setup-e2e@actions-test-setup-e2e-v1.1.0` |
 
 
 
