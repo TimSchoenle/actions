@@ -24,6 +24,9 @@ outputs:
   branch:
     description: 'The branch name'
     value: ${{ inputs.branch_name }}
+  base_branch:
+    description: 'The base branch name'
+    value: ${{ steps.base.outputs.branch }}
   sha:
     description: 'The SHA of the branch head'
     value: ${{ steps.final-outputs.outputs.sha }}
