@@ -25,6 +25,7 @@ env:
   TEST_REPO_NAME: actions-testing
   TEST_REPO: TimSchoenle/actions-testing
   TEST_ID: create-branch-test-${{ github.run_number }}-${{ github.run_attempt }}
+  TEST_REPO_BASE_BRANCH_NAME: main
 
 jobs:
   test-create-branch-default:
@@ -62,6 +63,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.setup.outputs.token }}
           BRANCH_NAME: ${{ steps.create.outputs.branch }}
+          BASE_BRANCH_NAME: ${{ steps.create.outputs.base_branch }}
           SHA: ${{ steps.create.outputs.sha }}
           CREATED: ${{ steps.create.outputs.created }}
           TEST_REPO: ${{ env.TEST_REPO }}
@@ -78,6 +80,19 @@ jobs:
              exit 1
           fi
           echo "✅ Verified branch created at $SHA"
+
+      - name: Verify Base Branch Name
+        shell: bash
+        env:
+          BASE_BRANCH_NAME: ${{ steps.create.outputs.base_branch }}
+          EXPECTED_BASE_BRANCH_NAME: ${{ env.TEST_REPO_BASE_BRANCH_NAME }}
+        run: |
+          # Verify base branch name
+          if [ "$BASE_BRANCH_NAME" != "$EXPECTED_BASE_BRANCH_NAME" ]; then
+            echo "::error::Base branch name ($BASE_BRANCH_NAME) does not match default ($EXPECTED_BASE_BRANCH_NAME)"
+            exit 1
+          fi
+          echo "✅ Verified base branch name matches"
 
       - name: Cleanup Branch
         if: always()
@@ -139,6 +154,19 @@ jobs:
              exit 1
           fi
           echo "✅ Verified child branch created from specific base"
+
+      - name: Verify Base Branch Name
+        shell: bash
+        env:
+          BASE_BRANCH_NAME: ${{ steps.create-child.outputs.base_branch }}
+          EXPECTED_BASE_BRANCH_NAME: ${{ steps.create-base.outputs.branch }}
+        run: |
+          # Verify base branch name
+          if [ "$BASE_BRANCH_NAME" != "$EXPECTED_BASE_BRANCH_NAME" ]; then
+            echo "::error::Base branch name ($BASE_BRANCH_NAME) does not match default ($EXPECTED_BASE_BRANCH_NAME)"
+            exit 1
+          fi
+          echo "✅ Verified base branch name matches"
 
       - name: Cleanup Child Branch
         if: always()
@@ -239,6 +267,19 @@ jobs:
           fi
           echo "✅ Verified branch was NOT reset"
 
+      - name: Verify Base Branch Name
+        shell: bash
+        env:
+          BASE_BRANCH_NAME: ${{ steps.create-no-reset.outputs.base_branch }}
+          EXPECTED_BASE_BRANCH_NAME: ${{ env.TEST_REPO_BASE_BRANCH_NAME }}
+        run: |
+          # Verify base branch name
+          if [ "$BASE_BRANCH_NAME" != "$EXPECTED_BASE_BRANCH_NAME" ]; then
+            echo "::error::Base branch name ($BASE_BRANCH_NAME) does not match default ($EXPECTED_BASE_BRANCH_NAME)"
+            exit 1
+          fi
+          echo "✅ Verified base branch name matches"
+
       - name: Reset Branch (Force)
         id: create-reset
         uses: ./tmp/actions-code/actions/common/create-branch
@@ -264,6 +305,19 @@ jobs:
              exit 1
           fi
           echo "✅ Verified branch RESET to initial SHA (divergence discarded)"
+
+      - name: Verify Base Branch Name
+        shell: bash
+        env:
+          BASE_BRANCH_NAME: ${{ steps.create-reset.outputs.base_branch }}
+          EXPECTED_BASE_BRANCH_NAME: ${{ env.TEST_REPO_BASE_BRANCH_NAME }}
+        run: |
+          # Verify base branch name
+          if [ "$BASE_BRANCH_NAME" != "$EXPECTED_BASE_BRANCH_NAME" ]; then
+            echo "::error::Base branch name ($BASE_BRANCH_NAME) does not match default ($EXPECTED_BASE_BRANCH_NAME)"
+            exit 1
+          fi
+          echo "✅ Verified base branch name matches"
 
       - name: Cleanup Branch
         if: always()
