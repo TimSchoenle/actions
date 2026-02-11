@@ -102,8 +102,8 @@ runs:
           echo "__EOF__"
         } >> "$GITHUB_OUTPUT"
 
-    - name: Collect Git Status (porcelain -z)
-      id: status
+    - name: Collect Changed Files (tracked + untracked, no ignored)
+      id: files
       shell: bash
       env:
         USE_FILTER: ${{ steps.parse.outputs.use_filter }}
@@ -111,28 +111,28 @@ runs:
       run: |
         set -euo pipefail
 
-        if [ "$USE_FILTER" != "true" ]; then
-          git status --porcelain -z > status.z
-        else
+        if [ "$USE_FILTER" = "true" ]; then
           mapfile -t SPECS < <(printf '%s\n' "$PATHSPECS_NL")
-          git status --porcelain -z -- "${SPECS[@]}" > status.z
-        fi
-
-        if [ -s status.z ]; then
-          echo "has_status=true" >> "$GITHUB_OUTPUT"
+          git ls-files -m -o --exclude-standard -z -- "${SPECS[@]}" > changed-files.z
         else
-          echo "has_status=false" >> "$GITHUB_OUTPUT"
+          git ls-files -m -o --exclude-standard -z > changed-files.z
         fi
 
-    - name: Resolve Changed Files (no dirs) for ghcommit
+        if [ -s changed-files.z ]; then
+          echo "has_files=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has_files=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Format Resolved File Pattern for ghcommit
       id: resolve
       shell: bash
       env:
-        HAS_STATUS: ${{ steps.status.outputs.has_status }}
+        HAS_FILES: ${{ steps.files.outputs.has_files }}
       run: |
         set -euo pipefail
 
-        if [ "$HAS_STATUS" != "true" ]; then
+        if [ "$HAS_FILES" != "true" ]; then
           echo "has_changes=false" >> "$GITHUB_OUTPUT"
           echo "resolved_file_pattern=" >> "$GITHUB_OUTPUT"
           echo "No file changes detected!"
@@ -140,23 +140,11 @@ runs:
         fi
 
         files=()
-
-        # status.z contains NUL-delimited records: "XY <path>\0"
-        # For renames/copies, the next NUL token is the new path; keep that.
-        while IFS= read -r -d '' rec; do
-          code="${rec:0:2}"
-          path="${rec:3}"
-
-          if [[ "${code:0:1}" == "R" || "${code:0:1}" == "C" ]]; then
-            IFS= read -r -d '' newpath || true
-            path="$newpath"
-          fi
-
-          [ -z "$path" ] && continue
-          [ -d "$path" ] && continue
-
-          files+=("$path")
-        done < status.z
+        while IFS= read -r -d '' f; do
+          [ -z "$f" ] && continue
+          [ -d "$f" ] && continue
+          files+=("$f")
+        done < changed-files.z
 
         if [ "${#files[@]}" -eq 0 ]; then
           echo "has_changes=false" >> "$GITHUB_OUTPUT"
