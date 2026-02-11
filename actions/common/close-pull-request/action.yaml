@@ -1,0 +1,57 @@
+name: 'Close Pull Request'
+description: 'Closes a pull request'
+inputs:
+  pull_request_id:
+    description: 'The ID of the pull request to close'
+    required: true
+  repository:
+    description: 'The repository where the pull request resides'
+    required: true
+  token:
+    description: 'The GitHub token to use'
+    required: true
+  comment:
+    description: 'Optional comment to post when closing the PR'
+    required: false
+
+outputs:
+  closed:
+    description: 'Whether the pull request was closed (true) or not found/already closed (false)'
+    value: ${{ steps.close-pr.outputs.closed }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Close Pull Request
+      id: close-pr
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        PR_ID: ${{ inputs.pull_request_id }}
+        REPO: ${{ inputs.repository }}
+        COMMENT: ${{ inputs.comment }}
+      run: |
+        # Check if PR exists
+        if gh pr view "$PR_ID" --repo "$REPO" > /dev/null 2>&1; then
+          # PR exists, try to close it
+          if [ -n "$COMMENT" ]; then
+            if gh pr close "$PR_ID" --repo "$REPO" --comment "$COMMENT"; then
+              echo "closed=true" >> "$GITHUB_OUTPUT"
+              echo "Successfully closed PR #$PR_ID with comment"
+            else
+              echo "::error::Failed to close PR #$PR_ID"
+              exit 1
+            fi
+          else
+            if gh pr close "$PR_ID" --repo "$REPO"; then
+              echo "closed=true" >> "$GITHUB_OUTPUT"
+              echo "Successfully closed PR #$PR_ID without comment"
+            else
+              echo "::error::Failed to close PR #$PR_ID"
+              exit 1
+            fi
+          fi
+        else
+          echo "closed=false" >> "$GITHUB_OUTPUT"
+          echo "PR #$PR_ID not found or not accessible, skipping close."
+        fi
