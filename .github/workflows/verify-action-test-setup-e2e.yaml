@@ -71,8 +71,6 @@ jobs:
           TEST_REPO: ${{ env.TEST_REPO }}
         run: |
           # Check if we are in the test repo (based on origin remote or file existence)
-          # Since we checked out to '.', the current directory should be the test repo.
-          # We can check for a known file or the git remote.
           cd "$TEST_REPO_CHECKOUT_PATH"
           REMOTE=$(git remote get-url origin)
           if [[ "$REMOTE" != *"$TEST_REPO"* ]]; then
