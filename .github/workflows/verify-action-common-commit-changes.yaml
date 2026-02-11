@@ -368,7 +368,7 @@ jobs:
         env:
           BRANCH_NAME: ${{ steps.branch.outputs.branch }}
         run: |
-          git pull origin ${{ steps.branch.outputs.branch }}
+          git pull origin $BRANCH_NAME
 
       - name: Change Permissions
         run: |
