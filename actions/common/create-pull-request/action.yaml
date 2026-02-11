@@ -105,42 +105,22 @@ runs:
           echo "Using provided base branch: $BASE_BRANCH_INPUT"
         fi
 
-    - name: Reset Branch
-      id: reset
-      if: inputs.reset_branch == 'true'
-      shell: bash
-      env:
-        GH_TOKEN: ${{ steps.generate_token.outputs.token }}
-        REPO: ${{ inputs.repository }}
-        HEAD_BRANCH: ${{ steps.branch-name.outputs.branch }}
-        BASE_BRANCH: ${{ steps.base.outputs.branch }}
-      run: |
-        echo "Resetting branch $HEAD_BRANCH to $BASE_BRANCH..."
-        # Get base branch SHA
-        SHA=$(gh api "/repos/$REPO/git/refs/heads/$BASE_BRANCH" --jq .object.sha)
-
-        # Check if head branch exists
-        if gh api "/repos/$REPO/git/refs/heads/$HEAD_BRANCH" > /dev/null 2>&1; then
-          # Force update (reset)
-          gh api -X PATCH "/repos/$REPO/git/refs/heads/$HEAD_BRANCH" \
-            -f sha="$SHA" \
-            -F force=true
-          echo "Branch reset to $SHA"
-        else
-          # Create
-          gh api -X POST "/repos/$REPO/git/refs" \
-            -f ref="refs/heads/$HEAD_BRANCH" \
-            -f sha="$SHA"
-          echo "Branch created at $SHA"
-        fi
-
-        echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+      # TODO: ADD OUTPUT TO CREATE BRANCH TO ALSO OUTPUT THE BASE BRANCH NAME TO REMOVE STEP FROM ABOVE
+    - name: Create Branch
+      id: branch
+      uses: TimSchoenle/actions/actions/common/create-branch@4db5e1f22376fa4f7fabd5acc6a25be1edebc7c4 # v1.1.0
+      with:
+        token: ${{ steps.generate_token.outputs.token }}
+        repository: ${{ inputs.repository }}
+        branch_name: ${{ steps.branch-name.outputs.branch }}
+        base_branch: ${{ steps.base.outputs.branch }}
+        reset_branch: ${{ inputs.reset_branch }}
 
     - name: Commit Changes
       if: inputs.commit_changes == 'true'
       uses: TimSchoenle/actions/actions/common/commit-changes@ccb733de0fa5b01dc39863828392f7fcf76927f0 # actions-common-commit-changes-v1.1.2
       env:
-        GITHUB_SHA: ${{ inputs.reset_branch == 'true' && steps.reset.outputs.sha || '' }}
+        GITHUB_SHA: ${{ steps.branch.outputs.sha }}
       with:
         token: ${{ steps.generate_token.outputs.token }}
         repository: ${{ inputs.repository }}
