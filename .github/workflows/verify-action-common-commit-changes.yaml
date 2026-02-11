@@ -364,11 +364,11 @@ jobs:
           commit_message: 'test: initial setup ${{ env.TEST_ID }}'
           file_pattern: 'test-chmod/script.sh'
 
-      - name: Pull Changes
+      - name: Reset to Initial State(The commit action is using the github API to commit changes, so the local git state is out of sync with the remote)
         env:
           BRANCH_NAME: ${{ steps.branch.outputs.branch }}
         run: |
-          git pull origin $BRANCH_NAME
+          git reset --hard origin/$BRANCH_NAME
 
       - name: Change Permissions
         run: |
