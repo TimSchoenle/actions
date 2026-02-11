@@ -107,8 +107,27 @@ jobs:
           branch_name: ${{ steps.branch.outputs.branch }}
 
   test-file-pattern-multiple-files:
-    name: Test Basic With Multiple Files
+    name: Test File Pattern Variants (${{ matrix.name }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: multiple-files-list
+            file_pattern: 'test-output/README.md test-output/SECURITY.md'
+            expected_files: |
+              test-output/README.md
+              test-output/SECURITY.md
+          - name: multiple-globs
+            file_pattern: 'actions/**/dist/**/* workflows/**/dist/**/*'
+            expected_files: |
+              actions/foo/dist/a.txt
+              workflows/bar/dist/b.txt
+          - name: dot-all
+            file_pattern: '.'
+            expected_files: |
+              test-output/dot-all.txt
+
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
@@ -132,34 +151,55 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch_name: test/file-pattern-multiple-files/${{ env.TEST_ID }}
+          branch_name: test/file-pattern-matrix/${{ env.TEST_ID }}/${{ matrix.name }}
           reset_branch: 'true'
 
-      - name: Create Test File
+      - name: Create Test Files for Pattern
+        shell: bash
         env:
           TEST_ID: ${{ env.TEST_ID }}
+          CASE: ${{ matrix.name }}
         run: |
-          mkdir -p test-output
-          echo "Test content for basic commit $TEST_ID" > test-output/basic-commit.txt
+          set -euo pipefail
 
-      - name: Run commit-changes (Basic)
+          mkdir -p test-output
+
+          if [ "$CASE" = "multiple-files-list" ]; then
+            mkdir -p test-output
+            echo "README $TEST_ID" > test-output/README.md
+            echo "SECURITY $TEST_ID" > test-output/SECURITY.md
+          elif [ "$CASE" = "multiple-globs" ]; then
+            mkdir -p actions/foo/dist
+            mkdir -p workflows/bar/dist
+            echo "actions dist $TEST_ID" > actions/foo/dist/a.txt
+            echo "workflows dist $TEST_ID" > workflows/bar/dist/b.txt
+          elif [ "$CASE" = "dot-all" ]; then
+            echo "dot all $TEST_ID" > test-output/dot-all.txt
+          else
+            echo "::error::Unknown matrix case: $CASE"
+            exit 1
+          fi
+
+      - name: Run commit-changes
         id: commit
         uses: ./tmp/actions-code/actions/common/commit-changes
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           branch: ${{ steps.branch.outputs.branch }}
-          commit_message: 'test: basic commit ${{ env.TEST_ID }}'
-          file_pattern: 'test-output/basic-commit.txt test-output/another-file.txt'
+          commit_message: 'test: file pattern matrix (${{ matrix.name }}) ${{ env.TEST_ID }}'
+          file_pattern: ${{ matrix.file_pattern }}
 
-      - name: Verify Commit
+      - name: Verify Commit Includes Expected Files
         shell: bash
         env:
           GH_TOKEN: ${{ steps.setup.outputs.token }}
           COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
           TEST_REPO: ${{ env.TEST_REPO }}
-          EXPECTED_MSG: 'test: basic commit ${{ env.TEST_ID }}'
+          EXPECTED_FILES: ${{ matrix.expected_files }}
         run: |
+          set -euo pipefail
+
           if [ -z "$COMMIT_SHA" ]; then
             echo "::error::Commit SHA not found in output"
             exit 1
@@ -167,13 +207,24 @@ jobs:
 
           echo "✅ Commit created: $COMMIT_SHA"
 
-          # Verify commit message
-          MSG=$(gh api "/repos/$TEST_REPO/git/commits/$COMMIT_SHA" --jq '.message')
-          if [ "$MSG" != "$EXPECTED_MSG" ]; then
-            echo "::error::Commit message mismatch. Expected '$EXPECTED_MSG', got '$MSG'"
+          FILES=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files[].filename')
+          echo "Files in commit:"
+          echo "$FILES"
+
+          missing=0
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            if ! echo "$FILES" | grep -Fxq "$f"; then
+              echo "::error::Expected file missing from commit: $f"
+              missing=1
+            fi
+          done <<< "$EXPECTED_FILES"
+
+          if [ "$missing" -ne 0 ]; then
             exit 1
           fi
-          echo "✅ Commit message verified"
+
+          echo "✅ Expected files verified"
 
       - name: Cleanup Branch
         if: always()
