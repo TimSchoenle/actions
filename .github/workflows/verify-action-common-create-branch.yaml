@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 'feature/actions/common/create-branch'
     paths:
       - 'actions/common/create-branch/**'
       - '.github/workflows/verify-action-common-create-branch.yaml'
