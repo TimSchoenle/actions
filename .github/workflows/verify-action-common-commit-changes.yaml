@@ -383,7 +383,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch: test/chmod-ignored/${{ env.TEST_ID }}
+          branch: ${{ steps.branch.outputs.branch }}
           commit_message: 'test: chmod change ${{ env.TEST_ID }}'
           file_pattern: 'test-chmod/script.sh'
           empty: 'false'
@@ -473,7 +473,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch: test/chmod-ignored/${{ env.TEST_ID }}
+          branch: ${{ steps.branch.outputs.branch }}
           commit_message: 'test: chmod change ${{ env.TEST_ID }}'
           file_pattern: 'test-chmod/script.sh'
           empty: 'false'
@@ -549,7 +549,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch: test/custom-branch/${{ env.TEST_ID }}
+          branch: ${{ steps.branch.outputs.branch }}
           commit_message: 'test: custom branch commit ${{ env.TEST_ID }}'
           file_pattern: 'test-custom/file.txt'
 
