@@ -1,0 +1,150 @@
+name: 'Create Branch'
+description: 'Creates or resets a git branch using GitHub API.'
+
+inputs:
+  token:
+    description: 'GitHub Token'
+    required: true
+  repository:
+    description: 'Repository name to create branch in (e.g. owner/repo)'
+    required: true
+  branch_name:
+    description: 'The branch name to create or reset'
+    required: true
+  base_branch:
+    description: 'The branch to branch from (defaults to repository default branch)'
+    required: false
+    default: ''
+  reset_branch:
+    description: 'Whether to reset the branch if it already exists'
+    required: false
+    default: 'false'
+
+outputs:
+  branch:
+    description: 'The branch name'
+    value: ${{ inputs.branch_name }}
+  sha:
+    description: 'The SHA of the branch head'
+    value: ${{ steps.final-outputs.outputs.sha }}
+  created:
+    description: 'True if branch was created or reset, false otherwise'
+    value: ${{ steps.final-outputs.outputs.created }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Resolve Base Branch
+      id: base
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        REPO: ${{ inputs.repository }}
+        BASE_BRANCH_INPUT: ${{ inputs.base_branch }}
+      run: |
+        if [ -z "$BASE_BRANCH_INPUT" ]; then
+          # Fetch default branch
+          DEFAULT_BRANCH=$(gh api "/repos/$REPO" --jq .default_branch)
+          echo "branch=$DEFAULT_BRANCH" >> "$GITHUB_OUTPUT"
+          echo "Using default branch: $DEFAULT_BRANCH"
+        else
+          echo "branch=$BASE_BRANCH_INPUT" >> "$GITHUB_OUTPUT"
+          echo "Using provided base branch: $BASE_BRANCH_INPUT"
+        fi
+
+    - name: Get Base SHA
+      id: base-sha
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        REPO: ${{ inputs.repository }}
+        BASE_BRANCH: ${{ steps.base.outputs.branch }}
+      run: |
+        SHA=$(gh api "/repos/$REPO/git/refs/heads/$BASE_BRANCH" --jq .object.sha)
+        if [ -z "$SHA" ]; then
+          echo "::error::Could not find SHA for base branch $BASE_BRANCH"
+          exit 1
+        fi
+        echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+        echo "Base SHA: $SHA"
+
+    - name: Check Target Branch
+      id: check
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        REPO: ${{ inputs.repository }}
+        BRANCH_NAME: ${{ inputs.branch_name }}
+      run: |
+        if gh api "/repos/$REPO/git/refs/heads/$BRANCH_NAME" > /dev/null 2>&1; then
+          echo "exists=true" >> "$GITHUB_OUTPUT"
+          # Get current SHA
+          CURRENT_SHA=$(gh api "/repos/$REPO/git/refs/heads/$BRANCH_NAME" --jq .object.sha)
+          echo "current_sha=$CURRENT_SHA" >> "$GITHUB_OUTPUT"
+          echo "Target branch '$BRANCH_NAME' already exists at $CURRENT_SHA"
+        else
+          echo "exists=false" >> "$GITHUB_OUTPUT"
+          echo "Target branch '$BRANCH_NAME' does not exist."
+        fi
+
+    - name: Create Branch
+      id: create
+      if: steps.check.outputs.exists == 'false'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        REPO: ${{ inputs.repository }}
+        BRANCH_NAME: ${{ inputs.branch_name }}
+        BASE_SHA: ${{ steps.base-sha.outputs.sha }}
+      run: |
+        echo "Creating branch '$BRANCH_NAME' from '$BASE_SHA'..."
+        gh api -X POST "/repos/$REPO/git/refs" \
+          -f ref="refs/heads/$BRANCH_NAME" \
+          -f sha="$BASE_SHA"
+
+        echo "sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
+        echo "created=true" >> "$GITHUB_OUTPUT"
+
+    - name: Reset Branch
+      id: reset
+      if: steps.check.outputs.exists == 'true' && inputs.reset_branch == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        REPO: ${{ inputs.repository }}
+        BRANCH_NAME: ${{ inputs.branch_name }}
+        BASE_SHA: ${{ steps.base-sha.outputs.sha }}
+      run: |
+        echo "Resetting branch '$BRANCH_NAME' to '$BASE_SHA'..."
+        gh api -X PATCH "/repos/$REPO/git/refs/heads/$BRANCH_NAME" \
+          -f sha="$BASE_SHA" \
+          -F force=true
+
+        echo "sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
+        echo "created=true" >> "$GITHUB_OUTPUT"
+
+    - name: Determine Final Outputs
+      id: final-outputs
+      shell: bash
+      env:
+        CREATED_SHA: ${{ steps.create.outputs.sha }}
+        RESET_SHA: ${{ steps.reset.outputs.sha }}
+        CURRENT_SHA: ${{ steps.check.outputs.current_sha }}
+        IS_CREATED: ${{ steps.create.outputs.created }}
+        IS_RESET: ${{ steps.reset.outputs.created }}
+      run: |
+        # Determine final SHA
+        if [ -n "$CREATED_SHA" ]; then
+          SHA="$CREATED_SHA"
+          CREATED="true"
+        elif [ -n "$RESET_SHA" ]; then
+          SHA="$RESET_SHA"
+          CREATED="true"
+        else
+          SHA="$CURRENT_SHA"
+          CREATED="false"
+          echo "Branch exists and was not reset."
+        fi
+
+        echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+        echo "created=$CREATED" >> "$GITHUB_OUTPUT"

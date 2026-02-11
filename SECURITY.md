@@ -18,7 +18,7 @@ Any version not listed in the following tables is not supported.
 | --- | --- | --- |
 | [Close Pull Request](./actions/common/close-pull-request) | actions-common-close-pull-request-v1.1.0 | :white_check_mark: |
 | [Commit Changes](./actions/common/commit-changes) | actions-common-commit-changes-v1.1.2 | :white_check_mark: |
-| [Common Delete-branch](./actions/common/delete-branch) | actions-common-delete-branch-v1.0.0 | :white_check_mark: |
+| [Common Create-branch](./actions/common/create-branch) | actions-common-create-branch-v1.0.0 | :white_check_mark: |
 | [Common Modify YAML](./actions/common/modify-yaml) | actions-common-modify-yaml-v1.2.2 | :white_check_mark: |
 | [Common Read YAML](./actions/common/read-yaml) | actions-common-read-yaml-v1.1.0 | :white_check_mark: |
 | [Create Pull Request](./actions/common/create-pull-request) | actions-common-create-pull-request-v1.0.1 | :white_check_mark: |
