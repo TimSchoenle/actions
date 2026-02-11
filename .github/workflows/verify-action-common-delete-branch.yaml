@@ -1,0 +1,126 @@
+name: Verify Common Delete-branch
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'actions/common/delete-branch/**'
+      - '.github/workflows/verify-action-common-delete-branch.yaml'
+  pull_request:
+    paths:
+      - 'actions/common/delete-branch/**'
+      - '.github/workflows/verify-action-common-delete-branch.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  TEST_OWNER: TimSchoenle
+  TEST_REPO: TimSchoenle/actions-testing
+  TEST_REPO_NAME: actions-testing
+  TEST_ID: delete-branch-test-${{ github.run_number }}-${{ github.run_attempt }}
+
+jobs:
+  test-delete-existing:
+    name: Test Delete Existing Branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          BRANCH_NAME: test/delete-branch-exist/${{ env.TEST_ID }}
+        run: |
+          # Get default branch SHA
+          SHA=$(gh api "/repos/$TEST_REPO/commits/main" --jq .sha)
+          # Create branch
+          gh api -X POST "/repos/$TEST_REPO/git/refs" \
+            -f ref="refs/heads/$BRANCH_NAME" \
+            -f sha="$SHA"
+          echo "Created branch: $BRANCH_NAME"
+
+      - name: Run delete-branch
+        id: delete
+        uses: ./tmp/actions-code/actions/common/delete-branch
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/delete-branch-exist/${{ env.TEST_ID }}
+
+      - name: Verify Deletion
+        env:
+          DELETED: ${{ steps.delete.outputs.deleted }}
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          BRANCH_NAME: test/delete-branch-exist/${{ env.TEST_ID }}
+        run: |
+          if [ "$DELETED" != "true" ]; then
+            echo "::error::Expected deleted=true, got $DELETED"
+            exit 1
+          fi
+
+          if gh api "/repos/$TEST_REPO/git/refs/heads/$BRANCH_NAME" > /dev/null 2>&1; then
+            echo "::error::Branch still exists after deletion"
+            exit 1
+          fi
+          echo "✅ Existing branch deleted successfully"
+
+  test-delete-non-existent:
+    name: Test Delete Non-Existent Branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Run delete-branch
+        id: delete
+        uses: ./tmp/actions-code/actions/common/delete-branch
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/delete-branch-non-exist/${{ env.TEST_ID }}
+
+      - name: Verify Graceful Failure
+        env:
+          DELETED: ${{ steps.delete.outputs.deleted }}
+        run: |
+          if [ "$DELETED" != "false" ]; then
+            echo "::error::Expected deleted=false, got $DELETED"
+            exit 1
+          fi
+          echo "✅ Non-existent branch handled gracefully"
