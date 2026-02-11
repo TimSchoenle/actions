@@ -80,7 +80,7 @@ runs:
 
     - name: Create Branch
       id: branch
-      uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # v1.2.0
+      uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
       with:
         token: ${{ steps.generate_token.outputs.token }}
         repository: ${{ inputs.repository }}
@@ -90,7 +90,7 @@ runs:
 
     - name: Commit Changes
       if: inputs.commit_changes == 'true'
-      uses: TimSchoenle/actions/actions/common/commit-changes@ccb733de0fa5b01dc39863828392f7fcf76927f0 # v1.1.2
+      uses: TimSchoenle/actions/actions/common/commit-changes@ccb733de0fa5b01dc39863828392f7fcf76927f0 # actions-common-commit-changes-v1.1.2
       env:
         GITHUB_SHA: ${{ steps.branch.outputs.sha }}
       with:
