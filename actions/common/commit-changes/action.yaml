@@ -39,18 +39,43 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Capture Caller Subdirectory
+      id: caller
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        CALLER_DIR="$(pwd -P)"
+        WORKSPACE_DIR="$(cd "$GITHUB_WORKSPACE" && pwd -P)"
+
+        if [[ "$CALLER_DIR" == "$WORKSPACE_DIR" ]]; then
+          rel=""
+        elif [[ "$CALLER_DIR" == "$WORKSPACE_DIR/"* ]]; then
+          rel="${CALLER_DIR#"$WORKSPACE_DIR"/}"
+        else
+          echo "Caller directory is outside GITHUB_WORKSPACE. Refusing to continue."
+          echo "caller_dir=$CALLER_DIR"
+          echo "workspace_dir=$WORKSPACE_DIR"
+          exit 1
+        fi
+
+        echo "caller_rel=$rel" >> "$GITHUB_OUTPUT"
+
     - name: Init Git Settings
       id: init
       shell: bash
+      working-directory: ${{ github.workspace }}
       run: |
         set -euo pipefail
         git config core.fileMode false
 
-    - name: Parse File Pattern Input
+    - name: Parse File Pattern Input (relative to caller dir)
       id: parse
       shell: bash
+      working-directory: ${{ github.workspace }}
       env:
         FILE_PATTERN: ${{ inputs.file_pattern }}
+        CALLER_REL: ${{ steps.caller.outputs.caller_rel }}
       run: |
         set -euo pipefail
 
@@ -62,16 +87,49 @@ runs:
 
         read -r -a RAW_SPECS <<< "$FILE_PATTERN"
 
+        PREFIX=""
+        if [ -n "${CALLER_REL:-}" ]; then
+          PREFIX="${CALLER_REL%/}/"
+        fi
+
+        REWRITTEN=()
+        for spec in "${RAW_SPECS[@]}"; do
+          # Normalize leading "./"
+          spec="${spec#./}"
+
+          # Keep explicit git pathspec magic untouched (advanced users)
+          if [[ "$spec" == :\(*\)* ]]; then
+            REWRITTEN+=("$spec")
+            continue
+          fi
+
+          # Keep empty and "." as-is (will effectively disable filtering later anyway)
+          if [ -z "$spec" ] || [ "$spec" = "." ]; then
+            REWRITTEN+=("$spec")
+            continue
+          fi
+
+          # Disallow absolute paths
+          if [[ "$spec" == /* ]]; then
+            echo "Absolute paths are not allowed in file_pattern: $spec" >&2
+            exit 1
+          fi
+
+          # Prefix with caller subdir if present
+          REWRITTEN+=("${PREFIX}${spec}")
+        done
+
         {
           echo "use_filter=true"
           echo "raw_specs<<__EOF__"
-          printf '%s\n' "${RAW_SPECS[@]}"
+          printf '%s\n' "${REWRITTEN[@]}"
           echo "__EOF__"
         } >> "$GITHUB_OUTPUT"
 
     - name: Build Git Pathspecs
       id: pathspecs
       shell: bash
+      working-directory: ${{ github.workspace }}
       env:
         USE_FILTER: ${{ steps.parse.outputs.use_filter }}
         RAW_SPECS_NL: ${{ steps.parse.outputs.raw_specs }}
@@ -105,6 +163,7 @@ runs:
     - name: Collect Changed Files (tracked + untracked, no ignored)
       id: files
       shell: bash
+      working-directory: ${{ github.workspace }}
       env:
         USE_FILTER: ${{ steps.parse.outputs.use_filter }}
         PATHSPECS_NL: ${{ steps.pathspecs.outputs.pathspecs }}
