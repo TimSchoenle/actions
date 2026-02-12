@@ -97,7 +97,7 @@ jobs:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
           helm-repo: ${{ env.TEST_REPO }}
-          base_branch: ${{ env.base-branch.outputs.branch }}
+          base_branch: ${{ steps.base-branch.outputs.branch }}
           chart-path: charts/test-app
           new-tag: v2.0.0
           image-digest: sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
