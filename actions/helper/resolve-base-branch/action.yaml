@@ -27,7 +27,7 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.token }}
         REPO: ${{ inputs.repository }}
-        BASE_BRANCH_INPUT: ${{ inputs.base_branch }}
+        BASE_BRANCH_INPUT: ${{ inputs.branch_name }}
       run: |
         if [ -z "$BASE_BRANCH_INPUT" ]; then
           # Fetch default branch
