@@ -110,7 +110,7 @@ jobs:
 
       - name: Commit and Push if changed
         id: auto-commit
-        uses: ./actions/common/commit-changes
+        uses: TimSchoenle/actions/actions/common/commit-changes@ccb733de0fa5b01dc39863828392f7fcf76927f0 # actions-common-commit-changes-v1.1.2
         with:
           commit_message: 'docs: auto-update documentation'
           file_pattern: 'README.md SECURITY.md'
