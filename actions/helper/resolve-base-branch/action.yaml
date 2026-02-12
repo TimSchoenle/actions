@@ -1,4 +1,4 @@
-name: 'Resolve Base Branch'
+name: 'Resolve Branch'
 description: 'Resolve the given base branch or return default branch.'
 
 inputs:
@@ -12,11 +12,19 @@ inputs:
     description: 'The branch name to resolve (defaults to repository default branch)'
     required: false
     default: ''
+  check_if_exist:
+    description: 'Check if the branch exists'
+    required: false
+    default: 'true'
+  silent_fail:
+    description: 'Silently fail if the branch cannot be resolved'
+    required: false
+    default: 'false'
 
 outputs:
   base_branch:
-    description: 'The base branch name'
-    value: ${{ steps.base.outputs.branch }}
+    description: 'The base branch name or empty if silent_fail is true'
+    value: ${{ steps.check.outputs.branch }}
 
 runs:
   using: 'composite'
@@ -37,4 +45,50 @@ runs:
         else
           echo "branch=$BASE_BRANCH_INPUT" >> "$GITHUB_OUTPUT"
           echo "Using provided base branch: $BASE_BRANCH_INPUT"
+        fi
+
+    - name: Check if Branch Exists
+      if: inputs.check_if_exist == 'true' && steps.base.outputs.branch != ''
+      id: exist
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        REPO: ${{ inputs.repository }}
+        BRANCH: ${{ steps.base.outputs.branch }}
+        SILENT_FAIL: ${{ inputs.silent_fail }}
+      run: |
+        HTTP_STATUS=$(gh api "/repos/$REPO/branches/$BRANCH" --silent -i 2>/dev/null | head -1 | awk '{print $2}')
+        if [ "$HTTP_STATUS" = "200" ]; then
+          echo "Branch '$BRANCH' exists in $REPO"
+          echo "exists=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "Branch '$BRANCH' does not exist in $REPO"
+          echo "exists=false" >> "$GITHUB_OUTPUT"
+          if [ "$SILENT_FAIL" != "true" ]; then
+            echo "::error::Branch '$BRANCH' does not exist in repository: $REPO"
+            exit 1
+          fi
+        fi
+
+    - name: Check Result
+      id: check
+      shell: bash
+      env:
+        INPUT_BRANCH: ${{ inputs.branch_name }}
+        INPUT_REPOSITORY: ${{ inputs.repository }}
+        RESOLVED_BRANCH: ${{ steps.base.outputs.branch }}
+        BRANCH_EXISTS: ${{ steps.exist.outputs.exists }}
+        CHECK_IF_EXIST: ${{ inputs.check_if_exist }}
+        SILENT_FAIL: ${{ inputs.silent_fail }}
+      run: |
+        if [ -z "$RESOLVED_BRANCH" ] && [ "$SILENT_FAIL" != "true" ]; then
+          echo "::error::Unable to resolve base branch for repository: $INPUT_REPOSITORY and branch: $INPUT_BRANCH"
+          exit 1
+        fi
+
+        # If existence check was performed and branch doesn't exist, clear the output
+        if [ "$CHECK_IF_EXIST" = "true" ] && [ "$BRANCH_EXISTS" = "false" ]; then
+          echo "branch=" >> "$GITHUB_OUTPUT"
+        else
+          echo "branch=$RESOLVED_BRANCH" >> "$GITHUB_OUTPUT"
         fi
