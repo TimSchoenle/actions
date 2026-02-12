@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.3](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.2...actions-common-modify-yaml-v1.2.3) (2026-02-12)
+
+
+### Build System
+
+* update commit-changes action version to v1.1.4 ([#407](https://github.com/TimSchoenle/actions/issues/407)) ([d0c22c1](https://github.com/TimSchoenle/actions/commit/d0c22c1daec35a0de6170255092cd6d2026b7174))
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v25.2.1 ([#368](https://github.com/TimSchoenle/actions/issues/368)) ([ba6ba2c](https://github.com/TimSchoenle/actions/commit/ba6ba2cf5fc9910b9a73c3ab7ad437131ee36725))
+* **deps:** update dependency @types/node to v25.2.2 ([#382](https://github.com/TimSchoenle/actions/issues/382)) ([9691628](https://github.com/TimSchoenle/actions/commit/9691628bb9715d4a3feaba45399b9de744e6d848))
+
 ## [1.2.2](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.1...actions-common-modify-yaml-v1.2.2) (2026-02-08)
 
 
