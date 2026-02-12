@@ -16,7 +16,7 @@
   "workflows/rust/coverage-codecov": "1.0.1",
   "workflows/rust/auto-format": "1.1.1",
   "workflows/rust/clippy": "1.1.1",
-  "actions/common/create-pull-request": "1.0.1",
+  "actions/common/create-pull-request": "1.0.2",
   "actions/test/setup-e2e": "1.1.0",
   "actions/common/close-pull-request": "1.1.0",
   "actions/common/delete-branch": "1.1.0",
