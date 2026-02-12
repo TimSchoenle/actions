@@ -1013,7 +1013,7 @@ jobs:
           repository: ${{ env.TEST_REPO }}
           branch: ${{ steps.branch.outputs.branch }}
           commit_message: 'test: relative patterns ${{ env.TEST_ID }}'
-          file_pattern: 'dist/**/* src/generated/**/*'
+          file_pattern: 'workflows/common/test2/dist/**/* workflows/common/test2/src/generated/**/*'
 
       - name: Verify Commit Includes Prefixed Paths
         shell: bash
