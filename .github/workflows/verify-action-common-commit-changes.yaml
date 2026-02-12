@@ -30,8 +30,23 @@ env:
 
 jobs:
   test-basic-commit:
-    name: Test Basic Commit
+    name: Test Basic Commit (${{ matrix.name }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: single-file
+            file_pattern: 'test-output/basic-commit.txt'
+          - name: multiple-files-list
+            file_pattern: 'test-output/basic-commit.txt test-output/SECURITY.md'
+          - name: single-glob
+            file_pattern: 'test-output/*.txt'
+          - name: multiple-globs
+            file_pattern: 'test-output/*.txt test-output/SECURITY.md'
+          - name: dot-all
+            file_pattern: '.'
+
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
@@ -73,7 +88,7 @@ jobs:
           repository: ${{ env.TEST_REPO }}
           branch: ${{ steps.branch.outputs.branch }}
           commit_message: 'test: basic commit ${{ env.TEST_ID }}'
-          file_pattern: 'test-output/basic-commit.txt'
+          file_pattern: ${{ matrix.file_pattern }}
 
       - name: Verify Commit
         shell: bash
@@ -97,6 +112,55 @@ jobs:
             exit 1
           fi
           echo "✅ Commit message verified"
+
+      - name: Verify Commit Includes Expected Files (and nothing else)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          EXPECTED_FILES: 'test-output/basic-commit.txt'
+        run: |
+          set -euo pipefail
+
+          if [ -z "$COMMIT_SHA" ]; then
+            echo "::error::Commit SHA not found in output"
+            exit 1
+          fi
+
+          FILES=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files[].filename' | sort || true)
+          EXPECTED_SORTED=$(printf '%s\n' "$EXPECTED_FILES" | sed '/^\s*$/d' | sort)
+
+          echo "Files in commit:"
+          echo "$FILES"
+          echo "Expected files:"
+          echo "$EXPECTED_SORTED"
+
+          # Missing expected files?
+          missing=0
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            if ! echo "$FILES" | grep -Fxq "$f"; then
+              echo "::error::Expected file missing from commit: $f"
+              missing=1
+            fi
+          done <<< "$EXPECTED_SORTED"
+
+          # Unexpected extra files?
+          extra=0
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            if ! echo "$EXPECTED_SORTED" | grep -Fxq "$f"; then
+              echo "::error::Unexpected file present in commit: $f"
+              extra=1
+            fi
+          done <<< "$FILES"
+
+          if [ "$missing" -ne 0 ] || [ "$extra" -ne 0 ]; then
+            exit 1
+          fi
+
+          echo "✅ Expected files verified (no extras)"
 
       - name: Cleanup Branch
         if: always()
