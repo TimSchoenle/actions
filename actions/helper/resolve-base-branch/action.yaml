@@ -29,17 +29,29 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Parse Repository
+      id: parse
+      shell: bash
+      env:
+        REPO: ${{ inputs.repository }}
+      run: |
+        OWNER="${REPO%%/*}"
+        REPO_NAME="${REPO#*/}"
+        echo "owner=$OWNER" >> "$GITHUB_OUTPUT"
+        echo "repo=$REPO_NAME" >> "$GITHUB_OUTPUT"
+
     - name: Resolve Base Branch
       id: base
       shell: bash
       env:
+        OWNER_NAME: ${{ steps.parse.outputs.owner }}
+        REPO_NAME: ${{ steps.parse.outputs.repo }}
         GH_TOKEN: ${{ inputs.token }}
-        REPO: ${{ inputs.repository }}
         BASE_BRANCH_INPUT: ${{ inputs.branch_name }}
       run: |
         if [ -z "$BASE_BRANCH_INPUT" ]; then
           # Fetch default branch
-          DEFAULT_BRANCH=$(gh api "/repos/$REPO" --jq .default_branch)
+          DEFAULT_BRANCH=$(gh api "/repos/$REPO_NAME/$REPO_NAME" --jq .default_branch)
           echo "branch=$DEFAULT_BRANCH" >> "$GITHUB_OUTPUT"
           echo "Using default branch: $DEFAULT_BRANCH"
         else
@@ -52,17 +64,18 @@ runs:
       id: exist
       shell: bash
       env:
+        OWNER_NAME: ${{ steps.parse.outputs.owner }}
+        REPO_NAME: ${{ steps.parse.outputs.repo }}
         GH_TOKEN: ${{ inputs.token }}
-        REPO: ${{ inputs.repository }}
         BRANCH: ${{ steps.base.outputs.branch }}
         SILENT_FAIL: ${{ inputs.silent_fail }}
       run: |
-        HTTP_STATUS=$(gh api "/repos/$REPO/branches/$BRANCH" --silent -i 2>/dev/null | head -1 | awk '{print $2}')
+        HTTP_STATUS=$(gh api "/repos/$OWNER_NAME/$REPO_NAME/branches/$BRANCH" --silent -i 2>/dev/null | head -1 | awk '{print $2}')
         if [ "$HTTP_STATUS" = "200" ]; then
-          echo "Branch '$BRANCH' exists in $REPO"
+          echo "Branch '$BRANCH' exists in $REPO_NAME for owner $OWNER_NAME"
           echo "exists=true" >> "$GITHUB_OUTPUT"
         else
-          echo "Branch '$BRANCH' does not exist in $REPO"
+          echo "Branch '$BRANCH' does not exist in $REPO_NAME for owner $OWNER_NAME"
           echo "exists=false" >> "$GITHUB_OUTPUT"
           if [ "$SILENT_FAIL" != "true" ]; then
             echo "::error::Branch '$BRANCH' does not exist in repository: $REPO"
