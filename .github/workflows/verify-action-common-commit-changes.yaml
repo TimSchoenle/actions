@@ -38,60 +38,38 @@ jobs:
         include:
           - name: single-file
             file_pattern: 'test-output/single.txt'
-            setup: |
-              mkdir -p test-output
-              echo "single $TEST_ID" > test-output/single.txt
             expected_files: |
               test-output/single.txt
 
           - name: multiple-explicit-files
             file_pattern: 'test-output/a.txt test-output/b.md'
-            setup: |
-              mkdir -p test-output
-              echo "a $TEST_ID" > test-output/a.txt
-              echo "b $TEST_ID" > test-output/b.md
             expected_files: |
               test-output/a.txt
               test-output/b.md
 
           - name: single-glob
             file_pattern: 'test-output/*.txt'
-            setup: |
-              mkdir -p test-output
-              echo "glob $TEST_ID" > test-output/glob-match.txt
             expected_files: |
               test-output/glob-match.txt
 
           - name: deep-glob
             file_pattern: 'actions/**/dist/**/*'
-            setup: |
-              mkdir -p actions/foo/dist
-              echo "deep $TEST_ID" > actions/foo/dist/deep.js
             expected_files: |
               actions/foo/dist/deep.js
 
           - name: multiple-deep-globs
             file_pattern: 'actions/**/dist/**/* workflows/**/dist/**/*'
-            setup: |
-              mkdir -p actions/foo/dist workflows/bar/dist
-              echo "a $TEST_ID" > actions/foo/dist/a.txt
-              echo "b $TEST_ID" > workflows/bar/dist/b.txt
             expected_files: |
               actions/foo/dist/a.txt
               workflows/bar/dist/b.txt
 
           - name: dot-all
             file_pattern: '.'
-            setup: |
-              echo "dot-all $TEST_ID" > dot-all-test.txt
             expected_files: |
               dot-all-test.txt
 
           - name: nested-untracked-dir
             file_pattern: '.'
-            setup: |
-              mkdir -p new-dir/sub
-              echo "nested $TEST_ID" > new-dir/sub/nested.txt
             expected_files: |
               new-dir/sub/nested.txt
 
@@ -125,9 +103,44 @@ jobs:
         shell: bash
         env:
           TEST_ID: ${{ env.TEST_ID }}
+          CASE: ${{ matrix.name }}
         run: |
           set -euo pipefail
-          ${{ matrix.setup }}
+          case "$CASE" in
+            single-file)
+              mkdir -p test-output
+              echo "single $TEST_ID" > test-output/single.txt
+              ;;
+            multiple-explicit-files)
+              mkdir -p test-output
+              echo "a $TEST_ID" > test-output/a.txt
+              echo "b $TEST_ID" > test-output/b.md
+              ;;
+            single-glob)
+              mkdir -p test-output
+              echo "glob $TEST_ID" > test-output/glob-match.txt
+              ;;
+            deep-glob)
+              mkdir -p actions/foo/dist
+              echo "deep $TEST_ID" > actions/foo/dist/deep.js
+              ;;
+            multiple-deep-globs)
+              mkdir -p actions/foo/dist workflows/bar/dist
+              echo "a $TEST_ID" > actions/foo/dist/a.txt
+              echo "b $TEST_ID" > workflows/bar/dist/b.txt
+              ;;
+            dot-all)
+              echo "dot-all $TEST_ID" > dot-all-test.txt
+              ;;
+            nested-untracked-dir)
+              mkdir -p new-dir/sub
+              echo "nested $TEST_ID" > new-dir/sub/nested.txt
+              ;;
+            *)
+              echo "::error::Unknown test case: $CASE"
+              exit 1
+              ;;
+          esac
 
       - name: Run commit-changes
         id: commit
@@ -194,10 +207,6 @@ jobs:
         include:
           - name: include-vs-exclude
             file_pattern: 'include/target.txt'
-            setup: |
-              mkdir -p include exclude
-              echo "target $TEST_ID" > include/target.txt
-              echo "noise $TEST_ID"  > exclude/noise.txt
             expected_files: |
               include/target.txt
             forbidden_files: |
@@ -205,10 +214,6 @@ jobs:
 
           - name: glob-excludes-sibling-dirs
             file_pattern: 'src/**/*.ts'
-            setup: |
-              mkdir -p src/core docs
-              echo "code $TEST_ID" > src/core/index.ts
-              echo "doc $TEST_ID"  > docs/readme.md
             expected_files: |
               src/core/index.ts
             forbidden_files: |
@@ -216,10 +221,6 @@ jobs:
 
           - name: parent-path-not-committed
             file_pattern: 'inside/file.txt'
-            setup: |
-              mkdir -p inside
-              echo "inside $TEST_ID"  > inside/file.txt
-              echo "outside $TEST_ID" > outside.txt
             expected_files: |
               inside/file.txt
             forbidden_files: |
@@ -255,9 +256,30 @@ jobs:
         shell: bash
         env:
           TEST_ID: ${{ env.TEST_ID }}
+          CASE: ${{ matrix.name }}
         run: |
           set -euo pipefail
-          ${{ matrix.setup }}
+          case "$CASE" in
+            include-vs-exclude)
+              mkdir -p include exclude
+              echo "target $TEST_ID" > include/target.txt
+              echo "noise $TEST_ID"  > exclude/noise.txt
+              ;;
+            glob-excludes-sibling-dirs)
+              mkdir -p src/core docs
+              echo "code $TEST_ID" > src/core/index.ts
+              echo "doc $TEST_ID"  > docs/readme.md
+              ;;
+            parent-path-not-committed)
+              mkdir -p inside
+              echo "inside $TEST_ID"  > inside/file.txt
+              echo "outside $TEST_ID" > outside.txt
+              ;;
+            *)
+              echo "::error::Unknown test case: $CASE"
+              exit 1
+              ;;
+          esac
 
       - name: Run commit-changes
         id: commit
@@ -492,32 +514,22 @@ jobs:
           - name: empty-disallowed
             file_pattern: '.'
             empty: 'false'
-            setup: ''
 
           - name: empty-dir-only
             file_pattern: '.'
             empty: 'false'
-            setup: mkdir -p empty-dir/subdir
 
           - name: pattern-mismatch
             file_pattern: 'does-not-exist/**/*.txt'
             empty: 'false'
-            setup: |
-              mkdir -p mismatch
-              echo "noise" > mismatch/outside.txt
 
           - name: chmod-only
             file_pattern: '.'
             empty: 'false'
-            setup: __CHMOD_SCENARIO__
 
           - name: gitignored-file-only
             file_pattern: '.'
             empty: 'false'
-            setup: |
-              mkdir -p ignored
-              echo "ignored/secret.txt" >> .git/info/exclude
-              echo "SECRET" > ignored/secret.txt
 
     steps:
       - name: Harden Runner
@@ -570,18 +582,37 @@ jobs:
           git fetch --prune origin "+refs/heads/$BRANCH_NAME:refs/remotes/origin/$BRANCH_NAME"
           git reset --hard "origin/$BRANCH_NAME"
 
-      - name: 'Setup: apply chmod'
-        if: matrix.name == 'chmod-only'
-        run: chmod +x test-chmod/script.sh
-
       - name: Prepare Test Scenario
-        if: matrix.setup != '' && matrix.setup != '__CHMOD_SCENARIO__'
         shell: bash
         env:
           TEST_ID: ${{ env.TEST_ID }}
+          CASE: ${{ matrix.name }}
         run: |
-          set -euo pipefail          
-          ${{ matrix.setup }}
+          set -euo pipefail
+          case "$CASE" in
+            empty-disallowed)
+              # No files to create — workspace is already clean
+              ;;
+            empty-dir-only)
+              mkdir -p empty-dir/subdir
+              ;;
+            pattern-mismatch)
+              mkdir -p mismatch
+              echo "noise $TEST_ID" > mismatch/outside.txt
+              ;;
+            chmod-only)
+              chmod +x test-chmod/script.sh
+              ;;
+            gitignored-file-only)
+              mkdir -p ignored
+              echo "ignored/secret.txt" >> .git/info/exclude
+              echo "SECRET" > ignored/secret.txt
+              ;;
+            *)
+              echo "::error::Unknown test case: $CASE"
+              exit 1
+              ;;
+          esac
 
       - name: Run commit-changes (expect no commit)
         id: commit
