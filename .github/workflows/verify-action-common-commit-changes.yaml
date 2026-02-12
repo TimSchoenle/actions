@@ -996,7 +996,6 @@ jobs:
 
       - name: Create Test Files (inside caller subdir)
         shell: bash
-        working-directory: workflows/common/test2
         env:
           TEST_ID: ${{ env.TEST_ID }}
         run: |
