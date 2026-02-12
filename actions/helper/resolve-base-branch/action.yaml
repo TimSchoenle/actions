@@ -1,5 +1,5 @@
 name: 'Resolve Branch'
-description: 'Resolve the given base branch or return default branch.'
+description: 'Resolve the given base branch or return default branch. With optional existence check.'
 
 inputs:
   token:
