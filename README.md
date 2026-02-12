@@ -29,11 +29,12 @@ Here is a list of all currently maintained actions in this repository:
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
 | [Close Pull Request](./actions/common/close-pull-request) | Closes a pull request | actions-common-close-pull-request-v1.1.0 | `uses: TimSchoenle/actions/actions/common/close-pull-request@actions-common-close-pull-request-v1.1.0` |
-| [Commit Changes](./actions/common/commit-changes) | Commits changes using the GitHub API to ensure verified bot commits. | actions-common-commit-changes-v1.1.2 | `uses: TimSchoenle/actions/actions/common/commit-changes@actions-common-commit-changes-v1.1.2` |
-| [Common Create-branch](./actions/common/create-branch) | A reusable action. | actions-common-create-branch-v1.0.0 | `uses: TimSchoenle/actions/actions/common/create-branch@actions-common-create-branch-v1.0.0` |
+| [Commit Changes](./actions/common/commit-changes) | Commits changes using the GitHub API to ensure verified bot commits. | actions-common-commit-changes-v1.1.4 | `uses: TimSchoenle/actions/actions/common/commit-changes@actions-common-commit-changes-v1.1.4` |
 | [Common Modify YAML](./actions/common/modify-yaml) | A action to modify a value in a YAML file while strictly preserving comments and structure | actions-common-modify-yaml-v1.2.2 | `uses: TimSchoenle/actions/actions/common/modify-yaml@actions-common-modify-yaml-v1.2.2` |
 | [Common Read YAML](./actions/common/read-yaml) | A action to read a value from a YAML file using dot notation | actions-common-read-yaml-v1.1.0 | `uses: TimSchoenle/actions/actions/common/read-yaml@actions-common-read-yaml-v1.1.0` |
+| [Create Branch](./actions/common/create-branch) | Creates or resets a git branch using GitHub API. | actions-common-create-branch-v1.2.0 | `uses: TimSchoenle/actions/actions/common/create-branch@actions-common-create-branch-v1.2.0` |
 | [Create Pull Request](./actions/common/create-pull-request) | Creates or updates a pull request using GitHub App authentication with optional branch reset. | actions-common-create-pull-request-v1.0.1 | `uses: TimSchoenle/actions/actions/common/create-pull-request@actions-common-create-pull-request-v1.0.1` |
+| [Delete-Branch](./actions/common/delete-branch) | Deletes a branch from a repository. Fails gracefully if the branch does not exist. | actions-common-delete-branch-v1.1.0 | `uses: TimSchoenle/actions/actions/common/delete-branch@actions-common-delete-branch-v1.1.0` |
 | [Get App Git Identity](./actions/common/get-app-git-identity) | Resolves the git identity (username, email, user ID) for a GitHub App bot. | actions-common-get-app-git-identity-v1.1.0 | `uses: TimSchoenle/actions/actions/common/get-app-git-identity@actions-common-get-app-git-identity-v1.1.0` |
 | [Setup App Git Identity](./actions/common/setup-app-git-identity) | Configures git with the identity of a GitHub App bot and outputs the bot details. | actions-common-setup-app-git-identity-v1.1.0 | `uses: TimSchoenle/actions/actions/common/setup-app-git-identity@actions-common-setup-app-git-identity-v1.1.0` |
 
@@ -92,9 +93,9 @@ To use, you need to download the rules and Import the ruleset.
 
 | Config | Description |
 | --- | --- |
+| [Renovate Branches: Trusted Bots & Admins Only](./configs/github-rulesets/branch-renovate_only-allow-trusted-bots-and-admins.json) | Restricts access to Renovate branches, allowing only trusted bots (Renovate, Automatic Release Manager) and admins to manage them, while enforcing code quality and signature requirements. |
 | [Default Branch: Default Protection Rules](./configs/github-rulesets/branch-default_default-rules.json) | Enforces standard protection rules on the default branch: requires PRs with 1 approval (squash only), signed commits, CodeQL scanning, and passing status checks. |
 | [Release Please Branches: Trusted Bots Only](./configs/github-rulesets/branch-release-please_only-allow-trusted-bots.json) | Restricts access to release-please branches, allowing only trusted bots to create, update, or delete them, while enforcing code quality and signature requirements. |
-| [Renovate Branches: Trusted Bots & Admins Only](./configs/github-rulesets/branch-renovate_only-allow-trusted-bots-and-admins.json) | Restricts access to Renovate branches, allowing only trusted bots (Renovate, Automatic Release Manager) and admins to manage them, while enforcing code quality and signature requirements. |
 | [Release Tags: Only Allow Automatic Release Manager Bot](./configs/github-rulesets/release-tags_only-allow-automatic-release-manager-bot.json) | Enforces that only the Automatic Release Manager bot can create, update, or delete release tags. |
 
 
