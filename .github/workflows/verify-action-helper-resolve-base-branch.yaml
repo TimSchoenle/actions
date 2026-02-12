@@ -128,7 +128,7 @@ jobs:
           repository: ${{ env.TEST_REPO }}
           branch_name: ${{ steps.branch.outputs.branch }}
 
-  verify-none-existing-branch:
+  verify-none-existing-branch-with-verify:
     name: Verify none existing branch resolver
     runs-on: ubuntu-latest
     permissions:
@@ -168,3 +168,47 @@ jobs:
             echo "::error::Base branch name ($BASE_BRANCH_NAME) should be empty"
             exit 1
           fi
+
+  verify-none-existing-branch-without-verify:
+    name: Verify none existing branch resolver without verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Test resolve-base-branch
+        id: resolve-base-branch
+        uses: ./tmp/actions-code/actions/helper/resolve-base-branch
+        with:
+          repository: ${{ env.TEST_REPO }}
+          token: ${{ steps.setup.outputs.token }}
+          branch_name: test/resolve-base-branch-does-not-exist-without-verify/${{ env.TEST_ID }}
+          check_if_exist: false
+
+      - name: Verify Base Branch Name
+        shell: bash
+        env:
+          BASE_BRANCH_NAME: ${{ steps.resolve-base-branch.outputs.base_branch }}
+          EXPECTED_BASE_BRANCH_NAME: test/resolve-base-branch-does-not-exist-without-verify/${{ env.TEST_ID }}
+        run: |
+          # Verify base branch name
+          if [ "$BASE_BRANCH_NAME" != "$EXPECTED_BASE_BRANCH_NAME" ]; then
+            echo "::error::Base branch name ($BASE_BRANCH_NAME) does not match default ($EXPECTED_BASE_BRANCH_NAME)"
+            exit 1
+          fi
+          echo "✅ Verified base branch name matches"
