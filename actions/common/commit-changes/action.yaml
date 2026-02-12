@@ -49,15 +49,26 @@ runs:
         set -euo pipefail
         git config core.fileMode false
 
-        # Build the git status arguments from the file pattern
+        # Build git pathspec arguments from the file pattern
         if [ -z "${FILE_PATTERN:-}" ] || [ "$FILE_PATTERN" = "." ]; then
           echo "::debug::No file pattern filter specified — checking all files"
           CHANGE_COUNT=$(git status --porcelain | wc -l)
         else
-          # Split space-separated patterns into an array
-          read -r -a PATTERNS <<< "$FILE_PATTERN"
-          echo "::debug::Checking changes for patterns: ${PATTERNS[*]}"
-          CHANGE_COUNT=$(git status --porcelain -- "${PATTERNS[@]}" | wc -l)
+          read -r -a RAW_PATTERNS <<< "$FILE_PATTERN"
+          PATHSPECS=()
+          for spec in "${RAW_PATTERNS[@]}"; do
+            if [[ "$spec" == :\(*\)* ]]; then
+              # Already a magic pathspec (e.g. :(glob)foo) — pass through
+              PATHSPECS+=("$spec")
+            elif [[ "$spec" == *"*"* || "$spec" == *"?"* || "$spec" == *"["* ]]; then
+              # Contains glob characters — wrap with :(glob) so git interprets them
+              PATHSPECS+=(":(glob)$spec")
+            else
+              PATHSPECS+=("$spec")
+            fi
+          done
+          echo "::debug::Resolved pathspecs: ${PATHSPECS[*]}"
+          CHANGE_COUNT=$(git status --porcelain -- "${PATHSPECS[@]}" | wc -l)
         fi
 
         CHANGE_COUNT=$((CHANGE_COUNT + 0)) # trim whitespace from wc
