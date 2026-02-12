@@ -29,168 +29,71 @@ env:
   TEST_ID: commit-changes-test-${{ github.run_number }}-${{ github.run_attempt }}
 
 jobs:
-  test-basic-commit:
-    name: Test Basic Commit (${{ matrix.name }})
+  test-commit-file-patterns:
+    name: 'Test Commit: ${{ matrix.name }}'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: single-file
-            file_pattern: 'test-output/basic-commit.txt'
-          - name: multiple-files-list
-            file_pattern: 'test-output/basic-commit.txt test-output/SECURITY.md'
+            file_pattern: 'test-output/single.txt'
+            setup: |
+              mkdir -p test-output
+              echo "single $TEST_ID" > test-output/single.txt
+            expected_files: |
+              test-output/single.txt
+
+          - name: multiple-explicit-files
+            file_pattern: 'test-output/a.txt test-output/b.md'
+            setup: |
+              mkdir -p test-output
+              echo "a $TEST_ID" > test-output/a.txt
+              echo "b $TEST_ID" > test-output/b.md
+            expected_files: |
+              test-output/a.txt
+              test-output/b.md
+
           - name: single-glob
             file_pattern: 'test-output/*.txt'
-          - name: multiple-globs
-            file_pattern: 'test-output/*.txt test-output/SECURITY.md'
-          - name: dot-all
-            file_pattern: '.'
-
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
-        with:
-          egress-policy: audit
-
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
-        with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
-
-      - name: Create Test Branch
-        id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/basic-commit/${{ matrix.name }}/${{ env.TEST_ID }}
-          reset_branch: 'true'
-
-      - name: Create Test File
-        env:
-          TEST_ID: ${{ env.TEST_ID }}
-        run: |
-          mkdir -p test-output
-          echo "Test content for basic commit $TEST_ID" > test-output/basic-commit.txt
-
-      - name: Run commit-changes (Basic)
-        id: commit
-        uses: ./tmp/actions-code/actions/common/commit-changes
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch: ${{ steps.branch.outputs.branch }}
-          commit_message: 'test: basic commit ${{ env.TEST_ID }}'
-          file_pattern: ${{ matrix.file_pattern }}
-
-      - name: Verify Commit
-        shell: bash
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-          EXPECTED_MSG: 'test: basic commit ${{ env.TEST_ID }}'
-        run: |
-          if [ -z "$COMMIT_SHA" ]; then
-            echo "::error::Commit SHA not found in output"
-            exit 1
-          fi
-
-          echo "✅ Commit created: $COMMIT_SHA"
-
-          # Verify commit message
-          MSG=$(gh api "/repos/$TEST_REPO/git/commits/$COMMIT_SHA" --jq '.message')
-          if [ "$MSG" != "$EXPECTED_MSG" ]; then
-            echo "::error::Commit message mismatch. Expected '$EXPECTED_MSG', got '$MSG'"
-            exit 1
-          fi
-          echo "✅ Commit message verified"
-
-      - name: Verify Commit Includes Expected Files (and nothing else)
-        shell: bash
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-          EXPECTED_FILES: 'test-output/basic-commit.txt'
-        run: |
-          set -euo pipefail
-
-          if [ -z "$COMMIT_SHA" ]; then
-            echo "::error::Commit SHA not found in output"
-            exit 1
-          fi
-
-          FILES=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files[].filename' | sort || true)
-          EXPECTED_SORTED=$(printf '%s\n' "$EXPECTED_FILES" | sed '/^\s*$/d' | sort)
-
-          echo "Files in commit:"
-          echo "$FILES"
-          echo "Expected files:"
-          echo "$EXPECTED_SORTED"
-
-          # Missing expected files?
-          missing=0
-          while IFS= read -r f; do
-            [ -z "$f" ] && continue
-            if ! echo "$FILES" | grep -Fxq "$f"; then
-              echo "::error::Expected file missing from commit: $f"
-              missing=1
-            fi
-          done <<< "$EXPECTED_SORTED"
-
-          # Unexpected extra files?
-          extra=0
-          while IFS= read -r f; do
-            [ -z "$f" ] && continue
-            if ! echo "$EXPECTED_SORTED" | grep -Fxq "$f"; then
-              echo "::error::Unexpected file present in commit: $f"
-              extra=1
-            fi
-          done <<< "$FILES"
-
-          if [ "$missing" -ne 0 ] || [ "$extra" -ne 0 ]; then
-            exit 1
-          fi
-
-          echo "✅ Expected files verified (no extras)"
-
-      - name: Cleanup Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.branch.outputs.branch }}
-
-  test-file-pattern-multiple-files:
-    name: Test File Pattern Variants (${{ matrix.name }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: multiple-files-list
-            file_pattern: 'test-output/README.md test-output/SECURITY.md'
+            setup: |
+              mkdir -p test-output
+              echo "glob $TEST_ID" > test-output/glob-match.txt
             expected_files: |
-              test-output/README.md
-              test-output/SECURITY.md
-          - name: multiple-globs
+              test-output/glob-match.txt
+
+          - name: deep-glob
+            file_pattern: 'actions/**/dist/**/*'
+            setup: |
+              mkdir -p actions/foo/dist
+              echo "deep $TEST_ID" > actions/foo/dist/deep.js
+            expected_files: |
+              actions/foo/dist/deep.js
+
+          - name: multiple-deep-globs
             file_pattern: 'actions/**/dist/**/* workflows/**/dist/**/*'
+            setup: |
+              mkdir -p actions/foo/dist workflows/bar/dist
+              echo "a $TEST_ID" > actions/foo/dist/a.txt
+              echo "b $TEST_ID" > workflows/bar/dist/b.txt
             expected_files: |
               actions/foo/dist/a.txt
               workflows/bar/dist/b.txt
+
           - name: dot-all
             file_pattern: '.'
+            setup: |
+              echo "dot-all $TEST_ID" > dot-all-test.txt
             expected_files: |
-              dot-all.txt
+              dot-all-test.txt
+
+          - name: nested-untracked-dir
+            file_pattern: '.'
+            setup: |
+              mkdir -p new-dir/sub
+              echo "nested $TEST_ID" > new-dir/sub/nested.txt
+            expected_files: |
+              new-dir/sub/nested.txt
 
     steps:
       - name: Harden Runner
@@ -215,32 +118,16 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch_name: test/file-pattern-matrix/${{ env.TEST_ID }}/${{ matrix.name }}
+          branch_name: test/patterns/${{ matrix.name }}/${{ env.TEST_ID }}
           reset_branch: 'true'
 
-      - name: Create Test Files for Pattern
+      - name: Create Test Files
         shell: bash
         env:
           TEST_ID: ${{ env.TEST_ID }}
-          CASE: ${{ matrix.name }}
         run: |
           set -euo pipefail
-
-          if [ "$CASE" = "multiple-files-list" ]; then
-            mkdir -p test-output
-            echo "README $TEST_ID" > test-output/README.md
-            echo "SECURITY $TEST_ID" > test-output/SECURITY.md
-          elif [ "$CASE" = "multiple-globs" ]; then
-            mkdir -p actions/foo/dist
-            mkdir -p workflows/bar/dist
-            echo "actions dist $TEST_ID" > actions/foo/dist/a.txt
-            echo "workflows dist $TEST_ID" > workflows/bar/dist/b.txt
-          elif [ "$CASE" = "dot-all" ]; then
-            echo "dot all $TEST_ID" > dot-all.txt
-          else
-            echo "::error::Unknown matrix case: $CASE"
-            exit 1
-          fi
+          ${{ matrix.setup }}
 
       - name: Run commit-changes
         id: commit
@@ -249,10 +136,23 @@ jobs:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           branch: ${{ steps.branch.outputs.branch }}
-          commit_message: 'test: file pattern matrix (${{ matrix.name }}) ${{ env.TEST_ID }}'
+          commit_message: 'test: ${{ matrix.name }} ${{ env.TEST_ID }}'
           file_pattern: ${{ matrix.file_pattern }}
 
-      - name: Verify Commit Includes Expected Files (and nothing else)
+      - name: Verify Outputs
+        shell: bash
+        env:
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          COMMIT_URL: ${{ steps.commit.outputs.commit_url }}
+          CHANGES_DETECTED: ${{ steps.commit.outputs.changes_detected }}
+        run: |
+          set -euo pipefail
+          [ -z "$COMMIT_SHA" ] && { echo "::error::commit_hash output is empty"; exit 1; }
+          [ -z "$COMMIT_URL" ] && { echo "::error::commit_url output is empty"; exit 1; }
+          [ "$CHANGES_DETECTED" = "true" ] || { echo "::error::changes_detected should be true"; exit 1; }
+          echo "✅ All outputs present"
+
+      - name: Verify Commit Contains Exactly Expected Files
         shell: bash
         env:
           GH_TOKEN: ${{ steps.setup.outputs.token }}
@@ -262,44 +162,448 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ -z "$COMMIT_SHA" ]; then
-            echo "::error::Commit SHA not found in output"
+          ACTUAL=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files[].filename' | sort)
+          EXPECTED=$(echo "$EXPECTED_FILES" | sed '/^\s*$/d' | sort)
+
+          echo "Actual files:"
+          echo "$ACTUAL"
+          echo "Expected files:"
+          echo "$EXPECTED"
+
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::File mismatch"
+            diff <(echo "$EXPECTED") <(echo "$ACTUAL") || true
             exit 1
           fi
+          echo "✅ Commit contains exactly the expected files"
 
-          FILES=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files[].filename' | sort || true)
-          EXPECTED_SORTED=$(printf '%s\n' "$EXPECTED_FILES" | sed '/^\s*$/d' | sort)
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
 
+  test-pattern-excludes-unrelated:
+    name: 'Test Pattern: excludes unrelated files'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: include-vs-exclude
+            file_pattern: 'include/target.txt'
+            setup: |
+              mkdir -p include exclude
+              echo "target $TEST_ID" > include/target.txt
+              echo "noise $TEST_ID"  > exclude/noise.txt
+            expected_files: |
+              include/target.txt
+            forbidden_files: |
+              exclude/noise.txt
+
+          - name: glob-excludes-sibling-dirs
+            file_pattern: 'src/**/*.ts'
+            setup: |
+              mkdir -p src/core docs
+              echo "code $TEST_ID" > src/core/index.ts
+              echo "doc $TEST_ID"  > docs/readme.md
+            expected_files: |
+              src/core/index.ts
+            forbidden_files: |
+              docs/readme.md
+
+          - name: parent-path-not-committed
+            file_pattern: 'inside/file.txt'
+            setup: |
+              mkdir -p inside
+              echo "inside $TEST_ID"  > inside/file.txt
+              echo "outside $TEST_ID" > outside.txt
+            expected_files: |
+              inside/file.txt
+            forbidden_files: |
+              outside.txt
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/exclude/${{ matrix.name }}/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Create Test Files
+        shell: bash
+        env:
+          TEST_ID: ${{ env.TEST_ID }}
+        run: |
+          set -euo pipefail
+          ${{ matrix.setup }}
+
+      - name: Run commit-changes
+        id: commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: exclude ${{ matrix.name }} ${{ env.TEST_ID }}'
+          file_pattern: ${{ matrix.file_pattern }}
+
+      - name: Verify Expected Present and Forbidden Absent
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          EXPECTED_FILES: ${{ matrix.expected_files }}
+          FORBIDDEN_FILES: ${{ matrix.forbidden_files }}
+        run: |
+          set -euo pipefail
+          [ -z "$COMMIT_SHA" ] && { echo "::error::commit_hash is empty"; exit 1; }
+
+          FILES=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files[].filename' | sort)
           echo "Files in commit:"
           echo "$FILES"
-          echo "Expected files:"
-          echo "$EXPECTED_SORTED"
 
-          # Missing expected files?
-          missing=0
+          fail=0
           while IFS= read -r f; do
             [ -z "$f" ] && continue
-            if ! echo "$FILES" | grep -Fxq "$f"; then
-              echo "::error::Expected file missing from commit: $f"
-              missing=1
-            fi
-          done <<< "$EXPECTED_SORTED"
+            echo "$FILES" | grep -Fxq "$f" || { echo "::error::Expected file missing: $f"; fail=1; }
+          done <<< "$EXPECTED_FILES"
 
-          # Unexpected extra files?
-          extra=0
           while IFS= read -r f; do
             [ -z "$f" ] && continue
-            if ! echo "$EXPECTED_SORTED" | grep -Fxq "$f"; then
-              echo "::error::Unexpected file present in commit: $f"
-              extra=1
-            fi
-          done <<< "$FILES"
+            echo "$FILES" | grep -Fxq "$f" && { echo "::error::Forbidden file present: $f"; fail=1; }
+          done <<< "$FORBIDDEN_FILES"
 
-          if [ "$missing" -ne 0 ] || [ "$extra" -ne 0 ]; then
-            exit 1
-          fi
+          [ "$fail" -ne 0 ] && exit 1
+          echo "✅ Correct files committed, forbidden files excluded"
 
-          echo "✅ Expected files verified (no extras)"
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
+
+  # ---------------------------------------------------------------------------
+  # File modification (edit existing tracked file)
+  # ---------------------------------------------------------------------------
+  test-modify-existing-file:
+    name: 'Test Modify: existing tracked file'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/modify-existing/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Create Initial File
+        run: |
+          mkdir -p test-modify
+          echo "version 1" > test-modify/data.txt
+
+      - name: Commit Initial File
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: initial file ${{ env.TEST_ID }}'
+          file_pattern: 'test-modify/data.txt'
+
+      - name: Sync Local With Remote
+        env:
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+        run: |
+          git fetch --prune origin "+refs/heads/$BRANCH_NAME:refs/remotes/origin/$BRANCH_NAME"
+          git reset --hard "origin/$BRANCH_NAME"
+
+      - name: Modify Existing File
+        run: echo "version 2" > test-modify/data.txt
+
+      - name: Commit Modified File
+        id: commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: modify existing ${{ env.TEST_ID }}'
+          file_pattern: 'test-modify/data.txt'
+
+      - name: Verify Modification Committed
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+        run: |
+          set -euo pipefail
+          [ -z "$COMMIT_SHA" ] && { echo "::error::Commit not created"; exit 1; }
+
+          STATUS=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files[] | select(.filename=="test-modify/data.txt") | .status')
+          [ "$STATUS" = "modified" ] || { echo "::error::Expected status 'modified', got '$STATUS'"; exit 1; }
+          echo "✅ Existing file modification committed correctly"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
+
+  test-file-deletion:
+    name: 'Test Delete: tracked file removal'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/file-deletion/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Create File to Delete
+        run: |
+          mkdir -p test-delete
+          echo "to be deleted" > test-delete/doomed.txt
+
+      - name: Commit Initial File
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: create file for deletion ${{ env.TEST_ID }}'
+          file_pattern: 'test-delete/doomed.txt'
+
+      - name: Sync Local With Remote
+        env:
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+        run: |
+          git fetch --prune origin "+refs/heads/$BRANCH_NAME:refs/remotes/origin/$BRANCH_NAME"
+          git reset --hard "origin/$BRANCH_NAME"
+
+      - name: Delete the File
+        run: |
+          rm test-delete/doomed.txt
+          git status
+
+      - name: Commit Deletion
+        id: commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: delete file ${{ env.TEST_ID }}'
+          file_pattern: 'test-delete/doomed.txt'
+
+      - name: Verify Deletion Committed
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+        run: |
+          set -euo pipefail
+          [ -z "$COMMIT_SHA" ] && { echo "::error::Commit not created for deletion"; exit 1; }
+
+          STATUS=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files[] | select(.filename=="test-delete/doomed.txt") | .status')
+          [ "$STATUS" = "removed" ] || { echo "::error::Expected status 'removed', got '$STATUS'"; exit 1; }
+          echo "✅ File deletion committed correctly"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
+
+  test-no-commit-scenarios:
+    name: 'Test No-Commit: ${{ matrix.name }}'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: empty-disallowed
+            file_pattern: '.'
+            empty: 'false'
+            setup: ''
+
+          - name: empty-dir-only
+            file_pattern: '.'
+            empty: 'false'
+            setup: mkdir -p empty-dir/subdir
+
+          - name: pattern-mismatch
+            file_pattern: 'does-not-exist/**/*.txt'
+            empty: 'false'
+            setup: |
+              mkdir -p mismatch
+              echo "noise" > mismatch/outside.txt
+
+          - name: chmod-only
+            file_pattern: '.'
+            empty: 'false'
+            setup: __CHMOD_SCENARIO__
+
+          - name: gitignored-file-only
+            file_pattern: '.'
+            empty: 'false'
+            setup: |
+              mkdir -p ignored
+              echo "ignored/secret.txt" >> .git/info/exclude
+              echo "SECRET" > ignored/secret.txt
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/no-commit/${{ matrix.name }}/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      # chmod scenario needs an initial committed file, then permission change
+      - name: 'Setup: create tracked file for chmod test'
+        if: matrix.name == 'chmod-only'
+        run: |
+          mkdir -p test-chmod
+          echo "echo hello" > test-chmod/script.sh
+
+      - name: 'Setup: commit initial file for chmod test'
+        if: matrix.name == 'chmod-only'
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: chmod setup ${{ env.TEST_ID }}'
+          file_pattern: 'test-chmod/script.sh'
+
+      - name: 'Setup: sync after initial commit for chmod test'
+        if: matrix.name == 'chmod-only'
+        env:
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+        run: |
+          git fetch --prune origin "+refs/heads/$BRANCH_NAME:refs/remotes/origin/$BRANCH_NAME"
+          git reset --hard "origin/$BRANCH_NAME"
+
+      - name: 'Setup: apply chmod'
+        if: matrix.name == 'chmod-only'
+        run: chmod +x test-chmod/script.sh
+
+      - name: Prepare Test Scenario
+        if: matrix.setup != '' && matrix.setup != '__CHMOD_SCENARIO__'
+        shell: bash
+        env:
+          TEST_ID: ${{ env.TEST_ID }}
+        run: |
+          set -euo pipefail          
+          ${{ matrix.setup }}
+
+      - name: Run commit-changes (expect no commit)
+        id: commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: no-commit ${{ matrix.name }} ${{ env.TEST_ID }}'
+          file_pattern: ${{ matrix.file_pattern }}
+          empty: ${{ matrix.empty }}
+
+      - name: Verify No Commit Was Created
+        shell: bash
+        env:
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          CHANGES_DETECTED: ${{ steps.commit.outputs.changes_detected }}
+        run: |
+          set -euo pipefail
+          [ "$CHANGES_DETECTED" = "true" ] && { echo "::error::changes_detected should be false"; exit 1; }
+          [ -n "${COMMIT_SHA:-}" ] && { echo "::error::commit_hash should be empty"; exit 1; }
+          echo "✅ No commit created as expected (${{ matrix.name }})"
 
       - name: Cleanup Branch
         if: always()
@@ -310,7 +614,7 @@ jobs:
           branch_name: ${{ steps.branch.outputs.branch }}
 
   test-empty-commit-allowed:
-    name: Test Empty Commit (Allowed)
+    name: 'Test Empty: allowed empty commit'
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
@@ -335,17 +639,17 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch_name: test/empty-commit-allowed/${{ env.TEST_ID }}
+          branch_name: test/empty-allowed/${{ env.TEST_ID }}
           reset_branch: 'true'
 
-      - name: Run commit-changes (Empty Allowed)
+      - name: Run commit-changes (empty=true, no file changes)
         id: commit
         uses: ./tmp/actions-code/actions/common/commit-changes
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           branch: ${{ steps.branch.outputs.branch }}
-          commit_message: 'test: empty commit allowed ${{ env.TEST_ID }}'
+          commit_message: 'test: empty commit ${{ env.TEST_ID }}'
           empty: 'true'
 
       - name: Verify Empty Commit
@@ -357,368 +661,12 @@ jobs:
           TEST_REPO: ${{ env.TEST_REPO }}
         run: |
           set -euo pipefail
+          [ "$CHANGES_DETECTED" = "true" ] || { echo "::error::changes_detected should be true"; exit 1; }
+          [ -z "$COMMIT_SHA" ] && { echo "::error::commit_hash should not be empty"; exit 1; }
 
-          if [ "$CHANGES_DETECTED" != "true" ]; then
-            echo "::error::changes_detected should be true for allowed empty commit"
-            exit 1
-          fi
-
-          if [ -z "$COMMIT_SHA" ]; then
-            echo "::error::Commit SHA not found for empty commit"
-            exit 1
-          fi
-
-          # Empty commit must not include any file changes
-          COUNT=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files | length')
-          if [ "$COUNT" -ne 0 ]; then
-            FILES=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files[].filename' || true)
-            echo "::error::Expected empty commit (0 files), got $COUNT files:"
-            echo "$FILES"
-            exit 1
-          fi
-
-          echo "✅ Empty commit created successfully (0 files changed)"
-
-      - name: Cleanup Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.branch.outputs.branch }}
-
-  test-empty-commit-disallowed:
-    name: Test Empty Commit (Disallowed)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
-        with:
-          egress-policy: audit
-
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
-        with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
-
-      - name: Create Test Branch
-        id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/empty-commit-disallowed/${{ env.TEST_ID }}
-          reset_branch: 'true'
-
-      - name: Run commit-changes (Empty Disallowed)
-        id: commit
-        uses: ./tmp/actions-code/actions/common/commit-changes
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch: ${{ steps.branch.outputs.branch }}
-          commit_message: 'test: empty commit disallowed ${{ env.TEST_ID }}'
-          empty: 'false'
-
-      - name: Verify No Commit
-        shell: bash
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
-          CHANGES_DETECTED: ${{ steps.commit.outputs.changes_detected }}
-        run: |
-          if [ "$CHANGES_DETECTED" == "true" ]; then
-             echo "::error::Changes detected should be false for disallowed empty commit"
-             exit 1
-          fi
-
-          if [ -n "$COMMIT_SHA" ]; then
-            echo "::error::Commit SHA should be empty when no commit is created"
-            exit 1
-          fi
-
-          echo "✅ No commit created as expected"
-
-      - name: Cleanup Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.branch.outputs.branch }}
-
-  test-file-pattern:
-    name: Test File Pattern
-    runs-on: ubuntu-latest
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
-        with:
-          egress-policy: audit
-
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
-        with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
-
-      - name: Create Test Branch
-        id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/file-pattern/${{ env.TEST_ID }}
-          reset_branch: 'true'
-
-      - name: Create Test Files
-        env:
-          TEST_ID: ${{ env.TEST_ID }}
-        run: |
-          mkdir -p test-pattern
-          echo "Included file $TEST_ID" > test-pattern/included.txt
-          echo "Ignored file $TEST_ID" > test-pattern/ignored.txt
-
-      - name: Run commit-changes (Pattern)
-        id: commit
-        uses: ./tmp/actions-code/actions/common/commit-changes
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch: ${{ steps.branch.outputs.branch }}
-          commit_message: 'test: file pattern ${{ env.TEST_ID }}'
-          file_pattern: 'test-pattern/included.txt'
-
-      - name: Verify File Pattern
-        shell: bash
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-        run: |
-          if [ -z "$COMMIT_SHA" ]; then
-            echo "::error::Commit not created"
-            exit 1
-          fi
-
-          # List files in commit
-          FILES=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files[].filename')
-
-          if ! echo "$FILES" | grep -q "test-pattern/included.txt"; then
-             echo "::error::Included file missing from commit"
-             exit 1
-          fi
-
-          if echo "$FILES" | grep -q "test-pattern/ignored.txt"; then
-             echo "::error::Ignored file present in commit"
-             exit 1
-          fi
-
-          echo "✅ File pattern verified correctly"
-
-      - name: Cleanup Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.branch.outputs.branch }}}
-
-  test-chmod-ignored:
-    name: Test CHMOD Changes Ignored
-    runs-on: ubuntu-latest
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
-        with:
-          egress-policy: audit
-
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
-        with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
-
-      - name: Create Test Branch
-        id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/chmod-ignored/${{ env.TEST_ID }}
-          reset_branch: 'true'
-
-      - name: Setup Initial State
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-          TEST_ID: ${{ env.TEST_ID }}
-        run: |
-          mkdir -p test-chmod
-          echo "echo 'hello'" > test-chmod/script.sh
-
-      - name: Create Initial Commit
-        id: initial_commit
-        uses: ./tmp/actions-code/actions/common/commit-changes
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch: ${{ steps.branch.outputs.branch }}
-          commit_message: 'test: initial setup ${{ env.TEST_ID }}'
-          file_pattern: 'test-chmod/script.sh'
-
-      - name: Reset to Initial State(The commit action is using the github API to commit changes, so the local git state is out of sync with the remote)
-        env:
-          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
-        run: |
-          git fetch --prune origin "+refs/heads/$BRANCH_NAME:refs/remotes/origin/$BRANCH_NAME"
-          git reset --hard "origin/$BRANCH_NAME"
-
-      - name: Change Permissions
-        run: |
-          chmod +x test-chmod/script.sh
-          # Verify local change exists
-          ls -l test-chmod/script.sh
-
-      - name: Run commit-changes (Should Ignore Chmod)
-        id: commit
-        uses: ./tmp/actions-code/actions/common/commit-changes
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch: ${{ steps.branch.outputs.branch }}
-          commit_message: 'test: chmod change ${{ env.TEST_ID }}'
-          file_pattern: 'test-chmod/script.sh'
-          empty: 'false'
-
-      - name: Verify No Commit
-        shell: bash
-        env:
-          CHANGES_DETECTED: ${{ steps.commit.outputs.changes_detected }}
-        run: |
-          if [ "$CHANGES_DETECTED" == "true" ]; then
-             echo "::error::Changes detected for chmod only change - should be ignored"
-             exit 1
-          fi
-          echo "✅ Chmod only change correctly ignored"
-
-      - name: Cleanup Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.branch.outputs.branch }}
-
-  test-existing-file:
-    name: Test Existing File
-    runs-on: ubuntu-latest
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
-        with:
-          egress-policy: audit
-
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
-        with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
-
-      - name: Create Test Branch
-        id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/existing-file/${{ env.TEST_ID }}
-          reset_branch: 'true'
-
-      - name: Setup Initial State
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-          TEST_ID: ${{ env.TEST_ID }}
-        run: |
-          mkdir -p test-chmod
-          echo "echo 'hello'" > test-chmod/script.sh
-
-      - name: Create Initial Commit
-        id: initial_commit
-        uses: ./tmp/actions-code/actions/common/commit-changes
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch: ${{ steps.branch.outputs.branch }}
-          commit_message: 'test: initial setup ${{ env.TEST_ID }}'
-          file_pattern: 'test-chmod/script.sh'
-
-      - name: Reset to Initial State(The commit action is using the github API to commit changes, so the local git state is out of sync with the remote)
-        env:
-          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
-        run: |
-          git fetch --prune origin "+refs/heads/$BRANCH_NAME:refs/remotes/origin/$BRANCH_NAME"
-          git reset --hard "origin/$BRANCH_NAME"
-
-      - name: Change File content
-        run: |
-          mkdir -p test-chmod
-          echo "echo 'hello2'" > test-chmod/script.sh
-
-      - name: Run commit-changes
-        id: commit
-        uses: ./tmp/actions-code/actions/common/commit-changes
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch: ${{ steps.branch.outputs.branch }}
-          commit_message: 'test: chmod change ${{ env.TEST_ID }}'
-          file_pattern: 'test-chmod/script.sh'
-          empty: 'false'
-
-      - name: Verify Commit
-        shell: bash
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-          EXPECTED_MSG: 'test: chmod change ${{ env.TEST_ID }}'
-        run: |
-          if [ -z "$COMMIT_SHA" ]; then
-            echo "::error::Commit SHA not found in output"
-            exit 1
-          fi
-
-          echo "✅ Commit created: $COMMIT_SHA"
-
-          # Verify commit message
-          MSG=$(gh api "/repos/$TEST_REPO/git/commits/$COMMIT_SHA" --jq '.message')
-          if [ "$MSG" != "$EXPECTED_MSG" ]; then
-            echo "::error::Commit message mismatch. Expected '$EXPECTED_MSG', got '$MSG'"
-            exit 1
-          fi
-          echo "✅ Commit message verified"
+          FILE_COUNT=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files | length')
+          [ "$FILE_COUNT" -eq 0 ] || { echo "::error::Expected 0 files, got $FILE_COUNT"; exit 1; }
+          echo "✅ Empty commit created with 0 file changes"
 
       - name: Cleanup Branch
         if: always()
@@ -729,7 +677,7 @@ jobs:
           branch_name: ${{ steps.branch.outputs.branch }}
 
   test-custom-branch:
-    name: Test Custom Branch
+    name: 'Test Branch: commit lands on target branch'
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
@@ -761,193 +709,33 @@ jobs:
         env:
           TEST_ID: ${{ env.TEST_ID }}
         run: |
-          mkdir -p test-custom
-          echo "Custom branch content $TEST_ID" > test-custom/file.txt
+          mkdir -p test-branch
+          echo "branch test $TEST_ID" > test-branch/file.txt
 
-      - name: Run commit-changes (Custom Branch)
+      - name: Run commit-changes
         id: commit
         uses: ./tmp/actions-code/actions/common/commit-changes
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           branch: ${{ steps.branch.outputs.branch }}
-          commit_message: 'test: custom branch commit ${{ env.TEST_ID }}'
-          file_pattern: 'test-custom/file.txt'
+          commit_message: 'test: custom branch ${{ env.TEST_ID }}'
+          file_pattern: 'test-branch/file.txt'
 
-      - name: Verify Custom Branch Commit
+      - name: Verify Commit Is Branch Tip
         shell: bash
         env:
           GH_TOKEN: ${{ steps.setup.outputs.token }}
           COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
           TEST_REPO: ${{ env.TEST_REPO }}
-          TEST_ID: ${{ env.TEST_ID }}
-        run: |
-          if [ -z "$COMMIT_SHA" ]; then
-            echo "::error::Commit not created"
-            exit 1
-          fi
-
-          # Verify commit exists on the correct branch
-          BRANCH_NAME="test/custom-branch/$TEST_ID"
-          BRANCH_SHA=$(gh api "/repos/$TEST_REPO/commits/$BRANCH_NAME" --jq '.sha')
-
-          if [ "$COMMIT_SHA" != "$BRANCH_SHA" ]; then
-             echo "::error::Commit SHA does not match branch tip. Got $BRANCH_SHA, expected $COMMIT_SHA"
-             exit 1
-          fi
-
-          echo "✅ Commit verified on custom branch: $BRANCH_NAME"
-
-      - name: Cleanup Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.branch.outputs.branch }}
-
-  test-empty-directory-only:
-    name: Test Empty Directory Only (should NOT commit)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
-        with:
-          egress-policy: audit
-
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
-        with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
-
-      - name: Create Test Branch
-        id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/empty-dir-only/${{ env.TEST_ID }}
-          reset_branch: 'true'
-
-      - name: Create Empty Directory
-        run: |
-          mkdir -p empty-dir-only/subdir
-
-      - name: Run commit-changes (should not commit)
-        id: commit
-        uses: ./tmp/actions-code/actions/common/commit-changes
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch: ${{ steps.branch.outputs.branch }}
-          commit_message: 'test: empty dir only ${{ env.TEST_ID }}'
-          file_pattern: '.'
-          empty: 'false'
-
-      - name: Verify No Commit
-        shell: bash
-        env:
-          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
-          CHANGES_DETECTED: ${{ steps.commit.outputs.changes_detected }}
-        run: |
-          if [ "$CHANGES_DETECTED" = "true" ]; then
-            echo "::error::changes_detected should be false for empty dir only"
-            exit 1
-          fi
-          if [ -n "$COMMIT_SHA" ]; then
-            echo "::error::Commit SHA should be empty when no commit is created"
-            exit 1
-          fi
-          echo "✅ No commit created for empty directory"
-
-      - name: Cleanup Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.branch.outputs.branch }}
-
-  test-ignored-file-only:
-    name: Test Ignored File Only (should NOT commit)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
-        with:
-          egress-policy: audit
-
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
-        with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
-
-      - name: Create Test Branch
-        id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/ignored-file-only/${{ env.TEST_ID }}
-          reset_branch: 'true'
-
-      - name: Configure Local Ignore + Create Ignored File
-        shell: bash
-        env:
-          TEST_ID: ${{ env.TEST_ID }}
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
         run: |
           set -euo pipefail
+          [ -z "$COMMIT_SHA" ] && { echo "::error::Commit not created"; exit 1; }
 
-          mkdir -p ignored
-          IGNORED_FILE="ignored/only-${TEST_ID}.txt"
-
-          # Ensure local exclude file exists and ignore just this test file
-          mkdir -p .git/info
-          echo "$IGNORED_FILE" >> .git/info/exclude
-
-          # Create the ignored file
-          echo "IGNORED=1" > "$IGNORED_FILE"
-
-          git check-ignore -q "$IGNORED_FILE"
-
-      - name: Run commit-changes (should not commit)
-        id: commit
-        uses: ./tmp/actions-code/actions/common/commit-changes
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch: ${{ steps.branch.outputs.branch }}
-          commit_message: 'test: ignored file only ${{ env.TEST_ID }}'
-          file_pattern: '.'
-          empty: 'false'
-
-      - name: Verify No Commit
-        shell: bash
-        env:
-          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
-          CHANGES_DETECTED: ${{ steps.commit.outputs.changes_detected }}
-        run: |
-          if [ "$CHANGES_DETECTED" = "true" ]; then
-            echo "::error::changes_detected should be false for ignored file only"
-            exit 1
-          fi
-          if [ -n "$COMMIT_SHA" ]; then
-            echo "::error::Commit SHA should be empty when no commit is created"
-            exit 1
-          fi
-          echo "✅ No commit created for ignored-only changes"
+          BRANCH_TIP=$(gh api "/repos/$TEST_REPO/commits/$BRANCH_NAME" --jq '.sha')
+          [ "$COMMIT_SHA" = "$BRANCH_TIP" ] || { echo "::error::Commit $COMMIT_SHA is not branch tip ($BRANCH_TIP)"; exit 1; }
+          echo "✅ Commit is the tip of branch $BRANCH_NAME"
 
       - name: Cleanup Branch
         if: always()
@@ -957,8 +745,8 @@ jobs:
           repository: ${{ env.TEST_REPO }}
           branch_name: ${{ steps.branch.outputs.branch }}
 
-  test-pattern-mismatch:
-    name: Test Pattern Mismatch (changes exist but pattern excludes them)
+  test-commit-message:
+    name: 'Test Message: commit message matches input'
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
@@ -983,128 +771,38 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch_name: test/pattern-mismatch/${{ env.TEST_ID }}
+          branch_name: test/commit-message/${{ env.TEST_ID }}
           reset_branch: 'true'
 
-      - name: Create a Change Outside the Pattern
+      - name: Create Test File
         env:
           TEST_ID: ${{ env.TEST_ID }}
-        run: |
-          mkdir -p mismatch
-          echo "change $TEST_ID" > mismatch/outside.txt
+        run: echo "msg test $TEST_ID" > message-test.txt
 
-      - name: Run commit-changes with non-matching pattern
+      - name: Run commit-changes
         id: commit
         uses: ./tmp/actions-code/actions/common/commit-changes
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           branch: ${{ steps.branch.outputs.branch }}
-          commit_message: 'test: pattern mismatch ${{ env.TEST_ID }}'
-          file_pattern: 'does-not-exist/**/*.txt'
-          empty: 'false'
+          commit_message: 'chore(test): verify commit message ${{ env.TEST_ID }}'
+          file_pattern: 'message-test.txt'
 
-      - name: Verify No Commit
-        shell: bash
-        env:
-          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
-          CHANGES_DETECTED: ${{ steps.commit.outputs.changes_detected }}
-        run: |
-          if [ "$CHANGES_DETECTED" = "true" ]; then
-            echo "::error::changes_detected should be false when pattern matches nothing"
-            exit 1
-          fi
-          if [ -n "$COMMIT_SHA" ]; then
-            echo "::error::Commit SHA should be empty when no commit is created"
-            exit 1
-          fi
-          echo "✅ No commit created when pattern mismatches"
-
-      - name: Cleanup Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.branch.outputs.branch }}
-
-  test-file-pattern-relative-to-caller-dir:
-    name: Test File Pattern Relative to Caller Subdirectory
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
-        with:
-          egress-policy: audit
-
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
-        with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
-
-      - name: Create Test Branch
-        id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/file-pattern-relative/${{ env.TEST_ID }}
-          reset_branch: 'true'
-
-      - name: Create Test Files (inside caller subdir)
-        shell: bash
-        env:
-          TEST_ID: ${{ env.TEST_ID }}
-        run: |
-          set -euo pipefail
-
-          mkdir -p  workflows/common/test2/dist workflows/common/test2/src/generated/
-          echo "dist file $TEST_ID" > workflows/common/test2/dist/relative-dist.txt
-          echo "generated file $TEST_ID" > workflows/common/test2/src/generated/relative-gen.txt
-
-      - name: Run commit-changes (patterns are relative to caller dir)
-        id: commit
-        uses: ./tmp/actions-code/actions/common/commit-changes
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch: ${{ steps.branch.outputs.branch }}
-          commit_message: 'test: relative patterns ${{ env.TEST_ID }}'
-          file_pattern: 'workflows/common/test2/dist/**/* workflows/common/test2/src/generated/**/*'
-
-      - name: Verify Commit Includes Prefixed Paths
+      - name: Verify Commit Message
         shell: bash
         env:
           GH_TOKEN: ${{ steps.setup.outputs.token }}
           COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
           TEST_REPO: ${{ env.TEST_REPO }}
+          EXPECTED_MSG: 'chore(test): verify commit message ${{ env.TEST_ID }}'
         run: |
           set -euo pipefail
+          [ -z "$COMMIT_SHA" ] && { echo "::error::Commit not created"; exit 1; }
 
-          if [ -z "$COMMIT_SHA" ]; then
-            echo "::error::Commit SHA not found in output"
-            exit 1
-          fi
-
-          FILES=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files[].filename' | sort || true)
-
-          EXPECTED_1="workflows/common/test2/dist/relative-dist.txt"
-          EXPECTED_2="workflows/common/test2/src/generated/relative-gen.txt"
-
-          echo "Files in commit:"
-          echo "$FILES"
-
-          echo "$FILES" | grep -Fxq "$EXPECTED_1" || { echo "::error::Missing expected file: $EXPECTED_1"; exit 1; }
-          echo "$FILES" | grep -Fxq "$EXPECTED_2" || { echo "::error::Missing expected file: $EXPECTED_2"; exit 1; }
-
-          echo "✅ Relative patterns were correctly resolved against caller subdirectory"
+          ACTUAL_MSG=$(gh api "/repos/$TEST_REPO/git/commits/$COMMIT_SHA" --jq '.message')
+          [ "$ACTUAL_MSG" = "$EXPECTED_MSG" ] || { echo "::error::Message mismatch: expected '$EXPECTED_MSG', got '$ACTUAL_MSG'"; exit 1; }
+          echo "✅ Commit message matches input"
 
       - name: Cleanup Branch
         if: always()
