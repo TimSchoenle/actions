@@ -33,7 +33,10 @@ inputs:
 outputs:
   pr-url:
     description: 'The URL of the created Pull Request'
-    value: ${{ steps.create-pr.outputs.pr-url }}
+    value: ${{ steps.create-pr.outputs.pr_url }}
+  pr_number:
+    description: 'The id of the created Pull Request'
+    value: ${{ steps.create-pr.outputs.pr_number }}
 
 runs:
   using: 'composite'
