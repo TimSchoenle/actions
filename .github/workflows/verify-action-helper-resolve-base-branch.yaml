@@ -164,7 +164,7 @@ jobs:
         env:
           BASE_BRANCH_NAME: ${{ steps.resolve-base-branch.outputs.base_branch }}
         run: |
-          if ![-z "$BASE_BRANCH_NAME" ]; then
+          if [ -n "$BASE_BRANCH_NAME" ]; then
             echo "::error::Base branch name ($BASE_BRANCH_NAME) should be empty"
             exit 1
           fi
