@@ -1001,7 +1001,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          mkdir -p dist src/generated
+          mkdir -p  workflows/common/test2/dist workflows/common/test2/src/generated/
           echo "dist file $TEST_ID" > workflows/common/test2/dist/relative-dist.txt
           echo "generated file $TEST_ID" > workflows/common/test2/src/generated/relative-gen.txt
 
