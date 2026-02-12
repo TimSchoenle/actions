@@ -119,7 +119,7 @@ runs:
         repo: ${{ inputs.repository }}
         branch: ${{ inputs.branch }}
         empty: ${{ inputs.empty }}
-        file_pattern: ${{ inputs.file_pattern }}
+        file_pattern: ${{ steps.detect.outputs.resolved_pattern }}
       env:
         GITHUB_TOKEN: ${{ inputs.token }}
 
