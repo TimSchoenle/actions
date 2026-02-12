@@ -48,11 +48,6 @@ jobs:
           test_repo_name: ${{ env.TEST_REPO_NAME }}
           current_repo_checkout_path: 'tmp/actions-code'
 
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-
       - name: Test resolve-base-branch
         id: resolve-base-branch
         uses: ./tmp/actions-code/actions/helper/resolve-base-branch
