@@ -1002,8 +1002,8 @@ jobs:
           set -euo pipefail
 
           mkdir -p dist src/generated
-          echo "dist file $TEST_ID" > dist/relative-dist.txt
-          echo "generated file $TEST_ID" > src/generated/relative-gen.txt
+          echo "dist file $TEST_ID" > workflows/common/test2/dist/relative-dist.txt
+          echo "generated file $TEST_ID" > workflows/common/test2/src/generated/relative-gen.txt
 
       - name: Run commit-changes (patterns are relative to caller dir)
         id: commit
