@@ -329,9 +329,6 @@ jobs:
           repository: ${{ env.TEST_REPO }}
           branch_name: ${{ steps.branch.outputs.branch }}
 
-  # ---------------------------------------------------------------------------
-  # File modification (edit existing tracked file)
-  # ---------------------------------------------------------------------------
   test-modify-existing-file:
     name: 'Test Modify: existing tracked file'
     runs-on: ubuntu-latest
