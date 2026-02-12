@@ -630,11 +630,12 @@ jobs:
         env:
           COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
           CHANGES_DETECTED: ${{ steps.commit.outputs.changes_detected }}
+          MATRIX_NAME: ${{ matrix.name }}
         run: |
           set -euo pipefail
           [ "$CHANGES_DETECTED" = "true" ] && { echo "::error::changes_detected should be false"; exit 1; }
           [ -n "${COMMIT_SHA:-}" ] && { echo "::error::commit_hash should be empty"; exit 1; }
-          echo "✅ No commit created as expected (${{ matrix.name }})"
+          echo "✅ No commit created as expected ($matrix.name)"
 
       - name: Cleanup Branch
         if: always()
