@@ -49,6 +49,8 @@ runs:
         set -euo pipefail
         git config core.fileMode false
 
+        FILES=()
+
         if [ -z "${FILE_PATTERN:-}" ] || [ "$FILE_PATTERN" = "." ]; then
           echo "::debug::No file pattern filter specified — checking all files"
           mapfile -t STATUS_LINES < <(git status --porcelain)
@@ -73,7 +75,6 @@ runs:
 
           # Extract repo-root-relative file paths from porcelain output
           # git status --porcelain shows untracked dirs as "?? dir/" — we must expand those
-          FILES=()
           for line in "${STATUS_LINES[@]}"; do
             entry="${line:3}"
             # Handle renames: "old -> new"
@@ -106,7 +107,7 @@ runs:
             echo "$RESOLVED_PATTERN"
             echo "__GHCOMMIT_EOF__"
           } >> "$GITHUB_OUTPUT"
-          echo "✅ Detected ${#FILES[@]} changed file(s) matching pattern '${FILE_PATTERN}'"
+          echo "✅ Detected $CHANGE_COUNT changed file(s) matching pattern '${FILE_PATTERN}'"
           echo "::debug::Resolved file list: ${RESOLVED_PATTERN}"
         else
           echo "has_changes=false" >> "$GITHUB_OUTPUT"
