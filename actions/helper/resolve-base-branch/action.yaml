@@ -51,7 +51,7 @@ runs:
       run: |
         if [ -z "$BASE_BRANCH_INPUT" ]; then
           # Fetch default branch
-          DEFAULT_BRANCH=$(gh api "/repos/$REPO_NAME/$REPO_NAME" --jq .default_branch)
+          DEFAULT_BRANCH=$(gh api "/repos/$OWNER_NAME/$REPO_NAME" --jq .default_branch)
           echo "branch=$DEFAULT_BRANCH" >> "$GITHUB_OUTPUT"
           echo "Using default branch: $DEFAULT_BRANCH"
         else
