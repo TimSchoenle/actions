@@ -8,8 +8,8 @@ inputs:
   repository:
     description: 'Repository name to create branch in (e.g. owner/repo)'
     required: true
-  base_branch:
-    description: 'The branch to branch from (defaults to repository default branch)'
+  branch_name:
+    description: 'The branch name to resolve (defaults to repository default branch)'
     required: false
     default: ''
 

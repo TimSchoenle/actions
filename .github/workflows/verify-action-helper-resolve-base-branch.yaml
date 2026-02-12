@@ -67,3 +67,95 @@ jobs:
             exit 1
           fi
           echo "✅ Verified base branch name matches"
+
+  verify-existing-branch:
+    name: Verify none base branch resolver
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/resolve-base-branch-exists/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Test resolve-base-branch
+        id: resolve-base-branch
+        uses: ./tmp/actions-code/actions/helper/resolve-base-branch
+        with:
+          repository: ${{ env.TEST_REPO }}
+          token: ${{ steps.setup.outputs.token }}
+          branch_name: ${{ steps.branch.outputs.branch_name }}
+
+      - name: Verify Base Branch Name
+        shell: bash
+        env:
+          BASE_BRANCH_NAME: ${{ steps.resolve-base-branch.outputs.base_branch }}
+          EXPECTED_BASE_BRANCH_NAME: ${{ steps.branch.outputs.branch_name }}
+        run: |
+          # Verify base branch name
+          if [ "$BASE_BRANCH_NAME" != "$EXPECTED_BASE_BRANCH_NAME" ]; then
+            echo "::error::Base branch name ($BASE_BRANCH_NAME) does not match default ($EXPECTED_BASE_BRANCH_NAME)"
+            exit 1
+          fi
+          echo "✅ Verified base branch name matches"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
+
+  verify-none-existing-branch:
+    name: Verify none existing branch resolver
+    runs-on: ubuntu-latest
+    env:
+      BRANCH_NAME: test/resolve-base-branch-does-not-exist/${{ env.TEST_ID }}
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Test resolve-base-branch
+        id: resolve-base-branch
+        uses: ./tmp/actions-code/actions/helper/resolve-base-branch
+        with:
+          repository: ${{ env.TEST_REPO }}
+          token: ${{ steps.setup.outputs.token }}
+          branch_name: ${{ env.BRANCH_NAME }}
