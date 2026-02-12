@@ -70,7 +70,8 @@ runs:
         BRANCH: ${{ steps.base.outputs.branch }}
         SILENT_FAIL: ${{ inputs.silent_fail }}
       run: |
-        HTTP_STATUS=$(gh api "/repos/$OWNER_NAME/$REPO_NAME/branches/$BRANCH" --silent -i 2>/dev/null | head -1 | awk '{print $2}')
+        RESPONSE=$(gh api "/repos/$OWNER_NAME/$REPO_NAME/branches/$BRANCH" --silent -i 2>/dev/null || true)
+        HTTP_STATUS=$(echo "$RESPONSE" | head -1 | awk '{print $2}')
         if [ "$HTTP_STATUS" = "200" ]; then
           echo "Branch '$BRANCH' exists in $REPO_NAME for owner $OWNER_NAME"
           echo "exists=true" >> "$GITHUB_OUTPUT"
