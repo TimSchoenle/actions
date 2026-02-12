@@ -57,7 +57,7 @@ jobs:
 
       - name: Create PR to Close
         id: create-pr
-        uses: TimSchoenle/actions/actions/common/create-pull-request@1393f765dcffb543ce8b1b74958ae60f0dc08dab # actions-common-create-pull-request-v1.0.1
+        uses: TimSchoenle/actions/actions/common/create-pull-request@43ba7f3e786f715bf727a212d8f1f15c4f50e342 # actions-common-create-pull-request-v1.0.2
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -173,7 +173,7 @@ jobs:
 
       - name: Create PR to Close
         id: create-pr
-        uses: TimSchoenle/actions/actions/common/create-pull-request@1393f765dcffb543ce8b1b74958ae60f0dc08dab # actions-common-create-pull-request-v1.0.1
+        uses: TimSchoenle/actions/actions/common/create-pull-request@43ba7f3e786f715bf727a212d8f1f15c4f50e342 # actions-common-create-pull-request-v1.0.2
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
