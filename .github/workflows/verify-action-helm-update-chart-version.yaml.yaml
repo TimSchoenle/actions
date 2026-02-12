@@ -524,6 +524,7 @@ jobs:
           GH_TOKEN: ${{ steps.setup.outputs.token }}
           TEST_REPO: ${{ env.TEST_REPO }}
           BRANCH: test/nested/${{ env.TEST_ID }}/nested-svc/v5.0.0
+          TEST_ID: ${{ env.TEST_ID }}
         run: |
           set -euo pipefail
 
@@ -539,7 +540,7 @@ jobs:
           echo "✅ Nested values.yaml verified"
 
           # Verify only the expected files were changed
-          PR_NUMBER=$(gh pr list --repo "$TEST_REPO" --head "test/nested/${{ env.TEST_ID }}/nested-svc/v5.0.0" --json number --jq '.[0].number')
+          PR_NUMBER=$(gh pr list --repo "$TEST_REPO" --head "test/nested/$TEST_ID/nested-svc/v5.0.0" --json number --jq '.[0].number')
           FILES=$(gh pr view "$PR_NUMBER" --repo "$TEST_REPO" --json files --jq '.files[].path' | sort)
           EXPECTED=$(printf '%s\n' "infra/k8s/charts/nested-svc/Chart.yaml" "infra/k8s/charts/nested-svc/values.yaml" | sort)
           [ "$FILES" = "$EXPECTED" ] || { echo "::error::File mismatch. Got: $FILES"; exit 1; }
