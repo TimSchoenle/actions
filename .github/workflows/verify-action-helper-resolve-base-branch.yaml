@@ -131,8 +131,6 @@ jobs:
   verify-none-existing-branch:
     name: Verify none existing branch resolver
     runs-on: ubuntu-latest
-    env:
-      BRANCH_NAME: test/resolve-base-branch-does-not-exist/${{ env.TEST_ID }}
     permissions:
       contents: read # to fetch code
     steps:
@@ -158,4 +156,4 @@ jobs:
         with:
           repository: ${{ env.TEST_REPO }}
           token: ${{ steps.setup.outputs.token }}
-          branch_name: ${{ env.BRANCH_NAME }}
+          branch_name: test/resolve-base-branch-does-not-exist/${{ env.TEST_ID }}
