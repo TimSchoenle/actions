@@ -48,7 +48,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Resolve Branch](./actions/helper/resolve-base-branch) | Resolve the given base branch or return default branch. | actions-helper-resolve-base-branch-v1.0.0 | `uses: TimSchoenle/actions/actions/helper/resolve-base-branch@actions-helper-resolve-base-branch-v1.0.0` |
+| [Resolve Branch](./actions/helper/resolve-base-branch) | Resolve the given base branch or return default branch. With optional existence check. | actions-helper-resolve-base-branch-v1.0.0 | `uses: TimSchoenle/actions/actions/helper/resolve-base-branch@actions-helper-resolve-base-branch-v1.0.0` |
 | [Verify Commit Authors](./actions/helper/verify-commit-authors) | Verifies that all commits in a PR are authored by a specific set of users and are signed. | actions-helper-verify-commit-authors-v1.1.5 | `uses: TimSchoenle/actions/actions/helper/verify-commit-authors@actions-helper-verify-commit-authors-v1.1.5` |
 
 ### Test
