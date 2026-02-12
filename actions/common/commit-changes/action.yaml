@@ -49,42 +49,67 @@ runs:
         set -euo pipefail
         git config core.fileMode false
 
-        # Build git pathspec arguments from the file pattern
         if [ -z "${FILE_PATTERN:-}" ] || [ "$FILE_PATTERN" = "." ]; then
           echo "::debug::No file pattern filter specified — checking all files"
-          CHANGE_COUNT=$(git status --porcelain | wc -l)
+          mapfile -t CHANGED < <(git status --porcelain)
+          RESOLVED_PATTERN="."
         else
+          # Build pathspecs: prefix glob patterns with :(glob) for git
           read -r -a RAW_PATTERNS <<< "$FILE_PATTERN"
           PATHSPECS=()
           for spec in "${RAW_PATTERNS[@]}"; do
             if [[ "$spec" == :\(*\)* ]]; then
-              # Already a magic pathspec (e.g. :(glob)foo) — pass through
               PATHSPECS+=("$spec")
             elif [[ "$spec" == *"*"* || "$spec" == *"?"* || "$spec" == *"["* ]]; then
-              # Contains glob characters — wrap with :(glob) so git interprets them
               PATHSPECS+=(":(glob)$spec")
             else
               PATHSPECS+=("$spec")
             fi
           done
           echo "::debug::Resolved pathspecs: ${PATHSPECS[*]}"
-          CHANGE_COUNT=$(git status --porcelain -- "${PATHSPECS[@]}" | wc -l)
+
+          # Collect changed files (modified, deleted, untracked) matching pathspecs
+          mapfile -t CHANGED < <(git status --porcelain -- "${PATHSPECS[@]}")
+
+          # Extract repo-root-relative file paths from porcelain output
+          FILES=()
+          for line in "${CHANGED[@]}"; do
+            file="${line:3}"
+            # Handle renames: "old -> new"
+            [[ "$file" == *" -> "* ]] && file="${file##* -> }"
+            [ -z "$file" ] && continue
+            FILES+=("$file")
+          done
+
+          if [ "${#FILES[@]}" -gt 0 ]; then
+            # Join into space-separated list for ghcommit-action
+            RESOLVED_PATTERN="$(printf '%s ' "${FILES[@]}")"
+            RESOLVED_PATTERN="${RESOLVED_PATTERN% }"
+          else
+            RESOLVED_PATTERN=""
+          fi
         fi
 
-        CHANGE_COUNT=$((CHANGE_COUNT + 0)) # trim whitespace from wc
-
-        if [ "$CHANGE_COUNT" -gt 0 ]; then
+        CHANGE_COUNT="${#CHANGED[@]}"
+        if [ "$CHANGE_COUNT" -gt 0 ] && [ -n "$RESOLVED_PATTERN" ]; then
           echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          # Use heredoc delimiter for safe multiline/special-char output
+          {
+            echo "resolved_pattern<<__GHCOMMIT_EOF__"
+            echo "$RESOLVED_PATTERN"
+            echo "__GHCOMMIT_EOF__"
+          } >> "$GITHUB_OUTPUT"
           echo "✅ Detected $CHANGE_COUNT changed file(s) matching pattern '${FILE_PATTERN}'"
+          echo "::debug::Resolved file list: ${RESOLVED_PATTERN}"
         else
           echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          echo "resolved_pattern=${FILE_PATTERN}" >> "$GITHUB_OUTPUT"
           if [ "$ALLOW_EMPTY" = "true" ]; then
             echo "ℹ️ No changes detected, but empty commit is allowed — will proceed"
           else
             echo "ℹ️ No changes detected and empty commits are disabled — skipping commit"
           fi
         fi
-
     - name: Commit Changes
       id: commit
       uses: planetscale/ghcommit-action@25309d8005ac7c3bcd61d3fe19b69e0fe47dbdde # v0.2.20
