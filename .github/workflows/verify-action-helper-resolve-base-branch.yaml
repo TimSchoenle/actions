@@ -111,7 +111,7 @@ jobs:
         shell: bash
         env:
           BASE_BRANCH_NAME: ${{ steps.resolve-base-branch.outputs.base_branch }}
-          EXPECTED_BASE_BRANCH_NAME: ${{ steps.branch.outputs.branch_name }}
+          EXPECTED_BASE_BRANCH_NAME: ${{ steps.branch.outputs.branch }}
         run: |
           # Verify base branch name
           if [ "$BASE_BRANCH_NAME" != "$EXPECTED_BASE_BRANCH_NAME" ]; then
