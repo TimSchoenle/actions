@@ -70,7 +70,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          branch_name: test/basic-commit/${{ env.TEST_ID }}
+          branch_name: test/basic-commit/${{ matrix.name }}/${{ env.TEST_ID }}
           reset_branch: 'true'
 
       - name: Create Test File
