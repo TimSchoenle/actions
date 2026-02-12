@@ -963,3 +963,93 @@ jobs:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           branch_name: ${{ steps.branch.outputs.branch }}
+
+  test-file-pattern-relative-to-caller-dir:
+    name: Test File Pattern Relative to Caller Subdirectory
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: workflows/common/test2
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/file-pattern-relative/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Create Test Files (inside caller subdir)
+        shell: bash
+        env:
+          TEST_ID: ${{ env.TEST_ID }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p dist src/generated
+          echo "dist file $TEST_ID" > dist/relative-dist.txt
+          echo "generated file $TEST_ID" > src/generated/relative-gen.txt
+
+      - name: Run commit-changes (patterns are relative to caller dir)
+        id: commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: relative patterns ${{ env.TEST_ID }}'
+          file_pattern: 'dist/**/* src/generated/**/*'
+
+      - name: Verify Commit Includes Prefixed Paths
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$COMMIT_SHA" ]; then
+            echo "::error::Commit SHA not found in output"
+            exit 1
+          fi
+
+          FILES=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files[].filename' | sort || true)
+
+          EXPECTED_1="workflows/common/test2/dist/relative-dist.txt"
+          EXPECTED_2="workflows/common/test2/src/generated/relative-gen.txt"
+
+          echo "Files in commit:"
+          echo "$FILES"
+
+          echo "$FILES" | grep -Fxq "$EXPECTED_1" || { echo "::error::Missing expected file: $EXPECTED_1"; exit 1; }
+          echo "$FILES" | grep -Fxq "$EXPECTED_2" || { echo "::error::Missing expected file: $EXPECTED_2"; exit 1; }
+
+          echo "✅ Relative patterns were correctly resolved against caller subdirectory"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
