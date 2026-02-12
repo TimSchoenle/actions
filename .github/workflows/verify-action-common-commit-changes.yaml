@@ -968,10 +968,6 @@ jobs:
     name: Test File Pattern Relative to Caller Subdirectory
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: workflows/common/test2
-
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
@@ -1000,6 +996,7 @@ jobs:
 
       - name: Create Test Files (inside caller subdir)
         shell: bash
+        working-directory: workflows/common/test2
         env:
           TEST_ID: ${{ env.TEST_ID }}
         run: |
