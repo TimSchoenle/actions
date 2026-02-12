@@ -157,3 +157,14 @@ jobs:
           repository: ${{ env.TEST_REPO }}
           token: ${{ steps.setup.outputs.token }}
           branch_name: test/resolve-base-branch-does-not-exist/${{ env.TEST_ID }}
+          silent_fail: true
+
+      - name: Verify Action Failure
+        shell: bash
+        env:
+          BASE_BRANCH_NAME: ${{ steps.resolve-base-branch.outputs.base_branch }}
+        run: |
+          if ![-z "$BASE_BRANCH_NAME" ]; then
+            echo "::error::Base branch name ($BASE_BRANCH_NAME) should be empty"
+            exit 1
+          fi
