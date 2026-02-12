@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.4](https://github.com/TimSchoenle/actions/compare/actions-common-commit-changes-v1.1.3...actions-common-commit-changes-v1.1.4) (2026-02-12)
+
+
+### Bug Fixes
+
+* **Actions/Commit-Changes:** rewrite path handlers to hopefully handle edge cases ([#405](https://github.com/TimSchoenle/actions/issues/405)) ([58c8ce5](https://github.com/TimSchoenle/actions/commit/58c8ce514561fddb56c3f7ad350ac6ee8c61f5d9))
+
 ## [1.1.3](https://github.com/TimSchoenle/actions/compare/actions-common-commit-changes-v1.1.2...actions-common-commit-changes-v1.1.3) (2026-02-11)
 
 
