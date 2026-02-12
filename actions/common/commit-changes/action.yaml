@@ -130,16 +130,20 @@ runs:
       run: |
         set -euo pipefail
 
-        # When there are no changes or no filter is used, pass the raw pattern through
-        if [ "$HAS_CHANGES" != "true" ] || [ "$USE_FILTER" != "true" ]; then
+        # No changes — just pass the raw pattern through (ghcommit won't run or will make empty commit)
+        if [ "$HAS_CHANGES" != "true" ]; then
           echo "resolved_pattern=${FILE_PATTERN:-"."}" >> "$GITHUB_OUTPUT"
           exit 0
         fi
 
-        # Re-query changed files and resolve to explicit paths for ghcommit-action
-        # (ghcommit doesn't understand :(glob) pathspecs or directory entries)
-        mapfile -t SPECS <<< "$PATHSPECS_NL"
-        mapfile -t STATUS_LINES < <(git status --porcelain -- "${SPECS[@]}")
+        # Query changed files and resolve to explicit file paths for ghcommit-action
+        # ghcommit cannot handle directories or :(glob) pathspecs — it needs concrete file paths
+        if [ "$USE_FILTER" = "true" ]; then
+          mapfile -t SPECS <<< "$PATHSPECS_NL"
+          mapfile -t STATUS_LINES < <(git status --porcelain -- "${SPECS[@]}")
+        else
+          mapfile -t STATUS_LINES < <(git status --porcelain)
+        fi
 
         FILES=()
         for line in "${STATUS_LINES[@]}"; do
