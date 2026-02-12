@@ -111,6 +111,11 @@
       "release-type": "simple",
       "component": "actions-common-create-branch",
       "include-component-in-tag": true
+    },
+    "actions/helper/resolve-base-branch": {
+      "release-type": "simple",
+      "component": "actions-helper-resolve-base-branch",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

@@ -36,6 +36,7 @@ Any version not listed in the following tables is not supported.
 
 | Component | Version | Supported |
 | --- | --- | --- |
+| [Helper Resolve-base-branch](./actions/helper/resolve-base-branch) | actions-helper-resolve-base-branch-v1.0.0 | :white_check_mark: |
 | [Verify Commit Authors](./actions/helper/verify-commit-authors) | actions-helper-verify-commit-authors-v1.1.5 | :white_check_mark: |
 
 ### Test

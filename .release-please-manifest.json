@@ -20,5 +20,6 @@
   "actions/test/setup-e2e": "1.1.0",
   "actions/common/close-pull-request": "1.1.0",
   "actions/common/delete-branch": "1.1.0",
-  "actions/common/create-branch": "1.2.0"
+  "actions/common/create-branch": "1.2.0",
+  "actions/helper/resolve-base-branch": "1.0.0"
 }

@@ -1,0 +1,40 @@
+name: 'Resolve Base Branch'
+description: 'Resolve the given base branch or return default branch.'
+
+inputs:
+  token:
+    description: 'GitHub Token'
+    required: true
+  repository:
+    description: 'Repository name to create branch in (e.g. owner/repo)'
+    required: true
+  base_branch:
+    description: 'The branch to branch from (defaults to repository default branch)'
+    required: false
+    default: ''
+
+outputs:
+  base_branch:
+    description: 'The base branch name'
+    value: ${{ steps.base.outputs.branch }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Resolve Base Branch
+      id: base
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        REPO: ${{ inputs.repository }}
+        BASE_BRANCH_INPUT: ${{ inputs.base_branch }}
+      run: |
+        if [ -z "$BASE_BRANCH_INPUT" ]; then
+          # Fetch default branch
+          DEFAULT_BRANCH=$(gh api "/repos/$REPO" --jq .default_branch)
+          echo "branch=$DEFAULT_BRANCH" >> "$GITHUB_OUTPUT"
+          echo "Using default branch: $DEFAULT_BRANCH"
+        else
+          echo "branch=$BASE_BRANCH_INPUT" >> "$GITHUB_OUTPUT"
+          echo "Using provided base branch: $BASE_BRANCH_INPUT"
+        fi

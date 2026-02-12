@@ -1,0 +1,74 @@
+name: Verify Helper Resolve-base-branch
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'actions/helper/resolve-base-branch/**'
+      - '.github/workflows/verify-action-helper-resolve-base-branch.yaml'
+  pull_request:
+    paths:
+      - 'actions/helper/resolve-base-branch/**'
+      - '.github/workflows/verify-action-helper-resolve-base-branch.yaml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+env:
+  TEST_OWNER: TimSchoenle
+  TEST_REPO_NAME: actions-testing
+  TEST_REPO: TimSchoenle/actions-testing
+  TEST_ID: resolve-base-branch-test-${{ github.run_number }}-${{ github.run_attempt }}
+  TEST_REPO_BASE_BRANCH_NAME: main
+
+jobs:
+  verify-base-branch:
+    name: Verify Resolve-base-branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Test resolve-base-branch
+        id: resolve-base-branch
+        uses: ./tmp/actions-code/actions/helper/resolve-base-branch
+        with:
+          repository: ${{ env.TEST_REPO }}
+          token: ${{ steps.setup.outputs.token }}
+
+      - name: Verify Base Branch Name
+        shell: bash
+        env:
+          BASE_BRANCH_NAME: ${{ steps.resolve-base-branch.outputs.base_branch }}
+          EXPECTED_BASE_BRANCH_NAME: ${{ env.TEST_REPO_BASE_BRANCH_NAME }}
+        run: |
+          # Verify base branch name
+          if [ "$BASE_BRANCH_NAME" != "$EXPECTED_BASE_BRANCH_NAME" ]; then
+            echo "::error::Base branch name ($BASE_BRANCH_NAME) does not match default ($EXPECTED_BASE_BRANCH_NAME)"
+            exit 1
+          fi
+          echo "✅ Verified base branch name matches"
