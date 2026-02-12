@@ -39,170 +39,51 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Init Git Settings
-      id: init
+    - name: Detect Changes
+      id: detect
       shell: bash
+      env:
+        FILE_PATTERN: ${{ inputs.file_pattern }}
+        ALLOW_EMPTY: ${{ inputs.empty }}
       run: |
         set -euo pipefail
         git config core.fileMode false
 
-    - name: Parse File Pattern Input
-      id: parse
-      shell: bash
-      env:
-        FILE_PATTERN: ${{ inputs.file_pattern }}
-      run: |
-        set -euo pipefail
-
+        # Build the git status arguments from the file pattern
         if [ -z "${FILE_PATTERN:-}" ] || [ "$FILE_PATTERN" = "." ]; then
-          echo "use_filter=false" >> "$GITHUB_OUTPUT"
-          echo "raw_specs=" >> "$GITHUB_OUTPUT"
-          exit 0
-        fi
-
-        read -r -a RAW_SPECS <<< "$FILE_PATTERN"
-
-        {
-          echo "use_filter=true"
-          echo "raw_specs<<__EOF__"
-          printf '%s\n' "${RAW_SPECS[@]}"
-          echo "__EOF__"
-        } >> "$GITHUB_OUTPUT"
-
-    - name: Build Git Pathspecs
-      id: pathspecs
-      shell: bash
-      env:
-        USE_FILTER: ${{ steps.parse.outputs.use_filter }}
-        RAW_SPECS_NL: ${{ steps.parse.outputs.raw_specs }}
-      run: |
-        set -euo pipefail
-
-        if [ "$USE_FILTER" != "true" ]; then
-          echo "pathspecs=" >> "$GITHUB_OUTPUT"
-          exit 0
-        fi
-
-        mapfile -t RAW_SPECS < <(printf '%s\n' "$RAW_SPECS_NL")
-
-        PATHSPECS=()
-        for spec in "${RAW_SPECS[@]}"; do
-          if [[ "$spec" == :\(*\)* ]]; then
-            PATHSPECS+=("$spec")
-          elif [[ "$spec" == *"*"* || "$spec" == *"?"* || "$spec" == *"["* ]]; then
-            PATHSPECS+=(":(glob)$spec")
-          else
-            PATHSPECS+=("$spec")
-          fi
-        done
-
-        {
-          echo "pathspecs<<__EOF__"
-          printf '%s\n' "${PATHSPECS[@]}"
-          echo "__EOF__"
-        } >> "$GITHUB_OUTPUT"
-
-    - name: Collect Changed Files (tracked + untracked, no ignored)
-      id: files
-      shell: bash
-      env:
-        USE_FILTER: ${{ steps.parse.outputs.use_filter }}
-        PATHSPECS_NL: ${{ steps.pathspecs.outputs.pathspecs }}
-      run: |
-        set -euo pipefail
-
-        CHANGED_Z="${RUNNER_TEMP}/commit-changes-changed-files.z"
-        : > "$CHANGED_Z"
-
-        if [ "$USE_FILTER" = "true" ]; then
-          mapfile -t SPECS < <(printf '%s\n' "$PATHSPECS_NL")
-          git ls-files -m -o --exclude-standard -z -- "${SPECS[@]}" > "$CHANGED_Z"
+          echo "::debug::No file pattern filter specified — checking all files"
+          CHANGE_COUNT=$(git status --porcelain | wc -l)
         else
-          git ls-files -m -o --exclude-standard -z > "$CHANGED_Z"
+          # Split space-separated patterns into an array
+          read -r -a PATTERNS <<< "$FILE_PATTERN"
+          echo "::debug::Checking changes for patterns: ${PATTERNS[*]}"
+          CHANGE_COUNT=$(git status --porcelain -- "${PATTERNS[@]}" | wc -l)
         fi
 
-        echo "changed_files_z=$CHANGED_Z" >> "$GITHUB_OUTPUT"
+        CHANGE_COUNT=$((CHANGE_COUNT + 0)) # trim whitespace from wc
 
-        if [ -s "$CHANGED_Z" ]; then
-          echo "has_files=true" >> "$GITHUB_OUTPUT"
+        if [ "$CHANGE_COUNT" -gt 0 ]; then
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          echo "✅ Detected $CHANGE_COUNT changed file(s) matching pattern '${FILE_PATTERN}'"
         else
-          echo "has_files=false" >> "$GITHUB_OUTPUT"
-        fi
-
-    - name: Format Resolved File Pattern for ghcommit
-      id: resolve
-      shell: bash
-      env:
-        HAS_FILES: ${{ steps.files.outputs.has_files }}
-        CHANGED_FILES_Z: ${{ steps.files.outputs.changed_files_z }}
-        ALLOW_EMPTY: ${{ inputs.empty }}
-      run: |
-        set -euo pipefail
-
-        if [ "$HAS_FILES" != "true" ]; then
-          if [ "$ALLOW_EMPTY" = "true" ]; then
-            # ghcommit-action requires a non-empty file_pattern input.
-            # Provide a *safe, non-directory* fallback that is likely to exist.
-            if [ -f ".gitignore" ]; then
-              echo "resolved_file_pattern=.gitignore" >> "$GITHUB_OUTPUT"
-            elif [ -f "README.md" ]; then
-              echo "resolved_file_pattern=README.md" >> "$GITHUB_OUTPUT"
-            else
-              # Last resort. Should be harmless if there are truly no changes,
-              # but we prefer a concrete file above to avoid directory edge cases.
-              echo "resolved_file_pattern=." >> "$GITHUB_OUTPUT"
-            fi
-          else
-            echo "resolved_file_pattern=" >> "$GITHUB_OUTPUT"
-          fi
-
           echo "has_changes=false" >> "$GITHUB_OUTPUT"
-          echo "No file changes detected!"
-          exit 0
-        fi
-
-        files=()
-        while IFS= read -r -d '' f; do
-          [ -z "$f" ] && continue
-          [ -d "$f" ] && continue
-          files+=("$f")
-        done < "$CHANGED_FILES_Z"
-
-        if [ "${#files[@]}" -eq 0 ]; then
           if [ "$ALLOW_EMPTY" = "true" ]; then
-            if [ -f ".gitignore" ]; then
-              echo "resolved_file_pattern=.gitignore" >> "$GITHUB_OUTPUT"
-            elif [ -f "README.md" ]; then
-              echo "resolved_file_pattern=README.md" >> "$GITHUB_OUTPUT"
-            else
-              echo "resolved_file_pattern=." >> "$GITHUB_OUTPUT"
-            fi
+            echo "ℹ️ No changes detected, but empty commit is allowed — will proceed"
           else
-            echo "resolved_file_pattern=" >> "$GITHUB_OUTPUT"
+            echo "ℹ️ No changes detected and empty commits are disabled — skipping commit"
           fi
-
-          echo "has_changes=false" >> "$GITHUB_OUTPUT"
-          echo "No file changes detected!"
-          exit 0
         fi
-
-        resolved="$(printf '%s ' "${files[@]}")"
-        resolved="${resolved% }"
-
-        echo "has_changes=true" >> "$GITHUB_OUTPUT"
-        echo "resolved_file_pattern=$resolved" >> "$GITHUB_OUTPUT"
-        echo "File change detected!"
 
     - name: Commit Changes
       id: commit
       uses: planetscale/ghcommit-action@25309d8005ac7c3bcd61d3fe19b69e0fe47dbdde # v0.2.20
-      if: steps.resolve.outputs.has_changes == 'true' || inputs.empty == 'true'
+      if: steps.detect.outputs.has_changes == 'true' || inputs.empty == 'true'
       with:
         commit_message: ${{ inputs.commit_message }}
         repo: ${{ inputs.repository }}
         branch: ${{ inputs.branch }}
         empty: ${{ inputs.empty }}
-        file_pattern: ${{ steps.resolve.outputs.resolved_file_pattern }}
+        file_pattern: ${{ inputs.file_pattern }}
       env:
         GITHUB_TOKEN: ${{ inputs.token }}
 
@@ -212,8 +93,10 @@ runs:
       env:
         COMMIT_HASH: ${{ steps.commit.outputs.commit-hash }}
       run: |
-        if [ -n "$COMMIT_HASH" ]; then
+        if [ -n "${COMMIT_HASH:-}" ]; then
           echo "changes_detected=true" >> "$GITHUB_OUTPUT"
+          echo "✅ Commit created: $COMMIT_HASH"
         else
           echo "changes_detected=false" >> "$GITHUB_OUTPUT"
+          echo "ℹ️ No commit was created"
         fi
