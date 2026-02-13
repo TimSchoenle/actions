@@ -12,6 +12,10 @@ inputs:
   helm-repo:
     description: 'Repository name of the helm charts (e.g. owner/repo)'
     required: true
+  base_branch:
+    description: 'The branch to merge into (defaults to repository default branch)'
+    required: false
+    default: ''
   chart-path:
     description: 'Path of the chart inside the repo (e.g. charts/my-app)'
     required: true
@@ -29,7 +33,10 @@ inputs:
 outputs:
   pr-url:
     description: 'The URL of the created Pull Request'
-    value: ${{ steps.create-pr.outputs.pr-url }}
+    value: ${{ steps.create-pr.outputs.pr_url }}
+  pr_number:
+    description: 'The id of the created Pull Request'
+    value: ${{ steps.create-pr.outputs.pr_number }}
 
 runs:
   using: 'composite'
@@ -60,11 +67,20 @@ runs:
         owner: ${{ steps.parse.outputs.owner }}
         repositories: ${{ steps.parse.outputs.repo }}
 
+    - name: Resolve Base Branch
+      id: resolve-base-branch
+      uses: TimSchoenle/actions/actions/helper/resolve-base-branch@1017e17f2dd642294627f53332e9bb84617e5faf # actions-helper-resolve-base-branch-v1.1.0
+      with:
+        repository: ${{ inputs.helm-repo }}
+        token: ${{ steps.generate_token.outputs.token }}
+        branch_name: ${{ inputs.base_branch }}
+
     - name: Checkout Helm Charts
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       with:
         repository: ${{ inputs.helm-repo }}
         token: ${{ steps.generate_token.outputs.token }}
+        ref: ${{ steps.resolve-base-branch.outputs.base_branch }}
         fetch-depth: 0
         persist-credentials: false
 
@@ -126,6 +142,7 @@ runs:
         app-id: ${{ inputs.app-id }}
         private-key: ${{ inputs.private-key }}
         repository: ${{ inputs.helm-repo }}
+        base_branch: ${{ steps.resolve-base-branch.outputs.base_branch }}
         branch_name: '${{ inputs.pr-branch-prefix }}/${{ steps.parse.outputs.chart-name }}/${{ inputs.new-tag }}'
         title: 'chore(${{ steps.parse.outputs.chart-name }}): update chart to ${{ steps.calc-version.outputs.new-version }}'
         body: |
