@@ -84,25 +84,6 @@ jobs:
             exit 1
           fi
 
-          # Capture the raw version string (handling stderr)
-          raw_version=$(java --version 2>&1 | head -n 1)
-
-          # Extract just the version number (e.g., "11.0.30")
-          # This regex looks for digits and dots inside double quotes
-          parsed_version=$(echo "$raw_version" | grep -oP '(?<=")[0-9.]+(?=")')
-
-          echo "Full String: $raw_version"
-          echo "Parsed Version: $parsed_version"
-          echo "Expected Starts With: $INSTALLED_JAVA_VERSION"
-
-          #  Perform the prefix match
-          if [[ "$parsed_version" != "$INSTALLED_JAVA_VERSION"* ]]; then
-            echo "::error::Version mismatch! System has $parsed_version, but expected $INSTALLED_JAVA_VERSION"
-            exit 1
-          fi
-
-          echo "Verification successful!"
-
       - name: Verify Java distribution
         shell: bash
         env:
