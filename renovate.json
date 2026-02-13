@@ -3,10 +3,10 @@
   "extends": ["github>TimSchoenle/actions//configs/renovate/default"],
   "github-actions": {
     "managerFilePatterns": [
-      "(^|/)(workflow-templates|\\.(?:github|gitea|forgejo)/(?:workflows|actions))/.+\\.ya?ml$",
-      "(^|/)action\\.ya?ml$",
-      "(^|/)workflow\\.ya?ml$",
-      "(^|/)workflows/(.*/)?workflow\\.ya?ml$"
+      "/(^|/)(workflow-templates|\\.(?:github|gitea|forgejo)/(?:workflows|actions))/.+\\.ya?ml$/",
+      "/(^|/)action\\.ya?ml$/",
+      "/(^|/)workflow\\.ya?ml$/",
+      "/(^|/)workflows/(.*/)?workflow\\.ya?ml$/"
     ]
   },
   "packageRules": [
