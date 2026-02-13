@@ -92,6 +92,7 @@ jobs:
 
       - name: Run update-chart-version
         id: update
+        working-directory: 'update-chart'
         uses: ./tmp/actions-code/actions/helm/update-chart-version
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
