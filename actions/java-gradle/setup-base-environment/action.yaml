@@ -60,6 +60,7 @@ runs:
         validate-wrappers: ${{ inputs.gradle_wrapper_validation }}
         allow-snapshot-wrappers: ${{ inputs.gradle_wrapper_allow_snapshots }}
         dependency-graph: ${{ inputs.gradle_dependency_graph }}
+        dependency-graph-report-dir: '.gradle/dependency-graph-reports'
 
     - name: Run chmod to make gradlew executable
       run: chmod +x ./gradlew
