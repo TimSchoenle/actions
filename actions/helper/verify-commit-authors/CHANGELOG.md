@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.7](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.6...actions-helper-verify-commit-authors-v1.1.7) (2026-02-13)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v25.2.3 ([#430](https://github.com/TimSchoenle/actions/issues/430)) ([d8de6d1](https://github.com/TimSchoenle/actions/commit/d8de6d15299a5f241b125f73eb57193cbfab937b))
+
 ## [1.1.6](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.5...actions-helper-verify-commit-authors-v1.1.6) (2026-02-13)
 
 
