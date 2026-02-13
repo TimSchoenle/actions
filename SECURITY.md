@@ -60,7 +60,7 @@ Any version not listed in the following tables is not supported.
 | --- | --- | --- |
 | [Auto Format](./workflows/maintenance/auto-bun-prettier) | workflows-maintenance-auto-bun-prettier-v1.1.7 | :white_check_mark: |
 | [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | workflows-maintenance-timed-auto-pr-approve-v1.2.7 | :white_check_mark: |
-| [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | workflows-maintenance-auto-approve-renovate-v1.3.0 | :white_check_mark: |
+| [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | workflows-maintenance-auto-approve-renovate-v1.3.1 | :white_check_mark: |
 
 ### Rust
 
@@ -69,7 +69,7 @@ Any version not listed in the following tables is not supported.
 | [Rust Auto-format](./workflows/rust/auto-format) | workflows-rust-auto-format-v1.1.1 | :white_check_mark: |
 | [Rust Cargo Check](./workflows/rust/cargo-check) | workflows-rust-cargo-check-v1.1.3 | :white_check_mark: |
 | [Rust Clippy](./workflows/rust/clippy) | workflows-rust-clippy-v1.1.1 | :white_check_mark: |
-| [Rust Coverage (Codecov)](./workflows/rust/coverage-codecov) | workflows-rust-coverage-codecov-v1.0.1 | :white_check_mark: |
+| [Rust Coverage (Codecov)](./workflows/rust/coverage-codecov) | workflows-rust-coverage-codecov-v1.0.2 | :white_check_mark: |
 | [Rust Test](./workflows/rust/test) | workflows-rust-test-v1.0.1 | :white_check_mark: |
 
 
