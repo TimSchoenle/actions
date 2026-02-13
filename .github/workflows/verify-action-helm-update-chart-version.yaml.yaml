@@ -104,7 +104,6 @@ jobs:
           pr-branch-prefix: test/helm-update/${{ env.TEST_ID }}
 
       - name: Post Action Checkout To Ensure The Post Action Runs Correctly
-        id: setup
         uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
