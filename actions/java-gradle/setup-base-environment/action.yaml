@@ -37,7 +37,7 @@ outputs:
     value: ${{ steps.setup-java.outputs.distribution }}
   java_path:
     description: Path to Java that was setup by the action
-    value: ${{ steps.setup-java.outputs.java }}
+    value: ${{ steps.setup-java.outputs.path }}
   gradle_version:
     description: Version of Gradle that was setup by the action
     value: ${{ steps.setup-gradle.outputs.gradle-version }}
