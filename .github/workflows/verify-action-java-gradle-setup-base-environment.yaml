@@ -92,7 +92,7 @@ jobs:
             exit 1
           fi
 
-          // Verify that the output of java -version contains the expected version
+          # Verify that the output of java -version contains the expected version
           if [[ "${java_version}" != *${INSTALLED_JAVA_VERSION}* ]]; then
             echo "::error::Expected Java version ${EXPECTED_JAVA_VERSION}, got ${java_version}"
             exit 1
