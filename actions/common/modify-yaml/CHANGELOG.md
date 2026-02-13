@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.4](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.3...actions-common-modify-yaml-v1.2.4) (2026-02-13)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v25.2.3 ([#430](https://github.com/TimSchoenle/actions/issues/430)) ([d8de6d1](https://github.com/TimSchoenle/actions/commit/d8de6d15299a5f241b125f73eb57193cbfab937b))
+
 ## [1.2.3](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.2...actions-common-modify-yaml-v1.2.3) (2026-02-12)
 
 
