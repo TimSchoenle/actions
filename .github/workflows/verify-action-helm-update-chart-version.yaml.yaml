@@ -90,9 +90,12 @@ jobs:
           commit_message: 'test: seed chart files for ${{ env.TEST_ID }}'
           file_pattern: 'charts/test-app/Chart.yaml charts/test-app/values.yaml'
 
+      - name: Test
+        run: |
+          cd update-helm
+
       - name: Run update-chart-version
         id: update
-        working-directory: 'update-chart'
         uses: ./tmp/actions-code/actions/helm/update-chart-version
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
@@ -103,6 +106,10 @@ jobs:
           new-tag: v2.0.0
           image-digest: sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
           pr-branch-prefix: test/helm-update/${{ env.TEST_ID }}
+
+      - name: Test
+        run: |
+          cd ..
 
       - name: Verify PR Output
         shell: bash
