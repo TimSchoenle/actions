@@ -51,6 +51,12 @@ Here is a list of all currently maintained actions in this repository:
 | [Resolve Branch](./actions/helper/resolve-base-branch) | Resolve the given base branch or return default branch. With optional existence check. | actions-helper-resolve-base-branch-v1.1.0 | `uses: TimSchoenle/actions/actions/helper/resolve-base-branch@actions-helper-resolve-base-branch-v1.1.0` |
 | [Verify Commit Authors](./actions/helper/verify-commit-authors) | Verifies that all commits in a PR are authored by a specific set of users and are signed. | actions-helper-verify-commit-authors-v1.1.6 | `uses: TimSchoenle/actions/actions/helper/verify-commit-authors@actions-helper-verify-commit-authors-v1.1.6` |
 
+### Java-gradle
+
+| Action | Description | Version | Usage |
+| --- | --- | --- | --- |
+| [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | Setup Java and Gradle environment for building, with opinionated default settings | actions-java-gradle-setup-base-environment-v1.0.0 | `uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@actions-java-gradle-setup-base-environment-v1.0.0` |
+
 ### Test
 
 | Action | Description | Version | Usage |
