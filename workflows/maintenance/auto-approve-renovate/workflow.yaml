@@ -33,7 +33,7 @@ jobs:
       pull-requests: write # to approve PRs
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
         with:
           egress-policy: audit
 
@@ -91,7 +91,7 @@ jobs:
       - name: Verify Commits and Signatures
         id: verify_commits
         if: steps.check_author.outputs.match == 'true' && steps.check_changes.outputs.match == 'true'
-        uses: TimSchoenle/actions/actions/helper/verify-commit-authors@0c26ac162a441046f6d88706c76566986d4fd8c5 # actions-helper-verify-commit-authors-v1.1.2
+        uses: TimSchoenle/actions/actions/helper/verify-commit-authors@47e2ae3e661a3126052a574db6891975421a9dc9 # actions-helper-verify-commit-authors-v1.1.5
         with:
           pr_url: ${{ github.event.pull_request.html_url }}
           github_token: ${{ secrets.token }}
