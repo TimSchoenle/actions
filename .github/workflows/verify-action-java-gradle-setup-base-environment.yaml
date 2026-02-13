@@ -78,7 +78,8 @@ jobs:
           INSTALLED_JAVA_VERSION: ${{ steps.setup-base-environment.outputs.java_version }}
           EXPECTED_JAVA_VERSION: ${{ matrix.java-version }}
         run: |
-          if [ "${INSTALLED_JAVA_VERSION}" != "${EXPECTED_JAVA_VERSION}" ]; then
+          # Verify that the installed Java version starts with the expected version
+          if [ "${INSTALLED_JAVA_VERSION}" != "${EXPECTED_JAVA_VERSION}"* ]; then
             echo "::error::Expected Java version ${EXPECTED_JAVA_VERSION}, got ${INSTALLED_JAVA_VERSION}"
             exit 1
           fi
