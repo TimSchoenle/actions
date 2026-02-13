@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.1](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.3.0...workflows-maintenance-auto-approve-renovate-meta-v1.3.1) (2026-02-13)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#417](https://github.com/TimSchoenle/actions/issues/417)) ([5369ede](https://github.com/TimSchoenle/actions/commit/5369edef0481f7a2e2b102b535e65daecf60f0f6))
+* **deps:** update to vactions-helper-verify-commit-authors-v1.1.6 ([#425](https://github.com/TimSchoenle/actions/issues/425)) ([d96899e](https://github.com/TimSchoenle/actions/commit/d96899e861f3488bc6173fa9756cfea3b9df503d))
+
 ## [1.3.0](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.2.5...workflows-maintenance-auto-approve-renovate-meta-v1.3.0) (2026-02-09)
 
 
