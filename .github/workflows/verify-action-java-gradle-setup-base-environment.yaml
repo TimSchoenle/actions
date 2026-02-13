@@ -76,7 +76,6 @@ jobs:
           java_version: ${{ matrix.java-version }}
           java_package: ${{ matrix.java-package }}
           java_distribution: ${{ matrix.java-distribution }}
-          gradle_dependency_graph: 'disabled'
 
       - name: Verify Java Version
         shell: bash
