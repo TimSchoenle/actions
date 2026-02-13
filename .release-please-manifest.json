@@ -11,7 +11,7 @@
   "workflows/maintenance/auto-approve-renovate": "1.3.1",
   "actions/helper/verify-commit-authors": "1.1.6",
   "workflows/maintenance/timed-auto-pr-approve": "1.2.7",
-  "workflows/rust/cargo-check": "1.1.3",
+  "workflows/rust/cargo-check": "1.1.4",
   "workflows/rust/test": "1.0.1",
   "workflows/rust/coverage-codecov": "1.0.2",
   "workflows/rust/auto-format": "1.1.1",
