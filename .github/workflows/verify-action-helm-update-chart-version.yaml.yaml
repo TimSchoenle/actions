@@ -92,6 +92,7 @@ jobs:
 
       - name: Test
         run: |
+          mkdir update-helm
           cd update-helm
 
       - name: Run update-chart-version
