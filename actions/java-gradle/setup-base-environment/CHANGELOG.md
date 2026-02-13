@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-setup-base-environment-v1.1.0...actions-java-gradle-setup-base-environment-v1.1.1) (2026-02-13)
+
+
+### Bug Fixes
+
+* **Actions/JavaGradle-Default-Setup:** isolate dependency report to .… ([#439](https://github.com/TimSchoenle/actions/issues/439)) ([ce9da74](https://github.com/TimSchoenle/actions/commit/ce9da74d6c4b06b0d8e6226e72c23b55b078bdf6))
+
 ## [1.1.0](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-setup-base-environment-v1.0.0...actions-java-gradle-setup-base-environment-v1.1.0) (2026-02-13)
 
 
