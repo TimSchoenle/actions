@@ -103,7 +103,7 @@ jobs:
           image-digest: sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
           pr-branch-prefix: test/helm-update/${{ env.TEST_ID }}
 
-      - name: Post Action Checkout To Ensure The Post Action Runs Correctly
+      - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
         uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
@@ -288,6 +288,16 @@ jobs:
           image-digest: sha256:deadbeef1234567890deadbeef1234567890deadbeef1234567890deadbeef12
           pr-branch-prefix: test/custom-prefix/${{ env.TEST_ID }}
 
+      - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
       - name: Verify Branch Name Uses Custom Prefix
         shell: bash
         env:
@@ -415,6 +425,16 @@ jobs:
           image-digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
           pr-branch-prefix: test/bump/${{ env.TEST_ID }}/${{ matrix.name }}
 
+      - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
       - name: Verify Version Bump
         shell: bash
         env:
@@ -527,6 +547,16 @@ jobs:
           new-tag: v5.0.0
           image-digest: sha256:nested1234567890nested1234567890nested1234567890nested1234567890
           pr-branch-prefix: test/nested/${{ env.TEST_ID }}
+
+      - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
 
       - name: Verify Nested Chart Updated
         shell: bash
@@ -668,6 +698,16 @@ jobs:
           new-tag: v9.0.0
           image-digest: sha256:second00000000000000000000000000000000000000000000000000000000000
           pr-branch-prefix: test/idem/${{ env.TEST_ID }}
+
+      - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
 
       - name: Verify Second Run Used Updated Digest
         shell: bash
