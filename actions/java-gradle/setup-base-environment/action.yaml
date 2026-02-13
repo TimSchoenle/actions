@@ -21,12 +21,6 @@ inputs:
     description: 'Allow Gradle wrapper snapshots'
     required: false
     default: 'false'
-  gradle_dependency_graph:
-    description: |
-      Specifies if a GitHub dependency snapshot should be generated for each Gradle build, and if so, how.
-      Valid values are 'disabled', 'generate', 'generate-and-submit', 'generate-submit-and-upload', 'generate-and-upload', and 'download-and-submit'.
-    required: false
-    default: 'generate-submit-and-upload'
 
 outputs:
   java_version:
@@ -59,8 +53,6 @@ runs:
       with:
         validate-wrappers: ${{ inputs.gradle_wrapper_validation }}
         allow-snapshot-wrappers: ${{ inputs.gradle_wrapper_allow_snapshots }}
-        dependency-graph: ${{ inputs.gradle_dependency_graph }}
-        dependency-graph-report-dir: '.gradle/dependency-graph-reports'
 
     - name: Run chmod to make gradlew executable
       run: chmod +x ./gradlew
