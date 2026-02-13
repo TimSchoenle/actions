@@ -686,6 +686,16 @@ jobs:
           repository: ${{ env.TEST_REPO }}
           pull_request_id: ${{ steps.first-run.outputs.pr_number }}
 
+      - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
       - name: Second Run (same tag, should reset branch and create new PR)
         id: second-run
         uses: ./tmp/actions-code/actions/helm/update-chart-version
