@@ -22,5 +22,5 @@
   "actions/common/delete-branch": "1.1.0",
   "actions/common/create-branch": "1.2.0",
   "actions/helper/resolve-base-branch": "1.1.0",
-  "actions/java-gradle/setup-base-environment": "1.0.0"
+  "actions/java-gradle/setup-base-environment": "1.1.0"
 }
