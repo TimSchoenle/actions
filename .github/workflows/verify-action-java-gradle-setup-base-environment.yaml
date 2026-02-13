@@ -100,8 +100,8 @@ jobs:
         env:
           INSTALLED_JAVA_PATH: ${{ steps.setup-base-environment.outputs.java_path }}
         run: |
-          if [ ! -f "${INSTALLED_JAVA_PATH}" ]; then
-            echo "::error::Java binary not found at: ${INSTALLED_JAVA_PATH}"
+          if [ ! -d "${INSTALLED_JAVA_PATH}" ]; then
+            echo "::error::Java directory not found at: ${INSTALLED_JAVA_PATH}"
             exit 1
           fi
 
