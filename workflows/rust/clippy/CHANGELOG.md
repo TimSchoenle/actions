@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.2](https://github.com/TimSchoenle/actions/compare/workflows-rust-clippy-meta-v1.1.1...workflows-rust-clippy-meta-v1.1.2) (2026-02-13)
+
+
+### Miscellaneous
+
+* **deps:** update actions/checkout digest to de0fac2 ([#416](https://github.com/TimSchoenle/actions/issues/416)) ([c1e4ad0](https://github.com/TimSchoenle/actions/commit/c1e4ad0cb192db7b26be4999bb929064f79a3192))
+* **deps:** update all non-major action updates ([#417](https://github.com/TimSchoenle/actions/issues/417)) ([5369ede](https://github.com/TimSchoenle/actions/commit/5369edef0481f7a2e2b102b535e65daecf60f0f6))
+
 ## [1.1.1](https://github.com/TimSchoenle/actions/compare/workflows-rust-clippy-meta-v1.1.0...workflows-rust-clippy-meta-v1.1.1) (2026-01-17)
 
 
