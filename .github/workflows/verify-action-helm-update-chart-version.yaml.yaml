@@ -90,11 +90,6 @@ jobs:
           commit_message: 'test: seed chart files for ${{ env.TEST_ID }}'
           file_pattern: 'charts/test-app/Chart.yaml charts/test-app/values.yaml'
 
-      - name: Test
-        run: |
-          mkdir update-helm
-          cd update-helm
-
       - name: Run update-chart-version
         id: update
         uses: ./tmp/actions-code/actions/helm/update-chart-version
@@ -108,9 +103,16 @@ jobs:
           image-digest: sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
           pr-branch-prefix: test/helm-update/${{ env.TEST_ID }}
 
-      - name: Test
-        run: |
-          cd ..
+      - name: Post Action Checkout To Ensure The Post Action Runs Correctly
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
 
       - name: Verify PR Output
         shell: bash
