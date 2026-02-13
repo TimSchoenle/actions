@@ -64,6 +64,7 @@ jobs:
           ls -la gradlew gradle/wrapper/
 
       - name: Test setup-base-environment
+        id: setup-base-environment
         uses: ./actions/java-gradle/setup-base-environment
         with:
           java_version: ${{ matrix.java-version }}
