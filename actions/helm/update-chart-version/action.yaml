@@ -103,14 +103,14 @@ runs:
         echo "new-version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
 
     - name: Set Chart Version
-      uses: TimSchoenle/actions/actions/common/modify-yaml@7cb79dbc464e8b80c07b1491cd5b833f0df1e874 # actions-common-modify-yaml-v1.2.3
+      uses: TimSchoenle/actions/actions/common/modify-yaml@09b31a8e2b59323710086e92e44770b921e64134 # actions-common-modify-yaml-v1.2.4
       with:
         file: ${{ inputs.chart-path }}/Chart.yaml
         key: version
         value: ${{ steps.calc-version.outputs.new-version }}
 
     - name: Set App Version
-      uses: TimSchoenle/actions/actions/common/modify-yaml@7cb79dbc464e8b80c07b1491cd5b833f0df1e874 # actions-common-modify-yaml-v1.2.3
+      uses: TimSchoenle/actions/actions/common/modify-yaml@09b31a8e2b59323710086e92e44770b921e64134 # actions-common-modify-yaml-v1.2.4
       with:
         file: ${{ inputs.chart-path }}/Chart.yaml
         key: appVersion
@@ -129,7 +129,7 @@ runs:
         echo "full-tag=$FULL_TAG" >> "$GITHUB_OUTPUT"
 
     - name: Update Image Tag
-      uses: TimSchoenle/actions/actions/common/modify-yaml@7cb79dbc464e8b80c07b1491cd5b833f0df1e874 # actions-common-modify-yaml-v1.2.3
+      uses: TimSchoenle/actions/actions/common/modify-yaml@09b31a8e2b59323710086e92e44770b921e64134 # actions-common-modify-yaml-v1.2.4
       with:
         file: ${{ inputs.chart-path }}/values.yaml
         key: image.tag
