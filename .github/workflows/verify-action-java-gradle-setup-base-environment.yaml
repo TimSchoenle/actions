@@ -84,7 +84,7 @@ jobs:
             exit 1
           fi
 
-          java_version=java --version
+          java_version=$(java -version 2>&1 | head -n 1)
           echo "Java version: $java_version"
 
           if [ -z "${java_version}" ]; then
