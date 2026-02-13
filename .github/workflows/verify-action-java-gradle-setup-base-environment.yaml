@@ -54,6 +54,9 @@ jobs:
           curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -o "${gradle_zip}"
           unzip -q "${gradle_zip}" -d "${sdk_install_dir}"
 
+          # Create a minimal Gradle project structure
+          echo 'rootProject.name = "verify-test"' > settings.gradle
+
           # Generate wrapper files (gradlew, gradlew.bat, gradle/wrapper/*)
           "${sdk_install_dir}/gradle-${GRADLE_VERSION}/bin/gradle" wrapper --gradle-version "${GRADLE_VERSION}"
 
