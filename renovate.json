@@ -5,6 +5,7 @@
     "managerFilePatterns": [
       "(^|/)(workflow-templates|\\.(?:github|gitea|forgejo)/(?:workflows|actions))/.+\\.ya?ml$",
       "(^|/)action\\.ya?ml$",
+      "(^|/)workflow\\.ya?ml$",
       "(^|/)workflows/(.*/)?workflow\\.ya?ml$"
     ]
   },
