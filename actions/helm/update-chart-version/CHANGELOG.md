@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.5.0](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.4.5...actions-helm-update-chart-version-v1.5.0) (2026-02-13)
+
+
+### Features
+
+* **Actions/Update-Chart-Version:** add base_branch input ([#413](https://github.com/TimSchoenle/actions/issues/413)) ([8575963](https://github.com/TimSchoenle/actions/commit/8575963cd39c09cda82dfb9e2b309a0b7add1e36))
+
+
+### Code Refactoring
+
+* **Actions/Update-Chart-Version:** migrate to create pull reques… ([#408](https://github.com/TimSchoenle/actions/issues/408)) ([7abc4eb](https://github.com/TimSchoenle/actions/commit/7abc4ebb203ce9e892583688ffe0e69c9c5b4a16))
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#410](https://github.com/TimSchoenle/actions/issues/410)) ([4f9f697](https://github.com/TimSchoenle/actions/commit/4f9f6972224a33b0e1980d8e57a262f3ca2ab77c))
+* **deps:** update to vactions-common-commit-changes-v1.1.2 ([#378](https://github.com/TimSchoenle/actions/issues/378)) ([d186a55](https://github.com/TimSchoenle/actions/commit/d186a550b4748e530719be83fa879edb7a1c7a6c))
+* **deps:** update to vactions-common-commit-changes-v1.1.4 ([#404](https://github.com/TimSchoenle/actions/issues/404)) ([0d1e329](https://github.com/TimSchoenle/actions/commit/0d1e329ed2a1b9c8e912f2c2db38508e64127093))
+* **deps:** update to vactions-common-modify-yaml-v1.2.2 ([#366](https://github.com/TimSchoenle/actions/issues/366)) ([2202dc3](https://github.com/TimSchoenle/actions/commit/2202dc328ce7efd714a02a2ac48e3e1882ec4367))
+
 ## [1.4.5](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.4.4...actions-helm-update-chart-version-v1.4.5) (2026-02-08)
 
 
