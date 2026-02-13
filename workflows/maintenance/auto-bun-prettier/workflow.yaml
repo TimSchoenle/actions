@@ -45,7 +45,7 @@ jobs:
     permissions: {}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
         with:
           egress-policy: audit
 
@@ -68,7 +68,7 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
 
       - name: Setup Bun
-        uses: TimSchoenle/actions/actions/bun/setup-cached@5480c26f4f5c3d5f0c28ed90391410274a67d241 # actions-bun-setup-cached-v1.1.1
+        uses: TimSchoenle/actions/actions/bun/setup-cached@311fcf1defd1520ad7d4a9abb838114adeba344f # actions-bun-setup-cached-v1.1.4
 
       - name: Format
         env:
@@ -77,7 +77,7 @@ jobs:
 
       - name: Commit and Push if changed
         id: auto-commit
-        uses: TimSchoenle/actions/actions/common/commit-changes@85df1583f874da24a2de30e19280e031c25a09c5 # actions-common-commit-changes-v1.1.1
+        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # actions-common-commit-changes-v1.1.4
         with:
           commit_message: ${{ inputs.commit_message }}
           token: ${{ steps.generate_token.outputs.token }}
