@@ -43,7 +43,7 @@ Any version not listed in the following tables is not supported.
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Java-gradle Setup-base-environment](./actions/java-gradle/setup-base-environment) | actions-java-gradle-setup-base-environment-v1.0.0 | :white_check_mark: |
+| [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | actions-java-gradle-setup-base-environment-v1.0.0 | :white_check_mark: |
 
 ### Test
 
