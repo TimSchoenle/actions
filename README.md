@@ -72,16 +72,16 @@ Here is a list of all currently maintained actions in this repository:
 | --- | --- | --- | --- |
 | [Auto Format](./workflows/maintenance/auto-bun-prettier) | Reusable workflow to auto-format code using Bun (Prettier) and commit changes. | workflows-maintenance-auto-bun-prettier-v1.1.7 | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@workflows-maintenance-auto-bun-prettier-v1.1.7` |
 | [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | Reusable workflow that automatically verifies, approves, and merges Pull Requests that match a specific branch pattern and have been open for a configurable duration. It ensures all commits are signed and authored by trusted users. | workflows-maintenance-timed-auto-pr-approve-v1.2.7 | `uses: TimSchoenle/actions/.github/workflows/maintenance-timed-auto-pr-approve.yaml@workflows-maintenance-timed-auto-pr-approve-v1.2.7` |
-| [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | Reusable workflow to auto approve Renovate PRs, this is useful to auto merge Renovate PRs which have auto-merge enabled. | workflows-maintenance-auto-approve-renovate-v1.3.0 | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-approve-renovate.yaml@workflows-maintenance-auto-approve-renovate-v1.3.0` |
+| [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | Reusable workflow to auto approve Renovate PRs, this is useful to auto merge Renovate PRs which have auto-merge enabled. | workflows-maintenance-auto-approve-renovate-v1.3.1 | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-approve-renovate.yaml@workflows-maintenance-auto-approve-renovate-v1.3.1` |
 
 ### Rust
 
 | Workflow | Description | Version | Usage |
 | --- | --- | --- | --- |
 | [Rust Auto-format](./workflows/rust/auto-format) | Reusable workflow that runs cargo fmt and commits changes. | workflows-rust-auto-format-v1.1.1 | `uses: TimSchoenle/actions/.github/workflows/rust-auto-format.yaml@workflows-rust-auto-format-v1.1.1` |
-| [Rust Cargo Check](./workflows/rust/cargo-check) | Reusable workflow that runs cargo check to verify Rust code compiles without errors. | workflows-rust-cargo-check-v1.1.3 | `uses: TimSchoenle/actions/.github/workflows/rust-cargo-check.yaml@workflows-rust-cargo-check-v1.1.3` |
+| [Rust Cargo Check](./workflows/rust/cargo-check) | Reusable workflow that runs cargo check to verify Rust code compiles without errors. | workflows-rust-cargo-check-v1.1.4 | `uses: TimSchoenle/actions/.github/workflows/rust-cargo-check.yaml@workflows-rust-cargo-check-v1.1.4` |
 | [Rust Clippy](./workflows/rust/clippy) | Reusable workflow that runs clippy to catch common mistakes and improve your Rust code. | workflows-rust-clippy-v1.1.1 | `uses: TimSchoenle/actions/.github/workflows/rust-clippy.yaml@workflows-rust-clippy-v1.1.1` |
-| [Rust Coverage (Codecov)](./workflows/rust/coverage-codecov) | Reusable workflow that runs cargo llvm-cov to generate code coverage and uploads to Codecov. | workflows-rust-coverage-codecov-v1.0.1 | `uses: TimSchoenle/actions/.github/workflows/rust-coverage-codecov.yaml@workflows-rust-coverage-codecov-v1.0.1` |
+| [Rust Coverage (Codecov)](./workflows/rust/coverage-codecov) | Reusable workflow that runs cargo llvm-cov to generate code coverage and uploads to Codecov. | workflows-rust-coverage-codecov-v1.0.2 | `uses: TimSchoenle/actions/.github/workflows/rust-coverage-codecov.yaml@workflows-rust-coverage-codecov-v1.0.2` |
 | [Rust Test](./workflows/rust/test) | Reusable workflow that runs cargo nextest to verify Rust code passes tests. | workflows-rust-test-v1.0.1 | `uses: TimSchoenle/actions/.github/workflows/rust-test.yaml@workflows-rust-test-v1.0.1` |
 
 
