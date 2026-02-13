@@ -90,7 +90,7 @@ jobs:
           INSTALLED_JAVA_DISTRIBUTION: ${{ steps.setup-base-environment.outputs.java_distribution }}
           EXPECTED_JAVA_DISTRIBUTION: ${{ matrix.java-distribution }}
         run: |
-          if [ "${INSTALLED_JAVA_DISTRIBUTION,,}" != *${EXPECTED_JAVA_DISTRIBUTION,,}* ]; then
+          if [[ "${INSTALLED_JAVA_DISTRIBUTION,,}" != *"${EXPECTED_JAVA_DISTRIBUTION,,}"* ]]; then
             echo "::error::Expected Java distribution ${EXPECTED_JAVA_DISTRIBUTION}, got ${INSTALLED_JAVA_DISTRIBUTION}"
             exit 1
           fi
