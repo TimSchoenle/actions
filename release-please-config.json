@@ -116,6 +116,11 @@
       "release-type": "simple",
       "component": "actions-helper-resolve-base-branch",
       "include-component-in-tag": true
+    },
+    "actions/java-gradle/setup-base-environment": {
+      "release-type": "simple",
+      "component": "actions-java-gradle-setup-base-environment",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

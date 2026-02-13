@@ -1,0 +1,124 @@
+name: Verify Java-gradle Setup-base-environment
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'actions/java-gradle/setup-base-environment/**'
+      - '.github/workflows/verify-action-java-gradle-setup-base-environment.yaml'
+  pull_request:
+    paths:
+      - 'actions/java-gradle/setup-base-environment/**'
+      - '.github/workflows/verify-action-java-gradle-setup-base-environment.yaml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  verify:
+    name: Verify Setup-base-environment
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java-version: ['11', '17', '21', '25']
+        java-package: ['jre', 'jdk', 'jdk+fx', 'jre+fx']
+        java-distribution: ['temurin', 'zulu']
+        gradle-setup-version: ['9.3.1', '8.14.3']
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Generate Gradle wrapper
+        shell: bash
+        env:
+          GRADLE_VERSION: ${{ matrix.gradle-setup-version }}
+        run: |
+          # Install Gradle temporarily to generate the wrapper files
+          sdk_install_dir="${RUNNER_TEMP}/gradle-install"
+          gradle_zip="${RUNNER_TEMP}/gradle-${GRADLE_VERSION}-bin.zip"
+
+          curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -o "${gradle_zip}"
+          unzip -q "${gradle_zip}" -d "${sdk_install_dir}"
+
+          # Generate wrapper files (gradlew, gradlew.bat, gradle/wrapper/*)
+          "${sdk_install_dir}/gradle-${GRADLE_VERSION}/bin/gradle" wrapper --gradle-version "${GRADLE_VERSION}"
+
+          # Verify the wrapper was created
+          ls -la gradlew gradle/wrapper/
+
+      - name: Test setup-base-environment
+        uses: ./actions/java-gradle/setup-base-environment
+        with:
+          java_version: ${{ matrix.java-version }}
+          java_package: ${{ matrix.java-package }}
+          java_distribution: ${{ matrix.java-distribution }}
+          gradle_dependency_graph: 'disabled'
+
+      - name: Verify Java Version
+        shell: bash
+        env:
+          INSTALLED_JAVA_VERSION: ${{ steps.setup-base-environment.outputs.java_version }}
+          EXPECTED_JAVA_VERSION: ${{ matrix.java-version }}
+        run: |
+          if [ "${INSTALLED_JAVA_VERSION}" != "${EXPECTED_JAVA_VERSION}" ]; then
+            echo "::error::Expected Java version ${EXPECTED_JAVA_VERSION}, got ${INSTALLED_JAVA_VERSION}"
+            exit 1
+          fi
+
+          java_version=java --version
+          echo "Java version: $java_version"
+
+          if [ -z "${java_version}" ]; then
+            echo "::error::Java version output is empty"
+            exit 1
+          fi
+
+          if [ "${java_version}" != "${INSTALLED_JAVA_VERSION}" ]; then
+            echo "::error::Expected Java version ${EXPECTED_JAVA_VERSION}, got ${java_version}"
+            exit 1
+          fi
+
+      - name: Verify Java distribution
+        shell: bash
+        env:
+          INSTALLED_JAVA_DISTRIBUTION: ${{ steps.setup-base-environment.outputs.java_distribution }}
+          EXPECTED_JAVA_DISTRIBUTION: ${{ matrix.java-distribution }}
+        run: |
+          if [ "${INSTALLED_JAVA_DISTRIBUTION}" != "${EXPECTED_JAVA_DISTRIBUTION}" ]; then
+            echo "::error::Expected Java distribution ${EXPECTED_JAVA_DISTRIBUTION}, got ${INSTALLED_JAVA_DISTRIBUTION}"
+            exit 1
+          fi
+
+      - name: Verify Java Path
+        shell: bash
+        env:
+          INSTALLED_JAVA_PATH: ${{ steps.setup-base-environment.outputs.java_path }}
+        run: |
+          if [ ! -f "${INSTALLED_JAVA_PATH}" ]; then
+            echo "::error::Java binary not found at: ${INSTALLED_JAVA_PATH}"
+            exit 1
+          fi
+
+      - name: Verify gradlew is executable
+        run: |
+          if [ ! -x "./gradlew" ]; then
+            echo "::error::gradlew is not executable"
+            exit 1
+          fi
+
+          echo "gradlew is executable"
+        shell: bash

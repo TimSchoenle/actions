@@ -39,6 +39,12 @@ Any version not listed in the following tables is not supported.
 | [Resolve Branch](./actions/helper/resolve-base-branch) | actions-helper-resolve-base-branch-v1.1.0 | :white_check_mark: |
 | [Verify Commit Authors](./actions/helper/verify-commit-authors) | actions-helper-verify-commit-authors-v1.1.6 | :white_check_mark: |
 
+### Java-gradle
+
+| Component | Version | Supported |
+| --- | --- | --- |
+| [Java-gradle Setup-base-environment](./actions/java-gradle/setup-base-environment) | actions-java-gradle-setup-base-environment-v1.0.0 | :white_check_mark: |
+
 ### Test
 
 | Component | Version | Supported |
