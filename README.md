@@ -72,6 +72,12 @@ Here is a list of all currently maintained actions in this repository:
 | --- | --- | --- | --- |
 | [Common Test Workflow21345](./workflows/common/test2) | Reusable workflow for common-test2 | workflows-common-test2-v2.11.1 | `uses: TimSchoenle/actions/.github/workflows/common-test2.yaml@workflows-common-test2-v2.11.1` |
 
+### Java-gradle
+
+| Workflow | Description | Version | Usage |
+| --- | --- | --- | --- |
+| [Java-gradle Auto-spotless](./workflows/java-gradle/auto-spotless) | Reusable workflow for java-gradle-auto-spotless | workflows-java-gradle-auto-spotless-v1.0.0 | `uses: TimSchoenle/actions/.github/workflows/java-gradle-auto-spotless.yaml@workflows-java-gradle-auto-spotless-v1.0.0` |
+
 ### Maintenance
 
 | Workflow | Description | Version | Usage |
@@ -100,10 +106,10 @@ To use, you need to download the rules and Import the ruleset.
 
 | Config | Description |
 | --- | --- |
-| [Release Tags: Only Allow Automatic Release Manager Bot](./configs/github-rulesets/release-tags_only-allow-automatic-release-manager-bot.json) | Enforces that only the Automatic Release Manager bot can create, update, or delete release tags. |
-| [Release Please Branches: Trusted Bots Only](./configs/github-rulesets/branch-release-please_only-allow-trusted-bots.json) | Restricts access to release-please branches, allowing only trusted bots to create, update, or delete them, while enforcing code quality and signature requirements. |
 | [Default Branch: Default Protection Rules](./configs/github-rulesets/branch-default_default-rules.json) | Enforces standard protection rules on the default branch: requires PRs with 1 approval (squash only), signed commits, CodeQL scanning, and passing status checks. |
+| [Release Please Branches: Trusted Bots Only](./configs/github-rulesets/branch-release-please_only-allow-trusted-bots.json) | Restricts access to release-please branches, allowing only trusted bots to create, update, or delete them, while enforcing code quality and signature requirements. |
 | [Renovate Branches: Trusted Bots & Admins Only](./configs/github-rulesets/branch-renovate_only-allow-trusted-bots-and-admins.json) | Restricts access to Renovate branches, allowing only trusted bots (Renovate, Automatic Release Manager) and admins to manage them, while enforcing code quality and signature requirements. |
+| [Release Tags: Only Allow Automatic Release Manager Bot](./configs/github-rulesets/release-tags_only-allow-automatic-release-manager-bot.json) | Enforces that only the Automatic Release Manager bot can create, update, or delete release tags. |
 
 
 ### Renovate
