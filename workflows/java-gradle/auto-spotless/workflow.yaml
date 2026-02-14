@@ -15,7 +15,7 @@ on:
         required: true
       java_distribution:
         description: 'Java distribution to use'
-        type: boolean
+        type: string
         required: false
         default: 'temurin'
       java_package:
@@ -35,12 +35,12 @@ on:
         default: 'false'
       commit_message:
         description: 'Commit message to use for the auto-commit.'
-        type: boolean
+        type: string
         required: false
         default: 'style: apply spotless formatting'
       comment_message:
         description: 'Comment message to use for the auto-commit.'
-        type: boolean
+        type: string
         required: false
         default: 'Applied spotless formatting.'
 
