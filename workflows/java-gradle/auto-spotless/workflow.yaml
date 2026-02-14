@@ -6,33 +6,41 @@ on:
     inputs:
       gradle_spotless_command:
         description: 'Spotless command to run'
+        type: string
         required: false
         default: 'spotlessApply'
       java_version:
         description: 'Java version to use for the build.'
+        type: string
         required: true
       java_distribution:
         description: 'Java distribution to use'
+        type: boolean
         required: false
         default: 'temurin'
       java_package:
         description: 'The package type (jdk, jre, jdk+fx, jre+fx)'
+        type: string
         required: false
         default: 'jdk'
       gradle_wrapper_validation:
         description: 'Validate Gradle wrapper'
+        type: boolean
         required: false
         default: 'true'
       gradle_wrapper_allow_snapshots:
         description: 'Allow Gradle wrapper snapshots'
+        type: boolean
         required: false
         default: 'false'
       commit_message:
         description: 'Commit message to use for the auto-commit.'
+        type: boolean
         required: false
         default: 'style: apply spotless formatting'
       comment_message:
         description: 'Comment message to use for the auto-commit.'
+        type: boolean
         required: false
         default: 'Applied spotless formatting.'
 
@@ -89,7 +97,7 @@ jobs:
       - name: Run spotless
         env:
           SPOTLESS_COMMAND: ${{ inputs.gradle_spotless_command }}
-        run: ./gradlew $SPOTLESS_COMMAND
+        run: ./gradlew "$SPOTLESS_COMMAND"
 
       - name: Commit and Push if changed
         id: auto-commit
