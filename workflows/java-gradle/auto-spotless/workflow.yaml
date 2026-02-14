@@ -118,5 +118,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: "$COMMENT_MESSAGE"
+              body: process.env.COMMENT_MESSAGE
             })

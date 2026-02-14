@@ -23,6 +23,6 @@
   "actions/common/create-branch": "1.2.0",
   "actions/helper/resolve-base-branch": "1.1.0",
   "actions/java-gradle/setup-base-environment": "1.2.0",
-  "workflows/java-gradle/auto-spotless": "1.0.1",
+  "workflows/java-gradle/auto-spotless": "1.0.3",
   "workflows/maintenance/wipe-cache": "1.1.0"
 }
