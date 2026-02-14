@@ -85,6 +85,7 @@ Here is a list of all currently maintained actions in this repository:
 | [Auto Format](./workflows/maintenance/auto-bun-prettier) | Reusable workflow to auto-format code using Bun (Prettier) and commit changes. | workflows-maintenance-auto-bun-prettier-v1.1.8 | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@workflows-maintenance-auto-bun-prettier-v1.1.8` |
 | [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | Reusable workflow that automatically verifies, approves, and merges Pull Requests that match a specific branch pattern and have been open for a configurable duration. It ensures all commits are signed and authored by trusted users. | workflows-maintenance-timed-auto-pr-approve-v1.2.9 | `uses: TimSchoenle/actions/.github/workflows/maintenance-timed-auto-pr-approve.yaml@workflows-maintenance-timed-auto-pr-approve-v1.2.9` |
 | [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | Reusable workflow to auto approve Renovate PRs, this is useful to auto merge Renovate PRs which have auto-merge enabled. | workflows-maintenance-auto-approve-renovate-v1.3.2 | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-approve-renovate.yaml@workflows-maintenance-auto-approve-renovate-v1.3.2` |
+| [Maintenance Wipe-cache](./workflows/maintenance/wipe-cache) | Reusable workflow for maintenance-wipe-cache | workflows-maintenance-wipe-cache-v1.0.0 | `uses: TimSchoenle/actions/.github/workflows/maintenance-wipe-cache.yaml@workflows-maintenance-wipe-cache-v1.0.0` |
 
 ### Rust
 
@@ -106,10 +107,10 @@ To use, you need to download the rules and Import the ruleset.
 
 | Config | Description |
 | --- | --- |
-| [Release Tags: Only Allow Automatic Release Manager Bot](./configs/github-rulesets/release-tags_only-allow-automatic-release-manager-bot.json) | Enforces that only the Automatic Release Manager bot can create, update, or delete release tags. |
-| [Release Please Branches: Trusted Bots Only](./configs/github-rulesets/branch-release-please_only-allow-trusted-bots.json) | Restricts access to release-please branches, allowing only trusted bots to create, update, or delete them, while enforcing code quality and signature requirements. |
 | [Default Branch: Default Protection Rules](./configs/github-rulesets/branch-default_default-rules.json) | Enforces standard protection rules on the default branch: requires PRs with 1 approval (squash only), signed commits, CodeQL scanning, and passing status checks. |
+| [Release Please Branches: Trusted Bots Only](./configs/github-rulesets/branch-release-please_only-allow-trusted-bots.json) | Restricts access to release-please branches, allowing only trusted bots to create, update, or delete them, while enforcing code quality and signature requirements. |
 | [Renovate Branches: Trusted Bots & Admins Only](./configs/github-rulesets/branch-renovate_only-allow-trusted-bots-and-admins.json) | Restricts access to Renovate branches, allowing only trusted bots (Renovate, Automatic Release Manager) and admins to manage them, while enforcing code quality and signature requirements. |
+| [Release Tags: Only Allow Automatic Release Manager Bot](./configs/github-rulesets/release-tags_only-allow-automatic-release-manager-bot.json) | Enforces that only the Automatic Release Manager bot can create, update, or delete release tags. |
 
 
 ### Renovate

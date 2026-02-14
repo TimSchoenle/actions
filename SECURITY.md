@@ -73,6 +73,7 @@ Any version not listed in the following tables is not supported.
 | [Auto Format](./workflows/maintenance/auto-bun-prettier) | workflows-maintenance-auto-bun-prettier-v1.1.8 | :white_check_mark: |
 | [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | workflows-maintenance-timed-auto-pr-approve-v1.2.9 | :white_check_mark: |
 | [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | workflows-maintenance-auto-approve-renovate-v1.3.2 | :white_check_mark: |
+| [Maintenance Wipe-cache](./workflows/maintenance/wipe-cache) | workflows-maintenance-wipe-cache-v1.0.0 | :white_check_mark: |
 
 ### Rust
 
