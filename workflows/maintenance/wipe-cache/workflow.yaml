@@ -6,10 +6,12 @@ on:
     inputs:
       repository:
         description: 'Repository to wipe cache for.'
+        type: string
         required: false
         default: ${{ github.repository }}
       branch:
         description: 'Branch to wipe cache for.'
+        type: string
         required: false
         default: ${{ github.event.ref }}
     secrets:
