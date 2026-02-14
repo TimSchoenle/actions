@@ -27,12 +27,12 @@ on:
         description: 'Validate Gradle wrapper'
         type: boolean
         required: false
-        default: 'true'
+        default: true
       gradle_wrapper_allow_snapshots:
         description: 'Allow Gradle wrapper snapshots'
         type: boolean
         required: false
-        default: 'false'
+        default: false
       commit_message:
         description: 'Commit message to use for the auto-commit.'
         type: string
