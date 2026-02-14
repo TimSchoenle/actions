@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.9](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.8...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.9) (2026-02-14)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#438](https://github.com/TimSchoenle/actions/issues/438)) ([fdba8ec](https://github.com/TimSchoenle/actions/commit/fdba8eca098caa0ffe6f712e81481ada3c786aee))
+
 ## [1.2.8](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.7...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.8) (2026-02-13)
 
 
