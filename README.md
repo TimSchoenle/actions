@@ -72,6 +72,12 @@ Here is a list of all currently maintained actions in this repository:
 | --- | --- | --- | --- |
 | [Common Test Workflow21345](./workflows/common/test2) | Reusable workflow for common-test2 | workflows-common-test2-v2.11.1 | `uses: TimSchoenle/actions/.github/workflows/common-test2.yaml@workflows-common-test2-v2.11.1` |
 
+### Java-gradle
+
+| Workflow | Description | Version | Usage |
+| --- | --- | --- | --- |
+| [Java-gradle Auto-spotless](./workflows/java-gradle/auto-spotless) | Automatically apply spotless formatting and commit changes. | workflows-java-gradle-auto-spotless-v1.0.0 | `uses: TimSchoenle/actions/.github/workflows/java-gradle-auto-spotless.yaml@workflows-java-gradle-auto-spotless-v1.0.0` |
+
 ### Maintenance
 
 | Workflow | Description | Version | Usage |

@@ -121,6 +121,11 @@
       "release-type": "simple",
       "component": "actions-java-gradle-setup-base-environment",
       "include-component-in-tag": true
+    },
+    "workflows/java-gradle/auto-spotless": {
+      "release-type": "simple",
+      "component": "workflows-java-gradle-auto-spotless-meta",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

@@ -1,0 +1,122 @@
+name: 'Java-gradle Auto-spotless'
+description: 'Automatically apply spotless formatting and commit changes.'
+
+on:
+  workflow_call:
+    inputs:
+      gradle_spotless_command:
+        description: 'Spotless command to run'
+        type: string
+        required: false
+        default: 'spotlessApply'
+      java_version:
+        description: 'Java version to use for the build.'
+        type: string
+        required: true
+      java_distribution:
+        description: 'Java distribution to use'
+        type: string
+        required: false
+        default: 'temurin'
+      java_package:
+        description: 'The package type (jdk, jre, jdk+fx, jre+fx)'
+        type: string
+        required: false
+        default: 'jdk'
+      gradle_wrapper_validation:
+        description: 'Validate Gradle wrapper'
+        type: boolean
+        required: false
+        default: 'true'
+      gradle_wrapper_allow_snapshots:
+        description: 'Allow Gradle wrapper snapshots'
+        type: boolean
+        required: false
+        default: 'false'
+      commit_message:
+        description: 'Commit message to use for the auto-commit.'
+        type: string
+        required: false
+        default: 'style: apply spotless formatting'
+      comment_message:
+        description: 'Comment message to use for the auto-commit.'
+        type: string
+        required: false
+        default: 'Applied spotless formatting.'
+
+    secrets:
+      bot_app_id:
+        description: 'Bot App ID to run the workflow. The bot needs permissions to write content and write pull requests.'
+        required: true
+      bot_private_key:
+        description: 'Bot Private Key to run the workflow'
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-auto-spotless-formatting
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  auto-spotless:
+    name: Auto Spotless Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Generate Bot Token
+        id: generate_token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ secrets.bot_app_id }}
+          private-key: ${{ secrets.bot_private_key }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+          token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Set up JDK
+        uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@c0830a12e031ca8bcaed36631b47a5fe986ac0b9 # actions-java-gradle-setup-base-environment-v1.1.1
+        with:
+          java_version: ${{ inputs.java_version }}
+          java_distribution: ${{ inputs.java_distribution }}
+          java_package: ${{ inputs.java_package }}
+          gradle_wrapper_validation: ${{ inputs.gradle_wrapper_validation }}
+          gradle_wrapper_allow_snapshots: ${{ inputs.gradle_wrapper_allow_snapshots }}
+
+      - name: Run spotless
+        env:
+          SPOTLESS_COMMAND: ${{ inputs.gradle_spotless_command }}
+        run: ./gradlew "$SPOTLESS_COMMAND"
+
+      - name: Commit and Push if changed
+        id: auto-commit
+        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # actions-common-commit-changes-v1.1.4
+        with:
+          commit_message: ${{ inputs.commit_message }}
+          token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Comment on PR
+        if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          COMMENT_MESSAGE: ${{ inputs.comment_message }}
+        with:
+          github-token: ${{ steps.generate_token.outputs.token }}
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: "$COMMENT_MESSAGE"
+            })
