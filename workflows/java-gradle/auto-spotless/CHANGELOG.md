@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/TimSchoenle/actions/compare/workflows-java-gradle-auto-spotless-meta-v1.0.2...workflows-java-gradle-auto-spotless-meta-v1.0.3) (2026-02-14)
+
+
+### Bug Fixes
+
+* **Workflows/Auto-Spotless:** comment message from env variable ([#455](https://github.com/TimSchoenle/actions/issues/455)) ([06bade9](https://github.com/TimSchoenle/actions/commit/06bade95d1d9e1ee4f964199e58aabfc66179668))
+
 ## [1.0.2](https://github.com/TimSchoenle/actions/compare/workflows-java-gradle-auto-spotless-meta-v1.0.1...workflows-java-gradle-auto-spotless-meta-v1.0.2) (2026-02-14)
 
 
