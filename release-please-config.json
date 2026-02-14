@@ -126,6 +126,11 @@
       "release-type": "simple",
       "component": "workflows-java-gradle-auto-spotless-meta",
       "include-component-in-tag": true
+    },
+    "workflows/maintenance/wipe-cache": {
+      "release-type": "simple",
+      "component": "workflows-maintenance-wipe-cache-meta",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

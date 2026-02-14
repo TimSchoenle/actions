@@ -1,0 +1,93 @@
+name: 'Maintenance Wipe-cache'
+description: 'Workflow to wipe all cache entries for the given branch.'
+
+on:
+  workflow_call:
+    inputs:
+      repository:
+        description: 'Repository to wipe cache for.'
+        type: string
+        required: false
+        default: ${{ github.repository }}
+      branch:
+        description: 'Branch to wipe cache for.'
+        type: string
+        required: false
+        default: ${{ github.event.ref }}
+    secrets:
+      github_token:
+        description: 'GitHub token to use for API calls.'
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-wipe-cache
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  cleanup-caches:
+    name: Cleanup Caches
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write # to delete caches
+      contents: read # to list cache keys
+    if: github.event.ref_type == 'branch'
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        with:
+          egress-policy: audit
+
+      - name: Cleanup Caches
+        env:
+          GH_TOKEN: ${{ secrets.github_token }}
+          REPO: ${{ inputs.repository }}
+          BRANCH: ${{ inputs.branch }}
+        run: |
+          gh extension install actions/gh-actions-cache
+
+          echo "Fetching list of cache keys for branch $BRANCH in $REPO"
+
+          totalDeleted=0
+          totalFailed=0
+
+          while true; do
+            cacheKeys=$(gh actions-cache list -R "$REPO" -B "$BRANCH" -L 100 | cut -f 1)
+
+            if [ -z "$cacheKeys" ]; then
+              echo "No more cache entries found."
+              break
+            fi
+
+            deletedThisRound=0
+            failedThisRound=0
+
+            for cacheKey in $cacheKeys; do
+              echo "  Deleting $cacheKey ..."
+              if gh actions-cache delete "$cacheKey" -R "$REPO" -B "$BRANCH" --confirm; then
+                deletedThisRound=$((deletedThisRound + 1))
+              else
+                echo "  Failed to delete $cacheKey"
+                failedThisRound=$((failedThisRound + 1))
+              fi
+            done
+
+            totalDeleted=$((totalDeleted + deletedThisRound))
+            totalFailed=$((totalFailed + failedThisRound))
+
+            echo "Round finished: $deletedThisRound deleted, $failedThisRound failed."
+
+            # If nothing was deleted this round, every key failed — stop to avoid an endless loop
+            if [ "$deletedThisRound" -eq 0 ]; then
+              echo "::error::No caches could be deleted this round. Aborting to avoid an infinite loop."
+              break
+            fi
+          done
+
+          echo "Summary: $totalDeleted deleted, $totalFailed failed."
+
+          if [ "$totalFailed" -gt 0 ]; then
+            echo "::warning::$totalFailed cache entries could not be deleted."
+            exit 1
+          fi
