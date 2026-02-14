@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-setup-base-environment-v1.1.1...actions-java-gradle-setup-base-environment-v1.2.0) (2026-02-13)
+
+
+### Features
+
+* **Actions/JavaGradle-Default-Setup:** remove gradle_dependency_grap… ([#444](https://github.com/TimSchoenle/actions/issues/444)) ([f6186e6](https://github.com/TimSchoenle/actions/commit/f6186e61b46525ad139edea93473c2e97aebc930))
+
 ## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-setup-base-environment-v1.1.0...actions-java-gradle-setup-base-environment-v1.1.1) (2026-02-13)
 
 
