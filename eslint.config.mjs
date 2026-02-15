@@ -1,3 +1,4 @@
+import { fixupPluginRules } from '@eslint/compat';
 import eslint from '@eslint/js';
 import importPlugin from 'eslint-plugin-import';
 import noSecrets from 'eslint-plugin-no-secrets';
@@ -59,7 +60,7 @@ export default tseslint.config(
   {
     plugins: {
       'no-secrets': noSecrets,
-      security,
+      security: fixupPluginRules(security),
     },
     rules: {
       'no-secrets/no-secrets': ['warn', { tolerance: 4.5 }],

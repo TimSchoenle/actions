@@ -13,6 +13,6 @@ export async function getRepoInfo(): Promise<string> {
     const url = await Sys.exec('git config --get remote.origin.url');
     return parseGitUrl(url);
   } catch (e) {
-    throw new Error(`Failed to get git remote url: ${e}`);
+    throw new Error(`Failed to get git remote url: ${e}`, { cause: e });
   }
 }
