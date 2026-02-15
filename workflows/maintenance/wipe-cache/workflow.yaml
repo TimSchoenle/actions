@@ -15,7 +15,7 @@ on:
         required: false
         default: ${{ github.event.ref }}
     secrets:
-      github_token:
+      token:
         description: 'GitHub token to use for API calls.'
         required: true
 
@@ -41,7 +41,7 @@ jobs:
 
       - name: Cleanup Caches
         env:
-          GH_TOKEN: ${{ secrets.github_token }}
+          GH_TOKEN: ${{ secrets.token }}
           REPO: ${{ inputs.repository }}
           BRANCH: ${{ inputs.branch }}
         run: |
