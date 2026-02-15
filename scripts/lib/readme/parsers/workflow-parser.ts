@@ -49,7 +49,7 @@ export function deriveWorkflowMetadata(
   return {
     name: configName || componentSuffix,
     description: configDescription || `Reusable workflow for ${componentSuffix}`,
-    version: tag,
+    version: `[${tag}](https://github.com/${repoId}/releases/tag/${tag})`,
     // Correct Usage for Clean Release
     usage: `\`uses: ${repoId}/.github/workflows/${targetFileName}@${tag}\``,
     category: category.charAt(0).toUpperCase() + category.slice(1),

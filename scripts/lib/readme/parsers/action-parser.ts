@@ -35,7 +35,7 @@ export function deriveActionMetadata(
   return {
     name: configName,
     description: configDescription || '',
-    version,
+    version: `[${version}](https://github.com/${repoId}/releases/tag/${version})`,
     usage: `\`uses: ${repoId}/${dirPath}@${version}\``,
     category: category.charAt(0).toUpperCase() + category.slice(1),
   };
