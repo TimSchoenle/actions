@@ -5,10 +5,9 @@ import * as ReadmeUtils from '../../utils';
 import * as GitUtils from '../../git-utils';
 
 // Mock Sys
-vi.mock('../../../utils', async () => {
-  const actual = await vi.importActual<typeof import('../../utils')>('../../../utils');
+vi.mock('../../../utils', () => {
   return {
-    ...actual,
+    ROOT_DIR: '/mock/root',
     Sys: {
       glob: vi.fn(),
       file: vi.fn(),
@@ -71,7 +70,7 @@ describe('ActionParser', () => {
     expect(items[0]).toEqual({
       name: 'Test Action',
       description: 'Test Desc',
-      version: 'pkg-sub-v1.0.0',
+      version: '[pkg-sub-v1.0.0](https://github.com/owner/repo/releases/tag/pkg-sub-v1.0.0)',
       usage: '`uses: owner/repo/actions/pkg/sub@pkg-sub-v1.0.0`',
       category: 'Pkg',
       path: 'actions/pkg/sub',

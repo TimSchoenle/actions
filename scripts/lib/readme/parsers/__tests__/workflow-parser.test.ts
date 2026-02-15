@@ -60,7 +60,8 @@ describe('WorkflowParser', () => {
     expect(items[0]).toEqual({
       name: 'Common Test Workflow', // From YAML
       description: 'Reusable logic', // From YAML
-      version: 'workflows-common-test2-v2.5.0', // Derived
+      version:
+        '[workflows-common-test2-v2.5.0](https://github.com/owner/repo/releases/tag/workflows-common-test2-v2.5.0)', // Derived
       usage: '`uses: owner/repo/.github/workflows/common-test2.yaml@workflows-common-test2-v2.5.0`', // Derived logic check
       category: 'Common',
       path: 'workflows/common/test2',
