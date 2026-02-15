@@ -19,4 +19,4 @@ jobs:
       branch: '${{ github.event.ref }}'
       repository: '${{ github.repository }}'
     secrets:
-      token: ${{ secrets.GITHUB_TOKEN }}
+      github_token: ${{ secrets.GITHUB_TOKEN }}
