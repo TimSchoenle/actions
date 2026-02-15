@@ -27,7 +27,9 @@ describe('parsers fuzzing', () => {
           if (!result) return false;
 
           expect(result.name).toBe(`${pkg}-${sub}`);
-          expect(result.version).toBe(`workflows-${pkg}-${sub}-v${ver}`);
+          expect(result.version).toBe(
+            `[workflows-${pkg}-${sub}-v${ver}](https://github.com/${repoId}/releases/tag/workflows-${pkg}-${sub}-v${ver})`,
+          );
           expect(result.category).toBe(pkg.charAt(0).toUpperCase() + pkg.slice(1));
         }),
       );
