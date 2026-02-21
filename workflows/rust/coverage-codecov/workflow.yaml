@@ -46,7 +46,7 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c # v1.15.2
 
       - name: Install cargo-llvm-cov and nextest
-        uses: taiki-e/install-action@2723513a70062521fb56e5df87a04967751efd2f # v2.68.4
+        uses: taiki-e/install-action@470679bc3a1580072dac4e67535d1aa3a3dcdf51 # v2.68.6
         with:
           tool: cargo-llvm-cov,nextest
 
