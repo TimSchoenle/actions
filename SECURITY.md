@@ -37,7 +37,7 @@ Any version not listed in the following tables is not supported.
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Resolve Branch](./actions/helper/resolve-base-branch) | [actions-helper-resolve-base-branch-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-resolve-base-branch-v1.1.0) | :white_check_mark: |
-| [Verify Commit Authors](./actions/helper/verify-commit-authors) | [actions-helper-verify-commit-authors-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v1.1.7) | :white_check_mark: |
+| [Verify Commit Authors](./actions/helper/verify-commit-authors) | [actions-helper-verify-commit-authors-v1.1.8](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v1.1.8) | :white_check_mark: |
 
 ### Java-gradle
 
