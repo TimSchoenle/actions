@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.8](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.7...actions-helper-verify-commit-authors-v1.1.8) (2026-02-23)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v25.3.0 ([#479](https://github.com/TimSchoenle/actions/issues/479)) ([0cd5191](https://github.com/TimSchoenle/actions/commit/0cd51918f8ee6e6c5abe917bbbe732496db4ba11))
+* **deps:** update graphqlcodegenerator monorepo ([#475](https://github.com/TimSchoenle/actions/issues/475)) ([4401f6a](https://github.com/TimSchoenle/actions/commit/4401f6a6a04a3b8ee99785dd50f77de8e6691c32))
+
+
+### Dependencies
+
+* **deps:** lock file maintenance ([#482](https://github.com/TimSchoenle/actions/issues/482)) ([bf6b2b4](https://github.com/TimSchoenle/actions/commit/bf6b2b48a6b7b6f223ec1aa35f3d020b0a588682))
+
 ## [1.1.7](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.6...actions-helper-verify-commit-authors-v1.1.7) (2026-02-13)
 
 
