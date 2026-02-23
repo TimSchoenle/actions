@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/TimSchoenle/actions/compare/actions-common-create-pull-request-v1.0.2...actions-common-create-pull-request-v1.0.3) (2026-02-23)
+
+
+### Bug Fixes
+
+* **Actions/Create-Pull-Request:** improve diff-check comparison ([#484](https://github.com/TimSchoenle/actions/issues/484)) ([5e715ac](https://github.com/TimSchoenle/actions/commit/5e715ac8024641b2112bafececda01a44bb42bfd))
+
 ## [1.0.2](https://github.com/TimSchoenle/actions/compare/actions-common-create-pull-request-v1.0.1...actions-common-create-pull-request-v1.0.2) (2026-02-12)
 
 
