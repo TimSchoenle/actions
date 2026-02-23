@@ -103,14 +103,14 @@ runs:
         echo "new-version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
 
     - name: Set Chart Version
-      uses: TimSchoenle/actions/actions/common/modify-yaml@09b31a8e2b59323710086e92e44770b921e64134 # actions-common-modify-yaml-v1.2.4
+      uses: TimSchoenle/actions/actions/common/modify-yaml@317dbbacf26bb10cd4416a7ada5812cf742857da # actions-common-modify-yaml-v1.2.5
       with:
         file: ${{ inputs.chart-path }}/Chart.yaml
         key: version
         value: ${{ steps.calc-version.outputs.new-version }}
 
     - name: Set App Version
-      uses: TimSchoenle/actions/actions/common/modify-yaml@09b31a8e2b59323710086e92e44770b921e64134 # actions-common-modify-yaml-v1.2.4
+      uses: TimSchoenle/actions/actions/common/modify-yaml@317dbbacf26bb10cd4416a7ada5812cf742857da # actions-common-modify-yaml-v1.2.5
       with:
         file: ${{ inputs.chart-path }}/Chart.yaml
         key: appVersion
@@ -129,7 +129,7 @@ runs:
         echo "full-tag=$FULL_TAG" >> "$GITHUB_OUTPUT"
 
     - name: Update Image Tag
-      uses: TimSchoenle/actions/actions/common/modify-yaml@09b31a8e2b59323710086e92e44770b921e64134 # actions-common-modify-yaml-v1.2.4
+      uses: TimSchoenle/actions/actions/common/modify-yaml@317dbbacf26bb10cd4416a7ada5812cf742857da # actions-common-modify-yaml-v1.2.5
       with:
         file: ${{ inputs.chart-path }}/values.yaml
         key: image.tag
@@ -137,7 +137,7 @@ runs:
 
     - name: Create Pull Request
       id: create-pr
-      uses: TimSchoenle/actions/actions/common/create-pull-request@43ba7f3e786f715bf727a212d8f1f15c4f50e342 # actions-common-create-pull-request-v1.0.2
+      uses: TimSchoenle/actions/actions/common/create-pull-request@8a2bdc388cd9c9db8d6dadd44375add3c8885e5d # actions-common-create-pull-request-v1.0.3
       with:
         app-id: ${{ inputs.app-id }}
         private-key: ${{ inputs.private-key }}
