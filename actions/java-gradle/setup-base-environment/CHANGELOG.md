@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-setup-base-environment-v1.2.0...actions-java-gradle-setup-base-environment-v1.2.1) (2026-02-28)
+
+
+### Miscellaneous
+
+* **deps:** update gradle/actions digest to 0723195 ([#492](https://github.com/TimSchoenle/actions/issues/492)) ([d2d1558](https://github.com/TimSchoenle/actions/commit/d2d155854e1d3aefb468904eae535ee9c6e65eda))
+
 ## [1.2.0](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-setup-base-environment-v1.1.1...actions-java-gradle-setup-base-environment-v1.2.0) (2026-02-13)
 
 
