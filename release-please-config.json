@@ -131,6 +131,11 @@
       "release-type": "simple",
       "component": "workflows-maintenance-wipe-cache-meta",
       "include-component-in-tag": true
+    },
+    "workflows/maintenance/auto-rebase": {
+      "release-type": "simple",
+      "component": "workflows-maintenance-auto-rebase-meta",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
