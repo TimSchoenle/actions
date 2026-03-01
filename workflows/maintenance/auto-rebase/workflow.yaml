@@ -91,19 +91,19 @@ jobs:
         with:
           github-token: ${{ steps.generate-token.outputs.token }}
           script: |
-            const prNumber = $PR_NUMBER;
+            const { PR_NUMBER } = process.env;
 
             // Get the PR to verify it's still open
             const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: prNumber
+              pull_number: PR_NUMBER
             });
 
-            console.log(`Checking PR #${prNumber} (state: ${pr.state})`);
+            console.log(`Checking PR #${PR_NUMBER} (state: ${pr.state})`);
 
             if (pr.state !== 'open') {
-               console.log(`PR #${prNumber} is not open, skipping.`);
+               console.log(`PR #${PR_NUMBER} is not open, skipping.`);
                return;
             }
 
@@ -111,12 +111,12 @@ jobs:
               const result = await github.rest.pulls.updateBranch({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                pull_number: prNumber,
+                pull_number: PR_NUMBER,
                 // Passing the expected_head_sha is recommended to avoid race conditions
                 expected_head_sha: pr.head.sha
               });
-              console.log(`Successfully requested branch update for PR #${prNumber}.`, result.data);
+              console.log(`Successfully requested branch update for PR #${PR_NUMBER}.`, result.data);
             } catch (error) {
-              console.error(`Failed to update branch for PR #${prNumber}:`, error.message);
-              core.warning(`Could not update PR #${prNumber}: ${error.message} - it might already be up to date or have conflicts.`);
+              console.error(`Failed to update branch for PR #${PR_NUMBER}:`, error.message);
+              core.warning(`Could not update PR #${PR_NUMBER}: ${error.message} - it might already be up to date or have conflicts.`);
             }
