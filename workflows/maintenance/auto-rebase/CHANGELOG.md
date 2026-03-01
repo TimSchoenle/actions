@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-rebase-meta-v1.1.2...workflows-maintenance-auto-rebase-meta-v1.1.3) (2026-03-01)
+
+
+### Bug Fixes
+
+* **Workflow/Auto-Rebase:** try to fix permission issue ([#521](https://github.com/TimSchoenle/actions/issues/521)) ([3866541](https://github.com/TimSchoenle/actions/commit/3866541f7c8b6280bc4e1006df6856230dbf2b25))
+
 ## [1.1.2](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-rebase-meta-v1.1.1...workflows-maintenance-auto-rebase-meta-v1.1.2) (2026-03-01)
 
 
