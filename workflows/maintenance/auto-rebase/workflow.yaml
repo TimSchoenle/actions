@@ -81,7 +81,7 @@ jobs:
         with:
           app-id: ${{ secrets.app_id }}
           private-key: ${{ secrets.private_key }}
-          permission-pull-requests: read
+          permission-pull-requests: write
           permission-contents: write
 
       - name: Rebase PR
