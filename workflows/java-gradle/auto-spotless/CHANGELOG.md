@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.4](https://github.com/TimSchoenle/actions/compare/workflows-java-gradle-auto-spotless-meta-v1.0.3...workflows-java-gradle-auto-spotless-meta-v1.0.4) (2026-03-02)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#496](https://github.com/TimSchoenle/actions/issues/496)) ([0d063a1](https://github.com/TimSchoenle/actions/commit/0d063a1ae3d1a73dac283a33f3c298974a6f7536))
+* **deps:** update all non-major action updates ([#527](https://github.com/TimSchoenle/actions/issues/527)) ([83e38cc](https://github.com/TimSchoenle/actions/commit/83e38cc5678667759e6e0ba01dad3ea5ecaf1596))
+
 ## [1.0.3](https://github.com/TimSchoenle/actions/compare/workflows-java-gradle-auto-spotless-meta-v1.0.2...workflows-java-gradle-auto-spotless-meta-v1.0.3) (2026-02-14)
 
 
