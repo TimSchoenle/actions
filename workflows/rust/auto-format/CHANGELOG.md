@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.3](https://github.com/TimSchoenle/actions/compare/workflows-rust-auto-format-meta-v1.1.2...workflows-rust-auto-format-meta-v1.1.3) (2026-03-02)
+
+
+### Miscellaneous
+
+* **deps:** update actions-rust-lang/setup-rust-toolchain action to v1.15.3 ([#512](https://github.com/TimSchoenle/actions/issues/512)) ([30f6ee5](https://github.com/TimSchoenle/actions/commit/30f6ee5a85103747ab48255d54531c6ac95aaa89))
+* **deps:** update all non-major action updates ([#496](https://github.com/TimSchoenle/actions/issues/496)) ([0d063a1](https://github.com/TimSchoenle/actions/commit/0d063a1ae3d1a73dac283a33f3c298974a6f7536))
+
 ## [1.1.2](https://github.com/TimSchoenle/actions/compare/workflows-rust-auto-format-meta-v1.1.1...workflows-rust-auto-format-meta-v1.1.2) (2026-02-13)
 
 
