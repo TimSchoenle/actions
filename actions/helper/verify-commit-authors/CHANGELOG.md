@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.1.9](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.8...actions-helper-verify-commit-authors-v1.1.9) (2026-03-02)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @graphql-codegen/cli to v6.1.2 ([#497](https://github.com/TimSchoenle/actions/issues/497)) ([4efdcaa](https://github.com/TimSchoenle/actions/commit/4efdcaa786de259b18f670780773aadb23011e58))
+* **deps:** update dependency @types/node to v25.3.1 ([#513](https://github.com/TimSchoenle/actions/issues/513)) ([3003165](https://github.com/TimSchoenle/actions/commit/30031650d032343d96309957349ad8f0ce56e2e5))
+* **deps:** update dependency @types/node to v25.3.2 ([#519](https://github.com/TimSchoenle/actions/issues/519)) ([21669be](https://github.com/TimSchoenle/actions/commit/21669be071af5fb5ffa79784d852b5dca7f27e81))
+* **deps:** update dependency graphql to v16.13.0 ([#509](https://github.com/TimSchoenle/actions/issues/509)) ([fb2011f](https://github.com/TimSchoenle/actions/commit/fb2011f62602a4db9ae9da97fbeb87971e2e8b21))
+* **deps:** update typescript-eslint monorepo to v8.56.1 ([#500](https://github.com/TimSchoenle/actions/issues/500)) ([62344ec](https://github.com/TimSchoenle/actions/commit/62344ec9a2bb295462558c92c025fa34e568eb05))
+
+
+### Dependencies
+
+* **deps:** lock file maintenance ([#523](https://github.com/TimSchoenle/actions/issues/523)) ([021dde9](https://github.com/TimSchoenle/actions/commit/021dde9ddc257b9d257386e86ed911a6364dff6a))
+
 ## [1.1.8](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.7...actions-helper-verify-commit-authors-v1.1.8) (2026-02-23)
 
 
