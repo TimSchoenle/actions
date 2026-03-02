@@ -76,7 +76,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Workflow | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Java-gradle Auto-spotless](./workflows/java-gradle/auto-spotless) | Automatically apply spotless formatting and commit changes. | [workflows-java-gradle-auto-spotless-v1.0.3](https://github.com/TimSchoenle/actions/releases/tag/workflows-java-gradle-auto-spotless-v1.0.3) | `uses: TimSchoenle/actions/.github/workflows/java-gradle-auto-spotless.yaml@workflows-java-gradle-auto-spotless-v1.0.3` |
+| [Java-gradle Auto-spotless](./workflows/java-gradle/auto-spotless) | Automatically apply spotless formatting and commit changes. | [workflows-java-gradle-auto-spotless-v1.0.4](https://github.com/TimSchoenle/actions/releases/tag/workflows-java-gradle-auto-spotless-v1.0.4) | `uses: TimSchoenle/actions/.github/workflows/java-gradle-auto-spotless.yaml@workflows-java-gradle-auto-spotless-v1.0.4` |
 
 ### Maintenance
 
