@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.10](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.9...workflows-maintenance-auto-bun-prettier-meta-v1.1.10) (2026-03-07)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#540](https://github.com/TimSchoenle/actions/issues/540)) ([414c82f](https://github.com/TimSchoenle/actions/commit/414c82fc8d089367efdc9a15dc9d5630e100ff4c))
+
 ## [1.1.9](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.8...workflows-maintenance-auto-bun-prettier-meta-v1.1.9) (2026-03-02)
 
 
