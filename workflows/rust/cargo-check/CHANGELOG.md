@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.6](https://github.com/TimSchoenle/actions/compare/workflows-rust-cargo-check-meta-v1.1.5...workflows-rust-cargo-check-meta-v1.1.6) (2026-03-07)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#540](https://github.com/TimSchoenle/actions/issues/540)) ([414c82f](https://github.com/TimSchoenle/actions/commit/414c82fc8d089367efdc9a15dc9d5630e100ff4c))
+
 ## [1.1.5](https://github.com/TimSchoenle/actions/compare/workflows-rust-cargo-check-meta-v1.1.4...workflows-rust-cargo-check-meta-v1.1.5) (2026-03-02)
 
 
