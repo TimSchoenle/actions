@@ -37,7 +37,7 @@ jobs:
           echo "workflow_files=$(find workflows -name '*.yaml' -o -name '*.yml' | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
 
       - name: Run Zizmor
-        uses: zizmorcore/zizmor-action@195d10ad90f31d8cd6ea1efd6ecc12969ddbe73f # v0.5.1
+        uses: zizmorcore/zizmor-action@71321a20a9ded102f6e9ce5718a2fcec2c4f70d8 # v0.5.2
         with:
           persona: pedantic
           inputs: . ${{ steps.find-workflows.outputs.workflow_files }}
