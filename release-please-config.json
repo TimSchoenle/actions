@@ -136,6 +136,11 @@
       "release-type": "simple",
       "component": "workflows-maintenance-auto-rebase-meta",
       "include-component-in-tag": true
+    },
+    "actions/java-gradle/auto-spotless": {
+      "release-type": "simple",
+      "component": "actions-java-gradle-auto-spotless",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
