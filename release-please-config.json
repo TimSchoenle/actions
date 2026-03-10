@@ -142,6 +142,11 @@
       "component": "actions-java-gradle-auto-spotless",
       "include-component-in-tag": true
     },
+    "actions/maintenance/auto-approve-pr": {
+      "release-type": "simple",
+      "component": "actions-maintenance-auto-approve-pr",
+      "include-component-in-tag": true
+    },
     "actions/helper/verify-branch-name": {
       "release-type": "simple",
       "component": "actions-helper-verify-branch-name",
