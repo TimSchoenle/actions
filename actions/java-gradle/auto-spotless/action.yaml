@@ -8,6 +8,10 @@ inputs:
   bot_private_key:
     description: 'Bot Private Key to run the workflow'
     required: true
+  repository:
+    description: 'Target repository in the format owner/repo. Defaults to the current repository.'
+    required: false
+    default: ${{ github.repository }}
   gradle_spotless_command:
     description: 'Spotless command to run'
     required: false
@@ -53,12 +57,23 @@ runs:
       with:
         egress-policy: audit
 
+    - name: Parse Repository
+      id: parse_repo
+      shell: bash
+      env:
+        REPOSITORY: ${{ inputs.repository }}
+      run: |
+        echo "owner=${REPOSITORY%%/*}" >> $GITHUB_OUTPUT
+        echo "repo_name=${REPOSITORY##*/}" >> $GITHUB_OUTPUT
+
     - name: Generate Bot Token
       id: generate_token
       uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
       with:
         app-id: ${{ inputs.bot_app_id }}
         private-key: ${{ inputs.bot_private_key }}
+        owner: ${{ steps.parse_repo.outputs.owner }}
+        repositories: ${{ steps.parse_repo.outputs.repo_name }}
         permission-contents: write
         permission-pull-requests: write
 
@@ -91,6 +106,7 @@ runs:
       with:
         commit_message: ${{ inputs.commit_message }}
         token: ${{ steps.generate_token.outputs.token }}
+        repository: ${{ inputs.repository || github.repository }}
 
     - name: Comment on PR
       if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request'

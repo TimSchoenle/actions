@@ -173,6 +173,7 @@ jobs:
           bot_private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
           java_version: ${{ matrix.java_version }}
           java_distribution: ${{ matrix.java_distribution }}
+          repository: ${{ env.TEST_REPO }}
 
       - name: Verify Formatting Changes Were Committed
         shell: bash
