@@ -1,0 +1,223 @@
+name: Verify Java-gradle Auto-spotless
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'actions/java-gradle/auto-spotless/**'
+      - '.github/workflows/verify-action-java-gradle-auto-spotless.yaml'
+  pull_request:
+    paths:
+      - 'actions/java-gradle/auto-spotless/**'
+      - '.github/workflows/verify-action-java-gradle-auto-spotless.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read # to read content
+
+env:
+  TEST_OWNER: TimSchoenle
+  TEST_REPO_NAME: actions-testing
+  TEST_REPO: TimSchoenle/actions-testing
+  TEST_ID: auto-spotless-test-${{ github.run_number }}-${{ github.run_attempt }}
+
+jobs:
+  test-spotless-formats-and-commits:
+    name: 'Test Spotless: ${{ matrix.name }}'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: java-11-temurin
+            java_version: '11'
+            java_distribution: 'temurin'
+            gradle_version: '8.14.3'
+
+          - name: java-17-temurin
+            java_version: '17'
+            java_distribution: 'temurin'
+            gradle_version: '8.14.3'
+
+          - name: java-21-zulu
+            java_version: '21'
+            java_distribution: 'zulu'
+            gradle_version: '9.3.1'
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@58077d3c7e43986b6b15fba718e8ea69e387dfcc # v2.15.1
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/spotless/${{ matrix.name }}/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Create Gradle Project with Spotless
+        shell: bash
+        env:
+          GRADLE_VERSION: ${{ matrix.gradle_version }}
+          TEST_ID: ${{ env.TEST_ID }}
+        run: |
+          set -euo pipefail
+
+          # Create Gradle project structure
+          mkdir -p src/main/java/com/example
+
+          # Create build.gradle with spotless plugin
+          cat > build.gradle << 'EOF'
+          plugins {
+              id 'java'
+              id 'com.diffplug.spotless' version '6.25.0'
+          }
+
+          repositories {
+              mavenCentral()
+          }
+
+          spotless {
+              java {
+                  googleJavaFormat()
+                  removeUnusedImports()
+                  trimTrailingWhitespace()
+                  endWithNewline()
+              }
+          }
+          EOF
+
+          # Create settings.gradle
+          echo 'rootProject.name = "spotless-test"' > settings.gradle
+
+          # Create badly formatted Java file
+          cat > src/main/java/com/example/TestClass.java << 'EOF'
+          package com.example;
+
+          import java.util.List;
+          import java.util.ArrayList;
+          import java.util.HashMap;
+
+          public class TestClass{
+          private String name;
+          private int value;
+
+          public TestClass(String name,int value){
+          this.name=name;
+          this.value=value;
+          }
+
+          public String getName(){return name;}
+          public void setName(String name){this.name=name;}
+
+          public int getValue(){return value;}
+          public void setValue(int value){this.value=value;}
+          }
+          EOF
+
+      - name: Generate Gradle Wrapper
+        shell: bash
+        env:
+          GRADLE_VERSION: ${{ matrix.gradle_version }}
+        run: |
+          set -euo pipefail
+          sdk_install_dir="${RUNNER_TEMP}/gradle-install"
+          gradle_zip="${RUNNER_TEMP}/gradle-${GRADLE_VERSION}-bin.zip"
+
+          curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -o "${gradle_zip}"
+          unzip -q "${gradle_zip}" -d "${sdk_install_dir}"
+
+          "${sdk_install_dir}/gradle-${GRADLE_VERSION}/bin/gradle" wrapper --gradle-version "${GRADLE_VERSION}"
+
+      - name: Commit Initial Unformatted Files
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: add unformatted Java files (${{ env.TEST_ID }})'
+          file_pattern: '.'
+
+      - name: Sync Local With Remote
+        env:
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+        run: |
+          git fetch --prune origin "+refs/heads/$BRANCH_NAME:refs/remotes/origin/$BRANCH_NAME"
+          git reset --hard "origin/$BRANCH_NAME"
+
+      - name: Run Auto-Spotless Action
+        id: auto_spotless
+        uses: ./tmp/actions-code/actions/java-gradle/auto-spotless
+        with:
+          bot_app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          bot_private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          java_version: ${{ matrix.java_version }}
+          java_distribution: ${{ matrix.java_distribution }}
+
+      - name: Verify Formatting Changes Were Committed
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+        run: |
+          set -euo pipefail
+
+          # Get the latest commit on the branch
+          LATEST_COMMIT=$(gh api "/repos/$TEST_REPO/commits/$BRANCH_NAME" --jq '.sha')
+          COMMIT_MSG=$(gh api "/repos/$TEST_REPO/git/commits/$LATEST_COMMIT" --jq '.message')
+
+          # Verify commit message contains spotless reference
+          if ! echo "$COMMIT_MSG" | grep -qi "spotless"; then
+            echo "::error::Commit message should reference spotless: $COMMIT_MSG"
+            exit 1
+          fi
+          echo "✅ Spotless commit created with message: $COMMIT_MSG"
+
+          # Verify that TestClass.java was modified
+          FILES=$(gh api "/repos/$TEST_REPO/commits/$LATEST_COMMIT" --jq '.files[].filename')
+          if ! echo "$FILES" | grep -q "TestClass.java"; then
+            echo "::error::TestClass.java should have been modified"
+            echo "Modified files: $FILES"
+            exit 1
+          fi
+          echo "✅ Java file was formatted and committed"
+
+          # Verify the file is now properly formatted
+          FILE_CONTENT=$(gh api "/repos/$TEST_REPO/contents/src/main/java/com/example/TestClass.java?ref=$BRANCH_NAME" --jq '.content' | base64 -d)
+
+          # Check for proper formatting indicators (proper spacing after class name)
+          if echo "$FILE_CONTENT" | grep -q "public class TestClass{"; then
+            echo "::error::File still has formatting issues (no space before brace)"
+            exit 1
+          fi
+
+          echo "✅ File is properly formatted"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
