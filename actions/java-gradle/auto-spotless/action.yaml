@@ -119,12 +119,14 @@ runs:
       uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
       env:
         COMMENT_MESSAGE: ${{ inputs.comment_message }}
+        REPO_OWNER: ${{ steps.parse_repo.outputs.owner }}
+        REPO_NAME: ${{ steps.parse_repo.outputs.repo_name }}
       with:
         github-token: ${{ steps.generate_token.outputs.token }}
         script: |
           github.rest.issues.createComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
+            owner: process.env.REPO_OWNER,
+            repo: process.env.REPO_NAME,
             issue_number: context.issue.number,
             body: process.env.COMMENT_MESSAGE
           })
