@@ -12,6 +12,10 @@ inputs:
     description: 'Target repository in the format owner/repo. Defaults to the current repository.'
     required: false
     default: ${{ github.repository }}
+  branch:
+    description: 'Target branch to checkout and commit to. Defaults to the current branch.'
+    required: false
+    default: ${{ github.head_ref || github.ref_name }}
   gradle_spotless_command:
     description: 'Spotless command to run'
     required: false
@@ -83,7 +87,7 @@ runs:
         repository: ${{ inputs.repository }}
         persist-credentials: false
         fetch-depth: 0
-        ref: ${{ github.head_ref }}
+        ref: ${{ inputs.branch }}
         token: ${{ steps.generate_token.outputs.token }}
 
     - name: Set up JDK
@@ -108,6 +112,7 @@ runs:
         commit_message: ${{ inputs.commit_message }}
         token: ${{ steps.generate_token.outputs.token }}
         repository: ${{ inputs.repository }}
+        branch: ${{ inputs.branch }}
 
     - name: Comment on PR
       if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request'
