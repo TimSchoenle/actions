@@ -115,7 +115,7 @@ runs:
         branch: ${{ inputs.branch }}
 
     - name: Comment on PR
-      if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request'
+      if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request' && inputs.repository == github.repository
       uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
       env:
         COMMENT_MESSAGE: ${{ inputs.comment_message }}
