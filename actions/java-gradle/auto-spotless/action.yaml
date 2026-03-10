@@ -80,6 +80,7 @@ runs:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       with:
+        repository: ${{ inputs.repository }}
         persist-credentials: false
         fetch-depth: 0
         ref: ${{ github.head_ref }}
@@ -106,7 +107,7 @@ runs:
       with:
         commit_message: ${{ inputs.commit_message }}
         token: ${{ steps.generate_token.outputs.token }}
-        repository: ${{ inputs.repository || github.repository }}
+        repository: ${{ inputs.repository }}
 
     - name: Comment on PR
       if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request'
