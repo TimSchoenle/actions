@@ -12,6 +12,14 @@ inputs:
     description: 'Ignore PRs with 0 changes. Renovate seems to sometimes create multiple lock-files PR without changing anything.'
     required: false
     default: 'true'
+  branch_pattern:
+    description: 'Pattern to match branch names (e.g. "release-please--branches--%"). Supports SQL LIKE wildcards (% for any chars, _ for single char).'
+    required: false
+    default: 'release-please--branches--%'
+  reject_forks:
+    description: 'Reject PRs from forked repositories. When true, only PRs from branches in the same repository will be approved.'
+    required: false
+    default: 'true'
 
 runs:
   using: 'composite'
@@ -41,6 +49,62 @@ runs:
           exit 0
         fi
         echo "match=true" >> "$GITHUB_OUTPUT"
+      shell: bash
+
+    - name: Check Branch Pattern
+      id: check_branch
+      env:
+        HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        BRANCH_PATTERN: ${{ inputs.branch_pattern }}
+      run: |
+        echo "PR Head Branch: $HEAD_REF"
+        echo "Branch Pattern: $BRANCH_PATTERN"
+
+        # Convert SQL LIKE pattern to bash glob pattern
+        # % (any chars) -> *
+        # _ (single char) -> ?
+        glob_pattern="${BRANCH_PATTERN//%/*}"
+        glob_pattern="${glob_pattern//_/?}"
+
+        echo "Converted to glob pattern: $glob_pattern"
+
+        # Check if branch matches pattern
+        if [[ "$HEAD_REF" == $glob_pattern ]]; then
+          echo "Branch matches pattern. Proceeding."
+          echo "match=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "Branch '$HEAD_REF' does not match pattern '$glob_pattern'. Skipping."
+          echo "match=false" >> "$GITHUB_OUTPUT"
+        fi
+      shell: bash
+
+    - name: Check Fork Status
+      id: check_fork
+      env:
+        HEAD_REPO_FULL_NAME: ${{ github.event.pull_request.head.repo.full_name }}
+        BASE_REPO_FULL_NAME: ${{ github.event.pull_request.base.repo.full_name }}
+        REJECT_FORKS: ${{ inputs.reject_forks }}
+      run: |
+        echo "PR Head Repo: $HEAD_REPO_FULL_NAME"
+        echo "PR Base Repo: $BASE_REPO_FULL_NAME"
+        echo "Reject Forks: $REJECT_FORKS"
+
+        # Check if PR is from a fork
+        if [[ "$HEAD_REPO_FULL_NAME" != "$BASE_REPO_FULL_NAME" ]]; then
+          echo "PR is from a forked repository."
+          if [[ "$REJECT_FORKS" == "true" ]]; then
+            echo "Rejecting PR from fork as per configuration. Skipping."
+            echo "match=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          else
+            echo "Allowing PR from fork as per configuration."
+            echo "match=true" >> "$GITHUB_OUTPUT"
+          fi
+        else
+          echo "PR is from the same repository. Proceeding."
+          echo "match=true" >> "$GITHUB_OUTPUT"
+        fi
+      shell: bash
 
     - name: Check Changes
       id: check_changes
@@ -66,20 +130,22 @@ runs:
           echo "PR has changes. Proceeding."
           echo "match=true" >> "$GITHUB_OUTPUT"
         fi
+      shell: bash
 
     - name: Verify Commits and Signatures
       id: verify_commits
-      if: steps.check_author.outputs.match == 'true' && steps.check_changes.outputs.match == 'true'
+      if: steps.check_author.outputs.match == 'true' && steps.check_branch.outputs.match == 'true' && steps.check_fork.outputs.match == 'true' && steps.check_changes.outputs.match == 'true'
       uses: TimSchoenle/actions/actions/helper/verify-commit-authors@342be94a4687e8953d42160ce5eb7e1d54b4b191 # actions-helper-verify-commit-authors-v1.1.9
       with:
         pr_url: ${{ github.event.pull_request.html_url }}
-        github_token: ${{ secrets.token }}
+        github_token: ${{ inputs.token }}
         user_ids: ${{ inputs.user_ids }}
 
     - name: Auto-approve
+      shell: bash
       if: steps.verify_commits.outputs.verified == 'true'
       env:
-        GH_TOKEN: ${{ secrets.token }}
+        GH_TOKEN: ${{ inputs.token }}
         PR_URL: ${{ github.event.pull_request.html_url }}
       run: |
         echo "All checks passed. Approving PR..."
