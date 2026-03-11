@@ -47,15 +47,6 @@ jobs:
           test_repo_name: ${{ env.TEST_REPO_NAME }}
           current_repo_checkout_path: 'tmp/actions-code'
 
-      - name: Get Bot User ID
-        id: bot_id
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-        run: |
-          BOT_ID=$(gh api /user --jq '.id')
-          echo "Bot User ID: $BOT_ID"
-          echo "bot_id=$BOT_ID" >> "$GITHUB_OUTPUT"
-
       - name: Create Test Branch
         id: branch
         uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
@@ -98,7 +89,7 @@ jobs:
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
           token: ${{ steps.setup.outputs.token }}
-          user_ids: ${{ steps.bot_id.outputs.bot_id }}
+          user_ids: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           ignore_empty_prs: 'true'
 
       - name: Verify PR Was Approved
@@ -256,15 +247,6 @@ jobs:
           test_repo_name: ${{ env.TEST_REPO_NAME }}
           current_repo_checkout_path: 'tmp/actions-code'
 
-      - name: Get Bot User ID
-        id: bot_id
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-        run: |
-          BOT_ID=$(gh api /user --jq '.id')
-          echo "Bot User ID: $BOT_ID"
-          echo "bot_id=$BOT_ID" >> "$GITHUB_OUTPUT"
-
       - name: Create Test Branch
         id: branch
         uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
@@ -293,7 +275,7 @@ jobs:
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
           token: ${{ steps.setup.outputs.token }}
-          user_ids: ${{ steps.bot_id.outputs.bot_id }}
+          user_ids: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           ignore_empty_prs: 'true'
 
       - name: Verify Empty PR Was Not Approved
@@ -351,15 +333,6 @@ jobs:
           test_repo_name: ${{ env.TEST_REPO_NAME }}
           current_repo_checkout_path: 'tmp/actions-code'
 
-      - name: Get Bot User ID
-        id: bot_id
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-        run: |
-          BOT_ID=$(gh api /user --jq '.id')
-          echo "Bot User ID: $BOT_ID"
-          echo "bot_id=$BOT_ID" >> "$GITHUB_OUTPUT"
-
       - name: Create Test Branch (Matching Pattern)
         id: branch_match
         uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
@@ -400,7 +373,7 @@ jobs:
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
           token: ${{ steps.setup.outputs.token }}
-          user_ids: ${{ steps.bot_id.outputs.bot_id }}
+          user_ids: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           branch_pattern: 'release-please--branches--%'
           ignore_empty_prs: 'true'
 
@@ -463,7 +436,7 @@ jobs:
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
           token: ${{ steps.setup.outputs.token }}
-          user_ids: ${{ steps.bot_id.outputs.bot_id }}
+          user_ids: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           branch_pattern: 'release-please--branches--%'
           ignore_empty_prs: 'true'
 
@@ -540,15 +513,6 @@ jobs:
           test_repo_name: ${{ env.TEST_REPO_NAME }}
           current_repo_checkout_path: 'tmp/actions-code'
 
-      - name: Get Bot User ID
-        id: bot_id
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-        run: |
-          BOT_ID=$(gh api /user --jq '.id')
-          echo "Bot User ID: $BOT_ID"
-          echo "bot_id=$BOT_ID" >> "$GITHUB_OUTPUT"
-
       - name: Create Test Branch
         id: branch
         uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
@@ -589,7 +553,7 @@ jobs:
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
           token: ${{ steps.setup.outputs.token }}
-          user_ids: ${{ steps.bot_id.outputs.bot_id }}
+          user_ids: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           branch_pattern: 'release-please--branches--%'
           reject_forks: 'true'
           ignore_empty_prs: 'true'
