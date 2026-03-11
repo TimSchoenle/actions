@@ -72,7 +72,7 @@ jobs:
           echo "Created at: $(date)" >> test-file.txt
 
       - name: Commit Test Changes
-        uses: ./tmp/actions-code/actions/common/commit-changes
+        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # actions-common-commit-changes-v1.1.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -82,14 +82,16 @@ jobs:
 
       - name: Create Pull Request
         id: pr
-        uses: ./tmp/actions-code/actions/common/create-pull-request
+        uses: TimSchoenle/actions/actions/common/create-pull-request@8a2bdc388cd9c9db8d6dadd44375add3c8885e5d # actions-common-create-pull-request-v1.0.3
         with:
-          token: ${{ steps.setup.outputs.token }}
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
           repository: ${{ env.TEST_REPO }}
-          head: ${{ steps.branch.outputs.branch }}
-          base: main
+          branch_name: ${{ steps.branch.outputs.branch }}
+          base_branch: main
           title: 'Test PR for auto-approve (positive) - ${{ env.TEST_ID }}'
           body: 'This is a test PR created by the verify workflow to test auto-approve-pr action.'
+          commit_changes: 'false'
 
       - name: Run Auto-approve Action (Should Approve)
         id: auto_approve
@@ -120,11 +122,11 @@ jobs:
 
       - name: Cleanup - Close Pull Request
         if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@d5b93361cfbe5c76d66f4fd05993e4d3ff8baa6e # actions-common-close-pull-request-v1.1.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # actions-common-close-pull-request-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          pr_number: ${{ steps.pr.outputs.pr_number }}
+          pull_request_id: ${{ steps.pr.outputs.pr_number }}
 
       - name: Cleanup - Delete Branch
         if: always()
@@ -170,7 +172,7 @@ jobs:
           echo "Created at: $(date)" >> test-file-negative.txt
 
       - name: Commit Test Changes
-        uses: ./tmp/actions-code/actions/common/commit-changes
+        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # actions-common-commit-changes-v1.1.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -180,14 +182,16 @@ jobs:
 
       - name: Create Pull Request
         id: pr
-        uses: ./tmp/actions-code/actions/common/create-pull-request
+        uses: TimSchoenle/actions/actions/common/create-pull-request@8a2bdc388cd9c9db8d6dadd44375add3c8885e5d # actions-common-create-pull-request-v1.0.3
         with:
-          token: ${{ steps.setup.outputs.token }}
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
           repository: ${{ env.TEST_REPO }}
-          head: ${{ steps.branch.outputs.branch }}
-          base: main
+          branch_name: ${{ steps.branch.outputs.branch }}
+          base_branch: main
           title: 'Test PR for auto-approve (negative) - ${{ env.TEST_ID }}'
           body: 'This is a test PR created by the verify workflow to test auto-approve-pr action with non-allowed user.'
+          commit_changes: 'false'
 
       - name: Run Auto-approve Action (Should Not Approve)
         id: auto_approve
@@ -218,11 +222,11 @@ jobs:
 
       - name: Cleanup - Close Pull Request
         if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@d5b93361cfbe5c76d66f4fd05993e4d3ff8baa6e # actions-common-close-pull-request-v1.1.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # actions-common-close-pull-request-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          pr_number: ${{ steps.pr.outputs.pr_number }}
+          pull_request_id: ${{ steps.pr.outputs.pr_number }}
 
       - name: Cleanup - Delete Branch
         if: always()
@@ -272,14 +276,17 @@ jobs:
 
       - name: Create Pull Request (No Changes)
         id: pr
-        uses: ./tmp/actions-code/actions/common/create-pull-request
+        uses: TimSchoenle/actions/actions/common/create-pull-request@8a2bdc388cd9c9db8d6dadd44375add3c8885e5d # actions-common-create-pull-request-v1.0.3
         with:
-          token: ${{ steps.setup.outputs.token }}
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
           repository: ${{ env.TEST_REPO }}
-          head: ${{ steps.branch.outputs.branch }}
-          base: main
+          branch_name: ${{ steps.branch.outputs.branch }}
+          base_branch: main
           title: 'Test PR for auto-approve (empty) - ${{ env.TEST_ID }}'
           body: 'This is a test PR with no changes to test ignore_empty_prs functionality.'
+          commit_changes: 'false'
+          empty_commit: 'true'
 
       - name: Run Auto-approve Action (Should Not Approve Empty PR)
         id: auto_approve
@@ -310,11 +317,11 @@ jobs:
 
       - name: Cleanup - Close Pull Request
         if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@d5b93361cfbe5c76d66f4fd05993e4d3ff8baa6e # actions-common-close-pull-request-v1.1.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # actions-common-close-pull-request-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          pr_number: ${{ steps.pr.outputs.pr_number }}
+          pull_request_id: ${{ steps.pr.outputs.pr_number }}
 
       - name: Cleanup - Delete Branch
         if: always()
@@ -368,7 +375,7 @@ jobs:
           echo "# Test file for branch pattern (matching)" > test-branch-match.txt
 
       - name: Commit Test Changes (Matching)
-        uses: ./tmp/actions-code/actions/common/commit-changes
+        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # actions-common-commit-changes-v1.1.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -378,14 +385,16 @@ jobs:
 
       - name: Create Pull Request (Matching Pattern)
         id: pr_match
-        uses: ./tmp/actions-code/actions/common/create-pull-request
+        uses: TimSchoenle/actions/actions/common/create-pull-request@8a2bdc388cd9c9db8d6dadd44375add3c8885e5d # actions-common-create-pull-request-v1.0.3
         with:
-          token: ${{ steps.setup.outputs.token }}
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
           repository: ${{ env.TEST_REPO }}
-          head: ${{ steps.branch_match.outputs.branch }}
-          base: main
+          branch_name: ${{ steps.branch_match.outputs.branch }}
+          base_branch: main
           title: 'Test PR for branch pattern (matching) - ${{ env.TEST_ID }}'
           body: 'Test PR with branch that matches the pattern.'
+          commit_changes: 'false'
 
       - name: Run Auto-approve Action (Should Approve - Pattern Match)
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
@@ -429,7 +438,7 @@ jobs:
           echo "# Test file for branch pattern (non-matching)" > test-branch-nomatch.txt
 
       - name: Commit Test Changes (Non-matching)
-        uses: ./tmp/actions-code/actions/common/commit-changes
+        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # actions-common-commit-changes-v1.1.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -439,14 +448,16 @@ jobs:
 
       - name: Create Pull Request (Non-matching Pattern)
         id: pr_nomatch
-        uses: ./tmp/actions-code/actions/common/create-pull-request
+        uses: TimSchoenle/actions/actions/common/create-pull-request@8a2bdc388cd9c9db8d6dadd44375add3c8885e5d # actions-common-create-pull-request-v1.0.3
         with:
-          token: ${{ steps.setup.outputs.token }}
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
           repository: ${{ env.TEST_REPO }}
-          head: ${{ steps.branch_nomatch.outputs.branch }}
-          base: main
+          branch_name: ${{ steps.branch_nomatch.outputs.branch }}
+          base_branch: main
           title: 'Test PR for branch pattern (non-matching) - ${{ env.TEST_ID }}'
           body: 'Test PR with branch that does not match the pattern.'
+          commit_changes: 'false'
 
       - name: Run Auto-approve Action (Should Not Approve - Pattern Mismatch)
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
@@ -477,11 +488,11 @@ jobs:
 
       - name: Cleanup - Close Pull Request (Match)
         if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@d5b93361cfbe5c76d66f4fd05993e4d3ff8baa6e # actions-common-close-pull-request-v1.1.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # actions-common-close-pull-request-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          pr_number: ${{ steps.pr_match.outputs.pr_number }}
+          pull_request_id: ${{ steps.pr_match.outputs.pr_number }}
 
       - name: Cleanup - Delete Branch (Match)
         if: always()
@@ -493,11 +504,11 @@ jobs:
 
       - name: Cleanup - Close Pull Request (No Match)
         if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@d5b93361cfbe5c76d66f4fd05993e4d3ff8baa6e # actions-common-close-pull-request-v1.1.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # actions-common-close-pull-request-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          pr_number: ${{ steps.pr_nomatch.outputs.pr_number }}
+          pull_request_id: ${{ steps.pr_nomatch.outputs.pr_number }}
 
       - name: Cleanup - Delete Branch (No Match)
         if: always()
@@ -553,7 +564,7 @@ jobs:
           echo "# Test file for reject_forks parameter" > test-reject-forks.txt
 
       - name: Commit Test Changes
-        uses: ./tmp/actions-code/actions/common/commit-changes
+        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # actions-common-commit-changes-v1.1.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -563,14 +574,16 @@ jobs:
 
       - name: Create Pull Request
         id: pr
-        uses: ./tmp/actions-code/actions/common/create-pull-request
+        uses: TimSchoenle/actions/actions/common/create-pull-request@8a2bdc388cd9c9db8d6dadd44375add3c8885e5d # actions-common-create-pull-request-v1.0.3
         with:
-          token: ${{ steps.setup.outputs.token }}
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
           repository: ${{ env.TEST_REPO }}
-          head: ${{ steps.branch.outputs.branch }}
-          base: main
+          branch_name: ${{ steps.branch.outputs.branch }}
+          base_branch: main
           title: 'Test PR for reject_forks - ${{ env.TEST_ID }}'
           body: 'Test PR to verify reject_forks parameter processing (same-repo PR, should approve).'
+          commit_changes: 'false'
 
       - name: Run Auto-approve with reject_forks=true (Should Still Approve Same-Repo PR)
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
@@ -602,11 +615,11 @@ jobs:
 
       - name: Cleanup - Close Pull Request
         if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@d5b93361cfbe5c76d66f4fd05993e4d3ff8baa6e # actions-common-close-pull-request-v1.1.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # actions-common-close-pull-request-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
-          pr_number: ${{ steps.pr.outputs.pr_number }}
+          pull_request_id: ${{ steps.pr.outputs.pr_number }}
 
       - name: Cleanup - Delete Branch
         if: always()
