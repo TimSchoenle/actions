@@ -47,6 +47,13 @@ jobs:
           test_repo_name: ${{ env.TEST_REPO_NAME }}
           current_repo_checkout_path: 'tmp/actions-code'
 
+      - name: Get Bot User ID
+        id: bot_identity
+        uses: TimSchoenle/actions/actions/common/get-app-git-identity@actions-common-get-app-git-identity-v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          app-slug: ${{ steps.setup.outputs }}
+
       - name: Create Test Branch
         id: branch
         uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
@@ -82,7 +89,7 @@ jobs:
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
           token: ${{ steps.setup.outputs.token }}
-          user_ids: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          user_ids: ${{ steps.bot_identity.outputs.bot-id }}
           branch_pattern: '%'
           ignore_empty_prs: 'true'
 
@@ -235,6 +242,13 @@ jobs:
           test_repo_name: ${{ env.TEST_REPO_NAME }}
           current_repo_checkout_path: 'tmp/actions-code'
 
+      - name: Get Bot User ID
+        id: bot_identity
+        uses: TimSchoenle/actions/actions/common/get-app-git-identity@actions-common-get-app-git-identity-v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          app-slug: ${{ secrets.ACTIONS_TEST_BOT_APP_SLUG }}
+
       - name: Create Test Branch
         id: branch
         uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
@@ -263,7 +277,7 @@ jobs:
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
           token: ${{ steps.setup.outputs.token }}
-          user_ids: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          user_ids: ${{ steps.bot_identity.outputs.bot-id }}
           branch_pattern: '%'
           ignore_empty_prs: 'true'
 
@@ -322,6 +336,13 @@ jobs:
           test_repo_name: ${{ env.TEST_REPO_NAME }}
           current_repo_checkout_path: 'tmp/actions-code'
 
+      - name: Get Bot User ID
+        id: bot_identity
+        uses: TimSchoenle/actions/actions/common/get-app-git-identity@actions-common-get-app-git-identity-v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          app-slug: ${{ secrets.ACTIONS_TEST_BOT_APP_SLUG }}
+
       - name: Create Test Branch (Matching Pattern)
         id: branch_match
         uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
@@ -355,7 +376,7 @@ jobs:
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
           token: ${{ steps.setup.outputs.token }}
-          user_ids: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          user_ids: ${{ steps.bot_identity.outputs.bot-id }}
           branch_pattern: 'release-please--branches--%'
           ignore_empty_prs: 'true'
 
@@ -411,7 +432,7 @@ jobs:
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
           token: ${{ steps.setup.outputs.token }}
-          user_ids: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          user_ids: ${{ steps.bot_identity.outputs.bot-id }}
           branch_pattern: 'release-please--branches--%'
           ignore_empty_prs: 'true'
 
@@ -488,6 +509,13 @@ jobs:
           test_repo_name: ${{ env.TEST_REPO_NAME }}
           current_repo_checkout_path: 'tmp/actions-code'
 
+      - name: Get Bot User ID
+        id: bot_identity
+        uses: TimSchoenle/actions/actions/common/get-app-git-identity@actions-common-get-app-git-identity-v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          app-slug: ${{ secrets.ACTIONS_TEST_BOT_APP_SLUG }}
+
       - name: Create Test Branch
         id: branch
         uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
@@ -521,7 +549,7 @@ jobs:
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
           token: ${{ steps.setup.outputs.token }}
-          user_ids: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          user_ids: ${{ steps.bot_identity.outputs.bot-id }}
           branch_pattern: 'release-please--branches--%'
           reject_forks: 'true'
           ignore_empty_prs: 'true'
