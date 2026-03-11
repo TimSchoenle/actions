@@ -40,7 +40,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -104,7 +104,7 @@ jobs:
           pr-branch-prefix: test/helm-update/${{ env.TEST_ID }}
 
       - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -230,7 +230,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -289,7 +289,7 @@ jobs:
           pr-branch-prefix: test/custom-prefix/${{ env.TEST_ID }}
 
       - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -365,7 +365,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -426,7 +426,7 @@ jobs:
           pr-branch-prefix: test/bump/${{ env.TEST_ID }}/${{ matrix.name }}
 
       - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -490,7 +490,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -549,7 +549,7 @@ jobs:
           pr-branch-prefix: test/nested/${{ env.TEST_ID }}
 
       - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -621,7 +621,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -687,7 +687,7 @@ jobs:
           pull_request_id: ${{ steps.first-run.outputs.pr_number }}
 
       - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -710,7 +710,7 @@ jobs:
           pr-branch-prefix: test/idem/${{ env.TEST_ID }}
 
       - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
-        uses: TimSchoenle/actions/actions/test/setup-e2e@76797c82cebc42c5752553eb4608db7367ad89d6 # actions-test-setup-e2e-v1.1.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
