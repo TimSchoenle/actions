@@ -50,7 +50,7 @@ Any version not listed in the following tables is not supported.
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Setup E2E Test](./actions/test/setup-e2e) | [actions-test-setup-e2e-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-test-setup-e2e-v1.1.0) | :white_check_mark: |
+| [Setup E2E Test](./actions/test/setup-e2e) | [actions-test-setup-e2e-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-test-setup-e2e-v1.2.0) | :white_check_mark: |
 
 
 ### Workflows
