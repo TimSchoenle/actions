@@ -30,6 +30,9 @@ outputs:
   token:
     description: 'The generated GitHub App token'
     value: ${{ steps.generate_token.outputs.token }}
+  app_slug:
+    description: 'The slug of the GitHub App'
+    value: ${{ steps.generate_token.outputs.app-slug }}
   current_repo_checkout_path:
     description: 'The path to checkout the current repository to'
     value: ${{ inputs.current_repo_checkout_path }}
