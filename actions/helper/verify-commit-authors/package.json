@@ -22,7 +22,7 @@
     "@graphql-typed-document-node/core": "3.2.0",
     "@octokit/graphql-schema": "15.26.1",
     "@types/node": "25.3.5",
-    "fast-check": "4.5.3",
+    "fast-check": "4.6.0",
     "graphql": "16.13.1",
     "typescript": "5.9.3",
     "vitest": "4.0.18"
