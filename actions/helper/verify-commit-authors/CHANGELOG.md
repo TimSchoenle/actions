@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.10](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.9...actions-helper-verify-commit-authors-v1.1.10) (2026-03-11)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v25.3.3 ([#532](https://github.com/TimSchoenle/actions/issues/532)) ([57ef2d4](https://github.com/TimSchoenle/actions/commit/57ef2d4400ffec03314bb7ea3b338a100bf04683))
+* **deps:** update dependency @types/node to v25.3.5 ([#559](https://github.com/TimSchoenle/actions/issues/559)) ([fd5960b](https://github.com/TimSchoenle/actions/commit/fd5960b82be7157bcfab1dca167c4f40baf39935))
+* **deps:** update graphqlcodegenerator monorepo ([#563](https://github.com/TimSchoenle/actions/issues/563)) ([c4b10c5](https://github.com/TimSchoenle/actions/commit/c4b10c5617d6bd1e9e304f1dabd5d460ac5f5773))
+
 ## [1.1.9](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.8...actions-helper-verify-commit-authors-v1.1.9) (2026-03-02)
 
 
