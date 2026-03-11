@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.2.7](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.6...actions-common-modify-yaml-v1.2.7) (2026-03-11)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @fast-check/vitest to v0.3.0 ([#573](https://github.com/TimSchoenle/actions/issues/573)) ([02d0266](https://github.com/TimSchoenle/actions/commit/02d0266c3d8f1e3fb3b44f5a953e7d52374ff272))
+* **deps:** update dependency @types/node to v25.3.3 ([#532](https://github.com/TimSchoenle/actions/issues/532)) ([57ef2d4](https://github.com/TimSchoenle/actions/commit/57ef2d4400ffec03314bb7ea3b338a100bf04683))
+* **deps:** update dependency @types/node to v25.3.5 ([#559](https://github.com/TimSchoenle/actions/issues/559)) ([fd5960b](https://github.com/TimSchoenle/actions/commit/fd5960b82be7157bcfab1dca167c4f40baf39935))
+* **deps:** update dependency fast-check to v4.6.0 ([#574](https://github.com/TimSchoenle/actions/issues/574)) ([e722c3a](https://github.com/TimSchoenle/actions/commit/e722c3ac39bfd961bacc8b552248202a16c4dc59))
+
 ## [1.2.6](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.5...actions-common-modify-yaml-v1.2.6) (2026-03-02)
 
 
