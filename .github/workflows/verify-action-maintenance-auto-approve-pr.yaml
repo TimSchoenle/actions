@@ -83,6 +83,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           user_ids: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          branch_pattern: '%'
           ignore_empty_prs: 'true'
 
       - name: Verify PR Was Approved
@@ -176,6 +177,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           user_ids: '12345' # Dummy user ID that won't match
+          branch_pattern: '%'
           ignore_empty_prs: 'true'
 
       - name: Verify PR Was Not Approved
@@ -262,6 +264,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           user_ids: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          branch_pattern: '%'
           ignore_empty_prs: 'true'
 
       - name: Verify Empty PR Was Not Approved

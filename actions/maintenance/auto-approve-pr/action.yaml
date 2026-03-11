@@ -14,8 +14,7 @@ inputs:
     default: 'true'
   branch_pattern:
     description: 'Pattern to match branch names (e.g. "release-please--branches--%"). Supports SQL LIKE wildcards (% for any chars, _ for single char).'
-    required: false
-    default: 'release-please--branches--%'
+    required: true
   reject_forks:
     description: 'Reject PRs from forked repositories. When true, only PRs from branches in the same repository will be approved.'
     required: false
