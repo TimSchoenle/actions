@@ -48,7 +48,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Helper Verify-branch-name](./actions/helper/verify-branch-name) | Verify the given name matches the pattern and also check if it is fork or not | [actions-helper-verify-branch-name-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-branch-name-v1.0.0) | `uses: TimSchoenle/actions/actions/helper/verify-branch-name@actions-helper-verify-branch-name-v1.0.0` |
+| [Helper Verify-branch-name](./actions/helper/verify-branch-name) | Verify the given name matches the pattern and also check if it is fork or not | [actions-helper-verify-branch-name-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-branch-name-v1.1.0) | `uses: TimSchoenle/actions/actions/helper/verify-branch-name@actions-helper-verify-branch-name-v1.1.0` |
 | [Resolve Branch](./actions/helper/resolve-base-branch) | Resolve the given base branch or return default branch. With optional existence check. | [actions-helper-resolve-base-branch-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-resolve-base-branch-v1.1.0) | `uses: TimSchoenle/actions/actions/helper/resolve-base-branch@actions-helper-resolve-base-branch-v1.1.0` |
 | [Verify Commit Authors](./actions/helper/verify-commit-authors) | Verifies that all commits in a PR are authored by a specific set of users and are signed. | [actions-helper-verify-commit-authors-v1.1.10](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v1.1.10) | `uses: TimSchoenle/actions/actions/helper/verify-commit-authors@actions-helper-verify-commit-authors-v1.1.10` |
 
