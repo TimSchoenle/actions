@@ -137,4 +137,7 @@ runs:
         AUTO_APPROVE_MESSAGE: ${{ inputs.auto_approve_message }}
       run: |
         echo "All checks passed. Approving PR..."
-        gh pr review "$PR_URL" --approve --body "$AUTO_APPROVE_MESSAGE"
+        if ! gh pr review "$PR_URL" --approve --body "$AUTO_APPROVE_MESSAGE"; then
+          echo "::error::Failed to approve PR at $PR_URL"
+          exit 1
+        fi
