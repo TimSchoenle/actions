@@ -38,65 +38,20 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
         PR_URL: ${{ inputs.pr_url }}
       run: |
-        echo "Fetching PR information from: $PR_URL"
+        # Transforms https://github.com/owner/repo/pull/123 into repos/owner/repo/pulls/123
+        ENDPOINT=$(echo "$PR_URL" | sed -E 's|.*/([^/]+/[^/]+)/pull/([0-9]+).*|repos/\1/pulls/\2|')
 
-        # Extract owner/repo/number from PR URL using bash regex
-        if [[ "$PR_URL" =~ github\.com/([^/]+)/([^/]+)/pull/([0-9]+) ]]; then
-          owner="${BASH_REMATCH[1]}"
-          repo="${BASH_REMATCH[2]}"
-          pr_number="${BASH_REMATCH[3]}"
-          base_repo="${owner}/${repo}"
-        else
-          echo "Error: Invalid PR URL format: $PR_URL"
-          exit 1
-        fi
+        gh api "$ENDPOINT" > pr.json
 
-        # Get PR details using GitHub CLI
-        # Note: author is an object with 'id' (node ID) and 'login' fields
-        # We need to fetch the user separately to get the database ID
-        pr_data=$(gh pr view "$PR_URL" --json headRefName,headRepository,headRepositoryOwner,author,isCrossRepository)
+        HEAD_REF=$(jq -r '.head.ref' pr.json)
+        HEAD_REPO=$(jq -r '.head.repo.full_name' pr.json)
+        BASE_REPO=$(jq -r '.base.repo.full_name' pr.json)
+        AUTHOR_ID=$(jq -r '.user.id' pr.json)
 
-        echo "DEBUG: PR data: $pr_data"
-
-        head_ref=$(echo "$pr_data" | jq -r '.headRefName // ""')
-        is_cross_repo=$(echo "$pr_data" | jq -r '.isCrossRepository // false')
-        author_login=$(echo "$pr_data" | jq -r '.author.login // ""')
-
-        # Get the author's database ID using their login
-        if [[ -n "$author_login" && "$author_login" != "null" ]]; then
-          author_id=$(gh api "users/$author_login" --jq '.id // ""')
-        else
-          author_id=""
-        fi
-
-        # Get head repository
-        head_repo=$(echo "$pr_data" | jq -r '.headRepository.nameWithOwner // ""')
-
-        # If headRepository is null/empty, construct it from available data
-        if [[ -z "$head_repo" || "$head_repo" == "null" ]]; then
-          if [[ "$is_cross_repo" == "true" ]]; then
-            # It's a fork - try to get owner info
-            head_repo_owner=$(echo "$pr_data" | jq -r '.headRepositoryOwner.login // ""')
-            if [[ -n "$head_repo_owner" && "$head_repo_owner" != "null" ]]; then
-              head_repo="${head_repo_owner}/${repo}"
-            else
-              head_repo="unknown/${repo}"
-            fi
-          else
-            # Same repository - use base_repo
-            head_repo="$base_repo"
-          fi
-        fi
-
-        echo "head_ref=$head_ref" >> "$GITHUB_OUTPUT"
-        echo "head_repo_full_name=$head_repo" >> "$GITHUB_OUTPUT"
-        echo "base_repo_full_name=$base_repo" >> "$GITHUB_OUTPUT"
-        echo "author_id=$author_id" >> "$GITHUB_OUTPUT"
-
-        echo "Head ref: $head_ref"
-        echo "Head repo: $head_repo"
-        echo "Base repo: $base_repo"
-        echo "Author ID: $author_id"
+        echo "head_ref=$HEAD_REF" >> $GITHUB_ENV
+        echo "head_repo_full_name=$HEAD_REPO" >> $GITHUB_ENV
+        echo "base_repo_full_name=$BASE_REPO" >> $GITHUB_ENV
+        echo "author_id=$AUTHOR_ID" >> $GITHUB_ENV
 
     - name: Check PR Author
       id: check_author
