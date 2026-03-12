@@ -1,0 +1,162 @@
+name: 'Helper Verify-branch-name'
+description: 'Verify the given name matches the pattern and also check if it is fork or not'
+
+inputs:
+  branch_pattern:
+    description: 'Regex pattern to match branch names (e.g. "^release-please--branches--.*$"). Uses extended regex syntax.'
+    required: false
+  reject_forks:
+    description: 'Reject PRs from forked repositories. When true, only PRs from branches in the same repository will be approved.'
+    required: false
+    default: 'true'
+  error_on_failure:
+    description: 'When true, the action will fail if any of the checks fail. When false, the action will succeed even if some checks fail.'
+    required: false
+    default: 'false'
+  head_repo_full_name:
+    description: 'Full name of the head repository (e.g. "owner/repo"). Typically from github.event.pull_request.head.repo.full_name.'
+    required: false
+    default: ${{ github.event.pull_request.head.repo.full_name }}
+  base_repo_full_name:
+    description: 'Full name of the base repository (e.g. "owner/repo"). Typically from github.event.pull_request.base.repo.full_name.'
+    required: false
+    default: ${{ github.event.pull_request.base.repo.full_name }}
+  head_ref:
+    description: 'The head branch name (e.g. "feature/my-branch"). Typically from github.event.pull_request.head.ref.'
+    required: false
+    default: ${{ github.event.pull_request.head.ref }}
+
+outputs:
+  verified:
+    description: 'True if all checks pass, false otherwise.'
+    value: ${{ steps.output.outputs.verified }}
+  branch_pattern_verified:
+    description: 'True if the branch name matches the pattern, false otherwise.'
+    value: ${{ steps.output.outputs.branch_pattern_verified }}
+  fork_verified:
+    description: 'True if the PR is from the same repository, false otherwise.'
+    value: ${{ steps.output.outputs.fork_verified }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate Inputs
+      shell: bash
+      env:
+        REJECT_FORKS: ${{ inputs.reject_forks }}
+        ERROR_ON_FAILURE: ${{ inputs.error_on_failure }}
+        HEAD_REF: ${{ inputs.head_ref }}
+        BRANCH_PATTERN: ${{ inputs.branch_pattern }}
+        HEAD_REPO_FULL_NAME: ${{ inputs.head_repo_full_name }}
+        BASE_REPO_FULL_NAME: ${{ inputs.base_repo_full_name }}
+      run: |
+        # Validate boolean inputs
+        if [[ "$REJECT_FORKS" != "true" && "$REJECT_FORKS" != "false" ]]; then
+          echo "::error::Invalid value for 'reject_forks': '$REJECT_FORKS'. Must be 'true' or 'false'."
+          exit 1
+        fi
+        if [[ "$ERROR_ON_FAILURE" != "true" && "$ERROR_ON_FAILURE" != "false" ]]; then
+          echo "::error::Invalid value for 'error_on_failure': '$ERROR_ON_FAILURE'. Must be 'true' or 'false'."
+          exit 1
+        fi
+
+        # Validate required inputs when branch_pattern is provided
+        if [[ -n "$BRANCH_PATTERN" && -z "$HEAD_REF" ]]; then
+          echo "::error::Branch name (head_ref) not provided. Cannot verify branch pattern."
+          echo "::error::head_ref: '$HEAD_REF'"
+          exit 1
+        fi
+
+        # Validate repository names are provided
+        if [[ -z "$HEAD_REPO_FULL_NAME" || -z "$BASE_REPO_FULL_NAME" ]]; then
+          echo "::error::Repository names not provided. Cannot verify fork status."
+          echo "::error::head_repo_full_name: '$HEAD_REPO_FULL_NAME'"
+          echo "::error::base_repo_full_name: '$BASE_REPO_FULL_NAME'"
+          exit 1
+        fi
+
+    - name: Check Branch Pattern
+      shell: bash
+      id: check_branch
+      env:
+        HEAD_REF: ${{ inputs.head_ref }}
+        BRANCH_PATTERN: ${{ inputs.branch_pattern }}
+      run: |
+        # Skip check if no pattern provided
+        if [[ -z "$BRANCH_PATTERN" ]]; then
+          echo "No branch pattern specified. Skipping pattern check (auto-pass)."
+          echo "match=true" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        echo "PR Head Branch: $HEAD_REF"
+        echo "Regex Pattern: $BRANCH_PATTERN"
+
+        # Check if branch matches regex pattern
+        if [[ "$HEAD_REF" =~ $BRANCH_PATTERN ]]; then
+          echo "✓ Branch matches pattern. Proceeding."
+          echo "match=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "✗ Branch '$HEAD_REF' does not match pattern '$BRANCH_PATTERN'."
+          echo "match=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Check Fork Status
+      shell: bash
+      id: check_fork
+      env:
+        HEAD_REPO_FULL_NAME: ${{ inputs.head_repo_full_name }}
+        BASE_REPO_FULL_NAME: ${{ inputs.base_repo_full_name }}
+        REJECT_FORKS: ${{ inputs.reject_forks }}
+      run: |
+        echo "PR Head Repo: $HEAD_REPO_FULL_NAME"
+        echo "PR Base Repo: $BASE_REPO_FULL_NAME"
+        echo "Reject Forks: $REJECT_FORKS"
+
+        # Check if PR is from a fork
+        if [[ "$HEAD_REPO_FULL_NAME" != "$BASE_REPO_FULL_NAME" ]]; then
+          echo "PR is from a forked repository."
+          if [[ "$REJECT_FORKS" == "true" ]]; then
+            echo "✗ Rejecting PR from fork as per configuration."
+            echo "match=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          else
+            echo "✓ Allowing PR from fork as per configuration."
+            echo "match=true" >> "$GITHUB_OUTPUT"
+          fi
+        else
+          echo "✓ PR is from the same repository. Proceeding."
+          echo "match=true" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Set Output
+      shell: bash
+      id: output
+      env:
+        BRANCH_MATCH: ${{ steps.check_branch.outputs.match }}
+        FORK_MATCH: ${{ steps.check_fork.outputs.match }}
+      run: |
+        # Properly evaluate boolean logic
+        if [[ "$BRANCH_MATCH" == "true" && "$FORK_MATCH" == "true" ]]; then
+          echo "verified=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "verified=false" >> "$GITHUB_OUTPUT"
+        fi
+        echo "branch_pattern_verified=$BRANCH_MATCH" >> "$GITHUB_OUTPUT"
+        echo "fork_verified=$FORK_MATCH" >> "$GITHUB_OUTPUT"
+
+    - name: Error on Failure
+      shell: bash
+      if: ${{ inputs.error_on_failure == 'true' && steps.output.outputs.verified == 'false' }}
+      env:
+        BRANCH_VERIFIED: ${{ steps.output.outputs.branch_pattern_verified }}
+        FORK_VERIFIED: ${{ steps.output.outputs.fork_verified }}
+      run: |
+        echo "::error::Verification failed!"
+        if [[ "$BRANCH_VERIFIED" == "false" ]]; then
+          echo "::error::  - Branch pattern check failed"
+        fi
+        if [[ "$FORK_VERIFIED" == "false" ]]; then
+          echo "::error::  - Fork check failed"
+        fi
+        exit 1
