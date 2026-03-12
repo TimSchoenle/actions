@@ -50,10 +50,10 @@ runs:
         BASE_REPO=$(jq -r '.base.repo.full_name' pr.json)
         AUTHOR_ID=$(jq -r '.user.id' pr.json)
 
-        echo "head_ref=$HEAD_REF" >> $GITHUB_ENV
-        echo "head_repo_full_name=$HEAD_REPO" >> $GITHUB_ENV
-        echo "base_repo_full_name=$BASE_REPO" >> $GITHUB_ENV
-        echo "author_id=$AUTHOR_ID" >> $GITHUB_ENV
+        echo "head_ref=$HEAD_REF" >> "$GITHUB_OUTPUT"
+        echo "head_repo_full_name=$HEAD_REPO" >> "$GITHUB_OUTPUT"
+        echo "base_repo_full_name=$BASE_REPO" >> "$GITHUB_OUTPUT"
+        echo "author_id=$AUTHOR_ID" >> "$GITHUB_OUTPUT"
 
     - name: Check PR Author
       id: check_author
