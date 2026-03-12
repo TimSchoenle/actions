@@ -42,7 +42,7 @@ jobs:
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
-          owner: ${{ env.TEST_OWNER }}
+          #owner: ${{ env.TEST_OWNER }}
           repositories: ${{ env.TEST_REPO }}
           permission-pull-requests: write
 
