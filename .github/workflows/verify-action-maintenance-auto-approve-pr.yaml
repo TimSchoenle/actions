@@ -377,7 +377,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           user_ids: ${{ steps.bot_identity.outputs.bot-id }}
-          branch_pattern: 'release-please--branches--%'
+          branch_pattern: '^release-please--branches--.*$'
           ignore_empty_prs: 'true'
 
       - name: Verify PR Was Approved (Pattern Match)
@@ -433,7 +433,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           user_ids: ${{ steps.bot_identity.outputs.bot-id }}
-          branch_pattern: 'release-please--branches--%'
+          branch_pattern: '^release-please--branches--.*$'
           ignore_empty_prs: 'true'
 
       - name: Verify PR Was Not Approved (Pattern Mismatch)
@@ -550,7 +550,7 @@ jobs:
         with:
           token: ${{ steps.setup.outputs.token }}
           user_ids: ${{ steps.bot_identity.outputs.bot-id }}
-          branch_pattern: 'release-please--branches--%'
+          branch_pattern: '^release-please--branches--.*$'
           reject_forks: 'true'
           ignore_empty_prs: 'true'
 
