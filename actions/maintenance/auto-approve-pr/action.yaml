@@ -43,6 +43,8 @@ runs:
 
         gh api "$ENDPOINT" > pr.json
 
+        echo "PR JSON: $(cat pr.json)"
+
         HEAD_REF=$(jq -r '.head.ref' pr.json)
         HEAD_REPO=$(jq -r '.head.repo.full_name' pr.json)
         BASE_REPO=$(jq -r '.base.repo.full_name' pr.json)
