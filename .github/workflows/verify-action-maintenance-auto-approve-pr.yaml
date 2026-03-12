@@ -89,6 +89,7 @@ jobs:
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
           token: ${{ steps.setup.outputs.token }}
+          pr_url: ${{ steps.pr.outputs.pr_url }}
           user_ids: ${{ steps.bot_identity.outputs.bot-id }}
           branch_pattern: '%'
           ignore_empty_prs: 'true'
@@ -183,6 +184,7 @@ jobs:
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
           token: ${{ steps.setup.outputs.token }}
+          pr_url: ${{ steps.pr.outputs.pr_url }}
           user_ids: '12345' # Dummy user ID that won't match
           branch_pattern: '%'
           ignore_empty_prs: 'true'
@@ -277,6 +279,7 @@ jobs:
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
           token: ${{ steps.setup.outputs.token }}
+          pr_url: ${{ steps.pr.outputs.pr_url }}
           user_ids: ${{ steps.bot_identity.outputs.bot-id }}
           branch_pattern: '%'
           ignore_empty_prs: 'true'
@@ -376,6 +379,7 @@ jobs:
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
           token: ${{ steps.setup.outputs.token }}
+          pr_url: ${{ steps.pr_match.outputs.pr_url }}
           user_ids: ${{ steps.bot_identity.outputs.bot-id }}
           branch_pattern: '^release-please--branches--.*$'
           ignore_empty_prs: 'true'
@@ -432,6 +436,7 @@ jobs:
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
           token: ${{ steps.setup.outputs.token }}
+          pr_url: ${{ steps.pr_nomatch.outputs.pr_url }}
           user_ids: ${{ steps.bot_identity.outputs.bot-id }}
           branch_pattern: '^release-please--branches--.*$'
           ignore_empty_prs: 'true'
@@ -549,6 +554,7 @@ jobs:
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
           token: ${{ steps.setup.outputs.token }}
+          pr_url: ${{ steps.pr.outputs.pr_url }}
           user_ids: ${{ steps.bot_identity.outputs.bot-id }}
           branch_pattern: '^release-please--branches--.*$'
           reject_forks: 'true'
