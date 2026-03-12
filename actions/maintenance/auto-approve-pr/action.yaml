@@ -52,11 +52,34 @@ runs:
         fi
 
         # Get PR details using GitHub CLI
-        pr_data=$(gh pr view "$PR_URL" --json headRefName,headRepository,author)
+        pr_data=$(gh pr view "$PR_URL" --json headRefName,headRepository,headRepositoryOwner,author,isCrossRepository)
+
+        echo "DEBUG: PR data: $pr_data"
 
         head_ref=$(echo "$pr_data" | jq -r '.headRefName // ""')
+        is_cross_repo=$(echo "$pr_data" | jq -r '.isCrossRepository // false')
+
+        # Try to get author ID from databaseId first, then fall back to id
+        author_id=$(echo "$pr_data" | jq -r '.author.databaseId // .author.id // ""')
+
+        # Get head repository
         head_repo=$(echo "$pr_data" | jq -r '.headRepository.nameWithOwner // ""')
-        author_id=$(echo "$pr_data" | jq -r '.author.id // ""')
+
+        # If headRepository is null/empty, construct it from available data
+        if [[ -z "$head_repo" || "$head_repo" == "null" ]]; then
+          if [[ "$is_cross_repo" == "true" ]]; then
+            # It's a fork - try to get owner info
+            head_repo_owner=$(echo "$pr_data" | jq -r '.headRepositoryOwner.login // ""')
+            if [[ -n "$head_repo_owner" && "$head_repo_owner" != "null" ]]; then
+              head_repo="${head_repo_owner}/${repo}"
+            else
+              head_repo="unknown/${repo}"
+            fi
+          else
+            # Same repository - use base_repo
+            head_repo="$base_repo"
+          fi
+        fi
 
         echo "head_ref=$head_ref" >> "$GITHUB_OUTPUT"
         echo "head_repo_full_name=$head_repo" >> "$GITHUB_OUTPUT"
