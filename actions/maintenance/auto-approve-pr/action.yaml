@@ -52,15 +52,22 @@ runs:
         fi
 
         # Get PR details using GitHub CLI
+        # Note: author is an object with 'id' (node ID) and 'login' fields
+        # We need to fetch the user separately to get the database ID
         pr_data=$(gh pr view "$PR_URL" --json headRefName,headRepository,headRepositoryOwner,author,isCrossRepository)
 
         echo "DEBUG: PR data: $pr_data"
 
         head_ref=$(echo "$pr_data" | jq -r '.headRefName // ""')
         is_cross_repo=$(echo "$pr_data" | jq -r '.isCrossRepository // false')
+        author_login=$(echo "$pr_data" | jq -r '.author.login // ""')
 
-        # Try to get author ID from databaseId first, then fall back to id
-        author_id=$(echo "$pr_data" | jq -r '.author.databaseId // .author.id // ""')
+        # Get the author's database ID using their login
+        if [[ -n "$author_login" && "$author_login" != "null" ]]; then
+          author_id=$(gh api "users/$author_login" --jq '.id // ""')
+        else
+          author_id=""
+        fi
 
         # Get head repository
         head_repo=$(echo "$pr_data" | jq -r '.headRepository.nameWithOwner // ""')
