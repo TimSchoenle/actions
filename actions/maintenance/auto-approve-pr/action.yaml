@@ -40,15 +40,13 @@ runs:
       run: |
         echo "Fetching PR information from: $PR_URL"
 
-        # Extract owner/repo from PR URL (format: https://github.com/owner/repo/pull/123)
-        base_repo=$(echo "$PR_URL" | sed -E 's|https://github.com/([^/]+/[^/]+)/pull/.*|\1|')
-
-        # Get PR details using GitHub CLI
-        pr_data=$(gh pr view "$PR_URL" --json headRefName,headRepository,author)
+        # Get PR details using GitHub CLI with baseRepository field
+        pr_data=$(gh pr view "$PR_URL" --json headRefName,headRepository,baseRepository,author)
 
         head_ref=$(echo "$pr_data" | jq -r '.headRefName')
-        head_repo=$(echo "$pr_data" | jq -r '.headRepository.nameWithOwner')
-        author_id=$(echo "$pr_data" | jq -r '.author.id')
+        head_repo=$(echo "$pr_data" | jq -r '.headRepository.nameWithOwner // ""')
+        base_repo=$(echo "$pr_data" | jq -r '.baseRepository.nameWithOwner // ""')
+        author_id=$(echo "$pr_data" | jq -r '.author.id // ""')
 
         echo "head_ref=$head_ref" >> "$GITHUB_OUTPUT"
         echo "head_repo_full_name=$head_repo" >> "$GITHUB_OUTPUT"
