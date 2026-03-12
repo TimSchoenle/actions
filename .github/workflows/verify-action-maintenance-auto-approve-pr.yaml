@@ -52,7 +52,7 @@ jobs:
         uses: TimSchoenle/actions/actions/common/get-app-git-identity@actions-common-get-app-git-identity-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
-          app-slug: ${{ steps.setup.outputs }}
+          app-slug: ${{ steps.setup.outputs.app_slug }}
 
       - name: Create Test Branch
         id: branch
@@ -247,7 +247,7 @@ jobs:
         uses: TimSchoenle/actions/actions/common/get-app-git-identity@actions-common-get-app-git-identity-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
-          app-slug: ${{ secrets.ACTIONS_TEST_BOT_APP_SLUG }}
+          app-slug: ${{ steps.setup.outputs.app_slug }}
 
       - name: Create Test Branch
         id: branch
@@ -341,7 +341,7 @@ jobs:
         uses: TimSchoenle/actions/actions/common/get-app-git-identity@actions-common-get-app-git-identity-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
-          app-slug: ${{ secrets.ACTIONS_TEST_BOT_APP_SLUG }}
+          app-slug: ${{ steps.setup.outputs.app_slug }}
 
       - name: Create Test Branch (Matching Pattern)
         id: branch_match
@@ -514,7 +514,7 @@ jobs:
         uses: TimSchoenle/actions/actions/common/get-app-git-identity@actions-common-get-app-git-identity-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
-          app-slug: ${{ secrets.ACTIONS_TEST_BOT_APP_SLUG }}
+          app-slug: ${{ steps.setup.outputs.app_slug }}
 
       - name: Create Test Branch
         id: branch
