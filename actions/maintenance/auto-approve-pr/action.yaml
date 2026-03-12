@@ -137,10 +137,10 @@ runs:
       id: is_valid_pr
       shell: bash
       env:
-        IS_VALID_AUTHOR: ${{ steps.check_author.outputs.verified }}
+        IS_VALID_AUTHOR: ${{ steps.check_author.outputs.match }}
         IS_VALID_BRANCH: ${{ steps.check_branch.outputs.verified }}
         HAS_VALID_COMMITS: ${{ steps.verify_commits.outputs.verified }}
-        HAS_CHANGES: ${{ steps.check_changes.outputs.verified }}
+        HAS_CHANGES: ${{ steps.check_changes.outputs.match }}
       run: |
         echo "Is valid author: $IS_VALID_AUTHOR"
         echo "Is valid branch: $IS_VALID_BRANCH"
