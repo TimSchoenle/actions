@@ -43,7 +43,7 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
 
       - name: Setup Bun
-        uses: TimSchoenle/actions/actions/bun/setup-cached@311fcf1defd1520ad7d4a9abb838114adeba344f # actions-bun-setup-cached-v1.1.4
+        uses: TimSchoenle/actions/actions/bun/setup-cached@e337ba069b1cc770a0dd5d39638664cf1ce8e64f # actions-bun-setup-cached-v1.1.5
         with:
           bun-version-file: '.bun-version'
 
@@ -103,7 +103,7 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
 
       - name: Setup Bun
-        uses: TimSchoenle/actions/actions/bun/setup-cached@311fcf1defd1520ad7d4a9abb838114adeba344f # actions-bun-setup-cached-v1.1.4
+        uses: TimSchoenle/actions/actions/bun/setup-cached@e337ba069b1cc770a0dd5d39638664cf1ce8e64f # actions-bun-setup-cached-v1.1.5
 
       - name: Generate Docs
         run: bun run generate-docs
