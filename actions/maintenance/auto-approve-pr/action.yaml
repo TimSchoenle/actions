@@ -48,7 +48,7 @@ runs:
         BASE_REPO=$(jq -r '.base.repo.full_name' pr.json)
         AUTHOR_ID=$(jq -r '.user.id' pr.json)
 
-        if [[ -z -n "$HEAD_REF" || -z -n "$HEAD_REPO" || -z -n "$BASE_REPO" || -z -n "$AUTHOR_ID" ]]; then
+        if [[ -z "$HEAD_REF" || -z "$HEAD_REPO" || -z "$BASE_REPO" || -z "$AUTHOR_ID" ]]; then
           echo "::error::Failed to parse PR URL: $PR_URL"
           exit 1
         fi
