@@ -36,6 +36,16 @@ jobs:
         with:
           egress-policy: audit
 
+      - name: Generate PR Approval Bot Token
+        id: generate_token2
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
+          owner: ${{ env.TEST_OWNER }}
+          repositories: ${{ env.TEST_REPO }}
+          permission-pull-requests: write
+
       - name: Setup E2E Test Environment
         id: setup
         uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
@@ -88,7 +98,7 @@ jobs:
         id: auto_approve
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
-          token: ${{ steps.setup.outputs.token }}
+          token: ${{ steps.generate_token2.outputs.token }}
           pr_url: ${{ steps.pr.outputs.pr_url }}
           user_ids: ${{ steps.bot_identity.outputs.bot-id }}
           branch_pattern: '.*'
@@ -138,6 +148,16 @@ jobs:
         with:
           egress-policy: audit
 
+      - name: Generate PR Approval Bot Token
+        id: generate_token2
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
+          owner: ${{ env.TEST_OWNER }}
+          repositories: ${{ env.TEST_REPO }}
+          permission-pull-requests: write
+
       - name: Setup E2E Test Environment
         id: setup
         uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
@@ -183,7 +203,7 @@ jobs:
         id: auto_approve
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
-          token: ${{ steps.setup.outputs.token }}
+          token: ${{ steps.generate_token2.outputs.token }}
           pr_url: ${{ steps.pr.outputs.pr_url }}
           user_ids: '12345' # Dummy user ID that won't match
           branch_pattern: '.*'
@@ -233,6 +253,16 @@ jobs:
         with:
           egress-policy: audit
 
+      - name: Generate PR Approval Bot Token
+        id: generate_token2
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
+          owner: ${{ env.TEST_OWNER }}
+          repositories: ${{ env.TEST_REPO }}
+          permission-pull-requests: write
+
       - name: Setup E2E Test Environment
         id: setup
         uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
@@ -278,7 +308,7 @@ jobs:
         id: auto_approve
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
-          token: ${{ steps.setup.outputs.token }}
+          token: ${{ steps.generate_token2.outputs.token }}
           pr_url: ${{ steps.pr.outputs.pr_url }}
           user_ids: ${{ steps.bot_identity.outputs.bot-id }}
           branch_pattern: '.*'
@@ -327,6 +357,16 @@ jobs:
         uses: step-security/harden-runner@58077d3c7e43986b6b15fba718e8ea69e387dfcc # v2.15.1
         with:
           egress-policy: audit
+
+      - name: Generate PR Approval Bot Token
+        id: generate_token2
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
+          owner: ${{ env.TEST_OWNER }}
+          repositories: ${{ env.TEST_REPO }}
+          permission-pull-requests: write
 
       - name: Setup E2E Test Environment
         id: setup
@@ -378,7 +418,7 @@ jobs:
       - name: Run Auto-approve Action (Should Approve - Pattern Match)
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
-          token: ${{ steps.setup.outputs.token }}
+          token: ${{ steps.generate_token2.outputs.token }}
           pr_url: ${{ steps.pr_match.outputs.pr_url }}
           user_ids: ${{ steps.bot_identity.outputs.bot-id }}
           branch_pattern: '^release-please--branches--.*$'
@@ -435,7 +475,7 @@ jobs:
       - name: Run Auto-approve Action (Should Not Approve - Pattern Mismatch)
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
-          token: ${{ steps.setup.outputs.token }}
+          token: ${{ steps.generate_token2.outputs.token }}
           pr_url: ${{ steps.pr_nomatch.outputs.pr_url }}
           user_ids: ${{ steps.bot_identity.outputs.bot-id }}
           branch_pattern: '^release-please--branches--.*$'
@@ -503,6 +543,16 @@ jobs:
         with:
           egress-policy: audit
 
+      - name: Generate PR Approval Bot Token
+        id: generate_token2
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
+          owner: ${{ env.TEST_OWNER }}
+          repositories: ${{ env.TEST_REPO }}
+          permission-pull-requests: write
+
       - name: Setup E2E Test Environment
         id: setup
         uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
@@ -553,7 +603,7 @@ jobs:
       - name: Run Auto-approve with reject_forks=true (Should Still Approve Same-Repo PR)
         uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
         with:
-          token: ${{ steps.setup.outputs.token }}
+          token: ${{ steps.generate_token2.outputs.token }}
           pr_url: ${{ steps.pr.outputs.pr_url }}
           user_ids: ${{ steps.bot_identity.outputs.bot-id }}
           branch_pattern: '^release-please--branches--.*$'
