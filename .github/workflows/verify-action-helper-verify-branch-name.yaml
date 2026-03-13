@@ -419,6 +419,7 @@ jobs:
           base_repo_full_name: ${{ matrix.base_repo }}
           reject_forks: ${{ matrix.reject_forks }}
           error_on_failure: 'false'
+          branch_pattern: '.*'
 
       - name: Assert Outputs
         env:
@@ -789,6 +790,7 @@ jobs:
           base_repo_full_name: ${{ matrix.base_repo }}
           reject_forks: ${{ matrix.reject_forks }}
           error_on_failure: ${{ matrix.error_on_failure }}
+          branch_pattern: '.*'
 
       - name: Assert Exit Code
         env:
