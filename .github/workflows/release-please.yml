@@ -112,6 +112,7 @@ jobs:
           echo "matrix=$MATRIX_JSON" >> "$GITHUB_OUTPUT"
 
   publish-workflow:
+    environment: release
     name: Publish ${{ matrix.path }}
     needs: prepare-matrix
     if: ${{ needs.prepare-matrix.outputs.matrix != '' && fromJson(needs.prepare-matrix.outputs.matrix).include[0] != null }}
