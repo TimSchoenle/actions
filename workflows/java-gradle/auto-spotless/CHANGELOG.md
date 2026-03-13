@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/TimSchoenle/actions/compare/workflows-java-gradle-auto-spotless-meta-v1.0.5...workflows-java-gradle-auto-spotless-meta-v1.1.0) (2026-03-13)
+
+
+### Features
+
+* migrate shared workflow logic to shared actions ([#594](https://github.com/TimSchoenle/actions/issues/594)) ([732f3ee](https://github.com/TimSchoenle/actions/commit/732f3ee4f01b66a354131eb7ca9d7f69f6a9f7cb))
+
 ## [1.0.5](https://github.com/TimSchoenle/actions/compare/workflows-java-gradle-auto-spotless-meta-v1.0.4...workflows-java-gradle-auto-spotless-meta-v1.0.5) (2026-03-13)
 
 
