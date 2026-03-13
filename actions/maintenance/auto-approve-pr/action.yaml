@@ -7,7 +7,7 @@ inputs:
     required: true
   user_ids:
     description: 'Comma-separated list of Database IDs of accepted authors (e.g. "29139614, 123456").'
-    required: false
+    required: true
   ignore_empty_prs:
     description: 'Ignore PRs with 0 changes. Renovate seems to sometimes create multiple lock-files PR without changing anything.'
     required: false
@@ -18,7 +18,7 @@ inputs:
     default: ${{ github.event.pull_request.html_url }}
   branch_pattern:
     description: 'Regex pattern to match branch names (e.g. "^release-please--branches--.*$"). Uses extended regex syntax.'
-    required: false
+    required: true
   reject_forks:
     description: 'Reject PRs from forked repositories. When true, only PRs from branches in the same repository will be approved.'
     required: false

@@ -4,7 +4,7 @@ description: 'Verify the given name matches the pattern and also check if it is 
 inputs:
   branch_pattern:
     description: 'Regex pattern to match branch names (e.g. "^release-please--branches--.*$"). Uses extended regex syntax.'
-    required: false
+    required: true
   reject_forks:
     description: 'Reject PRs from forked repositories. When true, only PRs from branches in the same repository will be approved.'
     required: false
