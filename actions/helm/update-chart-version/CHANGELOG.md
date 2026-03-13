@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.4](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.5.3...actions-helm-update-chart-version-v1.5.4) (2026-03-13)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#576](https://github.com/TimSchoenle/actions/issues/576)) ([a340156](https://github.com/TimSchoenle/actions/commit/a3401561aa1246bdbc84228350f726fcd9a0ee1f))
+
 ## [1.5.3](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.5.2...actions-helm-update-chart-version-v1.5.3) (2026-03-02)
 
 
