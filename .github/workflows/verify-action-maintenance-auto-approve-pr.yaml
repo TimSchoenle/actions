@@ -155,7 +155,7 @@ jobs:
           app-id: ${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
           owner: ${{ env.TEST_OWNER }}
-          repositories: ${{ env.TEST_REPO }}
+          repositories: ${{ env.TEST_REPO_NAME }}
           permission-pull-requests: write
 
       - name: Setup E2E Test Environment
@@ -260,7 +260,7 @@ jobs:
           app-id: ${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
           owner: ${{ env.TEST_OWNER }}
-          repositories: ${{ env.TEST_REPO }}
+          repositories: ${{ env.TEST_REPO_NAME }}
           permission-pull-requests: write
 
       - name: Setup E2E Test Environment
@@ -365,7 +365,7 @@ jobs:
           app-id: ${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
           owner: ${{ env.TEST_OWNER }}
-          repositories: ${{ env.TEST_REPO }}
+          repositories: ${{ env.TEST_REPO_NAME }}
           permission-pull-requests: write
 
       - name: Setup E2E Test Environment
@@ -550,7 +550,7 @@ jobs:
           app-id: ${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
           owner: ${{ env.TEST_OWNER }}
-          repositories: ${{ env.TEST_REPO }}
+          repositories: ${{ env.TEST_REPO_NAME }}
           permission-pull-requests: write
 
       - name: Setup E2E Test Environment
