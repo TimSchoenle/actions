@@ -88,7 +88,7 @@ runs:
     - name: Check Branch Pattern
       id: check_branch
       if: ${{ steps.check_author.outputs.match == 'true' }}
-      uses: TimSchoenle/actions/actions/helper/verify-branch-name@8bbd1a9182db482dc46e6c7dd21350c2cd6b55da # actions-helper-verify-branch-name-v1.1.0
+      uses: TimSchoenle/actions/actions/helper/verify-branch-name@942adbf1569777c9a9ef84f002ffd3c11736ee37 # actions-helper-verify-branch-name-v1.1.1
       with:
         branch_pattern: ${{ inputs.branch_pattern }}
         reject_forks: ${{ inputs.reject_forks }}
