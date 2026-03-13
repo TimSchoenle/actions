@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.11](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.10...actions-helper-verify-commit-authors-v1.1.11) (2026-03-13)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @fast-check/vitest to v0.3.0 ([#573](https://github.com/TimSchoenle/actions/issues/573)) ([02d0266](https://github.com/TimSchoenle/actions/commit/02d0266c3d8f1e3fb3b44f5a953e7d52374ff272))
+* **deps:** update dependency @types/node to v25.4.0 ([#580](https://github.com/TimSchoenle/actions/issues/580)) ([5a45dba](https://github.com/TimSchoenle/actions/commit/5a45dba517108a912b996ec4c00662ab57288127))
+* **deps:** update dependency fast-check to v4.6.0 ([#574](https://github.com/TimSchoenle/actions/issues/574)) ([e722c3a](https://github.com/TimSchoenle/actions/commit/e722c3ac39bfd961bacc8b552248202a16c4dc59))
+
 ## [1.1.10](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.9...actions-helper-verify-commit-authors-v1.1.10) (2026-03-11)
 
 
