@@ -23,6 +23,9 @@ permissions:
   contents: read # to read content
 
 env:
+  TEST_OWNER: ${{ env.TEST_OWNER }}
+  TEST_REPO_NAME: ${{ env.TEST_REPO_NAME }}
+  TEST_REPO: ${{ env.TEST_REPO }}
   TEST_ID: close-pr-test-${{ github.run_number }}-${{ github.run_attempt }}
 
 jobs:
