@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.4](https://github.com/TimSchoenle/actions/compare/workflows-rust-auto-format-meta-v1.1.3...workflows-rust-auto-format-meta-v1.1.4) (2026-03-13)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#540](https://github.com/TimSchoenle/actions/issues/540)) ([414c82f](https://github.com/TimSchoenle/actions/commit/414c82fc8d089367efdc9a15dc9d5630e100ff4c))
+
 ## [1.1.3](https://github.com/TimSchoenle/actions/compare/workflows-rust-auto-format-meta-v1.1.2...workflows-rust-auto-format-meta-v1.1.3) (2026-03-02)
 
 
