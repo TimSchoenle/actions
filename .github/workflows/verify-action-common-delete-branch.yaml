@@ -21,13 +21,11 @@ permissions:
   contents: read
 
 env:
-  TEST_OWNER: TimSchoenle
-  TEST_REPO: TimSchoenle/actions-testing
-  TEST_REPO_NAME: actions-testing
   TEST_ID: delete-branch-test-${{ github.run_number }}-${{ github.run_attempt }}
 
 jobs:
   test-delete-existing:
+    environment: ci-e2e
     name: Test Delete Existing Branch
     runs-on: ubuntu-latest
     steps:
@@ -88,6 +86,7 @@ jobs:
           echo "✅ Existing branch deleted successfully"
 
   test-delete-non-existent:
+    environment: ci-e2e
     name: Test Delete Non-Existent Branch
     runs-on: ubuntu-latest
     steps:

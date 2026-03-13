@@ -19,13 +19,9 @@ concurrency:
 
 permissions: {}
 
-env:
-  TEST_OWNER: TimSchoenle
-  TEST_REPO_NAME: actions-testing
-  TEST_REPO: TimSchoenle/actions-testing
-
 jobs:
   verify:
+    environment: ci-e2e
     name: Verify Setup-e2e
     runs-on: ubuntu-latest
     permissions:

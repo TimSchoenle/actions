@@ -23,13 +23,11 @@ permissions:
   contents: read # to read content
 
 env:
-  TEST_OWNER: TimSchoenle
-  TEST_REPO_NAME: actions-testing
-  TEST_REPO: TimSchoenle/actions-testing
   TEST_ID: helm-update-test-${{ github.run_number }}-${{ github.run_attempt }}
 
 jobs:
   test-full-update:
+    environment: ci-e2e
     name: 'Test: full chart version update and PR creation'
     runs-on: ubuntu-latest
     steps:
@@ -220,6 +218,7 @@ jobs:
           branch_name: test/helm-update/${{ env.TEST_ID }}/test-app/v2.0.0
 
   test-custom-branch-prefix:
+    environment: ci-e2e
     name: 'Test: custom PR branch prefix'
     runs-on: ubuntu-latest
     steps:
@@ -336,6 +335,7 @@ jobs:
           branch_name: test/custom-prefix/${{ env.TEST_ID }}/prefix-app/v3.5.0
 
   test-version-bump:
+    environment: ci-e2e
     name: 'Test Version Bump: ${{ matrix.name }}'
     runs-on: ubuntu-latest
     strategy:
@@ -480,6 +480,7 @@ jobs:
           branch_name: test/bump/${{ env.TEST_ID }}/${{ matrix.name }}/bump-app/${{ matrix.new_tag }}
 
   test-nested-chart-path:
+    environment: ci-e2e
     name: 'Test: nested chart path'
     runs-on: ubuntu-latest
     steps:
@@ -611,6 +612,7 @@ jobs:
           branch_name: test/nested/${{ env.TEST_ID }}/nested-svc/v5.0.0
 
   test-idempotent-rerun:
+    environment: ci-e2e
     name: 'Test: idempotent re-run resets branch'
     runs-on: ubuntu-latest
     steps:

@@ -14,6 +14,7 @@ permissions: {}
 jobs:
   release-please:
     name: Release Please
+    environment: release
     runs-on: ubuntu-latest
     outputs:
       paths_released: ${{ steps.release.outputs.paths_released }}
@@ -41,6 +42,7 @@ jobs:
 
   prepare-matrix:
     name: Prepare Workflow Matrix
+    environment: release
     needs: release-please
     if: always()
     runs-on: ubuntu-latest

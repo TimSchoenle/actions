@@ -21,13 +21,11 @@ permissions:
   contents: read # to read content
 
 env:
-  TEST_OWNER: TimSchoenle
-  TEST_REPO_NAME: actions-testing
-  TEST_REPO: TimSchoenle/actions-testing
   TEST_ID: auto-approve-pr-test-${{ github.run_number }}-${{ github.run_attempt }}
 
 jobs:
   test-auto-approve-positive:
+    environment: ci-e2e
     name: Test Auto-approve (Allowed User)
     runs-on: ubuntu-latest
     steps:
@@ -140,6 +138,7 @@ jobs:
           branch_name: ${{ steps.branch.outputs.branch }}
 
   test-auto-approve-negative:
+    environment: ci-e2e
     name: Test Auto-approve (Non-allowed User)
     runs-on: ubuntu-latest
     steps:
@@ -245,6 +244,7 @@ jobs:
           branch_name: ${{ steps.branch.outputs.branch }}
 
   test-branch-pattern-matching:
+    environment: ci-e2e
     name: Test Branch Pattern Matching
     runs-on: ubuntu-latest
     steps:
@@ -428,6 +428,7 @@ jobs:
           branch_name: ${{ steps.branch_nomatch.outputs.branch }}
 
   test-reject-forks:
+    environment: ci-e2e
     name: Test Reject Forks Setting
     runs-on: ubuntu-latest
     # Note: This test verifies the reject_forks parameter is processed correctly
