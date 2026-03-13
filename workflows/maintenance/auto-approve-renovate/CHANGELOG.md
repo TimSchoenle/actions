@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.3.4...workflows-maintenance-auto-approve-renovate-meta-v1.4.0) (2026-03-13)
+
+
+### Features
+
+* migrate shared workflow logic to shared actions ([#594](https://github.com/TimSchoenle/actions/issues/594)) ([732f3ee](https://github.com/TimSchoenle/actions/commit/732f3ee4f01b66a354131eb7ca9d7f69f6a9f7cb))
+
 ## [1.3.4](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.3.3...workflows-maintenance-auto-approve-renovate-meta-v1.3.4) (2026-03-13)
 
 
