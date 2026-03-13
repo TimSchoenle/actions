@@ -19,6 +19,11 @@ concurrency:
 
 permissions: {}
 
+env:
+  TEST_OWNER: TimSchoenle
+  TEST_REPO_NAME: actions-testing
+  TEST_REPO: TimSchoenle/actions-testing
+
 jobs:
   verify:
     environment: ci-e2e
