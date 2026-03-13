@@ -68,55 +68,16 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Generate Bot Token
-        id: generate_token
-        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+      - name: Auto Formatting
+        uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@cdebd5e467876f0b1797b284579d7589749d4891 # actions-java-gradle-auto-spotless-v1.1.0
         with:
-          app-id: ${{ secrets.bot_app_id }}
-          private-key: ${{ secrets.bot_private_key }}
-          permission-contents: write
-          permission-pull-requests: write
-
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-          ref: ${{ github.head_ref }}
-          token: ${{ steps.generate_token.outputs.token }}
-
-      - name: Set up JDK
-        uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@829bd1fb0b22243148114800e78f5506cb0a56cf # actions-java-gradle-setup-base-environment-v1.2.1
-        with:
+          bot_app_id: ${{ secrets.bot_app_id }}
+          bot_private_key: ${{ secrets.bot_private_key }}
+          gradle_spotless_command: ${{ inputs.gradle_spotless_command }}
           java_version: ${{ inputs.java_version }}
           java_distribution: ${{ inputs.java_distribution }}
           java_package: ${{ inputs.java_package }}
           gradle_wrapper_validation: ${{ inputs.gradle_wrapper_validation }}
           gradle_wrapper_allow_snapshots: ${{ inputs.gradle_wrapper_allow_snapshots }}
-
-      - name: Run spotless
-        env:
-          SPOTLESS_COMMAND: ${{ inputs.gradle_spotless_command }}
-        run: ./gradlew "$SPOTLESS_COMMAND"
-
-      - name: Commit and Push if changed
-        id: auto-commit
-        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # actions-common-commit-changes-v1.1.4
-        with:
           commit_message: ${{ inputs.commit_message }}
-          token: ${{ steps.generate_token.outputs.token }}
-
-      - name: Comment on PR
-        if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request'
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
-        env:
-          COMMENT_MESSAGE: ${{ inputs.comment_message }}
-        with:
-          github-token: ${{ steps.generate_token.outputs.token }}
-          script: |
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: process.env.COMMENT_MESSAGE
-            })
+          comment_message: ${{ inputs.comment_message }}
