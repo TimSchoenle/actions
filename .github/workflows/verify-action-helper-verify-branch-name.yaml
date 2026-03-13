@@ -40,6 +40,17 @@ jobs:
             expected_branch_verified: 'true'
             expected_fork_verified: 'true'
 
+          - name: 'Feature branch with escaped prefix pattern'
+            branch_pattern: '^feature\/.*'
+            head_ref: 'feature/add-new-feature'
+            head_repo: 'owner/repo'
+            base_repo: 'owner/repo'
+            reject_forks: 'false'
+            error_on_failure: 'false'
+            expected_verified: 'true'
+            expected_branch_verified: 'true'
+            expected_fork_verified: 'true'
+
           - name: 'Feature branch pattern mismatch'
             branch_pattern: '^feature/.*'
             head_ref: 'bugfix/fix-something'
