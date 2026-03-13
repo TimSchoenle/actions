@@ -91,7 +91,7 @@ Any version not listed in the following tables is not supported.
 | [Rust Auto-format](./workflows/rust/auto-format) | [workflows-rust-auto-format-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-auto-format-v1.1.4) | :white_check_mark: |
 | [Rust Cargo Check](./workflows/rust/cargo-check) | [workflows-rust-cargo-check-v1.1.6](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-cargo-check-v1.1.6) | :white_check_mark: |
 | [Rust Clippy](./workflows/rust/clippy) | [workflows-rust-clippy-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-clippy-v1.1.4) | :white_check_mark: |
-| [Rust Coverage (Codecov)](./workflows/rust/coverage-codecov) | [workflows-rust-coverage-codecov-v1.0.6](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-coverage-codecov-v1.0.6) | :white_check_mark: |
+| [Rust Coverage (Codecov)](./workflows/rust/coverage-codecov) | [workflows-rust-coverage-codecov-v1.0.7](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-coverage-codecov-v1.0.7) | :white_check_mark: |
 | [Rust Test](./workflows/rust/test) | [workflows-rust-test-v1.0.1](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-test-v1.0.1) | :white_check_mark: |
 
 
