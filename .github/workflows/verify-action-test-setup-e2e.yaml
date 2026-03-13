@@ -26,6 +26,7 @@ env:
 
 jobs:
   verify:
+    environment: ci-e2e
     name: Verify Setup-e2e
     runs-on: ubuntu-latest
     permissions:

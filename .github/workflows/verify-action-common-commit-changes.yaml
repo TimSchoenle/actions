@@ -30,6 +30,7 @@ env:
 
 jobs:
   test-commit-file-patterns:
+    environment: ci-e2e
     name: 'Test Commit: ${{ matrix.name }}'
     runs-on: ubuntu-latest
     strategy:
@@ -199,6 +200,7 @@ jobs:
           branch_name: ${{ steps.branch.outputs.branch }}
 
   test-pattern-excludes-unrelated:
+    environment: ci-e2e
     name: 'Test Pattern: excludes unrelated files'
     runs-on: ubuntu-latest
     strategy:
@@ -330,6 +332,7 @@ jobs:
           branch_name: ${{ steps.branch.outputs.branch }}
 
   test-modify-existing-file:
+    environment: ci-e2e
     name: 'Test Modify: existing tracked file'
     runs-on: ubuntu-latest
     steps:
@@ -415,6 +418,7 @@ jobs:
           branch_name: ${{ steps.branch.outputs.branch }}
 
   test-file-deletion:
+    environment: ci-e2e
     name: 'Test Delete: tracked file removal'
     runs-on: ubuntu-latest
     steps:
@@ -502,6 +506,7 @@ jobs:
           branch_name: ${{ steps.branch.outputs.branch }}
 
   test-no-commit-scenarios:
+    environment: ci-e2e
     name: 'Test No-Commit: ${{ matrix.name }}'
     runs-on: ubuntu-latest
     strategy:
@@ -643,6 +648,7 @@ jobs:
           branch_name: ${{ steps.branch.outputs.branch }}
 
   test-empty-commit-allowed:
+    environment: ci-e2e
     name: 'Test Empty: allowed empty commit'
     runs-on: ubuntu-latest
     steps:
@@ -706,6 +712,7 @@ jobs:
           branch_name: ${{ steps.branch.outputs.branch }}
 
   test-custom-branch:
+    environment: ci-e2e
     name: 'Test Branch: commit lands on target branch'
     runs-on: ubuntu-latest
     steps:
@@ -775,6 +782,7 @@ jobs:
           branch_name: ${{ steps.branch.outputs.branch }}
 
   test-commit-message:
+    environment: ci-e2e
     name: 'Test Message: commit message matches input'
     runs-on: ubuntu-latest
     steps:

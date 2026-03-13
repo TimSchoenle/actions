@@ -30,6 +30,7 @@ env:
 
 jobs:
   test-close-pr:
+    environment: ci-e2e
     name: Test Close PR
     runs-on: ubuntu-latest
     steps:
@@ -118,6 +119,7 @@ jobs:
           branch_name: 'test/close-pr/${{ env.TEST_ID }}'
 
   test-close-pr-not-found:
+    environment: ci-e2e
     name: Test Close Non-Existing PR
     runs-on: ubuntu-latest
     steps:
@@ -146,6 +148,7 @@ jobs:
           pull_request_id: '999999999' # Likely non-existing ID
 
   test-close-pr-with-comment:
+    environment: ci-e2e
     name: Test Close PR with Custom Comment
     runs-on: ubuntu-latest
     steps:

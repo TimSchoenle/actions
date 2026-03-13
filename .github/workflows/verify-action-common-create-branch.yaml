@@ -29,6 +29,7 @@ env:
 
 jobs:
   test-create-branch-default:
+    environment: ci-e2e
     name: Test Create Branch (Default Base)
     runs-on: ubuntu-latest
     permissions:
@@ -103,6 +104,7 @@ jobs:
           branch_name: test/create-branch-default/${{ env.TEST_ID }}
 
   test-create-branch-specific-base:
+    environment: ci-e2e
     name: Test Create Branch (Specific Base)
     runs-on: ubuntu-latest
     permissions:
@@ -185,6 +187,7 @@ jobs:
           branch_name: test/base-branch/${{ env.TEST_ID }}
 
   test-reset-branch:
+    environment: ci-e2e
     name: Test Reset Branch (Diverged)
     runs-on: ubuntu-latest
     permissions:
