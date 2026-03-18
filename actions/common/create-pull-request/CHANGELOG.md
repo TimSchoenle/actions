@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/TimSchoenle/actions/compare/actions-common-create-pull-request-v1.0.3...actions-common-create-pull-request-v1.0.4) (2026-03-18)
+
+
+### Miscellaneous
+
+* **deps:** update actions/create-github-app-token action to v3 ([#606](https://github.com/TimSchoenle/actions/issues/606)) ([846a7a7](https://github.com/TimSchoenle/actions/commit/846a7a77d2129d136b94264c64d0a2750a942e8a))
+
 ## [1.0.3](https://github.com/TimSchoenle/actions/compare/actions-common-create-pull-request-v1.0.2...actions-common-create-pull-request-v1.0.3) (2026-02-23)
 
 
