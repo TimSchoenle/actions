@@ -171,6 +171,11 @@
       "release-type": "simple",
       "component": "actions-rust-coverage-codecov",
       "include-component-in-tag": true
+    },
+    "actions/rust/test": {
+      "release-type": "simple",
+      "component": "actions-rust-test",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
