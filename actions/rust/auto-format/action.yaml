@@ -1,0 +1,87 @@
+name: 'Rust Auto-format'
+description: 'Action that runs cargo fmt and commits changes.'
+
+inputs:
+  bot_app_id:
+    required: true
+    description: 'GitHub App ID for bot authentication'
+  bot_private_key:
+    required: true
+    description: 'GitHub App Private Key'
+  repository:
+    description: 'Target repository in the format owner/repo. Defaults to the current repository.'
+    required: false
+    default: ${{ github.repository }}
+  branch:
+    description: 'Target branch to checkout and commit to. Defaults to the current branch.'
+    required: false
+    default: ${{ github.head_ref || github.ref_name }}
+  source_directory:
+    description: 'Directory containing the Rust project'
+    required: false
+    default: '.'
+  commit_message:
+    description: 'Commit message for auto-formatted changes'
+    required: false
+    default: 'style: auto-format rust code'
+
+outputs:
+  commit_hash:
+    description: 'The SHA of the created commit'
+    value: ${{ steps.auto-commit.outputs.commit-hash }}
+  commit_url:
+    description: 'The URL of the created commit.'
+    value: ${{ steps.auto-commit.outputs.commit-url }}
+  changes_detected:
+    description: 'True if changes were committed'
+    value: ${{ steps.auto-commit.outputs.changes_detected }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Parse Repository
+      id: parse_repo
+      shell: bash
+      env:
+        REPOSITORY: ${{ inputs.repository }}
+      run: |
+        echo "owner=${REPOSITORY%%/*}" >> $GITHUB_OUTPUT
+        echo "repo_name=${REPOSITORY##*/}" >> $GITHUB_OUTPUT
+
+    - name: Generate Bot Token
+      id: generate_token
+      uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3.0.0
+      with:
+        app-id: ${{ inputs.bot_app_id }}
+        private-key: ${{ inputs.bot_private_key }}
+        owner: ${{ steps.parse_repo.outputs.owner }}
+        repositories: ${{ steps.parse_repo.outputs.repo_name }}
+        permission-contents: write
+
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      with:
+        repository: ${{ inputs.repository }}
+        persist-credentials: false
+        fetch-depth: 0
+        ref: ${{ inputs.branch }}
+        token: ${{ steps.generate_token.outputs.token }}
+
+    - name: Install stable toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@150fca883cd4034361b621bd4e6a9d34e5143606 # v1.15.4
+      with:
+        components: rustfmt
+
+    - name: Run cargo fmt
+      shell: bash
+      working-directory: ${{ inputs.source_directory }}
+      run: cargo fmt
+
+    - name: Commit and Push if changed
+      id: auto-commit
+      uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # actions-common-commit-changes-v1.1.4
+      with:
+        commit_message: ${{ inputs.commit_message }}
+        token: ${{ steps.generate_token.outputs.token }}
+        repository: ${{ inputs.repository }}
+        branch: ${{ inputs.branch }}

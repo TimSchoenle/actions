@@ -1,0 +1,44 @@
+name: 'Rust Cargo-check'
+description: 'Action that runs cargo check to verify Rust code compiles without errors.'
+
+inputs:
+  repository:
+    description: 'Target repository in the format owner/repo. Defaults to the current repository.'
+    required: false
+    default: ${{ github.repository }}
+  branch:
+    description: 'Target branch to checkout. Defaults to the current branch.'
+    required: false
+    default: ${{ github.head_ref || github.ref_name }}
+  source_directory:
+    description: 'Directory containing the Rust project'
+    required: false
+    default: '.'
+  check_arguments:
+    description: 'Additional arguments to pass to cargo check'
+    required: false
+    default: '--all-targets --all-features'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      with:
+        repository: ${{ inputs.repository }}
+        persist-credentials: false
+        fetch-depth: 0
+        ref: ${{ inputs.branch }}
+
+    - name: Install stable toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@150fca883cd4034361b621bd4e6a9d34e5143606 # v1.15.4
+
+    - name: Run cargo check
+      shell: bash
+      env:
+        CHECK_ARGUMENTS: ${{ inputs.check_arguments }}
+      working-directory: ${{ inputs.source_directory }}
+      run: |
+        # shellcheck disable=SC2206
+        args=($CHECK_ARGUMENTS)
+        cargo check "${args[@]}"

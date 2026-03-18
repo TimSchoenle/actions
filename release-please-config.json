@@ -151,6 +151,31 @@
       "release-type": "simple",
       "component": "actions-helper-verify-branch-name",
       "include-component-in-tag": true
+    },
+    "actions/rust/auto-format": {
+      "release-type": "simple",
+      "component": "actions-rust-auto-format",
+      "include-component-in-tag": true
+    },
+    "actions/rust/cargo-check": {
+      "release-type": "simple",
+      "component": "actions-rust-cargo-check",
+      "include-component-in-tag": true
+    },
+    "actions/rust/clippy": {
+      "release-type": "simple",
+      "component": "actions-rust-clippy",
+      "include-component-in-tag": true
+    },
+    "actions/rust/coverage-codecov": {
+      "release-type": "simple",
+      "component": "actions-rust-coverage-codecov",
+      "include-component-in-tag": true
+    },
+    "actions/rust/test": {
+      "release-type": "simple",
+      "component": "actions-rust-test",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
