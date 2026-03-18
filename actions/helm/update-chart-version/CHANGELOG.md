@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.5](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.5.4...actions-helm-update-chart-version-v1.5.5) (2026-03-18)
+
+
+### Miscellaneous
+
+* **deps:** update actions/create-github-app-token action to v3 ([#606](https://github.com/TimSchoenle/actions/issues/606)) ([846a7a7](https://github.com/TimSchoenle/actions/commit/846a7a77d2129d136b94264c64d0a2750a942e8a))
+* **deps:** update all non-major action updates ([#597](https://github.com/TimSchoenle/actions/issues/597)) ([d1c6a0d](https://github.com/TimSchoenle/actions/commit/d1c6a0da1f808b5afa2588cc8060d73205fb5318))
+
 ## [1.5.4](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.5.3...actions-helm-update-chart-version-v1.5.4) (2026-03-13)
 
 
