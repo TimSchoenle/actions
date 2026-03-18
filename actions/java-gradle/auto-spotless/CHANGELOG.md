@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.1...actions-java-gradle-auto-spotless-v1.1.2) (2026-03-18)
+
+
+### Bug Fixes
+
+* **Actions/Auto-Spotless:** remove harden runner ([5448457](https://github.com/TimSchoenle/actions/commit/54484575135f95c93156e26cee9c8c5914170227))
+
 ## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.0...actions-java-gradle-auto-spotless-v1.1.1) (2026-03-18)
 
 
