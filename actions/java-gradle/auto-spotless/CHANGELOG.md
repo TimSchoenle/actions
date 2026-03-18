@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.0...actions-java-gradle-auto-spotless-v1.1.1) (2026-03-18)
+
+
+### Miscellaneous
+
+* **deps:** update actions/create-github-app-token action to v2.2.2 ([#605](https://github.com/TimSchoenle/actions/issues/605)) ([91c3369](https://github.com/TimSchoenle/actions/commit/91c3369a61b61c14c07298659a4bb9d0d6900e09))
+* **deps:** update actions/create-github-app-token action to v3 ([#606](https://github.com/TimSchoenle/actions/issues/606)) ([846a7a7](https://github.com/TimSchoenle/actions/commit/846a7a77d2129d136b94264c64d0a2750a942e8a))
+* **deps:** update all non-major action updates ([#626](https://github.com/TimSchoenle/actions/issues/626)) ([5f03368](https://github.com/TimSchoenle/actions/commit/5f03368cc522ba8d5f502850b8219bb4410f1006))
+
 ## [1.1.0](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.0.0...actions-java-gradle-auto-spotless-v1.1.0) (2026-03-13)
 
 
