@@ -69,7 +69,7 @@ jobs:
           egress-policy: audit
 
       - name: Auto Formatting
-        uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@cdebd5e467876f0b1797b284579d7589749d4891 # actions-java-gradle-auto-spotless-v1.1.0
+        uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@706254dd9e0024e208e1ebb320661bdacc79f95c # actions-java-gradle-auto-spotless-v1.1.1
         with:
           bot_app_id: ${{ secrets.bot_app_id }}
           bot_private_key: ${{ secrets.bot_private_key }}
