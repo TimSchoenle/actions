@@ -63,7 +63,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | Auto approve Pull Requests with the given user ids and branches. | [actions-maintenance-auto-approve-pr-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.1.2) | `uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@actions-maintenance-auto-approve-pr-v1.1.2` |
+| [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | Auto approve Pull Requests with the given user ids and branches. | [actions-maintenance-auto-approve-pr-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.1.3) | `uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@actions-maintenance-auto-approve-pr-v1.1.3` |
 
 ### Rust
 
