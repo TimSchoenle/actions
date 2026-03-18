@@ -53,6 +53,12 @@ Any version not listed in the following tables is not supported.
 | --- | --- | --- |
 | [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | [actions-maintenance-auto-approve-pr-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.1.1) | :white_check_mark: |
 
+### Rust
+
+| Component | Version | Supported |
+| --- | --- | --- |
+| [Rust Auto-format](./actions/rust/auto-format) | [actions-rust-auto-format-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v1.0.0) | :white_check_mark: |
+
 ### Test
 
 | Component | Version | Supported |

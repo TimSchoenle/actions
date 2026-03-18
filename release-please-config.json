@@ -151,6 +151,11 @@
       "release-type": "simple",
       "component": "actions-helper-verify-branch-name",
       "include-component-in-tag": true
+    },
+    "actions/rust/auto-format": {
+      "release-type": "simple",
+      "component": "actions-rust-auto-format",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
