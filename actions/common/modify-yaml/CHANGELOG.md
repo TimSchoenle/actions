@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.9](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.8...actions-common-modify-yaml-v1.2.9) (2026-03-18)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v25.5.0 ([#620](https://github.com/TimSchoenle/actions/issues/620)) ([328d002](https://github.com/TimSchoenle/actions/commit/328d002bd076858c4b4f597e139b096383cbbad8))
+* **deps:** update vitest monorepo to v4.1.0 ([#621](https://github.com/TimSchoenle/actions/issues/621)) ([42ff5dd](https://github.com/TimSchoenle/actions/commit/42ff5dd5df624e9fde0f8efe307ef6dc5f9dcda3))
+
+
+### Dependencies
+
+* **deps:** lock file maintenance ([#623](https://github.com/TimSchoenle/actions/issues/623)) ([516181e](https://github.com/TimSchoenle/actions/commit/516181ed4b407f53e570b4ad9636a73a47a3fe7f))
+
 ## [1.2.8](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.7...actions-common-modify-yaml-v1.2.8) (2026-03-13)
 
 
