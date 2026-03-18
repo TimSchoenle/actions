@@ -161,6 +161,11 @@
       "release-type": "simple",
       "component": "actions-rust-cargo-check",
       "include-component-in-tag": true
+    },
+    "actions/rust/clippy": {
+      "release-type": "simple",
+      "component": "actions-rust-clippy",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
