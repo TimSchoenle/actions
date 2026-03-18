@@ -31,7 +31,7 @@
   "actions/maintenance/auto-approve-pr": "1.1.1",
   "actions/rust/auto-format": "1.1.0",
   "actions/rust/cargo-check": "1.0.0",
-  "actions/rust/clippy": "1.0.0",
+  "actions/rust/clippy": "1.1.0",
   "actions/rust/coverage-codecov": "1.1.0",
   "actions/rust/test": "1.1.0"
 }
