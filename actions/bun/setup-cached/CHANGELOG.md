@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.6](https://github.com/TimSchoenle/actions/compare/actions-bun-setup-cached-v1.1.5...actions-bun-setup-cached-v1.1.6) (2026-03-18)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#611](https://github.com/TimSchoenle/actions/issues/611)) ([f7ac83f](https://github.com/TimSchoenle/actions/commit/f7ac83ff8bd44addb80ecdeec9622bbc9b4b079e))
+
 ## [1.1.5](https://github.com/TimSchoenle/actions/compare/actions-bun-setup-cached-v1.1.4...actions-bun-setup-cached-v1.1.5) (2026-03-11)
 
 
