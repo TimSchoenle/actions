@@ -166,6 +166,11 @@
       "release-type": "simple",
       "component": "actions-rust-clippy",
       "include-component-in-tag": true
+    },
+    "actions/rust/coverage-codecov": {
+      "release-type": "simple",
+      "component": "actions-rust-coverage-codecov",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
