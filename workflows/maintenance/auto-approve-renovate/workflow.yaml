@@ -38,7 +38,7 @@ jobs:
           egress-policy: audit
 
       - name: Auto-approve Renovate PRs
-        uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@9f1e2dc8d95f4a5672b1e5a4d6ceafa9b3105968 # actions-maintenance-auto-approve-pr-v1.1.1
+        uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@d775f56a4f254af2831e202639dfeefd310a860c # actions-maintenance-auto-approve-pr-v1.1.2
         with:
           token: ${{ secrets.token }}
           user_ids: ${{ inputs.user_ids }}
