@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-maintenance-auto-approve-pr-v1.1.1...actions-maintenance-auto-approve-pr-v1.1.2) (2026-03-18)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#597](https://github.com/TimSchoenle/actions/issues/597)) ([d1c6a0d](https://github.com/TimSchoenle/actions/commit/d1c6a0da1f808b5afa2588cc8060d73205fb5318))
+* **deps:** update all non-major action updates ([#602](https://github.com/TimSchoenle/actions/issues/602)) ([2bffd37](https://github.com/TimSchoenle/actions/commit/2bffd37a47453b07c3757dd6eb3e2d431d1b5afc))
+
 ## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-maintenance-auto-approve-pr-v1.1.0...actions-maintenance-auto-approve-pr-v1.1.1) (2026-03-13)
 
 
