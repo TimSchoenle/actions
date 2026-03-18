@@ -58,6 +58,7 @@ Any version not listed in the following tables is not supported.
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Rust Auto-format](./actions/rust/auto-format) | [actions-rust-auto-format-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v1.0.0) | :white_check_mark: |
+| [Rust Cargo-check](./actions/rust/cargo-check) | [actions-rust-cargo-check-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.0.0) | :white_check_mark: |
 
 ### Test
 

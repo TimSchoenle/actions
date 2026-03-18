@@ -156,6 +156,11 @@
       "release-type": "simple",
       "component": "actions-rust-auto-format",
       "include-component-in-tag": true
+    },
+    "actions/rust/cargo-check": {
+      "release-type": "simple",
+      "component": "actions-rust-cargo-check",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

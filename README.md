@@ -70,6 +70,7 @@ Here is a list of all currently maintained actions in this repository:
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
 | [Rust Auto-format](./actions/rust/auto-format) | Action that runs cargo fmt and commits changes. | [actions-rust-auto-format-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v1.0.0) | `uses: TimSchoenle/actions/actions/rust/auto-format@actions-rust-auto-format-v1.0.0` |
+| [Rust Cargo-check](./actions/rust/cargo-check) | Action that runs cargo check to verify Rust code compiles without errors. | [actions-rust-cargo-check-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.0.0) | `uses: TimSchoenle/actions/actions/rust/cargo-check@actions-rust-cargo-check-v1.0.0` |
 
 ### Test
 
