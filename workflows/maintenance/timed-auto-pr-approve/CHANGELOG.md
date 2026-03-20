@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.2.12](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.11...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.12) (2026-03-20)
+
+
+### Miscellaneous
+
+* **deps:** update actions/create-github-app-token action to v3 ([#606](https://github.com/TimSchoenle/actions/issues/606)) ([846a7a7](https://github.com/TimSchoenle/actions/commit/846a7a77d2129d136b94264c64d0a2750a942e8a))
+* **deps:** update all non-major action updates ([#597](https://github.com/TimSchoenle/actions/issues/597)) ([d1c6a0d](https://github.com/TimSchoenle/actions/commit/d1c6a0da1f808b5afa2588cc8060d73205fb5318))
+* **deps:** update all non-major action updates ([#626](https://github.com/TimSchoenle/actions/issues/626)) ([5f03368](https://github.com/TimSchoenle/actions/commit/5f03368cc522ba8d5f502850b8219bb4410f1006))
+* **deps:** update all non-major action updates ([#640](https://github.com/TimSchoenle/actions/issues/640)) ([e967ede](https://github.com/TimSchoenle/actions/commit/e967edef69c0ea4820917c9572fdd31eba62b92a))
+
 ## [1.2.11](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.10...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.11) (2026-03-13)
 
 
