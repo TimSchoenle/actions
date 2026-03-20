@@ -13,7 +13,6 @@ permissions: {}
 jobs:
   update-builds:
     name: Build Actions and Commit
-    deployment: false
     environment: ci
     runs-on: ubuntu-latest
     outputs:
@@ -75,7 +74,6 @@ jobs:
 
   update-readme:
     name: Update README
-    deployment: false
     environment: ci
     runs-on: ubuntu-latest
     needs: update-builds
