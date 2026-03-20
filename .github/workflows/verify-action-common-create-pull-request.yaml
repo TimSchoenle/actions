@@ -30,6 +30,7 @@ env:
 
 jobs:
   test-with-changes:
+    deployment: false
     environment: ci-e2e
     name: Test PR Creation with Changes
     runs-on: ubuntu-latest
@@ -166,6 +167,7 @@ jobs:
           branch_name: 'test/create-pr-with-changes/${{ env.TEST_ID }}'
 
   test-without-changes:
+    deployment: false
     environment: ci-e2e
     name: Test PR Skip with Identical Branches
     runs-on: ubuntu-latest
@@ -232,6 +234,7 @@ jobs:
           branch_name: 'test/create-pr-no-changes/${{ env.TEST_ID }}'
 
   test-commit-skip:
+    deployment: false
     environment: ci-e2e
     name: Test Commit Skip with No Changes
     runs-on: ubuntu-latest
@@ -300,6 +303,7 @@ jobs:
           branch_name: 'test/create-pr-commit-skip/${{ env.TEST_ID }}'
 
   test-branch-reset:
+    deployment: false
     environment: ci-e2e
     name: Test Branch Reset Behavior
     runs-on: ubuntu-latest

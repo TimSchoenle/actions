@@ -14,6 +14,7 @@ permissions: {}
 jobs:
   release-please:
     name: Release Please
+    deployment: false
     environment: release
     runs-on: ubuntu-latest
     outputs:
@@ -42,6 +43,7 @@ jobs:
 
   prepare-matrix:
     name: Prepare Workflow Matrix
+    deployment: false
     environment: release
     needs: release-please
     if: always()
@@ -112,6 +114,7 @@ jobs:
           echo "matrix=$MATRIX_JSON" >> "$GITHUB_OUTPUT"
 
   publish-workflow:
+    deployment: false
     environment: release
     name: Publish ${{ matrix.path }}
     needs: prepare-matrix

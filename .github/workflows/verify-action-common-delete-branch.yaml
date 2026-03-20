@@ -28,6 +28,7 @@ env:
 
 jobs:
   test-delete-existing:
+    deployment: false
     environment: ci-e2e
     name: Test Delete Existing Branch
     runs-on: ubuntu-latest
@@ -89,6 +90,7 @@ jobs:
           echo "✅ Existing branch deleted successfully"
 
   test-delete-non-existent:
+    deployment: false
     environment: ci-e2e
     name: Test Delete Non-Existent Branch
     runs-on: ubuntu-latest
