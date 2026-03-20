@@ -14,7 +14,9 @@ permissions: {}
 jobs:
   release-please:
     name: Release Please
-    environment: release
+    environment:
+      name: release
+      deployment: false
     runs-on: ubuntu-latest
     outputs:
       paths_released: ${{ steps.release.outputs.paths_released }}
@@ -42,7 +44,9 @@ jobs:
 
   prepare-matrix:
     name: Prepare Workflow Matrix
-    environment: release
+    environment:
+      name: release
+      deployment: false
     needs: release-please
     if: always()
     runs-on: ubuntu-latest
@@ -112,7 +116,9 @@ jobs:
           echo "matrix=$MATRIX_JSON" >> "$GITHUB_OUTPUT"
 
   publish-workflow:
-    environment: release
+    environment:
+      name: release
+      deployment: false
     name: Publish ${{ matrix.path }}
     needs: prepare-matrix
     if: ${{ needs.prepare-matrix.outputs.matrix != '' && fromJson(needs.prepare-matrix.outputs.matrix).include[0] != null }}
