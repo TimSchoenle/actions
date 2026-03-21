@@ -13,7 +13,7 @@
   "workflows/maintenance/timed-auto-pr-approve": "1.2.12",
   "workflows/rust/cargo-check": "1.1.6",
   "workflows/rust/test": "1.0.1",
-  "workflows/rust/coverage-codecov": "1.0.7",
+  "workflows/rust/coverage-codecov": "1.0.8",
   "workflows/rust/auto-format": "1.1.5",
   "workflows/rust/clippy": "1.1.4",
   "actions/common/create-pull-request": "1.0.4",
