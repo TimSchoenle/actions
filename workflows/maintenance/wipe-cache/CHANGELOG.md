@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.4](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-wipe-cache-meta-v1.1.3...workflows-maintenance-wipe-cache-meta-v1.1.4) (2026-03-21)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#626](https://github.com/TimSchoenle/actions/issues/626)) ([5f03368](https://github.com/TimSchoenle/actions/commit/5f03368cc522ba8d5f502850b8219bb4410f1006))
+
 ## [1.1.3](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-wipe-cache-meta-v1.1.2...workflows-maintenance-wipe-cache-meta-v1.1.3) (2026-03-12)
 
 
