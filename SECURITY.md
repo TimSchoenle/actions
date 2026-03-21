@@ -82,7 +82,7 @@ Any version not listed in the following tables is not supported.
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Java-gradle Auto-spotless](./workflows/java-gradle/auto-spotless) | [workflows-java-gradle-auto-spotless-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/workflows-java-gradle-auto-spotless-v1.1.0) | :white_check_mark: |
+| [Java-gradle Auto-spotless](./workflows/java-gradle/auto-spotless) | [workflows-java-gradle-auto-spotless-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/workflows-java-gradle-auto-spotless-v1.1.1) | :white_check_mark: |
 
 ### Maintenance
 
