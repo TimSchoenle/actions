@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.5](https://github.com/TimSchoenle/actions/compare/workflows-rust-clippy-meta-v1.1.4...workflows-rust-clippy-meta-v1.1.5) (2026-03-21)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#611](https://github.com/TimSchoenle/actions/issues/611)) ([f7ac83f](https://github.com/TimSchoenle/actions/commit/f7ac83ff8bd44addb80ecdeec9622bbc9b4b079e))
+* **deps:** update all non-major action updates ([#626](https://github.com/TimSchoenle/actions/issues/626)) ([5f03368](https://github.com/TimSchoenle/actions/commit/5f03368cc522ba8d5f502850b8219bb4410f1006))
+
 ## [1.1.4](https://github.com/TimSchoenle/actions/compare/workflows-rust-clippy-meta-v1.1.3...workflows-rust-clippy-meta-v1.1.4) (2026-03-13)
 
 
