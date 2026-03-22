@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.0.8](https://github.com/TimSchoenle/actions/compare/workflows-rust-coverage-codecov-meta-v1.0.7...workflows-rust-coverage-codecov-meta-v1.0.8) (2026-03-22)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#611](https://github.com/TimSchoenle/actions/issues/611)) ([f7ac83f](https://github.com/TimSchoenle/actions/commit/f7ac83ff8bd44addb80ecdeec9622bbc9b4b079e))
+* **deps:** update all non-major action updates ([#626](https://github.com/TimSchoenle/actions/issues/626)) ([5f03368](https://github.com/TimSchoenle/actions/commit/5f03368cc522ba8d5f502850b8219bb4410f1006))
+* **deps:** update all non-major action updates ([#659](https://github.com/TimSchoenle/actions/issues/659)) ([1ab18ab](https://github.com/TimSchoenle/actions/commit/1ab18ab34e31e424e3a91faf30fe33eb2f2141aa))
+* **deps:** update codecov/codecov-action digest to 1af5884 ([#646](https://github.com/TimSchoenle/actions/issues/646)) ([3a69370](https://github.com/TimSchoenle/actions/commit/3a69370d2a8ac541c3cabd11596ed79935eaddcc))
+* **deps:** update taiki-e/install-action action to v2.68.31 ([#617](https://github.com/TimSchoenle/actions/issues/617)) ([0dafdab](https://github.com/TimSchoenle/actions/commit/0dafdabd9cdd5dafb7869f958d7f74bb28ac33f2))
+* **deps:** update taiki-e/install-action action to v2.68.32 ([#619](https://github.com/TimSchoenle/actions/issues/619)) ([5948719](https://github.com/TimSchoenle/actions/commit/59487195e61a6c622d09c4de8c862e3631326ccb))
+* **deps:** update taiki-e/install-action action to v2.68.33 ([#625](https://github.com/TimSchoenle/actions/issues/625)) ([eab4190](https://github.com/TimSchoenle/actions/commit/eab41905388422a8f5f817ec054524eb6586af93))
+* **deps:** update taiki-e/install-action action to v2.68.34 ([#629](https://github.com/TimSchoenle/actions/issues/629)) ([db9c3bc](https://github.com/TimSchoenle/actions/commit/db9c3bc2337625562aa51db7375f23ce0fa1d835))
+* **deps:** update taiki-e/install-action action to v2.68.35 ([#631](https://github.com/TimSchoenle/actions/issues/631)) ([e7cb059](https://github.com/TimSchoenle/actions/commit/e7cb059febee500bd61ae7a3d71875f5335c1bfc))
+* **deps:** update taiki-e/install-action action to v2.68.36 ([#649](https://github.com/TimSchoenle/actions/issues/649)) ([19398f0](https://github.com/TimSchoenle/actions/commit/19398f01e5f3bb9436d3c65c895551fd6c535acf))
+* **deps:** update taiki-e/install-action action to v2.69.2 ([#651](https://github.com/TimSchoenle/actions/issues/651)) ([c89fbfe](https://github.com/TimSchoenle/actions/commit/c89fbfe99fea7969d4dc17b3a926c41b6ed5be74))
+* **deps:** update taiki-e/install-action action to v2.69.3 ([#655](https://github.com/TimSchoenle/actions/issues/655)) ([a4b7a0d](https://github.com/TimSchoenle/actions/commit/a4b7a0dcc54245782edd707d8134b229363ffa4f))
+* **deps:** update taiki-e/install-action action to v2.69.5 ([#661](https://github.com/TimSchoenle/actions/issues/661)) ([86da07c](https://github.com/TimSchoenle/actions/commit/86da07c1702e958562c491f986f9021fdd1a7615))
+
 ## [1.0.7](https://github.com/TimSchoenle/actions/compare/workflows-rust-coverage-codecov-meta-v1.0.6...workflows-rust-coverage-codecov-meta-v1.0.7) (2026-03-13)
 
 
