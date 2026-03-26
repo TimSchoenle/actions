@@ -72,7 +72,7 @@ Here is a list of all currently maintained actions in this repository:
 | [Rust Auto-format](./actions/rust/auto-format) | Action that runs cargo fmt and commits changes. | [actions-rust-auto-format-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v1.1.0) | `uses: TimSchoenle/actions/actions/rust/auto-format@actions-rust-auto-format-v1.1.0` |
 | [Rust Cargo-check](./actions/rust/cargo-check) | Action that runs cargo check to verify Rust code compiles without errors. | [actions-rust-cargo-check-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.1.0) | `uses: TimSchoenle/actions/actions/rust/cargo-check@actions-rust-cargo-check-v1.1.0` |
 | [Rust Clippy](./actions/rust/clippy) | Action that runs clippy to catch common mistakes and improve your Rust code. | [actions-rust-clippy-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-clippy-v1.1.0) | `uses: TimSchoenle/actions/actions/rust/clippy@actions-rust-clippy-v1.1.0` |
-| [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | Action that runs cargo llvm-cov to generate code coverage and uploads to Codecov. | [actions-rust-coverage-codecov-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.1) | `uses: TimSchoenle/actions/actions/rust/coverage-codecov@actions-rust-coverage-codecov-v1.1.1` |
+| [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | Action that runs cargo llvm-cov to generate code coverage and uploads to Codecov. | [actions-rust-coverage-codecov-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.2) | `uses: TimSchoenle/actions/actions/rust/coverage-codecov@actions-rust-coverage-codecov-v1.1.2` |
 | [Rust Test](./actions/rust/test) | Action that runs cargo nextest to verify Rust code passes tests. | [actions-rust-test-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.0) | `uses: TimSchoenle/actions/actions/rust/test@actions-rust-test-v1.1.0` |
 
 ### Test
@@ -126,10 +126,10 @@ To use, you need to download the rules and Import the ruleset.
 
 | Config | Description |
 | --- | --- |
-| [Release Tags: Only Allow Automatic Release Manager Bot](./configs/github-rulesets/release-tags_only-allow-automatic-release-manager-bot.json) | Enforces that only the Automatic Release Manager bot can create, update, or delete release tags. |
-| [Release Please Branches: Trusted Bots Only](./configs/github-rulesets/branch-release-please_only-allow-trusted-bots.json) | Restricts access to release-please branches, allowing only trusted bots to create, update, or delete them, while enforcing code quality and signature requirements. |
-| [Default Branch: Default Protection Rules](./configs/github-rulesets/branch-default_default-rules.json) | Enforces standard protection rules on the default branch: requires PRs with 1 approval (squash only), signed commits, CodeQL scanning, and passing status checks. |
 | [Renovate Branches: Trusted Bots & Admins Only](./configs/github-rulesets/branch-renovate_only-allow-trusted-bots-and-admins.json) | Restricts access to Renovate branches, allowing only trusted bots (Renovate, Automatic Release Manager) and admins to manage them, while enforcing code quality and signature requirements. |
+| [Default Branch: Default Protection Rules](./configs/github-rulesets/branch-default_default-rules.json) | Enforces standard protection rules on the default branch: requires PRs with 1 approval (squash only), signed commits, CodeQL scanning, and passing status checks. |
+| [Release Please Branches: Trusted Bots Only](./configs/github-rulesets/branch-release-please_only-allow-trusted-bots.json) | Restricts access to release-please branches, allowing only trusted bots to create, update, or delete them, while enforcing code quality and signature requirements. |
+| [Release Tags: Only Allow Automatic Release Manager Bot](./configs/github-rulesets/release-tags_only-allow-automatic-release-manager-bot.json) | Enforces that only the Automatic Release Manager bot can create, update, or delete release tags. |
 
 
 ### Renovate
