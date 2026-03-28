@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.9](https://github.com/TimSchoenle/actions/compare/workflows-rust-coverage-codecov-meta-v1.0.8...workflows-rust-coverage-codecov-meta-v1.0.9) (2026-03-28)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#681](https://github.com/TimSchoenle/actions/issues/681)) ([c9a6b84](https://github.com/TimSchoenle/actions/commit/c9a6b8410f400016279fef35733abb7db4b08875))
+* **deps:** update codecov/codecov-action action to v6 ([#684](https://github.com/TimSchoenle/actions/issues/684)) ([7ed2a20](https://github.com/TimSchoenle/actions/commit/7ed2a2053107a5438e3eedc8cadd06b26dbfda3e))
+* **deps:** update codecov/codecov-action digest to 75cd116 ([#680](https://github.com/TimSchoenle/actions/issues/680)) ([e0c5d45](https://github.com/TimSchoenle/actions/commit/e0c5d45cf3e7ea331d9b32dae8c3ebd4234d7ecd))
+* **deps:** update taiki-e/install-action action to v2.69.10 ([#677](https://github.com/TimSchoenle/actions/issues/677)) ([fd04ed5](https://github.com/TimSchoenle/actions/commit/fd04ed5e90d37e36bad2806b1b005e20d37b60a5))
+* **deps:** update taiki-e/install-action action to v2.69.7 ([#669](https://github.com/TimSchoenle/actions/issues/669)) ([d2806f0](https://github.com/TimSchoenle/actions/commit/d2806f0c708b0342574f32dbf64ea11800e6cd60))
+* **deps:** update taiki-e/install-action action to v2.69.8 ([#674](https://github.com/TimSchoenle/actions/issues/674)) ([b954b84](https://github.com/TimSchoenle/actions/commit/b954b84af8ef7fc8f6eb9089093a93254d35ba8e))
+* **deps:** update taiki-e/install-action action to v2.69.9 ([#676](https://github.com/TimSchoenle/actions/issues/676)) ([e1dd668](https://github.com/TimSchoenle/actions/commit/e1dd668317da8a9a9ee2db79a5ad4cbb1889df1c))
+* **deps:** update taiki-e/install-action action to v2.70.0 ([#688](https://github.com/TimSchoenle/actions/issues/688)) ([2c073df](https://github.com/TimSchoenle/actions/commit/2c073df1351d517320344c3720902d4a8e2789d4))
+
 ## [1.0.8](https://github.com/TimSchoenle/actions/compare/workflows-rust-coverage-codecov-meta-v1.0.7...workflows-rust-coverage-codecov-meta-v1.0.8) (2026-03-22)
 
 
