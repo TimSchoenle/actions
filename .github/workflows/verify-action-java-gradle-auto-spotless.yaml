@@ -28,7 +28,9 @@ env:
 
 jobs:
   test-spotless-formats-and-commits:
-    environment: ci-e2e
+    environment:
+      name: ci-e2e
+      deployment: false
     name: 'Test Spotless: ${{ matrix.name }}'
     runs-on: ubuntu-latest
     strategy:

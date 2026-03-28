@@ -13,7 +13,9 @@ permissions: {}
 jobs:
   update-builds:
     name: Build Actions and Commit
-    environment: ci
+    environment:
+      name: ci
+      deployment: false
     runs-on: ubuntu-latest
     outputs:
       changes_detected: ${{ steps.auto-commit.outputs.changes_detected }}
@@ -74,7 +76,9 @@ jobs:
 
   update-readme:
     name: Update README
-    environment: ci
+    environment:
+      name: ci
+      deployment: false
     runs-on: ubuntu-latest
     needs: update-builds
     if: needs.update-builds.outputs.changes_detected == 'false'

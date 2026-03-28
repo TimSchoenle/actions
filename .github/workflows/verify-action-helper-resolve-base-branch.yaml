@@ -27,7 +27,9 @@ env:
 
 jobs:
   verify-base-branch:
-    environment: ci-e2e
+    environment:
+      name: ci-e2e
+      deployment: false
     name: Verify Resolve-base-branch
     runs-on: ubuntu-latest
     permissions:
@@ -70,7 +72,9 @@ jobs:
           echo "✅ Verified base branch name matches"
 
   verify-existing-branch:
-    environment: ci-e2e
+    environment:
+      name: ci-e2e
+      deployment: false
     name: Verify none base branch resolver
     runs-on: ubuntu-latest
     permissions:
@@ -131,7 +135,9 @@ jobs:
           branch_name: ${{ steps.branch.outputs.branch }}
 
   verify-none-existing-branch-with-verify:
-    environment: ci-e2e
+    environment:
+      name: ci-e2e
+      deployment: false
     name: Verify none existing branch resolver
     runs-on: ubuntu-latest
     permissions:
@@ -173,7 +179,9 @@ jobs:
           fi
 
   verify-none-existing-branch-without-verify:
-    environment: ci-e2e
+    environment:
+      name: ci-e2e
+      deployment: false
     name: Verify none existing branch resolver without verify
     runs-on: ubuntu-latest
     permissions:

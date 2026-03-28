@@ -28,7 +28,9 @@ env:
 
 jobs:
   test-auto-approve-positive:
-    environment: ci-e2e
+    environment:
+      name: ci-e2e
+      deployment: false
     name: Test Auto-approve (Allowed User)
     runs-on: ubuntu-latest
     steps:
@@ -141,7 +143,9 @@ jobs:
           branch_name: ${{ steps.branch.outputs.branch }}
 
   test-auto-approve-negative:
-    environment: ci-e2e
+    environment:
+      name: ci-e2e
+      deployment: false
     name: Test Auto-approve (Non-allowed User)
     runs-on: ubuntu-latest
     steps:
@@ -247,7 +251,9 @@ jobs:
           branch_name: ${{ steps.branch.outputs.branch }}
 
   test-branch-pattern-matching:
-    environment: ci-e2e
+    environment:
+      name: ci-e2e
+      deployment: false
     name: Test Branch Pattern Matching
     runs-on: ubuntu-latest
     steps:
@@ -431,7 +437,9 @@ jobs:
           branch_name: ${{ steps.branch_nomatch.outputs.branch }}
 
   test-reject-forks:
-    environment: ci-e2e
+    environment:
+      name: ci-e2e
+      deployment: false
     name: Test Reject Forks Setting
     runs-on: ubuntu-latest
     # Note: This test verifies the reject_forks parameter is processed correctly
