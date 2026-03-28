@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.13](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.12...actions-helper-verify-commit-authors-v1.1.13) (2026-03-28)
+
+
+### Miscellaneous
+
+* **deps:** update dependency graphql to v16.13.2 ([#687](https://github.com/TimSchoenle/actions/issues/687)) ([869516b](https://github.com/TimSchoenle/actions/commit/869516bbec563f4c9660aaebd0323add55664d51))
+* **deps:** update vitest monorepo to v4.1.1 ([#683](https://github.com/TimSchoenle/actions/issues/683)) ([a570a99](https://github.com/TimSchoenle/actions/commit/a570a99310142d81d16797e453f00dc6dd0bac8a))
+
+
+### Dependencies
+
+* **deps:** lock file maintenance ([#665](https://github.com/TimSchoenle/actions/issues/665)) ([b3d5f73](https://github.com/TimSchoenle/actions/commit/b3d5f7329e81ab44c807023b6e6af371a46fb0c9))
+
 ## [1.1.12](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.11...actions-helper-verify-commit-authors-v1.1.12) (2026-03-18)
 
 
