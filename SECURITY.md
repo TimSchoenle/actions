@@ -10,7 +10,7 @@ Any version not listed in the following tables is not supported.
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Bun Setup-cached](./actions/bun/setup-cached) | [actions-bun-setup-cached-v1.1.6](https://github.com/TimSchoenle/actions/releases/tag/actions-bun-setup-cached-v1.1.6) | :white_check_mark: |
+| [Bun Setup-cached](./actions/bun/setup-cached) | [actions-bun-setup-cached-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/actions-bun-setup-cached-v1.1.7) | :white_check_mark: |
 
 ### Common
 
@@ -60,7 +60,7 @@ Any version not listed in the following tables is not supported.
 | [Rust Auto-format](./actions/rust/auto-format) | [actions-rust-auto-format-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v1.1.0) | :white_check_mark: |
 | [Rust Cargo-check](./actions/rust/cargo-check) | [actions-rust-cargo-check-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.1.0) | :white_check_mark: |
 | [Rust Clippy](./actions/rust/clippy) | [actions-rust-clippy-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-clippy-v1.1.0) | :white_check_mark: |
-| [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | [actions-rust-coverage-codecov-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.1) | :white_check_mark: |
+| [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | [actions-rust-coverage-codecov-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.2) | :white_check_mark: |
 | [Rust Test](./actions/rust/test) | [actions-rust-test-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.0) | :white_check_mark: |
 
 ### Test
@@ -82,26 +82,26 @@ Any version not listed in the following tables is not supported.
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Java-gradle Auto-spotless](./workflows/java-gradle/auto-spotless) | [workflows-java-gradle-auto-spotless-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/workflows-java-gradle-auto-spotless-v1.1.0) | :white_check_mark: |
+| [Java-gradle Auto-spotless](./workflows/java-gradle/auto-spotless) | [workflows-java-gradle-auto-spotless-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/workflows-java-gradle-auto-spotless-v1.1.1) | :white_check_mark: |
 
 ### Maintenance
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Auto Format](./workflows/maintenance/auto-bun-prettier) | [workflows-maintenance-auto-bun-prettier-v1.1.10](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-bun-prettier-v1.1.10) | :white_check_mark: |
-| [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | [workflows-maintenance-timed-auto-pr-approve-v1.2.11](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-timed-auto-pr-approve-v1.2.11) | :white_check_mark: |
-| [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | [workflows-maintenance-auto-approve-renovate-v1.4.0](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-approve-renovate-v1.4.0) | :white_check_mark: |
-| [Maintenance Auto-rebase](./workflows/maintenance/auto-rebase) | [workflows-maintenance-auto-rebase-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-rebase-v1.1.3) | :white_check_mark: |
-| [Maintenance Wipe-cache](./workflows/maintenance/wipe-cache) | [workflows-maintenance-wipe-cache-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-wipe-cache-v1.1.3) | :white_check_mark: |
+| [Auto Format](./workflows/maintenance/auto-bun-prettier) | [workflows-maintenance-auto-bun-prettier-v1.1.11](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-bun-prettier-v1.1.11) | :white_check_mark: |
+| [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | [workflows-maintenance-timed-auto-pr-approve-v1.2.12](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-timed-auto-pr-approve-v1.2.12) | :white_check_mark: |
+| [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | [workflows-maintenance-auto-approve-renovate-v1.4.1](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-approve-renovate-v1.4.1) | :white_check_mark: |
+| [Maintenance Auto-rebase](./workflows/maintenance/auto-rebase) | [workflows-maintenance-auto-rebase-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-rebase-v1.1.4) | :white_check_mark: |
+| [Maintenance Wipe-cache](./workflows/maintenance/wipe-cache) | [workflows-maintenance-wipe-cache-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-wipe-cache-v1.1.4) | :white_check_mark: |
 
 ### Rust
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Rust Auto-format](./workflows/rust/auto-format) | [workflows-rust-auto-format-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-auto-format-v1.1.4) | :white_check_mark: |
-| [Rust Cargo Check](./workflows/rust/cargo-check) | [workflows-rust-cargo-check-v1.1.6](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-cargo-check-v1.1.6) | :white_check_mark: |
-| [Rust Clippy](./workflows/rust/clippy) | [workflows-rust-clippy-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-clippy-v1.1.4) | :white_check_mark: |
-| [Rust Coverage (Codecov)](./workflows/rust/coverage-codecov) | [workflows-rust-coverage-codecov-v1.0.7](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-coverage-codecov-v1.0.7) | :white_check_mark: |
+| [Rust Auto-format](./workflows/rust/auto-format) | [workflows-rust-auto-format-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-auto-format-v1.1.5) | :white_check_mark: |
+| [Rust Cargo Check](./workflows/rust/cargo-check) | [workflows-rust-cargo-check-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-cargo-check-v1.1.7) | :white_check_mark: |
+| [Rust Clippy](./workflows/rust/clippy) | [workflows-rust-clippy-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-clippy-v1.1.5) | :white_check_mark: |
+| [Rust Coverage (Codecov)](./workflows/rust/coverage-codecov) | [workflows-rust-coverage-codecov-v1.0.8](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-coverage-codecov-v1.0.8) | :white_check_mark: |
 | [Rust Test](./workflows/rust/test) | [workflows-rust-test-v1.0.1](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-test-v1.0.1) | :white_check_mark: |
 
 

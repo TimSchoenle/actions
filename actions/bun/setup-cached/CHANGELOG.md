@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.7](https://github.com/TimSchoenle/actions/compare/actions-bun-setup-cached-v1.1.6...actions-bun-setup-cached-v1.1.7) (2026-03-25)
+
+
+### Miscellaneous
+
+* **deps:** update actions/cache digest to 6682284 ([#645](https://github.com/TimSchoenle/actions/issues/645)) ([818786d](https://github.com/TimSchoenle/actions/commit/818786d6e3c4e70d0adb011321739b69f6a435a0))
+
 ## [1.1.6](https://github.com/TimSchoenle/actions/compare/actions-bun-setup-cached-v1.1.5...actions-bun-setup-cached-v1.1.6) (2026-03-18)
 
 
