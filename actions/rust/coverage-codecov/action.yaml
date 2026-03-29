@@ -54,6 +54,6 @@ runs:
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6
       with:
-        token: ${{ secrets.codecov_token }}
+        token: ${{ inputs.codecov_token }}
         files: lcov.info
         fail_ci_if_error: true
