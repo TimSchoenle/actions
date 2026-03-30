@@ -84,12 +84,6 @@ Here is a list of all currently maintained actions in this repository:
 
 
 ## 🔄 Reusable Workflows
-### Common
-
-| Workflow | Description | Version | Usage |
-| --- | --- | --- | --- |
-| [Common Test Workflow21345](./workflows/common/test2) | Reusable workflow for common-test2 | [workflows-common-test2-v2.11.1](https://github.com/TimSchoenle/actions/releases/tag/workflows-common-test2-v2.11.1) | `uses: TimSchoenle/actions/.github/workflows/common-test2.yaml@workflows-common-test2-v2.11.1` |
-
 ### Maintenance
 
 | Workflow | Description | Version | Usage |
