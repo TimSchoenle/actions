@@ -38,27 +38,15 @@ jobs:
       - name: Should never run
         run: echo "This should be skipped"
 
-  failing-check:
-    name: Verify fixture failure
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    permissions:
-      contents: read
-    steps:
-      - name: Fixture fail step
-        run: |
-          echo "Intentional fixture failure"
-          exit 1
-
   verify:
     name: Verify Ensure-actions-are-executed
     if: ${{ always() }}
     needs:
       - successful-check
       - skipped-check
-      - failing-check
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
       checks: read
     steps:
@@ -78,10 +66,11 @@ jobs:
         uses: ./actions/maintenance/ensure-actions-are-executed
         with:
           token: ${{ github.token }}
+          ref: ${{ github.sha }}
           checks: |
             Verify fixture success
-            Verify fixture failure
             /^Verify fixture skipped$/
+            /^Verify Ensure-actions-are-executed$/
           error_on_failure: 'true'
 
       - name: Assert strict mode failed
@@ -110,10 +99,11 @@ jobs:
         uses: ./actions/maintenance/ensure-actions-are-executed
         with:
           token: ${{ github.token }}
+          ref: ${{ github.sha }}
           checks: |
             Verify fixture success
-            Verify fixture failure
             /^Verify fixture skipped$/
+            /^Verify Ensure-actions-are-executed$/
           error_on_failure: 'false'
 
       - name: Assert lenient mode reported failures without failing

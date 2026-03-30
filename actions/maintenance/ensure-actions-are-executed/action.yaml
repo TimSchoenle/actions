@@ -19,7 +19,7 @@ inputs:
   ref:
     description: 'Git reference (usually SHA) to inspect.'
     required: false
-    default: ${{ github.sha }}
+    default: ${{ github.event.pull_request.head.sha || github.sha }}
   error_on_failure:
     description: 'Whether to fail this action if matched checks failed verification.'
     required: false
@@ -163,6 +163,7 @@ runs:
         all_check_runs='[]'
         page=1
         total_fetched=0
+        data_source="commit-check-runs"
 
         echo "::group::Fetch Check Runs"
         while true; do
@@ -183,8 +184,51 @@ runs:
         done
         echo "::endgroup::"
 
+        if [[ "$total_fetched" -eq 0 ]]; then
+          echo "::notice::No commit check runs found for $INPUT_REPOSITORY at ref $INPUT_REF."
+          echo "::notice::Trying workflow jobs fallback for run_id=$GITHUB_RUN_ID."
+
+          page=1
+          total_jobs_fetched=0
+          all_workflow_jobs='[]'
+
+          echo "::group::Fetch Workflow Jobs Fallback"
+          while true; do
+            if ! jobs_response="$(gh api "/repos/$INPUT_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs?per_page=100&page=$page" 2>/dev/null)"; then
+              echo "::notice::Workflow jobs fallback is unavailable (likely missing actions:read permission)."
+              break
+            fi
+
+            page_jobs="$(printf '%s' "$jobs_response" | jq '.jobs // []')"
+            count="$(printf '%s' "$page_jobs" | jq 'length')"
+            total_jobs_fetched=$((total_jobs_fetched + count))
+
+            echo "Fetched fallback page $page with $count job(s). Total so far: $total_jobs_fetched"
+
+            all_workflow_jobs="$(jq -cn --argjson a "$all_workflow_jobs" --argjson b "$page_jobs" '$a + $b')"
+
+            if [[ "$count" -lt 100 ]]; then
+              break
+            fi
+
+            page=$((page + 1))
+          done
+          echo "::endgroup::"
+
+          if [[ "$total_jobs_fetched" -gt 0 ]]; then
+            all_check_runs="$(
+              printf '%s' "$all_workflow_jobs" \
+                | jq 'map({id: .id, name: .name, status: .status, conclusion: .conclusion, details_url: .html_url})'
+            )"
+            total_fetched="$total_jobs_fetched"
+            data_source="workflow-run-jobs"
+            echo "::notice::Using workflow jobs fallback data source with $total_fetched record(s)."
+          fi
+        fi
+
         printf '%s' "$all_check_runs" > "$RAW_CHECK_RUNS_FILE"
         echo "raw_runs_count=$total_fetched" >> "$GITHUB_OUTPUT"
+        echo "data_source=$data_source" >> "$GITHUB_OUTPUT"
 
     - name: Build Latest Check Snapshot
       id: snapshot
@@ -193,6 +237,7 @@ runs:
         RAW_CHECK_RUNS_FILE: ${{ steps.workspace.outputs.raw_check_runs_file }}
         LATEST_CHECK_RUNS_FILE: ${{ steps.workspace.outputs.latest_check_runs_file }}
         AVAILABLE_NAMES_FILE: ${{ steps.workspace.outputs.available_names_file }}
+        FETCH_DATA_SOURCE: ${{ steps.fetch.outputs.data_source }}
       run: |
         set -euo pipefail
 
@@ -202,11 +247,12 @@ runs:
         available_count="$(wc -l < "$AVAILABLE_NAMES_FILE" | tr -d ' ')"
 
         echo "::group::Latest Check Snapshot"
+        echo "Data source: ${FETCH_DATA_SOURCE:-unknown}"
         echo "Unique check names: $available_count"
         if [[ "$available_count" -gt 0 ]]; then
           nl -ba "$AVAILABLE_NAMES_FILE"
         else
-          echo "No check runs found for this commit."
+          echo "No checks found in the selected data source."
         fi
         echo "::endgroup::"
 
@@ -229,7 +275,7 @@ runs:
 
         mapfile -t available_names < "$AVAILABLE_NAMES_FILE"
         if [[ "${#available_names[@]}" -eq 0 ]]; then
-          echo "::notice::No check runs found for $INPUT_REPOSITORY at ref $INPUT_REF."
+          echo "::notice::No checks were available for matching in $INPUT_REPOSITORY at ref $INPUT_REF."
           echo "matched_checks_count=0" >> "$GITHUB_OUTPUT"
           exit 0
         fi
