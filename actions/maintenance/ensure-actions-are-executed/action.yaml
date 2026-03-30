@@ -20,24 +20,69 @@ inputs:
     description: 'Git reference (usually SHA) to inspect.'
     required: false
     default: ${{ github.sha }}
+  error_on_failure:
+    description: 'Whether to fail this action if matched checks failed verification.'
+    required: false
+    default: 'true'
 
 outputs:
   matched_checks_count:
     description: 'How many unique checks matched at least one matcher.'
-    value: ${{ steps.verify.outputs.matched_checks_count }}
+    value: ${{ steps.finalize.outputs.matched_checks_count }}
   failed_checks_count:
     description: 'How many matched checks failed verification.'
-    value: ${{ steps.verify.outputs.failed_checks_count }}
+    value: ${{ steps.finalize.outputs.failed_checks_count }}
 
 runs:
   using: 'composite'
   steps:
-    - name: Prepare Inputs
-      id: prepare
+    - name: Initialize Workspace
+      id: workspace
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        temp_dir="${RUNNER_TEMP}/ensure-actions-are-executed-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+        mkdir -p "$temp_dir"
+
+        matcher_file="${temp_dir}/matchers.txt"
+        raw_check_runs_file="${temp_dir}/raw-check-runs.json"
+        latest_check_runs_file="${temp_dir}/latest-check-runs.json"
+        available_names_file="${temp_dir}/available-check-names.txt"
+        selected_checks_file="${temp_dir}/selected-checks.txt"
+        failed_checks_file="${temp_dir}/failed-checks.tsv"
+
+        : > "$matcher_file"
+        : > "$available_names_file"
+        : > "$selected_checks_file"
+        : > "$failed_checks_file"
+
+        echo "::group::Workspace"
+        echo "Temp directory: $temp_dir"
+        echo "Matcher file: $matcher_file"
+        echo "Raw check runs file: $raw_check_runs_file"
+        echo "Latest check runs file: $latest_check_runs_file"
+        echo "Available names file: $available_names_file"
+        echo "Selected checks file: $selected_checks_file"
+        echo "Failed checks file: $failed_checks_file"
+        echo "::endgroup::"
+
+        echo "temp_dir=$temp_dir" >> "$GITHUB_OUTPUT"
+        echo "matcher_file=$matcher_file" >> "$GITHUB_OUTPUT"
+        echo "raw_check_runs_file=$raw_check_runs_file" >> "$GITHUB_OUTPUT"
+        echo "latest_check_runs_file=$latest_check_runs_file" >> "$GITHUB_OUTPUT"
+        echo "available_names_file=$available_names_file" >> "$GITHUB_OUTPUT"
+        echo "selected_checks_file=$selected_checks_file" >> "$GITHUB_OUTPUT"
+        echo "failed_checks_file=$failed_checks_file" >> "$GITHUB_OUTPUT"
+
+    - name: Validate Inputs and Tooling
+      id: validate
       shell: bash
       env:
-        INPUT_CHECKS: ${{ inputs.checks }}
         INPUT_MATCH_MODE: ${{ inputs.match_mode }}
+        INPUT_ERROR_ON_FAILURE: ${{ inputs.error_on_failure }}
+        INPUT_REPOSITORY: ${{ inputs.repository }}
+        INPUT_REF: ${{ inputs.ref }}
       run: |
         set -euo pipefail
 
@@ -51,31 +96,58 @@ runs:
           exit 1
         fi
 
-        if [[ "$INPUT_MATCH_MODE" != "auto" && "$INPUT_MATCH_MODE" != "exact" && "$INPUT_MATCH_MODE" != "regex" ]]; then
+        match_mode="$(printf '%s' "$INPUT_MATCH_MODE" | tr '[:upper:]' '[:lower:]')"
+        error_on_failure="$(printf '%s' "$INPUT_ERROR_ON_FAILURE" | tr '[:upper:]' '[:lower:]')"
+
+        if [[ "$match_mode" != "auto" && "$match_mode" != "exact" && "$match_mode" != "regex" ]]; then
           echo "::error::Invalid match_mode '$INPUT_MATCH_MODE'. Allowed values: auto, exact, regex."
           exit 1
         fi
 
-        # Normalize matcher list by splitting newlines and commas, trimming whitespace, and removing empties.
-        normalized_check_lines="$(
+        if [[ "$error_on_failure" != "true" && "$error_on_failure" != "false" ]]; then
+          echo "::error::Invalid error_on_failure '$INPUT_ERROR_ON_FAILURE'. Allowed values: true, false."
+          exit 1
+        fi
+
+        echo "::group::Configuration"
+        echo "Repository: $INPUT_REPOSITORY"
+        echo "Ref: $INPUT_REF"
+        echo "Match mode: $match_mode"
+        echo "Error on failure: $error_on_failure"
+        echo "::endgroup::"
+
+        echo "match_mode=$match_mode" >> "$GITHUB_OUTPUT"
+        echo "error_on_failure=$error_on_failure" >> "$GITHUB_OUTPUT"
+
+    - name: Normalize Matchers
+      id: normalize
+      shell: bash
+      env:
+        INPUT_CHECKS: ${{ inputs.checks }}
+        MATCHER_FILE: ${{ steps.workspace.outputs.matcher_file }}
+      run: |
+        set -euo pipefail
+
+        normalized_check_lines="$({
           printf '%s\n' "$INPUT_CHECKS" \
             | tr ',' '\n' \
             | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' \
             | sed '/^$/d'
-        )"
+        })"
 
         if [[ -z "$normalized_check_lines" ]]; then
           echo "::error::No checks configured. Provide at least one matcher in 'checks'."
           exit 1
         fi
 
-        temp_dir="${RUNNER_TEMP}/ensure-actions-are-executed"
-        mkdir -p "$temp_dir"
-        matcher_file="${temp_dir}/matchers.txt"
-        printf '%s\n' "$normalized_check_lines" > "$matcher_file"
+        printf '%s\n' "$normalized_check_lines" > "$MATCHER_FILE"
 
-        echo "temp_dir=$temp_dir" >> "$GITHUB_OUTPUT"
-        echo "matcher_file=$matcher_file" >> "$GITHUB_OUTPUT"
+        matcher_count="$(wc -l < "$MATCHER_FILE" | tr -d ' ')"
+        echo "::group::Normalized Matchers ($matcher_count)"
+        nl -ba "$MATCHER_FILE"
+        echo "::endgroup::"
+
+        echo "matcher_count=$matcher_count" >> "$GITHUB_OUTPUT"
 
     - name: Fetch Check Runs
       id: fetch
@@ -84,60 +156,80 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
         INPUT_REPOSITORY: ${{ inputs.repository }}
         INPUT_REF: ${{ inputs.ref }}
-        TEMP_DIR: ${{ steps.prepare.outputs.temp_dir }}
+        RAW_CHECK_RUNS_FILE: ${{ steps.workspace.outputs.raw_check_runs_file }}
       run: |
         set -euo pipefail
 
         all_check_runs='[]'
         page=1
+        total_fetched=0
+
+        echo "::group::Fetch Check Runs"
         while true; do
           response="$(gh api "/repos/$INPUT_REPOSITORY/commits/$INPUT_REF/check-runs?per_page=100&page=$page")"
           page_check_runs="$(printf '%s' "$response" | jq '.check_runs')"
           count="$(printf '%s' "$page_check_runs" | jq 'length')"
+          total_fetched=$((total_fetched + count))
+
+          echo "Fetched page $page with $count check run(s). Total so far: $total_fetched"
 
           all_check_runs="$(jq -cn --argjson a "$all_check_runs" --argjson b "$page_check_runs" '$a + $b')"
 
           if [[ "$count" -lt 100 ]]; then
             break
           fi
+
           page=$((page + 1))
         done
+        echo "::endgroup::"
 
-        latest_check_runs_file="${TEMP_DIR}/latest-check-runs.json"
-        available_names_file="${TEMP_DIR}/available-check-names.txt"
+        printf '%s' "$all_check_runs" > "$RAW_CHECK_RUNS_FILE"
+        echo "raw_runs_count=$total_fetched" >> "$GITHUB_OUTPUT"
 
-        latest_check_runs="$(
-          printf '%s' "$all_check_runs" \
-            | jq 'sort_by(.id) | group_by(.name) | map(.[-1])'
-        )"
-        printf '%s' "$latest_check_runs" > "$latest_check_runs_file"
-        printf '%s' "$latest_check_runs" | jq -r '.[].name' > "$available_names_file"
+    - name: Build Latest Check Snapshot
+      id: snapshot
+      shell: bash
+      env:
+        RAW_CHECK_RUNS_FILE: ${{ steps.workspace.outputs.raw_check_runs_file }}
+        LATEST_CHECK_RUNS_FILE: ${{ steps.workspace.outputs.latest_check_runs_file }}
+        AVAILABLE_NAMES_FILE: ${{ steps.workspace.outputs.available_names_file }}
+      run: |
+        set -euo pipefail
 
-        available_count="$(wc -l < "$available_names_file" | tr -d ' ')"
-        echo "latest_check_runs_file=$latest_check_runs_file" >> "$GITHUB_OUTPUT"
-        echo "available_names_file=$available_names_file" >> "$GITHUB_OUTPUT"
+        jq 'sort_by(.id) | group_by(.name) | map(.[-1])' "$RAW_CHECK_RUNS_FILE" > "$LATEST_CHECK_RUNS_FILE"
+        jq -r '.[].name' "$LATEST_CHECK_RUNS_FILE" > "$AVAILABLE_NAMES_FILE"
+
+        available_count="$(wc -l < "$AVAILABLE_NAMES_FILE" | tr -d ' ')"
+
+        echo "::group::Latest Check Snapshot"
+        echo "Unique check names: $available_count"
+        if [[ "$available_count" -gt 0 ]]; then
+          nl -ba "$AVAILABLE_NAMES_FILE"
+        else
+          echo "No check runs found for this commit."
+        fi
+        echo "::endgroup::"
+
         echo "available_count=$available_count" >> "$GITHUB_OUTPUT"
 
     - name: Match Check Patterns
       id: match
       shell: bash
       env:
-        INPUT_MATCH_MODE: ${{ inputs.match_mode }}
+        INPUT_MATCH_MODE: ${{ steps.validate.outputs.match_mode }}
         INPUT_REPOSITORY: ${{ inputs.repository }}
         INPUT_REF: ${{ inputs.ref }}
-        MATCHER_FILE: ${{ steps.prepare.outputs.matcher_file }}
-        AVAILABLE_NAMES_FILE: ${{ steps.fetch.outputs.available_names_file }}
-        TEMP_DIR: ${{ steps.prepare.outputs.temp_dir }}
+        MATCHER_FILE: ${{ steps.workspace.outputs.matcher_file }}
+        AVAILABLE_NAMES_FILE: ${{ steps.workspace.outputs.available_names_file }}
+        SELECTED_CHECKS_FILE: ${{ steps.workspace.outputs.selected_checks_file }}
       run: |
         set -euo pipefail
 
-        selected_checks_file="${TEMP_DIR}/selected-checks.txt"
-        : > "$selected_checks_file"
+        : > "$SELECTED_CHECKS_FILE"
 
         mapfile -t available_names < "$AVAILABLE_NAMES_FILE"
         if [[ "${#available_names[@]}" -eq 0 ]]; then
           echo "::notice::No check runs found for $INPUT_REPOSITORY at ref $INPUT_REF."
-          echo "selected_checks_file=$selected_checks_file" >> "$GITHUB_OUTPUT"
           echo "matched_checks_count=0" >> "$GITHUB_OUTPUT"
           exit 0
         fi
@@ -145,9 +237,11 @@ runs:
         declare -A selected_checks=()
         declare -A selected_by_pattern=()
 
+        echo "::group::Matcher Evaluation"
         while IFS= read -r raw_matcher || [[ -n "$raw_matcher" ]]; do
           matcher="$raw_matcher"
           mode="$INPUT_MATCH_MODE"
+
           if [[ "$mode" == "auto" ]]; then
             if [[ "$matcher" =~ ^/.+/$ ]]; then
               mode="regex"
@@ -167,6 +261,7 @@ runs:
           matched_in_pattern=0
           for check_name in "${available_names[@]}"; do
             is_match=0
+
             if [[ "$mode" == "exact" ]]; then
               if [[ "$check_name" == "$matcher" ]]; then
                 is_match=1
@@ -184,8 +279,11 @@ runs:
           done
 
           selected_by_pattern["$raw_matcher"]="$matched_in_pattern"
+          echo "Matcher '$raw_matcher' mode=$mode matched=$matched_in_pattern"
         done < "$MATCHER_FILE"
+        echo "::endgroup::"
 
+        echo "::group::Matcher Summary"
         for matcher in "${!selected_by_pattern[@]}"; do
           if [[ "${selected_by_pattern[$matcher]}" -eq 0 ]]; then
             echo "::notice::Matcher '$matcher' did not match any check run. This is treated as not started."
@@ -193,67 +291,129 @@ runs:
             echo "::notice::Matcher '$matcher' matched ${selected_by_pattern[$matcher]} check run(s)."
           fi
         done
+        echo "::endgroup::"
 
         matched_checks_count="${#selected_checks[@]}"
         if [[ "$matched_checks_count" -gt 0 ]]; then
-          printf '%s\n' "${!selected_checks[@]}" | sort > "$selected_checks_file"
+          printf '%s\n' "${!selected_checks[@]}" | sort > "$SELECTED_CHECKS_FILE"
+          echo "::group::Selected Checks ($matched_checks_count)"
+          nl -ba "$SELECTED_CHECKS_FILE"
+          echo "::endgroup::"
+        else
+          echo "::notice::No checks were selected by the provided matchers."
         fi
 
-        echo "selected_checks_file=$selected_checks_file" >> "$GITHUB_OUTPUT"
         echo "matched_checks_count=$matched_checks_count" >> "$GITHUB_OUTPUT"
 
     - name: Verify Matched Checks
       id: verify
       shell: bash
       env:
-        LATEST_CHECK_RUNS_FILE: ${{ steps.fetch.outputs.latest_check_runs_file }}
-        SELECTED_CHECKS_FILE: ${{ steps.match.outputs.selected_checks_file }}
+        LATEST_CHECK_RUNS_FILE: ${{ steps.workspace.outputs.latest_check_runs_file }}
+        SELECTED_CHECKS_FILE: ${{ steps.workspace.outputs.selected_checks_file }}
+        FAILED_CHECKS_FILE: ${{ steps.workspace.outputs.failed_checks_file }}
         MATCHED_CHECKS_COUNT: ${{ steps.match.outputs.matched_checks_count }}
       run: |
         set -euo pipefail
 
         failed_checks_count=0
+        skipped_checks_count=0
+        verified_success_checks_count=0
+        : > "$FAILED_CHECKS_FILE"
+
         if [[ "${MATCHED_CHECKS_COUNT:-0}" -eq 0 ]]; then
+          echo "::notice::No matched checks to verify."
           echo "matched_checks_count=0" >> "$GITHUB_OUTPUT"
           echo "failed_checks_count=0" >> "$GITHUB_OUTPUT"
+          echo "skipped_checks_count=0" >> "$GITHUB_OUTPUT"
+          echo "verified_success_checks_count=0" >> "$GITHUB_OUTPUT"
           exit 0
         fi
 
+        echo "::group::Verify Matched Checks"
         while IFS= read -r check_name || [[ -n "$check_name" ]]; do
-          status="$(
-            jq -r --arg name "$check_name" '.[] | select(.name == $name) | .status' "$LATEST_CHECK_RUNS_FILE"
-          )"
-          conclusion="$(
-            jq -r --arg name "$check_name" '.[] | select(.name == $name) | .conclusion // "null"' "$LATEST_CHECK_RUNS_FILE"
-          )"
-          details_url="$(
-            jq -r --arg name "$check_name" '.[] | select(.name == $name) | .details_url' "$LATEST_CHECK_RUNS_FILE"
-          )"
+          status="$(jq -r --arg name "$check_name" '.[] | select(.name == $name) | .status' "$LATEST_CHECK_RUNS_FILE")"
+          conclusion="$(jq -r --arg name "$check_name" '.[] | select(.name == $name) | .conclusion // "null"' "$LATEST_CHECK_RUNS_FILE")"
+          details_url="$(jq -r --arg name "$check_name" '.[] | select(.name == $name) | .details_url' "$LATEST_CHECK_RUNS_FILE")"
 
-          # Skipped checks are considered "not started" for conditional workflows/jobs.
+          echo "Check '$check_name' => status=$status conclusion=$conclusion"
+
           if [[ "$status" == "completed" && "$conclusion" == "skipped" ]]; then
             echo "::notice::Check '$check_name' was skipped and is ignored."
+            skipped_checks_count=$((skipped_checks_count + 1))
             continue
           fi
 
           if [[ "$status" != "completed" ]]; then
             echo "::error::Check '$check_name' started but is not completed (status=$status). $details_url"
+            printf '%s\t%s\t%s\n' "$check_name" "$status" "$conclusion" >> "$FAILED_CHECKS_FILE"
             failed_checks_count=$((failed_checks_count + 1))
             continue
           fi
 
           if [[ "$conclusion" != "success" ]]; then
             echo "::error::Check '$check_name' started but did not succeed (conclusion=$conclusion). $details_url"
+            printf '%s\t%s\t%s\n' "$check_name" "$status" "$conclusion" >> "$FAILED_CHECKS_FILE"
             failed_checks_count=$((failed_checks_count + 1))
             continue
           fi
 
           echo "::notice::Check '$check_name' completed successfully."
+          verified_success_checks_count=$((verified_success_checks_count + 1))
         done < "$SELECTED_CHECKS_FILE"
+        echo "::endgroup::"
+
+        echo "::group::Verification Counters"
+        echo "Matched checks: ${MATCHED_CHECKS_COUNT:-0}"
+        echo "Successful checks: $verified_success_checks_count"
+        echo "Skipped checks: $skipped_checks_count"
+        echo "Failed checks: $failed_checks_count"
+        echo "::endgroup::"
+
+        if [[ "$failed_checks_count" -gt 0 ]]; then
+          echo "::group::Failed Checks"
+          nl -ba "$FAILED_CHECKS_FILE"
+          echo "::endgroup::"
+        fi
 
         echo "matched_checks_count=${MATCHED_CHECKS_COUNT:-0}" >> "$GITHUB_OUTPUT"
         echo "failed_checks_count=$failed_checks_count" >> "$GITHUB_OUTPUT"
+        echo "skipped_checks_count=$skipped_checks_count" >> "$GITHUB_OUTPUT"
+        echo "verified_success_checks_count=$verified_success_checks_count" >> "$GITHUB_OUTPUT"
 
-        if [[ "$failed_checks_count" -gt 0 ]]; then
+    - name: Finalize
+      id: finalize
+      shell: bash
+      env:
+        ERROR_ON_FAILURE: ${{ steps.validate.outputs.error_on_failure }}
+        MATCHED_CHECKS_COUNT: ${{ steps.verify.outputs.matched_checks_count }}
+        FAILED_CHECKS_COUNT: ${{ steps.verify.outputs.failed_checks_count }}
+        SKIPPED_CHECKS_COUNT: ${{ steps.verify.outputs.skipped_checks_count }}
+        VERIFIED_SUCCESS_CHECKS_COUNT: ${{ steps.verify.outputs.verified_success_checks_count }}
+      run: |
+        set -euo pipefail
+
+        matched_checks_count="${MATCHED_CHECKS_COUNT:-0}"
+        failed_checks_count="${FAILED_CHECKS_COUNT:-0}"
+        skipped_checks_count="${SKIPPED_CHECKS_COUNT:-0}"
+        verified_success_checks_count="${VERIFIED_SUCCESS_CHECKS_COUNT:-0}"
+
+        echo "::group::Final Summary"
+        echo "Matched checks: $matched_checks_count"
+        echo "Successful checks: $verified_success_checks_count"
+        echo "Skipped checks: $skipped_checks_count"
+        echo "Failed checks: $failed_checks_count"
+        echo "error_on_failure: $ERROR_ON_FAILURE"
+        echo "::endgroup::"
+
+        echo "matched_checks_count=$matched_checks_count" >> "$GITHUB_OUTPUT"
+        echo "failed_checks_count=$failed_checks_count" >> "$GITHUB_OUTPUT"
+
+        if [[ "$failed_checks_count" -gt 0 && "$ERROR_ON_FAILURE" == "true" ]]; then
+          echo "::error::Verification failed because $failed_checks_count check(s) did not pass and error_on_failure=true."
           exit 1
+        fi
+
+        if [[ "$failed_checks_count" -gt 0 && "$ERROR_ON_FAILURE" == "false" ]]; then
+          echo "::warning::Found $failed_checks_count failing check(s), but continuing because error_on_failure=false."
         fi
