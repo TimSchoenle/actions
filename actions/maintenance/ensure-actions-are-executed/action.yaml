@@ -298,9 +298,14 @@ runs:
           fi
 
           if [[ "$mode" == "regex" ]]; then
-            if ! [[ "" =~ $matcher ]] 2>/dev/null; then
-              echo "::error::Invalid regex matcher '$raw_matcher'."
-              exit 1
+            if [[ "" =~ $matcher ]] 2>/dev/null; then
+              :
+            else
+              regex_status=$?
+              if [[ "$regex_status" -eq 2 ]]; then
+                echo "::error::Invalid regex matcher '$raw_matcher'."
+                exit 1
+              fi
             fi
           fi
 
