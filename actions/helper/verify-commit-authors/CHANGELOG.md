@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.1.13](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.12...actions-helper-verify-commit-authors-v1.1.13) (2026-03-30)
+
+
+### Miscellaneous
+
+* **deps:** update dependency graphql to v16.13.2 ([#687](https://github.com/TimSchoenle/actions/issues/687)) ([869516b](https://github.com/TimSchoenle/actions/commit/869516bbec563f4c9660aaebd0323add55664d51))
+* **deps:** update dependency typescript to v6 ([#685](https://github.com/TimSchoenle/actions/issues/685)) ([a7ada33](https://github.com/TimSchoenle/actions/commit/a7ada3376f1458b6021e08105997018f0a3707e0))
+* **deps:** update vitest monorepo to v4.1.1 ([#683](https://github.com/TimSchoenle/actions/issues/683)) ([a570a99](https://github.com/TimSchoenle/actions/commit/a570a99310142d81d16797e453f00dc6dd0bac8a))
+* **deps:** update vitest monorepo to v4.1.2 ([#692](https://github.com/TimSchoenle/actions/issues/692)) ([9144942](https://github.com/TimSchoenle/actions/commit/9144942dd60f70725e8c9d2fbfd5d60205715b46))
+
+
+### Dependencies
+
+* **deps:** lock file maintenance ([#665](https://github.com/TimSchoenle/actions/issues/665)) ([b3d5f73](https://github.com/TimSchoenle/actions/commit/b3d5f7329e81ab44c807023b6e6af371a46fb0c9))
+
 ## [1.1.12](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.11...actions-helper-verify-commit-authors-v1.1.12) (2026-03-18)
 
 
