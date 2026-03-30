@@ -17,11 +17,6 @@
       "component": "actions-common-modify-yaml",
       "include-component-in-tag": true
     },
-    "workflows/common/test2": {
-      "release-type": "simple",
-      "component": "workflows-common-test2-meta",
-      "skip-github-release": true
-    },
     "actions/common/setup-app-git-identity": {
       "release-type": "simple",
       "component": "actions-common-setup-app-git-identity",

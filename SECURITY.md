@@ -72,12 +72,6 @@ Any version not listed in the following tables is not supported.
 
 ### Workflows
 
-### Common
-
-| Component | Version | Supported |
-| --- | --- | --- |
-| [Common Test Workflow21345](./workflows/common/test2) | [workflows-common-test2-v2.11.1](https://github.com/TimSchoenle/actions/releases/tag/workflows-common-test2-v2.11.1) | :white_check_mark: |
-
 ### Maintenance
 
 | Component | Version | Supported |
