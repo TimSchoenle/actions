@@ -1,0 +1,68 @@
+name: Verify Maintenance Ensure-actions-are-executed
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'actions/maintenance/ensure-actions-are-executed/**'
+      - '.github/workflows/verify-action-maintenance-ensure-actions-are-executed.yaml'
+  pull_request:
+    paths:
+      - 'actions/maintenance/ensure-actions-are-executed/**'
+      - '.github/workflows/verify-action-maintenance-ensure-actions-are-executed.yaml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  successful-check:
+    name: Verify fixture success
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Fixture step
+        run: echo "Success fixture"
+
+  skipped-check:
+    name: Verify fixture skipped
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Should never run
+        run: echo "This should be skipped"
+
+  verify:
+    name: Verify Ensure-actions-are-executed
+    if: ${{ always() }}
+    needs:
+      - successful-check
+      - skipped-check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+      checks: read # to inspect check run states
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Test ensure-actions-are-executed
+        uses: ./actions/maintenance/ensure-actions-are-executed
+        with:
+          token: ${{ github.token }}
+          checks: |
+            Verify fixture success
+            /^Verify fixture skipped$/

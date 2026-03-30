@@ -141,6 +141,11 @@
       "release-type": "simple",
       "component": "actions-rust-test",
       "include-component-in-tag": true
+    },
+    "actions/maintenance/ensure-actions-are-executed": {
+      "release-type": "simple",
+      "component": "actions-maintenance-ensure-actions-are-executed",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
