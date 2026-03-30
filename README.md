@@ -106,16 +106,6 @@ Here is a list of all currently maintained actions in this repository:
 | [Maintenance Auto-rebase](./workflows/maintenance/auto-rebase) | Automatically rebases open PRs with a given label. | [workflows-maintenance-auto-rebase-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-rebase-v1.1.4) | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-rebase.yaml@workflows-maintenance-auto-rebase-v1.1.4` |
 | [Maintenance Wipe-cache](./workflows/maintenance/wipe-cache) | Workflow to wipe all cache entries for the given branch. | [workflows-maintenance-wipe-cache-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-wipe-cache-v1.1.4) | `uses: TimSchoenle/actions/.github/workflows/maintenance-wipe-cache.yaml@workflows-maintenance-wipe-cache-v1.1.4` |
 
-### Rust
-
-| Workflow | Description | Version | Usage |
-| --- | --- | --- | --- |
-| [Rust Auto-format](./workflows/rust/auto-format) | Reusable workflow that runs cargo fmt and commits changes. | [workflows-rust-auto-format-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-auto-format-v1.1.5) | `uses: TimSchoenle/actions/.github/workflows/rust-auto-format.yaml@workflows-rust-auto-format-v1.1.5` |
-| [Rust Cargo Check](./workflows/rust/cargo-check) | Reusable workflow that runs cargo check to verify Rust code compiles without errors. | [workflows-rust-cargo-check-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-cargo-check-v1.1.7) | `uses: TimSchoenle/actions/.github/workflows/rust-cargo-check.yaml@workflows-rust-cargo-check-v1.1.7` |
-| [Rust Clippy](./workflows/rust/clippy) | Reusable workflow that runs clippy to catch common mistakes and improve your Rust code. | [workflows-rust-clippy-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-clippy-v1.1.5) | `uses: TimSchoenle/actions/.github/workflows/rust-clippy.yaml@workflows-rust-clippy-v1.1.5` |
-| [Rust Coverage (Codecov)](./workflows/rust/coverage-codecov) | Reusable workflow that runs cargo llvm-cov to generate code coverage and uploads to Codecov. | [workflows-rust-coverage-codecov-v1.0.8](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-coverage-codecov-v1.0.8) | `uses: TimSchoenle/actions/.github/workflows/rust-coverage-codecov.yaml@workflows-rust-coverage-codecov-v1.0.8` |
-| [Rust Test](./workflows/rust/test) | Reusable workflow that runs cargo nextest to verify Rust code passes tests. | [workflows-rust-test-v1.0.1](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-test-v1.0.1) | `uses: TimSchoenle/actions/.github/workflows/rust-test.yaml@workflows-rust-test-v1.0.1` |
-
 
 
 ## ⚙️ Shared Configurations
@@ -126,9 +116,9 @@ To use, you need to download the rules and Import the ruleset.
 
 | Config | Description |
 | --- | --- |
-| [Renovate Branches: Trusted Bots & Admins Only](./configs/github-rulesets/branch-renovate_only-allow-trusted-bots-and-admins.json) | Restricts access to Renovate branches, allowing only trusted bots (Renovate, Automatic Release Manager) and admins to manage them, while enforcing code quality and signature requirements. |
 | [Default Branch: Default Protection Rules](./configs/github-rulesets/branch-default_default-rules.json) | Enforces standard protection rules on the default branch: requires PRs with 1 approval (squash only), signed commits, CodeQL scanning, and passing status checks. |
 | [Release Please Branches: Trusted Bots Only](./configs/github-rulesets/branch-release-please_only-allow-trusted-bots.json) | Restricts access to release-please branches, allowing only trusted bots to create, update, or delete them, while enforcing code quality and signature requirements. |
+| [Renovate Branches: Trusted Bots & Admins Only](./configs/github-rulesets/branch-renovate_only-allow-trusted-bots-and-admins.json) | Restricts access to Renovate branches, allowing only trusted bots (Renovate, Automatic Release Manager) and admins to manage them, while enforcing code quality and signature requirements. |
 | [Release Tags: Only Allow Automatic Release Manager Bot](./configs/github-rulesets/release-tags_only-allow-automatic-release-manager-bot.json) | Enforces that only the Automatic Release Manager bot can create, update, or delete release tags. |
 
 

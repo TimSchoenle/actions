@@ -94,16 +94,6 @@ Any version not listed in the following tables is not supported.
 | [Maintenance Auto-rebase](./workflows/maintenance/auto-rebase) | [workflows-maintenance-auto-rebase-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-rebase-v1.1.4) | :white_check_mark: |
 | [Maintenance Wipe-cache](./workflows/maintenance/wipe-cache) | [workflows-maintenance-wipe-cache-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-wipe-cache-v1.1.4) | :white_check_mark: |
 
-### Rust
-
-| Component | Version | Supported |
-| --- | --- | --- |
-| [Rust Auto-format](./workflows/rust/auto-format) | [workflows-rust-auto-format-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-auto-format-v1.1.5) | :white_check_mark: |
-| [Rust Cargo Check](./workflows/rust/cargo-check) | [workflows-rust-cargo-check-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-cargo-check-v1.1.7) | :white_check_mark: |
-| [Rust Clippy](./workflows/rust/clippy) | [workflows-rust-clippy-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-clippy-v1.1.5) | :white_check_mark: |
-| [Rust Coverage (Codecov)](./workflows/rust/coverage-codecov) | [workflows-rust-coverage-codecov-v1.0.8](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-coverage-codecov-v1.0.8) | :white_check_mark: |
-| [Rust Test](./workflows/rust/test) | [workflows-rust-test-v1.0.1](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-test-v1.0.1) | :white_check_mark: |
-
 
 
 ## Reporting a Vulnerability
