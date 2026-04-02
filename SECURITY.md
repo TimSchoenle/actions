@@ -18,7 +18,7 @@ Any version not listed in the following tables is not supported.
 | --- | --- | --- |
 | [Close Pull Request](./actions/common/close-pull-request) | [actions-common-close-pull-request-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-close-pull-request-v1.1.0) | :white_check_mark: |
 | [Commit Changes](./actions/common/commit-changes) | [actions-common-commit-changes-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v1.1.4) | :white_check_mark: |
-| [Common Modify YAML](./actions/common/modify-yaml) | [actions-common-modify-yaml-v1.2.9](https://github.com/TimSchoenle/actions/releases/tag/actions-common-modify-yaml-v1.2.9) | :white_check_mark: |
+| [Common Modify YAML](./actions/common/modify-yaml) | [actions-common-modify-yaml-v1.2.10](https://github.com/TimSchoenle/actions/releases/tag/actions-common-modify-yaml-v1.2.10) | :white_check_mark: |
 | [Common Read YAML](./actions/common/read-yaml) | [actions-common-read-yaml-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-read-yaml-v1.1.0) | :white_check_mark: |
 | [Create Branch](./actions/common/create-branch) | [actions-common-create-branch-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-branch-v1.2.0) | :white_check_mark: |
 | [Create Pull Request](./actions/common/create-pull-request) | [actions-common-create-pull-request-v1.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-pull-request-v1.0.4) | :white_check_mark: |
@@ -38,20 +38,21 @@ Any version not listed in the following tables is not supported.
 | --- | --- | --- |
 | [Helper Verify-branch-name](./actions/helper/verify-branch-name) | [actions-helper-verify-branch-name-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-branch-name-v1.1.1) | :white_check_mark: |
 | [Resolve Branch](./actions/helper/resolve-base-branch) | [actions-helper-resolve-base-branch-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-resolve-base-branch-v1.1.0) | :white_check_mark: |
-| [Verify Commit Authors](./actions/helper/verify-commit-authors) | [actions-helper-verify-commit-authors-v1.1.12](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v1.1.12) | :white_check_mark: |
+| [Verify Commit Authors](./actions/helper/verify-commit-authors) | [actions-helper-verify-commit-authors-v1.1.13](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v1.1.13) | :white_check_mark: |
 
 ### Java-gradle
 
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | [actions-java-gradle-auto-spotless-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v1.1.2) | :white_check_mark: |
-| [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | [actions-java-gradle-setup-base-environment-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.1) | :white_check_mark: |
+| [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | [actions-java-gradle-setup-base-environment-v1.2.2](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.2) | :white_check_mark: |
 
 ### Maintenance
 
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | [actions-maintenance-auto-approve-pr-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.1.3) | :white_check_mark: |
+| [Maintenance Ensure-actions-are-executed](./actions/maintenance/ensure-actions-are-executed) | [actions-maintenance-ensure-actions-are-executed-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v1.1.0) | :white_check_mark: |
 
 ### Rust
 
@@ -60,7 +61,7 @@ Any version not listed in the following tables is not supported.
 | [Rust Auto-format](./actions/rust/auto-format) | [actions-rust-auto-format-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v1.1.0) | :white_check_mark: |
 | [Rust Cargo-check](./actions/rust/cargo-check) | [actions-rust-cargo-check-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.1.0) | :white_check_mark: |
 | [Rust Clippy](./actions/rust/clippy) | [actions-rust-clippy-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-clippy-v1.1.0) | :white_check_mark: |
-| [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | [actions-rust-coverage-codecov-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.2) | :white_check_mark: |
+| [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | [actions-rust-coverage-codecov-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.4) | :white_check_mark: |
 | [Rust Test](./actions/rust/test) | [actions-rust-test-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.0) | :white_check_mark: |
 
 ### Test
@@ -72,37 +73,15 @@ Any version not listed in the following tables is not supported.
 
 ### Workflows
 
-### Common
-
-| Component | Version | Supported |
-| --- | --- | --- |
-| [Common Test Workflow21345](./workflows/common/test2) | [workflows-common-test2-v2.11.1](https://github.com/TimSchoenle/actions/releases/tag/workflows-common-test2-v2.11.1) | :white_check_mark: |
-
-### Java-gradle
-
-| Component | Version | Supported |
-| --- | --- | --- |
-| [Java-gradle Auto-spotless](./workflows/java-gradle/auto-spotless) | [workflows-java-gradle-auto-spotless-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/workflows-java-gradle-auto-spotless-v1.1.1) | :white_check_mark: |
-
 ### Maintenance
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Auto Format](./workflows/maintenance/auto-bun-prettier) | [workflows-maintenance-auto-bun-prettier-v1.1.11](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-bun-prettier-v1.1.11) | :white_check_mark: |
+| [Auto Format](./workflows/maintenance/auto-bun-prettier) | [workflows-maintenance-auto-bun-prettier-v1.1.12](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-bun-prettier-v1.1.12) | :white_check_mark: |
 | [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | [workflows-maintenance-timed-auto-pr-approve-v1.2.12](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-timed-auto-pr-approve-v1.2.12) | :white_check_mark: |
 | [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | [workflows-maintenance-auto-approve-renovate-v1.4.1](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-approve-renovate-v1.4.1) | :white_check_mark: |
 | [Maintenance Auto-rebase](./workflows/maintenance/auto-rebase) | [workflows-maintenance-auto-rebase-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-rebase-v1.1.4) | :white_check_mark: |
 | [Maintenance Wipe-cache](./workflows/maintenance/wipe-cache) | [workflows-maintenance-wipe-cache-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-wipe-cache-v1.1.4) | :white_check_mark: |
-
-### Rust
-
-| Component | Version | Supported |
-| --- | --- | --- |
-| [Rust Auto-format](./workflows/rust/auto-format) | [workflows-rust-auto-format-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-auto-format-v1.1.5) | :white_check_mark: |
-| [Rust Cargo Check](./workflows/rust/cargo-check) | [workflows-rust-cargo-check-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-cargo-check-v1.1.7) | :white_check_mark: |
-| [Rust Clippy](./workflows/rust/clippy) | [workflows-rust-clippy-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-clippy-v1.1.5) | :white_check_mark: |
-| [Rust Coverage (Codecov)](./workflows/rust/coverage-codecov) | [workflows-rust-coverage-codecov-v1.0.8](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-coverage-codecov-v1.0.8) | :white_check_mark: |
-| [Rust Test](./workflows/rust/test) | [workflows-rust-test-v1.0.1](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-test-v1.0.1) | :white_check_mark: |
 
 
 

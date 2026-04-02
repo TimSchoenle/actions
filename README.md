@@ -30,7 +30,7 @@ Here is a list of all currently maintained actions in this repository:
 | --- | --- | --- | --- |
 | [Close Pull Request](./actions/common/close-pull-request) | Closes a pull request | [actions-common-close-pull-request-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-close-pull-request-v1.1.0) | `uses: TimSchoenle/actions/actions/common/close-pull-request@actions-common-close-pull-request-v1.1.0` |
 | [Commit Changes](./actions/common/commit-changes) | Commits changes using the GitHub API to ensure verified bot commits. | [actions-common-commit-changes-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v1.1.4) | `uses: TimSchoenle/actions/actions/common/commit-changes@actions-common-commit-changes-v1.1.4` |
-| [Common Modify YAML](./actions/common/modify-yaml) | A action to modify a value in a YAML file while strictly preserving comments and structure | [actions-common-modify-yaml-v1.2.9](https://github.com/TimSchoenle/actions/releases/tag/actions-common-modify-yaml-v1.2.9) | `uses: TimSchoenle/actions/actions/common/modify-yaml@actions-common-modify-yaml-v1.2.9` |
+| [Common Modify YAML](./actions/common/modify-yaml) | A action to modify a value in a YAML file while strictly preserving comments and structure | [actions-common-modify-yaml-v1.2.10](https://github.com/TimSchoenle/actions/releases/tag/actions-common-modify-yaml-v1.2.10) | `uses: TimSchoenle/actions/actions/common/modify-yaml@actions-common-modify-yaml-v1.2.10` |
 | [Common Read YAML](./actions/common/read-yaml) | A action to read a value from a YAML file using dot notation | [actions-common-read-yaml-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-read-yaml-v1.1.0) | `uses: TimSchoenle/actions/actions/common/read-yaml@actions-common-read-yaml-v1.1.0` |
 | [Create Branch](./actions/common/create-branch) | Creates or resets a git branch using GitHub API. | [actions-common-create-branch-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-branch-v1.2.0) | `uses: TimSchoenle/actions/actions/common/create-branch@actions-common-create-branch-v1.2.0` |
 | [Create Pull Request](./actions/common/create-pull-request) | Creates or updates a pull request using GitHub App authentication with optional branch reset. | [actions-common-create-pull-request-v1.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-pull-request-v1.0.4) | `uses: TimSchoenle/actions/actions/common/create-pull-request@actions-common-create-pull-request-v1.0.4` |
@@ -50,20 +50,21 @@ Here is a list of all currently maintained actions in this repository:
 | --- | --- | --- | --- |
 | [Helper Verify-branch-name](./actions/helper/verify-branch-name) | Verify the given name matches the pattern and also check if it is fork or not | [actions-helper-verify-branch-name-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-branch-name-v1.1.1) | `uses: TimSchoenle/actions/actions/helper/verify-branch-name@actions-helper-verify-branch-name-v1.1.1` |
 | [Resolve Branch](./actions/helper/resolve-base-branch) | Resolve the given base branch or return default branch. With optional existence check. | [actions-helper-resolve-base-branch-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-resolve-base-branch-v1.1.0) | `uses: TimSchoenle/actions/actions/helper/resolve-base-branch@actions-helper-resolve-base-branch-v1.1.0` |
-| [Verify Commit Authors](./actions/helper/verify-commit-authors) | Verifies that all commits in a PR are authored by a specific set of users and are signed. | [actions-helper-verify-commit-authors-v1.1.12](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v1.1.12) | `uses: TimSchoenle/actions/actions/helper/verify-commit-authors@actions-helper-verify-commit-authors-v1.1.12` |
+| [Verify Commit Authors](./actions/helper/verify-commit-authors) | Verifies that all commits in a PR are authored by a specific set of users and are signed. | [actions-helper-verify-commit-authors-v1.1.13](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v1.1.13) | `uses: TimSchoenle/actions/actions/helper/verify-commit-authors@actions-helper-verify-commit-authors-v1.1.13` |
 
 ### Java-gradle
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
 | [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | Automatically apply spotless formatting and commit changes. | [actions-java-gradle-auto-spotless-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v1.1.2) | `uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@actions-java-gradle-auto-spotless-v1.1.2` |
-| [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | Setup Java and Gradle environment for building, with opinionated default settings | [actions-java-gradle-setup-base-environment-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.1) | `uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@actions-java-gradle-setup-base-environment-v1.2.1` |
+| [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | Setup Java and Gradle environment for building, with opinionated default settings | [actions-java-gradle-setup-base-environment-v1.2.2](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.2) | `uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@actions-java-gradle-setup-base-environment-v1.2.2` |
 
 ### Maintenance
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
 | [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | Auto approve Pull Requests with the given user ids and branches. | [actions-maintenance-auto-approve-pr-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.1.3) | `uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@actions-maintenance-auto-approve-pr-v1.1.3` |
+| [Maintenance Ensure-actions-are-executed](./actions/maintenance/ensure-actions-are-executed) | Ensures selected checks completed successfully when they were started. | [actions-maintenance-ensure-actions-are-executed-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v1.1.0) | `uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@actions-maintenance-ensure-actions-are-executed-v1.1.0` |
 
 ### Rust
 
@@ -72,7 +73,7 @@ Here is a list of all currently maintained actions in this repository:
 | [Rust Auto-format](./actions/rust/auto-format) | Action that runs cargo fmt and commits changes. | [actions-rust-auto-format-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v1.1.0) | `uses: TimSchoenle/actions/actions/rust/auto-format@actions-rust-auto-format-v1.1.0` |
 | [Rust Cargo-check](./actions/rust/cargo-check) | Action that runs cargo check to verify Rust code compiles without errors. | [actions-rust-cargo-check-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.1.0) | `uses: TimSchoenle/actions/actions/rust/cargo-check@actions-rust-cargo-check-v1.1.0` |
 | [Rust Clippy](./actions/rust/clippy) | Action that runs clippy to catch common mistakes and improve your Rust code. | [actions-rust-clippy-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-clippy-v1.1.0) | `uses: TimSchoenle/actions/actions/rust/clippy@actions-rust-clippy-v1.1.0` |
-| [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | Action that runs cargo llvm-cov to generate code coverage and uploads to Codecov. | [actions-rust-coverage-codecov-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.2) | `uses: TimSchoenle/actions/actions/rust/coverage-codecov@actions-rust-coverage-codecov-v1.1.2` |
+| [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | Action that runs cargo llvm-cov to generate code coverage and uploads to Codecov. | [actions-rust-coverage-codecov-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.4) | `uses: TimSchoenle/actions/actions/rust/coverage-codecov@actions-rust-coverage-codecov-v1.1.4` |
 | [Rust Test](./actions/rust/test) | Action that runs cargo nextest to verify Rust code passes tests. | [actions-rust-test-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.0) | `uses: TimSchoenle/actions/actions/rust/test@actions-rust-test-v1.1.0` |
 
 ### Test
@@ -84,37 +85,15 @@ Here is a list of all currently maintained actions in this repository:
 
 
 ## 🔄 Reusable Workflows
-### Common
-
-| Workflow | Description | Version | Usage |
-| --- | --- | --- | --- |
-| [Common Test Workflow21345](./workflows/common/test2) | Reusable workflow for common-test2 | [workflows-common-test2-v2.11.1](https://github.com/TimSchoenle/actions/releases/tag/workflows-common-test2-v2.11.1) | `uses: TimSchoenle/actions/.github/workflows/common-test2.yaml@workflows-common-test2-v2.11.1` |
-
-### Java-gradle
-
-| Workflow | Description | Version | Usage |
-| --- | --- | --- | --- |
-| [Java-gradle Auto-spotless](./workflows/java-gradle/auto-spotless) | Automatically apply spotless formatting and commit changes. | [workflows-java-gradle-auto-spotless-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/workflows-java-gradle-auto-spotless-v1.1.1) | `uses: TimSchoenle/actions/.github/workflows/java-gradle-auto-spotless.yaml@workflows-java-gradle-auto-spotless-v1.1.1` |
-
 ### Maintenance
 
 | Workflow | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Auto Format](./workflows/maintenance/auto-bun-prettier) | Reusable workflow to auto-format code using Bun (Prettier) and commit changes. | [workflows-maintenance-auto-bun-prettier-v1.1.11](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-bun-prettier-v1.1.11) | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@workflows-maintenance-auto-bun-prettier-v1.1.11` |
+| [Auto Format](./workflows/maintenance/auto-bun-prettier) | Reusable workflow to auto-format code using Bun (Prettier) and commit changes. | [workflows-maintenance-auto-bun-prettier-v1.1.12](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-bun-prettier-v1.1.12) | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@workflows-maintenance-auto-bun-prettier-v1.1.12` |
 | [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | Reusable workflow that automatically verifies, approves, and merges Pull Requests that match a specific branch pattern and have been open for a configurable duration. It ensures all commits are signed and authored by trusted users. | [workflows-maintenance-timed-auto-pr-approve-v1.2.12](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-timed-auto-pr-approve-v1.2.12) | `uses: TimSchoenle/actions/.github/workflows/maintenance-timed-auto-pr-approve.yaml@workflows-maintenance-timed-auto-pr-approve-v1.2.12` |
 | [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | Reusable workflow to auto approve Renovate PRs, this is useful to auto merge Renovate PRs which have auto-merge enabled. | [workflows-maintenance-auto-approve-renovate-v1.4.1](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-approve-renovate-v1.4.1) | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-approve-renovate.yaml@workflows-maintenance-auto-approve-renovate-v1.4.1` |
 | [Maintenance Auto-rebase](./workflows/maintenance/auto-rebase) | Automatically rebases open PRs with a given label. | [workflows-maintenance-auto-rebase-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-rebase-v1.1.4) | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-rebase.yaml@workflows-maintenance-auto-rebase-v1.1.4` |
 | [Maintenance Wipe-cache](./workflows/maintenance/wipe-cache) | Workflow to wipe all cache entries for the given branch. | [workflows-maintenance-wipe-cache-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-wipe-cache-v1.1.4) | `uses: TimSchoenle/actions/.github/workflows/maintenance-wipe-cache.yaml@workflows-maintenance-wipe-cache-v1.1.4` |
-
-### Rust
-
-| Workflow | Description | Version | Usage |
-| --- | --- | --- | --- |
-| [Rust Auto-format](./workflows/rust/auto-format) | Reusable workflow that runs cargo fmt and commits changes. | [workflows-rust-auto-format-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-auto-format-v1.1.5) | `uses: TimSchoenle/actions/.github/workflows/rust-auto-format.yaml@workflows-rust-auto-format-v1.1.5` |
-| [Rust Cargo Check](./workflows/rust/cargo-check) | Reusable workflow that runs cargo check to verify Rust code compiles without errors. | [workflows-rust-cargo-check-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-cargo-check-v1.1.7) | `uses: TimSchoenle/actions/.github/workflows/rust-cargo-check.yaml@workflows-rust-cargo-check-v1.1.7` |
-| [Rust Clippy](./workflows/rust/clippy) | Reusable workflow that runs clippy to catch common mistakes and improve your Rust code. | [workflows-rust-clippy-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-clippy-v1.1.5) | `uses: TimSchoenle/actions/.github/workflows/rust-clippy.yaml@workflows-rust-clippy-v1.1.5` |
-| [Rust Coverage (Codecov)](./workflows/rust/coverage-codecov) | Reusable workflow that runs cargo llvm-cov to generate code coverage and uploads to Codecov. | [workflows-rust-coverage-codecov-v1.0.8](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-coverage-codecov-v1.0.8) | `uses: TimSchoenle/actions/.github/workflows/rust-coverage-codecov.yaml@workflows-rust-coverage-codecov-v1.0.8` |
-| [Rust Test](./workflows/rust/test) | Reusable workflow that runs cargo nextest to verify Rust code passes tests. | [workflows-rust-test-v1.0.1](https://github.com/TimSchoenle/actions/releases/tag/workflows-rust-test-v1.0.1) | `uses: TimSchoenle/actions/.github/workflows/rust-test.yaml@workflows-rust-test-v1.0.1` |
 
 
 

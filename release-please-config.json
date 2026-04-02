@@ -17,11 +17,6 @@
       "component": "actions-common-modify-yaml",
       "include-component-in-tag": true
     },
-    "workflows/common/test2": {
-      "release-type": "simple",
-      "component": "workflows-common-test2-meta",
-      "skip-github-release": true
-    },
     "actions/common/setup-app-git-identity": {
       "release-type": "simple",
       "component": "actions-common-setup-app-git-identity",
@@ -62,31 +57,6 @@
       "component": "workflows-maintenance-timed-auto-pr-approve-meta",
       "include-component-in-tag": true
     },
-    "workflows/rust/cargo-check": {
-      "release-type": "simple",
-      "component": "workflows-rust-cargo-check-meta",
-      "include-component-in-tag": true
-    },
-    "workflows/rust/test": {
-      "release-type": "simple",
-      "component": "workflows-rust-test-meta",
-      "include-component-in-tag": true
-    },
-    "workflows/rust/coverage-codecov": {
-      "release-type": "simple",
-      "component": "workflows-rust-coverage-codecov-meta",
-      "include-component-in-tag": true
-    },
-    "workflows/rust/auto-format": {
-      "release-type": "simple",
-      "component": "workflows-rust-auto-format-meta",
-      "include-component-in-tag": true
-    },
-    "workflows/rust/clippy": {
-      "release-type": "simple",
-      "component": "workflows-rust-clippy-meta",
-      "include-component-in-tag": true
-    },
     "actions/common/create-pull-request": {
       "release-type": "simple",
       "component": "actions-common-create-pull-request",
@@ -120,11 +90,6 @@
     "actions/java-gradle/setup-base-environment": {
       "release-type": "simple",
       "component": "actions-java-gradle-setup-base-environment",
-      "include-component-in-tag": true
-    },
-    "workflows/java-gradle/auto-spotless": {
-      "release-type": "simple",
-      "component": "workflows-java-gradle-auto-spotless-meta",
       "include-component-in-tag": true
     },
     "workflows/maintenance/wipe-cache": {
@@ -175,6 +140,11 @@
     "actions/rust/test": {
       "release-type": "simple",
       "component": "actions-rust-test",
+      "include-component-in-tag": true
+    },
+    "actions/maintenance/ensure-actions-are-executed": {
+      "release-type": "simple",
+      "component": "actions-maintenance-ensure-actions-are-executed",
       "include-component-in-tag": true
     }
   },
