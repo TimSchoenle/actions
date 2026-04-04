@@ -20,6 +20,12 @@ export function inferValueType(newValue: string): string | number | boolean | nu
   if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(newValue)) {
     return Number(newValue);
   }
+  if (newValue === 'Infinity' || newValue === '+Infinity') {
+    return Infinity;
+  }
+  if (newValue === '-Infinity') {
+    return -Infinity;
+  }
   if (newValue === '.inf') {
     return Infinity;
   }
