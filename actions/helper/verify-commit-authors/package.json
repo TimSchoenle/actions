@@ -21,7 +21,7 @@
     "@graphql-codegen/typescript-operations": "5.0.9",
     "@graphql-typed-document-node/core": "3.2.0",
     "@octokit/graphql-schema": "15.26.1",
-    "@types/node": "25.5.0",
+    "@types/node": "25.5.2",
     "fast-check": "4.6.0",
     "graphql": "16.13.2",
     "typescript": "6.0.2",
