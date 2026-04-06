@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.2...actions-java-gradle-auto-spotless-v1.1.3) (2026-04-06)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#697](https://github.com/TimSchoenle/actions/issues/697)) ([a7f17e3](https://github.com/TimSchoenle/actions/commit/a7f17e37b57e945d29f607bb093a685ee983620e))
+
 ## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.1...actions-java-gradle-auto-spotless-v1.1.2) (2026-03-18)
 
 
