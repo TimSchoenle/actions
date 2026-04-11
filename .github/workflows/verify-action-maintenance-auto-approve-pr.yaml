@@ -41,7 +41,7 @@ jobs:
 
       - name: Generate PR Approval Bot Token
         id: generate_token2
-        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3.0.0
+        uses: actions/create-github-app-token@7bd03711494f032dfa3be3558f7dc8787b0be333 # v3.1.0
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
@@ -156,7 +156,7 @@ jobs:
 
       - name: Generate PR Approval Bot Token
         id: generate_token2
-        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3.0.0
+        uses: actions/create-github-app-token@7bd03711494f032dfa3be3558f7dc8787b0be333 # v3.1.0
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
@@ -264,7 +264,7 @@ jobs:
 
       - name: Generate PR Approval Bot Token
         id: generate_token2
-        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3.0.0
+        uses: actions/create-github-app-token@7bd03711494f032dfa3be3558f7dc8787b0be333 # v3.1.0
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
@@ -452,7 +452,7 @@ jobs:
 
       - name: Generate PR Approval Bot Token
         id: generate_token2
-        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3.0.0
+        uses: actions/create-github-app-token@7bd03711494f032dfa3be3558f7dc8787b0be333 # v3.1.0
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
