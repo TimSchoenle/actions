@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.14](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.13...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.14) (2026-04-11)
+
+
+### Miscellaneous
+
+* **deps:** update actions/create-github-app-token digest to 1b10c78 ([#758](https://github.com/TimSchoenle/actions/issues/758)) ([fce889d](https://github.com/TimSchoenle/actions/commit/fce889d67d804440cc577191e1fa6f9a06f68fa4))
+* **deps:** update actions/create-github-app-token digest to 7bd0371 ([#752](https://github.com/TimSchoenle/actions/issues/752)) ([068e052](https://github.com/TimSchoenle/actions/commit/068e052132b985b1eff8da409c863cf72e56d883))
+* **deps:** update all non-major action updates ([#738](https://github.com/TimSchoenle/actions/issues/738)) ([e0e8f90](https://github.com/TimSchoenle/actions/commit/e0e8f903b26ea19ae113403646d8301c70bb54ad))
+
 ## [1.2.13](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.12...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.13) (2026-04-06)
 
 

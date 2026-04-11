@@ -9,7 +9,7 @@
   "actions/common/commit-changes": "1.1.4",
   "workflows/maintenance/auto-approve-renovate": "1.4.2",
   "actions/helper/verify-commit-authors": "1.1.13",
-  "workflows/maintenance/timed-auto-pr-approve": "1.2.13",
+  "workflows/maintenance/timed-auto-pr-approve": "1.2.14",
   "actions/common/create-pull-request": "1.0.4",
   "actions/test/setup-e2e": "1.2.0",
   "actions/common/close-pull-request": "1.1.0",
