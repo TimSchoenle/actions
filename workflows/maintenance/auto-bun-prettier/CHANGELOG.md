@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.13](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.12...workflows-maintenance-auto-bun-prettier-meta-v1.1.13) (2026-04-11)
+
+
+### Miscellaneous
+
+* **deps:** update actions/create-github-app-token action to v3.1.0 ([#753](https://github.com/TimSchoenle/actions/issues/753)) ([4f201d2](https://github.com/TimSchoenle/actions/commit/4f201d26245ead0ba1005ee5f5d290993ad1e7dc))
+* **deps:** update actions/create-github-app-token action to v3.1.1 ([#759](https://github.com/TimSchoenle/actions/issues/759)) ([bde535e](https://github.com/TimSchoenle/actions/commit/bde535e107c8b529a742fb7ca63906011acd5023))
+* **deps:** update actions/github-script action to v9 ([#744](https://github.com/TimSchoenle/actions/issues/744)) ([3f631ad](https://github.com/TimSchoenle/actions/commit/3f631ad047b5ac2aca6627c0431db35fc9e68021))
+* **deps:** update all non-major action updates ([#738](https://github.com/TimSchoenle/actions/issues/738)) ([e0e8f90](https://github.com/TimSchoenle/actions/commit/e0e8f903b26ea19ae113403646d8301c70bb54ad))
+
 ## [1.1.12](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.11...workflows-maintenance-auto-bun-prettier-meta-v1.1.12) (2026-04-02)
 
 
