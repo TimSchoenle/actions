@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.6](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v1.1.5...actions-rust-coverage-codecov-v1.1.6) (2026-04-11)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#738](https://github.com/TimSchoenle/actions/issues/738)) ([e0e8f90](https://github.com/TimSchoenle/actions/commit/e0e8f903b26ea19ae113403646d8301c70bb54ad))
+* **deps:** update taiki-e/install-action action to v2.74.1 ([#732](https://github.com/TimSchoenle/actions/issues/732)) ([ca2a71f](https://github.com/TimSchoenle/actions/commit/ca2a71f016c8fd7929bfff350a02a23943227ab0))
+* **deps:** update taiki-e/install-action action to v2.75.0 ([#734](https://github.com/TimSchoenle/actions/issues/734)) ([bd2947c](https://github.com/TimSchoenle/actions/commit/bd2947c15f52a06261a85815972920951a8a1ea1))
+* **deps:** update taiki-e/install-action action to v2.75.1 ([#736](https://github.com/TimSchoenle/actions/issues/736)) ([02171d3](https://github.com/TimSchoenle/actions/commit/02171d3f2b93f6e2e97f2a59963bd97e07bc6514))
+* **deps:** update taiki-e/install-action action to v2.75.2 ([#737](https://github.com/TimSchoenle/actions/issues/737)) ([155fd5d](https://github.com/TimSchoenle/actions/commit/155fd5d2727c31f3e73ade7d7e499f7be8adc59d))
+* **deps:** update taiki-e/install-action action to v2.75.4 ([#747](https://github.com/TimSchoenle/actions/issues/747)) ([e2ab519](https://github.com/TimSchoenle/actions/commit/e2ab51964e029ce0c35cb13bc69f459a078ca26d))
+* **deps:** update taiki-e/install-action action to v2.75.5 ([#750](https://github.com/TimSchoenle/actions/issues/750)) ([eec6db5](https://github.com/TimSchoenle/actions/commit/eec6db55219497b9656caf334e9277abe44e63d4))
+* **deps:** update taiki-e/install-action action to v2.75.6 ([#761](https://github.com/TimSchoenle/actions/issues/761)) ([4e13ef6](https://github.com/TimSchoenle/actions/commit/4e13ef6ed1743ff10678ccffcb7fdde16f7567c6))
+
 ## [1.1.5](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v1.1.4...actions-rust-coverage-codecov-v1.1.5) (2026-04-07)
 
 
