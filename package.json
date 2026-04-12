@@ -6,6 +6,7 @@
     "create-action": "bun scripts/create-action.ts",
     "remove-action": "bun scripts/remove-action.ts",
     "create-workflow": "bun scripts/create-workflow.ts",
+    "generate-maven-central-signing-key": "bun scripts/generate-maven-central-signing-key.ts",
     "remove-workflow": "bun scripts/remove-workflow.ts",
     "generate-docs": "bun scripts/generate-docs.ts",
     "lint": "eslint scripts/**/*.ts",
@@ -51,7 +52,8 @@
   },
   "dependencies": {
     "chalk": "5",
-    "inquirer": "^13.0.0"
+    "inquirer": "13.0.0",
+    "openpgp": "6.1.1"
   },
   "workspaces": [
     "actions/**/*",
