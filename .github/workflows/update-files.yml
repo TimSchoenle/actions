@@ -42,6 +42,7 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+          fetch-tags: true
           ref: ${{ github.head_ref }}
           token: ${{ steps.generate_token.outputs.token }}
 
@@ -105,11 +106,15 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+          fetch-tags: true
           ref: ${{ github.head_ref }}
           token: ${{ steps.generate_token.outputs.token }}
 
       - name: Setup Bun
         uses: TimSchoenle/actions/actions/bun/setup-cached@3d01a1101b3c6f5a53ddff0b99cddac4932b7c17 # tag=actions-bun-setup-cached-v1.1.7
+
+      - name: Refresh Tags
+        run: git fetch --force --tags origin
 
       - name: Generate Docs
         run: bun run generate-docs

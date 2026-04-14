@@ -12,7 +12,7 @@ describe('parsers fuzzing', () => {
       fc.assert(
         fc.property(fc.string(), fc.string(), fc.string(), (dir, ver, repo) => {
           if (dir.startsWith('workflows/') || dir.startsWith('workflows\\')) return true;
-          const result = deriveWorkflowMetadata(dir, ver, repo);
+          const result = deriveWorkflowMetadata(dir, ver, ver, repo);
           return result === null;
         }),
       );
@@ -22,7 +22,7 @@ describe('parsers fuzzing', () => {
       fc.assert(
         fc.property(safeString, safeString, safeString, versionString, (repoId, pkg, sub, ver) => {
           const dir = `workflows/${pkg}/${sub}`;
-          const result = deriveWorkflowMetadata(dir, ver, repoId);
+          const result = deriveWorkflowMetadata(dir, ver, ver, repoId);
 
           if (!result) return false;
 
@@ -41,8 +41,8 @@ describe('parsers fuzzing', () => {
           const dirWindows = `workflows\\${pkg}\\${sub}`;
           const dirUnix = `workflows/${pkg}/${sub}`;
 
-          const resultWindows = deriveWorkflowMetadata(dirWindows, ver, repoId);
-          const resultUnix = deriveWorkflowMetadata(dirUnix, ver, repoId);
+          const resultWindows = deriveWorkflowMetadata(dirWindows, ver, ver, repoId);
+          const resultUnix = deriveWorkflowMetadata(dirUnix, ver, ver, repoId);
 
           if (resultWindows && resultUnix) {
             expect(resultWindows.name).toBe(resultUnix.name);
@@ -57,7 +57,7 @@ describe('parsers fuzzing', () => {
       fc.assert(
         fc.property(safeString, safeString, safeString, versionString, (repoId, pkg, sub, ver) => {
           const dir = `workflows/${pkg}/${sub}`;
-          const result = deriveWorkflowMetadata(dir, ver, repoId);
+          const result = deriveWorkflowMetadata(dir, ver, ver, repoId);
 
           if (!result) return true;
 
@@ -72,7 +72,7 @@ describe('parsers fuzzing', () => {
       fc.assert(
         fc.property(safeString, versionString, safeString, (pkg, ver, repo) => {
           const dir = `workflows/${pkg}`;
-          const result = deriveWorkflowMetadata(dir, ver, repo);
+          const result = deriveWorkflowMetadata(dir, ver, ver, repo);
 
           // Should return null for insufficient path depth
           expect(result).toBeNull();
@@ -86,12 +86,12 @@ describe('parsers fuzzing', () => {
       fc.assert(
         fc.property(safeString, safeString, versionString, fc.string(), (repoId, pkg, ver, name) => {
           const dir = `actions/${pkg}`;
-          const result = deriveActionMetadata(dir, ver, repoId, name);
+          const result = deriveActionMetadata(dir, ver, ver, repoId, name);
 
           expect(result.category).toBe('Other');
 
           const dirDeep = `actions/${pkg}/sub`;
-          const resultDeep = deriveActionMetadata(dirDeep, ver, repoId, name);
+          const resultDeep = deriveActionMetadata(dirDeep, ver, ver, repoId, name);
           const expectedCategory = pkg.charAt(0).toUpperCase() + pkg.slice(1);
           expect(resultDeep.category).toBe(expectedCategory);
         }),
@@ -102,7 +102,7 @@ describe('parsers fuzzing', () => {
       fc.assert(
         fc.property(safeString, safeString, versionString, fc.string(), (repoId, pkg, ver, name) => {
           const dir = `actions/${pkg}`;
-          const result = deriveActionMetadata(dir, ver, repoId, name);
+          const result = deriveActionMetadata(dir, ver, ver, repoId, name);
 
           expect(result.usage).toContain('`uses:');
           expect(result.usage).toContain('@');
@@ -116,7 +116,7 @@ describe('parsers fuzzing', () => {
       fc.assert(
         fc.property(safeString, safeString, versionString, fc.string({ minLength: 1 }), (repoId, pkg, ver, name) => {
           const dir = `actions/${pkg}`;
-          const result = deriveActionMetadata(dir, ver, repoId, name);
+          const result = deriveActionMetadata(dir, ver, ver, repoId, name);
 
           expect(result.name).toBe(name);
         }),
@@ -126,7 +126,7 @@ describe('parsers fuzzing', () => {
     it('should include description when provided', () => {
       fc.assert(
         fc.property(safeString, versionString, fc.string(), fc.string(), (pkg, ver, name, desc) => {
-          const result = deriveActionMetadata(`actions/${pkg}`, ver, 'repo', name, desc);
+          const result = deriveActionMetadata(`actions/${pkg}`, ver, ver, 'repo', name, desc);
           expect(result.description).toBe(desc);
         }),
       );

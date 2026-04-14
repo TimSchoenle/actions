@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getManifestVersions, getReleaseComponent } from './utils';
+import { getManifestVersions, getReleaseComponent, getTagCommitSha } from './utils';
 import { Sys } from '../utils';
 
 vi.mock('../utils', async (importOriginal) => {
@@ -75,6 +75,26 @@ describe('Readme Utils', () => {
         write: async () => {},
       } as unknown as ReturnType<typeof Sys.file>);
       const result = await getReleaseComponent('dir');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getTagCommitSha', () => {
+    it('should return commit sha when git lookup succeeds', async () => {
+      vi.mocked(Sys.exec).mockResolvedValue('0123456789abcdef0123456789abcdef01234567\n');
+      const result = await getTagCommitSha('actions-example-v1.0.0');
+      expect(result).toBe('0123456789abcdef0123456789abcdef01234567');
+    });
+
+    it('should return null for invalid sha output', async () => {
+      vi.mocked(Sys.exec).mockResolvedValue('not-a-sha');
+      const result = await getTagCommitSha('actions-example-v1.0.1');
+      expect(result).toBeNull();
+    });
+
+    it('should return null when git command fails', async () => {
+      vi.mocked(Sys.exec).mockRejectedValue(new Error('git failed'));
+      const result = await getTagCommitSha('actions-example-v1.0.2');
       expect(result).toBeNull();
     });
   });

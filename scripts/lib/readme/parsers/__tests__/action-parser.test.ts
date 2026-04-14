@@ -19,6 +19,7 @@ vi.mock('../../../utils', () => {
 vi.mock('../../utils', () => ({
   getManifestVersions: vi.fn(),
   getReleaseComponent: vi.fn(),
+  getTagCommitSha: vi.fn(),
 }));
 
 // Mock GitUtils
@@ -43,6 +44,7 @@ describe('ActionParser', () => {
       if (dir.includes('actions/pkg/sub')) return 'pkg-sub';
       return null;
     });
+    vi.mocked(ReadmeUtils.getTagCommitSha).mockResolvedValue('0123456789abcdef0123456789abcdef01234567');
 
     // Mock Glob
     const mockScan = {
@@ -71,7 +73,7 @@ describe('ActionParser', () => {
       name: 'Test Action',
       description: 'Test Desc',
       version: '[pkg-sub-v1.0.0](https://github.com/owner/repo/releases/tag/pkg-sub-v1.0.0)',
-      usage: '`uses: owner/repo/actions/pkg/sub@pkg-sub-v1.0.0`',
+      usage: '`uses: owner/repo/actions/pkg/sub@0123456789abcdef0123456789abcdef01234567 # tag=pkg-sub-v1.0.0`',
       category: 'Pkg',
       path: 'actions/pkg/sub',
     });
