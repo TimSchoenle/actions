@@ -1,4 +1,4 @@
-name: Verify Helm Update Chart Version
+﻿name: Verify Helm Update Chart Version
 
 on:
   push:
@@ -43,7 +43,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # tag=actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -54,7 +54,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
+        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # tag=actions-common-create-branch-v1.2.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -85,7 +85,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # actions-common-commit-changes-v1.1.4
+        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # tag=actions-common-commit-changes-v1.1.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -107,7 +107,7 @@ jobs:
           pr-branch-prefix: test/helm-update/${{ env.TEST_ID }}
 
       - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
-        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # tag=actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -200,7 +200,7 @@ jobs:
 
       - name: Cleanup Base Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # tag=actions-common-delete-branch-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -208,7 +208,7 @@ jobs:
 
       - name: Cleanup PR
         if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # actions-common-close-pull-request-v1.1.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # tag=actions-common-close-pull-request-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -216,7 +216,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # tag=actions-common-delete-branch-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -236,7 +236,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # tag=actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -247,7 +247,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
+        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # tag=actions-common-create-branch-v1.2.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -273,7 +273,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # actions-common-commit-changes-v1.1.4
+        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # tag=actions-common-commit-changes-v1.1.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -295,7 +295,7 @@ jobs:
           pr-branch-prefix: test/custom-prefix/${{ env.TEST_ID }}
 
       - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
-        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # tag=actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -319,7 +319,7 @@ jobs:
 
       - name: Cleanup Base Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # tag=actions-common-delete-branch-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -327,7 +327,7 @@ jobs:
 
       - name: Cleanup PR
         if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # actions-common-close-pull-request-v1.1.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # tag=actions-common-close-pull-request-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -335,7 +335,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # tag=actions-common-delete-branch-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -374,7 +374,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # tag=actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -385,7 +385,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
+        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # tag=actions-common-create-branch-v1.2.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -413,7 +413,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # actions-common-commit-changes-v1.1.4
+        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # tag=actions-common-commit-changes-v1.1.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -435,7 +435,7 @@ jobs:
           pr-branch-prefix: test/bump/${{ env.TEST_ID }}/${{ matrix.name }}
 
       - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
-        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # tag=actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -466,7 +466,7 @@ jobs:
 
       - name: Cleanup Base Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # tag=actions-common-delete-branch-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -474,7 +474,7 @@ jobs:
 
       - name: Cleanup PR
         if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # actions-common-close-pull-request-v1.1.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # tag=actions-common-close-pull-request-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -482,7 +482,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # tag=actions-common-delete-branch-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -502,7 +502,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # tag=actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -513,7 +513,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
+        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # tag=actions-common-create-branch-v1.2.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -539,7 +539,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # actions-common-commit-changes-v1.1.4
+        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # tag=actions-common-commit-changes-v1.1.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -561,7 +561,7 @@ jobs:
           pr-branch-prefix: test/nested/${{ env.TEST_ID }}
 
       - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
-        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # tag=actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -600,7 +600,7 @@ jobs:
 
       - name: Cleanup Base Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # tag=actions-common-delete-branch-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -608,7 +608,7 @@ jobs:
 
       - name: Cleanup PR
         if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # actions-common-close-pull-request-v1.1.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # tag=actions-common-close-pull-request-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -616,7 +616,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # tag=actions-common-delete-branch-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -636,7 +636,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # tag=actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -647,7 +647,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
+        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # tag=actions-common-create-branch-v1.2.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -673,7 +673,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # actions-common-commit-changes-v1.1.4
+        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # tag=actions-common-commit-changes-v1.1.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -695,14 +695,14 @@ jobs:
           pr-branch-prefix: test/idem/${{ env.TEST_ID }}
 
       - name: Close First PR
-        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # actions-common-close-pull-request-v1.1.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # tag=actions-common-close-pull-request-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           pull_request_id: ${{ steps.first-run.outputs.pr_number }}
 
       - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
-        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # tag=actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -725,7 +725,7 @@ jobs:
           pr-branch-prefix: test/idem/${{ env.TEST_ID }}
 
       - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
-        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # tag=actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -752,7 +752,7 @@ jobs:
 
       - name: Cleanup Base Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # tag=actions-common-delete-branch-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -760,7 +760,7 @@ jobs:
 
       - name: Cleanup PR
         if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # actions-common-close-pull-request-v1.1.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # tag=actions-common-close-pull-request-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -768,7 +768,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # tag=actions-common-delete-branch-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}

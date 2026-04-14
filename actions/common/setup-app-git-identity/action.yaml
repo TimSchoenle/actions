@@ -1,4 +1,4 @@
-name: 'Setup App Git Identity'
+﻿name: 'Setup App Git Identity'
 description: 'Configures git with the identity of a GitHub App bot and outputs the bot details.'
 
 inputs:
@@ -25,7 +25,7 @@ runs:
   steps:
     - name: Get Bot User Info
       id: get-bot-info
-      uses: TimSchoenle/actions/actions/common/get-app-git-identity@26754381479003bd81b51fffecc97f1faa20a9bf # actions-common-get-app-git-identity-v1.1.0
+      uses: TimSchoenle/actions/actions/common/get-app-git-identity@26754381479003bd81b51fffecc97f1faa20a9bf # tag=actions-common-get-app-git-identity-v1.1.0
       with:
         app-slug: ${{ inputs.app-slug }}
         token: ${{ inputs.token }}

@@ -1,4 +1,4 @@
-name: 'Maintenance Auto-approve-renovate'
+﻿name: 'Maintenance Auto-approve-renovate'
 description: 'Reusable workflow to auto approve Renovate PRs, this is useful to auto merge Renovate PRs which have auto-merge enabled.'
 
 on:
@@ -38,7 +38,7 @@ jobs:
           egress-policy: audit
 
       - name: Auto-approve Renovate PRs
-        uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@952c0858f31fc87a57429af70db8cda2d37c1642 # actions-maintenance-auto-approve-pr-v1.1.4
+        uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@952c0858f31fc87a57429af70db8cda2d37c1642 # tag=actions-maintenance-auto-approve-pr-v1.1.4
         with:
           token: ${{ secrets.token }}
           user_ids: ${{ inputs.user_ids }}
