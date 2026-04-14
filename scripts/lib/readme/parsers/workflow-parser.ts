@@ -4,7 +4,7 @@ import yaml from 'js-yaml';
 
 import { ROOT_DIR, Sys } from '../../utils.js';
 import { getRepoInfo } from '../git-utils.js';
-import { getManifestVersions } from '../utils.js';
+import { getManifestVersions, getTagCommitSha } from '../utils.js';
 
 import type { DocumentationItem, Parser } from '../types.js';
 
@@ -25,6 +25,7 @@ export interface WorkflowMetadata {
 export function deriveWorkflowMetadata(
   dir: string,
   shortVersion: string,
+  pinnedReference: string,
   repoId: string,
   configName?: string,
   configDescription?: string,
@@ -51,7 +52,7 @@ export function deriveWorkflowMetadata(
     description: configDescription || `Reusable workflow for ${componentSuffix}`,
     version: `[${tag}](https://github.com/${repoId}/releases/tag/${tag})`,
     // Correct Usage for Clean Release
-    usage: `\`uses: ${repoId}/.github/workflows/${targetFileName}@${tag}\``,
+    usage: `\`uses: ${repoId}/.github/workflows/${targetFileName}@${pinnedReference} # tag=${tag}\``,
     category: category.charAt(0).toUpperCase() + category.slice(1),
   };
 }
@@ -85,7 +86,17 @@ export class WorkflowParser implements Parser {
         continue;
       }
 
-      const metadata = deriveWorkflowMetadata(dir, shortVersion, repoId, config.name, config.description);
+      const componentSuffix = normalizedDir.split('/').slice(1).join('-');
+      const tag = `workflows-${componentSuffix}-v${shortVersion}`;
+      const pinnedReference = (await getTagCommitSha(tag)) || tag;
+      const metadata = deriveWorkflowMetadata(
+        dir,
+        shortVersion,
+        pinnedReference,
+        repoId,
+        config.name,
+        config.description,
+      );
       if (!metadata) {
         continue;
       }

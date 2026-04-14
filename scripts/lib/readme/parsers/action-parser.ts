@@ -4,7 +4,7 @@ import yaml from 'js-yaml';
 
 import { ROOT_DIR, Sys } from '../../utils.js';
 import { getRepoInfo } from '../git-utils.js';
-import { getManifestVersions, getReleaseComponent } from '../utils.js';
+import { getManifestVersions, getReleaseComponent, getTagCommitSha } from '../utils.js';
 
 import type { DocumentationItem, Parser } from '../types.js';
 
@@ -24,6 +24,7 @@ export interface ActionMetadata {
 export function deriveActionMetadata(
   dir: string,
   version: string,
+  pinnedReference: string,
   repoId: string,
   configName: string,
   configDescription?: string,
@@ -36,7 +37,7 @@ export function deriveActionMetadata(
     name: configName,
     description: configDescription || '',
     version: `[${version}](https://github.com/${repoId}/releases/tag/${version})`,
-    usage: `\`uses: ${repoId}/${dirPath}@${version}\``,
+    usage: `\`uses: ${repoId}/${dirPath}@${pinnedReference} # tag=${version}\``,
     category: category.charAt(0).toUpperCase() + category.slice(1),
   };
 }
@@ -80,7 +81,8 @@ export class ActionParser implements Parser {
         continue;
       }
 
-      const metadata = deriveActionMetadata(dir, version, repoId, config.name, config.description);
+      const pinnedReference = (await getTagCommitSha(version)) || version;
+      const metadata = deriveActionMetadata(dir, version, pinnedReference, repoId, config.name, config.description);
 
       items.push({
         name: metadata.name,

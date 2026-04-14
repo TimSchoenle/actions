@@ -19,6 +19,7 @@ vi.mock('../../../utils', () => {
 vi.mock('../../utils', () => ({
   getManifestVersions: vi.fn(),
   getReleaseComponent: vi.fn(),
+  getTagCommitSha: vi.fn(),
 }));
 
 // Mock GitUtils
@@ -38,6 +39,7 @@ describe('WorkflowParser', () => {
     (ReadmeUtils.getManifestVersions as any).mockResolvedValue({
       'workflows/common/test2': '2.5.0',
     });
+    (ReadmeUtils.getTagCommitSha as any).mockResolvedValue('fedcba9876543210fedcba9876543210fedcba98');
 
     // Mock Glob
     const mockScan = {
@@ -62,7 +64,8 @@ describe('WorkflowParser', () => {
       description: 'Reusable logic', // From YAML
       version:
         '[workflows-common-test2-v2.5.0](https://github.com/owner/repo/releases/tag/workflows-common-test2-v2.5.0)', // Derived
-      usage: '`uses: owner/repo/.github/workflows/common-test2.yaml@workflows-common-test2-v2.5.0`', // Derived logic check
+      usage:
+        '`uses: owner/repo/.github/workflows/common-test2.yaml@fedcba9876543210fedcba9876543210fedcba98 # tag=workflows-common-test2-v2.5.0`', // Derived logic check
       category: 'Common',
       path: 'workflows/common/test2',
     });
