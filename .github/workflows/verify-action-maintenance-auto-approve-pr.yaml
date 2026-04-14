@@ -1,4 +1,4 @@
-name: Verify Maintenance Auto-approve-pr
+﻿name: Verify Maintenance Auto-approve-pr
 
 on:
   push:
@@ -51,7 +51,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # tag=actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -62,14 +62,14 @@ jobs:
 
       - name: Get Bot User ID
         id: bot_identity
-        uses: TimSchoenle/actions/actions/common/get-app-git-identity@26754381479003bd81b51fffecc97f1faa20a9bf # actions-common-get-app-git-identity-v1.1.0
+        uses: TimSchoenle/actions/actions/common/get-app-git-identity@26754381479003bd81b51fffecc97f1faa20a9bf # tag=actions-common-get-app-git-identity-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           app-slug: ${{ steps.setup.outputs.app_slug }}
 
       - name: Create Test Branch
         id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
+        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # tag=actions-common-create-branch-v1.2.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -84,7 +84,7 @@ jobs:
 
       - name: Create Pull Request (with commit)
         id: pr
-        uses: TimSchoenle/actions/actions/common/create-pull-request@56a357475cab7e427e977544641726519b87c268 # actions-common-create-pull-request-v1.0.4
+        uses: TimSchoenle/actions/actions/common/create-pull-request@56a357475cab7e427e977544641726519b87c268 # tag=actions-common-create-pull-request-v1.0.4
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -128,7 +128,7 @@ jobs:
 
       - name: Cleanup - Close Pull Request
         if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # actions-common-close-pull-request-v1.1.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # tag=actions-common-close-pull-request-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -136,7 +136,7 @@ jobs:
 
       - name: Cleanup - Delete Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # tag=actions-common-delete-branch-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -166,7 +166,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # tag=actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -177,7 +177,7 @@ jobs:
 
       - name: Create Test Branch
         id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
+        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # tag=actions-common-create-branch-v1.2.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -192,7 +192,7 @@ jobs:
 
       - name: Create Pull Request (with commit)
         id: pr
-        uses: TimSchoenle/actions/actions/common/create-pull-request@56a357475cab7e427e977544641726519b87c268 # actions-common-create-pull-request-v1.0.4
+        uses: TimSchoenle/actions/actions/common/create-pull-request@56a357475cab7e427e977544641726519b87c268 # tag=actions-common-create-pull-request-v1.0.4
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -236,7 +236,7 @@ jobs:
 
       - name: Cleanup - Close Pull Request
         if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # actions-common-close-pull-request-v1.1.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # tag=actions-common-close-pull-request-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -244,7 +244,7 @@ jobs:
 
       - name: Cleanup - Delete Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # tag=actions-common-delete-branch-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -274,7 +274,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # tag=actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -285,14 +285,14 @@ jobs:
 
       - name: Get Bot User ID
         id: bot_identity
-        uses: TimSchoenle/actions/actions/common/get-app-git-identity@26754381479003bd81b51fffecc97f1faa20a9bf # actions-common-get-app-git-identity-v1.1.0
+        uses: TimSchoenle/actions/actions/common/get-app-git-identity@26754381479003bd81b51fffecc97f1faa20a9bf # tag=actions-common-get-app-git-identity-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           app-slug: ${{ steps.setup.outputs.app_slug }}
 
       - name: Create Test Branch (Matching Pattern)
         id: branch_match
-        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
+        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # tag=actions-common-create-branch-v1.2.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -306,7 +306,7 @@ jobs:
 
       - name: Create Pull Request (Matching Pattern with commit)
         id: pr_match
-        uses: TimSchoenle/actions/actions/common/create-pull-request@56a357475cab7e427e977544641726519b87c268 # actions-common-create-pull-request-v1.0.4
+        uses: TimSchoenle/actions/actions/common/create-pull-request@56a357475cab7e427e977544641726519b87c268 # tag=actions-common-create-pull-request-v1.0.4
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -349,7 +349,7 @@ jobs:
 
       - name: Create Test Branch (Non-matching Pattern)
         id: branch_nomatch
-        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
+        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # tag=actions-common-create-branch-v1.2.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -363,7 +363,7 @@ jobs:
 
       - name: Create Pull Request (Non-matching Pattern with commit)
         id: pr_nomatch
-        uses: TimSchoenle/actions/actions/common/create-pull-request@56a357475cab7e427e977544641726519b87c268 # actions-common-create-pull-request-v1.0.4
+        uses: TimSchoenle/actions/actions/common/create-pull-request@56a357475cab7e427e977544641726519b87c268 # tag=actions-common-create-pull-request-v1.0.4
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -406,7 +406,7 @@ jobs:
 
       - name: Cleanup - Close Pull Request (Match)
         if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # actions-common-close-pull-request-v1.1.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # tag=actions-common-close-pull-request-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -414,7 +414,7 @@ jobs:
 
       - name: Cleanup - Delete Branch (Match)
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # tag=actions-common-delete-branch-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -422,7 +422,7 @@ jobs:
 
       - name: Cleanup - Close Pull Request (No Match)
         if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # actions-common-close-pull-request-v1.1.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # tag=actions-common-close-pull-request-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -430,7 +430,7 @@ jobs:
 
       - name: Cleanup - Delete Branch (No Match)
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # tag=actions-common-delete-branch-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -462,7 +462,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # actions-test-setup-e2e-v1.2.0
+        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # tag=actions-test-setup-e2e-v1.2.0
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -473,14 +473,14 @@ jobs:
 
       - name: Get Bot User ID
         id: bot_identity
-        uses: TimSchoenle/actions/actions/common/get-app-git-identity@26754381479003bd81b51fffecc97f1faa20a9bf # actions-common-get-app-git-identity-v1.1.0
+        uses: TimSchoenle/actions/actions/common/get-app-git-identity@26754381479003bd81b51fffecc97f1faa20a9bf # tag=actions-common-get-app-git-identity-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           app-slug: ${{ steps.setup.outputs.app_slug }}
 
       - name: Create Test Branch
         id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # actions-common-create-branch-v1.2.0
+        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # tag=actions-common-create-branch-v1.2.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -494,7 +494,7 @@ jobs:
 
       - name: Create Pull Request (with commit)
         id: pr
-        uses: TimSchoenle/actions/actions/common/create-pull-request@56a357475cab7e427e977544641726519b87c268 # actions-common-create-pull-request-v1.0.4
+        uses: TimSchoenle/actions/actions/common/create-pull-request@56a357475cab7e427e977544641726519b87c268 # tag=actions-common-create-pull-request-v1.0.4
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -538,7 +538,7 @@ jobs:
 
       - name: Cleanup - Close Pull Request
         if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # actions-common-close-pull-request-v1.1.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@d553418def5cd5ba91cf4997752b3e2053fec978 # tag=actions-common-close-pull-request-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -546,7 +546,7 @@ jobs:
 
       - name: Cleanup - Delete Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # actions-common-delete-branch-v1.1.0
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # tag=actions-common-delete-branch-v1.1.0
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}

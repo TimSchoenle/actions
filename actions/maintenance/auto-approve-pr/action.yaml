@@ -1,4 +1,4 @@
-name: 'Maintenance Auto-approve-pr'
+﻿name: 'Maintenance Auto-approve-pr'
 description: 'Auto approve Pull Requests with the given user ids and branches.'
 
 inputs:
@@ -88,7 +88,7 @@ runs:
     - name: Check Branch Pattern
       id: check_branch
       if: ${{ steps.check_author.outputs.match == 'true' }}
-      uses: TimSchoenle/actions/actions/helper/verify-branch-name@942adbf1569777c9a9ef84f002ffd3c11736ee37 # actions-helper-verify-branch-name-v1.1.1
+      uses: TimSchoenle/actions/actions/helper/verify-branch-name@942adbf1569777c9a9ef84f002ffd3c11736ee37 # tag=actions-helper-verify-branch-name-v1.1.1
       with:
         branch_pattern: ${{ inputs.branch_pattern }}
         reject_forks: ${{ inputs.reject_forks }}
@@ -127,7 +127,7 @@ runs:
     - name: Verify Commits and Signatures
       id: verify_commits
       if: steps.check_changes.outputs.match == 'true'
-      uses: TimSchoenle/actions/actions/helper/verify-commit-authors@6a924e58dacbfe89586619e968a79c5eb84c87fe # actions-helper-verify-commit-authors-v1.1.14
+      uses: TimSchoenle/actions/actions/helper/verify-commit-authors@6a924e58dacbfe89586619e968a79c5eb84c87fe # tag=actions-helper-verify-commit-authors-v1.1.14
       with:
         pr_url: ${{ inputs.pr_url }}
         github_token: ${{ inputs.token }}

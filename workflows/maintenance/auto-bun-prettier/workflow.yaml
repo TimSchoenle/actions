@@ -1,4 +1,4 @@
-name: Auto Format
+﻿name: Auto Format
 description: 'Reusable workflow to auto-format code using Bun (Prettier) and commit changes.'
 
 on:
@@ -68,7 +68,7 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
 
       - name: Setup Bun
-        uses: TimSchoenle/actions/actions/bun/setup-cached@3d01a1101b3c6f5a53ddff0b99cddac4932b7c17 # actions-bun-setup-cached-v1.1.7
+        uses: TimSchoenle/actions/actions/bun/setup-cached@3d01a1101b3c6f5a53ddff0b99cddac4932b7c17 # tag=actions-bun-setup-cached-v1.1.7
 
       - name: Format
         env:
@@ -77,7 +77,7 @@ jobs:
 
       - name: Commit and Push if changed
         id: auto-commit
-        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # actions-common-commit-changes-v1.1.4
+        uses: TimSchoenle/actions/actions/common/commit-changes@8f15b94f827ea2005c0e32cadc86bb50969633dd # tag=actions-common-commit-changes-v1.1.4
         with:
           commit_message: ${{ inputs.commit_message }}
           token: ${{ steps.generate_token.outputs.token }}
