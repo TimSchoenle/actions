@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.5](https://github.com/TimSchoenle/actions/compare/actions-maintenance-auto-approve-pr-v1.1.4...actions-maintenance-auto-approve-pr-v1.1.5) (2026-04-14)
+
+
+### Build System
+
+* **ci:** migrate custom version comments to tag prefix to comply wi… ([#783](https://github.com/TimSchoenle/actions/issues/783)) ([5f54966](https://github.com/TimSchoenle/actions/commit/5f54966bad6066b7171046395596c792e857c937))
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#776](https://github.com/TimSchoenle/actions/issues/776)) ([44b7908](https://github.com/TimSchoenle/actions/commit/44b790864b20fc9a9b004d9586c32d409d40d2de))
+
 ## [1.1.4](https://github.com/TimSchoenle/actions/compare/actions-maintenance-auto-approve-pr-v1.1.3...actions-maintenance-auto-approve-pr-v1.1.4) (2026-04-06)
 
 
