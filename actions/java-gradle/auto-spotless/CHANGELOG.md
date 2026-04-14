@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.1.4](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.3...actions-java-gradle-auto-spotless-v1.1.4) (2026-04-14)
+
+
+### Build System
+
+* **ci:** migrate custom version comments to tag prefix to comply wi… ([#783](https://github.com/TimSchoenle/actions/issues/783)) ([5f54966](https://github.com/TimSchoenle/actions/commit/5f54966bad6066b7171046395596c792e857c937))
+
+
+### Miscellaneous
+
+* **deps:** update actions/create-github-app-token action to v3.1.0 ([#753](https://github.com/TimSchoenle/actions/issues/753)) ([4f201d2](https://github.com/TimSchoenle/actions/commit/4f201d26245ead0ba1005ee5f5d290993ad1e7dc))
+* **deps:** update actions/create-github-app-token action to v3.1.1 ([#759](https://github.com/TimSchoenle/actions/issues/759)) ([bde535e](https://github.com/TimSchoenle/actions/commit/bde535e107c8b529a742fb7ca63906011acd5023))
+* **deps:** update actions/github-script action to v9 ([#744](https://github.com/TimSchoenle/actions/issues/744)) ([3f631ad](https://github.com/TimSchoenle/actions/commit/3f631ad047b5ac2aca6627c0431db35fc9e68021))
+* **deps:** update to vactions-java-gradle-setup-base-environment-v1.2.3 ([#751](https://github.com/TimSchoenle/actions/issues/751)) ([f8910b4](https://github.com/TimSchoenle/actions/commit/f8910b4b1cd41b0cccf5a5ccb3b65566252337ad))
+
 ## [1.1.3](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.2...actions-java-gradle-auto-spotless-v1.1.3) (2026-04-06)
 
 
