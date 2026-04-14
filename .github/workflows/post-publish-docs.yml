@@ -14,7 +14,6 @@ permissions: {}
 jobs:
   update-docs:
     name: Update README and SECURITY
-    if: github.event.release.target_commitish == 'main'
     environment:
       name: ci
       deployment: false
