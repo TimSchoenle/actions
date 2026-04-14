@@ -42,7 +42,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Update Helm Chart Version](./actions/helm/update-chart-version) | Updates a Helm chart version, appVersion, and image tag, then creates a Pull Request. This action requires a bot account with access to the charts repo. Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag). | [actions-helm-update-chart-version-v1.5.8](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.5.8) | `uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.5.8 # tag=actions-helm-update-chart-version-v1.5.8` |
+| [Update Helm Chart Version](./actions/helm/update-chart-version) | Updates a Helm chart version, appVersion, and image tag, then creates a Pull Request. This action requires a bot account with access to the charts repo. Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag). | [actions-helm-update-chart-version-v1.5.8](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.5.8) | `uses: TimSchoenle/actions/actions/helm/update-chart-version@57671aff26a042a6a6dfcafd8407cb61abe88bae # tag=actions-helm-update-chart-version-v1.5.8` |
 
 ### Helper
 
@@ -56,14 +56,14 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | Automatically apply spotless formatting and commit changes. | [actions-java-gradle-auto-spotless-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v1.1.4) | `uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@actions-java-gradle-auto-spotless-v1.1.4 # tag=actions-java-gradle-auto-spotless-v1.1.4` |
+| [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | Automatically apply spotless formatting and commit changes. | [actions-java-gradle-auto-spotless-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v1.1.4) | `uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@e765cff1a4b68452e074f186bb8cceb8e92afea3 # tag=actions-java-gradle-auto-spotless-v1.1.4` |
 | [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | Setup Java and Gradle environment for building, with opinionated default settings | [actions-java-gradle-setup-base-environment-v1.2.3](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.3) | `uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@2fddd81b2ff88d6cee86ab71d17091270ce314af # tag=actions-java-gradle-setup-base-environment-v1.2.3` |
 
 ### Maintenance
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | Auto approve Pull Requests with the given user ids and branches. | [actions-maintenance-auto-approve-pr-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.1.4) | `uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@952c0858f31fc87a57429af70db8cda2d37c1642 # tag=actions-maintenance-auto-approve-pr-v1.1.4` |
+| [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | Auto approve Pull Requests with the given user ids and branches. | [actions-maintenance-auto-approve-pr-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.1.5) | `uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@actions-maintenance-auto-approve-pr-v1.1.5 # tag=actions-maintenance-auto-approve-pr-v1.1.5` |
 | [Maintenance Ensure-actions-are-executed](./actions/maintenance/ensure-actions-are-executed) | Ensures selected checks completed successfully when they were started. | [actions-maintenance-ensure-actions-are-executed-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v1.1.0) | `uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@4e453a788e2ca7144982e5fd43c4b987f6ba62ae # tag=actions-maintenance-ensure-actions-are-executed-v1.1.0` |
 
 ### Rust
@@ -72,7 +72,7 @@ Here is a list of all currently maintained actions in this repository:
 | --- | --- | --- | --- |
 | [Rust Auto-format](./actions/rust/auto-format) | Action that runs cargo fmt and commits changes. | [actions-rust-auto-format-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v1.1.0) | `uses: TimSchoenle/actions/actions/rust/auto-format@1361f508f575af13c560c00f774db66b6c020ce3 # tag=actions-rust-auto-format-v1.1.0` |
 | [Rust Cargo-check](./actions/rust/cargo-check) | Action that runs cargo check to verify Rust code compiles without errors. | [actions-rust-cargo-check-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.1.0) | `uses: TimSchoenle/actions/actions/rust/cargo-check@6907d47179efeebed4a374ebacb32921ec4dd3fa # tag=actions-rust-cargo-check-v1.1.0` |
-| [Rust Clippy](./actions/rust/clippy) | Action that runs clippy to catch common mistakes and improve your Rust code. | [actions-rust-clippy-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-clippy-v1.1.1) | `uses: TimSchoenle/actions/actions/rust/clippy@actions-rust-clippy-v1.1.1 # tag=actions-rust-clippy-v1.1.1` |
+| [Rust Clippy](./actions/rust/clippy) | Action that runs clippy to catch common mistakes and improve your Rust code. | [actions-rust-clippy-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-clippy-v1.1.1) | `uses: TimSchoenle/actions/actions/rust/clippy@bcab607db683736d14781974e312d58445270c5c # tag=actions-rust-clippy-v1.1.1` |
 | [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | Action that runs cargo llvm-cov to generate code coverage and uploads to Codecov. | [actions-rust-coverage-codecov-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.5) | `uses: TimSchoenle/actions/actions/rust/coverage-codecov@5944c6a33f7f66d780b296e282b009cb072a4354 # tag=actions-rust-coverage-codecov-v1.1.5` |
 | [Rust Test](./actions/rust/test) | Action that runs cargo nextest to verify Rust code passes tests. | [actions-rust-test-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.0) | `uses: TimSchoenle/actions/actions/rust/test@0db455a705ea67cf5c0844b1b180ed6b653e1c8d # tag=actions-rust-test-v1.1.0` |
 
