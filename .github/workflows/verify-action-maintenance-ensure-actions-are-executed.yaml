@@ -22,8 +22,6 @@ jobs:
   successful-check:
     name: Verify fixture success
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - name: Fixture step
         run: echo "Success fixture"
@@ -32,8 +30,6 @@ jobs:
     name: Verify fixture skipped
     if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - name: Should never run
         run: echo "This should be skipped"
@@ -46,9 +42,9 @@ jobs:
       - skipped-check
     runs-on: ubuntu-latest
     permissions:
-      actions: read
-      contents: read
-      checks: read
+      actions: read # to checkout the actions state
+      contents: read # to checkout
+      checks: read # to check the checks state
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176 # v2.17.0
