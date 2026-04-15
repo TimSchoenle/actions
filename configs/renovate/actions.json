@@ -13,7 +13,7 @@
       "matchPackageNames": ["TimSchoenle/actions"],
       "matchCurrentVersion": "/^actions-/",
       "matchUpdateTypes": ["major", "minor", "patch"],
-      "commitMessageTopic": "{{compatibility}}",
+      "commitMessageTopic": "{{depName}}",
       "commitMessageExtra": "to v{{newVersion}}"
     },
     {
