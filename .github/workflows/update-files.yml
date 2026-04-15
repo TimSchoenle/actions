@@ -47,7 +47,7 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
 
       - name: Setup Bun
-        uses: TimSchoenle/actions/actions/bun/setup-cached@3d01a1101b3c6f5a53ddff0b99cddac4932b7c17 # tag=actions-bun-setup-cached-v1.1.7
+        uses: TimSchoenle/actions/actions/bun/setup-cached@fba42f3b3c460cdeb05f7fe0e49ab949dc6c37a9 # tag=actions-bun-setup-cached-v1.1.8
         with:
           bun-version-file: '.bun-version'
 
@@ -111,7 +111,7 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
 
       - name: Setup Bun
-        uses: TimSchoenle/actions/actions/bun/setup-cached@3d01a1101b3c6f5a53ddff0b99cddac4932b7c17 # tag=actions-bun-setup-cached-v1.1.7
+        uses: TimSchoenle/actions/actions/bun/setup-cached@fba42f3b3c460cdeb05f7fe0e49ab949dc6c37a9 # tag=actions-bun-setup-cached-v1.1.8
 
       - name: Refresh Tags
         run: git fetch --force --tags origin
