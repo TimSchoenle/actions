@@ -16,6 +16,12 @@
       "commitMessageTopic": "{{compatibility}}",
       "commitMessageExtra": "to v{{newVersion}}",
       "additionalBranchPrefix": "{{compatibility}}-"
+    },
+    {
+      "description": "Disable github-actions manager for internal action pins (handled by regex manager)",
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["TimSchoenle/actions"],
+      "enabled": false
     }
   ]
 }
