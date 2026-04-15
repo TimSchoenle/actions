@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/TimSchoenle/actions/compare/actions-test-setup-e2e-v1.2.0...actions-test-setup-e2e-v1.2.1) (2026-04-15)
+
+
+### Build System
+
+* **ci:** fix the rest of zizmor flags ([34faf18](https://github.com/TimSchoenle/actions/commit/34faf18dcc13fd0612a40d78d8dc5f7fc2a6cbee))
+
 ## [1.2.0](https://github.com/TimSchoenle/actions/compare/actions-test-setup-e2e-v1.1.0...actions-test-setup-e2e-v1.2.0) (2026-03-11)
 
 
