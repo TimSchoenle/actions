@@ -80,7 +80,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Setup E2E Test](./actions/test/setup-e2e) | Sets up the environment for E2E testing: generates token, checks out test repo, and checks out actions code. | [actions-test-setup-e2e-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-test-setup-e2e-v1.2.1) | `uses: TimSchoenle/actions/actions/test/setup-e2e@actions-test-setup-e2e-v1.2.1 # tag=actions-test-setup-e2e-v1.2.1` |
+| [Setup E2E Test](./actions/test/setup-e2e) | Sets up the environment for E2E testing: generates token, checks out test repo, and checks out actions code. | [actions-test-setup-e2e-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-test-setup-e2e-v1.2.1) | `uses: TimSchoenle/actions/actions/test/setup-e2e@582a7bd61635e07a349a25622e47b2e9f8465d3c # tag=actions-test-setup-e2e-v1.2.1` |
 
 
 
