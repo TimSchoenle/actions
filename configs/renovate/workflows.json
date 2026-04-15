@@ -14,8 +14,7 @@
       "matchCurrentVersion": "/^workflows-/",
       "matchUpdateTypes": ["major", "minor", "patch"],
       "commitMessageTopic": "{{compatibility}}",
-      "commitMessageExtra": "to v{{newVersion}}",
-      "additionalBranchPrefix": "{{compatibility}}-"
+      "commitMessageExtra": "to v{{newVersion}}"
     },
     {
       "description": "Disable github-actions manager for internal workflow pins (handled by regex manager)",

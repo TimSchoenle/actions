@@ -14,8 +14,7 @@
       "matchCurrentVersion": "/^actions-/",
       "matchUpdateTypes": ["major", "minor", "patch"],
       "commitMessageTopic": "{{compatibility}}",
-      "commitMessageExtra": "to v{{newVersion}}",
-      "additionalBranchPrefix": "{{compatibility}}-"
+      "commitMessageExtra": "to v{{newVersion}}"
     },
     {
       "description": "Disable github-actions manager for internal action pins (handled by regex manager)",

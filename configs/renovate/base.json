@@ -18,7 +18,8 @@
       "matchStrings": [
         "(?<indent>\\s*)uses\\s*:\\s*(?<quote>['\"]?)(?<depPath>TimSchoenle\\/actions(?:\\/[^@'\"\\s#]+)?)@(?<currentDigest>[a-fA-F0-9]{40})(?<quoteEnd>['\"]?)\\s*#\\s*(?<hasTagPrefix>(?:renovate:\\s*)?tag\\s*=\\s*)?(?<currentValue>(?:actions|workflows)-[^\\s#'\"`]+)"
       ],
-      "depNameTemplate": "TimSchoenle/actions",
+      "depNameTemplate": "{{depPath}}",
+      "packageNameTemplate": "TimSchoenle/actions",
       "datasourceTemplate": "github-tags",
       "versioningTemplate": "regex:^(?<compatibility>(?:actions|workflows)-.*)[-/]v?(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)?$",
       "autoReplaceStringTemplate": "{{{indent}}}uses: {{{quote}}}{{{depPath}}}@{{#if newDigest}}{{{newDigest}}}{{/if}}{{#unless newDigest}}{{{newValue}}}{{/unless}}{{{quoteEnd}}} # {{#if hasTagPrefix}}tag={{{newValue}}}{{/if}}{{#unless hasTagPrefix}}{{{newValue}}}{{/unless}}"
