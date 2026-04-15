@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.15](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.14...actions-helper-verify-commit-authors-v1.1.15) (2026-04-15)
+
+
+### Miscellaneous
+
+* **deps:** update graphqlcodegenerator monorepo ([#785](https://github.com/TimSchoenle/actions/issues/785)) ([462b3bc](https://github.com/TimSchoenle/actions/commit/462b3bce7dd3fa71ef2cb02ccfc172a305e55321))
+
 ## [1.1.14](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.13...actions-helper-verify-commit-authors-v1.1.14) (2026-04-13)
 
 
