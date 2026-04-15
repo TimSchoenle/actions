@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.1.13](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.12...workflows-maintenance-auto-bun-prettier-meta-v1.1.13) (2026-04-15)
+
+
+### Build System
+
+* **ci:** migrate custom version comments to tag prefix to comply wi… ([#783](https://github.com/TimSchoenle/actions/issues/783)) ([5f54966](https://github.com/TimSchoenle/actions/commit/5f54966bad6066b7171046395596c792e857c937))
+
+
+### Miscellaneous
+
+* **deps:** update actions/create-github-app-token action to v3.1.0 ([#753](https://github.com/TimSchoenle/actions/issues/753)) ([4f201d2](https://github.com/TimSchoenle/actions/commit/4f201d26245ead0ba1005ee5f5d290993ad1e7dc))
+* **deps:** update actions/create-github-app-token action to v3.1.1 ([#759](https://github.com/TimSchoenle/actions/issues/759)) ([bde535e](https://github.com/TimSchoenle/actions/commit/bde535e107c8b529a742fb7ca63906011acd5023))
+* **deps:** update actions/github-script action to v9 ([#744](https://github.com/TimSchoenle/actions/issues/744)) ([3f631ad](https://github.com/TimSchoenle/actions/commit/3f631ad047b5ac2aca6627c0431db35fc9e68021))
+* **deps:** update all non-major action updates ([#738](https://github.com/TimSchoenle/actions/issues/738)) ([e0e8f90](https://github.com/TimSchoenle/actions/commit/e0e8f903b26ea19ae113403646d8301c70bb54ad))
+* **deps:** update step-security/harden-runner action to v2.18.0 ([#794](https://github.com/TimSchoenle/actions/issues/794)) ([6fd171e](https://github.com/TimSchoenle/actions/commit/6fd171ede7c97630bc8c25dccb70aeae0a7165a6))
+* **deps:** update timschoenle/actions/actions/bun/setup-cached to vactions-bun-setup-cached-v1.1.8 ([#803](https://github.com/TimSchoenle/actions/issues/803)) ([a9fd272](https://github.com/TimSchoenle/actions/commit/a9fd272a99be2adb149961c4b441f8bea78cc31d))
+
 ## [1.1.12](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.11...workflows-maintenance-auto-bun-prettier-meta-v1.1.12) (2026-04-02)
 
 
