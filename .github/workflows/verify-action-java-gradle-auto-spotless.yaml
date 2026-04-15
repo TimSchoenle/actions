@@ -59,8 +59,7 @@ jobs:
           egress-policy: audit
 
       - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # tag=actions-test-setup-e2e-v1.2.0
+        id: setupuses: TimSchoenle/actions/actions/test/setup-e2e@582a7bd61635e07a349a25622e47b2e9f8465d3c # actions-test-setup-e2e-v1.2.1
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -219,8 +218,7 @@ jobs:
 
           echo "✅ File is properly formatted"
 
-      - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
-        uses: TimSchoenle/actions/actions/test/setup-e2e@672acb2c734f080b887f92668c9feba714c2dd31 # tag=actions-test-setup-e2e-v1.2.0
+      - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...uses: TimSchoenle/actions/actions/test/setup-e2e@582a7bd61635e07a349a25622e47b2e9f8465d3c # actions-test-setup-e2e-v1.2.1
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
