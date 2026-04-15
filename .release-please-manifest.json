@@ -25,7 +25,7 @@
   "actions/rust/auto-format": "1.1.1",
   "actions/rust/cargo-check": "1.1.1",
   "actions/rust/clippy": "1.1.1",
-  "actions/rust/coverage-codecov": "1.1.6",
+  "actions/rust/coverage-codecov": "1.1.7",
   "actions/rust/test": "1.1.0",
   "actions/maintenance/ensure-actions-are-executed": "1.1.0"
 }
