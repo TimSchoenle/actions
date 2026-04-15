@@ -16,12 +16,12 @@
         "/(^|/)workflows/(.*/)?workflow\\.ya?ml$/"
       ],
       "matchStrings": [
-        "(?<indent>\\s*)uses\\s*:\\s*(?<quote>['\"]?)(?<depName>TimSchoenle\\/actions(?:\\/[^@'\"\\s#]+)?)@(?<currentDigest>[a-fA-F0-9]{40})(?<quoteEnd>['\"]?)\\s*#\\s*(?<hasTagPrefix>(?:renovate:\\s*)?tag\\s*=\\s*)?(?<currentValue>(?:actions|workflows)-[^\\s#'\"`]+)"
+        "uses\\s*:\\s*['\"]?(?<depName>TimSchoenle\\/actions(?:\\/[^@'\"\\s#]+)?)@(?<currentDigest>[a-fA-F0-9]{40})['\"]?\\s*#\\s*(?:(?:renovate:\\s*)?tag\\s*=\\s*)?(?<currentValue>(?:actions|workflows)-[^\\s#'\"`]+)"
       ],
       "packageNameTemplate": "TimSchoenle/actions",
       "datasourceTemplate": "github-tags",
       "versioningTemplate": "regex:^(?<compatibility>(?:actions|workflows)-.*)[-/]v?(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)?$",
-      "autoReplaceStringTemplate": "{{{indent}}}uses: {{{quote}}}{{{depName}}}@{{#if newDigest}}{{{newDigest}}}{{/if}}{{#unless newDigest}}{{{newValue}}}{{/unless}}{{{quoteEnd}}} # {{#if hasTagPrefix}}tag={{{newValue}}}{{/if}}{{#unless hasTagPrefix}}{{{newValue}}}{{/unless}}"
+      "autoReplaceStringTemplate": "uses: {{{depName}}}@{{#if newDigest}}{{{newDigest}}}{{/if}}{{#unless newDigest}}{{{newValue}}}{{/unless}} # tag={{{newValue}}}"
     }
   ]
 }
