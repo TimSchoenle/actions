@@ -22,7 +22,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Bun Setup-cached](./actions/bun/setup-cached) | Sets up Bun and manages dependency caching. | [actions-bun-setup-cached-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/actions-bun-setup-cached-v1.1.7) | `uses: TimSchoenle/actions/actions/bun/setup-cached@3d01a1101b3c6f5a53ddff0b99cddac4932b7c17 # tag=actions-bun-setup-cached-v1.1.7` |
+| [Bun Setup-cached](./actions/bun/setup-cached) | Sets up Bun and manages dependency caching. | [actions-bun-setup-cached-v1.1.8](https://github.com/TimSchoenle/actions/releases/tag/actions-bun-setup-cached-v1.1.8) | `uses: TimSchoenle/actions/actions/bun/setup-cached@actions-bun-setup-cached-v1.1.8 # tag=actions-bun-setup-cached-v1.1.8` |
 
 ### Common
 
