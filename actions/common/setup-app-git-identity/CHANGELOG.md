@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-common-setup-app-git-identity-v1.1.0...actions-common-setup-app-git-identity-v1.1.1) (2026-04-15)
+
+
+### Build System
+
+* **ci:** migrate custom version comments to tag prefix to comply wi… ([#783](https://github.com/TimSchoenle/actions/issues/783)) ([5f54966](https://github.com/TimSchoenle/actions/commit/5f54966bad6066b7171046395596c792e857c937))
+
 ## [1.1.0](https://github.com/TimSchoenle/actions/compare/actions-common-setup-app-git-identity-v1.0.0...actions-common-setup-app-git-identity-v1.1.0) (2026-01-09)
 
 
