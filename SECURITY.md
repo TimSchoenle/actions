@@ -51,7 +51,7 @@ Any version not listed in the following tables is not supported.
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | [actions-maintenance-auto-approve-pr-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.1.5) | :white_check_mark: |
+| [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | [actions-maintenance-auto-approve-pr-v1.1.6](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.1.6) | :white_check_mark: |
 | [Maintenance Ensure-actions-are-executed](./actions/maintenance/ensure-actions-are-executed) | [actions-maintenance-ensure-actions-are-executed-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v1.1.0) | :white_check_mark: |
 
 ### Rust
