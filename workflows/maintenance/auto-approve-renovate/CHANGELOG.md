@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.4.3](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.4.2...workflows-maintenance-auto-approve-renovate-meta-v1.4.3) (2026-04-15)
+
+
+### Build System
+
+* **ci:** migrate custom version comments to tag prefix to comply wi… ([#783](https://github.com/TimSchoenle/actions/issues/783)) ([5f54966](https://github.com/TimSchoenle/actions/commit/5f54966bad6066b7171046395596c792e857c937))
+* **renovate:** adjust auto merge rules for new custom regex manager ([8981c12](https://github.com/TimSchoenle/actions/commit/8981c12d4d21ffb3200a599fe0dbc9bbcd768f37))
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#738](https://github.com/TimSchoenle/actions/issues/738)) ([e0e8f90](https://github.com/TimSchoenle/actions/commit/e0e8f903b26ea19ae113403646d8301c70bb54ad))
+* **deps:** update step-security/harden-runner action to v2.18.0 ([#794](https://github.com/TimSchoenle/actions/issues/794)) ([6fd171e](https://github.com/TimSchoenle/actions/commit/6fd171ede7c97630bc8c25dccb70aeae0a7165a6))
+* **deps:** update to vactions-maintenance-auto-approve-pr-v1.1.5 ([#790](https://github.com/TimSchoenle/actions/issues/790)) ([0be00ae](https://github.com/TimSchoenle/actions/commit/0be00aee7166225357aad8dee912beb4043c3bba))
+
 ## [1.4.2](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.4.1...workflows-maintenance-auto-approve-renovate-meta-v1.4.2) (2026-04-08)
 
 
