@@ -79,7 +79,7 @@ Any version not listed in the following tables is not supported.
 | --- | --- | --- |
 | [Auto Format](./workflows/maintenance/auto-bun-prettier) | [workflows-maintenance-auto-bun-prettier-v1.1.13](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-bun-prettier-v1.1.13) | :white_check_mark: |
 | [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | [workflows-maintenance-timed-auto-pr-approve-v1.2.13](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-timed-auto-pr-approve-v1.2.13) | :white_check_mark: |
-| [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | [workflows-maintenance-auto-approve-renovate-v1.4.3](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-approve-renovate-v1.4.3) | :white_check_mark: |
+| [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | [workflows-maintenance-auto-approve-renovate-v1.4.4](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-approve-renovate-v1.4.4) | :white_check_mark: |
 | [Maintenance Auto-rebase](./workflows/maintenance/auto-rebase) | [workflows-maintenance-auto-rebase-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-rebase-v1.1.4) | :white_check_mark: |
 | [Maintenance Wipe-cache](./workflows/maintenance/wipe-cache) | [workflows-maintenance-wipe-cache-v1.1.6](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-wipe-cache-v1.1.6) | :white_check_mark: |
 
