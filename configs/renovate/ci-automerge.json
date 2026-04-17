@@ -3,6 +3,11 @@
   "description": "Auto-merge rules for all none major Github Actions including custom actions defined in this repository.",
   "packageRules": [
     {
+      "description": "Internal actions: Use a shorter minimumReleaseAge",
+      "matchPackageNames": ["TimSchoenle/actions"],
+      "minimumReleaseAge": "1 hour"
+    },
+    {
       "description": "CI actions: safe to auto-merge",
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["minor", "patch", "digest", "pin"],
