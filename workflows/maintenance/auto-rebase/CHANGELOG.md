@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.5](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-rebase-meta-v1.1.4...workflows-maintenance-auto-rebase-meta-v1.1.5) (2026-04-17)
+
+
+### Miscellaneous
+
+* **deps:** update actions/create-github-app-token action to v3.1.0 ([#753](https://github.com/TimSchoenle/actions/issues/753)) ([4f201d2](https://github.com/TimSchoenle/actions/commit/4f201d26245ead0ba1005ee5f5d290993ad1e7dc))
+* **deps:** update actions/create-github-app-token action to v3.1.1 ([#759](https://github.com/TimSchoenle/actions/issues/759)) ([bde535e](https://github.com/TimSchoenle/actions/commit/bde535e107c8b529a742fb7ca63906011acd5023))
+* **deps:** update actions/github-script action to v9 ([#744](https://github.com/TimSchoenle/actions/issues/744)) ([3f631ad](https://github.com/TimSchoenle/actions/commit/3f631ad047b5ac2aca6627c0431db35fc9e68021))
+
 ## [1.1.4](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-rebase-meta-v1.1.3...workflows-maintenance-auto-rebase-meta-v1.1.4) (2026-03-21)
 
 
