@@ -151,3 +151,26 @@ jobs:
           # Check if the unique dependency is present (it might be symlinked or copied depending on bun)
           test -d "node_modules/$TEST_PKG" || (echo "::error::dependency $TEST_PKG not found" && exit 1)
           echo "Cache restored successfully"
+
+  ensure-jobs-are-executed:
+    name: Ensure all jobs are correctly executed. This is a workaround for jobs with conditional steps, which should be  required if they execute.
+    if: ${{ always() }}
+    needs:
+      - prime-cache
+      - verify-cache
+    runs-on: ubuntu-latest
+    permissions:
+      checks: read # to check status of completed jobs
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@6c3c2f2c1c457b00c10c4848d6f5491db3b629df # v2.18.0
+        with:
+          egress-policy: audit
+
+      - name: Ensure all steps correctly completed
+        uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@4e453a788e2ca7144982e5fd43c4b987f6ba62ae # tag=actions-maintenance-ensure-actions-are-executed-v1.1.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checks: |
+            Prime Cache
+            Verify Cache Hit
