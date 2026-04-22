@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "chalk": "5",
-    "inquirer": "13.4.1",
+    "inquirer": "13.4.2",
     "openpgp": "6.3.0"
   },
   "workspaces": [
