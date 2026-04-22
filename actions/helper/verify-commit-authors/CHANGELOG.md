@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.16](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.15...actions-helper-verify-commit-authors-v1.1.16) (2026-04-22)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @graphql-codegen/cli to v6.3.1 ([#828](https://github.com/TimSchoenle/actions/issues/828)) ([62fd535](https://github.com/TimSchoenle/actions/commit/62fd535f1ae264e99a3333c58c5dc95819ab66b4))
+* **deps:** update dependency fast-check to v4.7.0 ([#823](https://github.com/TimSchoenle/actions/issues/823)) ([4f78c8c](https://github.com/TimSchoenle/actions/commit/4f78c8c676936e2ebd391ab2d42d41b4079fd0df))
+* **deps:** update dependency typescript to v6.0.3 ([#818](https://github.com/TimSchoenle/actions/issues/818)) ([e2a37af](https://github.com/TimSchoenle/actions/commit/e2a37af0505c4fb0aa0b4523ca1d7fa38e45ee45))
+
 ## [1.1.15](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.14...actions-helper-verify-commit-authors-v1.1.15) (2026-04-15)
 
 
