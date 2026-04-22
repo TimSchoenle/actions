@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.13](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.12...actions-common-modify-yaml-v1.2.13) (2026-04-22)
+
+
+### Miscellaneous
+
+* **deps:** update dependency fast-check to v4.7.0 ([#823](https://github.com/TimSchoenle/actions/issues/823)) ([4f78c8c](https://github.com/TimSchoenle/actions/commit/4f78c8c676936e2ebd391ab2d42d41b4079fd0df))
+* **deps:** update dependency typescript to v6.0.3 ([#818](https://github.com/TimSchoenle/actions/issues/818)) ([e2a37af](https://github.com/TimSchoenle/actions/commit/e2a37af0505c4fb0aa0b4523ca1d7fa38e45ee45))
+
 ## [1.2.12](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.11...actions-common-modify-yaml-v1.2.12) (2026-04-15)
 
 
