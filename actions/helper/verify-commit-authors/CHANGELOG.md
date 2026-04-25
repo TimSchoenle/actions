@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.17](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.16...actions-helper-verify-commit-authors-v1.1.17) (2026-04-25)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @actions/github to v9.1.1 ([#850](https://github.com/TimSchoenle/actions/issues/850)) ([e764dbd](https://github.com/TimSchoenle/actions/commit/e764dbdfa506960bbc587ad5452ae3206aabb695))
+
+
+### Miscellaneous
+
+* **deps:** update vitest monorepo to v4.1.5 (patch) ([#839](https://github.com/TimSchoenle/actions/issues/839)) ([6377dea](https://github.com/TimSchoenle/actions/commit/6377dea70a1d83a96b2a27ef41b54deca6c70ff9))
+
 ## [1.1.16](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.15...actions-helper-verify-commit-authors-v1.1.16) (2026-04-22)
 
 
