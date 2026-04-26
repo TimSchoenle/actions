@@ -1,4 +1,0 @@
-paths:
-  workflows/**/*.yaml:
-    ignore:
-      - 'unexpected key "description".*'
