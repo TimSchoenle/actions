@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.5](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.4.4...workflows-maintenance-auto-approve-renovate-meta-v1.4.5) (2026-04-26)
+
+
+### Miscellaneous
+
+* **deps:** update step-security/harden-runner action to v2.19.0 ([#837](https://github.com/TimSchoenle/actions/issues/837)) ([57484d6](https://github.com/TimSchoenle/actions/commit/57484d6432a034ba943af67b21a2ec77a8475140))
+* **deps:** update timschoenle/actions/actions/maintenance/auto-approve-pr to vactions-maintenance-auto-approve-pr-v1.1.7 ([#848](https://github.com/TimSchoenle/actions/issues/848)) ([aeb423a](https://github.com/TimSchoenle/actions/commit/aeb423ae4fbf7221a2eb235d1046ba94c7fa6b7c))
+
 ## [1.4.4](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.4.3...workflows-maintenance-auto-approve-renovate-meta-v1.4.4) (2026-04-16)
 
 
