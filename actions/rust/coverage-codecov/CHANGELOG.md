@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.9](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v1.1.8...actions-rust-coverage-codecov-v1.1.9) (2026-04-26)
+
+
+### Miscellaneous
+
+* **deps:** update taiki-e/install-action action to v2.75.19 ([#845](https://github.com/TimSchoenle/actions/issues/845)) ([7f27184](https://github.com/TimSchoenle/actions/commit/7f27184da21cdf82a9a25552c4a55a0adec166d4))
+* **deps:** update taiki-e/install-action action to v2.75.20 ([#853](https://github.com/TimSchoenle/actions/issues/853)) ([4bff013](https://github.com/TimSchoenle/actions/commit/4bff0139ad92830c740aa8b07a928642f7bea83c))
+
 ## [1.1.8](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v1.1.7...actions-rust-coverage-codecov-v1.1.8) (2026-04-22)
 
 
