@@ -36,6 +36,6 @@ runs:
         components: clippy
 
     - name: Run clippy
-      uses: clechasseur/rs-clippy-check@b418607012136b974dc5c880877df721d630bbc1 # v6.0.2
+      uses: clechasseur/rs-clippy-check@3a0225255fc5c07aefde16d229e8479a137ddd8e # v6.0.3
       with:
         args: ${{ inputs.clippy_arguments }}
