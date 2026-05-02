@@ -13,7 +13,7 @@
     "yaml": "^2.7.0"
   },
   "devDependencies": {
-    "@fast-check/vitest": "0.4.0",
+    "@fast-check/vitest": "0.4.1",
     "@types/node": "25.6.0",
     "fast-check": "4.7.0",
     "typescript": "6.0.3",
