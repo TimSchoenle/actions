@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.15](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.14...actions-common-modify-yaml-v1.2.15) (2026-05-02)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @fast-check/vitest to v0.4.1 ([#872](https://github.com/TimSchoenle/actions/issues/872)) ([62abd92](https://github.com/TimSchoenle/actions/commit/62abd92736c1db85c9e1ff48ff80633da52ff8a2))
+
 ## [1.2.14](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.13...actions-common-modify-yaml-v1.2.14) (2026-04-26)
 
 
