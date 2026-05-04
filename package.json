@@ -29,7 +29,7 @@
     "ansi-escapes": "7.3.0",
     "chardet": "2.1.1",
     "cli-width": "4.1.0",
-    "eslint": "10.2.1",
+    "eslint": "10.3.0",
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-no-secrets": "2.3.3",
     "eslint-plugin-perfectionist": "5.9.0",
