@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.15](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.14...workflows-maintenance-auto-bun-prettier-meta-v1.1.15) (2026-05-07)
+
+
+### Miscellaneous
+
+* **deps:** update step-security/harden-runner action to v2.19.1 ([#885](https://github.com/TimSchoenle/actions/issues/885)) ([11e3547](https://github.com/TimSchoenle/actions/commit/11e354755367f24396e322f89094a2dbefbb609a))
+
 ## [1.1.14](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.13...workflows-maintenance-auto-bun-prettier-meta-v1.1.14) (2026-04-26)
 
 
