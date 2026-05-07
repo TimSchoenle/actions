@@ -7,7 +7,7 @@
   "actions/bun/setup-cached": "1.1.8",
   "workflows/maintenance/auto-bun-prettier": "1.1.14",
   "actions/common/commit-changes": "1.1.4",
-  "workflows/maintenance/auto-approve-renovate": "1.4.6",
+  "workflows/maintenance/auto-approve-renovate": "1.4.7",
   "actions/helper/verify-commit-authors": "1.1.18",
   "workflows/maintenance/timed-auto-pr-approve": "1.2.17",
   "actions/common/create-pull-request": "1.0.5",
