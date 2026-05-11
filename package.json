@@ -16,7 +16,7 @@
   },
   "type": "module",
   "devDependencies": {
-    "@eslint/compat": "2.0.5",
+    "@eslint/compat": "2.1.0",
     "@eslint/js": "10.0.1",
     "@fast-check/vitest": "0.4.1",
     "@inquirer/prompts": "8.4.2",
