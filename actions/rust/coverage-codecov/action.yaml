@@ -34,7 +34,7 @@ runs:
         ref: ${{ inputs.branch }}
 
     - name: Install stable toolchain
-      uses: actions-rust-lang/setup-rust-toolchain@2b1f5e9b395427c92ee4e3331786ca3c37afe2d7 # v1.16.0
+      uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # v1.16.1
 
     - name: Install cargo-llvm-cov and nextest
       uses: taiki-e/install-action@3fa6878dc4ae603f73960271565a082bf196ab96 # v2.77.2
