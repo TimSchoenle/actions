@@ -40,7 +40,7 @@
     "iconv-lite": "0.7.2",
     "js-yaml": "4.1.1",
     "lint-staged": "17.0.3",
-    "mute-stream": "3.0.0",
+    "mute-stream": "4.0.0",
     "prettier": "3.8.3",
     "run-async": "4.0.6",
     "rxjs": "7.8.2",
