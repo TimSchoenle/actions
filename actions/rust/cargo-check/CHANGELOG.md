@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-rust-cargo-check-v1.1.1...actions-rust-cargo-check-v1.1.2) (2026-05-14)
+
+
+### Miscellaneous
+
+* **deps:** update actions-rust-lang/setup-rust-toolchain action to v1.16.1 ([#911](https://github.com/TimSchoenle/actions/issues/911)) ([68675c1](https://github.com/TimSchoenle/actions/commit/68675c1a53f2788bbc92a51bdd5d66d2bbaaa19b))
+
 ## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-rust-cargo-check-v1.1.0...actions-rust-cargo-check-v1.1.1) (2026-04-15)
 
 
