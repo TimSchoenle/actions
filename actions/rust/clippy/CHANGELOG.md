@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.4](https://github.com/TimSchoenle/actions/compare/actions-rust-clippy-v1.1.3...actions-rust-clippy-v1.1.4) (2026-05-14)
+
+
+### Miscellaneous
+
+* **deps:** update actions-rust-lang/setup-rust-toolchain action to v1.16.1 ([#911](https://github.com/TimSchoenle/actions/issues/911)) ([68675c1](https://github.com/TimSchoenle/actions/commit/68675c1a53f2788bbc92a51bdd5d66d2bbaaa19b))
+* **deps:** update clechasseur/rs-clippy-check action to v6.0.4 ([#915](https://github.com/TimSchoenle/actions/issues/915)) ([e35b200](https://github.com/TimSchoenle/actions/commit/e35b200acf0312216694bfa8b006aa21040fad86))
+
 ## [1.1.3](https://github.com/TimSchoenle/actions/compare/actions-rust-clippy-v1.1.2...actions-rust-clippy-v1.1.3) (2026-04-29)
 
 
