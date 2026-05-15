@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.18](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.17...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.18) (2026-05-15)
+
+
+### Miscellaneous
+
+* **deps:** update actions/create-github-app-token digest to bcd2ba4 ([#918](https://github.com/TimSchoenle/actions/issues/918)) ([738e802](https://github.com/TimSchoenle/actions/commit/738e8028129549c2d346d1f5d126cbfb5ed37910))
+* **deps:** update timschoenle/actions/actions/helper/verify-commit-authors to vactions-helper-verify-commit-authors-v1.1.19 ([#923](https://github.com/TimSchoenle/actions/issues/923)) ([11dcda8](https://github.com/TimSchoenle/actions/commit/11dcda81b6d242549d112ece2d757e7250329d22))
+
 ## [1.2.17](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.16...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.17) (2026-05-05)
 
 
