@@ -30,7 +30,7 @@ Any version not listed in the following tables is not supported.
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Update Helm Chart Version](./actions/helm/update-chart-version) | [actions-helm-update-chart-version-v1.5.9](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.5.9) | :white_check_mark: |
+| [Update Helm Chart Version](./actions/helm/update-chart-version) | [actions-helm-update-chart-version-v1.5.10](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.5.10) | :white_check_mark: |
 
 ### Helper
 
