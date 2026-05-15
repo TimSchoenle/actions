@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.10](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.5.9...actions-helm-update-chart-version-v1.5.10) (2026-05-15)
+
+
+### Miscellaneous
+
+* **deps:** update actions/create-github-app-token digest to bcd2ba4 ([#918](https://github.com/TimSchoenle/actions/issues/918)) ([738e802](https://github.com/TimSchoenle/actions/commit/738e8028129549c2d346d1f5d126cbfb5ed37910))
+
 ## [1.5.9](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.5.8...actions-helm-update-chart-version-v1.5.9) (2026-04-15)
 
 
