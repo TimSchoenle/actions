@@ -137,7 +137,7 @@ runs:
 
     - name: Create Pull Request
       id: create-pr
-      uses: TimSchoenle/actions/actions/common/create-pull-request@d3ca86986d44968790a98960aa09f4e4ca2ce4e7 # tag=actions-common-create-pull-request-v1.0.5
+      uses: TimSchoenle/actions/actions/common/create-pull-request@6ac9d25fec5594b05b51bd2eebafe606a6f5c917 # tag=actions-common-create-pull-request-v1.0.6
       with:
         app-id: ${{ inputs.app-id }}
         private-key: ${{ inputs.private-key }}
