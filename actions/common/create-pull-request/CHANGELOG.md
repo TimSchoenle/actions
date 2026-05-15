@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.6](https://github.com/TimSchoenle/actions/compare/actions-common-create-pull-request-v1.0.5...actions-common-create-pull-request-v1.0.6) (2026-05-15)
+
+
+### Miscellaneous
+
+* **deps:** update actions/create-github-app-token digest to bcd2ba4 ([#918](https://github.com/TimSchoenle/actions/issues/918)) ([738e802](https://github.com/TimSchoenle/actions/commit/738e8028129549c2d346d1f5d126cbfb5ed37910))
+
 ## [1.0.5](https://github.com/TimSchoenle/actions/compare/actions-common-create-pull-request-v1.0.4...actions-common-create-pull-request-v1.0.5) (2026-04-15)
 
 
