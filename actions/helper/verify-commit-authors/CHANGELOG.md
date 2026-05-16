@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.20](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.19...actions-helper-verify-commit-authors-v1.1.20) (2026-05-16)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v25.7.0 ([#933](https://github.com/TimSchoenle/actions/issues/933)) ([39c4132](https://github.com/TimSchoenle/actions/commit/39c413243ff0b99b48e0d14737e584b8966adf6d))
+* **deps:** update dependency fast-check to v4.8.0 ([#934](https://github.com/TimSchoenle/actions/issues/934)) ([e8ca5d0](https://github.com/TimSchoenle/actions/commit/e8ca5d0a51a42a739be76e3b26e383460b276e14))
+* **deps:** update vitest monorepo to v4.1.6 ([#929](https://github.com/TimSchoenle/actions/issues/929)) ([c5d3ebd](https://github.com/TimSchoenle/actions/commit/c5d3ebd651b3cb14b09050f6ae0402a8ac9ced3c))
+
 ## [1.1.19](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.18...actions-helper-verify-commit-authors-v1.1.19) (2026-05-12)
 
 
