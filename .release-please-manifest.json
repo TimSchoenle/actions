@@ -8,7 +8,7 @@
   "workflows/maintenance/auto-bun-prettier": "1.1.15",
   "actions/common/commit-changes": "1.1.4",
   "workflows/maintenance/auto-approve-renovate": "1.4.7",
-  "actions/helper/verify-commit-authors": "1.1.19",
+  "actions/helper/verify-commit-authors": "1.1.20",
   "workflows/maintenance/timed-auto-pr-approve": "1.2.18",
   "actions/common/create-pull-request": "1.0.6",
   "actions/test/setup-e2e": "1.2.1",
