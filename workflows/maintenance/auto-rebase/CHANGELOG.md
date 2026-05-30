@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.6](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-rebase-meta-v1.1.5...workflows-maintenance-auto-rebase-meta-v1.1.6) (2026-05-30)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates (minor) ([#943](https://github.com/TimSchoenle/actions/issues/943)) ([0aec39b](https://github.com/TimSchoenle/actions/commit/0aec39b1ff4ba893e7567293f61b425f28c3df0e))
+
 ## [1.1.5](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-rebase-meta-v1.1.4...workflows-maintenance-auto-rebase-meta-v1.1.5) (2026-04-17)
 
 
