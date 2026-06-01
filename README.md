@@ -42,7 +42,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Update Helm Chart Version](./actions/helm/update-chart-version) | Updates a Helm chart version, appVersion, and image tag, then creates a Pull Request. This action requires a bot account with access to the charts repo. Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag). | [actions-helm-update-chart-version-v1.5.11](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.5.11) | `uses: TimSchoenle/actions/actions/helm/update-chart-version@a09cb001100ec4bcb7d70e828253b2c8e13ae64c # tag=actions-helm-update-chart-version-v1.5.11` |
+| [Update Helm Chart Version](./actions/helm/update-chart-version) | Updates a Helm chart version, appVersion, and image tag, then creates a Pull Request. This action requires a bot account with access to the charts repo. Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag). | [actions-helm-update-chart-version-v1.5.12](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.5.12) | `uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.5.12 # tag=actions-helm-update-chart-version-v1.5.12` |
 
 ### Helper
 
