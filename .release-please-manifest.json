@@ -26,6 +26,6 @@
   "actions/rust/cargo-check": "1.1.3",
   "actions/rust/clippy": "1.1.5",
   "actions/rust/coverage-codecov": "1.1.18",
-  "actions/rust/test": "1.1.0",
+  "actions/rust/test": "1.1.1",
   "actions/maintenance/ensure-actions-are-executed": "1.1.0"
 }

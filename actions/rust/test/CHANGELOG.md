@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-rust-test-v1.1.0...actions-rust-test-v1.1.1) (2026-06-06)
+
+
+### CI
+
+* update checkout actions to v6.0.3 ([2461add](https://github.com/TimSchoenle/actions/commit/2461add20df465d72d0a46c4e764f5db6fbc2d45))
+
 ## [1.1.0](https://github.com/TimSchoenle/actions/compare/actions-rust-test-v1.0.0...actions-rust-test-v1.1.0) (2026-03-18)
 
 
