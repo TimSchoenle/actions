@@ -56,7 +56,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | Automatically apply spotless formatting and commit changes. | [actions-java-gradle-auto-spotless-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v1.1.5) | `uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@5b5238b152b5aad4c52e622904dfda6f2e603f9e # tag=actions-java-gradle-auto-spotless-v1.1.5` |
+| [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | Automatically apply spotless formatting and commit changes. | [actions-java-gradle-auto-spotless-v1.1.6](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v1.1.6) | `uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@actions-java-gradle-auto-spotless-v1.1.6 # tag=actions-java-gradle-auto-spotless-v1.1.6` |
 | [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | Setup Java and Gradle environment for building, with opinionated default settings | [actions-java-gradle-setup-base-environment-v1.2.3](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.3) | `uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@2fddd81b2ff88d6cee86ab71d17091270ce314af # tag=actions-java-gradle-setup-base-environment-v1.2.3` |
 
 ### Maintenance
@@ -70,7 +70,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Rust Auto-format](./actions/rust/auto-format) | Action that runs cargo fmt and commits changes. | [actions-rust-auto-format-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v1.1.4) | `uses: TimSchoenle/actions/actions/rust/auto-format@actions-rust-auto-format-v1.1.4 # tag=actions-rust-auto-format-v1.1.4` |
+| [Rust Auto-format](./actions/rust/auto-format) | Action that runs cargo fmt and commits changes. | [actions-rust-auto-format-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v1.1.4) | `uses: TimSchoenle/actions/actions/rust/auto-format@c5af21c1e21b75f2f88316b48e3551680af039e2 # tag=actions-rust-auto-format-v1.1.4` |
 | [Rust Cargo-check](./actions/rust/cargo-check) | Action that runs cargo check to verify Rust code compiles without errors. | [actions-rust-cargo-check-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.1.3) | `uses: TimSchoenle/actions/actions/rust/cargo-check@1bc34bcc20aa78b4c4084f404d4ad219caef55c4 # tag=actions-rust-cargo-check-v1.1.3` |
 | [Rust Clippy](./actions/rust/clippy) | Action that runs clippy to catch common mistakes and improve your Rust code. | [actions-rust-clippy-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-clippy-v1.1.5) | `uses: TimSchoenle/actions/actions/rust/clippy@dd5cdff87cdbe2661f5bc5a4621fa5a370f8deb3 # tag=actions-rust-clippy-v1.1.5` |
 | [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | Action that runs cargo llvm-cov to generate code coverage and uploads to Codecov. | [actions-rust-coverage-codecov-v1.1.18](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.18) | `uses: TimSchoenle/actions/actions/rust/coverage-codecov@611b3cf9159f1c73808c20ff44fd1a53c37669eb # tag=actions-rust-coverage-codecov-v1.1.18` |
