@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.17](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.16...workflows-maintenance-auto-bun-prettier-meta-v1.1.17) (2026-06-05)
+
+
+### Miscellaneous
+
+* **deps:** update actions/checkout digest to df4cb1c ([#980](https://github.com/TimSchoenle/actions/issues/980)) ([b5d4ced](https://github.com/TimSchoenle/actions/commit/b5d4ced7c35ec7173df139421e67b17817534c88))
+
 ## [1.1.16](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.15...workflows-maintenance-auto-bun-prettier-meta-v1.1.16) (2026-05-30)
 
 
