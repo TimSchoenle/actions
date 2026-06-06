@@ -73,14 +73,14 @@ Here is a list of all currently maintained actions in this repository:
 | [Rust Auto-format](./actions/rust/auto-format) | Action that runs cargo fmt and commits changes. | [actions-rust-auto-format-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v1.1.4) | `uses: TimSchoenle/actions/actions/rust/auto-format@c5af21c1e21b75f2f88316b48e3551680af039e2 # tag=actions-rust-auto-format-v1.1.4` |
 | [Rust Cargo-check](./actions/rust/cargo-check) | Action that runs cargo check to verify Rust code compiles without errors. | [actions-rust-cargo-check-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.1.3) | `uses: TimSchoenle/actions/actions/rust/cargo-check@1bc34bcc20aa78b4c4084f404d4ad219caef55c4 # tag=actions-rust-cargo-check-v1.1.3` |
 | [Rust Clippy](./actions/rust/clippy) | Action that runs clippy to catch common mistakes and improve your Rust code. | [actions-rust-clippy-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-clippy-v1.1.5) | `uses: TimSchoenle/actions/actions/rust/clippy@dd5cdff87cdbe2661f5bc5a4621fa5a370f8deb3 # tag=actions-rust-clippy-v1.1.5` |
-| [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | Action that runs cargo llvm-cov to generate code coverage and uploads to Codecov. | [actions-rust-coverage-codecov-v1.1.18](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.18) | `uses: TimSchoenle/actions/actions/rust/coverage-codecov@611b3cf9159f1c73808c20ff44fd1a53c37669eb # tag=actions-rust-coverage-codecov-v1.1.18` |
+| [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | Action that runs cargo llvm-cov to generate code coverage and uploads to Codecov. | [actions-rust-coverage-codecov-v1.1.19](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.19) | `uses: TimSchoenle/actions/actions/rust/coverage-codecov@actions-rust-coverage-codecov-v1.1.19 # tag=actions-rust-coverage-codecov-v1.1.19` |
 | [Rust Test](./actions/rust/test) | Action that runs cargo nextest to verify Rust code passes tests. | [actions-rust-test-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.1) | `uses: TimSchoenle/actions/actions/rust/test@c6844b562767b6e68fff4d39bdf9eced6e29b318 # tag=actions-rust-test-v1.1.1` |
 
 ### Test
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Setup E2E Test](./actions/test/setup-e2e) | Sets up the environment for E2E testing: generates token, checks out test repo, and checks out actions code. | [actions-test-setup-e2e-v1.2.2](https://github.com/TimSchoenle/actions/releases/tag/actions-test-setup-e2e-v1.2.2) | `uses: TimSchoenle/actions/actions/test/setup-e2e@actions-test-setup-e2e-v1.2.2 # tag=actions-test-setup-e2e-v1.2.2` |
+| [Setup E2E Test](./actions/test/setup-e2e) | Sets up the environment for E2E testing: generates token, checks out test repo, and checks out actions code. | [actions-test-setup-e2e-v1.2.2](https://github.com/TimSchoenle/actions/releases/tag/actions-test-setup-e2e-v1.2.2) | `uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2` |
 
 
 
