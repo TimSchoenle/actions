@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/TimSchoenle/actions/compare/actions-test-setup-e2e-v1.2.1...actions-test-setup-e2e-v1.2.2) (2026-06-06)
+
+
+### CI
+
+* update checkout actions to v6.0.3 ([2461add](https://github.com/TimSchoenle/actions/commit/2461add20df465d72d0a46c4e764f5db6fbc2d45))
+
 ## [1.2.1](https://github.com/TimSchoenle/actions/compare/actions-test-setup-e2e-v1.2.0...actions-test-setup-e2e-v1.2.1) (2026-04-15)
 
 
