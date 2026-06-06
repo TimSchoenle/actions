@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.19](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v1.1.18...actions-rust-coverage-codecov-v1.1.19) (2026-06-06)
+
+
+### Miscellaneous
+
+* **deps:** update actions/checkout digest to df4cb1c ([#980](https://github.com/TimSchoenle/actions/issues/980)) ([b5d4ced](https://github.com/TimSchoenle/actions/commit/b5d4ced7c35ec7173df139421e67b17817534c88))
+* **deps:** update all non-major action updates to v2.81.1 ([#996](https://github.com/TimSchoenle/actions/issues/996)) ([dcb44d6](https://github.com/TimSchoenle/actions/commit/dcb44d69c48783a2aa17f05bca3ad79e0b645ea8))
+
 ## [1.1.18](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v1.1.17...actions-rust-coverage-codecov-v1.1.18) (2026-06-01)
 
 
