@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.13](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.5.12...actions-helm-update-chart-version-v1.5.13) (2026-06-06)
+
+
+### Miscellaneous
+
+* **deps:** update actions/checkout digest to df4cb1c ([#980](https://github.com/TimSchoenle/actions/issues/980)) ([b5d4ced](https://github.com/TimSchoenle/actions/commit/b5d4ced7c35ec7173df139421e67b17817534c88))
+
 ## [1.5.12](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.5.11...actions-helm-update-chart-version-v1.5.12) (2026-06-01)
 
 
