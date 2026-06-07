@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.22](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.21...actions-helper-verify-commit-authors-v1.1.22) (2026-06-07)
+
+
+### Miscellaneous
+
+* **deps:** update vitest monorepo to v4.1.8 ([#995](https://github.com/TimSchoenle/actions/issues/995)) ([6f8246a](https://github.com/TimSchoenle/actions/commit/6f8246a1917fc7cb272523810214b7c1f020c702))
+
 ## [1.1.21](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.20...actions-helper-verify-commit-authors-v1.1.21) (2026-05-30)
 
 
