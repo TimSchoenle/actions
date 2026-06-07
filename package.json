@@ -53,7 +53,7 @@
   "dependencies": {
     "chalk": "5",
     "inquirer": "13.4.3",
-    "openpgp": "6.3.0"
+    "openpgp": "6.3.1"
   },
   "workspaces": [
     "actions/**/*",
