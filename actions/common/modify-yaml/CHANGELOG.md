@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.19](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.18...actions-common-modify-yaml-v1.2.19) (2026-06-07)
+
+
+### Miscellaneous
+
+* **deps:** update vitest monorepo to v4.1.8 ([#995](https://github.com/TimSchoenle/actions/issues/995)) ([6f8246a](https://github.com/TimSchoenle/actions/commit/6f8246a1917fc7cb272523810214b7c1f020c702))
+
 ## [1.2.18](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.17...actions-common-modify-yaml-v1.2.18) (2026-05-30)
 
 
