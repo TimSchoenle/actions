@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.20](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v1.1.19...actions-rust-coverage-codecov-v1.1.20) (2026-06-10)
+
+
+### Miscellaneous
+
+* **deps:** update codecov/codecov-action digest to fb8b358 ([#1007](https://github.com/TimSchoenle/actions/issues/1007)) ([412b3a4](https://github.com/TimSchoenle/actions/commit/412b3a4062b938cdd1928a29742f03993bb2e041))
+
 ## [1.1.19](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v1.1.18...actions-rust-coverage-codecov-v1.1.19) (2026-06-06)
 
 
