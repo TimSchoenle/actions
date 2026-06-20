@@ -25,7 +25,7 @@
     "@types/node": "25.9.3",
     "@typescript-eslint/eslint-plugin": "8.60.1",
     "@typescript-eslint/parser": "8.60.1",
-    "@vitest/coverage-v8": "4.1.8",
+    "@vitest/coverage-v8": "4.1.9",
     "ansi-escapes": "7.3.0",
     "chardet": "2.1.1",
     "cli-width": "4.1.0",
@@ -47,7 +47,7 @@
     "signal-exit": "4.1.0",
     "typescript": "6.0.3",
     "typescript-eslint": "8.60.1",
-    "vitest": "4.1.8",
+    "vitest": "4.1.9",
     "wrap-ansi": "10.0.0"
   },
   "dependencies": {
