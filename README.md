@@ -56,14 +56,14 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | Automatically apply spotless formatting and commit changes. | [actions-java-gradle-auto-spotless-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v1.1.7) | `uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@actions-java-gradle-auto-spotless-v1.1.7 # tag=actions-java-gradle-auto-spotless-v1.1.7` |
+| [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | Automatically apply spotless formatting and commit changes. | [actions-java-gradle-auto-spotless-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v1.1.7) | `uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@6b2ca04eb55ef11e11b0daaa3e793d4b5fd198e2 # tag=actions-java-gradle-auto-spotless-v1.1.7` |
 | [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | Setup Java and Gradle environment for building, with opinionated default settings | [actions-java-gradle-setup-base-environment-v1.2.5](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.5) | `uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@d5a39488dccf46d663e025f9636db1fa149e02a1 # tag=actions-java-gradle-setup-base-environment-v1.2.5` |
 
 ### Maintenance
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | Auto approve Pull Requests with the given user ids and branches. | [actions-maintenance-auto-approve-pr-v1.1.13](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.1.13) | `uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@9c57f38a292b46432504a029aed8c6d93ba607cb # tag=actions-maintenance-auto-approve-pr-v1.1.13` |
+| [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | Auto approve Pull Requests with the given user ids and branches. | [actions-maintenance-auto-approve-pr-v1.1.14](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.1.14) | `uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@actions-maintenance-auto-approve-pr-v1.1.14 # tag=actions-maintenance-auto-approve-pr-v1.1.14` |
 | [Maintenance Ensure-actions-are-executed](./actions/maintenance/ensure-actions-are-executed) | Ensures selected checks completed successfully when they were started. | [actions-maintenance-ensure-actions-are-executed-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v1.1.0) | `uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@4e453a788e2ca7144982e5fd43c4b987f6ba62ae # tag=actions-maintenance-ensure-actions-are-executed-v1.1.0` |
 
 ### Rust
