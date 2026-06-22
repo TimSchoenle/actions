@@ -42,7 +42,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Update Helm Chart Version](./actions/helm/update-chart-version) | Updates a Helm chart version, appVersion, and image tag, then creates a Pull Request. This action requires a bot account with access to the charts repo. Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag). | [actions-helm-update-chart-version-v1.5.14](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.5.14) | `uses: TimSchoenle/actions/actions/helm/update-chart-version@2f1c6c6f6a0e38c100f2436a84707ab9e7b96292 # tag=actions-helm-update-chart-version-v1.5.14` |
+| [Update Helm Chart Version](./actions/helm/update-chart-version) | Updates a Helm chart version, appVersion, and image tag, then creates a Pull Request. This action requires a bot account with access to the charts repo. Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag). | [actions-helm-update-chart-version-v1.5.15](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.5.15) | `uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.5.15 # tag=actions-helm-update-chart-version-v1.5.15` |
 
 ### Helper
 
@@ -50,7 +50,7 @@ Here is a list of all currently maintained actions in this repository:
 | --- | --- | --- | --- |
 | [Helper Verify-branch-name](./actions/helper/verify-branch-name) | Verify the given name matches the pattern and also check if it is fork or not | [actions-helper-verify-branch-name-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-branch-name-v1.1.1) | `uses: TimSchoenle/actions/actions/helper/verify-branch-name@942adbf1569777c9a9ef84f002ffd3c11736ee37 # tag=actions-helper-verify-branch-name-v1.1.1` |
 | [Resolve Branch](./actions/helper/resolve-base-branch) | Resolve the given base branch or return default branch. With optional existence check. | [actions-helper-resolve-base-branch-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-resolve-base-branch-v1.1.0) | `uses: TimSchoenle/actions/actions/helper/resolve-base-branch@1017e17f2dd642294627f53332e9bb84617e5faf # tag=actions-helper-resolve-base-branch-v1.1.0` |
-| [Verify Commit Authors](./actions/helper/verify-commit-authors) | Verifies that all commits in a PR are authored by a specific set of users and are signed. | [actions-helper-verify-commit-authors-v1.1.24](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v1.1.24) | `uses: TimSchoenle/actions/actions/helper/verify-commit-authors@actions-helper-verify-commit-authors-v1.1.24 # tag=actions-helper-verify-commit-authors-v1.1.24` |
+| [Verify Commit Authors](./actions/helper/verify-commit-authors) | Verifies that all commits in a PR are authored by a specific set of users and are signed. | [actions-helper-verify-commit-authors-v1.1.24](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v1.1.24) | `uses: TimSchoenle/actions/actions/helper/verify-commit-authors@680affd2bdbda5f39b52bfb8bdd168add0c2a8b3 # tag=actions-helper-verify-commit-authors-v1.1.24` |
 
 ### Java-gradle
 
