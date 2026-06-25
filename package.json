@@ -27,7 +27,7 @@
     "@typescript-eslint/parser": "8.61.1",
     "@vitest/coverage-v8": "4.1.9",
     "ansi-escapes": "7.3.0",
-    "chardet": "2.1.1",
+    "chardet": "2.2.0",
     "cli-width": "4.1.0",
     "eslint": "10.5.0",
     "eslint-plugin-import": "2.32.0",
