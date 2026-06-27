@@ -42,8 +42,8 @@
   "osvVulnerabilityAlerts": true,
   "commitHourlyLimit": 0,
   "prHourlyLimit": 2,
-  "prConcurrentLimit": 8,
-  "branchConcurrentLimit": 8,
+  "prConcurrentLimit": 0,
+  "branchConcurrentLimit": 0,
   "gitIgnoredAuthors": ["actions-maintenance-bot", "actions-maintenance-bot[bot]@users.noreply.github.com"],
   "packageRules": [
     {
