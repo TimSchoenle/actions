@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.5](https://github.com/TimSchoenle/actions/compare/actions-common-commit-changes-v1.1.4...actions-common-commit-changes-v1.1.5) (2026-06-27)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates to v2.79.15 ([#981](https://github.com/TimSchoenle/actions/issues/981)) ([710dc9c](https://github.com/TimSchoenle/actions/commit/710dc9c4a2fe1e186af4b58c3df93ce6afc9d9ba))
+
 ## [1.1.4](https://github.com/TimSchoenle/actions/compare/actions-common-commit-changes-v1.1.3...actions-common-commit-changes-v1.1.4) (2026-02-12)
 
 
