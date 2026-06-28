@@ -45,7 +45,7 @@ Any version not listed in the following tables is not supported.
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | [actions-java-gradle-auto-spotless-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v1.1.7) | :white_check_mark: |
-| [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | [actions-java-gradle-setup-base-environment-v1.2.5](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.5) | :white_check_mark: |
+| [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | [actions-java-gradle-setup-base-environment-v1.2.6](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.6) | :white_check_mark: |
 
 ### Maintenance
 
