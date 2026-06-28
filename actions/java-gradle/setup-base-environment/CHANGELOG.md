@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.6](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-setup-base-environment-v1.2.5...actions-java-gradle-setup-base-environment-v1.2.6) (2026-06-28)
+
+
+### Miscellaneous
+
+* **deps:** update actions/setup-java digest to 1bcf9fb ([#1066](https://github.com/TimSchoenle/actions/issues/1066)) ([506ab97](https://github.com/TimSchoenle/actions/commit/506ab974f82751a2f5a5a51df2b15d78deba83c9))
+
 ## [1.2.5](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-setup-base-environment-v1.2.4...actions-java-gradle-setup-base-environment-v1.2.5) (2026-06-21)
 
 
