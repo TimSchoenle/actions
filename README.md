@@ -57,7 +57,7 @@ Here is a list of all currently maintained actions in this repository:
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
 | [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | Automatically apply spotless formatting and commit changes. | [actions-java-gradle-auto-spotless-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v1.1.7) | `uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@6b2ca04eb55ef11e11b0daaa3e793d4b5fd198e2 # tag=actions-java-gradle-auto-spotless-v1.1.7` |
-| [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | Setup Java and Gradle environment for building, with opinionated default settings | [actions-java-gradle-setup-base-environment-v1.2.5](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.5) | `uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@d5a39488dccf46d663e025f9636db1fa149e02a1 # tag=actions-java-gradle-setup-base-environment-v1.2.5` |
+| [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | Setup Java and Gradle environment for building, with opinionated default settings | [actions-java-gradle-setup-base-environment-v1.2.6](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.6) | `uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@actions-java-gradle-setup-base-environment-v1.2.6 # tag=actions-java-gradle-setup-base-environment-v1.2.6` |
 
 ### Maintenance
 
