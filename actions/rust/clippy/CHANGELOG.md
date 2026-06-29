@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.6](https://github.com/TimSchoenle/actions/compare/actions-rust-clippy-v1.1.5...actions-rust-clippy-v1.1.6) (2026-06-29)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#1071](https://github.com/TimSchoenle/actions/issues/1071)) ([fe76b9a](https://github.com/TimSchoenle/actions/commit/fe76b9a46aeaa85aec66fa9e5ece86aa97eab0d2))
+
 ## [1.1.5](https://github.com/TimSchoenle/actions/compare/actions-rust-clippy-v1.1.4...actions-rust-clippy-v1.1.5) (2026-06-06)
 
 
