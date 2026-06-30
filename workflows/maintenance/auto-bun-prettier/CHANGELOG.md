@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.18](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.17...workflows-maintenance-auto-bun-prettier-meta-v1.1.18) (2026-06-30)
+
+
+### Miscellaneous
+
+* **deps:** update timschoenle/actions/actions/common/commit-changes to vactions-common-commit-changes-v1.1.5 ([#1075](https://github.com/TimSchoenle/actions/issues/1075)) ([6c34422](https://github.com/TimSchoenle/actions/commit/6c34422571a4e59a1431bd363d148b2200872ee2))
+
 ## [1.1.17](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.16...workflows-maintenance-auto-bun-prettier-meta-v1.1.17) (2026-06-05)
 
 
