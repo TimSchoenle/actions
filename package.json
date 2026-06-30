@@ -38,7 +38,7 @@
     "eslint-plugin-unicorn": "69.0.0",
     "husky": "9.1.7",
     "iconv-lite": "0.7.2",
-    "js-yaml": "4.2.0",
+    "js-yaml": "4.3.0",
     "lint-staged": "17.0.7",
     "mute-stream": "4.0.0",
     "prettier": "3.8.5",
