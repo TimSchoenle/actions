@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.16](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.5.15...actions-helm-update-chart-version-v1.5.16) (2026-07-02)
+
+
+### Miscellaneous
+
+* **deps:** update timschoenle/actions/actions/common/create-pull-request to vactions-common-create-pull-request-v1.0.7 ([#1089](https://github.com/TimSchoenle/actions/issues/1089)) ([f8889dd](https://github.com/TimSchoenle/actions/commit/f8889dd4cd06f8d926b33e2111565c09455586ed))
+
 ## [1.5.15](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.5.14...actions-helm-update-chart-version-v1.5.15) (2026-06-21)
 
 
