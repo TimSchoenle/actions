@@ -23,7 +23,7 @@
     "@octokit/graphql-schema": "15.26.1",
     "@types/node": "25.9.4",
     "fast-check": "4.8.0",
-    "graphql": "16.14.0",
+    "graphql": "16.14.2",
     "typescript": "6.0.3",
     "vitest": "4.1.9"
   }
