@@ -44,7 +44,11 @@
   "prHourlyLimit": 2,
   "prConcurrentLimit": 0,
   "branchConcurrentLimit": 0,
-  "gitIgnoredAuthors": ["actions-maintenance-bot", "actions-maintenance-bot[bot]@users.noreply.github.com"],
+  "gitIgnoredAuthors": [
+    "actions-maintenance-bot",
+    "actions-maintenance-bot[bot]@users.noreply.github.com",
+    "253958393+actions-maintenance-bot[bot]@users.noreply.github.com"
+  ],
   "packageRules": [
     {
       "description": "Auto-merge all non-major updates",
