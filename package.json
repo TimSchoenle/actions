@@ -37,7 +37,7 @@
     "eslint-plugin-sonarjs": "4.1.0",
     "eslint-plugin-unicorn": "70.0.0",
     "husky": "9.1.7",
-    "iconv-lite": "0.7.2",
+    "iconv-lite": "0.7.3",
     "js-yaml": "4.3.0",
     "lint-staged": "17.0.8",
     "mute-stream": "4.0.0",
