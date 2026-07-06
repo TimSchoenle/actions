@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.15](https://github.com/TimSchoenle/actions/compare/actions-maintenance-auto-approve-pr-v1.1.14...actions-maintenance-auto-approve-pr-v1.1.15) (2026-07-06)
+
+
+### Miscellaneous
+
+* **deps:** update timschoenle/actions/actions/helper/verify-commit-authors to vactions-helper-verify-commit-authors-v1.1.25 ([#1052](https://github.com/TimSchoenle/actions/issues/1052)) ([5ef8e72](https://github.com/TimSchoenle/actions/commit/5ef8e72b1a633088e5b0ffa30e901b28e746d241))
+
 ## [1.1.14](https://github.com/TimSchoenle/actions/compare/actions-maintenance-auto-approve-pr-v1.1.13...actions-maintenance-auto-approve-pr-v1.1.14) (2026-06-22)
 
 
