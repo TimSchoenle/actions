@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.10](https://github.com/TimSchoenle/actions/compare/actions-bun-setup-cached-v1.1.9...actions-bun-setup-cached-v1.1.10) (2026-07-06)
+
+
+### Miscellaneous
+
+* **deps:** update actions/cache action to v6 ([#1074](https://github.com/TimSchoenle/actions/issues/1074)) ([a6bac0c](https://github.com/TimSchoenle/actions/commit/a6bac0c4410334591b4dc17566fb5e46b6d243db))
+
 ## [1.1.9](https://github.com/TimSchoenle/actions/compare/actions-bun-setup-cached-v1.1.8...actions-bun-setup-cached-v1.1.9) (2026-06-29)
 
 
