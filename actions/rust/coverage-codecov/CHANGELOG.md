@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.25](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v1.1.24...actions-rust-coverage-codecov-v1.1.25) (2026-07-06)
+
+
+### Miscellaneous
+
+* **deps:** update actions-rust-lang/setup-rust-toolchain action to v1.17.0 ([#1082](https://github.com/TimSchoenle/actions/issues/1082)) ([4475e0f](https://github.com/TimSchoenle/actions/commit/4475e0f89982f64fecfbea98fa1c1c40b9944f49))
+* **deps:** update actions/checkout action to v7 ([#1047](https://github.com/TimSchoenle/actions/issues/1047)) ([dea5895](https://github.com/TimSchoenle/actions/commit/dea58957a304115d4e57abae7b39f71c53d242f4))
+
 ## [1.1.24](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v1.1.23...actions-rust-coverage-codecov-v1.1.24) (2026-07-04)
 
 
