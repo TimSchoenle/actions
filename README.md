@@ -42,7 +42,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Update Helm Chart Version](./actions/helm/update-chart-version) | Updates a Helm chart version, appVersion, and image tag, then creates a Pull Request. This action requires a bot account with access to the charts repo. Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag). | [actions-helm-update-chart-version-v1.5.17](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.5.17) | `uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.5.17 # tag=actions-helm-update-chart-version-v1.5.17` |
+| [Update Helm Chart Version](./actions/helm/update-chart-version) | Updates a Helm chart version, appVersion, and image tag, then creates a Pull Request. This action requires a bot account with access to the charts repo. Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag). | [actions-helm-update-chart-version-v1.5.17](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.5.17) | `uses: TimSchoenle/actions/actions/helm/update-chart-version@260f86d523b2d55daf8d2ed3e87098b2cbbf3b54 # tag=actions-helm-update-chart-version-v1.5.17` |
 
 ### Helper
 
@@ -56,7 +56,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | Automatically apply spotless formatting and commit changes. | [actions-java-gradle-auto-spotless-v1.1.8](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v1.1.8) | `uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@dd63f46e3f4ab2f24b78ec51180b48c238f3ba1a # tag=actions-java-gradle-auto-spotless-v1.1.8` |
+| [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | Automatically apply spotless formatting and commit changes. | [actions-java-gradle-auto-spotless-v1.1.9](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v1.1.9) | `uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@actions-java-gradle-auto-spotless-v1.1.9 # tag=actions-java-gradle-auto-spotless-v1.1.9` |
 | [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | Setup Java and Gradle environment for building, with opinionated default settings | [actions-java-gradle-setup-base-environment-v1.2.6](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.6) | `uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@a6a97ef1f7dc2e5af7264e90366c7a0b48d4e0d5 # tag=actions-java-gradle-setup-base-environment-v1.2.6` |
 
 ### Maintenance
