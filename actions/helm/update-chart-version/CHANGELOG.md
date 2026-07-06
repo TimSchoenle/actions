@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.17](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.5.16...actions-helm-update-chart-version-v1.5.17) (2026-07-06)
+
+
+### Miscellaneous
+
+* **deps:** update actions/checkout action to v7 ([#1047](https://github.com/TimSchoenle/actions/issues/1047)) ([dea5895](https://github.com/TimSchoenle/actions/commit/dea58957a304115d4e57abae7b39f71c53d242f4))
+* **deps:** update timschoenle/actions/actions/common/modify-yaml to vactions-common-modify-yaml-v1.2.21 ([#1051](https://github.com/TimSchoenle/actions/issues/1051)) ([593e0c9](https://github.com/TimSchoenle/actions/commit/593e0c9183a2b01868408e3d35f2f6d4b541be30))
+
 ## [1.5.16](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.5.15...actions-helm-update-chart-version-v1.5.16) (2026-07-02)
 
 
