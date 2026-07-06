@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.23](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.22...actions-common-modify-yaml-v1.2.23) (2026-07-06)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26 ([#1057](https://github.com/TimSchoenle/actions/issues/1057)) ([75cb7a1](https://github.com/TimSchoenle/actions/commit/75cb7a12f3f57b963291418168cf3df5b51e82fd))
+* **deps:** update dependency @types/node to v26.1.0 ([#1112](https://github.com/TimSchoenle/actions/issues/1112)) ([76604b9](https://github.com/TimSchoenle/actions/commit/76604b9e09028defd6823f3bee42b41da37411a6))
+
+
+### Dependencies
+
+* **deps:** lock file maintenance ([#1061](https://github.com/TimSchoenle/actions/issues/1061)) ([045a221](https://github.com/TimSchoenle/actions/commit/045a221eff2f1f4af7a52905e6729dd7a5595563))
+
 ## [1.2.22](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.21...actions-common-modify-yaml-v1.2.22) (2026-06-27)
 
 
