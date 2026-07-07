@@ -68,7 +68,7 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
 
       - name: Setup Bun
-        uses: TimSchoenle/actions/actions/bun/setup-cached@0aa0c147fe0b45838bfe09b60463b374e96d6f2a # tag=actions-bun-setup-cached-v1.1.9
+        uses: TimSchoenle/actions/actions/bun/setup-cached@cbdcf6fd08b46059064bc9c91efa6b610a9ee7db # tag=actions-bun-setup-cached-v1.1.10
 
       - name: Format
         env:
