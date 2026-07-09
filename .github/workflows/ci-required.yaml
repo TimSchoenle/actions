@@ -20,7 +20,7 @@ name: CI Required
 
 on:
   pull_request:
-  workflow_run:
+  workflow_run: # zizmor: ignore[dangerous-triggers] -- This workflow only reads completed verify workflow results and publishes an aggregate commit status for the same head SHA.
     # GENERATED — do not edit by hand. Run `bun run generate-ci-required` to
     # rebuild this list from the verify-action-*.yaml workflows on disk. The
     # ci-required drift test fails CI if it is out of sync.
