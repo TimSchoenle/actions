@@ -35,6 +35,10 @@ vi.mock('../generate-docs', () => ({
   main: vi.fn(),
 }));
 
+vi.mock('../generate-ci-required', () => ({
+  main: vi.fn(),
+}));
+
 describe('remove-action', () => {
   beforeEach(() => {
     vi.clearAllMocks();

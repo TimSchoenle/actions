@@ -3,6 +3,7 @@ import path from 'node:path';
 import { input } from '@inquirer/prompts';
 import chalk from 'chalk';
 
+import { main as generateCiRequired } from './generate-ci-required.js';
 import { main as generateDocs } from './generate-docs.js';
 import { createVerifyWorkflow, registerActionInReleasePlease, selectPackage } from './lib/action-utils.js';
 import { ACTIONS_DIR, capitalize, createFromTemplate, Sys } from './lib/utils.js';
@@ -42,6 +43,9 @@ export async function main() {
 
   // 4. Create Verification Workflow
   await createVerifyWorkflow(packageName, subAction);
+
+  // Sync the ci-required aggregate gate to watch the new verify workflow.
+  generateCiRequired();
 
   // 5. Update Release Please Config
   await registerActionInReleasePlease(packageName, subAction);

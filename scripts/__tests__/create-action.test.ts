@@ -4,6 +4,7 @@ import { Sys, createFromTemplate } from '../lib/utils';
 import { selectPackage, registerActionInReleasePlease, createVerifyWorkflow } from '../lib/action-utils';
 import { input } from '@inquirer/prompts';
 import { main as generateDocs } from '../generate-docs';
+import { main as generateCiRequired } from '../generate-ci-required';
 
 // Mock dependencies
 import type * as UtilsTypes from '../lib/utils';
@@ -30,6 +31,10 @@ vi.mock('@inquirer/prompts', () => ({
 }));
 
 vi.mock('../generate-docs', () => ({
+  main: vi.fn(),
+}));
+
+vi.mock('../generate-ci-required', () => ({
   main: vi.fn(),
 }));
 
@@ -63,6 +68,7 @@ describe('create-action', () => {
     expect(createVerifyWorkflow).toHaveBeenCalledWith('existing-pkg', 'new-sub');
     expect(registerActionInReleasePlease).toHaveBeenCalledWith('existing-pkg', 'new-sub');
     expect(generateDocs).toHaveBeenCalled();
+    expect(generateCiRequired).toHaveBeenCalled();
   });
 
   it('should create new action and package files if new package', async () => {

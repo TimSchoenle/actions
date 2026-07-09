@@ -335,3 +335,19 @@ jobs:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           branch_name: test/reset-branch/${{ env.TEST_ID }}
+
+  # <<< generated: summary (run 'bun run generate-ci-required' to update)
+  summary:
+    name: 'CI Summary: Common Create-branch'
+    if: ${{ always() }}
+    needs:
+      - test-create-branch-default
+      - test-create-branch-specific-base
+      - test-reset-branch
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Fail if any verify job did not succeed
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
+  # >>> generated: summary

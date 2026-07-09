@@ -864,3 +864,24 @@ jobs:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           branch_name: ${{ steps.branch.outputs.branch }}
+
+  # <<< generated: summary (run 'bun run generate-ci-required' to update)
+  summary:
+    name: 'CI Summary: Common Commit Changes'
+    if: ${{ always() }}
+    needs:
+      - test-commit-file-patterns
+      - test-pattern-excludes-unrelated
+      - test-modify-existing-file
+      - test-file-deletion
+      - test-no-commit-scenarios
+      - test-empty-commit-allowed
+      - test-custom-branch
+      - test-commit-message
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Fail if any verify job did not succeed
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
+  # >>> generated: summary

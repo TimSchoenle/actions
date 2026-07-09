@@ -3,6 +3,7 @@ import path from 'node:path';
 import { confirm, search } from '@inquirer/prompts';
 import chalk from 'chalk';
 
+import { main as generateCiRequired } from './generate-ci-required.js';
 import { main as generateDocs } from './generate-docs.js';
 import {
   getSubActions,
@@ -78,9 +79,10 @@ export async function main() {
     console.log(chalk.blue(`Package ${packageName} still has ${remaining.length} sub-actions.`));
   }
 
-  // 5. Regenerate README
+  // 5. Regenerate README and sync the ci-required aggregate gate watch list.
   console.log(chalk.blue('\nUpdating README.md...'));
   await generateDocs();
+  generateCiRequired();
 
   console.log(chalk.blue('\nDone! 🗑️'));
 }
