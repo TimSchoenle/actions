@@ -151,3 +151,18 @@ jobs:
           # Check if the unique dependency is present (it might be symlinked or copied depending on bun)
           test -d "node_modules/$TEST_PKG" || (echo "::error::dependency $TEST_PKG not found" && exit 1)
           echo "Cache restored successfully"
+
+  # <<< generated: summary (run 'bun run generate-ci-required' to update)
+  summary:
+    name: 'CI Summary: Bun Setup Cached'
+    if: ${{ always() }}
+    needs:
+      - prime-cache
+      - verify-cache
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Fail if any verify job did not succeed
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
+  # >>> generated: summary

@@ -93,3 +93,17 @@ jobs:
              echo "::error::Git user.name not set correctly."
              exit 1
           fi
+
+  # <<< generated: summary (run 'bun run generate-ci-required' to update)
+  summary:
+    name: 'CI Summary: Common Setup App Git Identity'
+    if: ${{ always() }}
+    needs:
+      - verify
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Fail if any verify job did not succeed
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
+  # >>> generated: summary

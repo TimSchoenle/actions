@@ -9,6 +9,7 @@
     "generate-maven-central-signing-key": "bun scripts/generate-maven-central-signing-key.ts",
     "remove-workflow": "bun scripts/remove-workflow.ts",
     "generate-docs": "bun scripts/generate-docs.ts",
+    "generate-ci-required": "bun scripts/generate-ci-required.ts",
     "lint": "eslint scripts/**/*.ts",
     "format": "prettier --write .",
     "test": "vitest run --coverage",
