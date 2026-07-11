@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.24](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.23...actions-common-modify-yaml-v1.2.24) (2026-07-11)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26.1.1 ([#1158](https://github.com/TimSchoenle/actions/issues/1158)) ([c0e6740](https://github.com/TimSchoenle/actions/commit/c0e674025f31a7bb8a6a644a715f65c76fe4f125))
+* **deps:** update vitest monorepo to v4.1.10 ([#1134](https://github.com/TimSchoenle/actions/issues/1134)) ([ba49760](https://github.com/TimSchoenle/actions/commit/ba49760b7fb2fd08ad467649d16d218e1adadf10))
+
 ## [1.2.23](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.22...actions-common-modify-yaml-v1.2.23) (2026-07-06)
 
 
