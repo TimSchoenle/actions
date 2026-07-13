@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.25](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.24...actions-common-modify-yaml-v1.2.25) (2026-07-13)
+
+
+### Miscellaneous
+
+* **deps:** update dependency fast-check to v4.9.0 ([#1141](https://github.com/TimSchoenle/actions/issues/1141)) ([f0bf53c](https://github.com/TimSchoenle/actions/commit/f0bf53cb09b309e54610ea87059efc5b6e0dfaaf))
+
 ## [1.2.24](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.2.23...actions-common-modify-yaml-v1.2.24) (2026-07-11)
 
 
