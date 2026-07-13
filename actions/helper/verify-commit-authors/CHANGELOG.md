@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.28](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.27...actions-helper-verify-commit-authors-v1.1.28) (2026-07-13)
+
+
+### Miscellaneous
+
+* **deps:** update dependency fast-check to v4.9.0 ([#1141](https://github.com/TimSchoenle/actions/issues/1141)) ([f0bf53c](https://github.com/TimSchoenle/actions/commit/f0bf53cb09b309e54610ea87059efc5b6e0dfaaf))
+
+
+### Dependencies
+
+* **deps:** lock file maintenance ([#1169](https://github.com/TimSchoenle/actions/issues/1169)) ([6cda277](https://github.com/TimSchoenle/actions/commit/6cda2778eb99fa5db4c3f9b6973447af881b797a))
+
 ## [1.1.27](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.26...actions-helper-verify-commit-authors-v1.1.27) (2026-07-11)
 
 
