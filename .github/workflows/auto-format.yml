@@ -8,7 +8,7 @@ permissions: {}
 jobs:
   auto-format:
     name: Auto Format
-    uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@90abf5449f58c8995b8091eea000726aabf8be6a # tag=workflows-maintenance-auto-bun-prettier-v1.1.20
+    uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@e886ca282ad47f2433cc9ffbd6276c2d07e37e41 # tag=workflows-maintenance-auto-bun-prettier-v1.1.21
     secrets:
       APP_ID: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
       PRIVATE_KEY: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
