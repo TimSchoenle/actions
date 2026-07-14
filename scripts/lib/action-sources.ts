@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import yaml from 'js-yaml';
+import { parse } from 'yaml';
 
 import { ROOT_DIR, Sys } from './utils.js';
 
@@ -118,7 +118,7 @@ function readIoNames(section: unknown, kind: 'input' | 'output', source: string)
 export function parseActionDefinition(content: string, source: string): ActionDefinition {
   let manifest: unknown;
   try {
-    manifest = yaml.load(content);
+    manifest = parse(content);
   } catch (error) {
     throw new Error(`${source}: could not be parsed as YAML. ${error instanceof Error ? error.message : ''}`.trim(), {
       cause: error,

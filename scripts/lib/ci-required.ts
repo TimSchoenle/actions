@@ -1,4 +1,4 @@
-import yaml from 'js-yaml';
+import { parse } from 'yaml';
 
 // Pure helpers shared by the `generate-ci-required` script and its drift test.
 // Intentionally free of any filesystem or Bun-specific APIs so the vitest suite
@@ -43,7 +43,7 @@ function toNeedsArray(needs: unknown): string[] {
 }
 
 export function parseWorkflow(content: string): ParsedWorkflow {
-  const doc = yaml.load(content) as { name?: unknown; jobs?: Record<string, unknown> } | null;
+  const doc = parse(content) as { name?: unknown; jobs?: Record<string, unknown> } | null;
   const name = typeof doc?.name === 'string' ? doc.name : '';
   const rawJobs = doc?.jobs && typeof doc.jobs === 'object' ? doc.jobs : {};
 
