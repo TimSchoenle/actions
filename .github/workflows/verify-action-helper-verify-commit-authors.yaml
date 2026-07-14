@@ -1,7 +1,12 @@
 name: Verify Helper Verify-commit-authors
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'actions/helper/verify-commit-authors/**'
+      - '.github/workflows/verify-action-helper-verify-commit-authors.yaml'
   pull_request:
     paths:
       - 'actions/helper/verify-commit-authors/**'
