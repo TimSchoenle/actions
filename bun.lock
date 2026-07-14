@@ -45,8 +45,83 @@
         "wrap-ansi": "10.0.0",
       },
     },
+    "actions/common/close-pull-request": {
+      "name": "actions-common-close-pull-request",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "@actions/github": "9.1.1",
+      },
+      "devDependencies": {
+        "@fast-check/vitest": "0.4.1",
+        "@types/node": "26.1.1",
+        "fast-check": "4.9.0",
+        "typescript": "6.0.3",
+        "vitest": "4.1.10",
+      },
+    },
+    "actions/common/create-branch": {
+      "name": "actions-common-create-branch",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "@actions/github": "9.1.1",
+      },
+      "devDependencies": {
+        "@fast-check/vitest": "0.4.1",
+        "@types/node": "26.1.1",
+        "fast-check": "4.9.0",
+        "typescript": "6.0.3",
+        "vitest": "4.1.10",
+      },
+    },
+    "actions/common/delete-branch": {
+      "name": "actions-common-delete-branch",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "@actions/github": "9.1.1",
+      },
+      "devDependencies": {
+        "@fast-check/vitest": "0.4.1",
+        "@types/node": "26.1.1",
+        "fast-check": "4.9.0",
+        "typescript": "6.0.3",
+        "vitest": "4.1.10",
+      },
+    },
+    "actions/common/get-app-git-identity": {
+      "name": "actions-common-get-app-git-identity",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "@actions/github": "9.1.1",
+      },
+      "devDependencies": {
+        "@fast-check/vitest": "0.4.1",
+        "@types/node": "26.1.1",
+        "fast-check": "4.9.0",
+        "typescript": "6.0.3",
+        "vitest": "4.1.10",
+      },
+    },
     "actions/common/modify-yaml": {
       "name": "actions-common-modify-yaml",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "yaml": "^2.7.0",
+      },
+      "devDependencies": {
+        "@fast-check/vitest": "0.4.1",
+        "@types/node": "26.1.1",
+        "fast-check": "4.9.0",
+        "typescript": "6.0.3",
+        "vitest": "4.1.10",
+      },
+    },
+    "actions/common/read-yaml": {
+      "name": "actions-common-read-yaml",
       "version": "1.0.0",
       "dependencies": {
         "@actions/core": "3.0.1",
@@ -107,6 +182,21 @@
         "@types/node": "26.1.1",
         "fast-check": "4.9.0",
         "graphql": "16.14.2",
+        "typescript": "6.0.3",
+        "vitest": "4.1.10",
+      },
+    },
+    "actions/maintenance/ensure-actions-are-executed": {
+      "name": "actions-maintenance-ensure-actions-are-executed",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "@actions/github": "9.1.1",
+      },
+      "devDependencies": {
+        "@fast-check/vitest": "0.4.1",
+        "@types/node": "26.1.1",
+        "fast-check": "4.9.0",
         "typescript": "6.0.3",
         "vitest": "4.1.10",
       },
@@ -465,13 +555,25 @@
 
     "acorn-jsx": ["acorn-jsx@5.3.2", "", { "peerDependencies": { "acorn": "^6.0.0 || ^7.0.0 || ^8.0.0" } }, "sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ=="],
 
+    "actions-common-close-pull-request": ["actions-common-close-pull-request@workspace:actions/common/close-pull-request"],
+
+    "actions-common-create-branch": ["actions-common-create-branch@workspace:actions/common/create-branch"],
+
+    "actions-common-delete-branch": ["actions-common-delete-branch@workspace:actions/common/delete-branch"],
+
+    "actions-common-get-app-git-identity": ["actions-common-get-app-git-identity@workspace:actions/common/get-app-git-identity"],
+
     "actions-common-modify-yaml": ["actions-common-modify-yaml@workspace:actions/common/modify-yaml"],
+
+    "actions-common-read-yaml": ["actions-common-read-yaml@workspace:actions/common/read-yaml"],
 
     "actions-helper-resolve-base-branch": ["actions-helper-resolve-base-branch@workspace:actions/helper/resolve-base-branch"],
 
     "actions-helper-verify-branch-name": ["actions-helper-verify-branch-name@workspace:actions/helper/verify-branch-name"],
 
     "actions-helper-verify-commit-authors": ["actions-helper-verify-commit-authors@workspace:actions/helper/verify-commit-authors"],
+
+    "actions-maintenance-ensure-actions-are-executed": ["actions-maintenance-ensure-actions-are-executed@workspace:actions/maintenance/ensure-actions-are-executed"],
 
     "ajv": ["ajv@6.15.0", "", { "dependencies": { "fast-deep-equal": "^3.1.1", "fast-json-stable-stringify": "^2.0.0", "json-schema-traverse": "^0.4.1", "uri-js": "^4.2.2" } }, "sha512-fgFx7Hfoq60ytK2c7DhnF8jIvzYgOMxfugjLOSMHjLIPgenqa7S7oaagATUq99mV6IYvN2tRmC0wnTYX6iPbMw=="],
 
