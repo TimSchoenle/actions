@@ -1,14 +1,10 @@
 import { parseRepository } from 'actions-util';
+import { resolveBranchOrDefault } from 'actions-util/branches';
 
-import type { RepositoryCoordinates } from 'actions-util';
+import type { BranchOrigin, BranchApi as GitBranchApi } from 'actions-util/branches';
 
 /** The repository operations this action needs, kept minimal so it can be faked in tests. */
-export interface BranchApi {
-  /** Resolves the default branch of the repository. */
-  getDefaultBranch(repository: RepositoryCoordinates): Promise<string>;
-  /** Resolves whether the given branch exists. Throws for any error other than "not found". */
-  branchExists(repository: RepositoryCoordinates, branch: string): Promise<boolean>;
-}
+export type BranchApi = Pick<GitBranchApi, 'branchExists' | 'getDefaultBranch'>;
 
 export interface ResolveRequest {
   /** Repository to resolve the branch in, e.g. `owner/repo`. */
@@ -23,7 +19,7 @@ export interface ResolveResult {
   /** The resolved branch name. */
   branch: string;
   /** Where the branch came from — useful for logging and for the caller's audit trail. */
-  origin: 'default-branch' | 'input';
+  origin: BranchOrigin;
   /** Whether the branch was verified to exist. `undefined` when the check was disabled. */
   exists: boolean | undefined;
 }
@@ -54,12 +50,7 @@ export class BranchNotFoundError extends Error {
 export async function resolveBaseBranch(api: BranchApi, request: ResolveRequest): Promise<ResolveResult> {
   const coordinates = parseRepository(request.repository);
 
-  const branch = request.branchName || (await api.getDefaultBranch(coordinates));
-  const origin = request.branchName ? 'input' : 'default-branch';
-
-  if (branch === '') {
-    throw new Error(`Unable to resolve a base branch for repository: ${request.repository}`);
-  }
+  const { branch, origin } = await resolveBranchOrDefault(api, coordinates, request.branchName);
 
   if (!request.checkIfExist) {
     return { branch, exists: undefined, origin };

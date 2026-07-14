@@ -1,7 +1,7 @@
 import * as github from '@actions/github';
-import { hasStatus } from 'actions-util';
+import { resolveOptional } from 'actions-util';
 
-import type { AppUserApi } from './identity.js';
+import type { AppUserApi } from 'actions-util';
 
 /**
  * Binds the {@link AppUserApi} to the GitHub REST API.
@@ -15,15 +15,9 @@ export function createAppUserApi(token: string): AppUserApi {
 
   return {
     async getUserId(username: string): Promise<number | undefined> {
-      try {
-        const { data } = await octokit.rest.users.getByUsername({ username });
-        return data.id;
-      } catch (error) {
-        if (hasStatus(error, 404)) {
-          return undefined;
-        }
-        throw error;
-      }
+      const response = await resolveOptional(octokit.rest.users.getByUsername({ username }));
+
+      return response?.data.id;
     },
   };
 }

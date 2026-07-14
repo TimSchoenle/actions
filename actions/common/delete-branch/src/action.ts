@@ -1,9 +1,9 @@
 import * as core from '@actions/core';
 import { runAction } from 'actions-util';
+import { createBranchApi } from 'actions-util/branches';
 
 import { deleteBranchIfExists } from './delete.js';
 import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';
-import { createBranchApi } from './github-api.js';
 
 import type { BranchApi, DeleteResult } from './delete.js';
 

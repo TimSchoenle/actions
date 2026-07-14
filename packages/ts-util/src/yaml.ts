@@ -109,6 +109,13 @@ export function inferValueType(newValue: string): string | number | boolean | nu
  * Helper to generate context-aware YAML string using a temporary document.
  */
 export function generateYamlString(value: string | number | boolean | null): string {
+  // The serializer renders negative zero as `0`, dropping the sign. `inferValueType` preserves it, so
+  // without this a caller writing `-0` would silently get `0` back — the one number where JavaScript
+  // distinguishes a value the YAML round-trip does not.
+  if (Object.is(value, -0)) {
+    return '-0';
+  }
+
   const tempDoc = new Document({ dummyKey: value });
   const tempString = tempDoc.toString();
 

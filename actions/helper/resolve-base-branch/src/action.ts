@@ -1,8 +1,8 @@
 import * as core from '@actions/core';
 import { runAction } from 'actions-util';
+import { createBranchApi } from 'actions-util/branches';
 
 import { ActionInput, getBooleanInput, getInput, setOutput } from './generated/action-io.js';
-import { createBranchApi } from './github-api.js';
 import { BranchNotFoundError, resolveBaseBranch } from './resolve.js';
 
 import type { BranchApi } from './resolve.js';

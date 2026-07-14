@@ -3,11 +3,11 @@ import * as path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { stringifyScalar, stringifyValue } from 'actions-util';
-import { readYaml, readYamlFile } from './read.js';
+import { readYamlFile, stringifyScalar, stringifyValue } from 'actions-util';
+import { readYaml } from './read.js';
 import { Scalar } from 'yaml';
 
-import type { YamlFileReader } from './read.js';
+import type { YamlFileReader } from 'actions-util';
 
 const FILE = 'config.yaml';
 

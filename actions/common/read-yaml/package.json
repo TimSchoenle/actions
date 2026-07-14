@@ -12,7 +12,7 @@
   "dependencies": {
     "actions-util": "workspace:*",
     "@actions/core": "3.0.1",
-    "yaml": "2.7.0"
+    "yaml": "2.8.3"
   },
   "devDependencies": {
     "@fast-check/vitest": "0.4.1",

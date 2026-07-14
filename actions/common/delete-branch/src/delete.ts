@@ -1,14 +1,9 @@
-import { parseRepository } from 'actions-util';
+import { parseRepository, toError } from 'actions-util';
 
-import type { RepositoryCoordinates } from 'actions-util';
+import type { BranchApi as GitBranchApi } from 'actions-util/branches';
 
 /** The repository operations this action needs, kept minimal so it can be faked in tests. */
-export interface BranchApi {
-  /** Resolves whether the given branch exists. Throws for any error other than "not found". */
-  branchExists(repository: RepositoryCoordinates, branch: string): Promise<boolean>;
-  /** Deletes the given branch. Throws when the deletion is rejected. */
-  deleteBranch(repository: RepositoryCoordinates, branch: string): Promise<void>;
-}
+export type BranchApi = Pick<GitBranchApi, 'branchExists' | 'deleteBranch'>;
 
 export interface DeleteRequest {
   /** Repository to delete the branch from, e.g. `owner/repo`. */
@@ -32,11 +27,6 @@ export type DeleteResult =
   | { deleted: false; outcome: 'not-found' }
   /** The branch exists but could not be deleted, e.g. because it is protected. */
   | { deleted: false; outcome: 'delete-failed'; cause: Error };
-
-/** Preserves the failure that the API reported, without assuming it threw an `Error`. */
-function toError(error: unknown): Error {
-  return error instanceof Error ? error : new Error(String(error));
-}
 
 /**
  * Deletes the branch if it exists, reporting rather than raising the two expected non-deletions.

@@ -119,11 +119,39 @@ export function compilePosixRegex(pattern: string): RegExp {
 }
 
 /**
- * Tests a value against a compiled pattern under a hard time budget.
+ * Tests values against a compiled pattern under a hard time budget, shared by the whole batch.
  *
- * @throws if the evaluation exceeds `timeoutMs` — see {@link PATTERN_MATCH_TIMEOUT_MS}. Callers wrap
- * this in an error naming the pattern and the value, which are what a human needs to fix it.
+ * Batching is not an optimization detail, it is the contract: the budget bounds the work a single
+ * pattern can cause in total. Evaluating one value per context would let a pattern that stays just
+ * under the budget on each of `n` values burn `n × timeoutMs` before anything noticed — and would
+ * pay for a fresh V8 context every time, which costs roughly three orders of magnitude more than the
+ * match itself.
+ *
+ * @throws if the batch exceeds `timeoutMs` — see {@link PATTERN_MATCH_TIMEOUT_MS}. Callers wrap this
+ * in an error naming the pattern, which is what a human needs to fix it.
+ */
+export function testPatterns(
+  regex: RegExp,
+  values: readonly string[],
+  timeoutMs: number = PATTERN_MATCH_TIMEOUT_MS,
+): boolean[] {
+  // `values.map` runs the host realm's `map`, so the result is an ordinary array rather than one
+  // belonging to the throwaway context. The timeout terminates the isolate's current execution
+  // either way, which is what makes the budget enforceable at all.
+  const matches: unknown = runInNewContext(
+    'values.map((value) => regex.test(value))',
+    { regex, values: [...values] },
+    { timeout: timeoutMs },
+  );
+
+  return matches as boolean[];
+}
+
+/**
+ * Tests a single value against a compiled pattern under a hard time budget.
+ *
+ * @throws if the evaluation exceeds `timeoutMs` — see {@link PATTERN_MATCH_TIMEOUT_MS}.
  */
 export function testPattern(regex: RegExp, value: string, timeoutMs: number = PATTERN_MATCH_TIMEOUT_MS): boolean {
-  return runInNewContext('regex.test(value)', { regex, value }, { timeout: timeoutMs }) === true;
+  return testPatterns(regex, [value], timeoutMs)[0];
 }

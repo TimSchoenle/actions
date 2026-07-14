@@ -35,6 +35,13 @@ describe('yaml utils', () => {
     expect(generateYamlString(123)).toBe('123');
   });
 
+  // The serializer renders -0 as `0`. inferValueType preserves the sign, so dropping it here would
+  // silently turn a written -0 into 0 — the one value where the two disagree.
+  it('generateYamlString preserves negative zero', () => {
+    expect(generateYamlString(inferValueType('-0') as number)).toBe('-0');
+    expect(generateYamlString(0)).toBe('0');
+  });
+
   it('formatValue works', () => {
     expect(formatValue(null)).toBe('null');
     expect(formatValue({ a: 1 })).toBe('{"a":1}');

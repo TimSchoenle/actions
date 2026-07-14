@@ -92,11 +92,11 @@ describe('read-yaml action', () => {
     expect(core.setOutput).not.toHaveBeenCalled();
   });
 
-  it('fails with a generic message when a non-Error is thrown', async () => {
+  it('keeps the message when a non-Error is thrown', async () => {
     vi.mocked(readYaml).mockRejectedValue('boom');
 
     await run();
 
-    expect(core.setFailed).toHaveBeenCalledWith('Unknown error occurred');
+    expect(core.setFailed).toHaveBeenCalledWith('boom');
   });
 });

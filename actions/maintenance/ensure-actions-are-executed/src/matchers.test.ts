@@ -1,3 +1,4 @@
+import { PATTERN_MATCH_TIMEOUT_MS } from 'actions-util';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -96,15 +97,26 @@ describe('resolveMatcher', () => {
   });
 });
 
-describe('matchesCheckName under catastrophic backtracking', () => {
+describe('matcher evaluation under catastrophic backtracking', () => {
   // Evaluation is time-boxed, so a matcher that cannot finish fails the step. Reporting it as
   // "unmatched" would read as "the check never started", which this action tolerates — turning a
   // hung verification into a silent pass.
-  it('fails rather than hanging, and never reports the check as unmatched', () => {
-    const matcher = resolveMatcher('/^(a+)+$/', 'auto');
-    const checkName = `${'a'.repeat(40)}!`;
+  const evil = '/^(a+)+$/';
+  const payload = `${'a'.repeat(40)}!`;
 
-    expect(() => matchesCheckName(matcher, checkName)).toThrow(MatcherEvaluationError);
+  it('fails rather than hanging, and never reports the check as unmatched', () => {
+    expect(() => matchesCheckName(resolveMatcher(evil, 'auto'), payload)).toThrow(MatcherEvaluationError);
+  });
+
+  it('spends one budget for the whole batch, not one per check name', () => {
+    const checkRuns = Array.from({ length: 8 }, (_, index) => checkRun(payload, index + 1));
+
+    const start = performance.now();
+
+    expect(() => selectChecks(checkRuns, matchers([evil]))).toThrow(MatcherEvaluationError);
+
+    // Eight names under a per-name budget would take eight times the budget to give up.
+    expect(performance.now() - start).toBeLessThan(2 * PATTERN_MATCH_TIMEOUT_MS);
   });
 });
 

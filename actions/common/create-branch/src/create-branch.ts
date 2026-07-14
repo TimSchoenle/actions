@@ -1,24 +1,14 @@
 import { parseRepository } from 'actions-util';
+import { resolveBranchOrDefault } from 'actions-util/branches';
 
 import type { RepositoryCoordinates } from 'actions-util';
+import type { BranchOrigin, BranchApi as GitBranchApi } from 'actions-util/branches';
 
 /** The git ref operations this action needs, kept minimal so it can be faked in tests. */
-export interface BranchApi {
-  /** Points a new `refs/heads/{branch}` at the given commit. */
-  createBranch(repository: RepositoryCoordinates, branch: string, sha: string): Promise<void>;
-  /**
-   * Resolves the commit a branch points at, or `undefined` when the branch does not exist. Throws
-   * for any error other than "not found".
-   */
-  getBranchSha(repository: RepositoryCoordinates, branch: string): Promise<string | undefined>;
-  /** Resolves the default branch of the repository. */
-  getDefaultBranch(repository: RepositoryCoordinates): Promise<string>;
-  /** Force-moves an existing branch to the given commit, discarding whatever it pointed at. */
-  resetBranch(repository: RepositoryCoordinates, branch: string, sha: string): Promise<void>;
-}
+export type BranchApi = Pick<GitBranchApi, 'createBranch' | 'getBranchSha' | 'getDefaultBranch' | 'resetBranch'>;
 
 /** Where the base branch came from — useful for logging and for the caller's audit trail. */
-export type BaseBranchOrigin = 'default-branch' | 'input';
+export type BaseBranchOrigin = BranchOrigin;
 
 /** What happened to the target branch. Anything but `unchanged` moved it to the base commit. */
 export type BranchOutcome = 'created' | 'reset' | 'unchanged';
@@ -70,22 +60,17 @@ async function resolveBase(
   coordinates: RepositoryCoordinates,
   request: CreateBranchRequest,
 ): Promise<{ baseBranch: string; baseOrigin: BaseBranchOrigin; baseSha: string }> {
-  const baseBranch = request.baseBranch || (await api.getDefaultBranch(coordinates));
-  const baseOrigin: BaseBranchOrigin = request.baseBranch ? 'input' : 'default-branch';
+  const { branch, origin } = await resolveBranchOrDefault(api, coordinates, request.baseBranch);
 
-  if (baseBranch === '') {
-    throw new Error(`Unable to resolve a base branch for repository: ${request.repository}`);
-  }
-
-  const baseSha = await api.getBranchSha(coordinates, baseBranch);
+  const baseSha = await api.getBranchSha(coordinates, branch);
 
   // An empty SHA is treated like a missing branch: creating a ref at an empty commit would be
   // rejected by the API with an error that says nothing about which branch was at fault.
   if (baseSha === undefined || baseSha === '') {
-    throw new BaseBranchNotFoundError(request.repository, baseBranch);
+    throw new BaseBranchNotFoundError(request.repository, branch);
   }
 
-  return { baseBranch, baseOrigin, baseSha };
+  return { baseBranch: branch, baseOrigin: origin, baseSha };
 }
 
 /**

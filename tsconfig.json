@@ -16,7 +16,8 @@
     "baseUrl": ".",
     "rootDir": ".",
     "paths": {
-      "actions-util": ["packages/ts-util/src/index.ts"]
+      "actions-util": ["packages/ts-util/src/index.ts"],
+      "actions-util/branches": ["packages/ts-util/src/github-branches.ts"]
     }
   },
   "include": ["scripts/**/*", "actions/**/*", "packages/**/*"],

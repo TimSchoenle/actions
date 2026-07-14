@@ -1,5 +1,5 @@
 import * as github from '@actions/github';
-import { hasStatus } from 'actions-util';
+import { resolveExists } from 'actions-util';
 
 import type { PullRequestApi } from './close.js';
 import type { RepositoryCoordinates } from 'actions-util';
@@ -33,15 +33,7 @@ export function createPullRequestApi(token: string): PullRequestApi {
     },
 
     async pullRequestExists({ owner, repo }: RepositoryCoordinates, pullRequestNumber: number): Promise<boolean> {
-      try {
-        await octokit.rest.pulls.get({ owner, pull_number: pullRequestNumber, repo });
-        return true;
-      } catch (error) {
-        if (hasStatus(error, 404)) {
-          return false;
-        }
-        throw error;
-      }
+      return resolveExists(octokit.rest.pulls.get({ owner, pull_number: pullRequestNumber, repo }));
     },
   };
 }

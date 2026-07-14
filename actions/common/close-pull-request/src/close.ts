@@ -1,4 +1,4 @@
-import { parseRepository } from 'actions-util';
+import { errorMessage, parseRepository } from 'actions-util';
 
 import type { RepositoryCoordinates } from 'actions-util';
 
@@ -30,11 +30,6 @@ export interface CloseResult {
   pullRequestNumber: number;
 }
 
-/** Renders the reason an API call failed, without leaking a non-`Error` rejection as `[object Object]`. */
-function describe(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
 /**
  * Raised when the comment that must precede the close cannot be posted.
  *
@@ -47,7 +42,7 @@ export class PullRequestCommentError extends Error {
     readonly pullRequestNumber: number,
     cause: unknown,
   ) {
-    super(`Failed to comment on PR #${pullRequestNumber} in ${repository}: ${describe(cause)}`, { cause });
+    super(`Failed to comment on PR #${pullRequestNumber} in ${repository}: ${errorMessage(cause)}`, { cause });
     this.name = 'PullRequestCommentError';
   }
 }
@@ -64,7 +59,7 @@ export class PullRequestCloseError extends Error {
     readonly pullRequestNumber: number,
     cause: unknown,
   ) {
-    super(`Failed to close PR #${pullRequestNumber} in ${repository}: ${describe(cause)}`, { cause });
+    super(`Failed to close PR #${pullRequestNumber} in ${repository}: ${errorMessage(cause)}`, { cause });
     this.name = 'PullRequestCloseError';
   }
 }

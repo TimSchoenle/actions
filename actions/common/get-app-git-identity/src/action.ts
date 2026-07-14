@@ -1,11 +1,10 @@
 import * as core from '@actions/core';
-import { runAction } from 'actions-util';
+import { resolveBotIdentity, runAction } from 'actions-util';
 
 import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';
 import { createAppUserApi } from './github-api.js';
-import { resolveBotIdentity } from './identity.js';
 
-import type { AppUserApi } from './identity.js';
+import type { AppUserApi } from 'actions-util';
 
 /**
  * Reads the action inputs, resolves the bot's git identity and publishes the `bot-name`,

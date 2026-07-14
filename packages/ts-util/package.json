@@ -10,6 +10,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./branches": {
+      "types": "./dist/github-branches.d.ts",
+      "import": "./dist/github-branches.js"
     }
   },
   "scripts": {
@@ -19,7 +23,8 @@
   },
   "dependencies": {
     "@actions/core": "3.0.1",
-    "yaml": "2.7.0"
+    "@actions/github": "9.1.1",
+    "yaml": "2.8.3"
   },
   "devDependencies": {
     "@fast-check/vitest": "0.4.1",

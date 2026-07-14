@@ -1,4 +1,4 @@
-import { compilePosixRegex, errorMessage, PATTERN_MATCH_TIMEOUT_MS, testPattern } from 'actions-util';
+import { compilePosixRegex, errorMessage, PATTERN_MATCH_TIMEOUT_MS, testPatterns } from 'actions-util';
 
 import type { CheckRun } from './checks.js';
 
@@ -63,11 +63,10 @@ export class InvalidMatcherError extends Error {
 export class MatcherEvaluationError extends Error {
   constructor(
     readonly matcher: string,
-    readonly checkName: string,
     readonly reason: string,
   ) {
     super(
-      `Matcher '${matcher}' could not be evaluated against check '${checkName}' within ${PATTERN_MATCH_TIMEOUT_MS}ms ` +
+      `Matcher '${matcher}' could not be evaluated against the check names within ${PATTERN_MATCH_TIMEOUT_MS}ms ` +
         `(possible catastrophic backtracking): ${reason}`,
     );
     this.name = 'MatcherEvaluationError';
@@ -140,7 +139,7 @@ export function resolveMatcher(raw: string, mode: MatchMode): Matcher {
 }
 
 /**
- * Tests a check name against a matcher.
+ * Tests every check name against a matcher, in the order given.
  *
  * Regex matching is unanchored, mirroring bash's `[[ $name =~ $pattern ]]`: `lint` selects
  * `lint (18.x)` as well as `pre-lint`. Anchor with `^` and `$` to opt out.
@@ -149,21 +148,29 @@ export function resolveMatcher(raw: string, mode: MatchMode): Matcher {
  * JavaScript's RegExp. `compilePosixRegex` reconciles the two, so matchers written for the shell keep
  * working; the residual divergence is documented there.
  *
- * Evaluation is time-boxed: a check name is whatever the workflow that produced it chose to call it,
- * and a matcher pushed into catastrophic backtracking would otherwise hang the job indefinitely.
+ * The whole batch shares one evaluation budget, so a matcher cannot spend it once per check name.
+ *
+ * @throws {MatcherEvaluationError} if the matcher exceeds its evaluation budget.
+ */
+export function matchCheckNames(matcher: Matcher, checkNames: readonly string[]): boolean[] {
+  if (matcher.regex === undefined) {
+    return checkNames.map((checkName) => checkName === matcher.raw);
+  }
+
+  try {
+    return testPatterns(matcher.regex, checkNames);
+  } catch (error) {
+    throw new MatcherEvaluationError(matcher.raw, errorMessage(error));
+  }
+}
+
+/**
+ * Tests a single check name against a matcher.
  *
  * @throws {MatcherEvaluationError} if the matcher exceeds its evaluation budget.
  */
 export function matchesCheckName(matcher: Matcher, checkName: string): boolean {
-  if (matcher.regex === undefined) {
-    return checkName === matcher.raw;
-  }
-
-  try {
-    return testPattern(matcher.regex, checkName);
-  } catch (error) {
-    throw new MatcherEvaluationError(matcher.raw, checkName, errorMessage(error));
-  }
+  return matchCheckNames(matcher, [checkName])[0];
 }
 
 /**
@@ -176,9 +183,11 @@ export function matchesCheckName(matcher: Matcher, checkName: string): boolean {
 export function selectChecks(checkRuns: CheckRun[], matchers: Matcher[]): Selection {
   const selectedByName = new Map<string, CheckRun>();
   const outcomes: MatcherOutcome[] = [];
+  const checkNames = checkRuns.map((checkRun) => checkRun.name);
 
   for (const matcher of matchers) {
-    const matched = checkRuns.filter((checkRun) => matchesCheckName(matcher, checkRun.name));
+    const matches = matchCheckNames(matcher, checkNames);
+    const matched = checkRuns.filter((_, index) => matches[index]);
 
     for (const checkRun of matched) {
       selectedByName.set(checkRun.name, checkRun);

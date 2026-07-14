@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { run } from './action.js';
 
-import type { AppUserApi } from './identity.js';
+import type { AppUserApi } from 'actions-util';
 
 /**
  * Only the reporting side of `@actions/core` is mocked. Input reading stays real so that the tests

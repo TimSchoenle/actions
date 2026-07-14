@@ -1,56 +1,60 @@
-import { existsSync } from 'node:fs';
-import * as fs from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 
-import { formatValue, generateYamlString, inferValueType } from 'actions-util';
-import { parseDocument } from 'yaml';
+import {
+  formatValue,
+  generateYamlString,
+  inferValueType,
+  loadYaml,
+  splitKeyPath,
+  YamlKeyNotFoundError,
+} from 'actions-util';
 
+/**
+ * A node's span in the source. Typed structurally because the exact CST node types are awkward to
+ * import, and the span is all this needs.
+ */
 interface NodeWithRange {
   range?: [number, number, number];
 }
 
+/**
+ * Replaces the value at `keyPath` in the YAML file at `filePath`, returning the previous value.
+ *
+ * The file is edited surgically wherever possible: the new value is spliced over the old node's span
+ * in the original bytes, so comments, quoting style, indentation and key order elsewhere in the file
+ * survive untouched. Re-serializing the document would normalize all of that away. A multi-line value
+ * has no single span to splice, so it falls back to re-serializing.
+ *
+ * @throws {YamlFileNotFoundError} if the path is not a readable file — including a directory, which
+ * the previous `existsSync` gate reported as present and then failed on with a raw `EISDIR`.
+ * @throws {YamlParseError} if the file does not parse.
+ * @throws {YamlKeyNotFoundError} if the key path addresses nothing.
+ */
 export async function modifyYaml(filePath: string, keyPath: string, newValue: string): Promise<string | undefined> {
-  if (!existsSync(filePath)) {
-    throw new Error(`File not found: ${filePath}`);
+  // `keepSourceTokens` is what preserves the node ranges the surgical splice below needs.
+  const { document, source } = await loadYaml(filePath, { keepSourceTokens: true });
+
+  const keys = splitKeyPath(keyPath);
+
+  if (!document.hasIn(keys)) {
+    throw new YamlKeyNotFoundError(keyPath, filePath);
   }
 
-  const fileContent = await fs.readFile(filePath, 'utf-8');
-  const doc = parseDocument(fileContent, { keepSourceTokens: true });
-
-  if (doc.errors.length > 0) {
-    throw new Error(`YAML parse error: ${doc.errors[0].message}`);
-  }
-
-  const keys = keyPath.split('.');
-  const oldValue = doc.getIn(keys);
-
-  if (oldValue === undefined && !doc.hasIn(keys)) {
-    throw new Error(`Key '${keyPath}' not found in ${filePath}`);
-  }
-
-  const oldValueStr = formatValue(oldValue);
+  const oldValue = formatValue(document.getIn(keys));
   const valueToSet = inferValueType(newValue);
+  const targetNode = document.getIn(keys, true) as NodeWithRange | undefined;
 
-  // Attempt surgical modification first (Strict Preservation)
-  // We use NodeWithRange because exact CST Node types are complex to import perfectly.
-  const targetNode = doc.getIn(keys, true) as NodeWithRange | undefined;
-
-  // Only attempt surgical splice if:
-  // 1. Node exists with range
-  // 2. New value is NOT multiline (handling indentation manually is error-prone)
-  // 3. New value doesn't look like it needs complex context awareness? (We rely on createNode)
-  if (targetNode?.range && !String(newValue).includes('\n')) {
+  if (targetNode?.range && !newValue.includes('\n')) {
     const [start, end] = targetNode.range;
-    const newString = generateYamlString(valueToSet);
+    const spliced = source.slice(0, start) + generateYamlString(valueToSet) + source.slice(end);
 
-    // Splice into original content
-    const newFileContent = fileContent.slice(0, start) + newString + fileContent.slice(end);
-    await fs.writeFile(filePath, newFileContent, 'utf-8');
-    return oldValueStr;
+    await writeFile(filePath, spliced, 'utf8');
+
+    return oldValue;
   }
 
-  // Fallback if range not found or complex value
-  doc.setIn(keys, valueToSet);
-  await fs.writeFile(filePath, doc.toString(), 'utf-8');
+  document.setIn(keys, valueToSet);
+  await writeFile(filePath, document.toString(), 'utf8');
 
-  return oldValueStr;
+  return oldValue;
 }
