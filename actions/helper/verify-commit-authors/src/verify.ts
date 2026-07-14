@@ -1,156 +1,116 @@
-import * as core from '@actions/core';
-import * as github from '@actions/github';
-import { print } from 'graphql';
+/**
+ * Upper bound of commits a single GraphQL page can return, and therefore the most commits this
+ * action is able to verify. A larger pull request cannot be verified and must never be reported as
+ * verified.
+ */
+export const MAX_VERIFIABLE_COMMITS = 100;
 
-import { VerifyCommitsDocument } from './generated/graphql.js';
-
-import type { VerifyCommitsQuery } from './generated/graphql.js';
-
-// Type alias for commit node from the query
-type CommitNode = NonNullable<
-  NonNullable<
-    Extract<NonNullable<VerifyCommitsQuery['resource']>, { __typename?: 'PullRequest' }>['commits']['nodes']
-  >[number]
->;
-
-interface ActionInputs {
-  prUrl: string;
-  token: string;
-  acceptedIds: number[];
-}
-
-interface CommitValidation {
+/** A commit reduced to what an author/signature check needs. */
+export interface CommitRecord {
+  /** Full commit SHA. */
   oid: string;
-  isAuthorValid: boolean;
-  isSignatureValid: boolean;
+  /** Database IDs of every author of the commit; `null` for an author without a linked GitHub account. */
+  authorIds: readonly (number | null)[];
+  /** True when the commit has more authors than the API returned, which makes it unverifiable. */
+  authorsTruncated: boolean;
+  /** True when GitHub reports the commit signature as valid. */
+  signatureValid: boolean;
+  /** GitHub's signature state (e.g. `VALID`, `UNSIGNED`), used for diagnostics only. */
+  signatureState: string | null;
+}
+
+/** A commit that failed verification, with every reason it failed. */
+export interface CommitFailure {
+  oid: string;
+  reasons: string[];
+}
+
+export interface VerificationResult {
+  /** True only if every commit was checked and every check passed. */
+  verified: boolean;
+  /** SHAs of all commits that failed verification. */
+  invalidCommits: string[];
+  /** Per-commit failure details, in commit order. */
+  failures: CommitFailure[];
 }
 
 /**
- * Parses and validates action inputs.
+ * Parses the comma-separated `user_ids` input into GitHub user database IDs.
+ *
+ * Every entry must be a positive integer. A typo would otherwise be coerced to `NaN`, silently match
+ * nothing and report the pull request as unverified — indistinguishable from a genuine rejection.
  */
-function getInputs(): ActionInputs {
-  const prUrl = core.getInput('pr_url', { required: true });
-  const token = core.getInput('github_token', { required: true });
-  const userIdsInput = core.getInput('user_ids', { required: true });
+export function parseUserIds(input: string): number[] {
+  const entries = input
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry !== '');
 
-  const acceptedIds = userIdsInput.split(',').map((s) => Number(s.trim()));
+  if (entries.length === 0) {
+    throw new Error("No accepted user IDs provided. 'user_ids' must contain at least one user database ID.");
+  }
 
-  core.info(`Verifying commits for PR: ${prUrl}`);
-  core.info(`Accepted User IDs: ${acceptedIds.join(', ')}`);
+  const ids = entries.map((entry) => {
+    if (!/^\d+$/.test(entry) || !Number.isSafeInteger(Number(entry)) || Number(entry) === 0) {
+      throw new Error(`Invalid user ID '${entry}'. Expected a positive integer GitHub user database ID.`);
+    }
 
-  return { prUrl, token, acceptedIds };
-}
-
-/**
- * Fetches Pull Request commit data via GraphQL.
- */
-async function fetchPullRequestCommits(
-  token: string,
-  prUrl: string,
-): Promise<Extract<NonNullable<VerifyCommitsQuery['resource']>, { __typename?: 'PullRequest' }>> {
-  const octokit = github.getOctokit(token);
-
-  const response = await octokit.graphql<VerifyCommitsQuery>(print(VerifyCommitsDocument), {
-    prUrl,
+    return Number(entry);
   });
 
-  const pr = response.resource;
-
-  if (pr?.__typename !== 'PullRequest' || !pr.commits) {
-    throw new Error('Could not find Pull Request data from URL');
-  }
-
-  return pr;
+  return [...new Set(ids)];
 }
 
 /**
- * Validates a single commit's author and signature.
+ * Validates a single commit: every author must be an accepted user, and the signature must be valid.
  */
-function validateCommit(node: CommitNode | null | undefined, acceptedIds: number[]): CommitValidation | null {
-  if (!node?.commit) return null;
+export function validateCommit(commit: CommitRecord, acceptedIds: ReadonlySet<number>): CommitFailure | undefined {
+  const reasons: string[] = [];
 
-  const commit = node.commit;
-  const oid = commit.oid;
-
-  // Check Authors
-  const authors = commit.authors?.nodes;
-  const isAuthorValid =
-    !!authors &&
-    authors.length > 0 &&
-    authors.every((author) => author?.user?.databaseId && acceptedIds.includes(author.user.databaseId));
-
-  // Check Signature
-  const isSignatureValid = commit.signature?.isValid === true;
-
-  return { oid, isAuthorValid, isSignatureValid };
-}
-
-/**
- * Validates all commits in a PR.
- * Returns an array of invalid commit OIDs.
- */
-function validateAllCommits(nodes: (CommitNode | null)[] | null | undefined, acceptedIds: number[]): string[] {
-  const invalidCommits: string[] = [];
-
-  if (!nodes) return invalidCommits;
-
-  for (const node of nodes) {
-    const validation = validateCommit(node, acceptedIds);
-    if (!validation) continue;
-
-    const { oid, isAuthorValid, isSignatureValid } = validation;
-
-    if (!isAuthorValid || !isSignatureValid) {
-      core.error(`Invalid commit: ${oid}. Author Valid: ${isAuthorValid}, Signature Valid: ${isSignatureValid}`);
-      invalidCommits.push(oid);
-    }
-  }
-
-  return invalidCommits;
-}
-
-/**
- * Sets action outputs based on validation results.
- */
-function setOutputs(invalidCommits: string[]): void {
-  if (invalidCommits.length > 0) {
-    core.warning('Found invalid commits (author check or signature check failed)');
-    core.setOutput('verified', 'false');
-    core.setOutput('invalid_commits', invalidCommits.join('\n'));
+  if (commit.authorsTruncated) {
+    reasons.push('commit has more authors than the API returned, so its authors cannot be verified');
+  } else if (commit.authorIds.length === 0) {
+    reasons.push('commit has no authors');
   } else {
-    core.info('All commits verified.');
-    core.setOutput('verified', 'true');
-    core.setOutput('invalid_commits', '');
+    const unknown = commit.authorIds.filter((id) => id === null).length;
+    const rejected = commit.authorIds.filter((id) => id !== null && !acceptedIds.has(id));
+
+    if (unknown > 0) {
+      reasons.push(`${unknown} author(s) are not linked to a GitHub account`);
+    }
+    if (rejected.length > 0) {
+      reasons.push(`author(s) not accepted: ${rejected.join(', ')}`);
+    }
   }
+
+  if (!commit.signatureValid) {
+    reasons.push(`signature is not valid (state: ${commit.signatureState ?? 'UNSIGNED'})`);
+  }
+
+  return reasons.length > 0 ? { oid: commit.oid, reasons } : undefined;
 }
 
 /**
- * Main action entry point.
+ * Verifies every commit of a pull request.
+ *
+ * An empty commit list is never verified: it means the data needed for the decision is missing, and
+ * this check exists to gate automation such as auto-approval.
  */
-export async function run(): Promise<void> {
-  try {
-    const { prUrl, token, acceptedIds } = getInputs();
+export function verifyCommits(commits: readonly CommitRecord[], acceptedIds: readonly number[]): VerificationResult {
+  const accepted = new Set(acceptedIds);
+  const failures: CommitFailure[] = [];
 
-    const pr = await fetchPullRequestCommits(token, prUrl);
+  for (const commit of commits) {
+    const failure = validateCommit(commit, accepted);
 
-    const { totalCount, nodes } = pr.commits;
-
-    if (totalCount > 100) {
-      core.warning('PR has more than 100 commits. Verification unsafe.');
-      core.setOutput('verified', 'false');
-      return;
-    }
-
-    const invalidCommits = validateAllCommits(nodes, acceptedIds);
-    setOutputs(invalidCommits);
-  } catch (error) {
-    if (error instanceof Error) {
-      core.setFailed(error.message);
-    } else {
-      core.setFailed('Unknown error occurred');
+    if (failure) {
+      failures.push(failure);
     }
   }
-}
 
-// When bundled by bun, this file becomes the entry point
-await run();
+  return {
+    failures,
+    invalidCommits: failures.map((failure) => failure.oid),
+    verified: commits.length > 0 && failures.length === 0,
+  };
+}

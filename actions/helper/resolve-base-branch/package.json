@@ -1,7 +1,7 @@
 {
-  "name": "actions-common-modify-yaml",
+  "name": "actions-helper-resolve-base-branch",
   "version": "1.0.0",
-  "description": "Modify YAML files while preserving comments and structure",
+  "description": "Resolve the given base branch or return the default branch, with an optional existence check",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@actions/core": "3.0.1",
-    "yaml": "^2.7.0"
+    "@actions/github": "9.1.1"
   },
   "devDependencies": {
     "@fast-check/vitest": "0.4.1",

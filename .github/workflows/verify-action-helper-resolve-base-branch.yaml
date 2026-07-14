@@ -225,6 +225,90 @@ jobs:
           fi
           echo "✅ Verified base branch name matches"
 
+  verify-input-validation:
+    name: Verify input validation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 'Repository without an owner'
+            repository: 'actions-testing'
+            branch_name: ''
+            check_if_exist: 'true'
+            silent_fail: 'false'
+
+          - name: 'Repository with a trailing path'
+            repository: 'TimSchoenle/actions/extra'
+            branch_name: ''
+            check_if_exist: 'true'
+            silent_fail: 'false'
+
+          - name: 'Invalid check_if_exist value'
+            repository: 'TimSchoenle/actions'
+            branch_name: 'main'
+            check_if_exist: 'maybe'
+            silent_fail: 'false'
+
+          - name: 'Invalid silent_fail value'
+            repository: 'TimSchoenle/actions'
+            branch_name: 'main'
+            check_if_exist: 'true'
+            silent_fail: ''
+
+          # silent_fail covers a missing branch — never a broken token. An unusable token must fail
+          # loudly instead of being reported as "branch does not exist".
+          - name: 'Invalid token is never silenced by silent_fail'
+            repository: 'TimSchoenle/actions'
+            branch_name: 'main'
+            check_if_exist: 'true'
+            silent_fail: 'true'
+            token: 'ghp_0000000000000000000000000000000000000000'
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Run Test (${{ matrix.name }})
+        id: resolve
+        continue-on-error: true
+        uses: ./actions/helper/resolve-base-branch
+        with:
+          token: ${{ matrix.token || secrets.GITHUB_TOKEN }}
+          repository: ${{ matrix.repository }}
+          branch_name: ${{ matrix.branch_name }}
+          check_if_exist: ${{ matrix.check_if_exist }}
+          silent_fail: ${{ matrix.silent_fail }}
+
+      - name: Assert Failure
+        env:
+          TEST_NAME: ${{ matrix.name }}
+          OUTCOME: ${{ steps.resolve.outcome }}
+          BASE_BRANCH: ${{ steps.resolve.outputs.base_branch }}
+        run: |
+          echo "Test: $TEST_NAME"
+
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "::error::Expected the action to fail, but the outcome was '$OUTCOME'"
+            exit 1
+          fi
+
+          if [ -n "$BASE_BRANCH" ]; then
+            echo "::error::A failed run must not emit a base branch, but it emitted '$BASE_BRANCH'"
+            exit 1
+          fi
+
+          echo "✅ Action failed as expected"
+
   # <<< generated: summary (run 'bun run generate-ci-required' to update)
   summary:
     name: 'CI Summary: Helper Resolve-base-branch'
@@ -234,6 +318,7 @@ jobs:
       - verify-existing-branch
       - verify-none-existing-branch-with-verify
       - verify-none-existing-branch-without-verify
+      - verify-input-validation
     runs-on: ubuntu-latest
     permissions: {}
     steps:

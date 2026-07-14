@@ -1,7 +1,7 @@
 {
-  "name": "actions-common-modify-yaml",
+  "name": "actions-helper-verify-branch-name",
   "version": "1.0.0",
-  "description": "Modify YAML files while preserving comments and structure",
+  "description": "Verify the head branch of a pull request matches a pattern and check whether it comes from a fork",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
@@ -10,8 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@actions/core": "3.0.1",
-    "yaml": "^2.7.0"
+    "@actions/core": "3.0.1"
   },
   "devDependencies": {
     "@fast-check/vitest": "0.4.1",
