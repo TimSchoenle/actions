@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import yaml from 'js-yaml';
+import { parse } from 'yaml';
 
 import { ROOT_DIR, Sys } from '../../utils.js';
 import { getRepoInfo } from '../git-utils.js';
@@ -72,7 +72,7 @@ export class WorkflowParser implements Parser {
       const content = await Sys.file(absPath).text();
       let config: WorkflowConfig;
       try {
-        config = yaml.load(content) as WorkflowConfig;
+        config = parse(content) as WorkflowConfig;
       } catch (e) {
         console.warn(`⚠️ Failed to parse ${file}:`, e);
         continue;

@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import yaml from 'js-yaml';
+import { parse } from 'yaml';
 
 import { ROOT_DIR, Sys } from '../../utils.js';
 import { getRepoInfo } from '../git-utils.js';
@@ -56,7 +56,7 @@ export class ActionParser implements Parser {
       const content = await Sys.file(absPath).text();
       let config: ActionConfig;
       try {
-        config = yaml.load(content) as ActionConfig;
+        config = parse(content) as ActionConfig;
       } catch (e) {
         console.warn(`⚠️ Failed to parse ${file}:`, e);
         continue;
