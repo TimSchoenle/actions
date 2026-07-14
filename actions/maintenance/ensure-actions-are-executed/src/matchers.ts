@@ -1,3 +1,5 @@
+import { compilePosixRegex, errorMessage, PATTERN_MATCH_TIMEOUT_MS, testPattern } from 'actions-util';
+
 import type { CheckRun } from './checks.js';
 
 /** How a configured matcher is interpreted. `auto` decides per matcher; the others force one. */
@@ -12,99 +14,6 @@ const MATCH_MODES: readonly MatchMode[] = ['auto', 'exact', 'regex'];
 const SLASH_WRAPPED_REGEX = /^\/(.+)\/$/s;
 
 /** A configured matcher, with its mode resolved and its pattern compiled. */
-/**
- * POSIX bracket expression classes, translated to their JavaScript character-range equivalents.
- *
- * The shell predecessor evaluated matchers with bash `[[ ... =~ ... ]]`, i.e. POSIX extended regular
- * expressions, which support `[[:digit:]]`-style classes that JavaScript's RegExp does not.
- * Translating them keeps previously working matchers working — an untranslated class compiles to a
- * regex that matches nothing, and a matcher that matches nothing is reported as "not started" and
- * passes, so the failure would be silent.
- *
- * Kept in step with the identical table in `actions/helper/verify-branch-name`.
- */
-const POSIX_CLASSES = new Map<string, string>([
-  ['alnum', 'A-Za-z0-9'],
-  ['alpha', 'A-Za-z'],
-  ['blank', ' \\t'],
-  ['cntrl', '\\x00-\\x1f\\x7f'],
-  ['digit', '0-9'],
-  ['graph', '\\x21-\\x7e'],
-  ['lower', 'a-z'],
-  ['print', '\\x20-\\x7e'],
-  ['punct', '!-\\/:-@\\[-`{-~'],
-  ['space', '\\s'],
-  ['upper', 'A-Z'],
-  ['word', 'A-Za-z0-9_'],
-  ['xdigit', '0-9A-Fa-f'],
-]);
-
-/** A POSIX class found in a bracket expression, and where it ends. */
-interface PosixClassMatch {
-  /** The JavaScript character range the class translates to. */
-  text: string;
-  /** Index of the first character after the class. */
-  nextIndex: number;
-}
-
-/** Reads a `[:class:]` token at `index`, or returns undefined if there is none. */
-function readPosixClass(pattern: string, index: number): PosixClassMatch | undefined {
-  if (pattern[index] !== '[' || pattern[index + 1] !== ':') {
-    return undefined;
-  }
-
-  const closingIndex = pattern.indexOf(':]', index + 2);
-
-  if (closingIndex === -1) {
-    return undefined;
-  }
-
-  const text = POSIX_CLASSES.get(pattern.slice(index + 2, closingIndex));
-
-  return text === undefined ? undefined : { nextIndex: closingIndex + 2, text };
-}
-
-/**
- * Rewrites POSIX bracket expression classes (`[[:digit:]]`) into JavaScript character ranges.
- *
- * Only occurrences inside a bracket expression are rewritten; outside of one, `[:digit:]` is an
- * ordinary character class in both dialects and must be left untouched.
- */
-export function translatePosixClasses(pattern: string): string {
-  let result = '';
-  let index = 0;
-  let insideBracket = false;
-
-  while (index < pattern.length) {
-    const character = pattern[index];
-
-    if (character === '\\' && index + 1 < pattern.length) {
-      result += character + pattern[index + 1];
-      index += 2;
-      continue;
-    }
-
-    const posixClass = insideBracket ? readPosixClass(pattern, index) : undefined;
-
-    if (posixClass) {
-      result += posixClass.text;
-      index = posixClass.nextIndex;
-      continue;
-    }
-
-    if (character === '[' && !insideBracket) {
-      insideBracket = true;
-    } else if (character === ']' && insideBracket) {
-      insideBracket = false;
-    }
-
-    result += character;
-    index += 1;
-  }
-
-  return result;
-}
-
 export interface Matcher {
   /** The matcher exactly as configured, including any wrapping slashes. Used for logging. */
   raw: string;
@@ -142,6 +51,26 @@ export class InvalidMatcherError extends Error {
   ) {
     super(`Invalid regex matcher '${matcher}': ${reason}`);
     this.name = 'InvalidMatcherError';
+  }
+}
+
+/**
+ * Raised when a matcher compiles but cannot be evaluated within its time budget.
+ *
+ * Fails the step rather than reporting the check as unmatched: a matcher that never finishes says
+ * nothing about whether the check passed, and "unmatched" is read as "not started", which passes.
+ */
+export class MatcherEvaluationError extends Error {
+  constructor(
+    readonly matcher: string,
+    readonly checkName: string,
+    readonly reason: string,
+  ) {
+    super(
+      `Matcher '${matcher}' could not be evaluated against check '${checkName}' within ${PATTERN_MATCH_TIMEOUT_MS}ms ` +
+        `(possible catastrophic backtracking): ${reason}`,
+    );
+    this.name = 'MatcherEvaluationError';
   }
 }
 
@@ -204,10 +133,9 @@ export function resolveMatcher(raw: string, mode: MatchMode): Matcher {
   const pattern = wrapped ? wrapped[1] : raw;
 
   try {
-    // eslint-disable-next-line security/detect-non-literal-regexp -- matching check names against a caller-supplied pattern is this action's purpose
-    return { mode: 'regex', raw, regex: new RegExp(translatePosixClasses(pattern)) };
+    return { mode: 'regex', raw, regex: compilePosixRegex(pattern) };
   } catch (error) {
-    throw new InvalidMatcherError(raw, error instanceof Error ? error.message : String(error));
+    throw new InvalidMatcherError(raw, errorMessage(error));
   }
 }
 
@@ -218,14 +146,24 @@ export function resolveMatcher(raw: string, mode: MatchMode): Matcher {
  * `lint (18.x)` as well as `pre-lint`. Anchor with `^` and `$` to opt out.
  *
  * Dialect note: the shell predecessor evaluated POSIX extended regular expressions, this runs
- * JavaScript's RegExp. Ordinary patterns behave identically, and POSIX bracket classes
- * (`[[:digit:]]`) are translated by {@link translatePosixClasses}, so matchers written for the shell
- * keep working. The one remaining divergence is backslash escapes: `\d` and `\w` are literal
- * characters in ERE but metacharacters here, so an ERE matcher relying on that literal reading — a
- * vanishingly rare thing to write on purpose — now means something else.
+ * JavaScript's RegExp. `compilePosixRegex` reconciles the two, so matchers written for the shell keep
+ * working; the residual divergence is documented there.
+ *
+ * Evaluation is time-boxed: a check name is whatever the workflow that produced it chose to call it,
+ * and a matcher pushed into catastrophic backtracking would otherwise hang the job indefinitely.
+ *
+ * @throws {MatcherEvaluationError} if the matcher exceeds its evaluation budget.
  */
 export function matchesCheckName(matcher: Matcher, checkName: string): boolean {
-  return matcher.regex === undefined ? checkName === matcher.raw : matcher.regex.test(checkName);
+  if (matcher.regex === undefined) {
+    return checkName === matcher.raw;
+  }
+
+  try {
+    return testPattern(matcher.regex, checkName);
+  } catch (error) {
+    throw new MatcherEvaluationError(matcher.raw, checkName, errorMessage(error));
+  }
 }
 
 /**

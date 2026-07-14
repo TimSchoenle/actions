@@ -163,6 +163,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@actions/core": "3.0.1",
+        "actions-util": "workspace:*",
       },
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
@@ -178,6 +179,7 @@
       "dependencies": {
         "@actions/core": "3.0.1",
         "@actions/github": "9.1.1",
+        "actions-util": "workspace:*",
       },
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
@@ -200,6 +202,7 @@
       "dependencies": {
         "@actions/core": "3.0.1",
         "@actions/github": "9.1.1",
+        "actions-util": "workspace:*",
       },
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
@@ -213,10 +216,13 @@
       "name": "actions-util",
       "version": "1.0.0",
       "dependencies": {
+        "@actions/core": "3.0.1",
         "yaml": "2.7.0",
       },
       "devDependencies": {
+        "@fast-check/vitest": "0.4.1",
         "@types/node": "26.1.1",
+        "fast-check": "4.9.0",
         "typescript": "6.0.3",
         "vitest": "4.1.10",
       },

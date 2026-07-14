@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { compileBranchPattern, matchesBranchPattern, translatePosixClasses, verifyBranch } from './verify.js';
+import { compileBranchPattern, matchesBranchPattern, verifyBranch } from './verify.js';
 
 import type { BranchVerificationRequest } from './verify.js';
 
@@ -15,45 +15,6 @@ const baseRequest: BranchVerificationRequest = {
 const request = (overrides: Partial<BranchVerificationRequest> = {}): BranchVerificationRequest => ({
   ...baseRequest,
   ...overrides,
-});
-
-describe('translatePosixClasses', () => {
-  it('translates classes inside bracket expressions', () => {
-    expect(translatePosixClasses('^[[:digit:]]+$')).toBe('^[0-9]+$');
-    expect(translatePosixClasses('^[[:alpha:][:digit:]_-]+$')).toBe('^[A-Za-z0-9_-]+$');
-  });
-
-  it('translates negated and mixed bracket expressions', () => {
-    expect(translatePosixClasses('[^[:space:]]')).toBe('[^\\s]');
-    expect(translatePosixClasses('release/[[:alnum:].]+')).toBe('release/[A-Za-z0-9.]+');
-  });
-
-  it('leaves patterns without POSIX classes untouched', () => {
-    const patterns = ['^feature/.*', '^v[0-9]+\\.[0-9]+$', '^(bugfix|hotfix)/.*', 'a{2,3}[a-z]'];
-    for (const pattern of patterns) {
-      expect(translatePosixClasses(pattern)).toBe(pattern);
-    }
-  });
-
-  it('does not touch a class-like sequence outside a bracket expression', () => {
-    // Outside brackets `[:digit:]` is itself an ordinary bracket expression in both dialects.
-    expect(translatePosixClasses('x[:digit:]')).toBe('x[:digit:]');
-  });
-
-  it('leaves unknown class names untouched', () => {
-    expect(translatePosixClasses('[[:unknown:]]')).toBe('[[:unknown:]]');
-  });
-
-  it('leaves an unterminated POSIX class untouched', () => {
-    expect(translatePosixClasses('[[:digit]')).toBe('[[:digit]');
-  });
-
-  it('respects escaped brackets', () => {
-    // The leading `[` is escaped, so the following `[` opens the bracket expression and `:digit:` is
-    // an ordinary set of characters inside it — nothing to translate.
-    expect(translatePosixClasses('\\[[:digit:]\\]')).toBe('\\[[:digit:]\\]');
-    expect(translatePosixClasses('\\[x\\]')).toBe('\\[x\\]');
-  });
 });
 
 describe('compileBranchPattern', () => {

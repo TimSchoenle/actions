@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import { runAction } from 'actions-util';
 
 import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';
 import { createAppUserApi } from './github-api.js';
@@ -15,8 +16,8 @@ import type { AppUserApi } from './identity.js';
  *
  * @param api injection seam for tests; defaults to the GitHub REST API bound to the `token` input.
  */
-export async function run(api?: AppUserApi): Promise<void> {
-  try {
+export function run(api?: AppUserApi): Promise<void> {
+  return runAction(async () => {
     const token = getInput(ActionInput.token, { required: true });
     const appSlug = getInput(ActionInput['app-slug'], { required: true });
 
@@ -27,7 +28,5 @@ export async function run(api?: AppUserApi): Promise<void> {
     setOutput(ActionOutput['bot-name'], identity.name);
     setOutput(ActionOutput['bot-email'], identity.email);
     setOutput(ActionOutput['bot-id'], String(identity.id));
-  } catch (error) {
-    core.setFailed(error instanceof Error ? error.message : 'Unknown error occurred');
-  }
+  });
 }

@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import { runAction } from 'actions-util';
 
 import { closePullRequestIfPresent } from './close.js';
 import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';
@@ -17,8 +18,8 @@ import type { PullRequestApi } from './close.js';
  *
  * @param api injection seam for tests; defaults to the GitHub REST API bound to the `token` input.
  */
-export async function run(api?: PullRequestApi): Promise<void> {
-  try {
+export function run(api?: PullRequestApi): Promise<void> {
+  return runAction(async () => {
     const token = getInput(ActionInput.token, { required: true });
     const repository = getInput(ActionInput.repository, { required: true });
     const pullRequestId = getInput(ActionInput.pull_request_id, { required: true });
@@ -37,7 +38,5 @@ export async function run(api?: PullRequestApi): Promise<void> {
     );
 
     setOutput(ActionOutput.closed, String(result.closed));
-  } catch (error) {
-    core.setFailed(error instanceof Error ? error.message : 'Unknown error occurred');
-  }
+  });
 }

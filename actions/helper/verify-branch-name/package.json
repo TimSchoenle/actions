@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "actions-util": "workspace:*",
     "@actions/core": "3.0.1"
   },
   "devDependencies": {

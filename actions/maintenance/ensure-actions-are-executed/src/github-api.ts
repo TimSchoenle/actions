@@ -1,6 +1,7 @@
 import * as github from '@actions/github';
 
-import type { CheckRun, CheckRunsApi, RepositoryCoordinates } from './checks.js';
+import type { CheckRun, CheckRunsApi } from './checks.js';
+import type { RepositoryCoordinates } from 'actions-util';
 
 /** Page size for every listing. The API caps it at 100, so this is the fewest possible round trips. */
 const PER_PAGE = 100;

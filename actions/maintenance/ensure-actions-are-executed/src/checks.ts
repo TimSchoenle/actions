@@ -1,8 +1,6 @@
-/** A repository split into its owner and name, e.g. `owner/repo`. */
-export interface RepositoryCoordinates {
-  owner: string;
-  repo: string;
-}
+import { errorMessage } from 'actions-util';
+
+import type { RepositoryCoordinates } from 'actions-util';
 
 /**
  * A check run, reduced to the fields the verification depends on.
@@ -51,8 +49,6 @@ export interface CheckRunCollection {
   fallbackFailure?: string;
 }
 
-const REPOSITORY_PATTERN = /^([^\s/]+)\/([^\s/]+)$/;
-
 /** The check runs GitHub attached to the commit — the source this action is built around. */
 const COMMIT_CHECK_RUNS: CheckDataSource = 'commit-check-runs';
 
@@ -84,30 +80,11 @@ async function collectWorkflowRunJobs(api: CheckRunsApi, request: CollectRequest
   try {
     return { checkRuns: await api.listWorkflowRunJobs(request.repository, request.runId), failure: undefined };
   } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-
     return {
       checkRuns: [],
-      failure: `Workflow jobs fallback is unavailable (likely missing actions:read permission): ${reason}`,
+      failure: `Workflow jobs fallback is unavailable (likely missing actions:read permission): ${errorMessage(error)}`,
     };
   }
-}
-
-/**
- * Splits `owner/repo` into its parts.
- *
- * Validated strictly: a malformed value (a bare name, a URL, a trailing path) would otherwise be
- * silently turned into a nonsensical API request whose 404 is indistinguishable from a repository
- * the token cannot see.
- */
-export function parseRepository(repository: string): RepositoryCoordinates {
-  const match = REPOSITORY_PATTERN.exec(repository);
-
-  if (!match) {
-    throw new Error(`Invalid repository '${repository}'. Expected the format 'owner/repo'.`);
-  }
-
-  return { owner: match[1], repo: match[2] };
 }
 
 /**

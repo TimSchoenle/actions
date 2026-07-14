@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
+import { parseRepository, runAction } from 'actions-util';
 
-import { collectCheckRuns, latestCheckRuns, parseRepository } from './checks.js';
+import { collectCheckRuns, latestCheckRuns } from './checks.js';
 import { ActionInput, ActionOutput, getBooleanInput, getInput, setOutput } from './generated/action-io.js';
 import { createCheckRunsApi } from './github-api.js';
 import { normalizeMatchers, parseMatchMode, resolveMatcher, selectChecks } from './matchers.js';
@@ -121,8 +122,8 @@ function logSummary(summary: VerificationSummary, matchedCount: number, errorOnF
  *
  * @param api injection seam for tests; defaults to the GitHub REST API bound to the `token` input.
  */
-export async function run(api?: CheckRunsApi): Promise<void> {
-  try {
+export function run(api?: CheckRunsApi): Promise<void> {
+  return runAction(async () => {
     const token = getInput(ActionInput.token, { required: true });
     const checks = getInput(ActionInput.checks, { required: true });
     const matchMode = parseMatchMode(getInput(ActionInput.match_mode));
@@ -179,7 +180,5 @@ export async function run(api?: CheckRunsApi): Promise<void> {
     }
 
     core.warning(`Found ${summary.failedCount} failing check(s), but continuing because error_on_failure=false.`);
-  } catch (error) {
-    core.setFailed(error instanceof Error ? error.message : 'Unknown error occurred');
-  }
+  });
 }

@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import {
   InvalidMatcherError,
+  MatcherEvaluationError,
   matchesCheckName,
   NoMatchersError,
   normalizeMatchers,
   parseMatchMode,
   resolveMatcher,
   selectChecks,
-  translatePosixClasses,
 } from './matchers.js';
 
 import type { CheckRun } from './checks.js';
@@ -96,24 +96,15 @@ describe('resolveMatcher', () => {
   });
 });
 
-describe('translatePosixClasses', () => {
-  it('rewrites POSIX classes inside a bracket expression', () => {
-    expect(translatePosixClasses('^build-[[:digit:]]+$')).toBe('^build-[0-9]+$');
-    expect(translatePosixClasses('^[[:alpha:][:digit:]_-]+$')).toBe('^[A-Za-z0-9_-]+$');
-  });
+describe('matchesCheckName under catastrophic backtracking', () => {
+  // Evaluation is time-boxed, so a matcher that cannot finish fails the step. Reporting it as
+  // "unmatched" would read as "the check never started", which this action tolerates — turning a
+  // hung verification into a silent pass.
+  it('fails rather than hanging, and never reports the check as unmatched', () => {
+    const matcher = resolveMatcher('/^(a+)+$/', 'auto');
+    const checkName = `${'a'.repeat(40)}!`;
 
-  it('rewrites a negated bracket expression', () => {
-    expect(translatePosixClasses('[^[:space:]]')).toBe('[^\\s]');
-  });
-
-  it('leaves a bare [:digit:] outside a bracket expression untouched', () => {
-    expect(translatePosixClasses('[:digit:]')).toBe('[:digit:]');
-  });
-
-  it('leaves patterns without POSIX classes untouched', () => {
-    for (const pattern of ['^lint$', 'build \\(18\\.x\\)', '.*', '[a-z]+']) {
-      expect(translatePosixClasses(pattern)).toBe(pattern);
-    }
+    expect(() => matchesCheckName(matcher, checkName)).toThrow(MatcherEvaluationError);
   });
 });
 

@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import { runAction } from 'actions-util';
 
 import { createOrResetBranch } from './create-branch.js';
 import { ActionInput, ActionOutput, getBooleanInput, getInput, setOutput } from './generated/action-io.js';
@@ -39,8 +40,8 @@ function report(result: CreateBranchResult): void {
  *
  * @param api injection seam for tests; defaults to the GitHub REST API bound to the `token` input.
  */
-export async function run(api?: BranchApi): Promise<void> {
-  try {
+export function run(api?: BranchApi): Promise<void> {
+  return runAction(async () => {
     const token = getInput(ActionInput.token, { required: true });
     const repository = getInput(ActionInput.repository, { required: true });
     const branchName = getInput(ActionInput.branch_name, { required: true });
@@ -60,7 +61,5 @@ export async function run(api?: BranchApi): Promise<void> {
     setOutput(ActionOutput.base_branch, result.baseBranch);
     setOutput(ActionOutput.sha, result.sha);
     setOutput(ActionOutput.created, result.outcome === 'unchanged' ? 'false' : 'true');
-  } catch (error) {
-    core.setFailed(error instanceof Error ? error.message : 'Unknown error occurred');
-  }
+  });
 }

@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import { runAction } from 'actions-util';
 
 import { deleteBranchIfExists } from './delete.js';
 import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';
@@ -40,8 +41,8 @@ function report(result: DeleteResult, repository: string, branch: string): void 
  *
  * @param api injection seam for tests; defaults to the GitHub REST API bound to the `token` input.
  */
-export async function run(api?: BranchApi): Promise<void> {
-  try {
+export function run(api?: BranchApi): Promise<void> {
+  return runAction(async () => {
     const token = getInput(ActionInput.token, { required: true });
     const repository = getInput(ActionInput.repository, { required: true });
     const branchName = getInput(ActionInput.branch_name, { required: true });
@@ -53,7 +54,5 @@ export async function run(api?: BranchApi): Promise<void> {
     report(result, repository, branchName);
 
     setOutput(ActionOutput.deleted, String(result.deleted));
-  } catch (error) {
-    core.setFailed(error instanceof Error ? error.message : 'Unknown error occurred');
-  }
+  });
 }

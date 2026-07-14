@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import { runAction } from 'actions-util';
 
 import { getInput, setOutput } from './generated/action-io.js';
 import { readYaml } from './read.js';
@@ -10,8 +11,8 @@ import { readYaml } from './read.js';
  * The bash predecessor appended `value=$VALUE` to `$GITHUB_OUTPUT` directly and corrupted the file
  * whenever the value spanned more than one line, so maps and sequences are only now readable.
  */
-export async function run(): Promise<void> {
-  try {
+export function run(): Promise<void> {
+  return runAction(async () => {
     const file = getInput('file', { required: true });
     const key = getInput('key', { required: true });
 
@@ -22,7 +23,5 @@ export async function run(): Promise<void> {
     setOutput('value', value);
 
     core.info(`✅ Read value: ${value}`);
-  } catch (error) {
-    core.setFailed(error instanceof Error ? error.message : 'Unknown error occurred');
-  }
+  });
 }

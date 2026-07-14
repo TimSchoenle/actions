@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { collectCheckRuns, latestCheckRuns, parseRepository } from './checks.js';
+import { collectCheckRuns, latestCheckRuns } from './checks.js';
 
 import type { CheckRun, CheckRunsApi } from './checks.js';
 
@@ -26,19 +26,6 @@ function fakeApi(checkRuns: CheckRun[] = [], jobs: CheckRun[] | Error = []): Che
     }),
   };
 }
-
-describe('parseRepository', () => {
-  it('splits owner and repository name', () => {
-    expect(parseRepository('octocat/hello-world')).toEqual({ owner: 'octocat', repo: 'hello-world' });
-  });
-
-  it.each(['owner', 'owner/repo/extra', 'https://github.com/owner/repo', 'owner /repo', ''])(
-    'rejects the malformed repository %o',
-    (value) => {
-      expect(() => parseRepository(value)).toThrow(`Invalid repository '${value}'. Expected the format 'owner/repo'.`);
-    },
-  );
-});
 
 describe('collectCheckRuns', () => {
   const request = { ref: 'deadbeef', repository, runId: 42 };
