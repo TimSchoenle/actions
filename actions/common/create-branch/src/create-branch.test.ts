@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { BaseBranchNotFoundError, createOrResetBranch, parseRepository } from './create-branch.js';
+import { parseRepository } from 'actions-common-ts-util';
+import type { RepositoryCoordinates } from 'actions-common-ts-util';
+import { BaseBranchNotFoundError, createOrResetBranch } from './create-branch.js';
 
-import type { BranchApi, RepositoryCoordinates } from './create-branch.js';
+import type { BranchApi } from './create-branch.js';
 
 const repository = 'owner/repo';
 const coordinates: RepositoryCoordinates = { owner: 'owner', repo: 'repo' };

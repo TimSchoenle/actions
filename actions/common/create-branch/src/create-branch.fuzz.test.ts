@@ -1,9 +1,11 @@
 import fc from 'fast-check';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createOrResetBranch, parseRepository } from './create-branch.js';
+import { parseRepository } from 'actions-common-ts-util';
+import type { RepositoryCoordinates } from 'actions-common-ts-util';
+import { createOrResetBranch } from './create-branch.js';
 
-import type { BranchApi, RepositoryCoordinates } from './create-branch.js';
+import type { BranchApi } from './create-branch.js';
 
 const segment = fc.stringMatching(/^[\w.-]{1,30}$/);
 const branch = fc.stringMatching(/^[\w./-]{1,60}$/);

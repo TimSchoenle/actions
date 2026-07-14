@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { run } from './action.js';
 
-import type { BranchApi, RepositoryCoordinates } from './create-branch.js';
+import type { RepositoryCoordinates } from 'actions-common-ts-util';
+import type { BranchApi } from './create-branch.js';
 
 /**
  * Only the reporting side of `@actions/core` is mocked. Input reading stays real so that the tests

@@ -1,8 +1,6 @@
-/** A repository split into its owner and name, e.g. `owner/repo`. */
-export interface RepositoryCoordinates {
-  owner: string;
-  repo: string;
-}
+import { parseRepository } from 'actions-common-ts-util';
+
+import type { RepositoryCoordinates } from 'actions-common-ts-util';
 
 /** The repository operations this action needs, kept minimal so it can be faked in tests. */
 export interface BranchApi {
@@ -34,26 +32,6 @@ export type DeleteResult =
   | { deleted: false; outcome: 'not-found' }
   /** The branch exists but could not be deleted, e.g. because it is protected. */
   | { deleted: false; outcome: 'delete-failed'; cause: Error };
-
-const REPOSITORY_PATTERN = /^([^\s/]+)\/([^\s/]+)$/;
-
-/**
- * Splits `owner/repo` into its parts.
- *
- * Validated strictly: a malformed value (a bare name, a URL, a trailing path) would otherwise be
- * silently turned into a nonsensical API request whose 404 is indistinguishable from a genuinely
- * missing repository — and this action reports a missing branch as success, so the mistake would
- * never surface.
- */
-export function parseRepository(repository: string): RepositoryCoordinates {
-  const match = REPOSITORY_PATTERN.exec(repository);
-
-  if (!match) {
-    throw new Error(`Invalid repository '${repository}'. Expected the format 'owner/repo'.`);
-  }
-
-  return { owner: match[1], repo: match[2] };
-}
 
 /** Preserves the failure that the API reported, without assuming it threw an `Error`. */
 function toError(error: unknown): Error {

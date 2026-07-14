@@ -22,10 +22,9 @@ type CliOptions = {
 };
 
 const TARGET_KEYS_OPENPGP = 'keys-openpgp';
-const TARGET_PGP_MIT = 'pgp-mit';
 const TARGET_KEYSERVER_UBUNTU = 'keyserver-ubuntu';
 
-type PublicationTargetId = typeof TARGET_KEYS_OPENPGP | typeof TARGET_KEYSERVER_UBUNTU | typeof TARGET_PGP_MIT;
+type PublicationTargetId = typeof TARGET_KEYS_OPENPGP | typeof TARGET_KEYSERVER_UBUNTU | 'pgp-mit';
 
 type PublicationTarget = {
   baseUrl: string;
@@ -69,13 +68,12 @@ const SECTION_DIVIDER = '=======================================================
 
 const OPENPGP_MODULE = 'openpgp';
 const URL_KEYS_OPENPGP = 'https://keys.openpgp.org';
-const URL_PGP_MIT = 'https://pgp.mit.edu';
 const URL_UBUNTU_KEYS = 'https://keyserver.ubuntu.com';
 
 const COMMON_PUBLIC_KEYSERVERS: PublicationTarget[] = [
   { baseUrl: URL_KEYS_OPENPGP, id: TARGET_KEYS_OPENPGP },
   // Fails on local
-  // { baseUrl: URL_PGP_MIT, id: TARGET_PGP_MIT },
+  // { baseUrl: 'https://pgp.mit.edu', id: 'pgp-mit' },
   { baseUrl: URL_UBUNTU_KEYS, id: TARGET_KEYSERVER_UBUNTU },
 ];
 

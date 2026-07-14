@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { parseRepository } from 'actions-common-ts-util';
 import {
   closePullRequestIfPresent,
   parsePullRequestId,
-  parseRepository,
   PullRequestCloseError,
   PullRequestCommentError,
 } from './close.js';

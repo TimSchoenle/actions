@@ -1,0 +1,28 @@
+{
+  "name": "actions-common-ts-util",
+  "version": "1.0.0",
+  "description": "Shared TypeScript utilities for GitHub Actions",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "yaml": "2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  }
+}

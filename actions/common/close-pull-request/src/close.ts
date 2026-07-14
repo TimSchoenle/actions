@@ -1,8 +1,6 @@
-/** A repository split into its owner and name, e.g. `owner/repo`. */
-export interface RepositoryCoordinates {
-  owner: string;
-  repo: string;
-}
+import { parseRepository } from 'actions-common-ts-util';
+
+import type { RepositoryCoordinates } from 'actions-common-ts-util';
 
 /** The pull request operations this action needs, kept minimal so it can be faked in tests. */
 export interface PullRequestApi {
@@ -71,26 +69,7 @@ export class PullRequestCloseError extends Error {
   }
 }
 
-const REPOSITORY_PATTERN = /^([^\s/]+)\/([^\s/]+)$/;
-
 const PULL_REQUEST_ID_PATTERN = /^\d+$/;
-
-/**
- * Splits `owner/repo` into its parts.
- *
- * Validated strictly: a malformed value (a bare name, a URL, a trailing path) would otherwise be
- * silently turned into a nonsensical API request whose 404 is indistinguishable from a genuinely
- * missing repository.
- */
-export function parseRepository(repository: string): RepositoryCoordinates {
-  const match = REPOSITORY_PATTERN.exec(repository);
-
-  if (!match) {
-    throw new Error(`Invalid repository '${repository}'. Expected the format 'owner/repo'.`);
-  }
-
-  return { owner: match[1], repo: match[2] };
-}
 
 /**
  * Parses the pull request number.

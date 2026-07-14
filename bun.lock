@@ -5,6 +5,7 @@
     "": {
       "name": "actions",
       "dependencies": {
+        "actions-common-ts-util": "workspace:*",
         "chalk": "5",
         "inquirer": "14.0.2",
         "openpgp": "6.3.1",
@@ -51,6 +52,7 @@
       "dependencies": {
         "@actions/core": "3.0.1",
         "@actions/github": "9.1.1",
+        "actions-common-ts-util": "workspace:*",
       },
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
@@ -66,6 +68,7 @@
       "dependencies": {
         "@actions/core": "3.0.1",
         "@actions/github": "9.1.1",
+        "actions-common-ts-util": "workspace:*",
       },
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
@@ -81,6 +84,7 @@
       "dependencies": {
         "@actions/core": "3.0.1",
         "@actions/github": "9.1.1",
+        "actions-common-ts-util": "workspace:*",
       },
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
@@ -96,6 +100,7 @@
       "dependencies": {
         "@actions/core": "3.0.1",
         "@actions/github": "9.1.1",
+        "actions-common-ts-util": "workspace:*",
       },
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
@@ -110,7 +115,8 @@
       "version": "1.0.0",
       "dependencies": {
         "@actions/core": "3.0.1",
-        "yaml": "^2.7.0",
+        "actions-common-ts-util": "workspace:*",
+        "yaml": "2.7.0",
       },
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
@@ -125,7 +131,8 @@
       "version": "1.0.0",
       "dependencies": {
         "@actions/core": "3.0.1",
-        "yaml": "^2.7.0",
+        "actions-common-ts-util": "workspace:*",
+        "yaml": "2.7.0",
       },
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
@@ -141,6 +148,7 @@
       "dependencies": {
         "@actions/core": "3.0.1",
         "@actions/github": "9.1.1",
+        "actions-common-ts-util": "workspace:*",
       },
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
@@ -197,6 +205,18 @@
         "@fast-check/vitest": "0.4.1",
         "@types/node": "26.1.1",
         "fast-check": "4.9.0",
+        "typescript": "6.0.3",
+        "vitest": "4.1.10",
+      },
+    },
+    "packages/ts-util": {
+      "name": "actions-common-ts-util",
+      "version": "1.0.0",
+      "dependencies": {
+        "yaml": "2.7.0",
+      },
+      "devDependencies": {
+        "@types/node": "26.1.1",
         "typescript": "6.0.3",
         "vitest": "4.1.10",
       },
@@ -566,6 +586,8 @@
     "actions-common-modify-yaml": ["actions-common-modify-yaml@workspace:actions/common/modify-yaml"],
 
     "actions-common-read-yaml": ["actions-common-read-yaml@workspace:actions/common/read-yaml"],
+
+    "actions-common-ts-util": ["actions-common-ts-util@workspace:packages/ts-util"],
 
     "actions-helper-resolve-base-branch": ["actions-helper-resolve-base-branch@workspace:actions/helper/resolve-base-branch"],
 
@@ -1425,7 +1447,7 @@
 
     "yallist": ["yallist@3.1.1", "", {}, "sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g=="],
 
-    "yaml": ["yaml@2.9.0", "", { "bin": { "yaml": "bin.mjs" } }, "sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA=="],
+    "yaml": ["yaml@2.7.0", "", { "bin": { "yaml": "bin.mjs" } }, "sha512-+hSoy/QHluxmC9kCIJyL/uyFmLmc+e5CFR5Wa+bpIhIj85LVb9ZH2nVnqrHoSvKogwODv0ClqZkmiSSaIH5LTA=="],
 
     "yargs": ["yargs@17.7.3", "", { "dependencies": { "cliui": "^8.0.1", "escalade": "^3.1.1", "get-caller-file": "^2.0.5", "require-directory": "^2.1.1", "string-width": "^4.2.3", "y18n": "^5.0.5", "yargs-parser": "^21.1.1" } }, "sha512-GZtjxm/J/4TSxuL3FNYjCmLktBTnIw/rVmKSIyKeYAZpmJB2ig9VauCC5xsa82GNKVKDAqpOn3KVzNt0zmrU0g=="],
 
@@ -1451,6 +1473,8 @@
 
     "@graphql-codegen/cli/listr2": ["listr2@9.0.5", "", { "dependencies": { "cli-truncate": "^5.0.0", "colorette": "^2.0.20", "eventemitter3": "^5.0.1", "log-update": "^6.1.0", "rfdc": "^1.4.1", "wrap-ansi": "^9.0.0" } }, "sha512-ME4Fb83LgEgwNw96RKNvKV4VTLuXfoKudAmm2lP8Kk87KaMK0/Xrx/aAkMWmT8mDb+3MlFDspfbCs7adjRxA2g=="],
 
+    "@graphql-codegen/cli/yaml": ["yaml@2.9.0", "", { "bin": { "yaml": "bin.mjs" } }, "sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA=="],
+
     "@inquirer/core/mute-stream": ["mute-stream@3.0.0", "", {}, "sha512-dkEJPVvun4FryqBmZ5KhDo0K9iDXAwn08tMLDinNdRBNPcYEDiWYysLcc6k3mjTMlbP9KyylvRpd4wFtwrT9rw=="],
 
     "@typescript-eslint/typescript-estree/semver": ["semver@7.8.5", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA=="],
@@ -1475,6 +1499,8 @@
 
     "eslint-plugin-sonarjs/semver": ["semver@7.8.5", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA=="],
 
+    "eslint-plugin-sonarjs/yaml": ["yaml@2.9.0", "", { "bin": { "yaml": "bin.mjs" } }, "sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA=="],
+
     "eslint-plugin-unicorn/semver": ["semver@7.8.5", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA=="],
 
     "fast-glob/glob-parent": ["glob-parent@5.1.2", "", { "dependencies": { "is-glob": "^4.0.1" } }, "sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow=="],
@@ -1488,6 +1514,8 @@
     "inquirer/mute-stream": ["mute-stream@3.0.0", "", {}, "sha512-dkEJPVvun4FryqBmZ5KhDo0K9iDXAwn08tMLDinNdRBNPcYEDiWYysLcc6k3mjTMlbP9KyylvRpd4wFtwrT9rw=="],
 
     "is-builtin-module/builtin-modules": ["builtin-modules@5.3.0", "", {}, "sha512-hMQUl2bUFG339QygPM97E+mc8OY1IAchORZxm4a/frcYwKzozMzRVDBwHW0NjOqGElLm2O37AVQE8ikxlZHrMQ=="],
+
+    "lint-staged/yaml": ["yaml@2.9.0", "", { "bin": { "yaml": "bin.mjs" } }, "sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA=="],
 
     "log-symbols/chalk": ["chalk@4.1.2", "", { "dependencies": { "ansi-styles": "^4.1.0", "supports-color": "^7.1.0" } }, "sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA=="],
 

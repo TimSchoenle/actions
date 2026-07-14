@@ -13,7 +13,7 @@
     "generate-action-sources": "bun scripts/generate-action-sources.ts",
     "check-action-sources": "bun scripts/generate-action-sources.ts --check",
     "check-action-dist": "bun scripts/check-action-dist.ts",
-    "lint": "eslint \"scripts/**/*.ts\" \"actions/**/src/**/*.ts\"",
+    "lint": "eslint \"scripts/**/*.ts\" \"actions/**/src/**/*.ts\" \"packages/**/src/**/*.ts\"",
     "typecheck": "bun run generate-action-sources && bun run --workspaces typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -57,12 +57,14 @@
     "wrap-ansi": "10.0.0"
   },
   "dependencies": {
+    "actions-common-ts-util": "workspace:*",
     "chalk": "5",
     "inquirer": "14.0.2",
     "openpgp": "6.3.1"
   },
   "workspaces": [
     "actions/**/*",
-    "workflows/**/*"
+    "workflows/**/*",
+    "packages/*"
   ]
 }

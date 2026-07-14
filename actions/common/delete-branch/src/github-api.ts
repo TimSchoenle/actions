@@ -1,11 +1,8 @@
 import * as github from '@actions/github';
+import { hasStatus } from 'actions-common-ts-util';
 
-import type { BranchApi, RepositoryCoordinates } from './delete.js';
-
-/** Narrows an unknown error to an Octokit HTTP error carrying the given status. */
-function hasStatus(error: unknown, status: number): boolean {
-  return typeof error === 'object' && error !== null && 'status' in error && error.status === status;
-}
+import type { BranchApi } from './delete.js';
+import type { RepositoryCoordinates } from 'actions-common-ts-util';
 
 /** The Git ref a branch lives behind, e.g. `heads/main` for the branch `main`. */
 function branchRef(branch: string): string {

@@ -1,7 +1,8 @@
 import fc from 'fast-check';
 import { describe, expect, it, vi } from 'vitest';
 
-import { deleteBranchIfExists, parseRepository } from './delete.js';
+import { parseRepository } from 'actions-common-ts-util';
+import { deleteBranchIfExists } from './delete.js';
 
 import type { BranchApi } from './delete.js';
 

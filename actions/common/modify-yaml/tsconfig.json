@@ -1,19 +1,9 @@
 {
+  "extends": "../../../tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "strict": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "declaration": false,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "outDir": "dist",
-    "noEmit": true,
-    "types": ["node"]
+    "outDir": "dist"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

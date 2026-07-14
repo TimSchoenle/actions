@@ -1,8 +1,6 @@
-/** A repository split into its owner and name, e.g. `owner/repo`. */
-export interface RepositoryCoordinates {
-  owner: string;
-  repo: string;
-}
+import { parseRepository } from 'actions-common-ts-util';
+
+import type { RepositoryCoordinates } from 'actions-common-ts-util';
 
 /** The git ref operations this action needs, kept minimal so it can be faked in tests. */
 export interface BranchApi {
@@ -64,25 +62,6 @@ export class BaseBranchNotFoundError extends Error {
     super(`Could not find SHA for base branch '${branch}' in repository: ${repository}`);
     this.name = 'BaseBranchNotFoundError';
   }
-}
-
-const REPOSITORY_PATTERN = /^([^\s/]+)\/([^\s/]+)$/;
-
-/**
- * Splits `owner/repo` into its parts.
- *
- * Validated strictly: a malformed value (a bare name, a URL, a trailing path) would otherwise be
- * silently turned into a nonsensical API request whose 404 is indistinguishable from a genuinely
- * missing repository.
- */
-export function parseRepository(repository: string): RepositoryCoordinates {
-  const match = REPOSITORY_PATTERN.exec(repository);
-
-  if (!match) {
-    throw new Error(`Invalid repository '${repository}'. Expected the format 'owner/repo'.`);
-  }
-
-  return { owner: match[1], repo: match[2] };
 }
 
 /** Resolves the branch to base the target branch on, and the commit at its head. */

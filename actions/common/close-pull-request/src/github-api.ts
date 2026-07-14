@@ -1,11 +1,8 @@
 import * as github from '@actions/github';
+import { hasStatus } from 'actions-common-ts-util';
 
-import type { PullRequestApi, RepositoryCoordinates } from './close.js';
-
-/** Narrows an unknown error to an Octokit HTTP error carrying the given status. */
-function hasStatus(error: unknown, status: number): boolean {
-  return typeof error === 'object' && error !== null && 'status' in error && error.status === status;
-}
+import type { PullRequestApi } from './close.js';
+import type { RepositoryCoordinates } from 'actions-common-ts-util';
 
 /**
  * Binds the {@link PullRequestApi} to the GitHub REST API.

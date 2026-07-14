@@ -1,14 +1,10 @@
 import { readFile } from 'node:fs/promises';
 
-import { Document, isAlias, isCollection, isScalar, parseDocument } from 'yaml';
+import { stringifyValue } from 'actions-common-ts-util';
+import { isAlias, isCollection, isScalar, parseDocument } from 'yaml';
 
-import type { Scalar, YAMLMap, YAMLSeq } from 'yaml';
-
-/**
- * The kinds of node a dot-path may legitimately land on. `Pair` and `Alias` are deliberately absent:
- * a path never addresses a pair, and an alias is resolved to its anchor before it reaches here.
- */
-export type YamlValueNode = Scalar | YAMLMap | YAMLSeq;
+import type { YamlValueNode } from 'actions-common-ts-util';
+import type { Document } from 'yaml';
 
 /**
  * Narrow seam over the file system: resolves the file's contents, or `undefined` when the path is
@@ -43,55 +39,6 @@ export const readYamlFile: YamlFileReader = async (filePath) => {
     throw error;
   }
 };
-
-/**
- * Renders a scalar exactly as it was authored, which is what `yq` printed and what callers compare
- * against in workflow expressions.
- *
- * The parser records the scalar's textual form in `source` (quotes stripped, escapes resolved), and
- * that is the only faithful representation available: the JS `value` has already been coerced by the
- * schema, so `1.0` would come back as `1`, `1e3` as `1000` and `007` as `7`. Version-like strings
- * such as `1.0.0` are never numbers to begin with and pass through untouched either way.
- *
- * A null value has no textual form when written as an empty value (`key:`), so it is normalised to
- * `null` — the same text `yq` printed, and the same text `modify-yaml` reports for a null old value.
- */
-export function stringifyScalar(scalar: Scalar): string {
-  if (scalar.value === null) {
-    return 'null';
-  }
-
-  return scalar.source ?? String(scalar.value);
-}
-
-/**
- * Renders a map or sequence as a standalone YAML block, matching what `yq` printed for non-scalar
- * nodes. The bash predecessor could not actually deliver such a value — `echo "value=$VALUE" >>
- * "$GITHUB_OUTPUT"` corrupts the output file for anything multi-line — so this path is repaired, not
- * preserved: `core.setOutput` encodes multi-line values correctly.
- *
- * Comments and anchors held by nodes inside the subtree survive serialization; a comment written
- * above the key that addresses the subtree belongs to the parent's pair and does not. An anchor on
- * the root of the fragment is dropped: it exists only to be referenced from elsewhere in the source
- * document and would be meaningless noise in a value that stands alone. It is restored afterwards so
- * that the function has no observable effect on the document.
- */
-export function stringifyCollection(collection: YAMLMap | YAMLSeq): string {
-  const { anchor } = collection;
-  collection.anchor = undefined;
-
-  try {
-    // YAML serialization always terminates the document with a newline; that is an artifact of the
-    // encoding rather than part of the value.
-    return new Document(collection).toString().replace(/\n$/, '');
-  } finally {
-    collection.anchor = anchor;
-  }
-}
-
-export function stringifyValue(node: YamlValueNode): string {
-  return isScalar(node) ? stringifyScalar(node) : stringifyCollection(node);
-}
 
 /**
  * Resolves a dot-path against the document, or `undefined` when it addresses nothing.
