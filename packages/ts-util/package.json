@@ -1,0 +1,36 @@
+{
+  "name": "actions-util",
+  "version": "1.0.0",
+  "description": "Shared TypeScript utilities for GitHub Actions",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./branches": {
+      "types": "./dist/github-branches.d.ts",
+      "import": "./dist/github-branches.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@actions/core": "3.0.1",
+    "@actions/github": "9.1.1",
+    "yaml": "2.8.3"
+  },
+  "devDependencies": {
+    "@fast-check/vitest": "0.4.1",
+    "@types/node": "26.1.1",
+    "fast-check": "4.9.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  }
+}

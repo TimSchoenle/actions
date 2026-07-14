@@ -6,8 +6,11 @@
  * Reading an input or writing an output that `action.yaml` does not declare is a compile error. To
  * keep that guarantee, action sources must not call `@actions/core` for I/O directly; ESLint
  * enforces this.
+ *
+ * Every input is a `string`: that is what the runner hands over, and inferring a type from an
+ * input's default would take over validation that belongs to `@actions/core`.
  */
-import * as core from '@actions/core';
+import { createActionIo } from 'actions-util';
 
 /** Every input declared in `action.yaml`. Usable as a value (`ActionInput.x`) and as a type. */
 export const ActionInput = {
@@ -27,18 +30,4 @@ export const ActionOutput = {
 
 export type ActionOutput = (typeof ActionOutput)[keyof typeof ActionOutput];
 
-export function getInput(name: ActionInput, options?: core.InputOptions): string {
-  return core.getInput(name, options);
-}
-
-export function getMultilineInput(name: ActionInput, options?: core.InputOptions): string[] {
-  return core.getMultilineInput(name, options);
-}
-
-export function getBooleanInput(name: ActionInput, options?: core.InputOptions): boolean {
-  return core.getBooleanInput(name, options);
-}
-
-export function setOutput(name: ActionOutput, value: string): void {
-  core.setOutput(name, value);
-}
+export const { getBooleanInput, getInput, getMultilineInput, setOutput } = createActionIo<ActionInput, ActionOutput>();

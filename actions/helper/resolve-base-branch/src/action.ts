@@ -1,7 +1,8 @@
 import * as core from '@actions/core';
+import { runAction } from 'actions-util';
+import { createBranchApi } from 'actions-util/branches';
 
 import { ActionInput, getBooleanInput, getInput, setOutput } from './generated/action-io.js';
-import { createBranchApi } from './github-api.js';
 import { BranchNotFoundError, resolveBaseBranch } from './resolve.js';
 
 import type { BranchApi } from './resolve.js';
@@ -15,8 +16,8 @@ import type { BranchApi } from './resolve.js';
  *
  * @param api injection seam for tests; defaults to the GitHub REST API bound to the `token` input.
  */
-export async function run(api?: BranchApi): Promise<void> {
-  try {
+export function run(api?: BranchApi): Promise<void> {
+  return runAction(async () => {
     const token = getInput(ActionInput.token, { required: true });
     const repository = getInput(ActionInput.repository, { required: true });
     const branchName = getInput(ActionInput.branch_name);
@@ -49,7 +50,5 @@ export async function run(api?: BranchApi): Promise<void> {
 
       throw error;
     }
-  } catch (error) {
-    core.setFailed(error instanceof Error ? error.message : 'Unknown error occurred');
-  }
+  });
 }

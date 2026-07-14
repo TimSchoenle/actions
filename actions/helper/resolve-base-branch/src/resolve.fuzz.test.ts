@@ -1,7 +1,8 @@
 import fc from 'fast-check';
 import { describe, expect, it, vi } from 'vitest';
 
-import { BranchNotFoundError, parseRepository, resolveBaseBranch } from './resolve.js';
+import { parseRepository } from 'actions-util';
+import { BranchNotFoundError, resolveBaseBranch } from './resolve.js';
 
 import type { BranchApi } from './resolve.js';
 

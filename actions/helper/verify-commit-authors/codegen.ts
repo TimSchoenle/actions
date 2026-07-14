@@ -9,6 +9,9 @@ const config: CodegenConfig = {
       plugins: ['typescript', 'typescript-operations', 'typed-document-node'],
       config: {
         onlyOperationTypes: true,
+        // The action now shares the repository's `verbatimModuleSyntax`, under which a value import
+        // of a type is an error. Emitting `import type` keeps the generated file compiling.
+        useTypeImports: true,
       },
     },
   },

@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
@@ -11,8 +12,14 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "verbatimModuleSyntax": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "rootDir": ".",
+    "paths": {
+      "actions-util": ["packages/ts-util/src/index.ts"],
+      "actions-util/branches": ["packages/ts-util/src/github-branches.ts"]
+    }
   },
-  "include": ["scripts/**/*", "actions/**/*"],
+  "include": ["scripts/**/*", "actions/**/*", "packages/**/*"],
   "exclude": ["node_modules", "configs"]
 }

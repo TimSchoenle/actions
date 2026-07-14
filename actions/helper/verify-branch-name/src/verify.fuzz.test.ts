@@ -1,7 +1,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 
-import { matchesBranchPattern, translatePosixClasses, verifyBranch } from './verify.js';
+import { matchesBranchPattern, verifyBranch } from './verify.js';
 
 /** Characters that are legal in a git branch name and carry no regex meaning. */
 const branchName = fc.stringMatching(/^[\w./-]{1,60}$/);
@@ -10,26 +10,6 @@ const repoName = fc.stringMatching(/^[\w-]{1,20}\/[\w-]{1,20}$/);
 function escapeRegex(value: string): string {
   return value.replaceAll(/[.*+?^${}()|[\]\\/]/g, String.raw`\$&`);
 }
-
-describe('translatePosixClasses fuzzing', () => {
-  it('is idempotent — translating an already translated pattern changes nothing', () => {
-    fc.assert(
-      fc.property(fc.string(), (pattern) => {
-        const once = translatePosixClasses(pattern);
-
-        expect(translatePosixClasses(once)).toBe(once);
-      }),
-    );
-  });
-
-  it('never throws and never drops the escape of an escaped character', () => {
-    fc.assert(
-      fc.property(fc.string(), (pattern) => {
-        expect(() => translatePosixClasses(pattern)).not.toThrow();
-      }),
-    );
-  });
-});
 
 describe('matchesBranchPattern fuzzing', () => {
   it('matches a branch against the escaped literal of itself', () => {

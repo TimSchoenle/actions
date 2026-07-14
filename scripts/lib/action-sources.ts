@@ -235,9 +235,10 @@ export type ${name} = (typeof ${name})[keyof typeof ${name}];`;
 /**
  * Renders the typed `@actions/core` facade for a single action.
  *
- * The facade deliberately keeps every input a `string`: that is what the runner hands over, and
- * inferring booleans from an input's default would silently take over validation that belongs to
- * `@actions/core`, which already rejects anything outside the YAML 1.2 core schema.
+ * Only the declared names are generated. The accessors themselves are identical in every action, so
+ * they live in `actions-util` (`createActionIo`) and are bound here to this action's name unions —
+ * emitting them ten times over is duplication a generator makes cheap to produce and no cheaper to
+ * review.
  */
 export function renderModule(definition: ActionDefinition, actionDir: string): string {
   return `/**
@@ -248,8 +249,11 @@ export function renderModule(definition: ActionDefinition, actionDir: string): s
  * Reading an input or writing an output that \`action.yaml\` does not declare is a compile error. To
  * keep that guarantee, action sources must not call \`@actions/core\` for I/O directly; ESLint
  * enforces this.
+ *
+ * Every input is a \`string\`: that is what the runner hands over, and inferring a type from an
+ * input's default would take over validation that belongs to \`@actions/core\`.
  */
-import * as core from '@actions/core';
+import { createActionIo } from 'actions-util';
 
 /** Every input declared in \`action.yaml\`. Usable as a value (\`ActionInput.x\`) and as a type. */
 ${renderLookup('ActionInput', definition.inputs)}
@@ -257,21 +261,7 @@ ${renderLookup('ActionInput', definition.inputs)}
 /** Every output declared in \`action.yaml\`. Usable as a value (\`ActionOutput.x\`) and as a type. */
 ${renderLookup('ActionOutput', definition.outputs)}
 
-export function getInput(name: ActionInput, options?: core.InputOptions): string {
-  return core.getInput(name, options);
-}
-
-export function getMultilineInput(name: ActionInput, options?: core.InputOptions): string[] {
-  return core.getMultilineInput(name, options);
-}
-
-export function getBooleanInput(name: ActionInput, options?: core.InputOptions): boolean {
-  return core.getBooleanInput(name, options);
-}
-
-export function setOutput(name: ActionOutput, value: string): void {
-  core.setOutput(name, value);
-}
+export const { getBooleanInput, getInput, getMultilineInput, setOutput } = createActionIo<ActionInput, ActionOutput>();
 `;
 }
 

@@ -119,12 +119,12 @@ describe('verify-commit-authors action', () => {
     expect(core.setOutput).not.toHaveBeenCalled();
   });
 
-  it('fails the step on a thrown non-Error value', async () => {
+  it('fails the step on a thrown non-Error value, keeping its message', async () => {
     await run(async () => {
       throw 'string error';
     });
 
-    expect(core.setFailed).toHaveBeenCalledWith('Unknown error occurred');
+    expect(core.setFailed).toHaveBeenCalledWith('string error');
   });
 
   it('logs the pull request and the accepted IDs', async () => {

@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import { runAction } from 'actions-util';
 
 import { getInput, setOutput } from './generated/action-io.js';
 import { modifyYaml } from './modify.js';
@@ -10,8 +11,8 @@ import { modifyYaml } from './modify.js';
  * empty are different situations, and collapsing them would leave a caller unable to tell whether it
  * added the key or overwrote it.
  */
-export async function run(): Promise<void> {
-  try {
+export function run(): Promise<void> {
+  return runAction(async () => {
     const file = getInput('file', { required: true });
     const key = getInput('key', { required: true });
     const value = getInput('value', { required: true });
@@ -26,7 +27,5 @@ export async function run(): Promise<void> {
     setOutput('new-value', value);
 
     core.info(`✅ Modified ${key} to: ${value}`);
-  } catch (error) {
-    core.setFailed(error instanceof Error ? error.message : 'Unknown error occurred');
-  }
+  });
 }

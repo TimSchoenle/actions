@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { formatValue, generateYamlString, inferValueType, modifyYaml } from './modify.js';
+import { formatValue, generateYamlString, inferValueType } from 'actions-util';
+import { modifyYaml } from './modify.js';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as os from 'node:os';

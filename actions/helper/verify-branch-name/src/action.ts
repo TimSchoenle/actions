@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import { runAction } from 'actions-util';
 
 import { getBooleanInput, getInput, setOutput } from './generated/action-io.js';
 import { verifyBranch } from './verify.js';
@@ -30,7 +31,7 @@ function reportFailure(result: BranchVerificationResult): void {
  * `error_on_failure: false` can branch on the individual results.
  */
 export function run(): void {
-  try {
+  runAction(() => {
     const branchPattern = getInput('branch_pattern');
     const rejectForks = getBooleanInput('reject_forks');
     const errorOnFailure = getBooleanInput('error_on_failure');
@@ -78,7 +79,5 @@ export function run(): void {
     }
 
     core.warning('Branch verification did not pass. Continuing because error_on_failure is false.');
-  } catch (error) {
-    core.setFailed(error instanceof Error ? error.message : 'Unknown error occurred');
-  }
+  });
 }

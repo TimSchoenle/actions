@@ -1,36 +1,4 @@
-import { runInNewContext } from 'node:vm';
-
-/**
- * Upper bound for a single branch-pattern evaluation.
- *
- * Branch names on a pull request are attacker-controlled (a fork can name its branch anything), so a
- * poorly written pattern could be pushed into catastrophic backtracking. The match therefore runs
- * inside a V8 context that is terminated once the budget is exhausted.
- */
-export const PATTERN_MATCH_TIMEOUT_MS = 1000;
-
-/**
- * POSIX bracket expression classes, translated to their JavaScript character-range equivalents.
- *
- * The predecessor of this action matched branches with bash `[[ ... =~ ... ]]`, i.e. POSIX extended
- * regular expressions, which support `[[:alpha:]]`-style classes that JavaScript's RegExp does not.
- * Translating them keeps previously working patterns working.
- */
-const POSIX_CLASSES = new Map<string, string>([
-  ['alnum', 'A-Za-z0-9'],
-  ['alpha', 'A-Za-z'],
-  ['blank', ' \\t'],
-  ['cntrl', '\\x00-\\x1f\\x7f'],
-  ['digit', '0-9'],
-  ['graph', '\\x21-\\x7e'],
-  ['lower', 'a-z'],
-  ['print', '\\x20-\\x7e'],
-  ['punct', '!-\\/:-@\\[-`{-~'],
-  ['space', '\\s'],
-  ['upper', 'A-Z'],
-  ['word', 'A-Za-z0-9_'],
-  ['xdigit', '0-9A-Fa-f'],
-]);
+import { compilePosixRegex, errorMessage, PATTERN_MATCH_TIMEOUT_MS, testPattern } from 'actions-util';
 
 export interface BranchVerificationRequest {
   /** POSIX-ERE-compatible pattern the head branch must match. An empty pattern skips the check. */
@@ -57,82 +25,14 @@ export interface BranchVerificationResult {
 }
 
 /**
- * Rewrites POSIX bracket expression classes (`[[:digit:]]`) into JavaScript character ranges.
- *
- * Only occurrences inside a bracket expression are rewritten; outside of one, `[:digit:]` is an
- * ordinary character class in both dialects and must be left untouched.
- */
-/** A POSIX class found in a bracket expression, and where it ends. */
-interface PosixClassMatch {
-  /** The JavaScript character range the class translates to. */
-  text: string;
-  /** Index of the first character after the class. */
-  nextIndex: number;
-}
-
-/** Reads a `[:class:]` token at `index`, or returns undefined if there is none. */
-function readPosixClass(pattern: string, index: number): PosixClassMatch | undefined {
-  if (pattern[index] !== '[' || pattern[index + 1] !== ':') {
-    return undefined;
-  }
-
-  const closingIndex = pattern.indexOf(':]', index + 2);
-
-  if (closingIndex === -1) {
-    return undefined;
-  }
-
-  const text = POSIX_CLASSES.get(pattern.slice(index + 2, closingIndex));
-
-  return text === undefined ? undefined : { nextIndex: closingIndex + 2, text };
-}
-
-export function translatePosixClasses(pattern: string): string {
-  let result = '';
-  let index = 0;
-  let insideBracket = false;
-
-  while (index < pattern.length) {
-    const character = pattern[index];
-
-    if (character === '\\' && index + 1 < pattern.length) {
-      result += character + pattern[index + 1];
-      index += 2;
-      continue;
-    }
-
-    const posixClass = insideBracket ? readPosixClass(pattern, index) : undefined;
-
-    if (posixClass) {
-      result += posixClass.text;
-      index = posixClass.nextIndex;
-      continue;
-    }
-
-    if (character === '[' && !insideBracket) {
-      insideBracket = true;
-    } else if (character === ']' && insideBracket) {
-      insideBracket = false;
-    }
-
-    result += character;
-    index += 1;
-  }
-
-  return result;
-}
-
-/**
  * Compiles a branch pattern into a RegExp, mirroring the unanchored, case-sensitive semantics of
  * bash's `[[ $branch =~ $pattern ]]`.
  */
 export function compileBranchPattern(pattern: string): RegExp {
   try {
-    // eslint-disable-next-line security/detect-non-literal-regexp -- the pattern is the action's purpose; evaluation is time-boxed in matchesBranchPattern
-    return new RegExp(translatePosixClasses(pattern));
+    return compilePosixRegex(pattern);
   } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    throw new Error(`Invalid branch pattern '${pattern}': ${reason}`, { cause: error });
+    throw new Error(`Invalid branch pattern '${pattern}': ${errorMessage(error)}`, { cause: error });
   }
 }
 
@@ -149,12 +49,11 @@ export function matchesBranchPattern(
   const regex = compileBranchPattern(pattern);
 
   try {
-    return runInNewContext('regex.test(branchName)', { branchName, regex }, { timeout: timeoutMs }) === true;
+    return testPattern(regex, branchName, timeoutMs);
   } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
     throw new Error(
       `Branch pattern '${pattern}' could not be evaluated against '${branchName}' within ${timeoutMs}ms ` +
-        `(possible catastrophic backtracking): ${reason}`,
+        `(possible catastrophic backtracking): ${errorMessage(error)}`,
       { cause: error },
     );
   }

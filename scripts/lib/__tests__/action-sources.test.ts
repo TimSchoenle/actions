@@ -219,9 +219,20 @@ describe('renderModule', () => {
     );
     expect(rendered).toContain('export type ActionInput = (typeof ActionInput)[keyof typeof ActionInput];');
     expect(rendered).toContain("export const ActionOutput = {\n  verified: 'verified',\n} as const;");
-    expect(rendered).toContain("import * as core from '@actions/core';");
     expect(rendered).toContain('actions/example/action/action.yaml');
     expect(rendered.endsWith('\n')).toBe(true);
+  });
+
+  // The accessors are identical in every action, so they are bound from `actions-util` rather than
+  // re-emitted per action. Reaching for `@actions/core` here would put that back.
+  it('binds the shared accessors to the declared names instead of re-emitting them', () => {
+    const rendered = renderModule(parseActionDefinition(MANIFEST, 'action.yaml'), 'actions/example/action');
+
+    expect(rendered).toContain("import { createActionIo } from 'actions-util';");
+    expect(rendered).toContain(
+      'export const { getBooleanInput, getInput, getMultilineInput, setOutput } = createActionIo<ActionInput, ActionOutput>();',
+    );
+    expect(rendered).not.toContain("from '@actions/core'");
   });
 
   // A name that is not a valid identifier — `modify-yaml` declares `old-value` — must stay verbatim

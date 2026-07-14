@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import { runAction } from 'actions-util';
 
 import { getInput, setOutput } from './generated/action-io.js';
 import { fetchPullRequestCommits } from './github-api.js';
@@ -23,8 +24,8 @@ function publish(result: Pick<VerificationResult, 'invalidCommits' | 'verified'>
  *
  * @param fetchCommits injection seam for tests; defaults to the GitHub GraphQL API.
  */
-export async function run(fetchCommits: CommitFetcher = fetchPullRequestCommits): Promise<void> {
-  try {
+export function run(fetchCommits: CommitFetcher = fetchPullRequestCommits): Promise<void> {
+  return runAction(async () => {
     const prUrl = getInput('pr_url', { required: true });
     const token = getInput('github_token', { required: true });
     const acceptedIds = parseUserIds(getInput('user_ids', { required: true }));
@@ -59,7 +60,5 @@ export async function run(fetchCommits: CommitFetcher = fetchPullRequestCommits)
     }
 
     publish(result);
-  } catch (error) {
-    core.setFailed(error instanceof Error ? error.message : 'Unknown error occurred');
-  }
+  });
 }
