@@ -2,7 +2,7 @@
   "name": "actions",
   "version": "1.0.0",
   "scripts": {
-    "build:workspaces": "bun run --workspaces build",
+    "build:workspaces": "bun run generate-action-sources && bun run --workspaces build",
     "create-action": "bun scripts/create-action.ts",
     "remove-action": "bun scripts/remove-action.ts",
     "create-workflow": "bun scripts/create-workflow.ts",
@@ -10,8 +10,13 @@
     "remove-workflow": "bun scripts/remove-workflow.ts",
     "generate-docs": "bun scripts/generate-docs.ts",
     "generate-ci-required": "bun scripts/generate-ci-required.ts",
-    "lint": "eslint scripts/**/*.ts",
+    "generate-action-sources": "bun scripts/generate-action-sources.ts",
+    "check-action-sources": "bun scripts/generate-action-sources.ts --check",
+    "check-action-dist": "bun scripts/check-action-dist.ts",
+    "lint": "eslint \"scripts/**/*.ts\" \"actions/**/src/**/*.ts\"",
+    "typecheck": "bun run generate-action-sources && bun run --workspaces typecheck",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run --coverage",
     "prepare": "husky"
   },

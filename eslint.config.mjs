@@ -96,6 +96,34 @@ export default tseslint.config(
     },
   },
 
+  // Action sources must read inputs and write outputs through the generated `action-io` module, so
+  // that every name is checked against the action.yaml that declares it. Calling @actions/core
+  // directly would bypass that check and reintroduce unverifiable string literals.
+  {
+    files: ['actions/**/src/**/*.ts', 'workflows/**/src/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          // Namespace call, e.g. `core.getInput('x')`. Restricting the import itself is not an
+          // option: `no-restricted-imports` rejects the whole `* as core` namespace, and the
+          // actions legitimately use it for `core.info`, `core.warning` and `core.setFailed`.
+          selector:
+            "CallExpression[callee.type='MemberExpression'][callee.property.name=/^(getInput|getBooleanInput|getMultilineInput|setOutput)$/]",
+          message:
+            "Import getInput/getBooleanInput/getMultilineInput/setOutput from './generated/action-io.js' instead of reaching into @actions/core, so the name is checked against action.yaml.",
+        },
+        {
+          // Named import, e.g. `import { getInput } from '@actions/core'`.
+          selector:
+            "ImportDeclaration[source.value='@actions/core'] > ImportSpecifier[imported.name=/^(getInput|getBooleanInput|getMultilineInput|setOutput)$/]",
+          message:
+            "Import this from './generated/action-io.js' instead of @actions/core, so the name is checked against action.yaml.",
+        },
+      ],
+    },
+  },
+
   // Scripts-specific overrides
   {
     files: ['scripts/**/*.ts'],
