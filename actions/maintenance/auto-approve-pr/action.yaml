@@ -127,7 +127,7 @@ runs:
     - name: Verify Commits and Signatures
       id: verify_commits
       if: steps.check_changes.outputs.match == 'true'
-      uses: TimSchoenle/actions/actions/helper/verify-commit-authors@b951e20c7fb0fa886c38179613e6d1a5eac508c4 # tag=actions-helper-verify-commit-authors-v1.1.27
+      uses: TimSchoenle/actions/actions/helper/verify-commit-authors@767143c0a350f52bd4cd66e49efeca2891dfc4b2 # tag=actions-helper-verify-commit-authors-v1.1.28
       with:
         pr_url: ${{ inputs.pr_url }}
         github_token: ${{ inputs.token }}
