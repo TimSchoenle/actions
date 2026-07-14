@@ -1,4 +1,6 @@
 {
   "*.{ts,js,mjs}": ["eslint --fix", "prettier --write"],
-  "*.{json,md,yml,yaml}": ["prettier --write"]
+  "*.{json,md,yml,yaml}": ["prettier --write"],
+  "actions/*/*/action.{yml,yaml}": ["bun scripts/generate-action-sources.ts --stage"],
+  "actions/*/*/{src/**/*.ts,action.yml,action.yaml,package.json}": ["bun scripts/check-action-dist.ts --stage"]
 }

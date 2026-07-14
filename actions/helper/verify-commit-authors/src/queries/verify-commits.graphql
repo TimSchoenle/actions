@@ -8,6 +8,7 @@ query VerifyCommits($prUrl: URI!) {
           commit {
             oid
             authors(first: 20) {
+              totalCount
               nodes {
                 user {
                   databaseId

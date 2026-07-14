@@ -60,8 +60,37 @@
         "vitest": "4.1.10",
       },
     },
+    "actions/helper/resolve-base-branch": {
+      "name": "actions-helper-resolve-base-branch",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "@actions/github": "9.1.1",
+      },
+      "devDependencies": {
+        "@fast-check/vitest": "0.4.1",
+        "@types/node": "26.1.1",
+        "fast-check": "4.9.0",
+        "typescript": "6.0.3",
+        "vitest": "4.1.10",
+      },
+    },
+    "actions/helper/verify-branch-name": {
+      "name": "actions-helper-verify-branch-name",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+      },
+      "devDependencies": {
+        "@fast-check/vitest": "0.4.1",
+        "@types/node": "26.1.1",
+        "fast-check": "4.9.0",
+        "typescript": "6.0.3",
+        "vitest": "4.1.10",
+      },
+    },
     "actions/helper/verify-commit-authors": {
-      "name": "verify-commit-authors",
+      "name": "actions-helper-verify-commit-authors",
       "version": "1.0.0",
       "dependencies": {
         "@actions/core": "3.0.1",
@@ -437,6 +466,12 @@
     "acorn-jsx": ["acorn-jsx@5.3.2", "", { "peerDependencies": { "acorn": "^6.0.0 || ^7.0.0 || ^8.0.0" } }, "sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ=="],
 
     "actions-common-modify-yaml": ["actions-common-modify-yaml@workspace:actions/common/modify-yaml"],
+
+    "actions-helper-resolve-base-branch": ["actions-helper-resolve-base-branch@workspace:actions/helper/resolve-base-branch"],
+
+    "actions-helper-verify-branch-name": ["actions-helper-verify-branch-name@workspace:actions/helper/verify-branch-name"],
+
+    "actions-helper-verify-commit-authors": ["actions-helper-verify-commit-authors@workspace:actions/helper/verify-commit-authors"],
 
     "ajv": ["ajv@6.15.0", "", { "dependencies": { "fast-deep-equal": "^3.1.1", "fast-json-stable-stringify": "^2.0.0", "json-schema-traverse": "^0.4.1", "uri-js": "^4.2.2" } }, "sha512-fgFx7Hfoq60ytK2c7DhnF8jIvzYgOMxfugjLOSMHjLIPgenqa7S7oaagATUq99mV6IYvN2tRmC0wnTYX6iPbMw=="],
 
@@ -1255,8 +1290,6 @@
     "uri-js": ["uri-js@4.4.1", "", { "dependencies": { "punycode": "^2.1.0" } }, "sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg=="],
 
     "urlpattern-polyfill": ["urlpattern-polyfill@10.1.0", "", {}, "sha512-IGjKp/o0NL3Bso1PymYURCJxMPNAf/ILOpendP9f5B6e1rTJgdgiOvgfoT8VxCAdY+Wisb9uhGaJJf3yZ2V9nw=="],
-
-    "verify-commit-authors": ["verify-commit-authors@workspace:actions/helper/verify-commit-authors"],
 
     "vite": ["vite@8.1.4", "", { "dependencies": { "lightningcss": "^1.32.0", "picomatch": "^4.0.5", "postcss": "^8.5.16", "rolldown": "~1.1.4", "tinyglobby": "^0.2.17" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "peerDependencies": { "@types/node": "^20.19.0 || >=22.12.0", "@vitejs/devtools": "^0.3.0", "esbuild": "^0.27.0 || ^0.28.0", "jiti": ">=1.21.0", "less": "^4.0.0", "sass": "^1.70.0", "sass-embedded": "^1.70.0", "stylus": ">=0.54.8", "sugarss": "^5.0.0", "terser": "^5.16.0", "tsx": "^4.8.1", "yaml": "^2.4.2" }, "optionalPeers": ["@types/node", "@vitejs/devtools", "esbuild", "jiti", "less", "sass", "sass-embedded", "stylus", "sugarss", "terser", "tsx", "yaml"], "bin": { "vite": "bin/vite.js" } }, "sha512-bTT9PsdWO+MQMNG9ZXIP/qM9wGh37DFxTV/sPq9cFpHr3w4jkgef032PkAL9jAqhk3Nz8NQw3O8n6/xFkqO4QQ=="],
 

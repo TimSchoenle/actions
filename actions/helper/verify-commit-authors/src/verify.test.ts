@@ -1,366 +1,144 @@
-import * as core from '@actions/core';
-import * as github from '@actions/github';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import type { VerifyCommitsQuery } from './generated/graphql.js';
-import { run } from './verify.js';
+import { parseUserIds, validateCommit, verifyCommits } from './verify.js';
 
-// Mock Modules
-vi.mock('@actions/core');
-vi.mock('@actions/github');
+import type { CommitRecord } from './verify.js';
 
-// Helper type for deep partial mocking
-type DeepPartial<T> = T extends object
-  ? {
-      [P in keyof T]?: DeepPartial<T[P]>;
-    }
-  : T;
+const ACCEPTED = [12345, 67890];
 
-describe('Verify Commit Authors Action', () => {
-  let setFailedMock: ReturnType<typeof vi.fn>;
-  let setOutputMock: ReturnType<typeof vi.fn>;
-  let warningMock: ReturnType<typeof vi.fn>;
-  let errorMock: ReturnType<typeof vi.fn>;
-  let infoMock: ReturnType<typeof vi.fn>;
-  let octokitMock: { graphql: ReturnType<typeof vi.fn> };
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-
-    // Setup input mocks with default valid values
-    vi.mocked(core.getInput).mockImplementation((name) => {
-      switch (name) {
-        case 'pr_url':
-          return 'https://github.com/owner/repo/pull/1';
-        case 'github_token':
-          return 'ghp_test_token';
-        case 'user_ids':
-          return '12345, 67890';
-        default:
-          return '';
-      }
-    });
-
-    setFailedMock = vi.mocked(core.setFailed);
-    setOutputMock = vi.mocked(core.setOutput);
-    warningMock = vi.mocked(core.warning);
-    errorMock = vi.mocked(core.error);
-    infoMock = vi.mocked(core.info);
-
-    // Setup Octokit mock
-    octokitMock = { graphql: vi.fn() };
-    vi.mocked(github.getOctokit).mockReturnValue(octokitMock as unknown as ReturnType<typeof github.getOctokit>);
-  });
-
-  // Type helpers for test data
-  type PullRequest = Extract<NonNullable<VerifyCommitsQuery['resource']>, { __typename?: 'PullRequest' }>;
-  type CommitsNodes = NonNullable<PullRequest['commits']['nodes']>;
-
-  const mockGraphQlResponse = (nodes: DeepPartial<CommitsNodes>, totalCount?: number) => {
-    const mockResponse: DeepPartial<VerifyCommitsQuery> = {
-      resource: {
-        __typename: 'PullRequest',
-        commits: {
-          totalCount: totalCount ?? nodes.length,
-          nodes,
-        },
-      },
-    };
-    octokitMock.graphql.mockResolvedValue(mockResponse);
+function commit(overrides: Partial<CommitRecord> = {}): CommitRecord {
+  return {
+    authorIds: [12345],
+    authorsTruncated: false,
+    oid: 'abc1234',
+    signatureState: 'VALID',
+    signatureValid: true,
+    ...overrides,
   };
+}
 
-  describe('Valid Commits', () => {
-    it('should verify single valid commit and output true', async () => {
-      mockGraphQlResponse([
-        {
-          commit: {
-            oid: 'abc1234',
-            authors: { nodes: [{ user: { databaseId: 12345 } }] },
-            signature: { isValid: true },
-          },
-        },
-      ]);
+describe('parseUserIds', () => {
+  it('parses a comma-separated list, tolerating surrounding whitespace', () => {
+    expect(parseUserIds('111, 222,333 ')).toEqual([111, 222, 333]);
+  });
 
-      await run();
+  it('parses a single ID', () => {
+    expect(parseUserIds('29139614')).toEqual([29139614]);
+  });
 
-      expect(setFailedMock).not.toHaveBeenCalled();
-      expect(setOutputMock).toHaveBeenCalledWith('verified', 'true');
-      expect(setOutputMock).toHaveBeenCalledWith('invalid_commits', '');
-      expect(infoMock).toHaveBeenCalledWith('All commits verified.');
-    });
+  it('ignores empty entries from a trailing separator', () => {
+    expect(parseUserIds('111,222,')).toEqual([111, 222]);
+  });
 
-    it('should verify multiple valid commits from different authors', async () => {
-      mockGraphQlResponse([
-        {
-          commit: {
-            oid: 'commit1',
-            authors: { nodes: [{ user: { databaseId: 12345 } }] },
-            signature: { isValid: true },
-          },
-        },
-        {
-          commit: {
-            oid: 'commit2',
-            authors: { nodes: [{ user: { databaseId: 67890 } }] },
-            signature: { isValid: true },
-          },
-        },
-      ]);
+  it('removes duplicates', () => {
+    expect(parseUserIds('111,222,111')).toEqual([111, 222]);
+  });
 
-      await run();
+  it.each(['', '   ', ',', ' , '])('rejects the effectively empty input %j', (input) => {
+    expect(parseUserIds.bind(null, input)).toThrow(/must contain at least one user database ID/);
+  });
 
-      expect(setFailedMock).not.toHaveBeenCalled();
-      expect(setOutputMock).toHaveBeenCalledWith('verified', 'true');
-    });
+  it.each(['abc', '12a', '-1', '1.5', '0', '1e3', '٣'])('rejects the non-integer ID %j', (input) => {
+    expect(parseUserIds.bind(null, input)).toThrow(`Invalid user ID '${input}'`);
+  });
 
-    it('should verify commit with multiple co-authors', async () => {
-      mockGraphQlResponse([
-        {
-          commit: {
-            oid: 'coauthored',
-            authors: {
-              nodes: [{ user: { databaseId: 12345 } }, { user: { databaseId: 67890 } }],
-            },
-            signature: { isValid: true },
-          },
-        },
-      ]);
+  it('rejects an ID beyond the safe integer range instead of silently rounding it', () => {
+    expect(parseUserIds.bind(null, '9007199254740993')).toThrow(/Invalid user ID/);
+  });
 
-      await run();
+  it('reports the offending entry of a mixed list', () => {
+    expect(parseUserIds.bind(null, '111,oops,333')).toThrow("Invalid user ID 'oops'");
+  });
+});
 
-      expect(setFailedMock).not.toHaveBeenCalled();
-      expect(setOutputMock).toHaveBeenCalledWith('verified', 'true');
+describe('validateCommit', () => {
+  const accepted = new Set(ACCEPTED);
+
+  it('accepts a signed commit from an accepted author', () => {
+    expect(validateCommit(commit(), accepted)).toBeUndefined();
+  });
+
+  it('accepts a co-authored commit when every author is accepted', () => {
+    expect(validateCommit(commit({ authorIds: [12345, 67890] }), accepted)).toBeUndefined();
+  });
+
+  it('rejects a commit with an author outside the accepted set', () => {
+    expect(validateCommit(commit({ authorIds: [99999] }), accepted)).toEqual({
+      oid: 'abc1234',
+      reasons: ['author(s) not accepted: 99999'],
     });
   });
 
-  describe('Invalid Authors', () => {
-    it('should report invalid when author is not in allowed list', async () => {
-      mockGraphQlResponse([
-        {
-          commit: {
-            oid: 'bad1234',
-            authors: { nodes: [{ user: { databaseId: 99999 } }] },
-            signature: { isValid: true },
-          },
-        },
-      ]);
-
-      await run();
-
-      expect(warningMock).toHaveBeenCalledWith(expect.stringContaining('Found invalid commits'));
-      expect(setOutputMock).toHaveBeenCalledWith('verified', 'false');
-      expect(setOutputMock).toHaveBeenCalledWith('invalid_commits', 'bad1234');
-      expect(errorMock).toHaveBeenCalledWith(expect.stringContaining('Author Valid: false'));
-    });
-
-    it('should report invalid when author user is null (deleted/ghost user)', async () => {
-      mockGraphQlResponse([
-        {
-          commit: {
-            oid: 'noauth123',
-            authors: { nodes: [{ user: null }] },
-            signature: { isValid: true },
-          },
-        },
-      ]);
-
-      await run();
-
-      expect(warningMock).toHaveBeenCalledWith(expect.stringContaining('Found invalid commits'));
-      expect(setOutputMock).toHaveBeenCalledWith('verified', 'false');
-    });
-
-    it('should report invalid when authors array is empty', async () => {
-      mockGraphQlResponse([
-        {
-          commit: {
-            oid: 'emptyauthors',
-            authors: { nodes: [] },
-            signature: { isValid: true },
-          },
-        },
-      ]);
-
-      await run();
-
-      expect(warningMock).toHaveBeenCalledWith(expect.stringContaining('Found invalid commits'));
-    });
-
-    it('should report invalid when one co-author is not in allowed list', async () => {
-      mockGraphQlResponse([
-        {
-          commit: {
-            oid: 'mixedauthors',
-            authors: {
-              nodes: [
-                { user: { databaseId: 12345 } }, // valid
-                { user: { databaseId: 99999 } }, // invalid
-              ],
-            },
-            signature: { isValid: true },
-          },
-        },
-      ]);
-
-      await run();
-
-      expect(setOutputMock).toHaveBeenCalledWith('verified', 'false');
-    });
+  it('rejects a commit where only one co-author is not accepted', () => {
+    expect(validateCommit(commit({ authorIds: [12345, 99999] }), accepted)?.reasons).toEqual([
+      'author(s) not accepted: 99999',
+    ]);
   });
 
-  describe('Invalid Signatures', () => {
-    it('should report invalid when signature is false', async () => {
-      mockGraphQlResponse([
-        {
-          commit: {
-            oid: 'nosig123',
-            authors: { nodes: [{ user: { databaseId: 12345 } }] },
-            signature: { isValid: false },
-          },
-        },
-      ]);
-
-      await run();
-
-      expect(warningMock).toHaveBeenCalledWith(expect.stringContaining('Found invalid commits'));
-      expect(setOutputMock).toHaveBeenCalledWith('verified', 'false');
-      expect(errorMock).toHaveBeenCalledWith(expect.stringContaining('Signature Valid: false'));
-    });
-
-    it('should report invalid when signature is null', async () => {
-      mockGraphQlResponse([
-        {
-          commit: {
-            oid: 'nullsig',
-            authors: { nodes: [{ user: { databaseId: 12345 } }] },
-            signature: null,
-          },
-        },
-      ]);
-
-      await run();
-
-      expect(setOutputMock).toHaveBeenCalledWith('verified', 'false');
-    });
+  it('rejects a commit whose author has no linked GitHub account', () => {
+    expect(validateCommit(commit({ authorIds: [null] }), accepted)?.reasons).toEqual([
+      '1 author(s) are not linked to a GitHub account',
+    ]);
   });
 
-  describe('Edge Cases', () => {
-    it('should warn and output false when PR has more than 100 commits', async () => {
-      mockGraphQlResponse([], 101);
-
-      await run();
-
-      expect(warningMock).toHaveBeenCalledWith(expect.stringContaining('more than 100 commits'));
-      expect(setOutputMock).toHaveBeenCalledWith('verified', 'false');
-    });
-
-    it('should handle empty commits list', async () => {
-      mockGraphQlResponse([]);
-
-      await run();
-
-      expect(setOutputMock).toHaveBeenCalledWith('verified', 'true');
-    });
-
-    it('should handle null node in commits array', async () => {
-      mockGraphQlResponse([null as unknown as DeepPartial<CommitsNodes>[number]]);
-
-      await run();
-
-      expect(setOutputMock).toHaveBeenCalledWith('verified', 'true');
-    });
-
-    it('should report multiple invalid commits', async () => {
-      mockGraphQlResponse([
-        {
-          commit: {
-            oid: 'bad1',
-            authors: { nodes: [{ user: { databaseId: 99999 } }] },
-            signature: { isValid: true },
-          },
-        },
-        {
-          commit: {
-            oid: 'bad2',
-            authors: { nodes: [{ user: { databaseId: 12345 } }] },
-            signature: { isValid: false },
-          },
-        },
-      ]);
-
-      await run();
-
-      expect(setOutputMock).toHaveBeenCalledWith('invalid_commits', 'bad1\nbad2');
-    });
+  it('rejects a commit without any author', () => {
+    expect(validateCommit(commit({ authorIds: [] }), accepted)?.reasons).toEqual(['commit has no authors']);
   });
 
-  describe('Error Handling', () => {
-    it('should setFailed on API errors', async () => {
-      octokitMock.graphql.mockRejectedValue(new Error('API Down'));
+  it('rejects a commit whose author list was truncated by the API', () => {
+    const failure = validateCommit(commit({ authorsTruncated: true }), accepted);
 
-      await run();
-
-      expect(setFailedMock).toHaveBeenCalledWith('API Down');
-    });
-
-    it('should setFailed when resource is not a PullRequest', async () => {
-      octokitMock.graphql.mockResolvedValue({
-        resource: { __typename: 'Issue' },
-      });
-
-      await run();
-
-      expect(setFailedMock).toHaveBeenCalledWith('Could not find Pull Request data from URL');
-    });
-
-    it('should setFailed when resource is null', async () => {
-      octokitMock.graphql.mockResolvedValue({ resource: null });
-
-      await run();
-
-      expect(setFailedMock).toHaveBeenCalledWith('Could not find Pull Request data from URL');
-    });
-
-    it('should handle non-Error thrown values', async () => {
-      octokitMock.graphql.mockRejectedValue('string error');
-
-      await run();
-
-      expect(setFailedMock).toHaveBeenCalledWith('Unknown error occurred');
-    });
+    expect(failure?.reasons).toEqual([expect.stringContaining('more authors than the API returned')]);
   });
 
-  describe('Input Parsing', () => {
-    it('should parse comma-separated user IDs correctly', async () => {
-      vi.mocked(core.getInput).mockImplementation((name) => {
-        if (name === 'user_ids') return '111, 222, 333';
-        if (name === 'pr_url') return 'https://github.com/o/r/pull/1';
-        if (name === 'github_token') return 'token';
-        return '';
-      });
+  it.each([
+    ['an invalid signature', { signatureState: 'INVALID', signatureValid: false }],
+    ['no signature at all', { signatureState: null, signatureValid: false }],
+  ])('rejects a commit with %s', (_name, overrides) => {
+    const failure = validateCommit(commit(overrides), accepted);
 
-      mockGraphQlResponse([
-        {
-          commit: {
-            oid: 'test',
-            authors: { nodes: [{ user: { databaseId: 222 } }] },
-            signature: { isValid: true },
-          },
-        },
-      ]);
+    expect(failure?.reasons).toEqual([expect.stringContaining('signature is not valid')]);
+  });
 
-      await run();
+  it('names the signature state in the failure reason', () => {
+    const failure = validateCommit(commit({ signatureState: 'UNSIGNED', signatureValid: false }), accepted);
 
-      expect(setOutputMock).toHaveBeenCalledWith('verified', 'true');
-    });
+    expect(failure?.reasons[0]).toContain('UNSIGNED');
+  });
 
-    it('should log verification info', async () => {
-      mockGraphQlResponse([]);
+  it('reports author and signature problems together', () => {
+    const failure = validateCommit(commit({ authorIds: [99999], signatureValid: false }), accepted);
 
-      await run();
+    expect(failure?.reasons).toHaveLength(2);
+  });
+});
 
-      expect(infoMock).toHaveBeenCalledWith(expect.stringContaining('Verifying commits for PR:'));
-      expect(infoMock).toHaveBeenCalledWith(expect.stringContaining('Accepted User IDs:'));
-    });
+describe('verifyCommits', () => {
+  it('verifies a pull request whose commits all pass', () => {
+    const result = verifyCommits([commit({ oid: 'a' }), commit({ oid: 'b', authorIds: [67890] })], ACCEPTED);
+
+    expect(result).toEqual({ failures: [], invalidCommits: [], verified: true });
+  });
+
+  it('collects every invalid commit, in order', () => {
+    const commits = [
+      commit({ oid: 'good' }),
+      commit({ authorIds: [99999], oid: 'bad-author' }),
+      commit({ oid: 'bad-signature', signatureValid: false }),
+    ];
+
+    const result = verifyCommits(commits, ACCEPTED);
+
+    expect(result.verified).toBe(false);
+    expect(result.invalidCommits).toEqual(['bad-author', 'bad-signature']);
+    expect(result.failures).toHaveLength(2);
+  });
+
+  it('never verifies an empty commit list', () => {
+    expect(verifyCommits([], ACCEPTED)).toEqual({ failures: [], invalidCommits: [], verified: false });
+  });
+
+  it('never verifies anything when no author is accepted', () => {
+    expect(verifyCommits([commit()], []).verified).toBe(false);
   });
 });

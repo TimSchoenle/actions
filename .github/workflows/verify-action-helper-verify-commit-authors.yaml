@@ -5,11 +5,11 @@ on:
     branches:
       - main
     paths:
-      - '/actions/helper/verify-commit-authors/**'
+      - 'actions/helper/verify-commit-authors/**'
       - '.github/workflows/verify-action-helper-verify-commit-authors.yaml'
   pull_request:
     paths:
-      - '/actions/helper/verify-commit-authors/**'
+      - 'actions/helper/verify-commit-authors/**'
       - '.github/workflows/verify-action-helper-verify-commit-authors.yaml'
 
 concurrency:
@@ -21,6 +21,8 @@ permissions: {}
 jobs:
   verify:
     name: Verify Verify-commit-authors
+    # The positive case verifies the commits of the pull request that triggered this run.
+    if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read # to fetch code
@@ -69,7 +71,7 @@ jobs:
           # Extract all unique author IDs into a comma-separated string
           AUTHORS=$(gh api graphql -F url="$PR_URL" -f query="$QUERY" | jq -r '
             [
-              .data.resource.commits.nodes[].commit.authors.nodes[].user.databaseId 
+              .data.resource.commits.nodes[].commit.authors.nodes[].user.databaseId
             ] | unique | join(",")
           ')
 
@@ -85,12 +87,22 @@ jobs:
           user_ids: ${{ steps.fetch-authors.outputs.authors }}
 
       - name: Assert Positive Result
-        if: steps.test-positive.outputs.verified != 'true'
         env:
           VERIFIED: ${{ steps.test-positive.outputs.verified }}
+          INVALID_COMMITS: ${{ steps.test-positive.outputs.invalid_commits }}
         run: |
-          echo "::error::Positive test failed! Expected verified=true, got $VERIFIED"
-          exit 1
+          if [ "$VERIFIED" != "true" ]; then
+            echo "::error::Positive test failed! Expected verified=true, got '$VERIFIED'"
+            echo "Invalid commits: $INVALID_COMMITS"
+            exit 1
+          fi
+
+          if [ -n "$INVALID_COMMITS" ]; then
+            echo "::error::A verified PR must not report invalid commits, got '$INVALID_COMMITS'"
+            exit 1
+          fi
+
+          echo "✅ All commits of this PR are authored by the expected users and signed"
 
       - name: Test verify-commit-authors (Negative - Should Fail)
         id: test-negative
@@ -101,12 +113,91 @@ jobs:
           user_ids: 1 # Dummy ID
 
       - name: Assert Negative Result
-        if: steps.test-negative.outputs.verified != 'false'
         env:
           VERIFIED: ${{ steps.test-negative.outputs.verified }}
+          INVALID_COMMITS: ${{ steps.test-negative.outputs.invalid_commits }}
         run: |
-          echo "::error::Negative test failed! Expected verified=false, got $VERIFIED"
-          exit 1
+          if [ "$VERIFIED" != "false" ]; then
+            echo "::error::Negative test failed! Expected verified=false, got '$VERIFIED'"
+            exit 1
+          fi
+
+          # Every commit of this PR was authored by someone other than user ID 1, so every commit
+          # must be listed as invalid.
+          if [ -z "$INVALID_COMMITS" ]; then
+            echo "::error::Expected the rejected commits to be listed on the invalid_commits output"
+            exit 1
+          fi
+
+          echo "✅ Rejected commits reported: $(echo "$INVALID_COMMITS" | wc -l) commit(s)"
+
+  verify-input-validation:
+    name: Test Input Validation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # A malformed ID must fail the step: coercing it to NaN would silently report the pull
+          # request as unverified, which is indistinguishable from a genuine rejection.
+          - name: 'Non-numeric user ID'
+            pr_url: 'https://github.com/TimSchoenle/actions/pull/1'
+            user_ids: 'not-an-id'
+
+          - name: 'One malformed ID among valid ones'
+            pr_url: 'https://github.com/TimSchoenle/actions/pull/1'
+            user_ids: '29139614, oops'
+
+          - name: 'Empty user ID list'
+            pr_url: 'https://github.com/TimSchoenle/actions/pull/1'
+            user_ids: ' , '
+
+          # A URL that is not a pull request cannot be verified.
+          - name: 'URL is not a pull request'
+            pr_url: 'https://github.com/TimSchoenle/actions'
+            user_ids: '29139614'
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Run Test (${{ matrix.name }})
+        id: test
+        continue-on-error: true
+        uses: ./actions/helper/verify-commit-authors
+        with:
+          pr_url: ${{ matrix.pr_url }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          user_ids: ${{ matrix.user_ids }}
+
+      - name: Assert Failure
+        env:
+          TEST_NAME: ${{ matrix.name }}
+          OUTCOME: ${{ steps.test.outcome }}
+          VERIFIED: ${{ steps.test.outputs.verified }}
+        run: |
+          echo "Test: $TEST_NAME"
+
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "::error::Expected the action to fail, but the outcome was '$OUTCOME'"
+            exit 1
+          fi
+
+          if [ -n "$VERIFIED" ]; then
+            echo "::error::A failed run must not publish a verification verdict, got verified='$VERIFIED'"
+            exit 1
+          fi
+
+          echo "✅ Action failed as expected without publishing a verdict"
 
   # <<< generated: summary (run 'bun run generate-ci-required' to update)
   summary:
@@ -114,6 +205,7 @@ jobs:
     if: ${{ always() }}
     needs:
       - verify
+      - verify-input-validation
     runs-on: ubuntu-latest
     permissions: {}
     steps:

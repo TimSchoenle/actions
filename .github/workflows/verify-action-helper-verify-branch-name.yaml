@@ -288,6 +288,40 @@ jobs:
             expected_branch_verified: 'false'
             expected_fork_verified: 'true'
 
+          # POSIX bracket expression classes, carried over from the bash predecessor
+          - name: 'POSIX character class match'
+            branch_pattern: '^release/[[:digit:]]+$'
+            head_ref: 'release/42'
+            head_repo: 'owner/repo'
+            base_repo: 'owner/repo'
+            reject_forks: 'false'
+            error_on_failure: 'false'
+            expected_verified: 'true'
+            expected_branch_verified: 'true'
+            expected_fork_verified: 'true'
+
+          - name: 'POSIX character class mismatch'
+            branch_pattern: '^release/[[:digit:]]+$'
+            head_ref: 'release/candidate'
+            head_repo: 'owner/repo'
+            base_repo: 'owner/repo'
+            reject_forks: 'false'
+            error_on_failure: 'false'
+            expected_verified: 'false'
+            expected_branch_verified: 'false'
+            expected_fork_verified: 'true'
+
+          - name: 'Mixed POSIX and literal character classes'
+            branch_pattern: '^[[:alpha:]]+/[[:alnum:]_-]+$'
+            head_ref: 'feature/issue_42-fix'
+            head_repo: 'owner/repo'
+            base_repo: 'owner/repo'
+            reject_forks: 'false'
+            error_on_failure: 'false'
+            expected_verified: 'true'
+            expected_branch_verified: 'true'
+            expected_fork_verified: 'true'
+
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
@@ -732,6 +766,9 @@ jobs:
   verify-input-validation:
     name: Test Input Validation
     runs-on: ubuntu-latest
+    # A pattern that backtracks catastrophically is expected to be aborted by the action itself.
+    # This cap makes a regression in that guard surface as a failed job instead of a hung runner.
+    timeout-minutes: 10
     permissions:
       contents: read
     strategy:
@@ -745,6 +782,27 @@ jobs:
             head_ref: 'test'
             head_repo: 'owner/repo'
             base_repo: 'owner/repo'
+            branch_pattern: '.*'
+            should_fail: true
+
+          # An unparseable pattern must fail loudly instead of silently reporting a mismatch
+          - name: 'Invalid regex pattern'
+            reject_forks: 'true'
+            error_on_failure: 'false'
+            head_ref: 'feature/test'
+            head_repo: 'owner/repo'
+            base_repo: 'owner/repo'
+            branch_pattern: '^feature/('
+            should_fail: true
+
+          # A pattern that backtracks catastrophically must be aborted, not run until the job times out
+          - name: 'Catastrophically backtracking pattern'
+            reject_forks: 'true'
+            error_on_failure: 'false'
+            head_ref: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!'
+            head_repo: 'owner/repo'
+            base_repo: 'owner/repo'
+            branch_pattern: '^(a+)+$'
             should_fail: true
 
           - name: 'Invalid error_on_failure value'
@@ -753,6 +811,7 @@ jobs:
             head_ref: 'test'
             head_repo: 'owner/repo'
             base_repo: 'owner/repo'
+            branch_pattern: '.*'
             should_fail: true
 
           # Valid boolean variations
@@ -762,6 +821,7 @@ jobs:
             head_ref: 'test'
             head_repo: 'owner/repo'
             base_repo: 'owner/repo'
+            branch_pattern: '.*'
             should_fail: false
 
           - name: 'Valid reject_forks=false'
@@ -770,6 +830,7 @@ jobs:
             head_ref: 'test'
             head_repo: 'owner/repo'
             base_repo: 'owner/repo'
+            branch_pattern: '.*'
             should_fail: false
 
           - name: 'Valid error_on_failure=true'
@@ -778,6 +839,7 @@ jobs:
             head_ref: 'test'
             head_repo: 'owner/repo'
             base_repo: 'owner/repo'
+            branch_pattern: '.*'
             should_fail: false
 
     steps:
@@ -801,7 +863,7 @@ jobs:
           base_repo_full_name: ${{ matrix.base_repo }}
           reject_forks: ${{ matrix.reject_forks }}
           error_on_failure: ${{ matrix.error_on_failure }}
-          branch_pattern: '.*'
+          branch_pattern: ${{ matrix.branch_pattern }}
 
       - name: Assert Exit Code
         env:
@@ -828,6 +890,74 @@ jobs:
             fi
           fi
 
+  verify-payload-fallback:
+    name: Test Pull Request Payload Fallback
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      # No head_ref / head_repo_full_name / base_repo_full_name: all three must fall back to the
+      # pull_request payload of the triggering event via the default expressions in action.yaml.
+      # reject_forks is off so the assertions hold for pull requests opened from a fork as well.
+      - name: Run Test (Resolve From Payload)
+        id: resolved
+        uses: ./actions/helper/verify-branch-name
+        with:
+          branch_pattern: '.*'
+          reject_forks: 'false'
+          error_on_failure: 'false'
+
+      # A pattern that cannot match any branch name. Reporting a mismatch (rather than failing with
+      # "head_ref not provided") proves a real branch name was resolved from the payload.
+      - name: Run Test (Payload Branch Is Matched)
+        id: mismatch
+        uses: ./actions/helper/verify-branch-name
+        with:
+          branch_pattern: '^branch-that-cannot-exist--[0-9]{40}$'
+          reject_forks: 'false'
+          error_on_failure: 'false'
+
+      - name: Assert Payload Fallback
+        env:
+          RESOLVED_VERIFIED: ${{ steps.resolved.outputs.verified }}
+          RESOLVED_FORK: ${{ steps.resolved.outputs.fork_verified }}
+          MISMATCH_VERIFIED: ${{ steps.mismatch.outputs.verified }}
+          MISMATCH_BRANCH: ${{ steps.mismatch.outputs.branch_pattern_verified }}
+        run: |
+          FAILED=0
+
+          if [ "$RESOLVED_VERIFIED" != "true" ]; then
+            echo "::error::Expected the payload fallback to verify this PR, got verified='$RESOLVED_VERIFIED'"
+            FAILED=1
+          fi
+
+          if [ "$RESOLVED_FORK" != "true" ]; then
+            echo "::error::Expected fork_verified=true for a same-repository PR, got '$RESOLVED_FORK'"
+            FAILED=1
+          fi
+
+          if [ "$MISMATCH_BRANCH" != "false" ] || [ "$MISMATCH_VERIFIED" != "false" ]; then
+            echo "::error::Expected the impossible pattern to report a mismatch, got branch_pattern_verified='$MISMATCH_BRANCH'"
+            FAILED=1
+          fi
+
+          if [ $FAILED -eq 1 ]; then
+            exit 1
+          fi
+
+          echo "✅ Head ref and repositories resolved from the pull_request payload"
+
   # <<< generated: summary (run 'bun run generate-ci-required' to update)
   summary:
     name: 'CI Summary: Helper Verify-branch-name'
@@ -838,6 +968,7 @@ jobs:
       - verify-error-handling
       - verify-combined-scenarios
       - verify-input-validation
+      - verify-payload-fallback
     runs-on: ubuntu-latest
     permissions: {}
     steps:
