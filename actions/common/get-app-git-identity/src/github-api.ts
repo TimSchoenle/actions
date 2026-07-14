@@ -1,5 +1,5 @@
 import * as github from '@actions/github';
-import { hasStatus } from 'actions-common-ts-util';
+import { hasStatus } from 'actions-util';
 
 import type { AppUserApi } from './identity.js';
 

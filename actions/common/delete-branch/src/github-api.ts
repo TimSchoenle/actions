@@ -1,8 +1,8 @@
 import * as github from '@actions/github';
-import { hasStatus } from 'actions-common-ts-util';
+import { hasStatus } from 'actions-util';
 
 import type { BranchApi } from './delete.js';
-import type { RepositoryCoordinates } from 'actions-common-ts-util';
+import type { RepositoryCoordinates } from 'actions-util';
 
 /** The Git ref a branch lives behind, e.g. `heads/main` for the branch `main`. */
 function branchRef(branch: string): string {

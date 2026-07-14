@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { run } from './action.js';
 
-import type { RepositoryCoordinates } from 'actions-common-ts-util';
+import type { RepositoryCoordinates } from 'actions-util';
 import type { BranchApi } from './create-branch.js';
 
 /**

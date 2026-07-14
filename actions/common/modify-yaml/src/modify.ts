@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 
-import { formatValue, generateYamlString, inferValueType } from 'actions-common-ts-util';
+import { formatValue, generateYamlString, inferValueType } from 'actions-util';
 import { parseDocument } from 'yaml';
 
 interface NodeWithRange {

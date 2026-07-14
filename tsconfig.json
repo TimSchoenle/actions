@@ -16,7 +16,7 @@
     "baseUrl": ".",
     "rootDir": ".",
     "paths": {
-      "actions-common-ts-util": ["packages/ts-util/src/index.ts"]
+      "actions-util": ["packages/ts-util/src/index.ts"]
     }
   },
   "include": ["scripts/**/*", "actions/**/*", "packages/**/*"],

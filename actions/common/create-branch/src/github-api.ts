@@ -1,8 +1,8 @@
 import * as github from '@actions/github';
-import { hasStatus } from 'actions-common-ts-util';
+import { hasStatus } from 'actions-util';
 
 import type { BranchApi } from './create-branch.js';
-import type { RepositoryCoordinates } from 'actions-common-ts-util';
+import type { RepositoryCoordinates } from 'actions-util';
 
 /**
  * Binds the {@link BranchApi} to the GitHub REST API.

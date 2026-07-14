@@ -5,7 +5,7 @@
     "": {
       "name": "actions",
       "dependencies": {
-        "actions-common-ts-util": "workspace:*",
+        "actions-util": "workspace:*",
         "chalk": "5",
         "inquirer": "14.0.2",
         "openpgp": "6.3.1",
@@ -52,7 +52,7 @@
       "dependencies": {
         "@actions/core": "3.0.1",
         "@actions/github": "9.1.1",
-        "actions-common-ts-util": "workspace:*",
+        "actions-util": "workspace:*",
       },
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
@@ -68,7 +68,7 @@
       "dependencies": {
         "@actions/core": "3.0.1",
         "@actions/github": "9.1.1",
-        "actions-common-ts-util": "workspace:*",
+        "actions-util": "workspace:*",
       },
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
@@ -84,7 +84,7 @@
       "dependencies": {
         "@actions/core": "3.0.1",
         "@actions/github": "9.1.1",
-        "actions-common-ts-util": "workspace:*",
+        "actions-util": "workspace:*",
       },
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
@@ -100,7 +100,7 @@
       "dependencies": {
         "@actions/core": "3.0.1",
         "@actions/github": "9.1.1",
-        "actions-common-ts-util": "workspace:*",
+        "actions-util": "workspace:*",
       },
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
@@ -115,7 +115,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@actions/core": "3.0.1",
-        "actions-common-ts-util": "workspace:*",
+        "actions-util": "workspace:*",
         "yaml": "2.7.0",
       },
       "devDependencies": {
@@ -131,7 +131,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@actions/core": "3.0.1",
-        "actions-common-ts-util": "workspace:*",
+        "actions-util": "workspace:*",
         "yaml": "2.7.0",
       },
       "devDependencies": {
@@ -148,7 +148,7 @@
       "dependencies": {
         "@actions/core": "3.0.1",
         "@actions/github": "9.1.1",
-        "actions-common-ts-util": "workspace:*",
+        "actions-util": "workspace:*",
       },
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
@@ -210,7 +210,7 @@
       },
     },
     "packages/ts-util": {
-      "name": "actions-common-ts-util",
+      "name": "actions-util",
       "version": "1.0.0",
       "dependencies": {
         "yaml": "2.7.0",
@@ -587,8 +587,6 @@
 
     "actions-common-read-yaml": ["actions-common-read-yaml@workspace:actions/common/read-yaml"],
 
-    "actions-common-ts-util": ["actions-common-ts-util@workspace:packages/ts-util"],
-
     "actions-helper-resolve-base-branch": ["actions-helper-resolve-base-branch@workspace:actions/helper/resolve-base-branch"],
 
     "actions-helper-verify-branch-name": ["actions-helper-verify-branch-name@workspace:actions/helper/verify-branch-name"],
@@ -596,6 +594,8 @@
     "actions-helper-verify-commit-authors": ["actions-helper-verify-commit-authors@workspace:actions/helper/verify-commit-authors"],
 
     "actions-maintenance-ensure-actions-are-executed": ["actions-maintenance-ensure-actions-are-executed@workspace:actions/maintenance/ensure-actions-are-executed"],
+
+    "actions-util": ["actions-util@workspace:packages/ts-util"],
 
     "ajv": ["ajv@6.15.0", "", { "dependencies": { "fast-deep-equal": "^3.1.1", "fast-json-stable-stringify": "^2.0.0", "json-schema-traverse": "^0.4.1", "uri-js": "^4.2.2" } }, "sha512-fgFx7Hfoq60ytK2c7DhnF8jIvzYgOMxfugjLOSMHjLIPgenqa7S7oaagATUq99mV6IYvN2tRmC0wnTYX6iPbMw=="],
 

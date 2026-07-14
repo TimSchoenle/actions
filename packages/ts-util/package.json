@@ -1,5 +1,5 @@
 {
-  "name": "actions-common-ts-util",
+  "name": "actions-util",
   "version": "1.0.0",
   "description": "Shared TypeScript utilities for GitHub Actions",
   "type": "module",

@@ -1,8 +1,8 @@
 import * as github from '@actions/github';
-import { hasStatus } from 'actions-common-ts-util';
+import { hasStatus } from 'actions-util';
 
 import type { PullRequestApi } from './close.js';
-import type { RepositoryCoordinates } from 'actions-common-ts-util';
+import type { RepositoryCoordinates } from 'actions-util';
 
 /**
  * Binds the {@link PullRequestApi} to the GitHub REST API.

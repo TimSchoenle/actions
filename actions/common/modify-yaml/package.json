@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "actions-common-ts-util": "workspace:*",
+    "actions-util": "workspace:*",
     "@actions/core": "3.0.1",
     "yaml": "2.7.0"
   },

@@ -3,7 +3,7 @@ import * as path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { stringifyScalar, stringifyValue } from 'actions-common-ts-util';
+import { stringifyScalar, stringifyValue } from 'actions-util';
 import { readYaml, readYamlFile } from './read.js';
 import { Scalar } from 'yaml';
 

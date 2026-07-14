@@ -57,7 +57,7 @@
     "wrap-ansi": "10.0.0"
   },
   "dependencies": {
-    "actions-common-ts-util": "workspace:*",
+    "actions-util": "workspace:*",
     "chalk": "5",
     "inquirer": "14.0.2",
     "openpgp": "6.3.1"

@@ -1,7 +1,7 @@
 import fc from 'fast-check';
 import { describe, expect, it, vi } from 'vitest';
 
-import { parseRepository } from 'actions-common-ts-util';
+import { parseRepository } from 'actions-util';
 import { closePullRequestIfPresent, parsePullRequestId } from './close.js';
 
 import type { PullRequestApi } from './close.js';

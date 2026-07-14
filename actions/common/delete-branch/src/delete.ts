@@ -1,6 +1,6 @@
-import { parseRepository } from 'actions-common-ts-util';
+import { parseRepository } from 'actions-util';
 
-import type { RepositoryCoordinates } from 'actions-common-ts-util';
+import type { RepositoryCoordinates } from 'actions-util';
 
 /** The repository operations this action needs, kept minimal so it can be faked in tests. */
 export interface BranchApi {

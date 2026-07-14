@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises';
 
-import { stringifyValue } from 'actions-common-ts-util';
+import { stringifyValue } from 'actions-util';
 import { isAlias, isCollection, isScalar, parseDocument } from 'yaml';
 
-import type { YamlValueNode } from 'actions-common-ts-util';
+import type { YamlValueNode } from 'actions-util';
 import type { Document } from 'yaml';
 
 /**

@@ -1,8 +1,8 @@
 import fc from 'fast-check';
 import { describe, expect, it, vi } from 'vitest';
 
-import { parseRepository } from 'actions-common-ts-util';
-import type { RepositoryCoordinates } from 'actions-common-ts-util';
+import { parseRepository } from 'actions-util';
+import type { RepositoryCoordinates } from 'actions-util';
 import { createOrResetBranch } from './create-branch.js';
 
 import type { BranchApi } from './create-branch.js';

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { parseRepository } from 'actions-common-ts-util';
-import type { RepositoryCoordinates } from 'actions-common-ts-util';
+import { parseRepository } from 'actions-util';
+import type { RepositoryCoordinates } from 'actions-util';
 import { BaseBranchNotFoundError, createOrResetBranch } from './create-branch.js';
 
 import type { BranchApi } from './create-branch.js';
