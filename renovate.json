@@ -28,6 +28,19 @@
       "matchPackageNames": ["typescript"],
       "matchUpdateTypes": ["major"],
       "automerge": false
+    },
+    {
+      "description": "Bundle graphql and the graphql codegen toolchain into a single PR. These must upgrade together (a graphql major such as v17 breaks codegen unless the generators move with it), and every bump requires re-running codegen to regenerate src/generated/graphql.ts, so they are never auto-merged.",
+      "groupName": "graphql codegen",
+      "matchPackageNames": [
+        "graphql",
+        "@graphql-typed-document-node/core",
+        "@octokit/graphql-schema",
+        "/^@graphql-codegen//"
+      ],
+      "separateMajorMinor": false,
+      "separateMinorPatch": false,
+      "automerge": false
     }
   ]
 }
