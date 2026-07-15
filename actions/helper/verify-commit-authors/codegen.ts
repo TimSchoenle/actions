@@ -14,9 +14,15 @@ const config: CodegenConfig = {
   documents: 'src/**/*.graphql',
   generates: {
     'src/generated/graphql.ts': {
-      plugins: ['typescript', 'typescript-operations', 'typed-document-node'],
+      plugins: ['typescript-operations', 'typed-document-node'],
       config: {
-        onlyOperationTypes: true,
+        // Map the custom scalars our operation touches to their concrete runtime types. Without this
+        // they default to `unknown`, which neither assigns to `string` at the call sites nor satisfies
+        // CodeQL's ban on `any`. Both are opaque hex/URI strings in the GitHub schema.
+        scalars: {
+          URI: 'string',
+          GitObjectID: 'string',
+        },
         // The action now shares the repository's `verbatimModuleSyntax`, under which a value import
         // of a type is an error. Emitting `import type` keeps the generated file compiling.
         useTypeImports: true,
