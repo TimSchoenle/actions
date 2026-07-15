@@ -865,6 +865,85 @@ jobs:
           repository: ${{ env.TEST_REPO }}
           branch_name: ${{ steps.branch.outputs.branch }}
 
+  test-commit-verified:
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: 'Test Verified: commit is signed and marked verified'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@331de547737ea4a2b899287998f1ff90a912b7ba # tag=actions-common-create-branch-v1.2.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/commit-verified/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Create Test File
+        env:
+          TEST_ID: ${{ env.TEST_ID }}
+        run: echo "verified test $TEST_ID" > verified-test.txt
+
+      - name: Run commit-changes
+        id: commit
+        uses: ./tmp/actions-code/actions/common/commit-changes
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: verified commit ${{ env.TEST_ID }}'
+          file_pattern: 'verified-test.txt'
+
+      # The action commits via the GraphQL createCommitOnBranch mutation, so GitHub
+      # signs the commit with its own key when an App installation token is used.
+      # A correctly configured action must therefore produce a commit the API reports
+      # as verified with reason "valid"; any other reason means signing regressed.
+      - name: Verify Commit Is Signed and Marked Verified
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+        run: |
+          set -euo pipefail
+          [ -z "$COMMIT_SHA" ] && { echo "::error::Commit not created"; exit 1; }
+
+          VERIFICATION=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.commit.verification')
+          VERIFIED=$(echo "$VERIFICATION" | jq -r '.verified')
+          REASON=$(echo "$VERIFICATION" | jq -r '.reason')
+
+          echo "verified=$VERIFIED reason=$REASON"
+
+          [ "$VERIFIED" = "true" ] || { echo "::error::Commit $COMMIT_SHA is not verified (reason: $REASON)"; exit 1; }
+          [ "$REASON" = "valid" ] || { echo "::error::Expected verification reason 'valid', got '$REASON'"; exit 1; }
+          echo "✅ Commit is signed by GitHub and marked as verified"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@8001f0d144c85586ba753315fb37a5c8237cfa99 # tag=actions-common-delete-branch-v1.1.0
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
+
   # <<< generated: summary (run 'bun run generate-ci-required' to update)
   summary:
     name: 'CI Summary: Common Commit Changes'
@@ -878,6 +957,7 @@ jobs:
       - test-empty-commit-allowed
       - test-custom-branch
       - test-commit-message
+      - test-commit-verified
     runs-on: ubuntu-latest
     permissions: {}
     steps:
