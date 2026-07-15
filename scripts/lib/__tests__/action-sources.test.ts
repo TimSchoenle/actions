@@ -40,10 +40,13 @@ runs:
   main: 'dist/index.js'
 `;
 
+/** The `build` script `checkActionStructure` expects for an action whose manifest sits at `action.yaml`. */
+const SHARED_BUILD = 'bun run scripts/build-action.ts';
+
 const VALID_PACKAGE: ActionPackage = {
   main: 'dist/index.js',
   scripts: {
-    build: 'bun build ./src/generated/index.ts --outfile ./dist/index.js --target node --minify --production',
+    build: SHARED_BUILD,
   },
 };
 
@@ -144,18 +147,12 @@ describe('checkActionStructure', () => {
     expect(checkActionStructure(definitionWith(), VALID_PACKAGE, 'action.yaml')).toEqual([]);
   });
 
-  it('accepts a build script that runs extra steps before bundling', () => {
-    const withCodegen = packageWith(
-      'bun run codegen && bun build ./src/generated/index.ts --outfile ./dist/index.js --target node --minify --production',
-    );
+  // Every action bundles through one shared builder, so the delegation is resolved relative to the
+  // action's own directory: from a nested action the shared script is several levels up.
+  it('accepts the delegation resolved relative to a nested action directory', () => {
+    const nested = packageWith('bun run ../../../scripts/build-action.ts');
 
-    expect(checkActionStructure(definitionWith(), withCodegen, 'action.yaml')).toEqual([]);
-  });
-
-  it('accepts an entry point and outfile written without the leading ./', () => {
-    const unprefixed = packageWith('bun build src/generated/index.ts --outfile dist/index.js --target node');
-
-    expect(checkActionStructure(definitionWith(), unprefixed, 'action.yaml')).toEqual([]);
+    expect(checkActionStructure(definitionWith(), nested, 'actions/common/example/action.yaml')).toEqual([]);
   });
 
   it('rejects a manifest without an entry point', () => {
@@ -182,31 +179,32 @@ describe('checkActionStructure', () => {
     ]);
   });
 
-  // The failure this whole check exists for: the build writes one file and GitHub runs another, so
-  // the action ships whatever happened to be committed at runs.main.
-  it('rejects a build script whose outfile is not what runs.main points at', () => {
-    const elsewhere = packageWith('bun build ./src/generated/index.ts --outfile ./dist/bundle.js --target node');
+  // The failure this check exists for: an action that bundles itself — with its own entry point,
+  // outfile or flags — instead of delegating to the shared builder ships a bundle built differently
+  // from every other action, which the byte-for-byte freshness check cannot vouch for.
+  it('rejects a build script that does not delegate to the shared builder', () => {
+    const inline = packageWith('bun build ./src/generated/index.ts --outfile ./dist/index.js --target node --minify');
 
-    expect(checkActionStructure(definitionWith(), elsewhere, 'action.yaml')).toEqual([
-      expect.stringContaining("writes './dist/bundle.js', but 'runs.main' points at 'dist/index.js'"),
+    expect(checkActionStructure(definitionWith(), inline, 'action.yaml')).toEqual([
+      expect.stringContaining("expected 'bun run scripts/build-action.ts'"),
     ]);
   });
 
-  // Bundling a hand-written entry point would silently take the generated one — and the guarantee
-  // that the entry point carries no logic — out of the build.
-  it('rejects a build script that bundles an entry point other than the generated one', () => {
-    const otherEntry = packageWith('bun build ./src/index.ts --outfile ./dist/index.js --target node');
+  // A delegation with the wrong depth points at a path that is not the shared builder, so it is
+  // rejected just like a hand-rolled build — the expected invocation names the correct depth.
+  it('rejects a delegation whose relative depth does not reach the shared builder', () => {
+    const wrongDepth = packageWith('bun run scripts/build-action.ts');
 
-    expect(checkActionStructure(definitionWith(), otherEntry, 'action.yaml')).toEqual([
-      expect.stringContaining("bundles './src/index.ts', expected './src/generated/index.ts'"),
+    expect(checkActionStructure(definitionWith(), wrongDepth, 'actions/common/example/action.yaml')).toEqual([
+      expect.stringContaining("expected 'bun run ../../../scripts/build-action.ts'"),
     ]);
   });
 
   it('reports every problem at once rather than one per run', () => {
     const broken: ActionPackage = { main: 'index.js', scripts: { build: 'tsc' } };
 
-    // runs.main, package.json main, the missing 'bun build' and the missing --outfile.
-    expect(checkActionStructure(definitionWith({ main: 'main.js' }), broken, 'action.yaml')).toHaveLength(4);
+    // runs.main, package.json main, and the build script that does not delegate to the shared builder.
+    expect(checkActionStructure(definitionWith({ main: 'main.js' }), broken, 'action.yaml')).toHaveLength(3);
   });
 });
 
@@ -358,10 +356,14 @@ describe('the committed action sources', () => {
   });
 
   it.each(nodeActionDirs)('%s agrees with its package.json on the bundle GitHub runs', (actionDir) => {
+    // `collectGeneratedModules` passes the manifest path as the source, and the expected build
+    // delegation is resolved relative to its directory — so the source must name the manifest, not
+    // the directory, or the relative depth comes out one level short.
+    const source = `${relativeDir(actionDir)}/action.yaml`;
     const manifest = readFileSync(path.join(actionDir, 'action.yaml'), 'utf8');
-    const definition = parseActionDefinition(manifest, relativeDir(actionDir));
+    const definition = parseActionDefinition(manifest, source);
     const packageJson = JSON.parse(readFileSync(path.join(actionDir, 'package.json'), 'utf8')) as ActionPackage;
 
-    expect(checkActionStructure(definition, packageJson, relativeDir(actionDir))).toEqual([]);
+    expect(checkActionStructure(definition, packageJson, source)).toEqual([]);
   });
 });
