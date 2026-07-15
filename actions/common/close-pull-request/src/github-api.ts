@@ -1,5 +1,5 @@
-import * as github from '@actions/github';
 import { resolveExists } from 'actions-util';
+import { createOctokit } from 'actions-util/client';
 
 import type { PullRequestApi } from './close.js';
 import type { RepositoryCoordinates } from 'actions-util';
@@ -15,7 +15,7 @@ import type { RepositoryCoordinates } from 'actions-util';
  * the conversation.
  */
 export function createPullRequestApi(token: string): PullRequestApi {
-  const octokit = github.getOctokit(token);
+  const octokit = createOctokit(token);
 
   return {
     async closePullRequest({ owner, repo }: RepositoryCoordinates, pullRequestNumber: number): Promise<void> {

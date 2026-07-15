@@ -1,4 +1,4 @@
-import * as github from '@actions/github';
+import { createOctokit } from 'actions-util/client';
 
 import type { CheckRun, CheckRunsApi } from './checks.js';
 import type { RepositoryCoordinates } from 'actions-util';
@@ -36,7 +36,7 @@ async function readAllPages<T>(read: PageReader<T>): Promise<T[]> {
  * `collectCheckRuns`), and a swallowed error at this level would make that decision impossible.
  */
 export function createCheckRunsApi(token: string): CheckRunsApi {
-  const octokit = github.getOctokit(token);
+  const octokit = createOctokit(token);
 
   return {
     async listCheckRunsForRef({ owner, repo }: RepositoryCoordinates, ref: string): Promise<CheckRun[]> {

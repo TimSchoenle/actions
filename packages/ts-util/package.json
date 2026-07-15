@@ -22,6 +22,10 @@
     "./commits": {
       "types": "./dist/github-commits.d.ts",
       "import": "./dist/github-commits.js"
+    },
+    "./client": {
+      "types": "./dist/github-client.d.ts",
+      "import": "./dist/github-client.js"
     }
   },
   "scripts": {

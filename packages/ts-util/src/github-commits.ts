@@ -1,5 +1,4 @@
-import * as github from '@actions/github';
-
+import { createOctokit } from './github-client.js';
 import { parseRepository } from './github.js';
 
 import type { CommitRecord } from './commit-verification.js';
@@ -299,7 +298,7 @@ async function collectPullRequestCommits(graphql: GraphqlClient, prUrl: string):
  * incomplete — every such case leaves the caller unable to make a trustworthy statement.
  */
 export async function fetchPullRequestCommits(token: string, prUrl: string): Promise<PullRequestCommits> {
-  const octokit = github.getOctokit(token);
+  const octokit = createOctokit(token);
   const graphql: GraphqlClient = (query, variables) => octokit.graphql(query, variables);
 
   return collectPullRequestCommits(graphql, prUrl);
