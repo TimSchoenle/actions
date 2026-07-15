@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "build": "bun build ./src/generated/index.ts --outfile ./dist/index.js --target node --minify --production",
+    "build": "bun run ../../../scripts/build-action.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

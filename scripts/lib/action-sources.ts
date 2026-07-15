@@ -25,8 +25,8 @@ export const ACTION_MODULE_PATH = 'src/action.ts';
 /** The bundle `runs.main` must reference and the build script must emit. */
 export const BUNDLE_PATH = 'dist/index.js';
 
-/** The source `runs.main` is bundled from. */
-const BUNDLE_ENTRY = `./${ENTRY_MODULE_PATH}`;
+/** The shared builder every Node action's `build` script delegates to, relative to the repo root. */
+export const SHARED_BUILD_SCRIPT = 'scripts/build-action.ts';
 
 /** Glob matching every action manifest in the repository. */
 const ACTION_MANIFEST_GLOB = 'actions/**/action.{yml,yaml}';
@@ -37,12 +37,6 @@ const ACTION_MANIFEST_GLOB = 'actions/**/action.{yml,yaml}';
  * in `action.yaml`, not something worth generating code for.
  */
 const IO_NAME_PATTERN = /^[A-Za-z_][\w-]*$/;
-
-/** The entry point `bun build` bundles, e.g. `./src/index.ts` in `bun build ./src/index.ts ...`. */
-const BUILD_ENTRY_PATTERN = /bun build\s+(\S+)/;
-
-/** The bundle `bun build` writes, e.g. `./dist/index.js` in `... --outfile ./dist/index.js`. */
-const BUILD_OUTFILE_PATTERN = /--outfile\s+(\S+)/;
 
 /** The parts of an `action.yaml` the generator derives its types from. */
 export interface ActionDefinition {
@@ -155,6 +149,22 @@ function normalizePath(value: string): string {
 }
 
 /**
+ * The exact `build` script an action must declare: a delegation to the single shared builder,
+ * resolved relative to the action's own directory.
+ *
+ * Centralizing the bundler invocation in `${SHARED_BUILD_SCRIPT}` is what keeps every action's
+ * bundle built with identical, deterministic flags. Validating that delegation here — rather than
+ * re-parsing a `bun build` command line per action — is what stops one action from drifting to a
+ * different entry point, outfile or flag set. The relative path is computed from repository-root
+ * paths joined under a virtual root so it never depends on the process working directory.
+ */
+function expectedBuildInvocation(source: string): string {
+  const actionDir = path.posix.dirname(toPosix(source));
+
+  return `bun run ${path.posix.relative(`/${actionDir}`, `/${SHARED_BUILD_SCRIPT}`)}`;
+}
+
+/**
  * Reports every way an action's manifest, package manifest and entry point fail to line up.
  *
  * GitHub runs the committed bundle at `runs.main` — not the TypeScript sources — so the chain from
@@ -194,18 +204,11 @@ export function checkActionStructure(
     return problems;
   }
 
-  const entry = BUILD_ENTRY_PATTERN.exec(build)?.[1];
-  if (entry === undefined) {
-    problems.push(`${source}: the 'build' script does not invoke 'bun build'.`);
-  } else if (normalizePath(entry) !== ENTRY_MODULE_PATH) {
-    problems.push(`${source}: the 'build' script bundles '${entry}', expected '${BUNDLE_ENTRY}'.`);
-  }
-
-  const outfile = BUILD_OUTFILE_PATTERN.exec(build)?.[1];
-  if (outfile === undefined) {
-    problems.push(`${source}: the 'build' script does not pass '--outfile'.`);
-  } else if (normalizePath(outfile) !== BUNDLE_PATH) {
-    problems.push(`${source}: the 'build' script writes '${outfile}', but 'runs.main' points at '${BUNDLE_PATH}'.`);
+  const expected = expectedBuildInvocation(source);
+  if (build.trim() !== expected) {
+    problems.push(
+      `${source}: the 'build' script is '${build}', expected '${expected}' so the bundle is built through the shared builder.`,
+    );
   }
 
   return problems;
