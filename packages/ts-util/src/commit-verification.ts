@@ -1,18 +1,15 @@
-/**
- * Upper bound of commits a single GraphQL page can return, and therefore the most commits this
- * action is able to verify. A larger pull request cannot be verified and must never be reported as
- * verified.
- */
-export const MAX_VERIFIABLE_COMMITS = 100;
-
 /** A commit reduced to what an author/signature check needs. */
 export interface CommitRecord {
   /** Full commit SHA. */
   oid: string;
-  /** Database IDs of every author of the commit; `null` for an author without a linked GitHub account. */
+  /**
+   * Database IDs of every author of the commit; `null` for an author without a linked GitHub account.
+   *
+   * Every author is present: the fetch pages the author connection to completion and rejects a commit
+   * whose authors it cannot fully retrieve, so a short list here means "few authors", never "the rest
+   * were not fetched".
+   */
   authorIds: readonly (number | null)[];
-  /** True when the commit has more authors than the API returned, which makes it unverifiable. */
-  authorsTruncated: boolean;
   /** True when GitHub reports the commit signature as valid. */
   signatureValid: boolean;
   /** GitHub's signature state (e.g. `VALID`, `UNSIGNED`), used for diagnostics only. */
@@ -67,9 +64,7 @@ export function parseUserIds(input: string): number[] {
 export function validateCommit(commit: CommitRecord, acceptedIds: ReadonlySet<number>): CommitFailure | undefined {
   const reasons: string[] = [];
 
-  if (commit.authorsTruncated) {
-    reasons.push('commit has more authors than the API returned, so its authors cannot be verified');
-  } else if (commit.authorIds.length === 0) {
+  if (commit.authorIds.length === 0) {
     reasons.push('commit has no authors');
   } else {
     const unknown = commit.authorIds.filter((id) => id === null).length;

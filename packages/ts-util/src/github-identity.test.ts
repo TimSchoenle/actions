@@ -1,7 +1,7 @@
 import * as github from '@actions/github';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createAppUserApi } from './github-api.js';
+import { createAppUserApi } from './github-identity.js';
 
 vi.mock('@actions/github');
 

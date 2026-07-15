@@ -1,0 +1,24 @@
+{
+  "name": "actions-maintenance-auto-approve-pr",
+  "version": "1.0.0",
+  "description": "Auto-approve pull requests from accepted authors on matching branches with verified commits",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "bun build ./src/generated/index.ts --outfile ./dist/index.js --target node --minify --production",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "actions-util": "workspace:*",
+    "@actions/core": "3.0.1",
+    "@actions/github": "9.1.1"
+  },
+  "devDependencies": {
+    "@fast-check/vitest": "0.4.1",
+    "@types/node": "26.1.1",
+    "fast-check": "4.9.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  }
+}

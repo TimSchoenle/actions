@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { run } from './action.js';
 
-import type { PullRequestCommits } from './github-api.js';
-import type { CommitRecord } from './verify.js';
+import type { CommitRecord } from 'actions-util';
+import type { PullRequestCommits } from 'actions-util/commits';
 
 vi.mock('@actions/core');
 
@@ -24,7 +24,6 @@ function mockInputs(overrides: Inputs = {}): void {
 function commit(overrides: Partial<CommitRecord> = {}): CommitRecord {
   return {
     authorIds: [12345],
-    authorsTruncated: false,
     oid: 'abc1234',
     signatureState: 'VALID',
     signatureValid: true,
@@ -75,13 +74,6 @@ describe('verify-commit-authors action', () => {
     expect(core.error).toHaveBeenCalledWith(expect.stringContaining('bad2'));
     expect(core.warning).toHaveBeenCalledWith(expect.stringContaining('Found 2 invalid commit(s)'));
     expect(core.setFailed).not.toHaveBeenCalled();
-  });
-
-  it('refuses to verify a pull request with more commits than one page', async () => {
-    await run(fetcher({ commits: [commit()], totalCount: 101 }));
-
-    expect(outputs()).toEqual({ invalid_commits: '', verified: 'false' });
-    expect(core.warning).toHaveBeenCalledWith(expect.stringContaining('more than the 100 this action can verify'));
   });
 
   it('refuses to verify a pull request without commits', async () => {

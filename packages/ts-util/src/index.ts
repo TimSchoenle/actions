@@ -8,6 +8,8 @@
  */
 export * from './action.js';
 export * from './action-io.js';
+export * from './branch-verification.js';
+export * from './commit-verification.js';
 export * from './errors.js';
 export * from './github.js';
 export * from './identity.js';

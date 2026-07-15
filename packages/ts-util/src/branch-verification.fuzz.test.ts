@@ -1,7 +1,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 
-import { matchesBranchPattern, verifyBranch } from './verify.js';
+import { matchesBranchPattern, verifyBranch } from './branch-verification.js';
 
 /** Characters that are legal in a git branch name and carry no regex meaning. */
 const branchName = fc.stringMatching(/^[\w./-]{1,60}$/);

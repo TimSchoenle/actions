@@ -1,8 +1,8 @@
 import * as core from '@actions/core';
 import { resolveBotIdentity, runAction } from 'actions-util';
+import { createAppUserApi } from 'actions-util/identity';
 
 import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';
-import { createAppUserApi } from './github-api.js';
 
 import type { AppUserApi } from 'actions-util';
 

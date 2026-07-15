@@ -14,6 +14,14 @@
     "./branches": {
       "types": "./dist/github-branches.d.ts",
       "import": "./dist/github-branches.js"
+    },
+    "./identity": {
+      "types": "./dist/github-identity.d.ts",
+      "import": "./dist/github-identity.js"
+    },
+    "./commits": {
+      "types": "./dist/github-commits.d.ts",
+      "import": "./dist/github-commits.js"
     }
   },
   "scripts": {
