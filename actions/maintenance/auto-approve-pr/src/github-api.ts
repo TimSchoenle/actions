@@ -1,4 +1,4 @@
-import * as github from '@actions/github';
+import { createOctokit } from 'actions-util/client';
 import { fetchPullRequestCommits } from 'actions-util/commits';
 
 import type { PullRequestCoordinates } from './pull-request-url.js';
@@ -29,7 +29,7 @@ export interface AutoApproveApi {
 }
 
 export function createAutoApproveApi(token: string): AutoApproveApi {
-  const octokit = github.getOctokit(token);
+  const octokit = createOctokit(token);
 
   return {
     async approve({ number, owner, repo }: PullRequestCoordinates, message: string): Promise<void> {

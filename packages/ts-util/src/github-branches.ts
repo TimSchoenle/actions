@@ -1,5 +1,4 @@
-import * as github from '@actions/github';
-
+import { createOctokit } from './github-client.js';
 import { resolveExists, resolveOptional } from './github.js';
 
 import type { RepositoryCoordinates } from './github.js';
@@ -76,7 +75,7 @@ function branchRef(branch: string): string {
  * {@link resolveExists}.
  */
 export function createBranchApi(token: string): BranchApi {
-  const octokit = github.getOctokit(token);
+  const octokit = createOctokit(token);
 
   return {
     async branchExists({ owner, repo }: RepositoryCoordinates, branch: string): Promise<boolean> {

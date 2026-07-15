@@ -1,5 +1,4 @@
-import * as github from '@actions/github';
-
+import { createOctokit } from './github-client.js';
 import { resolveOptional } from './github.js';
 
 import type { AppUserApi } from './identity.js';
@@ -16,7 +15,7 @@ import type { AppUserApi } from './identity.js';
  * opposite fixes.
  */
 export function createAppUserApi(token: string): AppUserApi {
-  const octokit = github.getOctokit(token);
+  const octokit = createOctokit(token);
 
   return {
     async getUserId(username: string): Promise<number | undefined> {

@@ -26,6 +26,10 @@ export default defineConfig({
         replacement: fileURLToPath(new URL('./packages/ts-util/src/github-commits.ts', import.meta.url)),
       },
       {
+        find: 'actions-util/client',
+        replacement: fileURLToPath(new URL('./packages/ts-util/src/github-client.ts', import.meta.url)),
+      },
+      {
         find: 'actions-util',
         replacement: fileURLToPath(new URL('./packages/ts-util/src/index.ts', import.meta.url)),
       },

@@ -1,4 +1,4 @@
-import * as github from '@actions/github';
+import { createOctokit } from 'actions-util/client';
 
 import type { FileChanges } from './changes.js';
 import type { RepositoryCoordinates } from 'actions-util';
@@ -97,7 +97,7 @@ function buildCommitInput(request: CreateCommitRequest): Record<string, unknown>
 }
 
 export function createCommitApi(token: string): CommitApi {
-  const octokit = github.getOctokit(token);
+  const octokit = createOctokit(token);
 
   return {
     async createCommit(request: CreateCommitRequest): Promise<CreatedCommit> {
