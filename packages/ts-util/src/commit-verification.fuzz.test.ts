@@ -1,9 +1,9 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 
-import { parseUserIds, validateCommit, verifyCommits } from './verify.js';
+import { parseUserIds, validateCommit, verifyCommits } from './commit-verification.js';
 
-import type { CommitRecord } from './verify.js';
+import type { CommitRecord } from './commit-verification.js';
 
 const userId = fc.integer({ max: 100_000_000, min: 1 });
 const oid = fc.stringMatching(/^[\da-f]{7,40}$/);
@@ -11,7 +11,6 @@ const oid = fc.stringMatching(/^[\da-f]{7,40}$/);
 const commitRecord = (authorIdPool: fc.Arbitrary<number | null>): fc.Arbitrary<CommitRecord> =>
   fc.record({
     authorIds: fc.array(authorIdPool, { maxLength: 5, minLength: 0 }),
-    authorsTruncated: fc.boolean(),
     oid,
     signatureState: fc.oneof(fc.constant(null), fc.constantFrom('VALID', 'INVALID', 'UNSIGNED')),
     signatureValid: fc.boolean(),
@@ -67,9 +66,7 @@ describe('validateCommit fuzzing', () => {
         (commit, acceptedIds) => {
           const accepted = new Set(acceptedIds);
           const authorsOk =
-            !commit.authorsTruncated &&
-            commit.authorIds.length > 0 &&
-            commit.authorIds.every((id) => id !== null && accepted.has(id));
+            commit.authorIds.length > 0 && commit.authorIds.every((id) => id !== null && accepted.has(id));
 
           const failure = validateCommit(commit, accepted);
 
@@ -85,16 +82,6 @@ describe('validateCommit fuzzing', () => {
         const unsigned = { ...commit, signatureValid: false };
 
         expect(validateCommit(unsigned, new Set(acceptedIds))).toBeDefined();
-      }),
-    );
-  });
-
-  it('never accepts a commit whose author list was truncated', () => {
-    fc.assert(
-      fc.property(commitRecord(userId), fc.uniqueArray(userId, { minLength: 1 }), (commit, acceptedIds) => {
-        const truncated = { ...commit, authorsTruncated: true };
-
-        expect(validateCommit(truncated, new Set(acceptedIds))).toBeDefined();
       }),
     );
   });

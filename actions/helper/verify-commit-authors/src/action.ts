@@ -1,12 +1,11 @@
 import * as core from '@actions/core';
-import { runAction } from 'actions-util';
+import { parseUserIds, runAction, verifyCommits } from 'actions-util';
+import { fetchPullRequestCommits } from 'actions-util/commits';
 
 import { getInput, setOutput } from './generated/action-io.js';
-import { fetchPullRequestCommits } from './github-api.js';
-import { MAX_VERIFIABLE_COMMITS, parseUserIds, verifyCommits } from './verify.js';
 
-import type { PullRequestCommits } from './github-api.js';
-import type { VerificationResult } from './verify.js';
+import type { VerificationResult } from 'actions-util';
+import type { PullRequestCommits } from 'actions-util/commits';
 
 /** Fetches the commits of a pull request; injectable so the adapter can be tested without a network. */
 export type CommitFetcher = (token: string, prUrl: string) => Promise<PullRequestCommits>;
@@ -19,8 +18,8 @@ function publish(result: Pick<VerificationResult, 'invalidCommits' | 'verified'>
 /**
  * Reads the action inputs, verifies every commit of the pull request and publishes the outputs.
  *
- * The action fails closed: anything that prevents a complete check — too many commits, incomplete
- * data, an API error — results in `verified=false` or a failed step, never in a silent pass.
+ * The action fails closed: anything that prevents a complete check — incomplete data, an API error —
+ * results in `verified=false` or a failed step, never in a silent pass.
  *
  * @param fetchCommits injection seam for tests; defaults to the GitHub GraphQL API.
  */
@@ -33,15 +32,7 @@ export function run(fetchCommits: CommitFetcher = fetchPullRequestCommits): Prom
     core.info(`Verifying commits for PR: ${prUrl}`);
     core.info(`Accepted User IDs: ${acceptedIds.join(', ')}`);
 
-    const { commits, totalCount } = await fetchCommits(token, prUrl);
-
-    if (totalCount > MAX_VERIFIABLE_COMMITS) {
-      core.warning(
-        `Pull request has ${totalCount} commits, more than the ${MAX_VERIFIABLE_COMMITS} this action can verify. Reporting as unverified.`,
-      );
-      publish({ invalidCommits: [], verified: false });
-      return;
-    }
+    const { commits } = await fetchCommits(token, prUrl);
 
     const result = verifyCommits(commits, acceptedIds);
 

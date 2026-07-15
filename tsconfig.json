@@ -17,7 +17,9 @@
     "rootDir": ".",
     "paths": {
       "actions-util": ["packages/ts-util/src/index.ts"],
-      "actions-util/branches": ["packages/ts-util/src/github-branches.ts"]
+      "actions-util/branches": ["packages/ts-util/src/github-branches.ts"],
+      "actions-util/identity": ["packages/ts-util/src/github-identity.ts"],
+      "actions-util/commits": ["packages/ts-util/src/github-commits.ts"]
     }
   },
   "include": ["scripts/**/*", "actions/**/*", "packages/**/*"],

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { compileBranchPattern, matchesBranchPattern, verifyBranch } from './verify.js';
+import { compileBranchPattern, matchesBranchPattern, verifyBranch } from './branch-verification.js';
 
-import type { BranchVerificationRequest } from './verify.js';
+import type { BranchVerificationRequest } from './branch-verification.js';
 
 const baseRequest: BranchVerificationRequest = {
   baseRepoFullName: 'owner/repo',

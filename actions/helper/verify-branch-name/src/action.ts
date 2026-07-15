@@ -1,10 +1,9 @@
 import * as core from '@actions/core';
-import { runAction } from 'actions-util';
+import { runAction, verifyBranch } from 'actions-util';
 
 import { getBooleanInput, getInput, setOutput } from './generated/action-io.js';
-import { verifyBranch } from './verify.js';
 
-import type { BranchVerificationResult } from './verify.js';
+import type { BranchVerificationResult } from 'actions-util';
 
 function reportFailure(result: BranchVerificationResult): void {
   core.error('Verification failed!');

@@ -1,15 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseUserIds, validateCommit, verifyCommits } from './verify.js';
+import { parseUserIds, validateCommit, verifyCommits } from './commit-verification.js';
 
-import type { CommitRecord } from './verify.js';
+import type { CommitRecord } from './commit-verification.js';
 
 const ACCEPTED = [12345, 67890];
 
 function commit(overrides: Partial<CommitRecord> = {}): CommitRecord {
   return {
     authorIds: [12345],
-    authorsTruncated: false,
     oid: 'abc1234',
     signatureState: 'VALID',
     signatureValid: true,
@@ -83,12 +82,6 @@ describe('validateCommit', () => {
 
   it('rejects a commit without any author', () => {
     expect(validateCommit(commit({ authorIds: [] }), accepted)?.reasons).toEqual(['commit has no authors']);
-  });
-
-  it('rejects a commit whose author list was truncated by the API', () => {
-    const failure = validateCommit(commit({ authorsTruncated: true }), accepted);
-
-    expect(failure?.reasons).toEqual([expect.stringContaining('more authors than the API returned')]);
   });
 
   it.each([

@@ -18,6 +18,14 @@ export default defineConfig({
         replacement: fileURLToPath(new URL('./packages/ts-util/src/github-branches.ts', import.meta.url)),
       },
       {
+        find: 'actions-util/identity',
+        replacement: fileURLToPath(new URL('./packages/ts-util/src/github-identity.ts', import.meta.url)),
+      },
+      {
+        find: 'actions-util/commits',
+        replacement: fileURLToPath(new URL('./packages/ts-util/src/github-commits.ts', import.meta.url)),
+      },
+      {
         find: 'actions-util',
         replacement: fileURLToPath(new URL('./packages/ts-util/src/index.ts', import.meta.url)),
       },

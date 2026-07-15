@@ -1,4 +1,5 @@
-import { compilePosixRegex, errorMessage, PATTERN_MATCH_TIMEOUT_MS, testPattern } from 'actions-util';
+import { errorMessage } from './errors.js';
+import { compilePosixRegex, PATTERN_MATCH_TIMEOUT_MS, testPattern } from './posix-regex.js';
 
 export interface BranchVerificationRequest {
   /** POSIX-ERE-compatible pattern the head branch must match. An empty pattern skips the check. */
