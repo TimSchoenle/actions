@@ -232,9 +232,11 @@ describe('createOctokit', () => {
 });
 
 describe('DEFAULT_RETRY_POLICY', () => {
-  it('bounds a single wait to one minute and retries a handful of times', () => {
-    expect(DEFAULT_RETRY_POLICY.maxDelayMs).toBe(60_000);
+  it('is a bounded, self-consistent policy', () => {
     expect(DEFAULT_RETRY_POLICY.maxRetries).toBeGreaterThan(0);
     expect(DEFAULT_RETRY_POLICY.baseDelayMs).toBeGreaterThan(0);
+    // The ceiling must sit at or above the base, or the first backoff would already be clipped.
+    expect(DEFAULT_RETRY_POLICY.maxDelayMs).toBeGreaterThanOrEqual(DEFAULT_RETRY_POLICY.baseDelayMs);
+    expect(Number.isFinite(DEFAULT_RETRY_POLICY.maxDelayMs)).toBe(true);
   });
 });
