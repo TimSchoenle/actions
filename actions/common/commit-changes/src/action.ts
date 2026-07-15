@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import { runAction } from 'actions-util';
 
 import { commitChanges } from './commit.js';
-import { ActionInput, ActionOutput, getBooleanInput, getInput, setOutput } from './generated/action-io.js';
+import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';
 import { createGit } from './git.js';
 import { createCommitApi } from './github-api.js';
 import { createWorkspace } from './workspace.js';
@@ -18,7 +18,7 @@ function report(result: CommitChangesResult): void {
     setOutput(ActionOutput.commit_hash, result.commitHash ?? '');
     setOutput(ActionOutput.commit_url, result.commitUrl ?? '');
   } else {
-    core.info('ℹ️ No changes detected and empty commits are disabled — skipping commit');
+    core.info('ℹ️ No changes detected — skipping commit');
   }
 }
 
@@ -37,7 +37,6 @@ export function run(overrides: Partial<CommitChangesDeps> = {}): Promise<void> {
     const repository = getInput(ActionInput.repository);
     const branch = getInput(ActionInput.branch);
     const filePattern = getInput(ActionInput.file_pattern);
-    const empty = getBooleanInput(ActionInput.empty);
 
     const deps: CommitChangesDeps = {
       api: overrides.api ?? createCommitApi(token),
@@ -45,7 +44,7 @@ export function run(overrides: Partial<CommitChangesDeps> = {}): Promise<void> {
       workspace: overrides.workspace ?? createWorkspace(),
     };
 
-    const result = await commitChanges(deps, { branch, empty, filePattern, message, repository });
+    const result = await commitChanges(deps, { branch, filePattern, message, repository });
 
     report(result);
   });

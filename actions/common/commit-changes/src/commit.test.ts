@@ -40,7 +40,6 @@ function fakeApi(oid = 'headsha'): CommitApi & { created: CreateCommitRequest[] 
 
 const baseRequest: CommitChangesRequest = {
   branch: 'main',
-  empty: false,
   filePattern: '.',
   message: 'chore: update',
   repository: 'owner/repo',
@@ -67,7 +66,7 @@ describe('commitChanges', () => {
     expect(git.ignoreFileModeChanges).toHaveBeenCalledOnce();
   });
 
-  it('does not commit when the tree is clean and empty commits are disabled', async () => {
+  it('does not commit when the tree is clean', async () => {
     const api = fakeApi();
 
     const result = await commitChanges(deps({ api, git: fakeGit('') }), baseRequest);
@@ -101,16 +100,6 @@ describe('commitChanges', () => {
       },
       message: 'chore: update',
     });
-  });
-
-  it('creates an empty commit when asked to, even with a clean tree', async () => {
-    const api = fakeApi();
-
-    const result = await commitChanges(deps({ api, git: fakeGit('') }), { ...baseRequest, empty: true });
-
-    expect(result.committed).toBe(true);
-    expect(result.hasChanges).toBe(false);
-    expect(api.created[0].fileChanges).toEqual({ additions: [], deletions: [] });
   });
 
   it('scopes the status to the built pathspecs when a file pattern is given', async () => {

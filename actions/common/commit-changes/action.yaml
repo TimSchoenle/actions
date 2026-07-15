@@ -16,10 +16,6 @@ inputs:
     description: 'Branch to commit to'
     required: false
     default: ${{ github.head_ref || github.ref_name }}
-  empty:
-    description: Allow making an empty commit if there are no changes.
-    required: false
-    default: 'false'
   file_pattern:
     description: 'File pattern to commit'
     required: false

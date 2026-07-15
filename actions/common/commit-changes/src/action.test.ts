@@ -18,7 +18,6 @@ type Inputs = Record<string, string>;
 const defaultInputs: Inputs = {
   branch: 'main',
   commit_message: 'chore: update',
-  empty: 'false',
   file_pattern: '.',
   repository: 'owner/repo',
   token: 'ghs_token',

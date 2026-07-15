@@ -24,8 +24,6 @@ export interface CommitChangesRequest {
   message: string;
   /** Space-separated `file_pattern` scoping which changes are committed. */
   filePattern: string;
-  /** Whether to commit even when the working tree has no matching changes. */
-  empty: boolean;
 }
 
 /** What the run did. `committed` is false only when nothing was committed. */
@@ -44,10 +42,9 @@ export interface CommitChangesResult {
  * Commits the working-tree changes matching `file_pattern` to the branch, using the GraphQL commit
  * API so the commit is verified.
  *
- * Nothing is committed when the tree has no matching changes, unless `empty` was asked for — in which
- * case an empty commit is created. The branch head is read immediately before the commit and passed
- * as `expectedHeadOid`, so a concurrent push to the branch fails this write loudly rather than being
- * silently overwritten.
+ * Nothing is committed when the tree has no matching changes. The branch head is read immediately
+ * before the commit and passed as `expectedHeadOid`, so a concurrent push to the branch fails this
+ * write loudly rather than being silently overwritten.
  *
  * @throws if `branch` is empty, or if the repository is malformed — a commit must never be attempted
  * against an unresolved target.
@@ -69,7 +66,7 @@ export async function commitChanges(
   const changedPaths = parseChangedPaths(status);
   const hasChanges = changedPaths.length > 0;
 
-  if (!hasChanges && !request.empty) {
+  if (!hasChanges) {
     return { committed: false, hasChanges: false };
   }
 

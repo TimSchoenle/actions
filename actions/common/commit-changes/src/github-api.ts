@@ -79,26 +79,21 @@ export function toCommitMessage(message: string): CommitMessage {
   return body === '' ? { headline } : { body, headline };
 }
 
-/** The `CreateCommitOnBranchInput`, with `fileChanges` omitted for an empty commit. */
+/** The `CreateCommitOnBranchInput` for the signed `createCommitOnBranch` mutation. */
 function buildCommitInput(request: CreateCommitRequest): Record<string, unknown> {
   const { branch, coordinates, expectedHeadOid, fileChanges, message } = request;
 
-  const input: Record<string, unknown> = {
+  // `fileChanges` always carries at least one addition or deletion: a commit is only ever built when
+  // the tree has matching changes, so there is no empty-commit case to special-case here.
+  return {
     branch: {
       branchName: branch,
       repositoryNameWithOwner: `${coordinates.owner}/${coordinates.repo}`,
     },
     expectedHeadOid,
+    fileChanges,
     message: toCommitMessage(message),
   };
-
-  // An empty `fileChanges` is omitted rather than sent: with neither additions nor deletions this
-  // produces an empty commit (the `empty` input), and passing an empty object would be rejected.
-  if (fileChanges.additions.length > 0 || fileChanges.deletions.length > 0) {
-    input.fileChanges = fileChanges;
-  }
-
-  return input;
 }
 
 export function createCommitApi(token: string): CommitApi {

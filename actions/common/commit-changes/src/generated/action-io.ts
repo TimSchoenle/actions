@@ -18,7 +18,6 @@ export const ActionInput = {
   token: 'token',
   repository: 'repository',
   branch: 'branch',
-  empty: 'empty',
   file_pattern: 'file_pattern',
 } as const;
 

@@ -92,15 +92,6 @@ describe('createCommitApi', () => {
       });
     });
 
-    it('omits fileChanges for an empty commit so GitHub does not reject it', async () => {
-      await createCommitApi('token').createCommit({
-        ...request,
-        fileChanges: { additions: [], deletions: [] },
-      });
-
-      expect(lastInput(octokit)).not.toHaveProperty('fileChanges');
-    });
-
     it('includes fileChanges when only deletions are present', async () => {
       await createCommitApi('token').createCommit({
         ...request,
