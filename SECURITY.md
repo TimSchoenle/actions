@@ -23,7 +23,7 @@ Any version not listed in the following tables is not supported.
 | [Create Branch](./actions/common/create-branch) | [actions-common-create-branch-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-branch-v1.2.0) | :white_check_mark: |
 | [Create Pull Request](./actions/common/create-pull-request) | [actions-common-create-pull-request-v1.0.7](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-pull-request-v1.0.7) | :white_check_mark: |
 | [Delete-Branch](./actions/common/delete-branch) | [actions-common-delete-branch-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-delete-branch-v1.1.0) | :white_check_mark: |
-| [Get App Git Identity](./actions/common/get-app-git-identity) | [actions-common-get-app-git-identity-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-get-app-git-identity-v1.1.0) | :white_check_mark: |
+| [Get App Git Identity](./actions/common/get-app-git-identity) | [actions-common-get-app-git-identity-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-get-app-git-identity-v1.2.0) | :white_check_mark: |
 | [Setup App Git Identity](./actions/common/setup-app-git-identity) | [actions-common-setup-app-git-identity-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-setup-app-git-identity-v1.1.1) | :white_check_mark: |
 
 ### Helm
