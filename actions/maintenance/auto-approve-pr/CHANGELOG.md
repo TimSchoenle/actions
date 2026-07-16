@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.2.0](https://github.com/TimSchoenle/actions/compare/actions-maintenance-auto-approve-pr-v1.1.17...actions-maintenance-auto-approve-pr-v1.2.0) (2026-07-16)
+
+
+### Features
+
+* add proper retry logic for github api interaction ([#1203](https://github.com/TimSchoenle/actions/issues/1203)) ([36d3bd2](https://github.com/TimSchoenle/actions/commit/36d3bd20f1bc82ddeed6bbd2fc6c07cc37f577ff))
+
+
+### Code Refactoring
+
+* migrate more actions to TS ([#1198](https://github.com/TimSchoenle/actions/issues/1198)) ([140f384](https://github.com/TimSchoenle/actions/commit/140f3848c2f53c3a10830d89e4654495eba64950))
+
+
+### Build System
+
+* standardize action build process ([#1204](https://github.com/TimSchoenle/actions/issues/1204)) ([3c469b0](https://github.com/TimSchoenle/actions/commit/3c469b0bc9a0a91d00d3df0af095bb19ae769582))
+
+
+### Miscellaneous
+
+* **deps:** update timschoenle/actions/actions/helper/verify-commit-authors to vactions-helper-verify-commit-authors-v1.1.28 ([#1178](https://github.com/TimSchoenle/actions/issues/1178)) ([c0b237b](https://github.com/TimSchoenle/actions/commit/c0b237b2ffdae2408f4ac2657c3eea140698eeaa))
+
 ## [1.1.17](https://github.com/TimSchoenle/actions/compare/actions-maintenance-auto-approve-pr-v1.1.16...actions-maintenance-auto-approve-pr-v1.1.17) (2026-07-13)
 
 
