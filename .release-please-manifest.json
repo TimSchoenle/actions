@@ -6,7 +6,7 @@
   "actions/common/get-app-git-identity": "1.2.0",
   "actions/bun/setup-cached": "1.1.10",
   "workflows/maintenance/auto-bun-prettier": "1.1.21",
-  "actions/common/commit-changes": "1.1.5",
+  "actions/common/commit-changes": "1.2.0",
   "workflows/maintenance/auto-approve-renovate": "1.4.15",
   "actions/helper/verify-commit-authors": "1.2.0",
   "workflows/maintenance/timed-auto-pr-approve": "1.2.26",
