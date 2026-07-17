@@ -17,7 +17,7 @@ Any version not listed in the following tables is not supported.
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Close Pull Request](./actions/common/close-pull-request) | [actions-common-close-pull-request-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-close-pull-request-v1.2.0) | :white_check_mark: |
-| [Commit Changes](./actions/common/commit-changes) | [actions-common-commit-changes-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v1.1.5) | :white_check_mark: |
+| [Commit Changes](./actions/common/commit-changes) | [actions-common-commit-changes-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v1.2.0) | :white_check_mark: |
 | [Common Modify YAML](./actions/common/modify-yaml) | [actions-common-modify-yaml-v1.3.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-modify-yaml-v1.3.0) | :white_check_mark: |
 | [Common Read YAML](./actions/common/read-yaml) | [actions-common-read-yaml-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-read-yaml-v1.1.1) | :white_check_mark: |
 | [Create Branch](./actions/common/create-branch) | [actions-common-create-branch-v1.3.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-branch-v1.3.0) | :white_check_mark: |
