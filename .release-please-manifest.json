@@ -27,5 +27,5 @@
   "actions/rust/clippy": "1.1.7",
   "actions/rust/coverage-codecov": "1.1.28",
   "actions/rust/test": "1.1.1",
-  "actions/maintenance/ensure-actions-are-executed": "1.1.1"
+  "actions/maintenance/ensure-actions-are-executed": "1.2.0"
 }
