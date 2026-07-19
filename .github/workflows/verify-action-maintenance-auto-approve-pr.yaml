@@ -84,7 +84,7 @@ jobs:
 
       - name: Create Pull Request (with commit)
         id: pr
-        uses: TimSchoenle/actions/actions/common/create-pull-request@55d227c6055169db03bd269de70c50b05d76abd5 # tag=actions-common-create-pull-request-v1.0.7
+        uses: TimSchoenle/actions/actions/common/create-pull-request@424d20c4fcf37c6fdde8481d5f232a74ad135c65 # tag=actions-common-create-pull-request-v1.0.8
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -192,7 +192,7 @@ jobs:
 
       - name: Create Pull Request (with commit)
         id: pr
-        uses: TimSchoenle/actions/actions/common/create-pull-request@55d227c6055169db03bd269de70c50b05d76abd5 # tag=actions-common-create-pull-request-v1.0.7
+        uses: TimSchoenle/actions/actions/common/create-pull-request@424d20c4fcf37c6fdde8481d5f232a74ad135c65 # tag=actions-common-create-pull-request-v1.0.8
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -306,7 +306,7 @@ jobs:
 
       - name: Create Pull Request (Matching Pattern with commit)
         id: pr_match
-        uses: TimSchoenle/actions/actions/common/create-pull-request@55d227c6055169db03bd269de70c50b05d76abd5 # tag=actions-common-create-pull-request-v1.0.7
+        uses: TimSchoenle/actions/actions/common/create-pull-request@424d20c4fcf37c6fdde8481d5f232a74ad135c65 # tag=actions-common-create-pull-request-v1.0.8
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -363,7 +363,7 @@ jobs:
 
       - name: Create Pull Request (Non-matching Pattern with commit)
         id: pr_nomatch
-        uses: TimSchoenle/actions/actions/common/create-pull-request@55d227c6055169db03bd269de70c50b05d76abd5 # tag=actions-common-create-pull-request-v1.0.7
+        uses: TimSchoenle/actions/actions/common/create-pull-request@424d20c4fcf37c6fdde8481d5f232a74ad135c65 # tag=actions-common-create-pull-request-v1.0.8
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -494,7 +494,7 @@ jobs:
 
       - name: Create Pull Request (with commit)
         id: pr
-        uses: TimSchoenle/actions/actions/common/create-pull-request@55d227c6055169db03bd269de70c50b05d76abd5 # tag=actions-common-create-pull-request-v1.0.7
+        uses: TimSchoenle/actions/actions/common/create-pull-request@424d20c4fcf37c6fdde8481d5f232a74ad135c65 # tag=actions-common-create-pull-request-v1.0.8
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
