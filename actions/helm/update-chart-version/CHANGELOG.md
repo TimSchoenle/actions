@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.5.21](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.5.20...actions-helm-update-chart-version-v1.5.21) (2026-07-19)
+
+
+### Miscellaneous
+
+* **deps:** update timschoenle/actions/actions/common/modify-yaml to vactions-common-modify-yaml-v1.3.0 ([#1212](https://github.com/TimSchoenle/actions/issues/1212)) ([bc25795](https://github.com/TimSchoenle/actions/commit/bc25795437378d59821d6a86db7b3a65696d5e34))
+* **deps:** update timschoenle/actions/actions/common/read-yaml to vactions-common-read-yaml-v1.1.1 ([#1221](https://github.com/TimSchoenle/actions/issues/1221)) ([6201bdc](https://github.com/TimSchoenle/actions/commit/6201bdc142b52e9ac17b4a03305e93ae9eda96dd))
+* **deps:** update timschoenle/actions/actions/helper/resolve-base-branch to vactions-helper-resolve-base-branch-v1.2.0 ([#1213](https://github.com/TimSchoenle/actions/issues/1213)) ([b0072dd](https://github.com/TimSchoenle/actions/commit/b0072ddc545a99027ad5ad5b4bbb311bda46d79b))
+
 ## [1.5.20](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.5.19...actions-helm-update-chart-version-v1.5.20) (2026-07-16)
 
 
