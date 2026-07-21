@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.22](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.5.21...actions-helm-update-chart-version-v1.5.22) (2026-07-21)
+
+
+### Miscellaneous
+
+* **deps:** update actions/checkout digest to 3d3c42e ([#1240](https://github.com/TimSchoenle/actions/issues/1240)) ([fb33525](https://github.com/TimSchoenle/actions/commit/fb33525ac0e1e33735806885a1c24fbea508cd4d))
+* **deps:** update timschoenle/actions/actions/common/create-pull-request to vactions-common-create-pull-request-v1.0.8 ([#1237](https://github.com/TimSchoenle/actions/issues/1237)) ([523415a](https://github.com/TimSchoenle/actions/commit/523415a7d726c79845e74fe225963af4c97e015a))
+
 ## [1.5.21](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.5.20...actions-helm-update-chart-version-v1.5.21) (2026-07-19)
 
 
