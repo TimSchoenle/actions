@@ -22,7 +22,7 @@
   "actions/java-gradle/auto-spotless": "1.1.11",
   "actions/helper/verify-branch-name": "1.2.0",
   "actions/maintenance/auto-approve-pr": "1.2.0",
-  "actions/rust/auto-format": "1.1.6",
+  "actions/rust/auto-format": "1.1.7",
   "actions/rust/cargo-check": "1.1.4",
   "actions/rust/clippy": "1.1.7",
   "actions/rust/coverage-codecov": "1.1.29",

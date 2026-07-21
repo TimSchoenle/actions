@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.7](https://github.com/TimSchoenle/actions/compare/actions-rust-auto-format-v1.1.6...actions-rust-auto-format-v1.1.7) (2026-07-21)
+
+
+### Miscellaneous
+
+* **deps:** update actions/checkout digest to 3d3c42e ([#1240](https://github.com/TimSchoenle/actions/issues/1240)) ([fb33525](https://github.com/TimSchoenle/actions/commit/fb33525ac0e1e33735806885a1c24fbea508cd4d))
+* **deps:** update timschoenle/actions/actions/common/commit-changes to vactions-common-commit-changes-v1.2.0 ([#1224](https://github.com/TimSchoenle/actions/issues/1224)) ([c8560fb](https://github.com/TimSchoenle/actions/commit/c8560fbca3504e5d123b996641ae075394d2a10b))
+
 ## [1.1.6](https://github.com/TimSchoenle/actions/compare/actions-rust-auto-format-v1.1.5...actions-rust-auto-format-v1.1.6) (2026-07-06)
 
 
