@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.5](https://github.com/TimSchoenle/actions/compare/actions-rust-cargo-check-v1.1.4...actions-rust-cargo-check-v1.1.5) (2026-07-21)
+
+
+### Miscellaneous
+
+* **deps:** update actions/checkout digest to 3d3c42e ([#1240](https://github.com/TimSchoenle/actions/issues/1240)) ([fb33525](https://github.com/TimSchoenle/actions/commit/fb33525ac0e1e33735806885a1c24fbea508cd4d))
+
 ## [1.1.4](https://github.com/TimSchoenle/actions/compare/actions-rust-cargo-check-v1.1.3...actions-rust-cargo-check-v1.1.4) (2026-07-06)
 
 
