@@ -49,7 +49,7 @@
     "run-async": "4.0.6",
     "rxjs": "7.8.2",
     "signal-exit": "4.1.0",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "typescript-eslint": "8.65.0",
     "vitest": "4.1.10",
     "wrap-ansi": "10.0.0",
