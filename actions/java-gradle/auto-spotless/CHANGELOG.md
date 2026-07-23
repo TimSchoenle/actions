@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.12](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.11...actions-java-gradle-auto-spotless-v1.1.12) (2026-07-23)
+
+
+### Miscellaneous
+
+* **deps:** update actions/checkout digest to 3d3c42e ([#1240](https://github.com/TimSchoenle/actions/issues/1240)) ([fb33525](https://github.com/TimSchoenle/actions/commit/fb33525ac0e1e33735806885a1c24fbea508cd4d))
+
 ## [1.1.11](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.10...actions-java-gradle-auto-spotless-v1.1.11) (2026-07-21)
 
 
