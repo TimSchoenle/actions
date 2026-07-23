@@ -19,7 +19,7 @@
   "actions/java-gradle/setup-base-environment": "1.2.8",
   "workflows/maintenance/wipe-cache": "1.1.10",
   "workflows/maintenance/auto-rebase": "1.1.6",
-  "actions/java-gradle/auto-spotless": "1.1.11",
+  "actions/java-gradle/auto-spotless": "1.1.12",
   "actions/helper/verify-branch-name": "1.2.0",
   "actions/maintenance/auto-approve-pr": "1.2.0",
   "actions/rust/auto-format": "1.1.7",
