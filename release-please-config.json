@@ -146,6 +146,11 @@
       "release-type": "simple",
       "component": "actions-maintenance-ensure-actions-are-executed",
       "include-component-in-tag": true
+    },
+    "actions/common/render-template": {
+      "release-type": "simple",
+      "component": "actions-common-render-template",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
