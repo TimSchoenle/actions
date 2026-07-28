@@ -25,7 +25,7 @@ Any version not listed in the following tables is not supported.
 | [Delete-Branch](./actions/common/delete-branch) | [actions-common-delete-branch-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-delete-branch-v1.2.0) | :white_check_mark: |
 | [Get App Git Identity](./actions/common/get-app-git-identity) | [actions-common-get-app-git-identity-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-get-app-git-identity-v1.2.0) | :white_check_mark: |
 | [Render Template](./actions/common/render-template) | [actions-common-render-template-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-v1.0.0) | :white_check_mark: |
-| [Render Template And Commit](./actions/common/render-template-and-commit) | [actions-common-render-template-and-commit-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-and-commit-v1.0.0) | :white_check_mark: |
+| [Render Template And Commit](./actions/common/render-template-and-commit) | [actions-common-render-template-and-commit-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-and-commit-v1.1.0) | :white_check_mark: |
 | [Setup App Git Identity](./actions/common/setup-app-git-identity) | [actions-common-setup-app-git-identity-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-setup-app-git-identity-v1.2.0) | :white_check_mark: |
 
 ### Helm
@@ -63,7 +63,7 @@ Any version not listed in the following tables is not supported.
 | [Rust Auto-format](./actions/rust/auto-format) | [actions-rust-auto-format-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v1.1.7) | :white_check_mark: |
 | [Rust Cargo-check](./actions/rust/cargo-check) | [actions-rust-cargo-check-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.1.5) | :white_check_mark: |
 | [Rust Clippy](./actions/rust/clippy) | [actions-rust-clippy-v1.1.8](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-clippy-v1.1.8) | :white_check_mark: |
-| [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | [actions-rust-coverage-codecov-v1.1.31](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.31) | :white_check_mark: |
+| [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | [actions-rust-coverage-codecov-v1.1.32](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.32) | :white_check_mark: |
 | [Rust Test](./actions/rust/test) | [actions-rust-test-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.1) | :white_check_mark: |
 
 ### Test
