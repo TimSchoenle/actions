@@ -126,7 +126,7 @@ jobs:
         uses: ./actions/common/render-template
         with:
           template: README.hbs
-          output: README.md
+          output: out/README.md
           variables: ${{ matrix.variables }}
 
       - name: Assert Rendered Bytes
@@ -137,7 +137,7 @@ jobs:
           # real defect in a generated file and is invisible to a pattern match.
           printf '%s' "$EXPECTED" > expected.md
 
-          if ! diff -u expected.md README.md; then
+          if ! diff -u expected.md out/README.md; then
             echo "::error::Rendered output does not match the expected bytes."
             exit 1
           fi
@@ -150,7 +150,7 @@ jobs:
         run: |
           [ "$CHANGED" = "true" ] || { echo "::error::changed was '$CHANGED', expected true"; exit 1; }
 
-          ACTUAL=$(sha256sum README.md | cut -d' ' -f1)
+          ACTUAL=$(sha256sum out/README.md | cut -d' ' -f1)
           [ "$CHECKSUM" = "$ACTUAL" ] || { echo "::error::checksum '$CHECKSUM' does not match the file's '$ACTUAL'"; exit 1; }
           echo "✅ Outputs correct"
 
@@ -262,19 +262,19 @@ jobs:
         uses: ./actions/common/render-template
         with:
           template: README.hbs
-          output: README.md
+          output: out/README.md
           variables: '{"tags":["docs","ci","rust"]}'
 
       - name: Record Modification Time
         id: before
-        run: echo "mtime=$(stat -c %Y.%n README.md)" >> "$GITHUB_OUTPUT"
+        run: echo "mtime=$(stat -c %Y.%n out/README.md)" >> "$GITHUB_OUTPUT"
 
       - name: Second Render With The Same Inputs
         id: second
         uses: ./actions/common/render-template
         with:
           template: README.hbs
-          output: README.md
+          output: out/README.md
           variables: '{"tags":["docs","ci","rust"]}'
 
       - name: Third Render With The Keys Reordered
@@ -282,7 +282,7 @@ jobs:
         uses: ./actions/common/render-template
         with:
           template: README.hbs
-          output: README.md
+          output: out/README.md
           # The same set in a different order must render identically, or a reshuffled payload
           # produces a diff that is not a real change.
           variables: '{"tags":["rust","docs","ci"]}'
@@ -302,10 +302,10 @@ jobs:
           [ "$FIRST_CHECKSUM" = "$THIRD_CHECKSUM" ] || { echo "::error::checksum changed across identical renders"; exit 1; }
 
           # An unchanged file must not be rewritten, or anything keyed on its mtime is defeated.
-          AFTER_MTIME="$(stat -c %Y.%n README.md)"
+          AFTER_MTIME="$(stat -c %Y.%n out/README.md)"
           [ "$AFTER_MTIME" = "$BEFORE_MTIME" ] || { echo "::error::unchanged file was rewritten ($BEFORE_MTIME -> $AFTER_MTIME)"; exit 1; }
 
-          diff -u <(printf -- '- ci\n- docs\n- rust\n') README.md
+          diff -u <(printf -- '- ci\n- docs\n- rust\n') out/README.md
           echo "✅ Rendering is stable and idempotent"
 
   # The mode that makes this usable as a CI gate: verify a committed generated file is current,
@@ -328,20 +328,21 @@ jobs:
 
       - name: Set Up Template And A Current Output
         run: |
+          mkdir -p out
           printf '# {{ title }}\n' > README.hbs
-          printf '# Actions\n' > README.md
+          printf '# Actions\n' > out/README.md
 
       - name: Check A Current File
         id: current
         uses: ./actions/common/render-template
         with:
           template: README.hbs
-          output: README.md
+          output: out/README.md
           variables: '{"title":"Actions"}'
           check: true
 
       - name: Make The Output Stale
-        run: printf '# Actions\nhand-edited line\n' > README.md
+        run: printf '# Actions\nhand-edited line\n' > out/README.md
 
       - name: Check A Stale File
         id: stale
@@ -349,7 +350,7 @@ jobs:
         uses: ./actions/common/render-template
         with:
           template: README.hbs
-          output: README.md
+          output: out/README.md
           variables: '{"title":"Actions"}'
           check: true
 
@@ -375,7 +376,7 @@ jobs:
 
           # Check mode must never write: the stale content has to survive untouched, and the missing
           # file must not have been created.
-          diff -u <(printf '# Actions\nhand-edited line\n') README.md
+          diff -u <(printf '# Actions\nhand-edited line\n') out/README.md
           [ ! -e absent/README.md ] || { echo "::error::check mode created the output file"; exit 1; }
           echo "✅ Check mode verifies without writing"
 
@@ -456,23 +457,25 @@ jobs:
         uses: ./actions/common/render-template
         with:
           template: README.hbs
-          output: README.md
+          output: out/README.md
           variables: ${{ matrix.variables }}
           partials-dir: ${{ matrix.partials_dir || '' }}
 
+      # The output path deliberately sits under a directory the checkout does not create, so its
+      # absence is evidence the render wrote nothing rather than an artefact of the workspace.
       - name: Assert The Step Failed Without Writing
         env:
           OUTCOME: ${{ steps.render.outcome }}
         run: |
           if [ "$OUTCOME" != "failure" ]; then
             echo "::error::Expected the step to fail, but it succeeded."
-            [ -f README.md ] && cat README.md
+            [ -f out/README.md ] && cat out/README.md
             exit 1
           fi
 
-          if [ -e README.md ]; then
+          if [ -e out/README.md ]; then
             echo "::error::A failed render left an output file behind."
-            cat README.md
+            cat out/README.md
             exit 1
           fi
           echo "✅ Failed as expected, leaving no output behind"
@@ -502,13 +505,13 @@ jobs:
         uses: ./actions/common/render-template
         with:
           template: README.hbs
-          output: README.md
+          output: out/README.md
           variables: '{"repo":{"name":"actions"}}'
           strict: false
 
       - name: Assert Nothing Resolved
         run: |
-          diff -u <(printf '[][][][]') README.md
+          diff -u <(printf '[][][][]') out/README.md
           echo "✅ No prototype member was reachable from a template"
 
   # <<< generated: summary (run 'bun run generate-ci-required' to update)
