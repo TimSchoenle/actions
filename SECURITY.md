@@ -24,6 +24,7 @@ Any version not listed in the following tables is not supported.
 | [Create Pull Request](./actions/common/create-pull-request) | [actions-common-create-pull-request-v1.0.8](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-pull-request-v1.0.8) | :white_check_mark: |
 | [Delete-Branch](./actions/common/delete-branch) | [actions-common-delete-branch-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-delete-branch-v1.2.0) | :white_check_mark: |
 | [Get App Git Identity](./actions/common/get-app-git-identity) | [actions-common-get-app-git-identity-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-get-app-git-identity-v1.2.0) | :white_check_mark: |
+| [Render Template](./actions/common/render-template) | [actions-common-render-template-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-v1.0.0) | :white_check_mark: |
 | [Setup App Git Identity](./actions/common/setup-app-git-identity) | [actions-common-setup-app-git-identity-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-setup-app-git-identity-v1.2.0) | :white_check_mark: |
 
 ### Helm
