@@ -29,6 +29,7 @@ on:
       - Verify Action Common Modify YAML
       - Verify Action Common Read YAML
       - Verify Action Common Render Template
+      - Verify Action Common Render Template And Commit
       - Verify Bun Setup Cached
       - Verify Common Close Pull Request
       - Verify Common Commit Changes
