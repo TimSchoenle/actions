@@ -50,7 +50,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Helper Verify-branch-name](./actions/helper/verify-branch-name) | Verify the head branch of a pull request matches a pattern and check whether it comes from a fork | [actions-helper-verify-branch-name-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-branch-name-v1.2.1) | `uses: TimSchoenle/actions/actions/helper/verify-branch-name@actions-helper-verify-branch-name-v1.2.1 # tag=actions-helper-verify-branch-name-v1.2.1` |
+| [Helper Verify-branch-name](./actions/helper/verify-branch-name) | Verify the head branch of a pull request matches a pattern and check whether it comes from a fork | [actions-helper-verify-branch-name-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-branch-name-v1.2.1) | `uses: TimSchoenle/actions/actions/helper/verify-branch-name@0d02dddf74bb1bcf66302bb8d3a73ab09e822d6d # tag=actions-helper-verify-branch-name-v1.2.1` |
 | [Resolve Branch](./actions/helper/resolve-base-branch) | Resolve the given base branch or return default branch. With optional existence check. | [actions-helper-resolve-base-branch-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-resolve-base-branch-v1.2.0) | `uses: TimSchoenle/actions/actions/helper/resolve-base-branch@b0e2075dffded29db35c98ceb6065c201bda77ca # tag=actions-helper-resolve-base-branch-v1.2.0` |
 | [Verify Commit Authors](./actions/helper/verify-commit-authors) | Verifies that all commits in a PR are authored by a specific set of users and are signed. | [actions-helper-verify-commit-authors-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v1.2.0) | `uses: TimSchoenle/actions/actions/helper/verify-commit-authors@3104aa1e1eeed9be86d066b60b0799923e830f3b # tag=actions-helper-verify-commit-authors-v1.2.0` |
 
@@ -65,7 +65,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | Auto approve Pull Requests with the given user ids and branches. | [actions-maintenance-auto-approve-pr-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.2.0) | `uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@4858d2ecc17b70cfb529ab3e6414ff6dc0c36476 # tag=actions-maintenance-auto-approve-pr-v1.2.0` |
+| [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | Auto approve Pull Requests with the given user ids and branches. | [actions-maintenance-auto-approve-pr-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.2.1) | `uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@actions-maintenance-auto-approve-pr-v1.2.1 # tag=actions-maintenance-auto-approve-pr-v1.2.1` |
 | [Maintenance Ensure-actions-are-executed](./actions/maintenance/ensure-actions-are-executed) | Ensures selected checks completed successfully when they were started. | [actions-maintenance-ensure-actions-are-executed-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v1.2.0) | `uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@682f47366b471f0844aa63c585d743c15e9a88ae # tag=actions-maintenance-ensure-actions-are-executed-v1.2.0` |
 
 ### Rust
