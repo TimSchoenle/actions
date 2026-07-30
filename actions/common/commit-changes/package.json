@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@fast-check/vitest": "0.4.1",
-    "@types/node": "26.1.1",
+    "@types/node": "26.1.2",
     "fast-check": "4.9.0",
     "typescript": "6.0.3",
     "vitest": "4.1.10"
