@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.1](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.2.0...actions-helper-verify-commit-authors-v1.2.1) (2026-07-31)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26.1.2 ([#1286](https://github.com/TimSchoenle/actions/issues/1286)) ([16b9314](https://github.com/TimSchoenle/actions/commit/16b9314d882c59ccb836721935f0ae99a7ee7a51))
+
+
+### Dependencies
+
+* **deps:** lock file maintenance ([#1261](https://github.com/TimSchoenle/actions/issues/1261)) ([7ed82a2](https://github.com/TimSchoenle/actions/commit/7ed82a26b7944eff27b69f8482a13a21c128b036))
+
 ## [1.2.0](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.1.28...actions-helper-verify-commit-authors-v1.2.0) (2026-07-16)
 
 
