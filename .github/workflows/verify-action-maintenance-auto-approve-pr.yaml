@@ -62,7 +62,7 @@ jobs:
 
       - name: Get Bot User ID
         id: bot_identity
-        uses: TimSchoenle/actions/actions/common/get-app-git-identity@07e9298bba4111664a38699e4f35c94e1e0e7ac6 # tag=actions-common-get-app-git-identity-v1.2.0
+        uses: TimSchoenle/actions/actions/common/get-app-git-identity@ec69d3449f11a8291934cf11a9ef57f72a423376 # tag=actions-common-get-app-git-identity-v1.2.1
         with:
           token: ${{ steps.setup.outputs.token }}
           app-slug: ${{ steps.setup.outputs.app_slug }}
@@ -285,7 +285,7 @@ jobs:
 
       - name: Get Bot User ID
         id: bot_identity
-        uses: TimSchoenle/actions/actions/common/get-app-git-identity@07e9298bba4111664a38699e4f35c94e1e0e7ac6 # tag=actions-common-get-app-git-identity-v1.2.0
+        uses: TimSchoenle/actions/actions/common/get-app-git-identity@ec69d3449f11a8291934cf11a9ef57f72a423376 # tag=actions-common-get-app-git-identity-v1.2.1
         with:
           token: ${{ steps.setup.outputs.token }}
           app-slug: ${{ steps.setup.outputs.app_slug }}
@@ -473,7 +473,7 @@ jobs:
 
       - name: Get Bot User ID
         id: bot_identity
-        uses: TimSchoenle/actions/actions/common/get-app-git-identity@07e9298bba4111664a38699e4f35c94e1e0e7ac6 # tag=actions-common-get-app-git-identity-v1.2.0
+        uses: TimSchoenle/actions/actions/common/get-app-git-identity@ec69d3449f11a8291934cf11a9ef57f72a423376 # tag=actions-common-get-app-git-identity-v1.2.1
         with:
           token: ${{ steps.setup.outputs.token }}
           app-slug: ${{ steps.setup.outputs.app_slug }}
