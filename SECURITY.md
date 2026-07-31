@@ -26,7 +26,7 @@ Any version not listed in the following tables is not supported.
 | [Get App Git Identity](./actions/common/get-app-git-identity) | [actions-common-get-app-git-identity-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-get-app-git-identity-v1.2.1) | :white_check_mark: |
 | [Render Template](./actions/common/render-template) | [actions-common-render-template-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-v1.0.0) | :white_check_mark: |
 | [Render Template And Commit](./actions/common/render-template-and-commit) | [actions-common-render-template-and-commit-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-and-commit-v1.1.0) | :white_check_mark: |
-| [Setup App Git Identity](./actions/common/setup-app-git-identity) | [actions-common-setup-app-git-identity-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-setup-app-git-identity-v1.2.0) | :white_check_mark: |
+| [Setup App Git Identity](./actions/common/setup-app-git-identity) | [actions-common-setup-app-git-identity-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-setup-app-git-identity-v1.2.1) | :white_check_mark: |
 
 ### Helm
 
