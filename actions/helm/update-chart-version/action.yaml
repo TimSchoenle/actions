@@ -86,7 +86,7 @@ runs:
 
     - name: Read Current Version
       id: read-version
-      uses: TimSchoenle/actions/actions/common/read-yaml@661cb62b2faddd36e66e0cfb815679c6f897f2e6 # tag=actions-common-read-yaml-v1.1.1
+      uses: TimSchoenle/actions/actions/common/read-yaml@7c23161e06ceb38f27b43d037ba1ac118cdb3aa4 # tag=actions-common-read-yaml-v1.1.2
       with:
         file: ${{ inputs.chart-path }}/Chart.yaml
         key: version
