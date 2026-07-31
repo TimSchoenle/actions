@@ -85,7 +85,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@5373ad973e0bf692b19771bf68f201237a7ad1f1 # tag=actions-common-commit-changes-v1.2.0
+        uses: TimSchoenle/actions/actions/common/commit-changes@990f592db0d2b0ebc3842d6bbf636a9a4638b070 # tag=actions-common-commit-changes-v1.2.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -273,7 +273,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@5373ad973e0bf692b19771bf68f201237a7ad1f1 # tag=actions-common-commit-changes-v1.2.0
+        uses: TimSchoenle/actions/actions/common/commit-changes@990f592db0d2b0ebc3842d6bbf636a9a4638b070 # tag=actions-common-commit-changes-v1.2.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -413,7 +413,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@5373ad973e0bf692b19771bf68f201237a7ad1f1 # tag=actions-common-commit-changes-v1.2.0
+        uses: TimSchoenle/actions/actions/common/commit-changes@990f592db0d2b0ebc3842d6bbf636a9a4638b070 # tag=actions-common-commit-changes-v1.2.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -539,7 +539,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@5373ad973e0bf692b19771bf68f201237a7ad1f1 # tag=actions-common-commit-changes-v1.2.0
+        uses: TimSchoenle/actions/actions/common/commit-changes@990f592db0d2b0ebc3842d6bbf636a9a4638b070 # tag=actions-common-commit-changes-v1.2.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -673,7 +673,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@5373ad973e0bf692b19771bf68f201237a7ad1f1 # tag=actions-common-commit-changes-v1.2.0
+        uses: TimSchoenle/actions/actions/common/commit-changes@990f592db0d2b0ebc3842d6bbf636a9a4638b070 # tag=actions-common-commit-changes-v1.2.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
