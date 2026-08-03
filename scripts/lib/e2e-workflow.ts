@@ -43,7 +43,7 @@ export const PINNED = {
   // `setup-cached` pins internally, because the two halves have to agree on the cache format.
   setupBunOnly: 'oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0',
   cache: 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0',
-  cacheRestore: 'actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6',
+  cacheRestore: 'actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0',
 } as const;
 
 /** The scratch repository every case mutates. */
