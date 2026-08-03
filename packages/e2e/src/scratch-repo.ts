@@ -4,8 +4,29 @@ import { errorMessage, hasStatus, parseRepository, resolveOptional } from 'actio
 import { createOctokit } from 'actions-util/client';
 import { readAfterWrite } from 'actions-util/read-after-write';
 
+import { Workspace } from './workspace.js';
+
+import type { WorkspaceFiles } from './workspace.js';
+
 /** Token used for every API call the harness makes; a fine-grained PAT is enough locally. */
 const TOKEN_ENV = 'E2E_GITHUB_TOKEN';
+
+/**
+ * Token for a *second* identity, needed only where GitHub refuses to let one account act on itself.
+ *
+ * Approving a pull request is the case: GitHub rejects a review by its own author, so
+ * `auto-approve-pr` cannot be exercised with the token that opened the fixture.
+ */
+const SECONDARY_TOKEN_ENV = 'E2E_GITHUB_TOKEN_SECONDARY';
+
+/**
+ * Slug of the GitHub App behind each token, when one minted it.
+ *
+ * Set by the generated workflows from `create-github-app-token`'s `app-slug` output. Absent locally,
+ * where a personal token identifies itself through `GET /user` instead.
+ */
+const APP_SLUG_ENV = 'E2E_APP_SLUG';
+const SECONDARY_APP_SLUG_ENV = 'E2E_APP_SLUG_SECONDARY';
 
 /** Repository the cases mutate. Nothing in it is expected to survive a run. */
 const REPOSITORY_ENV = 'E2E_TEST_REPOSITORY';
@@ -27,6 +48,15 @@ const UNPROCESSABLE = 422;
 const CONVERGENCE_DELAYS_MS = [500, 1_000, 2_000, 4_000];
 
 const sleep = (milliseconds: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+/** GitHub's ceiling on `per_page`; the scratch repository never approaches it. */
+const MAX_PAGE_SIZE = 100;
+
+/** The lifecycle states a check run can be created in. */
+export type CheckStatus = 'queued' | 'in_progress' | 'completed';
+
+/** The outcomes a completed check run can report. */
+export type CheckConclusion = 'success' | 'failure' | 'neutral' | 'cancelled' | 'skipped' | 'timed_out';
 
 /**
  * Whether a failed `deleteRef` means the ref was already gone.
@@ -123,6 +153,49 @@ export class ScratchRepo {
       process.env[REPOSITORY_ENV] ?? DEFAULT_REPOSITORY,
       process.env[TOKEN_ENV] ?? '',
     );
+  }
+
+  /**
+   * The token of the second identity, for a case that cannot use the first.
+   *
+   * @throws {E2eConfigurationError} when it is not configured, rather than falling back to the
+   * primary token — a silent fallback would turn "GitHub refused a self-review" into a confusing
+   * assertion failure about a missing approval.
+   */
+  get secondaryToken(): string {
+    const token = process.env[SECONDARY_TOKEN_ENV] ?? '';
+
+    if (token === '') {
+      throw new E2eConfigurationError(
+        `${SECONDARY_TOKEN_ENV} is not set. This case needs a second identity because GitHub refuses ` +
+          'to let an account review its own pull request.',
+      );
+    }
+
+    return token;
+  }
+
+  /**
+   * The numeric id of the account behind a token, which several actions match authors against.
+   *
+   * `GET /user` only answers for a user token. In CI the token is a GitHub App *installation* token,
+   * which that endpoint rejects with 403 "Resource not accessible by integration" — so when the
+   * workflow tells us which app minted it, the bot user is resolved by name instead. Both paths
+   * return the id of the account whose commits the fixtures will carry.
+   */
+  async accountId(token: string = this.token): Promise<number> {
+    const slug = token === this.token ? process.env[APP_SLUG_ENV] : process.env[SECONDARY_APP_SLUG_ENV];
+    const octokit = createOctokit(token);
+
+    if (slug !== undefined && slug !== '') {
+      const { data } = await octokit.rest.users.getByUsername({ username: `${slug}[bot]` });
+
+      return data.id;
+    }
+
+    const { data } = await octokit.rest.users.getAuthenticated();
+
+    return data.id;
   }
 
   /** Reserves a branch name for a case and schedules it for teardown. */
@@ -244,6 +317,125 @@ export class ScratchRepo {
     await this.headOf(branch, sha);
 
     return sha;
+  }
+
+  /**
+   * Clones a branch into a working tree, for an action that shells out to git.
+   *
+   * `commit-changes` reads `git status --porcelain` to decide what to commit, so its cases need a
+   * real repository rather than a directory of files. The fetch is shallow and single-branch: the
+   * scratch repository's history is of no interest, and the cases only ever touch one ref.
+   */
+  async checkout(branch: string, files: WorkspaceFiles = {}): Promise<Workspace> {
+    const workspace = await Workspace.create();
+
+    try {
+      await workspace.initGit(branch);
+      await workspace.git(['fetch', '--depth=1', '--no-tags', `https://github.com/${this.repository}.git`, branch], {
+        authToken: this.token,
+      });
+      await workspace.git(['checkout', '--quiet', '-B', branch, 'FETCH_HEAD']);
+      await workspace.write(files);
+
+      return workspace;
+    } catch (error) {
+      await workspace.dispose();
+      throw error;
+    }
+  }
+
+  /** Opens a pull request and schedules it for teardown. */
+  async createPullRequest(head: string, base: string, title: string, body = ''): Promise<number> {
+    const { data } = await this.octokit.rest.pulls.create({
+      owner: this.owner,
+      repo: this.repo,
+      head,
+      base,
+      title,
+      body,
+    });
+
+    this.pullRequests.add(data.number);
+
+    return data.number;
+  }
+
+  /** Reads a pull request, for asserting on what an action did to it. */
+  async pullRequest(number: number): Promise<{
+    state: string;
+    merged: boolean;
+    title: string;
+    body: string | null;
+    labels: string[];
+    head: string;
+    base: string;
+  }> {
+    const { data } = await this.octokit.rest.pulls.get({ owner: this.owner, repo: this.repo, pull_number: number });
+
+    return {
+      state: data.state,
+      merged: data.merged,
+      title: data.title,
+      body: data.body,
+      labels: data.labels.map((label) => label.name),
+      head: data.head.ref,
+      base: data.base.ref,
+    };
+  }
+
+  /** The review states left on a pull request, in the order they were submitted. */
+  async reviewStates(number: number): Promise<string[]> {
+    const { data } = await this.octokit.rest.pulls.listReviews({
+      owner: this.owner,
+      repo: this.repo,
+      pull_number: number,
+      per_page: MAX_PAGE_SIZE,
+    });
+
+    return data.map((review) => review.state);
+  }
+
+  /** The review bodies on a pull request, for asserting on the message an approval carried. */
+  async reviewBodies(number: number): Promise<string[]> {
+    const { data } = await this.octokit.rest.pulls.listReviews({
+      owner: this.owner,
+      repo: this.repo,
+      pull_number: number,
+      per_page: MAX_PAGE_SIZE,
+    });
+
+    return data.map((review) => review.body);
+  }
+
+  /** The comment bodies on a pull request, which is how several actions report what they did. */
+  async issueComments(number: number): Promise<string[]> {
+    const { data } = await this.octokit.rest.issues.listComments({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: number,
+      per_page: MAX_PAGE_SIZE,
+    });
+
+    return data.map((comment) => comment.body ?? '');
+  }
+
+  /**
+   * Publishes a check run against a commit, as a fixture for the actions that read them.
+   *
+   * `ensure-actions-are-executed` decides whether a required check ran and succeeded, so its cases
+   * need check runs in every state — including a queued one that never completes.
+   */
+  async createCheckRun(sha: string, name: string, status: CheckStatus, conclusion?: CheckConclusion): Promise<number> {
+    const { data } = await this.octokit.rest.checks.create({
+      owner: this.owner,
+      repo: this.repo,
+      head_sha: sha,
+      name,
+      status,
+      ...(conclusion === undefined ? {} : { conclusion }),
+    });
+
+    return data.id;
   }
 
   /** Closes every tracked pull request, describing the ones that would not close. */

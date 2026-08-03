@@ -10,9 +10,26 @@ export const SUPPORTED_RUNTIME = 'node20';
 export interface ActionInputDeclaration {
   name: string;
   required: boolean;
-  /** The `default:` from `action.yaml`, applied by the runner when the caller supplies no value. */
+  /**
+   * The `default:` from `action.yaml`, applied by the runner when the caller supplies no value.
+   *
+   * Absent when the default is context-dependent; see {@link contextDefault}.
+   */
   default?: string;
+  /**
+   * The raw default when it is a workflow expression, e.g. `${{ github.repository }}`.
+   *
+   * The runner evaluates these against a context the harness has no access to — there is no event
+   * payload, no `github.head_ref`. Applying such a default literally would hand the action the
+   * string `${{ github.repository }}`, which it would then use as a repository name. Recording it
+   * separately lets {@link ActionInputDeclaration} be honest about the value being unavailable, so a
+   * case is made to supply it explicitly.
+   */
+  contextDefault?: string;
 }
+
+/** Marks a default the runner evaluates as an expression rather than passing through verbatim. */
+const EXPRESSION = /\$\{\{/;
 
 /** An `action.yaml` reduced to the contract the harness has to honour. */
 export interface ActionManifest {
@@ -58,11 +75,14 @@ function parseInputs(runs: Record<string, unknown> | undefined): Map<string, Act
 
   for (const [name, raw] of Object.entries(runs ?? {})) {
     const declaration = asRecord(raw) ?? {};
+    const value = readDefault(declaration);
+    const isExpression = value !== undefined && EXPRESSION.test(value);
 
     inputs.set(name, {
       name,
       required: declaration['required'] === true,
-      default: readDefault(declaration),
+      default: isExpression ? undefined : value,
+      contextDefault: isExpression ? value : undefined,
     });
   }
 

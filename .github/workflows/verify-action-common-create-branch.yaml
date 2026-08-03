@@ -1,15 +1,15 @@
+# GENERATED — do not edit by hand. Run `bun run generate-e2e-workflows` to rebuild this file
+# from the actions that have an `e2e/` directory. The drift test in CI fails if it is out of date.
+#
+# The cases live in `actions/common/create-branch/e2e/` and are ordinary vitest files. This
+# workflow supplies only what they cannot get on a laptop: a token scoped to the scratch repository.
 name: Verify Common Create-branch
-
-# The cases themselves live in `actions/common/create-branch/e2e/` and are ordinary vitest files.
-# This workflow only supplies what they cannot get on a laptop: a token scoped to the scratch
-# repository. Everything else — fixtures, assertions, teardown — is TypeScript, and runs the same way
-# under `bun run e2e`.
 
 on:
   push:
     branches:
       - main
-      - 'feature/actions/common/create-branch'
+      - 'feature/common/create-branch'
     paths:
       - 'actions/common/create-branch/**'
       - 'packages/e2e/**'
@@ -26,11 +26,6 @@ concurrency:
   cancel-in-progress: true
 
 permissions: {}
-
-env:
-  TEST_OWNER: TimSchoenle
-  TEST_REPO_NAME: actions-testing
-  TEST_REPO: TimSchoenle/actions-testing
 
 jobs:
   e2e:
@@ -63,17 +58,21 @@ jobs:
 
       - name: Generate Token
         id: token
-        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          owner: ${{ env.TEST_OWNER }}
-          repositories: ${{ env.TEST_REPO_NAME }}
+          owner: TimSchoenle
+          repositories: actions-testing
+          permission-contents: write
 
       - name: Run End-to-end Cases
         env:
           E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
-          E2E_TEST_REPOSITORY: ${{ env.TEST_REPO }}
+          # An installation token cannot call `GET /user`, so the suite resolves its own account by
+          # app slug instead. Without this a case matching commit authors fails only in CI.
+          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
+          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
         run: bun run e2e actions/common/create-branch
 
   # <<< generated: summary (run 'bun run generate-ci-required' to update)

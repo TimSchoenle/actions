@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -8,11 +8,13 @@ import { loadActionManifest } from './action-manifest.js';
 import { parseFileCommands } from './github-file-commands.js';
 import { resolveRuntime } from './runtime.js';
 import { parseWorkflowCommands, redact } from './workflow-commands.js';
+import { Workspace } from './workspace.js';
 
 import type { ProvidedInputs } from './action-inputs.js';
 import type { ActionManifest } from './action-manifest.js';
 import type { ActionRuntime } from './runtime.js';
 import type { WorkflowCommands } from './workflow-commands.js';
+import type { WorkspaceFiles } from './workspace.js';
 
 /** Which build of the action to execute. */
 export type ActionEntry = 'dist' | 'source';
@@ -35,6 +37,9 @@ const REPORT_LOG_LINES = 40;
  */
 const INHERITED_ENV = new Set([
   'PATH',
+  // Windows-only, and load-bearing there: `@actions/exec` resolves an executable by trying each
+  // PATHEXT suffix, so without it `git` is looked up as an extensionless file and never found.
+  'PATHEXT',
   'HOME',
   'USERPROFILE',
   'SYSTEMROOT',
@@ -65,6 +70,16 @@ export interface RunActionOptions<TInput extends string> {
   env?: Readonly<Record<string, string>>;
   /** Values to redact from any failure report, on top of whatever the action masks itself. */
   secrets?: readonly string[];
+  /**
+   * Workspace to run in, for an action that reads or writes files.
+   *
+   * The caller owns it and is responsible for disposing of it, which is what lets several runs share
+   * one working tree — `commit-changes` is asserted on by running it twice over the same checkout.
+   * Omitted, the harness creates an empty one and removes it afterwards.
+   */
+  workspace?: Workspace;
+  /** Fixture files written into the workspace before the run, keyed by relative path. */
+  files?: WorkspaceFiles;
   timeoutMs?: number;
 }
 
@@ -233,11 +248,17 @@ export async function runAction<TInput extends string, TOutput extends string>(
   const executable = resolveRuntime(runtime);
 
   const scratch = await mkdtemp(path.join(tmpdir(), 'actions-e2e-'));
-  const workspace = path.join(scratch, 'workspace');
+  // A caller-supplied workspace is the caller's to dispose of; one created here is not, so the two
+  // are tracked separately and only the second is cleaned up below.
+  const ownedWorkspace = options.workspace === undefined ? await Workspace.create() : undefined;
+  const workspace = (options.workspace ?? ownedWorkspace)?.path ?? '';
   const expected = options.expect ?? 'success';
 
   try {
-    await mkdir(workspace, { recursive: true });
+    if (options.files !== undefined) {
+      await (options.workspace ?? ownedWorkspace)?.write(options.files);
+    }
+
     const commandFiles = await prepareCommandFiles(scratch);
 
     const env: Record<string, string> = {
@@ -283,6 +304,7 @@ export async function runAction<TInput extends string, TOutput extends string>(
   } finally {
     if (process.env[KEEP_WORKSPACE_ENV] === undefined) {
       await rm(scratch, { recursive: true, force: true });
+      await ownedWorkspace?.dispose();
     }
   }
 }

@@ -54,6 +54,27 @@ runs:
     expect(parsed.inputs.get('count')?.default).toBe('0');
   });
 
+  it('keeps a workflow-expression default out of the applicable defaults', () => {
+    const parsed = parseActionManifest(
+      manifest(`inputs:
+  repository:
+    description: 'Repository'
+    default: \${{ github.repository }}
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
+`),
+      DIRECTORY,
+    );
+
+    expect(parsed.inputs.get('repository')).toEqual({
+      name: 'repository',
+      required: false,
+      default: undefined,
+      contextDefault: '${{ github.repository }}',
+    });
+  });
+
   it('refuses a composite action, naming the runtime it found', () => {
     const parse = (): unknown => parseActionManifest(manifest("runs:\n  using: 'composite'\n  steps: []\n"), DIRECTORY);
 

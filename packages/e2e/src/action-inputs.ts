@@ -78,6 +78,7 @@ export function resolveInputEnv<TInput extends string>(
 
   const env: Record<string, string> = {};
   const missing: string[] = [];
+  const unresolved: string[] = [];
 
   for (const declaration of manifest.inputs.values()) {
     const omitted = declaration.name in provided && provided[declaration.name as TInput] === undefined;
@@ -89,13 +90,23 @@ export function resolveInputEnv<TInput extends string>(
     const value = provided[declaration.name as TInput] ?? declaration.default;
 
     if (value === undefined) {
-      if (declaration.required) {
+      if (declaration.contextDefault !== undefined) {
+        unresolved.push(`${declaration.name} (default: ${declaration.contextDefault})`);
+      } else if (declaration.required) {
         missing.push(declaration.name);
       }
       continue;
     }
 
     env[inputEnvName(declaration.name)] = value;
+  }
+
+  if (unresolved.length > 0) {
+    throw new InputContractError(
+      `Input(s) of ${manifest.directory}/action.yaml default to a workflow expression, which no case can ` +
+        `reproduce: ${unresolved.sort().join(', ')}. Supply the value the workflow would have resolved, ` +
+        'or `undefined` to assert the action’s behaviour without it.',
+    );
   }
 
   if (missing.length > 0) {

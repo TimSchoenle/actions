@@ -65,6 +65,20 @@ describe('resolveInputEnv', () => {
     expect(env).not.toHaveProperty('INPUT_TOKEN');
   });
 
+  it('refuses to pass a workflow-expression default through as a literal', () => {
+    const manifest = manifestWith("  repository:\n    description: 'Repo'\n    default: ${{ github.repository }}\n");
+    const resolve = (): unknown => resolveInputEnv(manifest, {});
+
+    expect(resolve).toThrow(InputContractError);
+    expect(resolve).toThrow(/repository \(default: \$\{\{ github\.repository \}\}\)/);
+  });
+
+  it('accepts a workflow-expression default once the case supplies the value', () => {
+    const manifest = manifestWith("  repository:\n    description: 'Repo'\n    default: ${{ github.repository }}\n");
+
+    expect(resolveInputEnv(manifest, { repository: 'owner/repo' })).toEqual({ INPUT_REPOSITORY: 'owner/repo' });
+  });
+
   it('rejects an action whose inputs collide on one environment variable', () => {
     const manifest = manifestWith("  'a b':\n    description: 'One'\n  a_b:\n    description: 'Two'\n");
 

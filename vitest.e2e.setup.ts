@@ -8,5 +8,11 @@ import { assertE2eConfigured } from './packages/e2e/src/scratch-repo.js';
  * failure this suite exists to prevent.
  */
 export function setup(): void {
-  assertE2eConfigured();
+  // Locally this stays quiet, so the cases that need no credentials at all — `read-yaml` and
+  // `modify-yaml` only touch the filesystem — can be run without minting a token. In CI a missing
+  // token is a configuration failure and must stop the run before a single file loads; the suites
+  // that do reach GitHub would otherwise be the only thing reporting it, one error at a time.
+  if (process.env['CI'] !== undefined) {
+    assertE2eConfigured();
+  }
 }

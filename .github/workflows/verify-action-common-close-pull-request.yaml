@@ -1,17 +1,23 @@
-﻿name: Verify Common Close Pull Request
+# GENERATED — do not edit by hand. Run `bun run generate-e2e-workflows` to rebuild this file
+# from the actions that have an `e2e/` directory. The drift test in CI fails if it is out of date.
+#
+# The cases live in `actions/common/close-pull-request/e2e/` and are ordinary vitest files. This
+# workflow supplies only what they cannot get on a laptop: a token scoped to the scratch repository.
+name: Verify Common Close-pull-request
 
 on:
   push:
     branches:
       - main
+      - 'feature/common/close-pull-request'
     paths:
       - 'actions/common/close-pull-request/**'
+      - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-close-pull-request.yaml'
   pull_request:
-    branches:
-      - main
     paths:
       - 'actions/common/close-pull-request/**'
+      - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-close-pull-request.yaml'
   workflow_dispatch:
 
@@ -19,237 +25,63 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read # to read content
-
-env:
-  TEST_OWNER: TimSchoenle
-  TEST_REPO_NAME: actions-testing
-  TEST_REPO: TimSchoenle/actions-testing
-  TEST_ID: close-pr-test-${{ github.run_number }}-${{ github.run_attempt }}
+permissions: {}
 
 jobs:
-  test-close-pr:
+  e2e:
     environment:
       name: ci-e2e
       deployment: false
-    name: Test Close PR
+    name: End-to-end
     runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
           egress-policy: audit
 
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
+          persist-credentials: false
 
-      - name: Create Test Content
-        run: |
-          mkdir -p test-close-pr
-          echo "Test content for closing PR $TEST_ID" > test-close-pr/file.txt
-          date >> test-close-pr/file.txt
+      # The cases run `dist/index.js`, the bundle GitHub itself would run, so nothing is built here.
+      # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
+      # it to 'latest', which would win otherwise.
+      - name: Setup Bun
+        uses: TimSchoenle/actions/actions/bun/setup-cached@cbdcf6fd08b46059064bc9c91efa6b610a9ee7db # tag=actions-bun-setup-cached-v1.1.10
+        with:
+          bun-version: ''
+          bun-version-file: '.bun-version'
 
-      - name: Create PR to Close
-        id: create-pr
-        uses: TimSchoenle/actions/actions/common/create-pull-request@2d46b820a55e210c75dece9ec14c419cd8a9c559 # tag=actions-common-create-pull-request-v1.0.10
+      - name: Generate Token
+        id: token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/close-pr/${{ env.TEST_ID }}
-          title: '[TEST-CLOSE-PR] To Be Closed - ${{ env.TEST_ID }}'
-          body: |
-            **Test PR: Close Me**
-            This PR is created to test the close-pull-request action.
-            Test ID: `${{ env.TEST_ID }}`
-          commit_message: 'test: create pr to close (${{ env.TEST_ID }})'
-          file_pattern: 'test-close-pr/file.txt'
+          owner: TimSchoenle
+          repositories: actions-testing
+          permission-contents: write
+          permission-pull-requests: write
 
-      - name: Run close-pull-request
-        id: test-action
-        uses: ./tmp/actions-code/actions/common/close-pull-request
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          pull_request_id: ${{ steps.create-pr.outputs.pr_number }}
-
-      - name: Verify PR Creation
-        if: steps.create-pr.outcome == 'failure'
-        run: |
-          echo "::error::Failed to create PR, cannot proceed with close test"
-          exit 1
-
-      - name: Verify PR Closed
-        shell: bash
+      - name: Run End-to-end Cases
         env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          PR_NUMBER: ${{ steps.create-pr.outputs.pr_number }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-        run: |
-          STATE=$(gh pr view "$PR_NUMBER" --repo "$TEST_REPO" --json state --jq '.state')
-          if [ "$STATE" != "CLOSED" ]; then
-            echo "::error::PR should be CLOSED, but is $STATE"
-            exit 1
-          fi
-          echo "✅ PR #$PR_NUMBER is successfully CLOSED"
-
-      - name: Verify Output
-        if: success()
-        env:
-          CLOSED_OUTPUT: ${{ steps.test-action.outputs.closed }}
-        run: |
-          if [ "$CLOSED_OUTPUT" != "true" ]; then
-            echo "::error::Output 'closed' should be 'true'"
-            exit 1
-          fi
-
-      - name: Cleanup Test Artifacts
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@ed9d34e3034a8631d4bf462baa093eb20bb4b7d3 # tag=actions-common-delete-branch-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: 'test/close-pr/${{ env.TEST_ID }}'
-
-  test-close-pr-not-found:
-    environment:
-      name: ci-e2e
-      deployment: false
-    name: Test Close Non-Existing PR
-    runs-on: ubuntu-latest
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
-        with:
-          egress-policy: audit
-
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
-        with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
-
-      - name: Run close-pull-request (Non-Existing)
-        id: test-action
-        uses: ./tmp/actions-code/actions/common/close-pull-request
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          pull_request_id: '999999999' # Likely non-existing ID
-
-  test-close-pr-with-comment:
-    environment:
-      name: ci-e2e
-      deployment: false
-    name: Test Close PR with Custom Comment
-    runs-on: ubuntu-latest
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
-        with:
-          egress-policy: audit
-
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
-        with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
-
-      - name: Create Test Content
-        run: |
-          mkdir -p test-close-pr-comment
-          echo "Test content for closing PR with comment $TEST_ID" > test-close-pr-comment/file.txt
-          date >> test-close-pr-comment/file.txt
-
-      - name: Create PR to Close
-        id: create-pr
-        uses: TimSchoenle/actions/actions/common/create-pull-request@2d46b820a55e210c75dece9ec14c419cd8a9c559 # tag=actions-common-create-pull-request-v1.0.10
-        with:
-          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/close-pr-comment/${{ env.TEST_ID }}
-          title: '[TEST-CLOSE-PR] To Be Closed with Comment - ${{ env.TEST_ID }}'
-          body: |
-            **Test PR: Close Me**
-            This PR is created to test the close-pull-request action with a custom comment.
-            Test ID: `${{ env.TEST_ID }}`
-          commit_message: 'test: create pr to close with comment (${{ env.TEST_ID }})'
-          file_pattern: 'test-close-pr-comment/file.txt'
-
-      - name: Run close-pull-request
-        id: test-action
-        uses: ./tmp/actions-code/actions/common/close-pull-request
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          pull_request_id: ${{ steps.create-pr.outputs.pr_number }}
-          comment: 'Custom closing comment for ${{ env.TEST_ID }}'
-
-      - name: Verify PR Closed and Comment
-        shell: bash
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          PR_NUMBER: ${{ steps.create-pr.outputs.pr_number }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-          TEST_ID: ${{ env.TEST_ID }}
-        run: |
-          # Verify State
-          STATE=$(gh pr view "$PR_NUMBER" --repo "$TEST_REPO" --json state --jq '.state')
-          if [ "$STATE" != "CLOSED" ]; then
-            echo "::error::PR should be CLOSED, but is $STATE"
-            exit 1
-          fi
-
-          # Verify Comment
-          # We need to fetch comments. gh pr view --json comments includes body of comments.
-          COMMENTS=$(gh pr view "$PR_NUMBER" --repo "$TEST_REPO" --json comments --jq '.comments[].body')
-          EXPECTED_COMMENT="Custom closing comment for $TEST_ID"
-
-          if ! echo "$COMMENTS" | grep -q "$EXPECTED_COMMENT"; then
-            echo "::error::PR comments did not contain expected text: $EXPECTED_COMMENT"
-            echo "Actual comments:"
-            echo "$COMMENTS"
-            exit 1
-          fi
-
-          echo "✅ PR #$PR_NUMBER closed with expected comment"
-
-      - name: Cleanup Test Artifacts
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@ed9d34e3034a8631d4bf462baa093eb20bb4b7d3 # tag=actions-common-delete-branch-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: 'test/close-pr-comment/${{ env.TEST_ID }}'
+          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          # An installation token cannot call `GET /user`, so the suite resolves its own account by
+          # app slug instead. Without this a case matching commit authors fails only in CI.
+          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
+          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+        run: bun run e2e actions/common/close-pull-request
 
   # <<< generated: summary (run 'bun run generate-ci-required' to update)
   summary:
-    name: 'CI Summary: Common Close Pull Request'
+    name: 'CI Summary: Common Close-pull-request'
     if: ${{ always() }}
     needs:
-      - test-close-pr
-      - test-close-pr-not-found
-      - test-close-pr-with-comment
+      - e2e
     runs-on: ubuntu-latest
     permissions: {}
     steps:

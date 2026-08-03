@@ -1,16 +1,25 @@
+# GENERATED — do not edit by hand. Run `bun run generate-e2e-workflows` to rebuild this file
+# from the actions that have an `e2e/` directory. The drift test in CI fails if it is out of date.
+#
+# The cases live in `actions/maintenance/ensure-actions-are-executed/e2e/` and are ordinary vitest files. This
+# workflow supplies only what they cannot get on a laptop: a token scoped to the scratch repository.
 name: Verify Maintenance Ensure-actions-are-executed
 
 on:
   push:
     branches:
       - main
+      - 'feature/maintenance/ensure-actions-are-executed'
     paths:
       - 'actions/maintenance/ensure-actions-are-executed/**'
+      - 'packages/e2e/**'
       - '.github/workflows/verify-action-maintenance-ensure-actions-are-executed.yaml'
   pull_request:
     paths:
       - 'actions/maintenance/ensure-actions-are-executed/**'
+      - 'packages/e2e/**'
       - '.github/workflows/verify-action-maintenance-ensure-actions-are-executed.yaml'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,32 +28,14 @@ concurrency:
 permissions: {}
 
 jobs:
-  successful-check:
-    name: Verify fixture success
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fixture step
-        run: echo "Success fixture"
-
-  skipped-check:
-    name: Verify fixture skipped
-    if: ${{ github.event_name == 'workflow_dispatch' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Should never run
-        run: echo "This should be skipped"
-
-  verify:
-    name: Verify Ensure-actions-are-executed
-    if: ${{ always() }}
-    needs:
-      - successful-check
-      - skipped-check
+  e2e:
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: End-to-end
     runs-on: ubuntu-latest
     permissions:
-      actions: read # to checkout the actions state
-      contents: read # to checkout
-      checks: read # to check the checks state
+      contents: read # to fetch code
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
@@ -56,88 +47,41 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Strict mode should fail
-        id: strict_mode
-        continue-on-error: true
-        uses: ./actions/maintenance/ensure-actions-are-executed
+      # The cases run `dist/index.js`, the bundle GitHub itself would run, so nothing is built here.
+      # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
+      # it to 'latest', which would win otherwise.
+      - name: Setup Bun
+        uses: TimSchoenle/actions/actions/bun/setup-cached@cbdcf6fd08b46059064bc9c91efa6b610a9ee7db # tag=actions-bun-setup-cached-v1.1.10
         with:
-          token: ${{ github.token }}
-          ref: ${{ github.sha }}
-          checks: |
-            Verify fixture success
-            /^Verify fixture skipped$/
-            /^Verify Ensure-actions-are-executed$/
-          error_on_failure: 'true'
+          bun-version: ''
+          bun-version-file: '.bun-version'
 
-      - name: Assert strict mode failed
-        shell: bash
-        env:
-          STRICT_OUTCOME: ${{ steps.strict_mode.outcome }}
-          STRICT_FAILED: ${{ steps.strict_mode.outputs.failed_checks_count }}
-        run: |
-          set -euo pipefail
-
-          echo "Strict outcome: $STRICT_OUTCOME"
-          echo "Strict failed count: ${STRICT_FAILED:-unset}"
-
-          if [[ "$STRICT_OUTCOME" != "failure" ]]; then
-            echo "::error::Strict mode was expected to fail but outcome was '$STRICT_OUTCOME'."
-            exit 1
-          fi
-
-          if [[ "${STRICT_FAILED:-0}" -lt 1 ]]; then
-            echo "::error::Strict mode failed, but failed_checks_count was '${STRICT_FAILED:-0}'."
-            exit 1
-          fi
-
-      - name: Lenient mode should continue
-        id: lenient_mode
-        uses: ./actions/maintenance/ensure-actions-are-executed
+      - name: Generate Token
+        id: token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          token: ${{ github.token }}
-          ref: ${{ github.sha }}
-          checks: |
-            Verify fixture success
-            /^Verify fixture skipped$/
-            /^Verify Ensure-actions-are-executed$/
-          error_on_failure: 'false'
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: TimSchoenle
+          repositories: actions-testing
+          permission-checks: write
+          permission-contents: write
 
-      - name: Assert lenient mode reported failures without failing
-        shell: bash
+      - name: Run End-to-end Cases
         env:
-          LENIENT_OUTCOME: ${{ steps.lenient_mode.outcome }}
-          LENIENT_FAILED: ${{ steps.lenient_mode.outputs.failed_checks_count }}
-          LENIENT_MATCHED: ${{ steps.lenient_mode.outputs.matched_checks_count }}
-        run: |
-          set -euo pipefail
-
-          echo "Lenient outcome: $LENIENT_OUTCOME"
-          echo "Lenient matched count: ${LENIENT_MATCHED:-unset}"
-          echo "Lenient failed count: ${LENIENT_FAILED:-unset}"
-
-          if [[ "$LENIENT_OUTCOME" != "success" ]]; then
-            echo "::error::Lenient mode should have succeeded, but outcome was '$LENIENT_OUTCOME'."
-            exit 1
-          fi
-
-          if [[ "${LENIENT_FAILED:-0}" -lt 1 ]]; then
-            echo "::error::Lenient mode should report at least one failed check."
-            exit 1
-          fi
-
-          if [[ "${LENIENT_MATCHED:-0}" -lt 2 ]]; then
-            echo "::error::Expected at least two matched checks (success + failure)."
-            exit 1
-          fi
+          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          # An installation token cannot call `GET /user`, so the suite resolves its own account by
+          # app slug instead. Without this a case matching commit authors fails only in CI.
+          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
+          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+        run: bun run e2e actions/maintenance/ensure-actions-are-executed
 
   # <<< generated: summary (run 'bun run generate-ci-required' to update)
   summary:
     name: 'CI Summary: Maintenance Ensure-actions-are-executed'
     if: ${{ always() }}
     needs:
-      - successful-check
-      - skipped-check
-      - verify
+      - e2e
     runs-on: ubuntu-latest
     permissions: {}
     steps:

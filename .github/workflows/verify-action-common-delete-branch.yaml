@@ -1,15 +1,23 @@
-﻿name: Verify Common Delete-branch
+# GENERATED — do not edit by hand. Run `bun run generate-e2e-workflows` to rebuild this file
+# from the actions that have an `e2e/` directory. The drift test in CI fails if it is out of date.
+#
+# The cases live in `actions/common/delete-branch/e2e/` and are ordinary vitest files. This
+# workflow supplies only what they cannot get on a laptop: a token scoped to the scratch repository.
+name: Verify Common Delete-branch
 
 on:
   push:
     branches:
       - main
+      - 'feature/common/delete-branch'
     paths:
       - 'actions/common/delete-branch/**'
+      - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-delete-branch.yaml'
   pull_request:
     paths:
       - 'actions/common/delete-branch/**'
+      - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-delete-branch.yaml'
   workflow_dispatch:
 
@@ -17,127 +25,62 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-
-env:
-  TEST_OWNER: TimSchoenle
-  TEST_REPO: TimSchoenle/actions-testing
-  TEST_REPO_NAME: actions-testing
-  TEST_ID: delete-branch-test-${{ github.run_number }}-${{ github.run_attempt }}
+permissions: {}
 
 jobs:
-  test-delete-existing:
+  e2e:
     environment:
       name: ci-e2e
       deployment: false
-    name: Test Delete Existing Branch
+    name: End-to-end
     runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
           egress-policy: audit
 
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
+          persist-credentials: false
 
-      - name: Create Test Branch
+      # The cases run `dist/index.js`, the bundle GitHub itself would run, so nothing is built here.
+      # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
+      # it to 'latest', which would win otherwise.
+      - name: Setup Bun
+        uses: TimSchoenle/actions/actions/bun/setup-cached@cbdcf6fd08b46059064bc9c91efa6b610a9ee7db # tag=actions-bun-setup-cached-v1.1.10
+        with:
+          bun-version: ''
+          bun-version-file: '.bun-version'
+
+      - name: Generate Token
+        id: token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: TimSchoenle
+          repositories: actions-testing
+          permission-contents: write
+
+      - name: Run End-to-end Cases
         env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-          BRANCH_NAME: test/delete-branch-exist/${{ env.TEST_ID }}
-        run: |
-          # Get default branch SHA
-          SHA=$(gh api "/repos/$TEST_REPO/commits/main" --jq .sha)
-          # Create branch
-          gh api -X POST "/repos/$TEST_REPO/git/refs" \
-            -f ref="refs/heads/$BRANCH_NAME" \
-            -f sha="$SHA"
-          echo "Created branch: $BRANCH_NAME"
-
-      - name: Run delete-branch
-        id: delete
-        uses: ./tmp/actions-code/actions/common/delete-branch
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/delete-branch-exist/${{ env.TEST_ID }}
-
-      - name: Verify Deletion
-        env:
-          DELETED: ${{ steps.delete.outputs.deleted }}
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-          BRANCH_NAME: test/delete-branch-exist/${{ env.TEST_ID }}
-        run: |
-          if [ "$DELETED" != "true" ]; then
-            echo "::error::Expected deleted=true, got $DELETED"
-            exit 1
-          fi
-
-          if gh api "/repos/$TEST_REPO/git/refs/heads/$BRANCH_NAME" > /dev/null 2>&1; then
-            echo "::error::Branch still exists after deletion"
-            exit 1
-          fi
-          echo "✅ Existing branch deleted successfully"
-
-  test-delete-non-existent:
-    environment:
-      name: ci-e2e
-      deployment: false
-    name: Test Delete Non-Existent Branch
-    runs-on: ubuntu-latest
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
-        with:
-          egress-policy: audit
-
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
-        with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
-
-      - name: Run delete-branch
-        id: delete
-        uses: ./tmp/actions-code/actions/common/delete-branch
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/delete-branch-non-exist/${{ env.TEST_ID }}
-
-      - name: Verify Graceful Failure
-        env:
-          DELETED: ${{ steps.delete.outputs.deleted }}
-        run: |
-          if [ "$DELETED" != "false" ]; then
-            echo "::error::Expected deleted=false, got $DELETED"
-            exit 1
-          fi
-          echo "✅ Non-existent branch handled gracefully"
+          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          # An installation token cannot call `GET /user`, so the suite resolves its own account by
+          # app slug instead. Without this a case matching commit authors fails only in CI.
+          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
+          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+        run: bun run e2e actions/common/delete-branch
 
   # <<< generated: summary (run 'bun run generate-ci-required' to update)
   summary:
     name: 'CI Summary: Common Delete-branch'
     if: ${{ always() }}
     needs:
-      - test-delete-existing
-      - test-delete-non-existent
+      - e2e
     runs-on: ubuntu-latest
     permissions: {}
     steps:

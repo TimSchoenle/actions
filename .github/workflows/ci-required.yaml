@@ -26,19 +26,19 @@ on:
     # ci-required drift test fails CI if it is out of sync.
     # <<< generated: verify-workflows
     workflows:
-      - Verify Action Common Modify YAML
-      - Verify Action Common Read YAML
-      - Verify Action Common Render Template
       - Verify Action Common Render Template And Commit
       - Verify Bun Setup Cached
-      - Verify Common Close Pull Request
-      - Verify Common Commit Changes
+      - Verify Common Close-pull-request
+      - Verify Common Commit-changes
       - Verify Common Create Pull Request
       - Verify Common Create-branch
       - Verify Common Delete-branch
-      - Verify Common Get App Git Identity
-      - Verify Common Setup App Git Identity
-      - Verify Helm Apply Chart Updates
+      - Verify Common Get-app-git-identity
+      - Verify Common Modify-yaml
+      - Verify Common Read-yaml
+      - Verify Common Render-template
+      - Verify Common Setup-app-git-identity
+      - Verify Helm Apply-chart-updates
       - Verify Helm Update Chart Version
       - Verify Helper Resolve-base-branch
       - Verify Helper Verify-branch-name
