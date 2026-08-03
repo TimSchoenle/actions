@@ -151,8 +151,11 @@ jobs:
           fi
           echo "✅ File content verified"
 
+      # Guarded, not just `always()`: a run that opened no pull request — because it failed early, or
+      # because skipping was the very thing under test — has no number to close, and closing "nothing"
+      # would report a second, misleading failure on top of the real result.
       - name: Cleanup Test Pull Request
-        if: always()
+        if: always() && steps.create-pr.outputs.pr_number != ''
         uses: TimSchoenle/actions/actions/common/close-pull-request@5555e4c158b8325fa11fd1a2b39258347a886517 # tag=actions-common-close-pull-request-v1.2.1
         with:
           token: ${{ steps.setup.outputs.token }}
@@ -219,8 +222,11 @@ jobs:
 
           echo "✅ PR correctly skipped (branches are identical)"
 
+      # Guarded, not just `always()`: a run that opened no pull request — because it failed early, or
+      # because skipping was the very thing under test — has no number to close, and closing "nothing"
+      # would report a second, misleading failure on top of the real result.
       - name: Cleanup Test Pull Request
-        if: always()
+        if: always() && steps.create-pr.outputs.pr_number != ''
         uses: TimSchoenle/actions/actions/common/close-pull-request@5555e4c158b8325fa11fd1a2b39258347a886517 # tag=actions-common-close-pull-request-v1.2.1
         with:
           token: ${{ steps.setup.outputs.token }}
@@ -289,8 +295,11 @@ jobs:
 
           echo "✅ Commit and PR correctly skipped (no local changes)"
 
+      # Guarded, not just `always()`: a run that opened no pull request — because it failed early, or
+      # because skipping was the very thing under test — has no number to close, and closing "nothing"
+      # would report a second, misleading failure on top of the real result.
       - name: Cleanup Test Pull Request
-        if: always()
+        if: always() && steps.create-pr.outputs.pr_number != ''
         uses: TimSchoenle/actions/actions/common/close-pull-request@5555e4c158b8325fa11fd1a2b39258347a886517 # tag=actions-common-close-pull-request-v1.2.1
         with:
           token: ${{ steps.setup.outputs.token }}
@@ -440,8 +449,11 @@ jobs:
 
           echo "✅ Branch reset behavior verified successfully"
 
+      # Guarded, not just `always()`: a run that opened no pull request — because it failed early, or
+      # because skipping was the very thing under test — has no number to close, and closing "nothing"
+      # would report a second, misleading failure on top of the real result.
       - name: Cleanup Test Pull Request
-        if: always()
+        if: always() && steps.create-pr-reset.outputs.pr_number != ''
         uses: TimSchoenle/actions/actions/common/close-pull-request@5555e4c158b8325fa11fd1a2b39258347a886517 # tag=actions-common-close-pull-request-v1.2.1
         with:
           token: ${{ steps.setup.outputs.token }}
