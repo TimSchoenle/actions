@@ -1,11 +1,17 @@
 import * as github from '@actions/github';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createCommitApi, toCommitMessage } from './github-api.js';
 
 import type { CreateCommitRequest } from './github-api.js';
 
 vi.mock('@actions/github');
+vi.mock('@actions/core');
+
+/** Builds an object shaped like an Octokit `RequestError`. */
+function httpError(status: number): unknown {
+  return Object.assign(new Error(`HTTP ${status}`), { status });
+}
 
 interface OctokitMock {
   graphql: ReturnType<typeof vi.fn>;
@@ -63,11 +69,37 @@ describe('createCommitApi', () => {
   });
 
   describe('getHeadOid', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it('resolves the branch head via the single-ref endpoint', async () => {
       octokit.rest.git.getRef.mockResolvedValue({ data: { object: { sha: 'headsha' } } });
 
       await expect(createCommitApi('token').getHeadOid({ owner: 'o', repo: 'r' }, 'main')).resolves.toBe('headsha');
       expect(octokit.rest.git.getRef).toHaveBeenCalledWith({ owner: 'o', ref: 'heads/main', repo: 'r' });
+    });
+
+    // The branch is routinely created seconds earlier by another step, and GitHub 404s a ref it has
+    // not yet replicated. Taking that first answer at face value is what broke the e2e workflows.
+    it('retries a branch GitHub has acknowledged but not yet made readable', async () => {
+      vi.useFakeTimers();
+      octokit.rest.git.getRef
+        .mockRejectedValueOnce(httpError(404))
+        .mockResolvedValueOnce({ data: { object: { sha: 'headsha' } } });
+
+      const pending = createCommitApi('token').getHeadOid({ owner: 'o', repo: 'r' }, 'fresh-branch');
+      await vi.advanceTimersByTimeAsync(1_000);
+
+      await expect(pending).resolves.toBe('headsha');
+      expect(octokit.rest.git.getRef).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not retry a failure that is not a missing ref', async () => {
+      octokit.rest.git.getRef.mockRejectedValue(httpError(403));
+
+      await expect(createCommitApi('token').getHeadOid({ owner: 'o', repo: 'r' }, 'main')).rejects.toThrow('HTTP 403');
+      expect(octokit.rest.git.getRef).toHaveBeenCalledTimes(1);
     });
   });
 

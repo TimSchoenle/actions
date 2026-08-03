@@ -30,6 +30,10 @@ export default defineConfig({
         replacement: fileURLToPath(new URL('./packages/ts-util/src/github-client.ts', import.meta.url)),
       },
       {
+        find: 'actions-util/read-after-write',
+        replacement: fileURLToPath(new URL('./packages/ts-util/src/read-after-write.ts', import.meta.url)),
+      },
+      {
         find: 'actions-util',
         replacement: fileURLToPath(new URL('./packages/ts-util/src/index.ts', import.meta.url)),
       },

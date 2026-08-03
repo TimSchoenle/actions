@@ -26,6 +26,10 @@
     "./client": {
       "types": "./dist/github-client.d.ts",
       "import": "./dist/github-client.js"
+    },
+    "./read-after-write": {
+      "types": "./dist/read-after-write.d.ts",
+      "import": "./dist/read-after-write.js"
     }
   },
   "scripts": {

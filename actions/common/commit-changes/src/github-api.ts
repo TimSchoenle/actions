@@ -1,4 +1,5 @@
 import { createOctokit } from 'actions-util/client';
+import { readAfterWrite } from 'actions-util/read-after-write';
 
 import type { FileChanges } from './changes.js';
 import type { RepositoryCoordinates } from 'actions-util';
@@ -115,7 +116,12 @@ export function createCommitApi(token: string): CommitApi {
     },
 
     async getHeadOid({ owner, repo }: RepositoryCoordinates, branch: string): Promise<string> {
-      const { data } = await octokit.rest.git.getRef({ owner, ref: `heads/${branch}`, repo });
+      // Callers routinely commit to a branch created moments earlier, and a ref that new is not yet
+      // readable on every replica: the 404 that comes back is replication lag, not a missing branch.
+      const { data } = await readAfterWrite(
+        () => octokit.rest.git.getRef({ owner, ref: `heads/${branch}`, repo }),
+        `Branch '${branch}'`,
+      );
 
       return data.object.sha;
     },
