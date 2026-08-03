@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.2](https://github.com/TimSchoenle/actions/compare/actions-common-commit-changes-v1.2.1...actions-common-commit-changes-v1.2.2) (2026-08-03)
+
+
+### Bug Fixes
+
+* **Actions/CommitChanges:** github network delay edge case ([3713d44](https://github.com/TimSchoenle/actions/commit/3713d44de9d7e060f46bdd84ecfa24f545cd8287))
+
+
+### Dependencies
+
+* **deps:** lock file maintenance ([#1320](https://github.com/TimSchoenle/actions/issues/1320)) ([b3022a2](https://github.com/TimSchoenle/actions/commit/b3022a23f90829a884bfe11df468edaf17793109))
+
 ## [1.2.1](https://github.com/TimSchoenle/actions/compare/actions-common-commit-changes-v1.2.0...actions-common-commit-changes-v1.2.1) (2026-07-31)
 
 
