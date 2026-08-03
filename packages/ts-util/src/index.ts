@@ -13,6 +13,8 @@ export * from './commit-verification.js';
 export * from './errors.js';
 export * from './github.js';
 export * from './identity.js';
+export * from './log.js';
 export * from './posix-regex.js';
+export * from './workspace-path.js';
 export * from './yaml.js';
 export * from './yaml-document.js';

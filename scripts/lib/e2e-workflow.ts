@@ -20,18 +20,158 @@ export const E2E_DIRECTORY = 'e2e';
 /** Prefix every generated workflow file shares with the hand-written verify workflows. */
 export const VERIFY_WORKFLOW_PREFIX = 'verify-action-';
 
-/** Pinned third-party actions. Renovate updates these in place, so they live in one object. */
-const PINNED = {
+/**
+ * Pinned actions, in one object because Renovate has to find them here.
+ *
+ * This file is the source of truth for every generated workflow, and it is TypeScript, so no
+ * built-in Renovate manager sees it. Three `customManagers` in `renovate.json` do, and they only
+ * work on refs written in exactly this shape: a single-quoted literal starting with the owner, a
+ * 40-character digest, then ` # ` and either a `vX.Y.Z` tag or `tag=<component>-vX.Y.Z` for an
+ * internal one. `renovate-managers.test.ts` fails any entry the managers would silently skip —
+ * which otherwise looks like nothing at all, an action quietly frozen at the version it was added.
+ *
+ * Renovate updates every occurrence of the same dependency at the same version in one branch, so a
+ * bump lands here and in the generated workflows together and the drift check stays satisfied.
+ */
+export const PINNED = {
   hardenRunner: 'step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0',
   checkout: 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7',
   createAppToken: 'actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0',
   setupBun:
     'TimSchoenle/actions/actions/bun/setup-cached@cbdcf6fd08b46059064bc9c91efa6b610a9ee7db # tag=actions-bun-setup-cached-v1.1.10',
+  // Used only by the test job, which must not install anything. Kept at the same versions
+  // `setup-cached` pins internally, because the two halves have to agree on the cache format.
+  setupBunOnly: 'oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0',
+  cache: 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6',
+  cacheRestore: 'actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6',
 } as const;
 
 /** The scratch repository every case mutates. */
 const TEST_OWNER = 'TimSchoenle';
 const TEST_REPO_NAME = 'actions-testing';
+
+/**
+ * Endpoints every generated job needs whatever else it does.
+ *
+ * `github.com` fetches the checkout and the tarball of every action a job `uses`;
+ * `objects.githubusercontent.com` is where a GitHub release download redirects, which is how bun
+ * itself arrives. The cache pair is the service and the blob storage it hands off to.
+ */
+const BASE_ENDPOINTS: readonly string[] = [
+  'github.com:443',
+  'objects.githubusercontent.com:443',
+  '*.actions.githubusercontent.com:443',
+  '*.blob.core.windows.net:443',
+];
+
+/**
+ * The install job's extra reach: the package registry, and nothing else.
+ *
+ * This job holds no token and touches no repository. It exists so that the registry appears in
+ * exactly one job's allowlist, and it is not the job that runs the tests.
+ */
+export const INSTALL_ALLOWED_ENDPOINTS: readonly string[] = [...BASE_ENDPOINTS, 'registry.npmjs.org:443'];
+
+/**
+ * The test job's reach: the GitHub API, and nothing else.
+ *
+ * The point of splitting the two is here. This job is the one that holds a repository-scoped app
+ * token, so it is the one whose egress matters — and it has no path to a package registry at all.
+ * A dependency that tried to phone home during `vitest` would be blocked rather than audited, and
+ * a `postinstall` cannot run here because nothing is installed here.
+ *
+ * `harden-runner` cannot change policy mid-job, which is why this is a second job rather than a
+ * second step: an allowlist is only as narrow as the widest thing the job does.
+ */
+export const E2E_ALLOWED_ENDPOINTS: readonly string[] = [...BASE_ENDPOINTS, 'api.github.com:443'];
+
+/** Renders a harden-runner step with the allowlist for one job, indented to sit under `steps:`. */
+function hardenRunnerStep(endpoints: readonly string[]): string {
+  const rendered = endpoints.map((endpoint) => `            ${endpoint}`).join('\n');
+
+  return `      - name: Harden Runner
+        uses: ${PINNED.hardenRunner}
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+${rendered}`;
+}
+
+/**
+ * Every directory `bun install` populates, and so everything the test job needs restored.
+ *
+ * A bun workspace does not hoist all dependencies to the root. `@actions/core` lives in
+ * `packages/ts-util/node_modules`, and each action under `actions/` keeps its own tree the same way;
+ * the root holds only what is shared. `setup-cached` caches `<working-directory>/node_modules` and
+ * nothing else, which is enough to make an install faster — it installs afterwards regardless — but
+ * not enough to reconstitute a tree on its own. The test job never installs, so restoring the root
+ * alone leaves every workspace dependency missing, and that surfaces as `ERR_MODULE_NOT_FOUND` from
+ * inside a package rather than as anything resembling a cache failure.
+ *
+ * This is therefore the generator's own cache, keyed separately from the one `setup-cached` keeps.
+ *
+ * The same list is rendered into the job that saves and the job that restores, and it has to be the
+ * *same string*, not an equivalent one: `actions/cache` hashes this input verbatim into the entry's
+ * version and returns a cache only when the key and that version both match, so `node_modules` and
+ * `./node_modules` are two different caches under one key. `e2e-contract.test.ts` asserts the two
+ * generated halves agree.
+ */
+const WORKSPACE_MODULES: readonly string[] = ['node_modules', 'packages/*/node_modules', 'actions/*/*/node_modules'];
+
+/** Renders the multi-line `path:` input both cache steps share, indented to sit under `with:`. */
+function cachePathsInput(): string {
+  return ['          path: |', ...WORKSPACE_MODULES.map((pattern) => `            ${pattern}`)].join('\n');
+}
+
+/**
+ * The job that installs dependencies, so the job that runs the tests does not have to.
+ *
+ * The key is computed once here and published, rather than recomputed downstream: two copies of a
+ * `hashFiles` expression are two chances to disagree, and a disagreement here surfaces as a cache
+ * miss the test job cannot recover from, because it may not install anything.
+ *
+ * The cache step precedes the install so that a hit is a restore rather than a download, and saves
+ * in its post step only when the key was missing. It has to sit in this job and not the next one:
+ * writing the cache is the half that needs a populated tree, and populating one needs the registry.
+ */
+function installJob(): string {
+  return `  install:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      cache-key: \${{ steps.key.outputs.value }}
+    steps:
+${hardenRunnerStep(INSTALL_ALLOWED_ENDPOINTS)}
+
+      - name: Checkout
+        uses: ${PINNED.checkout}
+        with:
+          persist-credentials: false
+
+      - name: Compute Cache Key
+        id: key
+        env:
+          CACHE_KEY: e2e-workspace-modules-\${{ runner.os }}-\${{ hashFiles('bun.lock') }}
+        run: echo "value=$CACHE_KEY" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Workspace Dependencies
+        uses: ${PINNED.cache}
+        with:
+${cachePathsInput()}
+          key: \${{ steps.key.outputs.value }}
+
+      # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
+      # it to 'latest', which would win otherwise. It reinstalls on every run whatever the cache did,
+      # which is what validates the restored tree against the lockfile before the next job trusts it.
+      - name: Setup Bun And Install
+        uses: ${PINNED.setupBun}
+        with:
+          bun-version: ''
+          bun-version-file: '.bun-version'
+`;
+}
 
 /** A token scope and the access level granted on it. */
 export type TokenPermissions = Readonly<Record<string, 'read' | 'write'>>;
@@ -185,7 +325,9 @@ export function renderE2eWorkflow(action: E2eAction, extraJobs = ''): string {
   const name = workflowName(action);
   const secondary = needsSecondaryIdentity(action);
   const extraIds = extraJobIds(extraJobs);
-  const needs = ['e2e', ...extraIds].map((id) => `      - ${id}`).join('\n');
+  // `install` is in the summary's needs as well as `e2e`'s: a failed install leaves `e2e` *skipped*,
+  // and a summary that only watched `e2e` would read that absence as nothing having gone wrong.
+  const needs = ['install', 'e2e', ...extraIds].map((id) => `      - ${id}`).join('\n');
 
   return `# GENERATED — do not edit by hand. Run \`bun run generate-e2e-workflows\` to rebuild this file
 # from the actions that have an \`e2e/\` directory. The drift test in CI fails if it is out of date.
@@ -217,7 +359,9 @@ concurrency:
 permissions: {}
 
 jobs:
+${installJob()}
   e2e:
+    needs: install
     environment:
       name: ci-e2e
       deployment: false
@@ -226,25 +370,31 @@ jobs:
     permissions:
       contents: read # to fetch code
     steps:
-      - name: Harden Runner
-        uses: ${PINNED.hardenRunner}
-        with:
-          egress-policy: audit
+${hardenRunnerStep(E2E_ALLOWED_ENDPOINTS)}
 
       - name: Checkout
         uses: ${PINNED.checkout}
         with:
           persist-credentials: false
 
-      # The cases run \`dist/index.js\`, the bundle GitHub itself would run, so nothing is built here.
-      # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
-      # it to 'latest', which would win otherwise.
+      # setup-bun rather than setup-cached: the cached wrapper runs \`bun install\` on every job, cache
+      # hit or not, and this job is the one that must have no route to a package registry at all.
       - name: Setup Bun
-        uses: ${PINNED.setupBun}
+        uses: ${PINNED.setupBunOnly}
         with:
-          bun-version: ''
           bun-version-file: '.bun-version'
 
+      # Restored, never installed, and never saved. \`fail-on-cache-miss\` is what keeps that honest:
+      # without it a miss would leave the suite to fail later on a missing import, several confusing
+      # minutes further on.
+      - name: Restore Dependencies
+        uses: ${PINNED.cacheRestore}
+        with:
+${cachePathsInput()}
+          key: \${{ needs.install.outputs.cache-key }}
+          fail-on-cache-miss: true
+
+      # The cases run \`dist/index.js\`, the bundle GitHub itself would run, so nothing is built here.
       - name: Generate Token
         id: token
         uses: ${PINNED.createAppToken}

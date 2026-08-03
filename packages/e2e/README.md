@@ -85,6 +85,41 @@ Properties worth knowing:
   regularly 404s, and a ref that was *moved* can read back at its previous commit with no 404 to
   announce it. Pass the expected commit to poll for convergence.
 
+## Hostile inputs
+
+`actions-e2e` ships the payloads and the assertions for the adversarial half of each suite, so a new
+trick is added once and tested against every action. They live in `src/adversarial.ts`.
+
+```ts
+it('publishes a value that forges every workflow command, without any taking effect', async () => {
+  const result = await read(blockScalar(commandInjectionPayload()));
+
+  expect(result.outputs['value']).toBe(commandInjectionPayload()); // still published, as data
+  expectNoInjection(result); // but nothing acted on it
+});
+```
+
+| Export | What it produces |
+| --- | --- |
+| `commandInjectionPayload()` | A value forging `::error::`, `::add-mask::`, `::stop-commands::` and the rest. |
+| `fileCommandInjectionPayload()` | A value shaped like the `GITHUB_OUTPUT` heredoc format, to forge a second key. |
+| `HOSTILE_CHARACTERS` / `INPUT_HOSTILE_CHARACTERS` | Control, bidi and zero-width characters. The second list drops the ones the runner cannot deliver through an environment variable. |
+| `TRAVERSAL_PATHS` / `DECEPTIVE_PATHS` | Paths that escape a directory, and paths that only look like they do. |
+| `REDOS_PATTERNS` | Patterns whose backtracking is superlinear, each with a subject that triggers it. |
+| `yamlAliasBomb()`, `oversized()` | A geometrically expanding document, and a value of an exact size. |
+| `expectNoInjection(result)` | Nothing forged, on either the command stream or the command files. |
+| `expectCleanRejection(result, /reason/)` | Failed, annotated, and not by crashing. |
+
+Two properties are worth stating because they are what make the assertions usable:
+
+- **Publishing a hostile value as an output is not a finding.** `expectNoInjection` matches forged
+  command messages by *equality*, so an action quoting a payload into a legitimate `::error::`
+  annotation passes — the escaping is the correct behaviour, and asserting on a substring would
+  forbid it.
+- **A NUL cannot reach an action through an input.** The runner delivers inputs as environment
+  variables, so `resolveInputEnv` refuses one with that reason rather than failing inside `spawn`.
+  Exercise that character through file content.
+
 ## Identity
 
 `accountId()` resolves the account whose commits the fixtures carry. Locally that is `GET /user`. In
@@ -96,6 +131,23 @@ generated workflow passes `E2E_APP_SLUG` and the bot user is resolved by name in
 GitHub refuses a review submitted by the pull request's own author, so `auto-approve-pr` cannot be
 exercised by the account that opened the fixture. Its workflow mints a second token, scoped to
 `pull-requests: write` and nothing else, and the suite reads it from `E2E_GITHUB_TOKEN_SECONDARY`.
+
+## Network scope
+
+Each generated workflow runs `harden-runner` with `egress-policy: block`, and splits into two jobs so
+that the allowlists can differ:
+
+- **`install`** checks out, sets up bun and runs `bun install --frozen-lockfile`. It is the only job
+  that may reach `registry.npmjs.org`, and it holds no token.
+- **`e2e`** restores `node_modules` from the cache `install` wrote (`fail-on-cache-miss: true`), mints
+  the app token and runs the cases. It may reach `api.github.com` and nothing else beyond the
+  checkout and cache endpoints.
+
+The split exists because `harden-runner` sets one policy for a whole job. Keeping the install in the
+same job would put a package registry on the allowlist of the job holding a repository-scoped write
+token, and a `postinstall` script would run there. A contract test in `scripts/__tests__` fails any
+generated workflow whose `e2e` job can reach a registry, uses the installing bun setup, or restores
+without `fail-on-cache-miss`.
 
 ## Token scope
 

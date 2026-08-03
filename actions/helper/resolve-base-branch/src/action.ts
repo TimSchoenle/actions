@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { runAction } from 'actions-util';
+import { quoteForLog, runAction } from 'actions-util';
 import { createBranchApi } from 'actions-util/branches';
 
 import { ActionInput, getBooleanInput, getInput, setOutput } from './generated/action-io.js';
@@ -33,11 +33,11 @@ export function run(api?: BranchApi): Promise<void> {
 
       core.info(
         result.origin === 'input'
-          ? `Using provided base branch: ${result.branch}`
-          : `Using default branch: ${result.branch}`,
+          ? `Using provided base branch: ${quoteForLog(result.branch)}`
+          : `Using default branch: ${quoteForLog(result.branch)}`,
       );
       if (result.exists) {
-        core.info(`✅ Branch '${result.branch}' exists in ${repository}`);
+        core.info(`✅ Branch ${quoteForLog(result.branch)} exists in ${quoteForLog(repository)}`);
       }
 
       setOutput('base_branch', result.branch);

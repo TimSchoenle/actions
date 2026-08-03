@@ -83,6 +83,16 @@ export interface RunActionOptions<TInput extends string> {
   timeoutMs?: number;
 }
 
+/**
+ * The bytes of each command file, exactly as the action left them.
+ *
+ * The parsed views above answer "what did the action publish"; these answer "what did it write",
+ * which is a different question as soon as a value is hostile. A value carrying the heredoc
+ * delimiter, or a bare `key=value` line, is only visible before parsing — and `@actions/core`
+ * refusing to write it is precisely the property worth asserting.
+ */
+export type RawCommandFiles = Readonly<Record<'GITHUB_OUTPUT' | 'GITHUB_ENV' | 'GITHUB_STATE', string>>;
+
 export interface ActionRunResult<TOutput extends string> extends WorkflowCommands {
   exitCode: number;
   /** Everything written to `GITHUB_OUTPUT`; absent keys were never set. */
@@ -91,6 +101,11 @@ export interface ActionRunResult<TOutput extends string> extends WorkflowCommand
   exportedEnv: Record<string, string>;
   /** Everything written to `GITHUB_STATE`, which the action's own post step would read back. */
   state: Record<string, string>;
+  /** Directories appended to `GITHUB_PATH`, in order. */
+  addedPath: string[];
+  /** Everything appended to `GITHUB_STEP_SUMMARY`, which the runner renders as Markdown. */
+  stepSummary: string;
+  raw: RawCommandFiles;
   stdout: string;
   stderr: string;
   /** The scratch directory used as `GITHUB_WORKSPACE`; removed unless `E2E_KEEP_WORKSPACE` is set. */
@@ -196,6 +211,35 @@ interface SpawnResult {
   stderr: string;
 }
 
+/**
+ * The largest a single environment entry may be, which is the ceiling on any one action input.
+ *
+ * Linux caps one entry of the environment at `MAX_ARG_STRLEN` — 32 pages, 131072 bytes — including
+ * the name and the `=`. The runner passes every action input as an `INPUT_*` variable, so this is
+ * not a limit of the harness: a workflow cannot hand an action a value this large either.
+ */
+const MAX_ENV_ENTRY_BYTES = 131_072;
+
+/**
+ * Rejects an environment the kernel would refuse, so the case says why instead of reporting E2BIG.
+ *
+ * `spawn` fails with a bare `E2BIG` and no indication of which variable was at fault, and Windows
+ * has no equivalent limit — so an oversized payload passes locally and fails only on a runner, which
+ * is the most expensive place to work it out.
+ */
+function assertDeliverableEnvironment(env: Record<string, string>): void {
+  for (const [name, value] of Object.entries(env)) {
+    const bytes = Buffer.byteLength(`${name}=${value}`, 'utf8');
+
+    if (bytes > MAX_ENV_ENTRY_BYTES) {
+      throw new ActionOutcomeError(
+        `${name} is ${bytes} bytes, past the ${MAX_ENV_ENTRY_BYTES}-byte limit on one environment entry. ` +
+          'A workflow could not deliver this input either; test a value the runner can actually pass.',
+      );
+    }
+  }
+}
+
 function spawnAction(
   executable: string,
   script: string,
@@ -204,6 +248,8 @@ function spawnAction(
   timeoutMs: number,
 ): Promise<SpawnResult> {
   return new Promise((resolve, reject) => {
+    assertDeliverableEnvironment(env);
+
     const child = spawn(executable, [script], { cwd, env, windowsHide: true });
     const stdout: Buffer[] = [];
     const stderr: Buffer[] = [];
@@ -281,16 +327,23 @@ export async function runAction<TInput extends string, TOutput extends string>(
     // resolves a path against `process.cwd()` would otherwise read a directory GitHub never uses.
     const spawned = await spawnAction(executable, script, env, workspace, options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
     const commands = parseWorkflowCommands(spawned.stdout);
+    const raw: RawCommandFiles = {
+      GITHUB_OUTPUT: await readFile(commandFiles['GITHUB_OUTPUT'], 'utf8'),
+      GITHUB_ENV: await readFile(commandFiles['GITHUB_ENV'], 'utf8'),
+      GITHUB_STATE: await readFile(commandFiles['GITHUB_STATE'], 'utf8'),
+    };
 
     const result: ActionRunResult<TOutput> = {
       ...commands,
       masks: [...commands.masks, ...(options.secrets ?? [])],
       exitCode: spawned.exitCode,
-      outputs: parseFileCommands(await readFile(commandFiles['GITHUB_OUTPUT'], 'utf8')) as Partial<
-        Record<TOutput, string>
-      >,
-      exportedEnv: parseFileCommands(await readFile(commandFiles['GITHUB_ENV'], 'utf8')),
-      state: parseFileCommands(await readFile(commandFiles['GITHUB_STATE'], 'utf8')),
+      outputs: parseFileCommands(raw.GITHUB_OUTPUT) as Partial<Record<TOutput, string>>,
+      exportedEnv: parseFileCommands(raw.GITHUB_ENV),
+      state: parseFileCommands(raw.GITHUB_STATE),
+      // `GITHUB_PATH` is a plain list of directories, not key/value pairs, so it is read as one.
+      addedPath: (await readFile(commandFiles['GITHUB_PATH'], 'utf8')).split(/\r?\n/).filter((line) => line !== ''),
+      stepSummary: await readFile(commandFiles['GITHUB_STEP_SUMMARY'], 'utf8'),
+      raw,
       stdout: spawned.stdout,
       stderr: spawned.stderr,
       workspace,

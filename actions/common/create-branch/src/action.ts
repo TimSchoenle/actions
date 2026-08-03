@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { runAction } from 'actions-util';
+import { quoteForLog, runAction } from 'actions-util';
 import { createBranchApi } from 'actions-util/branches';
 
 import { createOrResetBranch } from './create-branch.js';
@@ -9,24 +9,26 @@ import type { BranchApi, CreateBranchResult } from './create-branch.js';
 
 /** Reports what the run did to the target branch, mirroring the log trail of the previous shell steps. */
 function report(result: CreateBranchResult): void {
+  const branch = quoteForLog(result.branch);
+
   core.info(
     result.baseOrigin === 'input'
-      ? `Using provided base branch: ${result.baseBranch}`
-      : `Using default branch: ${result.baseBranch}`,
+      ? `Using provided base branch: ${quoteForLog(result.baseBranch)}`
+      : `Using default branch: ${quoteForLog(result.baseBranch)}`,
   );
   core.info(`Base SHA: ${result.baseSha}`);
 
   switch (result.outcome) {
     case 'created': {
-      core.info(`✅ Created branch '${result.branch}' at ${result.sha}`);
+      core.info(`✅ Created branch ${branch} at ${result.sha}`);
       break;
     }
     case 'reset': {
-      core.info(`✅ Reset branch '${result.branch}' to ${result.sha}`);
+      core.info(`✅ Reset branch ${branch} to ${result.sha}`);
       break;
     }
     case 'unchanged': {
-      core.info(`Branch '${result.branch}' already exists at ${result.sha} and was not reset.`);
+      core.info(`Branch ${branch} already exists at ${result.sha} and was not reset.`);
       break;
     }
   }

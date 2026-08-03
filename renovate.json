@@ -9,6 +9,39 @@
       "/(^|/)workflows/(.*/)?workflow\\.ya?ml$/"
     ]
   },
+  "customManagers": [
+    {
+      "description": "Internal action refs pinned inside the end-to-end workflow generator. scripts/lib/e2e-workflow.ts is the source of truth for every generated verify-action-*.yaml, and is matched by no built-in manager because it is TypeScript rather than YAML. Without this, Renovate bumps only the generated copies and the drift check fails; with it, one branch carries both, because Renovate updates every occurrence of the same dependency at the same version together. A contract test in scripts/__tests__ fails any pin these managers would not match.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^scripts/lib/e2e-workflow\\.ts$/"],
+      "matchStrings": [
+        "'(?<depName>TimSchoenle\\/actions(?:\\/[^@'\\s#]+)?)@(?<currentDigest>[a-fA-F0-9]{40}) # tag=(?<currentValue>(?:actions|workflows)-[^'\\s#]+)'"
+      ],
+      "packageNameTemplate": "TimSchoenle/actions",
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "regex:^(?<compatibility>(?:actions|workflows)-.*)[-/]v?(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)?$",
+      "autoReplaceStringTemplate": "'{{{depName}}}@{{#if newDigest}}{{{newDigest}}}{{/if}}{{#unless newDigest}}{{{newValue}}}{{/unless}} # tag={{{newValue}}}'"
+    },
+    {
+      "description": "Third-party actions pinned inside the end-to-end workflow generator, addressed by a subdirectory of their repository. These need depName and packageName to differ — the tags live on actions/cache, not on actions/cache/restore — which a single generic pattern cannot express, so each is listed explicitly and the contract test fails a new one that is not.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^scripts/lib/e2e-workflow\\.ts$/"],
+      "matchStrings": [
+        "'(?<depName>actions\\/cache\\/restore)@(?<currentDigest>[a-fA-F0-9]{40}) # (?<currentValue>v[^'\\s#]+)'"
+      ],
+      "packageNameTemplate": "actions/cache",
+      "datasourceTemplate": "github-tags"
+    },
+    {
+      "description": "Third-party actions pinned inside the end-to-end workflow generator, addressed by repository. Anchored on the opening quote of the TypeScript string literal, which is what keeps it from also matching the subdirectory and internal forms above without needing a lookahead — re2, which Renovate uses, has none.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^scripts/lib/e2e-workflow\\.ts$/"],
+      "matchStrings": [
+        "'(?<depName>[\\w.-]+\\/[\\w.-]+)@(?<currentDigest>[a-fA-F0-9]{40}) # (?<currentValue>v[^'\\s#]+)'"
+      ],
+      "datasourceTemplate": "github-tags"
+    }
+  ],
   "packageRules": [
     {
       "description": "Auto-merge safe dev updates",

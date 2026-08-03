@@ -4,7 +4,14 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { findDrift } from '../generate-e2e-workflows.js';
-import { DECLARED_TOKEN_SCOPES, E2E_DIRECTORY, findE2eActions, workflowFileName } from '../lib/e2e-workflow.js';
+import {
+  DECLARED_TOKEN_SCOPES,
+  E2E_ALLOWED_ENDPOINTS,
+  E2E_DIRECTORY,
+  findE2eActions,
+  INSTALL_ALLOWED_ENDPOINTS,
+  workflowFileName,
+} from '../lib/e2e-workflow.js';
 import { ROOT_DIR, scanSorted } from '../lib/utils.js';
 
 /**
@@ -41,6 +48,13 @@ function runtimeOf(actionPath: string): string {
   const manifest = fs.readFileSync(path.join(ROOT_DIR, actionPath, 'action.yaml'), 'utf8');
 
   return /^\s*using:\s*'?([\w-]+)'?/m.exec(manifest)?.[1] ?? 'unknown';
+}
+
+/** Reads a generated workflow and returns just its `e2e` job, the half that holds the token. */
+function e2eJobOf(action: Awaited<ReturnType<typeof findE2eActions>>[number]): string {
+  const workflow = fs.readFileSync(path.join(ROOT_DIR, '.github', 'workflows', workflowFileName(action)), 'utf8');
+
+  return (workflow.split('\n  e2e:\n')[1] ?? '').split('\n  # <<< generated: summary')[0];
 }
 
 describe('end-to-end contract', () => {
@@ -94,6 +108,75 @@ describe('end-to-end contract', () => {
     const drift = await findDrift();
 
     expect(drift, "run 'bun run generate-e2e-workflows' and commit the result").toEqual([]);
+  });
+
+  it('blocks egress in every generated workflow, to a stated allowlist', async () => {
+    for (const action of await findE2eActions()) {
+      const file = workflowFileName(action);
+      const workflow = fs.readFileSync(path.join(ROOT_DIR, '.github', 'workflows', file), 'utf8');
+
+      // These jobs hold a repository-scoped app token, so audit mode reports an exfiltration rather
+      // than preventing one. They are only pinnable at all because they are generated and identical.
+      expect(workflow, `${file} must block egress, not merely audit it`).toContain('egress-policy: block');
+      expect(workflow, `${file} must not fall back to auditing`).not.toContain('egress-policy: audit');
+
+      for (const endpoint of [...INSTALL_ALLOWED_ENDPOINTS, ...E2E_ALLOWED_ENDPOINTS]) {
+        expect(workflow, `${file} must allow ${endpoint}`).toContain(endpoint);
+      }
+    }
+  });
+
+  // The whole reason the install is a separate job. `harden-runner` sets one policy per job, so the
+  // only way for the token-holding job to have no route to a package registry is for it not to be
+  // the job that installs — and the only way that stays true is to assert it here.
+  it('gives the job that holds the token no route to a package registry', async () => {
+    expect(E2E_ALLOWED_ENDPOINTS).not.toContain('registry.npmjs.org:443');
+    expect(INSTALL_ALLOWED_ENDPOINTS).toContain('registry.npmjs.org:443');
+
+    for (const action of await findE2eActions()) {
+      const file = workflowFileName(action);
+      const e2eJob = e2eJobOf(action);
+
+      expect(e2eJob, `${file}: the e2e job must not reach a registry`).not.toContain('registry.npmjs.org');
+      // `setup-cached` installs on every run, cache hit or not, so using it here would put the
+      // registry back on the critical path of the job holding the token.
+      expect(e2eJob, `${file}: the e2e job must not use the installing bun setup`).not.toContain('bun/setup-cached@');
+      expect(e2eJob, `${file}: the e2e job must restore what install cached`).toContain('fail-on-cache-miss: true');
+    }
+  });
+
+  /**
+   * `actions/cache` returns an entry only when the key *and* a version hashed from the `path` input
+   * both match, and it hashes that input exactly as written — so `node_modules` and `./node_modules`
+   * are two different caches under one key, and the job that saves and the job that restores have to
+   * name the paths identically rather than merely equivalently.
+   *
+   * Getting this wrong trips no lint and no other test. It fails every e2e job at once, on a
+   * `fail-on-cache-miss` for a key the install job in the same run demonstrably hit.
+   *
+   * The set also has to cover more than the root: a bun workspace leaves each package's own
+   * dependencies in its own `node_modules`, so a cache of the root alone restores a tree that is
+   * missing `@actions/core` — which fails as a module resolution error inside a package, long past
+   * anything that would name the cache as the cause.
+   */
+  it('saves and restores the same dependency paths, covering every workspace', async () => {
+    for (const action of await findE2eActions()) {
+      const file = workflowFileName(action);
+      const workflow = fs.readFileSync(path.join(ROOT_DIR, '.github', 'workflows', file), 'utf8');
+      const installJob = workflow.split('\n  install:\n')[1]?.split('\n  e2e:\n')[0] ?? '';
+
+      const saved = /path: \|\n((?: {12}\S+\n)+)/.exec(installJob)?.[1];
+      const restored = /path: \|\n((?: {12}\S+\n)+)/.exec(e2eJobOf(action))?.[1];
+
+      expect(saved, `${file}: the install job caches no dependency paths`).toBeDefined();
+      expect(restored, `${file}: the e2e job restores no dependency paths`).toEqual(saved);
+      expect(saved, `${file}: the cache must cover each package's own node_modules, not just the root`).toContain(
+        'packages/*/node_modules',
+      );
+      expect(saved, `${file}: the cache must cover each action's own node_modules`).toContain(
+        'actions/*/*/node_modules',
+      );
+    }
   });
 
   it('gives every action with cases a workflow that runs them', async () => {

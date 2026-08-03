@@ -87,6 +87,35 @@ describe('resolveBaseBranch', () => {
     await expect(resolveBaseBranch(emptyRepo, request)).rejects.toThrow(BranchNotFoundError);
   });
 
+  // GitHub hides a repository the token cannot see behind a 404 rather than a 403, so a revoked
+  // installation and a branch that was never created produce the same answer from `branchExists`.
+  // Only `BranchNotFoundError` is silenced by `silent_fail`, so conflating them hands the caller an
+  // empty base branch and sends it off to branch from nothing.
+  it('reports an unreachable repository as an error, not as a missing branch', async () => {
+    const unreachable: BranchApi = {
+      branchExists: vi.fn(async () => false),
+      getDefaultBranch: vi.fn(async () => {
+        throw new Error('Not Found');
+      }),
+    };
+
+    const request = { branchName: 'develop', checkIfExist: true, repository: 'owner/repo' };
+
+    await expect(resolveBaseBranch(unreachable, request)).rejects.toThrow('Not Found');
+    await expect(resolveBaseBranch(unreachable, request)).rejects.not.toThrow(BranchNotFoundError);
+  });
+
+  it('does not re-probe the repository when the missing branch is the default one', async () => {
+    // Resolving the default branch already required the call, so a second one would only cost a
+    // request to learn what the first already proved.
+    const emptyRepo = fakeApi({ existingBranches: [] });
+
+    await expect(
+      resolveBaseBranch(emptyRepo, { branchName: '', checkIfExist: true, repository: 'owner/repo' }),
+    ).rejects.toThrow(BranchNotFoundError);
+    expect(emptyRepo.getDefaultBranch).toHaveBeenCalledTimes(1);
+  });
+
   it('propagates API failures instead of reporting them as a missing branch', async () => {
     const failing: BranchApi = {
       branchExists: vi.fn(async () => {

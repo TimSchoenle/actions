@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { runAction } from 'actions-util';
+import { quoteForLog, runAction } from 'actions-util';
 
 import { sanitizeChangelog } from './changelog.js';
 import { readChartVersion, resolveChartFiles } from './chart-files.js';
@@ -33,7 +33,8 @@ interface Plan {
  */
 function resolveChartVersion(explicit: string, bump: string, current: string): string {
   if (explicit !== '') {
-    core.info(`Using the explicit chart-version '${explicit}'; version-bump is ignored`);
+    // Logged before `assertSemver` has vetted it, so it is still arbitrary caller-supplied text here.
+    core.info(`Using the explicit chart-version ${quoteForLog(explicit)}; version-bump is ignored`);
 
     return assertSemver(explicit, CHART_VERSION);
   }
@@ -91,15 +92,17 @@ export function run(): Promise<void> {
   return runAction(async () => {
     const { request, relativePaths, changelog } = await buildPlan();
 
-    core.info(`Updating ${request.images.length} image value(s) in ${request.valuesFile}`);
+    core.info(`Updating ${request.images.length} image value(s) in ${quoteForLog(request.valuesFile)}`);
 
     const { imageEdits } = await applyUpdate(request);
 
+    // Both sides of every edit are repository content: the key and the previous value come out of
+    // `values.yaml`, and a chart carrying a multi-line tag would otherwise reach stdout unescaped.
     for (const edit of imageEdits) {
-      core.info(`  ${edit.key}: ${edit.old} -> ${edit.new}`);
+      core.info(`  ${quoteForLog(edit.key)}: ${quoteForLog(edit.old)} -> ${quoteForLog(edit.new)}`);
     }
 
-    core.info(`Chart version: ${request.previousChartVersion} -> ${request.chartVersion}`);
+    core.info(`Chart version: ${quoteForLog(request.previousChartVersion)} -> ${quoteForLog(request.chartVersion)}`);
 
     setOutput(CHART_VERSION, request.chartVersion);
     setOutput('previous-chart-version', request.previousChartVersion);

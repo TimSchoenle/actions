@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { runAction, verifyBranch } from 'actions-util';
+import { quoteForLog, runAction, verifyBranch } from 'actions-util';
 
 import { getBooleanInput, getInput, setOutput } from './generated/action-io.js';
 
@@ -38,13 +38,15 @@ export function run(): void {
     const headRepoFullName = getInput('head_repo_full_name');
     const baseRepoFullName = getInput('base_repo_full_name');
 
-    core.info(`Head branch: '${headRef}'`);
-    core.info(`Head repository: '${headRepoFullName}'`);
-    core.info(`Base repository: '${baseRepoFullName}'`);
+    // Every one of these arrives from the `pull_request` payload of a fork-authored event, which is
+    // the least trustworthy input any action here takes.
+    core.info(`Head branch: ${quoteForLog(headRef)}`);
+    core.info(`Head repository: ${quoteForLog(headRepoFullName)}`);
+    core.info(`Base repository: ${quoteForLog(baseRepoFullName)}`);
     core.info(
       branchPattern === ''
         ? 'No branch pattern specified. Skipping pattern check (auto-pass).'
-        : `Branch pattern: '${branchPattern}'`,
+        : `Branch pattern: ${quoteForLog(branchPattern)}`,
     );
 
     const result = verifyBranch({

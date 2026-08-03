@@ -122,7 +122,7 @@ describe('verify-commit-authors action', () => {
   it('logs the pull request and the accepted IDs', async () => {
     await run(fetcher({ commits: [commit()], totalCount: 1 }));
 
-    expect(core.info).toHaveBeenCalledWith('Verifying commits for PR: https://github.com/owner/repo/pull/1');
+    expect(core.info).toHaveBeenCalledWith('Verifying commits for PR: "https://github.com/owner/repo/pull/1"');
     expect(core.info).toHaveBeenCalledWith('Accepted User IDs: 12345, 67890');
   });
 });

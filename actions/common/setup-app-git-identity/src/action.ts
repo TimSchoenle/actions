@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { resolveBotIdentity, runAction } from 'actions-util';
+import { quoteForLog, resolveBotIdentity, runAction } from 'actions-util';
 import { createAppUserApi } from 'actions-util/identity';
 
 import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';
@@ -31,7 +31,7 @@ export function run({ api, git }: RunDependencies = {}): Promise<void> {
 
     const identity = await resolveBotIdentity(api ?? createAppUserApi(token), appSlug);
 
-    core.info(`Configuring git user as ${identity.name} <${identity.email}>...`);
+    core.info(`Configuring git user as ${quoteForLog(identity.name)} <${quoteForLog(identity.email)}>...`);
     await configureGitIdentity(git ?? createGitConfigurator(), identity);
 
     setOutput(ActionOutput['bot-name'], identity.name);

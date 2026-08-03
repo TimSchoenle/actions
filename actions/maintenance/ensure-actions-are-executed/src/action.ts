@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { parseRepository, runAction } from 'actions-util';
+import { parseRepository, quoteAllForLog, quoteForLog, runAction } from 'actions-util';
 
 import { collectCheckRuns, latestCheckRuns } from './checks.js';
 import { ActionInput, ActionOutput, getBooleanInput, getInput, setOutput } from './generated/action-io.js';
@@ -50,7 +50,7 @@ function logSnapshot(collection: CheckRunCollection, checkRuns: CheckRun[]): voi
     for (const [index, checkRun] of checkRuns.entries()) {
       const conclusion = checkRun.conclusion ?? 'null';
 
-      core.info(`${index + 1}. ${checkRun.name} (status=${checkRun.status}, conclusion=${conclusion})`);
+      core.info(`${index + 1}. ${quoteForLog(checkRun.name)} (status=${checkRun.status}, conclusion=${conclusion})`);
     }
   });
 }
@@ -58,15 +58,15 @@ function logSnapshot(collection: CheckRunCollection, checkRuns: CheckRun[]): voi
 function logSelection(selection: Selection): void {
   group('Matcher Evaluation', () => {
     for (const { matcher, matchedNames } of selection.outcomes) {
-      core.info(`Matcher '${matcher.raw}' mode=${matcher.mode} matched=${matchedNames.length}`);
+      core.info(`Matcher ${quoteForLog(matcher.raw)} mode=${matcher.mode} matched=${matchedNames.length}`);
     }
   });
 
   for (const { matcher, matchedNames } of selection.outcomes) {
     core.notice(
       matchedNames.length === 0
-        ? `Matcher '${matcher.raw}' did not match any check run. This is treated as not started.`
-        : `Matcher '${matcher.raw}' matched ${matchedNames.length} check run(s).`,
+        ? `Matcher ${quoteForLog(matcher.raw)} did not match any check run. This is treated as not started.`
+        : `Matcher ${quoteForLog(matcher.raw)} matched ${matchedNames.length} check run(s).`,
     );
   }
 
@@ -77,7 +77,7 @@ function logSelection(selection: Selection): void {
 
   group(`Selected Checks (${selection.selected.length})`, () => {
     for (const [index, checkRun] of selection.selected.entries()) {
-      core.info(`${index + 1}. ${checkRun.name}`);
+      core.info(`${index + 1}. ${quoteForLog(checkRun.name)}`);
     }
   });
 }
@@ -90,7 +90,9 @@ function logVerification(summary: VerificationSummary): void {
 
   group('Verify Matched Checks', () => {
     for (const { checkRun, outcome, reason } of summary.verifications) {
-      core.info(`Check '${checkRun.name}' => status=${checkRun.status} conclusion=${checkRun.conclusion ?? 'null'}`);
+      core.info(
+        `Check ${quoteForLog(checkRun.name)} => status=${checkRun.status} conclusion=${checkRun.conclusion ?? 'null'}`,
+      );
 
       // A failure is annotated with its details URL, so the log points straight at the run to open.
       if (outcome === 'failed') {
@@ -139,10 +141,10 @@ export function run(api?: CheckRunsApi): Promise<void> {
 
     group('Configuration', () => {
       core.info(`Repository: ${repository.owner}/${repository.repo}`);
-      core.info(`Ref: ${ref}`);
+      core.info(`Ref: ${quoteForLog(ref)}`);
       core.info(`Match mode: ${matchMode}`);
       core.info(`Error on failure: ${String(errorOnFailure)}`);
-      core.info(`Matchers: ${matchers.map((matcher) => matcher.raw).join(', ')}`);
+      core.info(`Matchers: ${quoteAllForLog(matchers.map((matcher) => matcher.raw))}`);
     });
 
     const collection = await collectCheckRuns(api ?? createCheckRunsApi(token), {
@@ -155,7 +157,9 @@ export function run(api?: CheckRunsApi): Promise<void> {
     logSnapshot(collection, checkRuns);
 
     if (checkRuns.length === 0) {
-      core.notice(`No checks were available for matching in ${repository.owner}/${repository.repo} at ref ${ref}.`);
+      core.notice(
+        `No checks were available for matching in ${repository.owner}/${repository.repo} at ref ${quoteForLog(ref)}.`,
+      );
     }
 
     const selection = selectChecks(checkRuns, matchers);

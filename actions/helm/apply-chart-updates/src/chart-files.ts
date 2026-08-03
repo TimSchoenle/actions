@@ -6,20 +6,21 @@
  * instead of two, and there is no legitimate reason for this action to write anything in a chart
  * repository other than a chart's `Chart.yaml` and `values.yaml`.
  */
-import { isAbsolute, relative, resolve } from 'node:path';
+import { relative, resolve } from 'node:path';
 
-import { loadYaml } from 'actions-util';
+import { loadYaml, resolveWithinWorkspace } from 'actions-util';
 
 export const CHART_FILE_NAME = 'Chart.yaml';
 export const VALUES_FILE_NAME = 'values.yaml';
 
-/** Raised when `chart-path` escapes, or could escape, the workspace. */
-export class UnsafePathError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'UnsafePathError';
-  }
-}
+/**
+ * Raised when `chart-path` escapes, or could escape, the workspace.
+ *
+ * Re-exported from `actions-util` rather than declared here: the containment rule is shared with
+ * every other action that takes a path, and two classes with the same name would let a caller catch
+ * the wrong one.
+ */
+export { UnsafePathError } from 'actions-util';
 
 /** The files of one chart, as absolute paths, plus the repository-relative paths to report. */
 export interface ChartFiles {
@@ -32,32 +33,16 @@ export interface ChartFiles {
 /**
  * Resolves the chart's files beneath `workspace`.
  *
- * Both a syntactic check (no absolute path, no `..` segment) and a check on the resolved result are
- * applied. The syntactic one gives a clear error; the resolved one is what actually holds, and
- * catches anything the first did not anticipate.
+ * The containment rule itself is `resolveWithinWorkspace`; what is left here is the part specific to
+ * a chart — that the directory holds exactly two files with fixed names, and that their paths are
+ * also needed relative to the repository root for the commit step's file pattern.
+ *
+ * @throws {UnsafePathError} if `chart-path` is empty, absolute, or leaves the workspace.
  */
 export function resolveChartFiles(chartPath: string, workspace: string): ChartFiles {
-  const trimmed = chartPath.trim();
-
-  if (trimmed === '') {
-    throw new UnsafePathError('chart-path must not be empty');
-  }
-
-  if (isAbsolute(trimmed) || /^[A-Za-z]:/.test(trimmed)) {
-    throw new UnsafePathError(`chart-path must be relative to the repository, got '${chartPath}'`);
-  }
-
-  if (trimmed.split(/[/\\]/).includes('..')) {
-    throw new UnsafePathError(`chart-path must not traverse upwards, got '${chartPath}'`);
-  }
-
   const root = resolve(workspace);
-  const chartDir = resolve(root, trimmed);
+  const chartDir = resolveWithinWorkspace(chartPath, root, 'chart-path');
   const fromRoot = relative(root, chartDir);
-
-  if (fromRoot.startsWith('..') || isAbsolute(fromRoot)) {
-    throw new UnsafePathError(`chart-path resolves outside the workspace: '${chartPath}'`);
-  }
 
   const prefix = fromRoot === '' ? '' : `${fromRoot.split('\\').join('/')}/`;
 

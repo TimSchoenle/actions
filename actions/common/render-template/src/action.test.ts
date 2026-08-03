@@ -136,14 +136,14 @@ describe('render-template action', () => {
   describe('logging', () => {
     it('says it is rendering in write mode and checking in check mode', async () => {
       await run();
-      expect(logged()).toContain('Rendering README.md from README.hbs');
+      expect(logged()).toContain('Rendering "README.md" from "README.hbs"');
 
       vi.clearAllMocks();
       setInputs({ check: 'true' });
       vi.mocked(generateFile).mockResolvedValue({ changed: false, checksum: 'abc', partialCount: 0 });
 
       await run();
-      expect(logged()).toContain('Checking README.md from README.hbs');
+      expect(logged()).toContain('Checking "README.md" from "README.hbs"');
     });
 
     // A mis-pointed partials directory otherwise fails much later, with a message about a template.
@@ -163,7 +163,7 @@ describe('render-template action', () => {
 
     it('distinguishes a write from a no-op', async () => {
       await run();
-      expect(logged()).toContain('Wrote README.md');
+      expect(logged()).toContain('Wrote "README.md"');
 
       vi.clearAllMocks();
       setInputs();

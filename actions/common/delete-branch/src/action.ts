@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { runAction } from 'actions-util';
+import { quoteForLog, runAction } from 'actions-util';
 import { createBranchApi } from 'actions-util/branches';
 
 import { deleteBranchIfExists } from './delete.js';
@@ -15,17 +15,19 @@ import type { BranchApi, DeleteResult } from './delete.js';
  * lands — must not fail the workflow. The `deleted` output tells a caller that needs certainty.
  */
 function report(result: DeleteResult, repository: string, branch: string): void {
+  const quoted = quoteForLog(branch);
+
   switch (result.outcome) {
     case 'deleted': {
-      core.info(`✅ Branch '${branch}' deleted successfully.`);
+      core.info(`✅ Branch ${quoted} deleted successfully.`);
       break;
     }
     case 'delete-failed': {
-      core.warning(`Failed to delete branch '${branch}': ${result.cause.message}`);
+      core.warning(`Failed to delete branch ${quoted}: ${result.cause.message}`);
       break;
     }
     case 'not-found': {
-      core.info(`Branch '${branch}' does not exist in ${repository}. Skipping delete.`);
+      core.info(`Branch ${quoted} does not exist in ${quoteForLog(repository)}. Skipping delete.`);
       break;
     }
   }
@@ -47,7 +49,7 @@ export function run(api?: BranchApi): Promise<void> {
     const repository = getInput(ActionInput.repository, { required: true });
     const branchName = getInput(ActionInput.branch_name, { required: true });
 
-    core.info(`Attempting to delete branch '${branchName}' in repository: ${repository}`);
+    core.info(`Attempting to delete branch ${quoteForLog(branchName)} in repository: ${quoteForLog(repository)}`);
 
     const result = await deleteBranchIfExists(api ?? createBranchApi(token), { branchName, repository });
 

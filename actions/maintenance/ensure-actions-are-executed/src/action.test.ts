@@ -152,7 +152,7 @@ describe('ensure-actions-are-executed action', () => {
 
     expect(output('matched_checks_count')).toBe('0');
     expect(output('failed_checks_count')).toBe('0');
-    expect(notices()).toContain("Matcher 'build' did not match any check run. This is treated as not started.");
+    expect(notices()).toContain('Matcher "build" did not match any check run. This is treated as not started.');
     expect(core.setFailed).not.toHaveBeenCalled();
   });
 

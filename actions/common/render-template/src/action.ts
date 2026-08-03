@@ -1,8 +1,30 @@
 import * as core from '@actions/core';
-import { runAction } from 'actions-util';
+import { quoteForLog, resolveWithinWorkspace, runAction, workspaceRoot } from 'actions-util';
 
 import { generateFile } from './generate.js';
 import { getBooleanInput, getInput, setOutput } from './generated/action-io.js';
+
+/**
+ * Rejects any path input that would reach outside the checkout.
+ *
+ * Validated, not rewritten: the action runs with the workspace as its working directory, so the
+ * relative paths it is given already resolve inside it. The only ways out are `..` and an absolute
+ * path, and both are refused here — before a single file is read or written, so a hostile `output`
+ * cannot leave a partial file somewhere the workflow never looks. Reporting the paths as the caller
+ * wrote them is what keeps every downstream error message about `README.hbs` and not about
+ * `/home/runner/work/repo/repo/README.hbs`.
+ */
+function assertPathsWithinWorkspace(templatePath: string, outputPath: string, partialsDir: string): void {
+  const workspace = workspaceRoot();
+
+  resolveWithinWorkspace(templatePath, workspace, 'template');
+  resolveWithinWorkspace(outputPath, workspace, 'output');
+
+  // An empty `partials-dir` means "no partials", which is not a path at all.
+  if (partialsDir.trim() !== '') {
+    resolveWithinWorkspace(partialsDir, workspace, 'partials-dir');
+  }
+}
 
 /**
  * Reads the action inputs, renders the template and publishes what happened to the output file.
@@ -16,15 +38,18 @@ export function run(): Promise<void> {
   return runAction(async () => {
     const templatePath = getInput('template', { required: true });
     const outputPath = getInput('output', { required: true });
+    const partialsDir = getInput('partials-dir');
     const check = getBooleanInput('check');
 
-    core.info(`${check ? 'Checking' : 'Rendering'} ${outputPath} from ${templatePath}...`);
+    assertPathsWithinWorkspace(templatePath, outputPath, partialsDir);
+
+    core.info(`${check ? 'Checking' : 'Rendering'} ${quoteForLog(outputPath)} from ${quoteForLog(templatePath)}...`);
 
     const result = await generateFile({
       templatePath,
       outputPath,
       variables: getInput('variables'),
-      partialsDir: getInput('partials-dir'),
+      partialsDir,
       strict: getBooleanInput('strict'),
       escapeHtml: getBooleanInput('escape-html'),
       check,
@@ -39,10 +64,14 @@ export function run(): Promise<void> {
     }
 
     if (check) {
-      core.info(`✅ ${outputPath} is up to date.`);
+      core.info(`✅ ${quoteForLog(outputPath)} is up to date.`);
       return;
     }
 
-    core.info(result.changed ? `✅ Wrote ${outputPath}.` : `✅ ${outputPath} was already up to date; left untouched.`);
+    core.info(
+      result.changed
+        ? `✅ Wrote ${quoteForLog(outputPath)}.`
+        : `✅ ${quoteForLog(outputPath)} was already up to date; left untouched.`,
+    );
   });
 }

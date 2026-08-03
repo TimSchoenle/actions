@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { runAction } from 'actions-util';
+import { quoteForLog, runAction } from 'actions-util';
 
 import { getInput, setOutput } from './generated/action-io.js';
 import { modifyYaml } from './modify.js';
@@ -17,7 +17,7 @@ export function run(): Promise<void> {
     const key = getInput('key', { required: true });
     const value = getInput('value', { required: true });
 
-    core.info(`Modifying ${key} in ${file}...`);
+    core.info(`Modifying ${quoteForLog(key)} in ${quoteForLog(file)}...`);
 
     const oldValue = await modifyYaml(file, key, value);
 
@@ -26,6 +26,6 @@ export function run(): Promise<void> {
     }
     setOutput('new-value', value);
 
-    core.info(`✅ Modified ${key} to: ${value}`);
+    core.info(`✅ Modified ${quoteForLog(key)} to: ${quoteForLog(value)}`);
   });
 }
