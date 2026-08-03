@@ -1,7 +1,7 @@
 ﻿name: 'Update Helm Chart Version'
-description: 'Updates a Helm chart version, appVersion, and image tag, then creates a Pull Request.
-  This action requires a bot account with access to the charts repo.
-  Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag).'
+description: "Updates a Helm chart's image tags, version and appVersion, then opens a Pull Request.
+  Every image carries its own version and digest, so one call can move a chart with many services.
+  This action requires a bot account with access to the charts repo."
 inputs:
   app-id:
     description: 'GitHub App ID'
@@ -19,14 +19,54 @@ inputs:
   chart-path:
     description: 'Path of the chart inside the repo (e.g. charts/my-app)'
     required: true
-  new-tag:
-    description: 'New app version/tag'
+  images:
+    description: 'JSON object mapping a dot-notation key in values.yaml to that image''s own variables,
+      e.g. {"services.api.image.tag": {"tag": "v1.2.3", "digest": "sha256:..."}}.
+      Every key must already exist in values.yaml and must match key-pattern.'
     required: true
-  image-digest:
-    description: 'Docker image digest (e.g. sha256:...)'
-    required: true
+  value-template:
+    description: "Template for the value written at each key. Supports ${name} placeholders only, resolved
+      against the entry's own variables layered over `variables`. An undefined placeholder is an error."
+    required: false
+    default: '${tag}@${digest}'
+  variables:
+    description: "JSON object of default template variables, shared by every entry. An entry's own
+      variables always win. Optional: images that move independently carry their versions per entry."
+    required: false
+    default: '{}'
+  app-version:
+    description: 'Value to write to Chart.yaml appVersion. Explicit only, never derived from an image:
+      a chart whose services release independently has no single app version. Left untouched when empty.'
+    required: false
+    default: ''
+  version-bump:
+    description: 'How to bump the Chart.yaml version: patch, minor, major or none. Ignored when chart-version is set.'
+    required: false
+    default: 'patch'
+  chart-version:
+    description: 'Explicit Chart.yaml version, taking precedence over version-bump. Must be valid SemVer.'
+    required: false
+    default: ''
+  changelog:
+    description: 'Markdown changelog for this release, carried into the pull request body as a collapsed
+      section. Sanitized first: mentions and issue-closing keywords are neutralized and the text is truncated.'
+    required: false
+    default: ''
+  changelog-max-bytes:
+    description: 'Byte cap for the sanitized changelog. A pull request body is limited to 65536 characters.'
+    required: false
+    default: '30000'
+  key-pattern:
+    description: 'Regular expression every key in `images` must match. The default confines writes to image tags;
+      widening it is an explicit decision. Structural key validation applies regardless of this pattern.'
+    required: false
+    default: '^([A-Za-z0-9_-]+\.)*image\.tag$'
+  value-pattern:
+    description: 'Regular expression every rendered value must match before it is written.'
+    required: false
+    default: '^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}(@sha256:[0-9a-f]{64})?$'
   pr-branch-prefix:
-    description: 'Prefix for the PR branch'
+    description: 'Prefix for the PR branch. The branch is <prefix>/<chart-name>/<new-chart-version>.'
     default: 'chore/helm/auto-update'
     required: false
 
@@ -37,10 +77,25 @@ outputs:
   pr_number:
     description: 'The id of the created Pull Request'
     value: ${{ steps.create-pr.outputs.pr_number }}
+  chart-version:
+    description: 'The chart version written to Chart.yaml'
+    value: ${{ steps.apply.outputs.chart-version }}
+  previous-chart-version:
+    description: 'The chart version that was in Chart.yaml before the update'
+    value: ${{ steps.apply.outputs.previous-chart-version }}
+  updated-count:
+    description: 'Number of image keys updated in values.yaml'
+    value: ${{ steps.apply.outputs.updated-count }}
+  changes:
+    description: 'JSON array of {key, old, new} for every image key updated, in input order'
+    value: ${{ steps.apply.outputs.changes }}
 
 runs:
   using: 'composite'
   steps:
+    # The only shell in this action. Everything that touches caller-controlled content — keys, tags,
+    # digests, the changelog — happens inside apply-chart-updates, where it is validated rather than
+    # interpolated.
     - name: Parse Inputs
       id: parse
       shell: bash
@@ -48,15 +103,19 @@ runs:
         CHART_PATH: ${{ inputs.chart-path }}
         HELM_REPO: ${{ inputs.helm-repo }}
       run: |
+        set -euo pipefail
+
+        if ! [[ "$HELM_REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+          echo "::error::helm-repo must be owner/repo, got '$HELM_REPO'"
+          exit 1
+        fi
+
         # Extract chart name from path (basename)
         CHART_NAME=$(basename "$CHART_PATH")
         echo "chart-name=$CHART_NAME" >> "$GITHUB_OUTPUT"
 
-        FULL_REPO="$HELM_REPO"
-        OWNER="${FULL_REPO%%/*}"
-        REPO="${FULL_REPO#*/}"
-        echo "owner=$OWNER" >> "$GITHUB_OUTPUT"
-        echo "repo=$REPO" >> "$GITHUB_OUTPUT"
+        echo "owner=${HELM_REPO%%/*}" >> "$GITHUB_OUTPUT"
+        echo "repo=${HELM_REPO#*/}" >> "$GITHUB_OUTPUT"
 
     - name: Generate Bot Token
       id: generate_token
@@ -84,79 +143,47 @@ runs:
         fetch-depth: 0
         persist-credentials: false
 
-    - name: Read Current Version
-      id: read-version
-      uses: TimSchoenle/actions/actions/common/read-yaml@7c23161e06ceb38f27b43d037ba1ac118cdb3aa4 # tag=actions-common-read-yaml-v1.1.2
+    # One step for the whole file update: a composite cannot loop, so N images cannot be N steps.
+    - name: Apply Chart Updates
+      id: apply
+      uses: TimSchoenle/actions/actions/helm/apply-chart-updates@3fc3b5628a7eda8aac81835bf6512abfc930b0e7 # tag=actions-helm-apply-chart-updates-v1.1.0
       with:
-        file: ${{ inputs.chart-path }}/Chart.yaml
-        key: version
-
-    - name: Calculate New Version
-      id: calc-version
-      shell: bash
-      env:
-        CURRENT_VERSION: ${{ steps.read-version.outputs.value }}
-      run: |
-        # Increment patch version (simple awk script logic)
-        NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
-        echo "Calculated New Version: $NEW_VERSION"
-        echo "new-version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
-
-    - name: Set Chart Version
-      uses: TimSchoenle/actions/actions/common/modify-yaml@03a4e1a60d5afd30b9404ab6a17349a71688ec6c # tag=actions-common-modify-yaml-v1.3.1
-      with:
-        file: ${{ inputs.chart-path }}/Chart.yaml
-        key: version
-        value: ${{ steps.calc-version.outputs.new-version }}
-
-    - name: Set App Version
-      uses: TimSchoenle/actions/actions/common/modify-yaml@03a4e1a60d5afd30b9404ab6a17349a71688ec6c # tag=actions-common-modify-yaml-v1.3.1
-      with:
-        file: ${{ inputs.chart-path }}/Chart.yaml
-        key: appVersion
-        value: ${{ inputs.new-tag }}
-
-    - name: Construct Full Image Tag
-      id: construct-tag
-      shell: bash
-      env:
-        NEW_TAG: ${{ inputs.new-tag }}
-        IMAGE_DIGEST: ${{ inputs.image-digest }}
-      run: |
-        # We need to construct the full tag: TAG@DIGEST
-        FULL_TAG="${NEW_TAG}@${IMAGE_DIGEST}"
-        echo "Full Tag: $FULL_TAG"
-        echo "full-tag=$FULL_TAG" >> "$GITHUB_OUTPUT"
-
-    - name: Update Image Tag
-      uses: TimSchoenle/actions/actions/common/modify-yaml@03a4e1a60d5afd30b9404ab6a17349a71688ec6c # tag=actions-common-modify-yaml-v1.3.1
-      with:
-        file: ${{ inputs.chart-path }}/values.yaml
-        key: image.tag
-        value: ${{ steps.construct-tag.outputs.full-tag }}
+        chart-path: ${{ inputs.chart-path }}
+        images: ${{ inputs.images }}
+        value-template: ${{ inputs.value-template }}
+        variables: ${{ inputs.variables }}
+        app-version: ${{ inputs.app-version }}
+        version-bump: ${{ inputs.version-bump }}
+        chart-version: ${{ inputs.chart-version }}
+        changelog: ${{ inputs.changelog }}
+        changelog-max-bytes: ${{ inputs.changelog-max-bytes }}
+        key-pattern: ${{ inputs.key-pattern }}
+        value-pattern: ${{ inputs.value-pattern }}
 
     - name: Create Pull Request
       id: create-pr
-      uses: TimSchoenle/actions/actions/common/create-pull-request@0bb04fa0f8a8f4ebbe1668f7c28f230c55fd5d3d # tag=actions-common-create-pull-request-v1.0.9
+      uses: TimSchoenle/actions/actions/common/create-pull-request@2d46b820a55e210c75dece9ec14c419cd8a9c559 # tag=actions-common-create-pull-request-v1.0.10
       with:
         app-id: ${{ inputs.app-id }}
         private-key: ${{ inputs.private-key }}
         repository: ${{ inputs.helm-repo }}
         base_branch: ${{ steps.resolve-base-branch.outputs.base_branch }}
-        branch_name: '${{ inputs.pr-branch-prefix }}/${{ steps.parse.outputs.chart-name }}/${{ inputs.new-tag }}'
-        title: 'chore(${{ steps.parse.outputs.chart-name }}): update chart to ${{ steps.calc-version.outputs.new-version }}'
+        # Named after the chart version, not an image tag: with per-image versions there is no single
+        # tag to name a branch after, and the chart version is what this pull request delivers.
+        branch_name: '${{ inputs.pr-branch-prefix }}/${{ steps.parse.outputs.chart-name }}/${{ steps.apply.outputs.chart-version }}'
+        title: 'chore(${{ steps.parse.outputs.chart-name }}): update chart to ${{ steps.apply.outputs.chart-version }}'
+        # Both Markdown fragments leave apply-chart-updates already sanitized, so nothing
+        # caller-controlled is assembled into this body here.
         body: |
-          Automated update for **${{ steps.parse.outputs.chart-name }}** chart.
+          Automated update for the **${{ steps.parse.outputs.chart-name }}** chart.
 
-          - **New Chart Version**: `${{ steps.calc-version.outputs.new-version }}`
-          - **New App Version**: `${{ inputs.new-tag }}`
-          - **Docker Digest**: `${{ inputs.image-digest }}`
+          - **Chart version**: `${{ steps.apply.outputs.previous-chart-version }}` → `${{ steps.apply.outputs.chart-version }}`
+          - **Images updated**: ${{ steps.apply.outputs.updated-count }}
 
-          ### Expected Structure
-          This action assumes the following structure in the chart directory:
-          - `Chart.yaml`: Contains `version` and `appVersion` fields.
-          - `values.yaml`: Contains `image.tag` field.
+          ${{ steps.apply.outputs.summary-markdown }}
+
+          ${{ steps.apply.outputs.changelog-markdown }}
         reset_branch: 'true'
         commit_changes: 'true'
-        commit_message: 'chore(${{ steps.parse.outputs.chart-name }}): update chart to ${{ steps.calc-version.outputs.new-version }}'
-        file_pattern: '${{ inputs.chart-path }}/Chart.yaml ${{ inputs.chart-path }}/values.yaml'
+        commit_message: 'chore(${{ steps.parse.outputs.chart-name }}): update chart to ${{ steps.apply.outputs.chart-version }}'
+        file_pattern: ${{ steps.apply.outputs.files }}
