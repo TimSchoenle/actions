@@ -60,7 +60,7 @@
   },
   "dependencies": {
     "actions-util": "workspace:*",
-    "chalk": "5",
+    "chalk": "6",
     "inquirer": "14.0.2",
     "openpgp": "6.3.1"
   },
