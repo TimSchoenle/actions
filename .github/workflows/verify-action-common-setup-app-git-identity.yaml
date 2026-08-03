@@ -1,17 +1,23 @@
-name: Verify Common Setup App Git Identity
+# GENERATED — do not edit by hand. Run `bun run generate-e2e-workflows` to rebuild this file
+# from the actions that have an `e2e/` directory. The drift test in CI fails if it is out of date.
+#
+# The cases live in `actions/common/setup-app-git-identity/e2e/` and are ordinary vitest files. This
+# workflow supplies only what they cannot get on a laptop: a token scoped to the scratch repository.
+name: Verify Common Setup-app-git-identity
 
 on:
   push:
     branches:
       - main
+      - 'feature/common/setup-app-git-identity'
     paths:
       - 'actions/common/setup-app-git-identity/**'
+      - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-setup-app-git-identity.yaml'
   pull_request:
-    branches:
-      - main
     paths:
       - 'actions/common/setup-app-git-identity/**'
+      - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-setup-app-git-identity.yaml'
   workflow_dispatch:
 
@@ -22,9 +28,14 @@ concurrency:
 permissions: {}
 
 jobs:
-  verify:
-    name: Verify Action
+  e2e:
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: End-to-end
     runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
@@ -36,70 +47,40 @@ jobs:
         with:
           persist-credentials: false
 
-      # Using 'github-actions' as the slug since it is a known bot
-      - name: Run setup-app-git-identity
-        id: setup
-        uses: ./actions/common/setup-app-git-identity
-        env:
-          TEST_APP_SLUG: 'github-actions'
+      # The cases run `dist/index.js`, the bundle GitHub itself would run, so nothing is built here.
+      # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
+      # it to 'latest', which would win otherwise.
+      - name: Setup Bun
+        uses: TimSchoenle/actions/actions/bun/setup-cached@cbdcf6fd08b46059064bc9c91efa6b610a9ee7db # tag=actions-bun-setup-cached-v1.1.10
         with:
-          app-slug: ${{ env.TEST_APP_SLUG }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          bun-version: ''
+          bun-version-file: '.bun-version'
 
-      - name: Verify Outputs
-        shell: bash
+      - name: Generate Token
+        id: token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: TimSchoenle
+          repositories: actions-testing
+          permission-metadata: read
+
+      - name: Run End-to-end Cases
         env:
-          BOT_NAME: ${{ steps.setup.outputs.bot-name }}
-          BOT_EMAIL: ${{ steps.setup.outputs.bot-email }}
-          BOT_ID: ${{ steps.setup.outputs.bot-id }}
-          EXPECTED_SLUG: 'github-actions'
-          EXPECTED_ID: '41898282'
-        run: |
-          echo "Verifying outputs..."
-          echo "Bot Name: $BOT_NAME"
-          echo "Bot Email: $BOT_EMAIL"
-          echo "Bot ID: $BOT_ID"
-
-          EXPECTED_USERNAME="${EXPECTED_SLUG}[bot]"
-          if [[ "$BOT_NAME" != "$EXPECTED_USERNAME" ]]; then
-            echo "::error::Unexpected bot name: $BOT_NAME"
-            exit 1
-          fi
-
-          # github-actions bot ID is typically 41898282
-          if [[ "$BOT_ID" != "$EXPECTED_ID" ]]; then
-             echo "::warning::Unexpected bot ID for $EXPECTED_SLUG: $BOT_ID. This might change, but usually stays static."
-          fi
-
-          EXPECTED_EMAIL="${BOT_ID}+${EXPECTED_USERNAME}@users.noreply.github.com"
-          if [[ "$BOT_EMAIL" != "$EXPECTED_EMAIL" ]]; then
-            echo "::error::Unexpected bot email. Expected $EXPECTED_EMAIL, got $BOT_EMAIL"
-            exit 1
-          fi
-
-      - name: Verify Git Config
-        shell: bash
-        env:
-          EXPECTED_SLUG: 'github-actions'
-        run: |
-          GIT_NAME=$(git config user.name)
-          GIT_EMAIL=$(git config user.email)
-
-          echo "Git User: $GIT_NAME"
-          echo "Git Email: $GIT_EMAIL"
-
-          EXPECTED_USERNAME="${EXPECTED_SLUG}[bot]"
-          if [[ "$GIT_NAME" != "$EXPECTED_USERNAME" ]]; then
-             echo "::error::Git user.name not set correctly."
-             exit 1
-          fi
+          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          # An installation token cannot call `GET /user`, so the suite resolves its own account by
+          # app slug instead. Without this a case matching commit authors fails only in CI.
+          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
+          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+        run: bun run e2e actions/common/setup-app-git-identity
 
   # <<< generated: summary (run 'bun run generate-ci-required' to update)
   summary:
-    name: 'CI Summary: Common Setup App Git Identity'
+    name: 'CI Summary: Common Setup-app-git-identity'
     if: ${{ always() }}
     needs:
-      - verify
+      - e2e
     runs-on: ubuntu-latest
     permissions: {}
     steps:

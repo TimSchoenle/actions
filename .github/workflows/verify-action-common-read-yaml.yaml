@@ -1,11 +1,25 @@
-name: Verify Action Common Read YAML
+# GENERATED — do not edit by hand. Run `bun run generate-e2e-workflows` to rebuild this file
+# from the actions that have an `e2e/` directory. The drift test in CI fails if it is out of date.
+#
+# The cases live in `actions/common/read-yaml/e2e/` and are ordinary vitest files. This
+# workflow supplies only what they cannot get on a laptop: a token scoped to the scratch repository.
+name: Verify Common Read-yaml
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'feature/common/read-yaml'
+    paths:
+      - 'actions/common/read-yaml/**'
+      - 'packages/e2e/**'
+      - '.github/workflows/verify-action-common-read-yaml.yaml'
   pull_request:
     paths:
       - 'actions/common/read-yaml/**'
+      - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-read-yaml.yaml'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -14,30 +28,14 @@ concurrency:
 permissions: {}
 
 jobs:
-  verify-read-yaml:
-    name: Verify Read YAML
+  e2e:
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: End-to-end
+    runs-on: ubuntu-latest
     permissions:
       contents: read # to fetch code
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - key: 'version'
-            expected: '1.0.0'
-            desc: 'Root key'
-          - key: 'app.name'
-            expected: 'test-app'
-            desc: 'Nested key'
-          - key: 'app.database.host'
-            expected: 'localhost'
-            desc: 'Deep nested key'
-          - key: 'app.resources.limits.cpu'
-            expected: '500m'
-            desc: 'Mixed type value (string)'
-          - key: 'app.debug'
-            expected: 'true'
-            desc: 'Boolean value'
-
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
@@ -49,48 +47,40 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Complex Test Data
-        run: |
-          cat <<EOF > complex.yaml
-          version: 1.0.0
-
-          # Application Metadata
-          app:
-            name: test-app # inline comment
-            debug: true
-            
-            # Database Configuration
-            database:
-              host: localhost
-              port: 5432
-              
-            resources:
-              limits:
-                cpu: 500m
-          EOF
-
-      - name: Test Read YAML (${{ matrix.desc }})
-        id: read
-        uses: ./actions/common/read-yaml
+      # The cases run `dist/index.js`, the bundle GitHub itself would run, so nothing is built here.
+      # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
+      # it to 'latest', which would win otherwise.
+      - name: Setup Bun
+        uses: TimSchoenle/actions/actions/bun/setup-cached@cbdcf6fd08b46059064bc9c91efa6b610a9ee7db # tag=actions-bun-setup-cached-v1.1.10
         with:
-          file: complex.yaml
-          key: ${{ matrix.key }}
+          bun-version: ''
+          bun-version-file: '.bun-version'
 
-      - name: Assert Value
-        if: steps.read.outputs.value != matrix.expected
+      - name: Generate Token
+        id: token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: TimSchoenle
+          repositories: actions-testing
+          permission-metadata: read
+
+      - name: Run End-to-end Cases
         env:
-          EXPECTED: ${{ matrix.expected }}
-          ACTUAL: ${{ steps.read.outputs.value }}
-        run: |
-          echo "Expected '$EXPECTED', got '$ACTUAL'"
-          exit 1
+          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          # An installation token cannot call `GET /user`, so the suite resolves its own account by
+          # app slug instead. Without this a case matching commit authors fails only in CI.
+          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
+          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+        run: bun run e2e actions/common/read-yaml
 
   # <<< generated: summary (run 'bun run generate-ci-required' to update)
   summary:
-    name: 'CI Summary: Action Common Read YAML'
+    name: 'CI Summary: Common Read-yaml'
     if: ${{ always() }}
     needs:
-      - verify-read-yaml
+      - e2e
     runs-on: ubuntu-latest
     permissions: {}
     steps:

@@ -15,6 +15,7 @@
     "handlebars": "4.7.9"
   },
   "devDependencies": {
+    "actions-e2e": "workspace:*",
     "@fast-check/vitest": "0.4.1",
     "@types/node": "26.1.2",
     "fast-check": "4.9.0",

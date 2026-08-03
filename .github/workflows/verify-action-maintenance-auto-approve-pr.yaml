@@ -1,15 +1,23 @@
-﻿name: Verify Maintenance Auto-approve-pr
+# GENERATED — do not edit by hand. Run `bun run generate-e2e-workflows` to rebuild this file
+# from the actions that have an `e2e/` directory. The drift test in CI fails if it is out of date.
+#
+# The cases live in `actions/maintenance/auto-approve-pr/e2e/` and are ordinary vitest files. This
+# workflow supplies only what they cannot get on a laptop: a token scoped to the scratch repository.
+name: Verify Maintenance Auto-approve-pr
 
 on:
   push:
     branches:
       - main
+      - 'feature/maintenance/auto-approve-pr'
     paths:
       - 'actions/maintenance/auto-approve-pr/**'
+      - 'packages/e2e/**'
       - '.github/workflows/verify-action-maintenance-auto-approve-pr.yaml'
   pull_request:
     paths:
       - 'actions/maintenance/auto-approve-pr/**'
+      - 'packages/e2e/**'
       - '.github/workflows/verify-action-maintenance-auto-approve-pr.yaml'
   workflow_dispatch:
 
@@ -17,550 +25,75 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read # to read content
-
-env:
-  TEST_OWNER: TimSchoenle
-  TEST_REPO_NAME: actions-testing
-  TEST_REPO: TimSchoenle/actions-testing
-  TEST_ID: auto-approve-pr-test-${{ github.run_number }}-${{ github.run_attempt }}
+permissions: {}
 
 jobs:
-  test-auto-approve-positive:
+  e2e:
     environment:
       name: ci-e2e
       deployment: false
-    name: Test Auto-approve (Allowed User)
+    name: End-to-end
     runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
           egress-policy: audit
 
-      - name: Generate PR Approval Bot Token
-        id: generate_token2
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # The cases run `dist/index.js`, the bundle GitHub itself would run, so nothing is built here.
+      # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
+      # it to 'latest', which would win otherwise.
+      - name: Setup Bun
+        uses: TimSchoenle/actions/actions/bun/setup-cached@cbdcf6fd08b46059064bc9c91efa6b610a9ee7db # tag=actions-bun-setup-cached-v1.1.10
+        with:
+          bun-version: ''
+          bun-version-file: '.bun-version'
+
+      - name: Generate Token
+        id: token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: TimSchoenle
+          repositories: actions-testing
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Generate Secondary Token
+        id: secondary-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
-          owner: ${{ env.TEST_OWNER }}
-          repositories: ${{ env.TEST_REPO_NAME }}
+          owner: TimSchoenle
+          repositories: actions-testing
           permission-pull-requests: write
 
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
-        with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
-
-      - name: Get Bot User ID
-        id: bot_identity
-        uses: TimSchoenle/actions/actions/common/get-app-git-identity@ec69d3449f11a8291934cf11a9ef57f72a423376 # tag=actions-common-get-app-git-identity-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          app-slug: ${{ steps.setup.outputs.app_slug }}
-
-      - name: Create Test Branch
-        id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@b2d91d475a1436da4c9b2a2835897413913ef6d7 # tag=actions-common-create-branch-v1.3.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/auto-approve/positive/${{ env.TEST_ID }}
-          reset_branch: 'true'
-
-      - name: Create Test File
-        shell: bash
-        run: |
-          echo "# Test file for auto-approve-pr" > test-file.txt
-          echo "Created at: $(date)" >> test-file.txt
-
-      - name: Create Pull Request (with commit)
-        id: pr
-        uses: TimSchoenle/actions/actions/common/create-pull-request@2d46b820a55e210c75dece9ec14c419cd8a9c559 # tag=actions-common-create-pull-request-v1.0.10
-        with:
-          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.branch.outputs.branch }}
-          base_branch: main
-          title: 'Test PR for auto-approve (positive) - ${{ env.TEST_ID }}'
-          body: 'This is a test PR created by the verify workflow to test auto-approve-pr action.'
-          commit_changes: 'true'
-          commit_message: 'test: add test file for auto-approve (${{ env.TEST_ID }})'
-          file_pattern: '.'
-
-      - name: Run Auto-approve Action (Should Approve)
-        id: auto_approve
-        uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
-        with:
-          token: ${{ steps.generate_token2.outputs.token }}
-          pr_url: ${{ steps.pr.outputs.pr_url }}
-          user_ids: ${{ steps.bot_identity.outputs.bot-id }}
-          branch_pattern: '.*'
-          ignore_empty_prs: 'true'
-
-      - name: Verify PR Was Approved
+      - name: Run End-to-end Cases
         env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-        run: |
-          set -euo pipefail
-
-          # Get PR reviews
-          REVIEWS=$(gh api "/repos/$TEST_REPO/pulls/$PR_NUMBER/reviews" --jq '.[].state')
-
-          if ! echo "$REVIEWS" | grep -q "APPROVED"; then
-            echo "::error::PR was not approved as expected"
-            echo "Reviews: $REVIEWS"
-            exit 1
-          fi
-
-          echo "✅ PR was successfully auto-approved"
-
-      - name: Cleanup - Close Pull Request
-        if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@5555e4c158b8325fa11fd1a2b39258347a886517 # tag=actions-common-close-pull-request-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          pull_request_id: ${{ steps.pr.outputs.pr_number }}
-
-      - name: Cleanup - Delete Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@ed9d34e3034a8631d4bf462baa093eb20bb4b7d3 # tag=actions-common-delete-branch-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.branch.outputs.branch }}
-
-  test-auto-approve-negative:
-    environment:
-      name: ci-e2e
-      deployment: false
-    name: Test Auto-approve (Non-allowed User)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
-        with:
-          egress-policy: audit
-
-      - name: Generate PR Approval Bot Token
-        id: generate_token2
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          app-id: ${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
-          owner: ${{ env.TEST_OWNER }}
-          repositories: ${{ env.TEST_REPO_NAME }}
-          permission-pull-requests: write
-
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
-        with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
-
-      - name: Create Test Branch
-        id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@b2d91d475a1436da4c9b2a2835897413913ef6d7 # tag=actions-common-create-branch-v1.3.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/auto-approve/negative/${{ env.TEST_ID }}
-          reset_branch: 'true'
-
-      - name: Create Test File
-        shell: bash
-        run: |
-          echo "# Test file for auto-approve-pr (negative)" > test-file-negative.txt
-          echo "Created at: $(date)" >> test-file-negative.txt
-
-      - name: Create Pull Request (with commit)
-        id: pr
-        uses: TimSchoenle/actions/actions/common/create-pull-request@2d46b820a55e210c75dece9ec14c419cd8a9c559 # tag=actions-common-create-pull-request-v1.0.10
-        with:
-          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.branch.outputs.branch }}
-          base_branch: main
-          title: 'Test PR for auto-approve (negative) - ${{ env.TEST_ID }}'
-          body: 'This is a test PR created by the verify workflow to test auto-approve-pr action with non-allowed user.'
-          commit_changes: 'true'
-          commit_message: 'test: add test file for auto-approve negative case (${{ env.TEST_ID }})'
-          file_pattern: '.'
-
-      - name: Run Auto-approve Action (Should Not Approve)
-        id: auto_approve
-        uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
-        with:
-          token: ${{ steps.generate_token2.outputs.token }}
-          pr_url: ${{ steps.pr.outputs.pr_url }}
-          user_ids: '12345' # Dummy user ID that won't match
-          branch_pattern: '.*'
-          ignore_empty_prs: 'true'
-
-      - name: Verify PR Was Not Approved
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-        run: |
-          set -euo pipefail
-
-          # Get PR reviews
-          REVIEWS=$(gh api "/repos/$TEST_REPO/pulls/$PR_NUMBER/reviews" --jq '.[].state' || echo "")
-
-          if echo "$REVIEWS" | grep -q "APPROVED"; then
-            echo "::error::PR was approved but should not have been"
-            echo "Reviews: $REVIEWS"
-            exit 1
-          fi
-
-          echo "✅ PR was correctly not approved"
-
-      - name: Cleanup - Close Pull Request
-        if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@5555e4c158b8325fa11fd1a2b39258347a886517 # tag=actions-common-close-pull-request-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          pull_request_id: ${{ steps.pr.outputs.pr_number }}
-
-      - name: Cleanup - Delete Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@ed9d34e3034a8631d4bf462baa093eb20bb4b7d3 # tag=actions-common-delete-branch-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.branch.outputs.branch }}
-
-  test-branch-pattern-matching:
-    environment:
-      name: ci-e2e
-      deployment: false
-    name: Test Branch Pattern Matching
-    runs-on: ubuntu-latest
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
-        with:
-          egress-policy: audit
-
-      - name: Generate PR Approval Bot Token
-        id: generate_token2
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          app-id: ${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
-          owner: ${{ env.TEST_OWNER }}
-          repositories: ${{ env.TEST_REPO_NAME }}
-          permission-pull-requests: write
-
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
-        with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
-
-      - name: Get Bot User ID
-        id: bot_identity
-        uses: TimSchoenle/actions/actions/common/get-app-git-identity@ec69d3449f11a8291934cf11a9ef57f72a423376 # tag=actions-common-get-app-git-identity-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          app-slug: ${{ steps.setup.outputs.app_slug }}
-
-      - name: Create Test Branch (Matching Pattern)
-        id: branch_match
-        uses: TimSchoenle/actions/actions/common/create-branch@b2d91d475a1436da4c9b2a2835897413913ef6d7 # tag=actions-common-create-branch-v1.3.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: release-please--branches--main/${{ env.TEST_ID }}
-          reset_branch: 'true'
-
-      - name: Create Test File (Matching)
-        shell: bash
-        run: |
-          echo "# Test file for branch pattern (matching)" > test-branch-match.txt
-
-      - name: Create Pull Request (Matching Pattern with commit)
-        id: pr_match
-        uses: TimSchoenle/actions/actions/common/create-pull-request@2d46b820a55e210c75dece9ec14c419cd8a9c559 # tag=actions-common-create-pull-request-v1.0.10
-        with:
-          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.branch_match.outputs.branch }}
-          base_branch: main
-          title: 'Test PR for branch pattern (matching) - ${{ env.TEST_ID }}'
-          body: 'Test PR with branch that matches the pattern.'
-          commit_changes: 'true'
-          commit_message: 'test: branch pattern matching test (${{ env.TEST_ID }})'
-          file_pattern: '.'
-
-      - name: Run Auto-approve Action (Should Approve - Pattern Match)
-        uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
-        with:
-          token: ${{ steps.generate_token2.outputs.token }}
-          pr_url: ${{ steps.pr_match.outputs.pr_url }}
-          user_ids: ${{ steps.bot_identity.outputs.bot-id }}
-          branch_pattern: '^release-please--branches--.*$'
-          ignore_empty_prs: 'true'
-
-      - name: Verify PR Was Approved (Pattern Match)
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          PR_NUMBER: ${{ steps.pr_match.outputs.pr_number }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-        run: |
-          set -euo pipefail
-
-          # Get PR reviews
-          REVIEWS=$(gh api "/repos/$TEST_REPO/pulls/$PR_NUMBER/reviews" --jq '.[].state')
-
-          if ! echo "$REVIEWS" | grep -q "APPROVED"; then
-            echo "::error::PR with matching branch pattern was not approved"
-            echo "Reviews: $REVIEWS"
-            exit 1
-          fi
-
-          echo "✅ PR with matching branch pattern was approved"
-
-      - name: Create Test Branch (Non-matching Pattern)
-        id: branch_nomatch
-        uses: TimSchoenle/actions/actions/common/create-branch@b2d91d475a1436da4c9b2a2835897413913ef6d7 # tag=actions-common-create-branch-v1.3.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: feature/test-branch/${{ env.TEST_ID }}
-          reset_branch: 'true'
-
-      - name: Create Test File (Non-matching)
-        shell: bash
-        run: |
-          echo "# Test file for branch pattern (non-matching)" > test-branch-nomatch.txt
-
-      - name: Create Pull Request (Non-matching Pattern with commit)
-        id: pr_nomatch
-        uses: TimSchoenle/actions/actions/common/create-pull-request@2d46b820a55e210c75dece9ec14c419cd8a9c559 # tag=actions-common-create-pull-request-v1.0.10
-        with:
-          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.branch_nomatch.outputs.branch }}
-          base_branch: main
-          title: 'Test PR for branch pattern (non-matching) - ${{ env.TEST_ID }}'
-          body: 'Test PR with branch that does not match the pattern.'
-          commit_changes: 'true'
-          commit_message: 'test: branch pattern non-matching test (${{ env.TEST_ID }})'
-          file_pattern: '.'
-
-      - name: Run Auto-approve Action (Should Not Approve - Pattern Mismatch)
-        uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
-        with:
-          token: ${{ steps.generate_token2.outputs.token }}
-          pr_url: ${{ steps.pr_nomatch.outputs.pr_url }}
-          user_ids: ${{ steps.bot_identity.outputs.bot-id }}
-          branch_pattern: '^release-please--branches--.*$'
-          ignore_empty_prs: 'true'
-
-      - name: Verify PR Was Not Approved (Pattern Mismatch)
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          PR_NUMBER: ${{ steps.pr_nomatch.outputs.pr_number }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-        run: |
-          set -euo pipefail
-
-          # Get PR reviews
-          REVIEWS=$(gh api "/repos/$TEST_REPO/pulls/$PR_NUMBER/reviews" --jq '.[].state' || echo "")
-
-          if echo "$REVIEWS" | grep -q "APPROVED"; then
-            echo "::error::PR with non-matching branch pattern was approved but should not have been"
-            echo "Reviews: $REVIEWS"
-            exit 1
-          fi
-
-          echo "✅ PR with non-matching branch pattern was correctly not approved"
-
-      - name: Cleanup - Close Pull Request (Match)
-        if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@5555e4c158b8325fa11fd1a2b39258347a886517 # tag=actions-common-close-pull-request-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          pull_request_id: ${{ steps.pr_match.outputs.pr_number }}
-
-      - name: Cleanup - Delete Branch (Match)
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@ed9d34e3034a8631d4bf462baa093eb20bb4b7d3 # tag=actions-common-delete-branch-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.branch_match.outputs.branch }}
-
-      - name: Cleanup - Close Pull Request (No Match)
-        if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@5555e4c158b8325fa11fd1a2b39258347a886517 # tag=actions-common-close-pull-request-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          pull_request_id: ${{ steps.pr_nomatch.outputs.pr_number }}
-
-      - name: Cleanup - Delete Branch (No Match)
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@ed9d34e3034a8631d4bf462baa093eb20bb4b7d3 # tag=actions-common-delete-branch-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.branch_nomatch.outputs.branch }}
-
-  test-reject-forks:
-    environment:
-      name: ci-e2e
-      deployment: false
-    name: Test Reject Forks Setting
-    runs-on: ubuntu-latest
-    # Note: This test verifies the reject_forks parameter is processed correctly
-    # but cannot test actual fork rejection since E2E tests create PRs in the same repo
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
-        with:
-          egress-policy: audit
-
-      - name: Generate PR Approval Bot Token
-        id: generate_token2
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          app-id: ${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
-          owner: ${{ env.TEST_OWNER }}
-          repositories: ${{ env.TEST_REPO_NAME }}
-          permission-pull-requests: write
-
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
-        with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
-
-      - name: Get Bot User ID
-        id: bot_identity
-        uses: TimSchoenle/actions/actions/common/get-app-git-identity@ec69d3449f11a8291934cf11a9ef57f72a423376 # tag=actions-common-get-app-git-identity-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          app-slug: ${{ steps.setup.outputs.app_slug }}
-
-      - name: Create Test Branch
-        id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@b2d91d475a1436da4c9b2a2835897413913ef6d7 # tag=actions-common-create-branch-v1.3.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: release-please--branches--test-fork/${{ env.TEST_ID }}
-          reset_branch: 'true'
-
-      - name: Create Test File
-        shell: bash
-        run: |
-          echo "# Test file for reject_forks parameter" > test-reject-forks.txt
-
-      - name: Create Pull Request (with commit)
-        id: pr
-        uses: TimSchoenle/actions/actions/common/create-pull-request@2d46b820a55e210c75dece9ec14c419cd8a9c559 # tag=actions-common-create-pull-request-v1.0.10
-        with:
-          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.branch.outputs.branch }}
-          base_branch: main
-          title: 'Test PR for reject_forks - ${{ env.TEST_ID }}'
-          body: 'Test PR to verify reject_forks parameter processing (same-repo PR, should approve).'
-          commit_changes: 'true'
-          commit_message: 'test: reject_forks parameter test (${{ env.TEST_ID }})'
-          file_pattern: '.'
-
-      - name: Run Auto-approve with reject_forks=true (Should Still Approve Same-Repo PR)
-        uses: ./tmp/actions-code/actions/maintenance/auto-approve-pr
-        with:
-          token: ${{ steps.generate_token2.outputs.token }}
-          pr_url: ${{ steps.pr.outputs.pr_url }}
-          user_ids: ${{ steps.bot_identity.outputs.bot-id }}
-          branch_pattern: '^release-please--branches--.*$'
-          reject_forks: 'true'
-          ignore_empty_prs: 'true'
-
-      - name: Verify Same-Repo PR Was Approved (Even with reject_forks=true)
-        env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-        run: |
-          set -euo pipefail
-
-          # Get PR reviews
-          REVIEWS=$(gh api "/repos/$TEST_REPO/pulls/$PR_NUMBER/reviews" --jq '.[].state')
-
-          if ! echo "$REVIEWS" | grep -q "APPROVED"; then
-            echo "::error::Same-repo PR was not approved (reject_forks=true should only reject forks)"
-            echo "Reviews: $REVIEWS"
-            exit 1
-          fi
-
-          echo "✅ Same-repo PR was correctly approved with reject_forks=true"
-
-      - name: Cleanup - Close Pull Request
-        if: always()
-        uses: TimSchoenle/actions/actions/common/close-pull-request@5555e4c158b8325fa11fd1a2b39258347a886517 # tag=actions-common-close-pull-request-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          pull_request_id: ${{ steps.pr.outputs.pr_number }}
-
-      - name: Cleanup - Delete Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@ed9d34e3034a8631d4bf462baa093eb20bb4b7d3 # tag=actions-common-delete-branch-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.branch.outputs.branch }}
+          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          # An installation token cannot call `GET /user`, so the suite resolves its own account by
+          # app slug instead. Without this a case matching commit authors fails only in CI.
+          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
+          E2E_GITHUB_TOKEN_SECONDARY: ${{ steps.secondary-token.outputs.token }}
+          E2E_APP_SLUG_SECONDARY: ${{ steps.secondary-token.outputs.app-slug }}
+          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+        run: bun run e2e actions/maintenance/auto-approve-pr
 
   # <<< generated: summary (run 'bun run generate-ci-required' to update)
   summary:
     name: 'CI Summary: Maintenance Auto-approve-pr'
     if: ${{ always() }}
     needs:
-      - test-auto-approve-positive
-      - test-auto-approve-negative
-      - test-branch-pattern-matching
-      - test-reject-forks
+      - e2e
     runs-on: ubuntu-latest
     permissions: {}
     steps:

@@ -1,16 +1,23 @@
-﻿name: Verify Common Create-branch
+# GENERATED — do not edit by hand. Run `bun run generate-e2e-workflows` to rebuild this file
+# from the actions that have an `e2e/` directory. The drift test in CI fails if it is out of date.
+#
+# The cases live in `actions/common/create-branch/e2e/` and are ordinary vitest files. This
+# workflow supplies only what they cannot get on a laptop: a token scoped to the scratch repository.
+name: Verify Common Create-branch
 
 on:
   push:
     branches:
       - main
-      - 'feature/actions/common/create-branch'
+      - 'feature/common/create-branch'
     paths:
       - 'actions/common/create-branch/**'
+      - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-create-branch.yaml'
   pull_request:
     paths:
       - 'actions/common/create-branch/**'
+      - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-create-branch.yaml'
   workflow_dispatch:
 
@@ -20,330 +27,60 @@ concurrency:
 
 permissions: {}
 
-env:
-  TEST_OWNER: TimSchoenle
-  TEST_REPO_NAME: actions-testing
-  TEST_REPO: TimSchoenle/actions-testing
-  TEST_ID: create-branch-test-${{ github.run_number }}-${{ github.run_attempt }}
-  TEST_REPO_BASE_BRANCH_NAME: main
-
 jobs:
-  test-create-branch-default:
+  e2e:
     environment:
       name: ci-e2e
       deployment: false
-    name: Test Create Branch (Default Base)
+    name: End-to-end
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: read # to fetch code
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
           egress-policy: audit
 
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
+          persist-credentials: false
 
-      - name: Run create-branch
-        id: create
-        uses: ./tmp/actions-code/actions/common/create-branch
+      # The cases run `dist/index.js`, the bundle GitHub itself would run, so nothing is built here.
+      # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
+      # it to 'latest', which would win otherwise.
+      - name: Setup Bun
+        uses: TimSchoenle/actions/actions/bun/setup-cached@cbdcf6fd08b46059064bc9c91efa6b610a9ee7db # tag=actions-bun-setup-cached-v1.1.10
         with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/create-branch-default/${{ env.TEST_ID }}
+          bun-version: ''
+          bun-version-file: '.bun-version'
 
-      - name: Verify Branch Created
-        shell: bash
+      - name: Generate Token
+        id: token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: TimSchoenle
+          repositories: actions-testing
+          permission-contents: write
+
+      - name: Run End-to-end Cases
         env:
-          GH_TOKEN: ${{ steps.setup.outputs.token }}
-          BRANCH_NAME: ${{ steps.create.outputs.branch }}
-          BASE_BRANCH_NAME: ${{ steps.create.outputs.base_branch }}
-          SHA: ${{ steps.create.outputs.sha }}
-          CREATED: ${{ steps.create.outputs.created }}
-          TEST_REPO: ${{ env.TEST_REPO }}
-        run: |
-          if [ "$CREATED" != "true" ]; then
-            echo "::error::Branch should have been created"
-            exit 1
-          fi
-
-          # Verify remote SHA
-          REMOTE_SHA=$(gh api "/repos/$TEST_REPO/git/refs/heads/$BRANCH_NAME" --jq .object.sha)
-          if [ "$REMOTE_SHA" != "$SHA" ]; then
-             echo "::error::Remote SHA ($REMOTE_SHA) does not match output SHA ($SHA)"
-             exit 1
-          fi
-          echo "✅ Verified branch created at $SHA"
-
-      - name: Verify Base Branch Name
-        shell: bash
-        env:
-          BASE_BRANCH_NAME: ${{ steps.create.outputs.base_branch }}
-          EXPECTED_BASE_BRANCH_NAME: ${{ env.TEST_REPO_BASE_BRANCH_NAME }}
-        run: |
-          # Verify base branch name
-          if [ "$BASE_BRANCH_NAME" != "$EXPECTED_BASE_BRANCH_NAME" ]; then
-            echo "::error::Base branch name ($BASE_BRANCH_NAME) does not match default ($EXPECTED_BASE_BRANCH_NAME)"
-            exit 1
-          fi
-          echo "✅ Verified base branch name matches"
-
-      - name: Cleanup Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@ed9d34e3034a8631d4bf462baa093eb20bb4b7d3 # tag=actions-common-delete-branch-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/create-branch-default/${{ env.TEST_ID }}
-
-  test-create-branch-specific-base:
-    environment:
-      name: ci-e2e
-      deployment: false
-    name: Test Create Branch (Specific Base)
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
-        with:
-          egress-policy: audit
-
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
-        with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
-
-      # We need a predictable base branch. Let's use 'main' explicitly, or create a 'base' branch first.
-      # Let's create a 'base' branch first using the action (defaults to default branch).
-      - name: Create Base Branch
-        id: create-base
-        uses: ./tmp/actions-code/actions/common/create-branch
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/base-branch/${{ env.TEST_ID }}
-
-      - name: Run create-branch (From Specific Base)
-        id: create-child
-        uses: ./tmp/actions-code/actions/common/create-branch
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/child-branch/${{ env.TEST_ID }}
-          base_branch: test/base-branch/${{ env.TEST_ID }}
-
-      - name: Verify Child Branch
-        shell: bash
-        env:
-          BASE_SHA: ${{ steps.create-base.outputs.sha }}
-          CHILD_SHA: ${{ steps.create-child.outputs.sha }}
-        run: |
-          if [ "$CHILD_SHA" != "$BASE_SHA" ]; then
-             echo "::error::Child branch SHA ($CHILD_SHA) does not match Base branch SHA ($BASE_SHA)"
-             exit 1
-          fi
-          echo "✅ Verified child branch created from specific base"
-
-      - name: Verify Base Branch Name
-        shell: bash
-        env:
-          BASE_BRANCH_NAME: ${{ steps.create-child.outputs.base_branch }}
-          EXPECTED_BASE_BRANCH_NAME: ${{ steps.create-base.outputs.branch }}
-        run: |
-          # Verify base branch name
-          if [ "$BASE_BRANCH_NAME" != "$EXPECTED_BASE_BRANCH_NAME" ]; then
-            echo "::error::Base branch name ($BASE_BRANCH_NAME) does not match default ($EXPECTED_BASE_BRANCH_NAME)"
-            exit 1
-          fi
-          echo "✅ Verified base branch name matches"
-
-      - name: Cleanup Child Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@ed9d34e3034a8631d4bf462baa093eb20bb4b7d3 # tag=actions-common-delete-branch-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/child-branch/${{ env.TEST_ID }}
-
-      - name: Cleanup Base Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@ed9d34e3034a8631d4bf462baa093eb20bb4b7d3 # tag=actions-common-delete-branch-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/base-branch/${{ env.TEST_ID }}
-
-  test-reset-branch:
-    environment:
-      name: ci-e2e
-      deployment: false
-    name: Test Reset Branch (Diverged)
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
-        with:
-          egress-policy: audit
-
-      - name: Setup E2E Test Environment
-        id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
-        with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
-
-      - name: Create Initial Branch
-        id: create-initial
-        uses: ./tmp/actions-code/actions/common/create-branch
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/reset-branch/${{ env.TEST_ID }}
-
-      - name: Create Test File for Commit
-        run: |
-          mkdir -p test-data
-          echo "Diverging commit for $TEST_ID" > test-data/diverge.txt
-
-      - name: Commit Changes (Diverge)
-        id: commit-diverge
-        uses: TimSchoenle/actions/actions/common/commit-changes@147b117c39eaa951bf8c326c5e2fa8553c8a8937 # tag=actions-common-commit-changes-v1.2.2
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch: test/reset-branch/${{ env.TEST_ID }}
-          commit_message: 'test: diverge branch for reset test'
-          file_pattern: 'test-data/diverge.txt'
-
-      - name: Verify Divergence
-        shell: bash
-        env:
-          INITIAL_SHA: ${{ steps.create-initial.outputs.sha }}
-          DIVERGED_SHA: ${{ steps.commit-diverge.outputs.commit_hash }}
-        run: |
-          if [ "$INITIAL_SHA" == "$DIVERGED_SHA" ]; then
-            echo "::error::Branch failed to diverge"
-            exit 1
-          fi
-          echo "✅ Branch diverged: $INITIAL_SHA -> $DIVERGED_SHA"
-
-      - name: Try Create Branch (No Reset)
-        id: create-no-reset
-        uses: ./tmp/actions-code/actions/common/create-branch
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/reset-branch/${{ env.TEST_ID }}
-          reset_branch: 'false'
-
-      - name: Verify No Reset
-        shell: bash
-        env:
-          DIVERGED_SHA: ${{ steps.commit-diverge.outputs.commit_hash }}
-          CURRENT_SHA: ${{ steps.create-no-reset.outputs.sha }}
-          CREATED: ${{ steps.create-no-reset.outputs.created }}
-        run: |
-          if [ "$CREATED" == "true" ]; then
-            echo "::error::Branch reported as created/reset even though reset_branch=false"
-            exit 1
-          fi
-          if [ "$CURRENT_SHA" != "$DIVERGED_SHA" ]; then
-             echo "::error::Branch SHA changed! Expected $DIVERGED_SHA, got $CURRENT_SHA"
-             exit 1
-          fi
-          echo "✅ Verified branch was NOT reset"
-
-      - name: Verify Base Branch Name
-        shell: bash
-        env:
-          BASE_BRANCH_NAME: ${{ steps.create-no-reset.outputs.base_branch }}
-          EXPECTED_BASE_BRANCH_NAME: ${{ env.TEST_REPO_BASE_BRANCH_NAME }}
-        run: |
-          # Verify base branch name
-          if [ "$BASE_BRANCH_NAME" != "$EXPECTED_BASE_BRANCH_NAME" ]; then
-            echo "::error::Base branch name ($BASE_BRANCH_NAME) does not match default ($EXPECTED_BASE_BRANCH_NAME)"
-            exit 1
-          fi
-          echo "✅ Verified base branch name matches"
-
-      - name: Reset Branch (Force)
-        id: create-reset
-        uses: ./tmp/actions-code/actions/common/create-branch
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/reset-branch/${{ env.TEST_ID }}
-          reset_branch: 'true'
-
-      - name: Verify Reset
-        shell: bash
-        env:
-          INITIAL_SHA: ${{ steps.create-initial.outputs.sha }}
-          RESET_SHA: ${{ steps.create-reset.outputs.sha }}
-          CREATED: ${{ steps.create-reset.outputs.created }}
-        run: |
-          if [ "$CREATED" != "true" ]; then
-            echo "::error::Branch should have been reset"
-            exit 1
-          fi
-          if [ "$RESET_SHA" != "$INITIAL_SHA" ]; then
-             echo "::error::Branch reset to wrong SHA! Expected $INITIAL_SHA, got $RESET_SHA"
-             exit 1
-          fi
-          echo "✅ Verified branch RESET to initial SHA (divergence discarded)"
-
-      - name: Verify Base Branch Name
-        shell: bash
-        env:
-          BASE_BRANCH_NAME: ${{ steps.create-reset.outputs.base_branch }}
-          EXPECTED_BASE_BRANCH_NAME: ${{ env.TEST_REPO_BASE_BRANCH_NAME }}
-        run: |
-          # Verify base branch name
-          if [ "$BASE_BRANCH_NAME" != "$EXPECTED_BASE_BRANCH_NAME" ]; then
-            echo "::error::Base branch name ($BASE_BRANCH_NAME) does not match default ($EXPECTED_BASE_BRANCH_NAME)"
-            exit 1
-          fi
-          echo "✅ Verified base branch name matches"
-
-      - name: Cleanup Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@ed9d34e3034a8631d4bf462baa093eb20bb4b7d3 # tag=actions-common-delete-branch-v1.2.1
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: test/reset-branch/${{ env.TEST_ID }}
+          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          # An installation token cannot call `GET /user`, so the suite resolves its own account by
+          # app slug instead. Without this a case matching commit authors fails only in CI.
+          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
+          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+        run: bun run e2e actions/common/create-branch
 
   # <<< generated: summary (run 'bun run generate-ci-required' to update)
   summary:
     name: 'CI Summary: Common Create-branch'
     if: ${{ always() }}
     needs:
-      - test-create-branch-default
-      - test-create-branch-specific-base
-      - test-reset-branch
+      - e2e
     runs-on: ubuntu-latest
     permissions: {}
     steps:

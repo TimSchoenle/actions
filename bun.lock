@@ -56,6 +56,7 @@
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
         "@types/node": "26.1.2",
+        "actions-e2e": "workspace:*",
         "fast-check": "4.9.0",
         "typescript": "6.0.3",
         "vitest": "4.1.10",
@@ -73,6 +74,7 @@
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
         "@types/node": "26.1.2",
+        "actions-e2e": "workspace:*",
         "fast-check": "4.9.0",
         "typescript": "6.0.3",
         "vitest": "4.1.10",
@@ -89,6 +91,7 @@
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
         "@types/node": "26.1.2",
+        "actions-e2e": "workspace:*",
         "fast-check": "4.9.0",
         "typescript": "6.0.3",
         "vitest": "4.1.10",
@@ -105,6 +108,7 @@
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
         "@types/node": "26.1.2",
+        "actions-e2e": "workspace:*",
         "fast-check": "4.9.0",
         "typescript": "6.0.3",
         "vitest": "4.1.10",
@@ -121,6 +125,7 @@
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
         "@types/node": "26.1.2",
+        "actions-e2e": "workspace:*",
         "fast-check": "4.9.0",
         "typescript": "6.0.3",
         "vitest": "4.1.10",
@@ -136,6 +141,7 @@
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
         "@types/node": "26.1.2",
+        "actions-e2e": "workspace:*",
         "fast-check": "4.9.0",
         "typescript": "6.0.3",
         "vitest": "4.1.10",
@@ -153,6 +159,7 @@
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
         "@types/node": "26.1.2",
+        "actions-e2e": "workspace:*",
         "fast-check": "4.9.0",
         "typescript": "6.0.3",
         "vitest": "4.1.10",
@@ -169,6 +176,7 @@
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
         "@types/node": "26.1.2",
+        "actions-e2e": "workspace:*",
         "fast-check": "4.9.0",
         "typescript": "6.0.3",
         "vitest": "4.1.10",
@@ -185,6 +193,7 @@
       },
       "devDependencies": {
         "@types/node": "26.1.2",
+        "actions-e2e": "workspace:*",
         "typescript": "6.0.3",
         "vitest": "4.1.10",
       },
@@ -199,6 +208,7 @@
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
         "@types/node": "26.1.2",
+        "actions-e2e": "workspace:*",
         "fast-check": "4.9.0",
         "typescript": "6.0.3",
         "vitest": "4.1.10",
@@ -216,6 +226,7 @@
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
         "@types/node": "26.1.2",
+        "actions-e2e": "workspace:*",
         "fast-check": "4.9.0",
         "typescript": "6.0.3",
         "vitest": "4.1.10",
@@ -231,6 +242,7 @@
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
         "@types/node": "26.1.2",
+        "actions-e2e": "workspace:*",
         "fast-check": "4.9.0",
         "typescript": "6.0.3",
         "vitest": "4.1.10",
@@ -247,6 +259,7 @@
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
         "@types/node": "26.1.2",
+        "actions-e2e": "workspace:*",
         "fast-check": "4.9.0",
         "typescript": "6.0.3",
         "vitest": "4.1.10",
@@ -263,6 +276,7 @@
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
         "@types/node": "26.1.2",
+        "actions-e2e": "workspace:*",
         "fast-check": "4.9.0",
         "typescript": "6.0.3",
         "vitest": "4.1.10",
@@ -275,6 +289,23 @@
         "@actions/core": "3.0.1",
         "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
+      },
+      "devDependencies": {
+        "@fast-check/vitest": "0.4.1",
+        "@types/node": "26.1.2",
+        "actions-e2e": "workspace:*",
+        "fast-check": "4.9.0",
+        "typescript": "6.0.3",
+        "vitest": "4.1.10",
+      },
+    },
+    "packages/e2e": {
+      "name": "actions-e2e",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/github": "9.1.1",
+        "actions-util": "workspace:*",
+        "yaml": "2.9.0",
       },
       "devDependencies": {
         "@fast-check/vitest": "0.4.1",
@@ -533,6 +564,8 @@
     "actions-common-render-template": ["actions-common-render-template@workspace:actions/common/render-template"],
 
     "actions-common-setup-app-git-identity": ["actions-common-setup-app-git-identity@workspace:actions/common/setup-app-git-identity"],
+
+    "actions-e2e": ["actions-e2e@workspace:packages/e2e"],
 
     "actions-helm-apply-chart-updates": ["actions-helm-apply-chart-updates@workspace:actions/helm/apply-chart-updates"],
 

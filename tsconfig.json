@@ -21,7 +21,8 @@
       "actions-util/identity": ["packages/ts-util/src/github-identity.ts"],
       "actions-util/commits": ["packages/ts-util/src/github-commits.ts"],
       "actions-util/client": ["packages/ts-util/src/github-client.ts"],
-      "actions-util/read-after-write": ["packages/ts-util/src/read-after-write.ts"]
+      "actions-util/read-after-write": ["packages/ts-util/src/read-after-write.ts"],
+      "actions-e2e": ["packages/e2e/src/index.ts"]
     }
   },
   "include": ["scripts/**/*", "actions/**/*", "packages/**/*"],
