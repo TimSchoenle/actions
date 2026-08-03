@@ -211,6 +211,35 @@ interface SpawnResult {
   stderr: string;
 }
 
+/**
+ * The largest a single environment entry may be, which is the ceiling on any one action input.
+ *
+ * Linux caps one entry of the environment at `MAX_ARG_STRLEN` — 32 pages, 131072 bytes — including
+ * the name and the `=`. The runner passes every action input as an `INPUT_*` variable, so this is
+ * not a limit of the harness: a workflow cannot hand an action a value this large either.
+ */
+const MAX_ENV_ENTRY_BYTES = 131_072;
+
+/**
+ * Rejects an environment the kernel would refuse, so the case says why instead of reporting E2BIG.
+ *
+ * `spawn` fails with a bare `E2BIG` and no indication of which variable was at fault, and Windows
+ * has no equivalent limit — so an oversized payload passes locally and fails only on a runner, which
+ * is the most expensive place to work it out.
+ */
+function assertDeliverableEnvironment(env: Record<string, string>): void {
+  for (const [name, value] of Object.entries(env)) {
+    const bytes = Buffer.byteLength(`${name}=${value}`, 'utf8');
+
+    if (bytes > MAX_ENV_ENTRY_BYTES) {
+      throw new ActionOutcomeError(
+        `${name} is ${bytes} bytes, past the ${MAX_ENV_ENTRY_BYTES}-byte limit on one environment entry. ` +
+          'A workflow could not deliver this input either; test a value the runner can actually pass.',
+      );
+    }
+  }
+}
+
 function spawnAction(
   executable: string,
   script: string,
@@ -219,6 +248,8 @@ function spawnAction(
   timeoutMs: number,
 ): Promise<SpawnResult> {
   return new Promise((resolve, reject) => {
+    assertDeliverableEnvironment(env);
+
     const child = spawn(executable, [script], { cwd, env, windowsHide: true });
     const stdout: Buffer[] = [];
     const stderr: Buffer[] = [];

@@ -6,6 +6,7 @@ import {
   expectCleanRejection,
   expectNoInjection,
   fileCommandInjectionPayload,
+  LARGEST_DELIVERABLE_INPUT,
   oversized,
   REDOS_PATTERNS,
   runAction,
@@ -188,7 +189,7 @@ describe('apply-chart-updates under hostile input', () => {
     });
 
     it('truncates a changelog that would overflow a pull request body', async () => {
-      const result = await apply({ changelog: oversized(200_000), 'changelog-max-bytes': '2000' });
+      const result = await apply({ changelog: oversized(LARGEST_DELIVERABLE_INPUT), 'changelog-max-bytes': '2000' });
       const markdown = result.outputs['changelog-markdown'] ?? '';
 
       expect(new TextEncoder().encode(markdown).length).toBeLessThan(3000);

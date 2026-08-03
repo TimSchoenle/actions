@@ -189,6 +189,20 @@ export function oversized(bytes: number): string {
 }
 
 /**
+ * The largest payload a workflow could actually hand an action through an input.
+ *
+ * An input reaches the action as an `INPUT_*` environment variable, and Linux caps a single entry of
+ * the environment at `MAX_ARG_STRLEN` — 32 pages, 131072 bytes — including the name and the `=`.
+ * A larger value never reaches the action at all: `spawn` fails with `E2BIG`, which tests the kernel
+ * rather than the action, and only on Linux, since Windows has no equivalent limit. This leaves
+ * headroom for the variable's name. `run-action.ts` enforces the ceiling with a legible error.
+ *
+ * A payload that must be larger still belongs in a file, the way `render-template` writes its
+ * two-megabyte template — a file has no such limit and is how a real workflow would carry one.
+ */
+export const LARGEST_DELIVERABLE_INPUT = 100_000;
+
+/**
  * Exactly the messages a payload's forged commands carry.
  *
  * Matched by equality, never by substring, and the distinction is the whole assertion. An action that

@@ -9,6 +9,7 @@ import {
   fileCommandInjectionPayload,
   FORGERY_MARKER,
   HOSTILE_CHARACTERS,
+  LARGEST_DELIVERABLE_INPUT,
   oversized,
   REDOS_PATTERNS,
   TRAVERSAL_PATHS,
@@ -194,5 +195,14 @@ describe('the payload catalogue', () => {
 
   it('sizes an oversized value exactly', () => {
     expect(oversized(1024)).toHaveLength(1024);
+  });
+
+  // The ceiling is the kernel's, not the harness's: `MAX_ARG_STRLEN` bounds one environment entry,
+  // name and `=` included, and an action input is one. A payload over it fails as `spawn E2BIG` on a
+  // runner while passing on Windows, which has no equivalent limit — so the headroom is the point.
+  it('leaves the largest deliverable input room for a variable name inside one environment entry', () => {
+    const entry = `INPUT_SOME-REASONABLY-LONG-ACTION-INPUT-NAME=${oversized(LARGEST_DELIVERABLE_INPUT)}`;
+
+    expect(Buffer.byteLength(entry, 'utf8')).toBeLessThan(131_072);
   });
 });

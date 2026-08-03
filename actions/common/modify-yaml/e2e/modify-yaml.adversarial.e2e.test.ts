@@ -6,6 +6,7 @@ import {
   expectNoInjection,
   fileCommandInjectionPayload,
   INPUT_HOSTILE_CHARACTERS,
+  LARGEST_DELIVERABLE_INPUT,
   oversized,
   runAction,
   TRAVERSAL_PATHS,
@@ -195,7 +196,7 @@ describe('modify-yaml under hostile input', () => {
     });
 
     it('carries a value far larger than any real image tag', async () => {
-      const payload = oversized(256 * 1024);
+      const payload = oversized(LARGEST_DELIVERABLE_INPUT);
 
       const result = await modify(payload);
 
