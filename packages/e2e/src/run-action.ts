@@ -83,6 +83,16 @@ export interface RunActionOptions<TInput extends string> {
   timeoutMs?: number;
 }
 
+/**
+ * The bytes of each command file, exactly as the action left them.
+ *
+ * The parsed views above answer "what did the action publish"; these answer "what did it write",
+ * which is a different question as soon as a value is hostile. A value carrying the heredoc
+ * delimiter, or a bare `key=value` line, is only visible before parsing — and `@actions/core`
+ * refusing to write it is precisely the property worth asserting.
+ */
+export type RawCommandFiles = Readonly<Record<'GITHUB_OUTPUT' | 'GITHUB_ENV' | 'GITHUB_STATE', string>>;
+
 export interface ActionRunResult<TOutput extends string> extends WorkflowCommands {
   exitCode: number;
   /** Everything written to `GITHUB_OUTPUT`; absent keys were never set. */
@@ -91,6 +101,11 @@ export interface ActionRunResult<TOutput extends string> extends WorkflowCommand
   exportedEnv: Record<string, string>;
   /** Everything written to `GITHUB_STATE`, which the action's own post step would read back. */
   state: Record<string, string>;
+  /** Directories appended to `GITHUB_PATH`, in order. */
+  addedPath: string[];
+  /** Everything appended to `GITHUB_STEP_SUMMARY`, which the runner renders as Markdown. */
+  stepSummary: string;
+  raw: RawCommandFiles;
   stdout: string;
   stderr: string;
   /** The scratch directory used as `GITHUB_WORKSPACE`; removed unless `E2E_KEEP_WORKSPACE` is set. */
@@ -281,16 +296,23 @@ export async function runAction<TInput extends string, TOutput extends string>(
     // resolves a path against `process.cwd()` would otherwise read a directory GitHub never uses.
     const spawned = await spawnAction(executable, script, env, workspace, options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
     const commands = parseWorkflowCommands(spawned.stdout);
+    const raw: RawCommandFiles = {
+      GITHUB_OUTPUT: await readFile(commandFiles['GITHUB_OUTPUT'], 'utf8'),
+      GITHUB_ENV: await readFile(commandFiles['GITHUB_ENV'], 'utf8'),
+      GITHUB_STATE: await readFile(commandFiles['GITHUB_STATE'], 'utf8'),
+    };
 
     const result: ActionRunResult<TOutput> = {
       ...commands,
       masks: [...commands.masks, ...(options.secrets ?? [])],
       exitCode: spawned.exitCode,
-      outputs: parseFileCommands(await readFile(commandFiles['GITHUB_OUTPUT'], 'utf8')) as Partial<
-        Record<TOutput, string>
-      >,
-      exportedEnv: parseFileCommands(await readFile(commandFiles['GITHUB_ENV'], 'utf8')),
-      state: parseFileCommands(await readFile(commandFiles['GITHUB_STATE'], 'utf8')),
+      outputs: parseFileCommands(raw.GITHUB_OUTPUT) as Partial<Record<TOutput, string>>,
+      exportedEnv: parseFileCommands(raw.GITHUB_ENV),
+      state: parseFileCommands(raw.GITHUB_STATE),
+      // `GITHUB_PATH` is a plain list of directories, not key/value pairs, so it is read as one.
+      addedPath: (await readFile(commandFiles['GITHUB_PATH'], 'utf8')).split(/\r?\n/).filter((line) => line !== ''),
+      stepSummary: await readFile(commandFiles['GITHUB_STEP_SUMMARY'], 'utf8'),
+      raw,
       stdout: spawned.stdout,
       stderr: spawned.stderr,
       workspace,

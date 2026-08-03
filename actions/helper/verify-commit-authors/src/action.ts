@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { parseUserIds, runAction, verifyCommits } from 'actions-util';
+import { parseUserIds, quoteUrlForLog, runAction, verifyCommits } from 'actions-util';
 import { fetchPullRequestCommits } from 'actions-util/commits';
 
 import { getInput, setOutput } from './generated/action-io.js';
@@ -29,7 +29,7 @@ export function run(fetchCommits: CommitFetcher = fetchPullRequestCommits): Prom
     const token = getInput('github_token', { required: true });
     const acceptedIds = parseUserIds(getInput('user_ids', { required: true }));
 
-    core.info(`Verifying commits for PR: ${prUrl}`);
+    core.info(`Verifying commits for PR: ${quoteUrlForLog(prUrl)}`);
     core.info(`Accepted User IDs: ${acceptedIds.join(', ')}`);
 
     const { commits } = await fetchCommits(token, prUrl);

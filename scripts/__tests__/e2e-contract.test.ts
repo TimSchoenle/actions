@@ -4,7 +4,14 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { findDrift } from '../generate-e2e-workflows.js';
-import { DECLARED_TOKEN_SCOPES, E2E_DIRECTORY, findE2eActions, workflowFileName } from '../lib/e2e-workflow.js';
+import {
+  DECLARED_TOKEN_SCOPES,
+  E2E_ALLOWED_ENDPOINTS,
+  E2E_DIRECTORY,
+  findE2eActions,
+  INSTALL_ALLOWED_ENDPOINTS,
+  workflowFileName,
+} from '../lib/e2e-workflow.js';
 import { ROOT_DIR, scanSorted } from '../lib/utils.js';
 
 /**
@@ -94,6 +101,42 @@ describe('end-to-end contract', () => {
     const drift = await findDrift();
 
     expect(drift, "run 'bun run generate-e2e-workflows' and commit the result").toEqual([]);
+  });
+
+  it('blocks egress in every generated workflow, to a stated allowlist', async () => {
+    for (const action of await findE2eActions()) {
+      const file = workflowFileName(action);
+      const workflow = fs.readFileSync(path.join(ROOT_DIR, '.github', 'workflows', file), 'utf8');
+
+      // These jobs hold a repository-scoped app token, so audit mode reports an exfiltration rather
+      // than preventing one. They are only pinnable at all because they are generated and identical.
+      expect(workflow, `${file} must block egress, not merely audit it`).toContain('egress-policy: block');
+      expect(workflow, `${file} must not fall back to auditing`).not.toContain('egress-policy: audit');
+
+      for (const endpoint of [...INSTALL_ALLOWED_ENDPOINTS, ...E2E_ALLOWED_ENDPOINTS]) {
+        expect(workflow, `${file} must allow ${endpoint}`).toContain(endpoint);
+      }
+    }
+  });
+
+  // The whole reason the install is a separate job. `harden-runner` sets one policy per job, so the
+  // only way for the token-holding job to have no route to a package registry is for it not to be
+  // the job that installs — and the only way that stays true is to assert it here.
+  it('gives the job that holds the token no route to a package registry', async () => {
+    expect(E2E_ALLOWED_ENDPOINTS).not.toContain('registry.npmjs.org:443');
+    expect(INSTALL_ALLOWED_ENDPOINTS).toContain('registry.npmjs.org:443');
+
+    for (const action of await findE2eActions()) {
+      const file = workflowFileName(action);
+      const workflow = fs.readFileSync(path.join(ROOT_DIR, '.github', 'workflows', file), 'utf8');
+      const e2eJob = (workflow.split('\n  e2e:\n')[1] ?? '').split('\n  # <<< generated: summary')[0];
+
+      expect(e2eJob, `${file}: the e2e job must not reach a registry`).not.toContain('registry.npmjs.org');
+      // `setup-cached` installs on every run, cache hit or not, so using it here would put the
+      // registry back on the critical path of the job holding the token.
+      expect(e2eJob, `${file}: the e2e job must not use the installing bun setup`).not.toContain('bun/setup-cached@');
+      expect(e2eJob, `${file}: the e2e job must restore what install cached`).toContain('fail-on-cache-miss: true');
+    }
   });
 
   it('gives every action with cases a workflow that runs them', async () => {

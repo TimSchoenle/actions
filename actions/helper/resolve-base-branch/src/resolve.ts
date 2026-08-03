@@ -42,6 +42,35 @@ export class BranchNotFoundError extends Error {
 }
 
 /**
+ * Confirms the repository itself is reachable before reporting a branch as merely absent.
+ *
+ * GitHub answers `GET /git/ref/{ref}` with **404 for a repository the token cannot see**, exactly as
+ * it does for a branch that is not there — private repositories are hidden rather than forbidden, so
+ * there is no 403 to tell the two apart. Left alone, a token whose installation was revoked, or one
+ * scoped to the wrong repository, reads as "that branch does not exist"; `silent_fail` then swallows
+ * it and the caller is handed an empty `base_branch` and proceeds to branch from nothing.
+ *
+ * Asking for the default branch is the cheapest probe that distinguishes them, and it costs a request
+ * only on the path that is about to fail anyway. Whatever it throws propagates untouched — it is not
+ * a {@link BranchNotFoundError}, which is the only thing `silent_fail` is allowed to silence.
+ *
+ * Skipped when the branch under test *is* the default branch: resolving it already required this
+ * call, so the repository is known to be reachable and a second request would prove nothing.
+ */
+async function assertRepositoryReachable(
+  api: BranchApi,
+  coordinates: ReturnType<typeof parseRepository>,
+  repository: string,
+  origin: BranchOrigin,
+): Promise<void> {
+  if (origin === 'default-branch') {
+    return;
+  }
+
+  await api.getDefaultBranch(coordinates);
+}
+
+/**
  * Resolves the base branch: the requested branch if given, otherwise the repository's default
  * branch, optionally verified to exist.
  *
@@ -59,6 +88,8 @@ export async function resolveBaseBranch(api: BranchApi, request: ResolveRequest)
   // The default branch is verified too: a repository without any commit reports a default branch
   // name that has no ref behind it, and callers must not check that branch out.
   if (!(await api.branchExists(coordinates, branch))) {
+    await assertRepositoryReachable(api, coordinates, request.repository, origin);
+
     throw new BranchNotFoundError(request.repository, branch);
   }
 

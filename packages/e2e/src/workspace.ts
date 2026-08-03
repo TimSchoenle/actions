@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -89,9 +89,79 @@ export class Workspace {
     }
   }
 
+  /** Writes fixture bytes, for content that is not valid UTF-8 or must contain an exact byte. */
+  async writeBytes(relativePath: string, contents: Uint8Array): Promise<void> {
+    const target = resolveWithin(this.path, relativePath);
+
+    await mkdir(path.dirname(target), { recursive: true });
+    await writeFile(target, contents);
+  }
+
+  /**
+   * Links `relativePath` at `target`, which may deliberately point outside the workspace.
+   *
+   * The escape hatch for the one file-system trick a fixture cannot express as content: an action
+   * that resolves a path without checking what it lands on will happily read or rewrite whatever the
+   * link points at. Callers must gate on {@link symlinksSupported} — an unprivileged Windows session
+   * without developer mode cannot create one, and a case that silently skipped would be worse than
+   * one that never ran.
+   */
+  async symlink(relativePath: string, target: string): Promise<void> {
+    const link = resolveWithin(this.path, relativePath);
+
+    await mkdir(path.dirname(link), { recursive: true });
+    await symlink(target, link);
+  }
+
+  /**
+   * Whether this platform lets the test process create symbolic links.
+   *
+   * Probed rather than assumed from `process.platform`: Windows allows them under developer mode or
+   * an elevated session, so the answer differs between two machines running the same OS.
+   */
+  static async symlinksSupported(): Promise<boolean> {
+    const probe = await mkdtemp(path.join(tmpdir(), 'actions-e2e-link-'));
+
+    try {
+      await symlink(path.join(probe, 'target'), path.join(probe, 'link'));
+      return true;
+    } catch {
+      return false;
+    } finally {
+      await rm(probe, { recursive: true, force: true });
+    }
+  }
+
   /** Reads a file back, for asserting on what an action wrote. */
   async read(relativePath: string): Promise<string> {
     return readFile(resolveWithin(this.path, relativePath), 'utf8');
+  }
+
+  /**
+   * Every file in the workspace, as sorted workspace-relative POSIX paths.
+   *
+   * The assertion an action's happy path cannot make: that a hostile output path wrote *nothing*,
+   * rather than writing somewhere the case forgot to look. Directories are not listed; only the files
+   * that would end up in a commit.
+   */
+  async entries(): Promise<string[]> {
+    const found: string[] = [];
+
+    const walk = async (directory: string): Promise<void> => {
+      for (const entry of await readdir(directory, { withFileTypes: true })) {
+        const absolute = path.join(directory, entry.name);
+
+        if (entry.isDirectory()) {
+          await walk(absolute);
+        } else {
+          found.push(path.relative(this.path, absolute).split(path.sep).join('/'));
+        }
+      }
+    };
+
+    await walk(this.path);
+
+    return found.sort();
   }
 
   /** Whether a path exists, for asserting that an action created or left alone a file. */

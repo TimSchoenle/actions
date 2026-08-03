@@ -98,6 +98,16 @@ export function resolveInputEnv<TInput extends string>(
       continue;
     }
 
+    // The runner delivers inputs as environment variables, which cannot hold a NUL on any platform it
+    // supports. Passing one here fails deep inside `spawn` with a message about `options.env`, which
+    // reads as a harness bug rather than as the fidelity boundary it is.
+    if (value.includes(String.fromCodePoint(0))) {
+      throw new InputContractError(
+        `Input '${declaration.name}' of ${manifest.directory}/action.yaml contains a NUL byte, which the ` +
+          'runner cannot deliver through the environment. Exercise that character through file content instead.',
+      );
+    }
+
     env[inputEnvName(declaration.name)] = value;
   }
 

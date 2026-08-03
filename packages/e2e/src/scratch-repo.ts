@@ -207,6 +207,28 @@ export class ScratchRepo {
     return name;
   }
 
+  /**
+   * Registers a ref name **verbatim**, outside this suite's namespace, for teardown.
+   *
+   * {@link branch} prefixes what it is given, which is right for a fixture and wrong for the one case
+   * that needs it not to be: an adversarial case asking what an action does with `--force`, or with
+   * `heads/<something>`, has to hand over exactly that string, and if the action turns out to create
+   * a ref then nothing namespaced will ever clean it up. Reserving it means teardown deletes it
+   * whether or not the case expected it to exist — which is the point, since the case is asking a
+   * question it does not know the answer to.
+   *
+   * The janitor sweeps `test/**` only, so a name outside that prefix has no other backstop.
+   */
+  reserve(name: string): string {
+    // An empty name is not a ref anything could have created, and registering it would only send
+    // teardown at `refs/heads/`, which addresses the namespace rather than a branch.
+    if (name !== '') {
+      this.branches.add(name);
+    }
+
+    return name;
+  }
+
   /** Schedules a pull request the action under test opened, so teardown closes it. */
   trackPullRequest(number: number): void {
     this.pullRequests.add(number);
@@ -459,18 +481,54 @@ export class ScratchRepo {
   }
 
   /** Deletes every reserved branch, tolerating the ones that were never created. */
-  private async deleteBranches(): Promise<string[]> {
-    const failures: string[] = [];
+  /**
+   * Deletes one branch, and confirms it is gone rather than trusting the response.
+   *
+   * "Already deleted" cannot be taken at face value here. A ref written moments earlier is not yet
+   * visible to every replica, so a delete issued straight after a case finishes can be answered
+   * "Reference does not exist" for a branch that then materialises seconds later — and a teardown
+   * that reported success is the reason the scratch repository collects orphans. The delete is
+   * therefore re-attempted for as long as a *read* can still see the ref.
+   */
+  private async deleteBranch(branch: string): Promise<string | undefined> {
+    let lastError: unknown;
 
-    for (const branch of this.branches) {
+    for (const delayMs of [0, ...CONVERGENCE_DELAYS_MS]) {
+      if (delayMs > 0) {
+        await sleep(delayMs);
+      }
+
       try {
         await resolveOptional(
           this.octokit.rest.git.deleteRef({ owner: this.owner, repo: this.repo, ref: `heads/${branch}` }),
         );
+        lastError = undefined;
       } catch (error) {
+        lastError = error;
+
         if (!isAlreadyDeleted(error)) {
-          failures.push(`branch ${branch}: ${errorMessage(error)}`);
+          return `branch ${branch}: ${errorMessage(error)}`;
         }
+      }
+
+      // The single-ref read, not the listing: the listing keeps reporting a ref for minutes after it
+      // is gone, and polling that would turn every successful teardown into a timeout.
+      if ((await this.refSha(branch)) === undefined) {
+        return undefined;
+      }
+    }
+
+    return `branch ${branch}: still present after teardown${lastError === undefined ? '' : ` (${errorMessage(lastError)})`}`;
+  }
+
+  private async deleteBranches(): Promise<string[]> {
+    const failures: string[] = [];
+
+    for (const branch of this.branches) {
+      const failure = await this.deleteBranch(branch);
+
+      if (failure !== undefined) {
+        failures.push(failure);
       }
     }
 

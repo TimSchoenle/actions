@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { resolveBotIdentity, runAction } from 'actions-util';
+import { quoteForLog, resolveBotIdentity, runAction } from 'actions-util';
 import { createAppUserApi } from 'actions-util/identity';
 
 import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';
@@ -22,7 +22,7 @@ export function run(api?: AppUserApi): Promise<void> {
 
     const identity = await resolveBotIdentity(api ?? createAppUserApi(token), appSlug);
 
-    core.info(`Resolved git identity: ${identity.name} <${identity.email}>`);
+    core.info(`Resolved git identity: ${quoteForLog(identity.name)} <${quoteForLog(identity.email)}>`);
 
     setOutput(ActionOutput['bot-name'], identity.name);
     setOutput(ActionOutput['bot-email'], identity.email);

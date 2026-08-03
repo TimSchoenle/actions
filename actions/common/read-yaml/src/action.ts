@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { runAction } from 'actions-util';
+import { quoteForLog, runAction } from 'actions-util';
 
 import { getInput, setOutput } from './generated/action-io.js';
 import { readYaml } from './read.js';
@@ -16,12 +16,14 @@ export function run(): Promise<void> {
     const file = getInput('file', { required: true });
     const key = getInput('key', { required: true });
 
-    core.info(`Reading ${key} from ${file}...`);
+    core.info(`Reading ${quoteForLog(key)} from ${quoteForLog(file)}...`);
 
     const value = await readYaml(file, key);
 
     setOutput('value', value);
 
-    core.info(`✅ Read value: ${value}`);
+    // Quoted, not interpolated: the file is repository content, and a value spanning lines would
+    // otherwise put whatever it likes at the start of a stdout line, where the runner reads commands.
+    core.info(`✅ Read value: ${quoteForLog(value)}`);
   });
 }

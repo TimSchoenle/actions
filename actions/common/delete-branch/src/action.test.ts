@@ -81,7 +81,7 @@ describe('delete-branch action', () => {
   it('warns and outputs deleted=false when the deletion is rejected', async () => {
     await run(fakeApi(['feature/x'], new Error('Reference does not exist')));
 
-    expect(core.warning).toHaveBeenCalledWith("Failed to delete branch 'feature/x': Reference does not exist");
+    expect(core.warning).toHaveBeenCalledWith('Failed to delete branch "feature/x": Reference does not exist');
     expect(core.setOutput).toHaveBeenCalledWith('deleted', 'false');
     expect(core.setFailed).not.toHaveBeenCalled();
   });

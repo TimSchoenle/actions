@@ -10,6 +10,7 @@
  * {@link parseActionManifest} refuses them with that reason rather than failing obscurely.
  */
 export * from './action-inputs.js';
+export * from './adversarial.js';
 export * from './action-manifest.js';
 export * from './github-file-commands.js';
 export * from './run-action.js';
