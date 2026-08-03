@@ -42,6 +42,7 @@ export const PINNED = {
   // Used only by the test job, which must not install anything. Kept at the same versions
   // `setup-cached` pins internally, because the two halves have to agree on the cache format.
   setupBunOnly: 'oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0',
+  cache: 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6',
   cacheRestore: 'actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6',
 } as const;
 
@@ -97,23 +98,41 @@ ${rendered}`;
 }
 
 /**
- * The path the dependency cache covers, shared by the job that writes it and the one that reads it.
+ * Every directory `bun install` populates, and so everything the test job needs restored.
  *
- * The leading `./` is not cosmetic and must not be tidied away. `actions/cache` hashes the `path`
- * input *verbatim* into the cache entry's version, and an entry is returned only when both the key
- * and that version match. `setup-cached` saves under `${{ inputs.working-directory }}/node_modules`,
- * which with its default working directory is the literal string `./node_modules` — so a restore
- * spelled `node_modules` computes a different version and misses every time, on a key that is
- * demonstrably present. `e2e-contract.test.ts` pins the two spellings to each other.
+ * A bun workspace does not hoist all dependencies to the root. `@actions/core` lives in
+ * `packages/ts-util/node_modules`, and each action under `actions/` keeps its own tree the same way;
+ * the root holds only what is shared. `setup-cached` caches `<working-directory>/node_modules` and
+ * nothing else, which is enough to make an install faster — it installs afterwards regardless — but
+ * not enough to reconstitute a tree on its own. The test job never installs, so restoring the root
+ * alone leaves every workspace dependency missing, and that surfaces as `ERR_MODULE_NOT_FOUND` from
+ * inside a package rather than as anything resembling a cache failure.
+ *
+ * This is therefore the generator's own cache, keyed separately from the one `setup-cached` keeps.
+ *
+ * The same list is rendered into the job that saves and the job that restores, and it has to be the
+ * *same string*, not an equivalent one: `actions/cache` hashes this input verbatim into the entry's
+ * version and returns a cache only when the key and that version both match, so `node_modules` and
+ * `./node_modules` are two different caches under one key. `e2e-contract.test.ts` asserts the two
+ * generated halves agree.
  */
-const NODE_MODULES = './node_modules';
+const WORKSPACE_MODULES: readonly string[] = ['node_modules', 'packages/*/node_modules', 'actions/*/*/node_modules'];
+
+/** Renders the multi-line `path:` input both cache steps share, indented to sit under `with:`. */
+function cachePathsInput(): string {
+  return ['          path: |', ...WORKSPACE_MODULES.map((pattern) => `            ${pattern}`)].join('\n');
+}
 
 /**
  * The job that installs dependencies, so the job that runs the tests does not have to.
  *
- * It publishes the cache key `setup-cached` computed rather than recomputing it downstream: two
- * copies of a `hashFiles` expression are two chances to disagree, and a disagreement here surfaces as
- * a cache miss that the test job cannot recover from because it may not install anything.
+ * The key is computed once here and published, rather than recomputed downstream: two copies of a
+ * `hashFiles` expression are two chances to disagree, and a disagreement here surfaces as a cache
+ * miss the test job cannot recover from, because it may not install anything.
+ *
+ * The cache step precedes the install so that a hit is a restore rather than a download, and saves
+ * in its post step only when the key was missing. It has to sit in this job and not the next one:
+ * writing the cache is the half that needs a populated tree, and populating one needs the registry.
  */
 function installJob(): string {
   return `  install:
@@ -122,7 +141,7 @@ function installJob(): string {
     permissions:
       contents: read # to fetch code
     outputs:
-      cache-key: \${{ steps.bun.outputs.cache-key }}
+      cache-key: \${{ steps.key.outputs.value }}
     steps:
 ${hardenRunnerStep(INSTALL_ALLOWED_ENDPOINTS)}
 
@@ -131,10 +150,22 @@ ${hardenRunnerStep(INSTALL_ALLOWED_ENDPOINTS)}
         with:
           persist-credentials: false
 
+      - name: Compute Cache Key
+        id: key
+        env:
+          CACHE_KEY: e2e-workspace-modules-\${{ runner.os }}-\${{ hashFiles('bun.lock') }}
+        run: echo "value=$CACHE_KEY" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Workspace Dependencies
+        uses: ${PINNED.cache}
+        with:
+${cachePathsInput()}
+          key: \${{ steps.key.outputs.value }}
+
       # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
-      # it to 'latest', which would win otherwise.
+      # it to 'latest', which would win otherwise. It reinstalls on every run whatever the cache did,
+      # which is what validates the restored tree against the lockfile before the next job trusts it.
       - name: Setup Bun And Install
-        id: bun
         uses: ${PINNED.setupBun}
         with:
           bun-version: ''
@@ -359,7 +390,7 @@ ${hardenRunnerStep(E2E_ALLOWED_ENDPOINTS)}
       - name: Restore Dependencies
         uses: ${PINNED.cacheRestore}
         with:
-          path: ${NODE_MODULES}
+${cachePathsInput()}
           key: \${{ needs.install.outputs.cache-key }}
           fail-on-cache-miss: true
 

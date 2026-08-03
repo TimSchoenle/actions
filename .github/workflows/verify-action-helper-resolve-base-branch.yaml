@@ -34,7 +34,7 @@ jobs:
     permissions:
       contents: read # to fetch code
     outputs:
-      cache-key: ${{ steps.bun.outputs.cache-key }}
+      cache-key: ${{ steps.key.outputs.value }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
@@ -52,10 +52,25 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Compute Cache Key
+        id: key
+        env:
+          CACHE_KEY: e2e-workspace-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+        run: echo "value=$CACHE_KEY" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Workspace Dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            actions/*/*/node_modules
+          key: ${{ steps.key.outputs.value }}
+
       # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
-      # it to 'latest', which would win otherwise.
+      # it to 'latest', which would win otherwise. It reinstalls on every run whatever the cache did,
+      # which is what validates the restored tree against the lockfile before the next job trusts it.
       - name: Setup Bun And Install
-        id: bun
         uses: TimSchoenle/actions/actions/bun/setup-cached@cbdcf6fd08b46059064bc9c91efa6b610a9ee7db # tag=actions-bun-setup-cached-v1.1.10
         with:
           bun-version: ''
@@ -100,7 +115,10 @@ jobs:
       - name: Restore Dependencies
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: ./node_modules
+          path: |
+            node_modules
+            packages/*/node_modules
+            actions/*/*/node_modules
           key: ${{ needs.install.outputs.cache-key }}
           fail-on-cache-miss: true
 

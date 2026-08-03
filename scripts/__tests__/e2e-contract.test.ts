@@ -147,25 +147,34 @@ describe('end-to-end contract', () => {
 
   /**
    * `actions/cache` returns an entry only when the key *and* a version hashed from the `path` input
-   * both match, and it hashes that input exactly as written: `./node_modules` and `node_modules` are
-   * two different caches under one key. So the generated restore has to spell the path the way
-   * `setup-cached` spelled it when it saved, which is read back out of the manifest here rather than
-   * restated — a restatement is the second copy that drifts.
+   * both match, and it hashes that input exactly as written — so `node_modules` and `./node_modules`
+   * are two different caches under one key, and the job that saves and the job that restores have to
+   * name the paths identically rather than merely equivalently.
    *
    * Getting this wrong trips no lint and no other test. It fails every e2e job at once, on a
    * `fail-on-cache-miss` for a key the install job in the same run demonstrably hit.
+   *
+   * The set also has to cover more than the root: a bun workspace leaves each package's own
+   * dependencies in its own `node_modules`, so a cache of the root alone restores a tree that is
+   * missing `@actions/core` — which fails as a module resolution error inside a package, long past
+   * anything that would name the cache as the cause.
    */
-  it('restores the dependency cache under the exact path setup-cached saved it', async () => {
-    const manifest = fs.readFileSync(path.join(ROOT_DIR, 'actions', 'bun', 'setup-cached', 'action.yaml'), 'utf8');
-    const workingDirectory = /^ {2}working-directory:[\s\S]*?default: '([^']*)'/m.exec(manifest)?.[1];
-    const relativeToIt = /path: \$\{\{ inputs\.working-directory \}\}(\S+)/.exec(manifest)?.[1];
-
-    expect(workingDirectory, 'setup-cached no longer defaults working-directory').toBeDefined();
-    expect(relativeToIt, 'setup-cached no longer caches a path relative to working-directory').toBeDefined();
-
+  it('saves and restores the same dependency paths, covering every workspace', async () => {
     for (const action of await findE2eActions()) {
-      expect(e2eJobOf(action), `${workflowFileName(action)}: restores a path setup-cached never saved`).toContain(
-        `path: ${workingDirectory}${relativeToIt}`,
+      const file = workflowFileName(action);
+      const workflow = fs.readFileSync(path.join(ROOT_DIR, '.github', 'workflows', file), 'utf8');
+      const installJob = workflow.split('\n  install:\n')[1]?.split('\n  e2e:\n')[0] ?? '';
+
+      const saved = /path: \|\n((?: {12}\S+\n)+)/.exec(installJob)?.[1];
+      const restored = /path: \|\n((?: {12}\S+\n)+)/.exec(e2eJobOf(action))?.[1];
+
+      expect(saved, `${file}: the install job caches no dependency paths`).toBeDefined();
+      expect(restored, `${file}: the e2e job restores no dependency paths`).toEqual(saved);
+      expect(saved, `${file}: the cache must cover each package's own node_modules, not just the root`).toContain(
+        'packages/*/node_modules',
+      );
+      expect(saved, `${file}: the cache must cover each action's own node_modules`).toContain(
+        'actions/*/*/node_modules',
       );
     }
   });
