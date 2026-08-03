@@ -1,47 +1,17 @@
-import { fileURLToPath } from 'node:url';
+import { configDefaults, defineConfig } from 'vitest/config';
 
-import { defineConfig } from 'vitest/config';
+import { E2E_TEST_PATTERN, workspaceAliases } from './vitest.aliases.js';
 
 export default defineConfig({
   resolve: {
-    // `tsc` and `bun build` resolve the workspace package through the tsconfig `paths` mapping and
-    // so compile it from source. Vite reads no tsconfig `paths`, and would fall back to the
-    // package's `exports` entry — `packages/ts-util/dist`, which is gitignored and never built in
-    // CI. Mapping it to the same source keeps every toolchain on one copy of the code.
-    //
-    // Declared as an ordered array, not an object: an alias also matches every subpath beneath it, so
-    // a bare `actions-util` entry would rewrite `actions-util/branches` to `…/index.ts/branches`. The
-    // specific entry has to be tried first.
-    alias: [
-      {
-        find: 'actions-util/branches',
-        replacement: fileURLToPath(new URL('./packages/ts-util/src/github-branches.ts', import.meta.url)),
-      },
-      {
-        find: 'actions-util/identity',
-        replacement: fileURLToPath(new URL('./packages/ts-util/src/github-identity.ts', import.meta.url)),
-      },
-      {
-        find: 'actions-util/commits',
-        replacement: fileURLToPath(new URL('./packages/ts-util/src/github-commits.ts', import.meta.url)),
-      },
-      {
-        find: 'actions-util/client',
-        replacement: fileURLToPath(new URL('./packages/ts-util/src/github-client.ts', import.meta.url)),
-      },
-      {
-        find: 'actions-util/read-after-write',
-        replacement: fileURLToPath(new URL('./packages/ts-util/src/read-after-write.ts', import.meta.url)),
-      },
-      {
-        find: 'actions-util',
-        replacement: fileURLToPath(new URL('./packages/ts-util/src/index.ts', import.meta.url)),
-      },
-    ],
+    alias: workspaceAliases,
   },
   test: {
     globals: true,
     environment: 'node',
+    // End-to-end cases need credentials and a scratch repository, so they are not part of the unit
+    // suite. `vitest.e2e.config.ts` runs them.
+    exclude: [...configDefaults.exclude, E2E_TEST_PATTERN],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

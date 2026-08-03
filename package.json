@@ -18,6 +18,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run --coverage",
+    "e2e": "vitest run --config vitest.e2e.config.ts",
     "prepare": "husky"
   },
   "type": "module",
