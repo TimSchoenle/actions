@@ -2,7 +2,7 @@
   "name": "actions",
   "version": "1.0.0",
   "scripts": {
-    "build:workspaces": "bun run generate-action-sources && bun run --workspaces build",
+    "build:workspaces": "bun run generate-action-sources && bun run --filter '*' build",
     "create-action": "bun scripts/create-action.ts",
     "remove-action": "bun scripts/remove-action.ts",
     "create-workflow": "bun scripts/create-workflow.ts",

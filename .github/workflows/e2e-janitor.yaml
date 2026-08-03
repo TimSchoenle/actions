@@ -66,6 +66,10 @@ jobs:
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
           owner: ${{ env.TEST_OWNER }}
           repositories: ${{ env.TEST_REPO_NAME }}
+          # Scoped to exactly what the two sweeps do — close pull requests, and read and delete refs.
+          # Without a `permission-*` input the token would inherit the whole installation.
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Resolve Cutoff
         id: cutoff
@@ -99,6 +103,8 @@ jobs:
           # chronological order coincide.
           # Listed into a variable rather than straight into `mapfile`: a process substitution hides
           # its exit code, so a failing `gh api` would read as "nothing is stale" and pass green.
+          # `$ENV.CUTOFF` is jq syntax, not a shell expansion, so the filter must stay single-quoted.
+          # shellcheck disable=SC2016
           listing="$(
             gh api --paginate "repos/${TEST_REPO}/pulls?state=open&per_page=100" \
               --jq '.[] | select(.updated_at < $ENV.CUTOFF) | .number'

@@ -1,9 +1,9 @@
-name: Verify Maintenance Auto-approve-pr
 # GENERATED — do not edit by hand. Run `bun run generate-e2e-workflows` to rebuild this file
 # from the actions that have an `e2e/` directory. The drift test in CI fails if it is out of date.
 #
 # The cases live in `actions/maintenance/auto-approve-pr/e2e/` and are ordinary vitest files. This
 # workflow supplies only what they cannot get on a laptop: a token scoped to the scratch repository.
+name: Verify Maintenance Auto-approve-pr
 
 on:
   push:
