@@ -113,7 +113,7 @@ jobs:
       # without it a miss would leave the suite to fail later on a missing import, several confusing
       # minutes further on.
       - name: Restore Dependencies
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             node_modules
