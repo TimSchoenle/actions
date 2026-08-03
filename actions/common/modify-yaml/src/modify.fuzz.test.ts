@@ -145,15 +145,32 @@ describe('Primitive Persistence Fuzzing', () => {
 
 describe('Helper Functions Fuzzing', () => {
   // 1. inferValueType
+  // Independent oracle for the documented inference contract: YAML 1.2 core schema
+  // scalars (decimal/float with exponent, unsigned hex/octal, .inf/.nan, booleans, null)
+  // plus the signed hex/octal extension. Anything else stays a string.
+  function expectedInference(input: string): string | number | boolean | null {
+    const isNegated = input.startsWith('-');
+    const magnitude = isNegated ? input.slice(1) : input;
+
+    if (/^0x[\da-fA-F]+$/i.test(magnitude) || /^0o[0-7]+$/.test(magnitude)) {
+      return isNegated ? -Number(magnitude) : Number(magnitude);
+    }
+    // eslint-disable-next-line security/detect-unsafe-regex
+    if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(input)) return Number(input);
+    if (input === 'Infinity' || input === '+Infinity' || input === '.inf') return Infinity;
+    if (input === '-Infinity' || input === '-.inf') return -Infinity;
+    if (input === '.nan') return Number.NaN;
+    if (input === 'true') return true;
+    if (input === 'false') return false;
+    if (input === 'null') return null;
+    return input;
+  }
+
   it('inferValueType should be consistent', () => {
     fc.assert(
       fc.property(fc.string(), (input) => {
-        const result = inferValueType(input);
-        if (input === 'true') expect(result).toBe(true);
-        else if (input === 'false') expect(result).toBe(false);
-        else if (input === 'null') expect(result).toBe(null);
-        else if (/^-?\d+(\.\d+)?$/.test(input)) expect(result).toBe(Number(input));
-        else expect(result).toBe(input);
+        // toBe uses Object.is, so -0 and NaN are compared exactly.
+        expect(inferValueType(input)).toBe(expectedInference(input));
       }),
     );
   });
