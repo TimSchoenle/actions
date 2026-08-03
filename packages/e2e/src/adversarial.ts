@@ -157,10 +157,15 @@ export const DECEPTIVE_PATHS = [
  *
  * A workflow input reaching `new RegExp` is a denial-of-service seam on a billed runner: the step
  * does not fail, it simply never ends. Each pattern is paired with the subject that makes it blow up.
+ *
+ * The `codeql[js/redos]` suppressions below are the point of the fixture, not a defect being waved
+ * through: these patterns are catastrophic *by construction*, and the only code that compiles one is
+ * the assertion that it is a valid regular expression. Nothing here ever runs one against its
+ * subject — see the note in `adversarial.test.ts`.
  */
 export const REDOS_PATTERNS = [
-  { name: 'nested quantifiers', pattern: '^(a+)+$', subject: `${'a'.repeat(40)}!` },
-  { name: 'alternation with overlap', pattern: '^(a|a)*$', subject: `${'a'.repeat(40)}!` },
+  { name: 'nested quantifiers', pattern: '^(a+)+$', subject: `${'a'.repeat(40)}!` }, // codeql[js/redos]
+  { name: 'alternation with overlap', pattern: '^(a|a)*$', subject: `${'a'.repeat(40)}!` }, // codeql[js/redos]
   { name: 'an unbounded prefix', pattern: '^(.*a){30}$', subject: `${'a'.repeat(60)}!` },
 ] as const;
 

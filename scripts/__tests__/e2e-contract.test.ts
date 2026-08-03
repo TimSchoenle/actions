@@ -50,6 +50,13 @@ function runtimeOf(actionPath: string): string {
   return /^\s*using:\s*'?([\w-]+)'?/m.exec(manifest)?.[1] ?? 'unknown';
 }
 
+/** Reads a generated workflow and returns just its `e2e` job, the half that holds the token. */
+function e2eJobOf(action: Awaited<ReturnType<typeof findE2eActions>>[number]): string {
+  const workflow = fs.readFileSync(path.join(ROOT_DIR, '.github', 'workflows', workflowFileName(action)), 'utf8');
+
+  return (workflow.split('\n  e2e:\n')[1] ?? '').split('\n  # <<< generated: summary')[0];
+}
+
 describe('end-to-end contract', () => {
   it('gives every node20 action end-to-end cases, or a stated exemption', async () => {
     const manifests = await scanSorted('actions/*/*/action.yaml');
@@ -128,14 +135,38 @@ describe('end-to-end contract', () => {
 
     for (const action of await findE2eActions()) {
       const file = workflowFileName(action);
-      const workflow = fs.readFileSync(path.join(ROOT_DIR, '.github', 'workflows', file), 'utf8');
-      const e2eJob = (workflow.split('\n  e2e:\n')[1] ?? '').split('\n  # <<< generated: summary')[0];
+      const e2eJob = e2eJobOf(action);
 
       expect(e2eJob, `${file}: the e2e job must not reach a registry`).not.toContain('registry.npmjs.org');
       // `setup-cached` installs on every run, cache hit or not, so using it here would put the
       // registry back on the critical path of the job holding the token.
       expect(e2eJob, `${file}: the e2e job must not use the installing bun setup`).not.toContain('bun/setup-cached@');
       expect(e2eJob, `${file}: the e2e job must restore what install cached`).toContain('fail-on-cache-miss: true');
+    }
+  });
+
+  /**
+   * `actions/cache` returns an entry only when the key *and* a version hashed from the `path` input
+   * both match, and it hashes that input exactly as written: `./node_modules` and `node_modules` are
+   * two different caches under one key. So the generated restore has to spell the path the way
+   * `setup-cached` spelled it when it saved, which is read back out of the manifest here rather than
+   * restated — a restatement is the second copy that drifts.
+   *
+   * Getting this wrong trips no lint and no other test. It fails every e2e job at once, on a
+   * `fail-on-cache-miss` for a key the install job in the same run demonstrably hit.
+   */
+  it('restores the dependency cache under the exact path setup-cached saved it', async () => {
+    const manifest = fs.readFileSync(path.join(ROOT_DIR, 'actions', 'bun', 'setup-cached', 'action.yaml'), 'utf8');
+    const workingDirectory = /^ {2}working-directory:[\s\S]*?default: '([^']*)'/m.exec(manifest)?.[1];
+    const relativeToIt = /path: \$\{\{ inputs\.working-directory \}\}(\S+)/.exec(manifest)?.[1];
+
+    expect(workingDirectory, 'setup-cached no longer defaults working-directory').toBeDefined();
+    expect(relativeToIt, 'setup-cached no longer caches a path relative to working-directory').toBeDefined();
+
+    for (const action of await findE2eActions()) {
+      expect(e2eJobOf(action), `${workflowFileName(action)}: restores a path setup-cached never saved`).toContain(
+        `path: ${workingDirectory}${relativeToIt}`,
+      );
     }
   });
 

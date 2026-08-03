@@ -96,8 +96,17 @@ function hardenRunnerStep(endpoints: readonly string[]): string {
 ${rendered}`;
 }
 
-/** The path the dependency cache covers, shared by the job that writes it and the one that reads it. */
-const NODE_MODULES = 'node_modules';
+/**
+ * The path the dependency cache covers, shared by the job that writes it and the one that reads it.
+ *
+ * The leading `./` is not cosmetic and must not be tidied away. `actions/cache` hashes the `path`
+ * input *verbatim* into the cache entry's version, and an entry is returned only when both the key
+ * and that version match. `setup-cached` saves under `${{ inputs.working-directory }}/node_modules`,
+ * which with its default working directory is the literal string `./node_modules` — so a restore
+ * spelled `node_modules` computes a different version and misses every time, on a key that is
+ * demonstrably present. `e2e-contract.test.ts` pins the two spellings to each other.
+ */
+const NODE_MODULES = './node_modules';
 
 /**
  * The job that installs dependencies, so the job that runs the tests does not have to.
