@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.6.0](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.5.23...actions-helm-update-chart-version-v1.6.0) (2026-08-03)
+
+
+### Features
+
+* **Actions/Update-Chart-Version:** support for multi value charts ([#1334](https://github.com/TimSchoenle/actions/issues/1334)) ([fdf1d33](https://github.com/TimSchoenle/actions/commit/fdf1d337a92438bea4737020b7a64d083aebe388))
+
+
+### Miscellaneous
+
+* **deps:** update timschoenle/actions/actions/common/create-pull-request to vactions-common-create-pull-request-v1.0.9 ([#1313](https://github.com/TimSchoenle/actions/issues/1313)) ([b493b09](https://github.com/TimSchoenle/actions/commit/b493b09596463806738558c80a82bb5a9d25f54f))
+
 ## [1.5.23](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.5.22...actions-helm-update-chart-version-v1.5.23) (2026-08-01)
 
 
