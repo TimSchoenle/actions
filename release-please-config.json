@@ -2,6 +2,11 @@
   "separate-pull-requests": true,
   "always-update": true,
   "packages": {
+    "actions/helm/apply-chart-updates": {
+      "release-type": "simple",
+      "component": "actions-helm-apply-chart-updates",
+      "include-component-in-tag": true
+    },
     "actions/helm/update-chart-version": {
       "release-type": "simple",
       "component": "actions-helm-update-chart-version",

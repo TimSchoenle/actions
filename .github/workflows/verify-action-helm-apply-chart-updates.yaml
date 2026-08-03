@@ -1,0 +1,332 @@
+name: Verify Helm Apply Chart Updates
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'actions/helm/apply-chart-updates/**'
+      - '.github/workflows/verify-action-helm-apply-chart-updates.yaml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'actions/helm/apply-chart-updates/**'
+      - '.github/workflows/verify-action-helm-apply-chart-updates.yaml'
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DIGEST_API: sha256:1111111111111111111111111111111111111111111111111111111111111111
+  DIGEST_WORKER: sha256:2222222222222222222222222222222222222222222222222222222222222222
+  DIGEST_RENDER: sha256:3333333333333333333333333333333333333333333333333333333333333333
+  DIGEST_BOOTSTRAP: sha256:4444444444444444444444444444444444444444444444444444444444444444
+
+jobs:
+  # The feature this action exists for: one call, many images, each with its own version.
+  multi-image-mixed-versions:
+    name: 'Test: multi-image update with differing versions'
+    permissions:
+      contents: read # to fetch code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Seed a chart shaped like a real multi-service chart
+        run: |
+          set -euo pipefail
+          mkdir -p charts/multi
+
+          cat <<'EOF' > charts/multi/Chart.yaml
+          apiVersion: v2
+          name: multi
+          description: A chart with independently released services
+          version: 1.2.3
+          appVersion: "v0.4.1"
+          EOF
+
+          cat <<'EOF' > charts/multi/values.yaml
+          # yaml-language-server: $schema=values.schema.json
+          services:
+            api:
+              # @schema
+              # type: string
+              # @schema
+              # -- Image tag, pinned by digest.
+              image:
+                repository: owner/api
+                tag: v0.4.1@sha256:aaa   # trailing comment
+            worker:
+              image:
+                repository: owner/worker
+                tag: "v0.4.1@sha256:bbb"
+            render:
+              image:
+                repository: owner/render
+                tag: v0.4.1@sha256:ccc
+          bootstrap:
+            image:
+              tag: v0.4.1@sha256:ddd
+          # Third-party images this chart does not release and must never rewrite.
+          postgresql:
+            image:
+              tag: 18-alpine@sha256:eee
+          valkey:
+            image:
+              tag: 9.1.1-alpine@sha256:fff
+          EOF
+
+          cp charts/multi/values.yaml before-values.yaml
+          cp charts/multi/Chart.yaml before-chart.yaml
+
+      - name: Apply chart updates
+        id: apply
+        uses: ./actions/helm/apply-chart-updates
+        with:
+          chart-path: charts/multi
+          images: |
+            {
+              "services.api.image.tag":    {"tag": "v1.0.0", "digest": "${{ env.DIGEST_API }}"},
+              "services.worker.image.tag": {"tag": "v0.9.4", "digest": "${{ env.DIGEST_WORKER }}"},
+              "services.render.image.tag": {"tag": "v2.1.0", "digest": "${{ env.DIGEST_RENDER }}"},
+              "bootstrap.image.tag":       {"tag": "v1.0.0", "digest": "${{ env.DIGEST_BOOTSTRAP }}"}
+            }
+
+      - name: Verify each image got its own version and digest
+        env:
+          VALUES: charts/multi/values.yaml
+        run: |
+          set -euo pipefail
+          cat "$VALUES"
+
+          grep -qF "tag: v1.0.0@$DIGEST_API" "$VALUES" || { echo "::error::api tag wrong"; exit 1; }
+          grep -qF "tag: v0.9.4@$DIGEST_WORKER" "$VALUES" || { echo "::error::worker tag wrong"; exit 1; }
+          grep -qF "tag: v2.1.0@$DIGEST_RENDER" "$VALUES" || { echo "::error::render tag wrong"; exit 1; }
+          grep -qF "tag: v1.0.0@$DIGEST_BOOTSTRAP" "$VALUES" || { echo "::error::bootstrap tag wrong"; exit 1; }
+          echo "✅ Every image carries its own version"
+
+      - name: Verify nothing else in values.yaml moved
+        env:
+          VALUES: charts/multi/values.yaml
+        run: |
+          set -euo pipefail
+
+          ADDED=$(diff before-values.yaml "$VALUES" | grep -c '^> ' || true)
+          [ "$ADDED" = "4" ] || { echo "::error::expected exactly 4 changed lines, got $ADDED"; diff before-values.yaml "$VALUES" || true; exit 1; }
+
+          NON_TAG=$(diff before-values.yaml "$VALUES" | grep '^> ' | grep -vc 'tag:' || true)
+          [ "$NON_TAG" = "0" ] || { echo "::error::a line other than a tag changed"; exit 1; }
+
+          # The schema annotations are load-bearing and the third-party images are not ours to move.
+          grep -qF '# -- Image tag, pinned by digest.' "$VALUES" || { echo "::error::comment lost"; exit 1; }
+          grep -qF '# trailing comment' "$VALUES" || { echo "::error::trailing comment lost"; exit 1; }
+          grep -qF 'tag: 18-alpine@sha256:eee' "$VALUES" || { echo "::error::postgresql image was rewritten"; exit 1; }
+          grep -qF 'tag: 9.1.1-alpine@sha256:fff' "$VALUES" || { echo "::error::valkey image was rewritten"; exit 1; }
+          echo "✅ Comments, structure and third-party images preserved"
+
+      - name: Verify the chart version bumped and appVersion did not
+        env:
+          CHART: charts/multi/Chart.yaml
+        run: |
+          set -euo pipefail
+          cat "$CHART"
+
+          grep -q 'version: 1.2.4' "$CHART" || { echo "::error::expected version 1.2.4"; exit 1; }
+          # No app-version was given: a chart whose services release independently has none.
+          grep -qF 'appVersion: "v0.4.1"' "$CHART" || { echo "::error::appVersion should not have changed"; exit 1; }
+          echo "✅ Chart version bumped, appVersion untouched"
+
+      - name: Verify the published outputs
+        env:
+          CHART_VERSION: ${{ steps.apply.outputs.chart-version }}
+          PREVIOUS: ${{ steps.apply.outputs.previous-chart-version }}
+          COUNT: ${{ steps.apply.outputs.updated-count }}
+          CHANGES: ${{ steps.apply.outputs.changes }}
+          FILES: ${{ steps.apply.outputs.files }}
+          SUMMARY: ${{ steps.apply.outputs.summary-markdown }}
+        run: |
+          set -euo pipefail
+          [ "$CHART_VERSION" = "1.2.4" ] || { echo "::error::chart-version was '$CHART_VERSION'"; exit 1; }
+          [ "$PREVIOUS" = "1.2.3" ] || { echo "::error::previous-chart-version was '$PREVIOUS'"; exit 1; }
+          [ "$COUNT" = "4" ] || { echo "::error::updated-count was '$COUNT'"; exit 1; }
+          [ "$FILES" = "charts/multi/Chart.yaml charts/multi/values.yaml" ] || { echo "::error::files was '$FILES'"; exit 1; }
+          [ "$(echo "$CHANGES" | jq 'length')" = "4" ] || { echo "::error::changes did not list 4 updates"; exit 1; }
+          echo "$SUMMARY" | grep -q 'services.render.image.tag' || { echo "::error::summary missing an image"; exit 1; }
+          echo "✅ Outputs verified"
+
+  # Every one of these must fail the step *and* leave the checkout untouched.
+  rejections:
+    name: 'Test rejection: ${{ matrix.name }}'
+    permissions:
+      contents: read # to fetch code
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: key outside the allowlist
+            images: '{"allowUnsafeExposure": {"tag": "v1.0.0"}}'
+            template: '${tag}'
+          - name: key absent from the chart
+            images: '{"services.absent.image.tag": {"tag": "v1.0.0"}}'
+            template: '${tag}'
+          - name: key traversing the prototype chain
+            images: '{"services.__proto__.image.tag": {"tag": "v1.0.0"}}'
+            template: '${tag}'
+          - name: value the value pattern rejects
+            images: '{"services.api.image.tag": {"tag": ".hidden"}}'
+            template: '${tag}'
+          - name: undefined placeholder
+            images: '{"services.api.image.tag": {"tag": "v1.0.0"}}'
+            template: '${tag}@${digest}'
+          # One entry short a tag must fail, never inherit its sibling's version.
+          - name: one entry missing its own tag
+            images: '{"services.api.image.tag": {"tag": "v1.0.0"}, "services.worker.image.tag": {}}'
+            template: '${tag}'
+          - name: variable value carrying a newline
+            images: "{\"services.api.image.tag\": {\"tag\": \"v1\\nrm -rf /\"}}"
+            template: '${tag}'
+          - name: images that is not an object
+            images: '[]'
+            template: '${tag}'
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Seed the chart
+        run: |
+          set -euo pipefail
+          mkdir -p charts/reject
+
+          printf 'apiVersion: v2\nname: reject\nversion: 1.0.0\nappVersion: "v0.0.1"\n' > charts/reject/Chart.yaml
+          printf 'services:\n  api:\n    image:\n      tag: v0.0.1@sha256:aaa\n  worker:\n    image:\n      tag: v0.0.1@sha256:bbb\n' > charts/reject/values.yaml
+
+          cp charts/reject/Chart.yaml before-chart.yaml
+          cp charts/reject/values.yaml before-values.yaml
+
+      - name: Apply chart updates (expected to fail)
+        id: apply
+        continue-on-error: true
+        uses: ./actions/helm/apply-chart-updates
+        with:
+          chart-path: charts/reject
+          images: ${{ matrix.images }}
+          value-template: ${{ matrix.template }}
+
+      - name: Verify the step failed and changed nothing
+        env:
+          OUTCOME: ${{ steps.apply.outcome }}
+        run: |
+          set -euo pipefail
+
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "::error::the action should have failed, but its outcome was '$OUTCOME'"
+            exit 1
+          fi
+
+          diff before-values.yaml charts/reject/values.yaml || { echo "::error::values.yaml was modified"; exit 1; }
+          diff before-chart.yaml charts/reject/Chart.yaml || { echo "::error::Chart.yaml was modified"; exit 1; }
+          echo "✅ Rejected without touching the chart"
+
+  # The changelog is the one free-form input, so what it may *do* is what is tested.
+  changelog:
+    name: 'Test: changelog sanitization'
+    permissions:
+      contents: read # to fetch code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Seed the chart
+        run: |
+          set -euo pipefail
+          mkdir -p charts/log
+          printf 'apiVersion: v2\nname: log\nversion: 1.0.0\n' > charts/log/Chart.yaml
+          printf 'image:\n  tag: v0.0.1@sha256:aaa\n' > charts/log/values.yaml
+
+      - name: Apply chart updates with a hostile changelog
+        id: apply
+        uses: ./actions/helm/apply-chart-updates
+        with:
+          chart-path: charts/log
+          images: '{"image.tag": {"tag": "v1.0.0", "digest": "${{ env.DIGEST_API }}"}}'
+          changelog-max-bytes: '400'
+          changelog: |
+            ## What's changed
+
+            - Rework the worker, thanks @octocat and @acme/platform
+            - Fixes #12
+            - Closes https://github.com/TimSchoenle/helm-charts/issues/13
+            - Padding to force truncation: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+            - Padding to force truncation: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+            - Padding to force truncation: cccccccccccccccccccccccccccccccccccccccccccccccccc
+            - Padding to force truncation: dddddddddddddddddddddddddddddddddddddddddddddddddd
+            - Padding to force truncation: eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+
+      - name: Verify the changelog cannot notify anyone or close anything
+        env:
+          CHANGELOG: ${{ steps.apply.outputs.changelog-markdown }}
+        run: |
+          set -euo pipefail
+          echo "$CHANGELOG"
+
+          echo "$CHANGELOG" | grep -q '<summary>Changelog</summary>' || { echo "::error::not wrapped in a details section"; exit 1; }
+          echo "$CHANGELOG" | grep -qF '… changelog truncated' || { echo "::error::truncation was not marked"; exit 1; }
+
+          if echo "$CHANGELOG" | grep -qE '(^|[^A-Za-z0-9_`])@[A-Za-z0-9]'; then
+            echo "::error::an active mention survived sanitization"
+            exit 1
+          fi
+
+          if echo "$CHANGELOG" | grep -qiE '(close[sd]?|fix(e[sd])?|resolve[sd]?)[[:space:]]*:?[[:space:]]+(#[0-9]|https?://)'; then
+            echo "::error::an issue-closing reference survived sanitization"
+            exit 1
+          fi
+
+          BYTES=$(printf '%s' "$CHANGELOG" | wc -c)
+          [ "$BYTES" -le 500 ] || { echo "::error::changelog was $BYTES bytes, past the cap plus its wrapper"; exit 1; }
+          echo "✅ Changelog is safe to embed"
+
+  # <<< generated: summary (run 'bun run generate-ci-required' to update)
+  summary:
+    name: 'CI Summary: Helm Apply Chart Updates'
+    if: ${{ always() }}
+    needs:
+      - multi-image-mixed-versions
+      - rejections
+      - changelog
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Fail if any verify job did not succeed
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
+  # >>> generated: summary

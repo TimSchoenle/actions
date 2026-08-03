@@ -189,6 +189,22 @@
         "vitest": "4.1.10",
       },
     },
+    "actions/helm/apply-chart-updates": {
+      "name": "actions-helm-apply-chart-updates",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "actions-util": "workspace:*",
+      },
+      "devDependencies": {
+        "@fast-check/vitest": "0.4.1",
+        "@types/node": "26.1.2",
+        "fast-check": "4.9.0",
+        "typescript": "6.0.3",
+        "vitest": "4.1.10",
+        "yaml": "2.9.0",
+      },
+    },
     "actions/helper/resolve-base-branch": {
       "name": "actions-helper-resolve-base-branch",
       "version": "1.0.0",
@@ -517,6 +533,8 @@
     "actions-common-render-template": ["actions-common-render-template@workspace:actions/common/render-template"],
 
     "actions-common-setup-app-git-identity": ["actions-common-setup-app-git-identity@workspace:actions/common/setup-app-git-identity"],
+
+    "actions-helm-apply-chart-updates": ["actions-helm-apply-chart-updates@workspace:actions/helm/apply-chart-updates"],
 
     "actions-helper-resolve-base-branch": ["actions-helper-resolve-base-branch@workspace:actions/helper/resolve-base-branch"],
 

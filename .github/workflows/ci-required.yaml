@@ -38,6 +38,7 @@ on:
       - Verify Common Delete-branch
       - Verify Common Get App Git Identity
       - Verify Common Setup App Git Identity
+      - Verify Helm Apply Chart Updates
       - Verify Helm Update Chart Version
       - Verify Helper Resolve-base-branch
       - Verify Helper Verify-branch-name

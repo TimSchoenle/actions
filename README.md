@@ -44,6 +44,7 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
+| [Apply Helm Chart Updates](./actions/helm/apply-chart-updates) | Applies a set of templated image updates to a Helm chart's values.yaml and bumps Chart.yaml, preserving comments and structure. Every image carries its own version and digest. | [actions-helm-apply-chart-updates-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-apply-chart-updates-v1.0.0) | `uses: TimSchoenle/actions/actions/helm/apply-chart-updates@actions-helm-apply-chart-updates-v1.0.0 # tag=actions-helm-apply-chart-updates-v1.0.0` |
 | [Update Helm Chart Version](./actions/helm/update-chart-version) | Updates a Helm chart version, appVersion, and image tag, then creates a Pull Request. This action requires a bot account with access to the charts repo. Requires structure: Chart.yaml (version, appVersion) and values.yaml (image.tag). | [actions-helm-update-chart-version-v1.5.23](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.5.23) | `uses: TimSchoenle/actions/actions/helm/update-chart-version@0ada9fd480cb7ecb07078bac8a77702caa1d6b99 # tag=actions-helm-update-chart-version-v1.5.23` |
 
 ### Helper
