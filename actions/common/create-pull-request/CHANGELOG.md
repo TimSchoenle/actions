@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.11](https://github.com/TimSchoenle/actions/compare/actions-common-create-pull-request-v1.0.10...actions-common-create-pull-request-v1.0.11) (2026-08-04)
+
+
+### Miscellaneous
+
+* **deps:** update timschoenle/actions/actions/common/commit-changes to vactions-common-commit-changes-v1.3.0 ([#1361](https://github.com/TimSchoenle/actions/issues/1361)) ([e4d9cf6](https://github.com/TimSchoenle/actions/commit/e4d9cf69aa8d469dd8dceca01707a00e5d2941b3))
+* **deps:** update timschoenle/actions/actions/common/create-branch to vactions-common-create-branch-v1.4.0 ([#1362](https://github.com/TimSchoenle/actions/issues/1362)) ([7b106a4](https://github.com/TimSchoenle/actions/commit/7b106a47378980fa2f5d667a1be35734a25f34c3))
+
 ## [1.0.10](https://github.com/TimSchoenle/actions/compare/actions-common-create-pull-request-v1.0.9...actions-common-create-pull-request-v1.0.10) (2026-08-03)
 
 
