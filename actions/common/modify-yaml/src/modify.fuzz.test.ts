@@ -32,6 +32,17 @@ function expectedInference(input: string): string | number | boolean | null {
   return input;
 }
 
+/**
+ * Whether a value can hold the next path segment as a key.
+ *
+ * Arrays are excluded even though `typeof [] === 'object'`: `yaml.stringify` serializes only their
+ * indexed entries, so a string key set on one never reaches the file and the key path under test
+ * would be absent by construction.
+ */
+function canHoldKeys(value: unknown): boolean {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 // Helper to create a temp file for fuzzing
 async function withTempFile(content: string, callback: (path: string) => Promise<void>) {
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'fuzz-test-'));
@@ -62,7 +73,7 @@ describe('modifyYaml Fuzzing', () => {
           let current = baseObj;
           for (let i = 0; i < pathSegments.length - 1; i++) {
             const segment = pathSegments[i];
-            if (current[segment] === undefined || typeof current[segment] !== 'object' || current[segment] === null) {
+            if (!canHoldKeys(current[segment])) {
               current[segment] = {};
             }
             current = current[segment];
