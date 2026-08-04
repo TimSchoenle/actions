@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.4.0...actions-common-modify-yaml-v1.4.1) (2026-08-04)
+
+
+### Bug Fixes
+
+* **modify-yaml:** assert the full inference contract in the fuzz test ([#1356](https://github.com/TimSchoenle/actions/issues/1356)) ([dab298c](https://github.com/TimSchoenle/actions/commit/dab298cf9d50b612a31a295aa7c255b8233ea0c3))
+
 ## [1.4.0](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.3.1...actions-common-modify-yaml-v1.4.0) (2026-08-04)
 
 
