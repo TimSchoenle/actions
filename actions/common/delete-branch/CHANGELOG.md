@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.3.0](https://github.com/TimSchoenle/actions/compare/actions-common-delete-branch-v1.2.1...actions-common-delete-branch-v1.3.0) (2026-08-03)
+
+
+### Features
+
+* **e2e:** add adversarial coverage and close four injection defects ([#1350](https://github.com/TimSchoenle/actions/issues/1350)) ([26b4c3f](https://github.com/TimSchoenle/actions/commit/26b4c3f084ff8dff395e98e35849d7e4b77b1159))
+
+
+### CI
+
+* rework e2e testing setup ([#1343](https://github.com/TimSchoenle/actions/issues/1343)) ([4f51f79](https://github.com/TimSchoenle/actions/commit/4f51f797ab8b92dab8dbf6c12f6eeb3b835bf661))
+
+
+### Dependencies
+
+* **deps:** lock file maintenance ([#1320](https://github.com/TimSchoenle/actions/issues/1320)) ([b3022a2](https://github.com/TimSchoenle/actions/commit/b3022a23f90829a884bfe11df468edaf17793109))
+
 ## [1.2.1](https://github.com/TimSchoenle/actions/compare/actions-common-delete-branch-v1.2.0...actions-common-delete-branch-v1.2.1) (2026-07-31)
 
 
