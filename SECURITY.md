@@ -21,7 +21,7 @@ Any version not listed in the following tables is not supported.
 | [Common Modify YAML](./actions/common/modify-yaml) | [actions-common-modify-yaml-v1.4.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-modify-yaml-v1.4.1) | :white_check_mark: |
 | [Common Read YAML](./actions/common/read-yaml) | [actions-common-read-yaml-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-read-yaml-v1.2.0) | :white_check_mark: |
 | [Create Branch](./actions/common/create-branch) | [actions-common-create-branch-v1.4.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-branch-v1.4.0) | :white_check_mark: |
-| [Create Pull Request](./actions/common/create-pull-request) | [actions-common-create-pull-request-v1.0.10](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-pull-request-v1.0.10) | :white_check_mark: |
+| [Create Pull Request](./actions/common/create-pull-request) | [actions-common-create-pull-request-v1.0.11](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-pull-request-v1.0.11) | :white_check_mark: |
 | [Delete-Branch](./actions/common/delete-branch) | [actions-common-delete-branch-v1.3.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-delete-branch-v1.3.0) | :white_check_mark: |
 | [Get App Git Identity](./actions/common/get-app-git-identity) | [actions-common-get-app-git-identity-v1.3.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-get-app-git-identity-v1.3.0) | :white_check_mark: |
 | [Render Template](./actions/common/render-template) | [actions-common-render-template-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-v1.1.0) | :white_check_mark: |
