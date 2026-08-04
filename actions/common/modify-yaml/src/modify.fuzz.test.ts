@@ -6,6 +6,32 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as os from 'node:os';
 
+/**
+ * Independent oracle for the documented inference contract: YAML 1.2 core schema scalars
+ * (decimal/float with exponent, unsigned hex/octal, .inf/.nan, booleans, null) plus the signed
+ * hex/octal extension. Anything else stays a string.
+ *
+ * Deliberately reimplemented rather than delegating to `inferValueType`, so a regression in the
+ * implementation cannot make the tests agree with it.
+ */
+function expectedInference(input: string): string | number | boolean | null {
+  const isNegated = input.startsWith('-');
+  const magnitude = isNegated ? input.slice(1) : input;
+
+  if (/^0x[\da-fA-F]+$/i.test(magnitude) || /^0o[0-7]+$/.test(magnitude)) {
+    return isNegated ? -Number(magnitude) : Number(magnitude);
+  }
+  // eslint-disable-next-line security/detect-unsafe-regex
+  if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(input)) return Number(input);
+  if (input === 'Infinity' || input === '+Infinity' || input === '.inf') return Infinity;
+  if (input === '-Infinity' || input === '-.inf') return -Infinity;
+  if (input === '.nan') return Number.NaN;
+  if (input === 'true') return true;
+  if (input === 'false') return false;
+  if (input === 'null') return null;
+  return input;
+}
+
 // Helper to create a temp file for fuzzing
 async function withTempFile(content: string, callback: (path: string) => Promise<void>) {
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'fuzz-test-'));
@@ -68,19 +94,9 @@ describe('modifyYaml Fuzzing', () => {
               resultValue = resultValue?.[segment];
             }
 
-            // 3. Expected value logic
-            let expectedValue: any = newValue;
-            if (/^-?\d+(\.\d+)?$/.test(newValue)) {
-              expectedValue = Number(newValue);
-            } else if (newValue === 'true') {
-              expectedValue = true;
-            } else if (newValue === 'false') {
-              expectedValue = false;
-            } else if (newValue === 'null') {
-              expectedValue = null;
-            }
-
-            expect(resultValue).toEqual(expectedValue);
+            // 3. The written value is inferred, not stored verbatim, so the round-trip lands on the
+            // inferred scalar — `0x0` comes back as the number 0, `1e5` as 100000, and so on.
+            expect(resultValue).toEqual(expectedInference(newValue));
           });
         },
       ),
@@ -145,27 +161,6 @@ describe('Primitive Persistence Fuzzing', () => {
 
 describe('Helper Functions Fuzzing', () => {
   // 1. inferValueType
-  // Independent oracle for the documented inference contract: YAML 1.2 core schema
-  // scalars (decimal/float with exponent, unsigned hex/octal, .inf/.nan, booleans, null)
-  // plus the signed hex/octal extension. Anything else stays a string.
-  function expectedInference(input: string): string | number | boolean | null {
-    const isNegated = input.startsWith('-');
-    const magnitude = isNegated ? input.slice(1) : input;
-
-    if (/^0x[\da-fA-F]+$/i.test(magnitude) || /^0o[0-7]+$/.test(magnitude)) {
-      return isNegated ? -Number(magnitude) : Number(magnitude);
-    }
-    // eslint-disable-next-line security/detect-unsafe-regex
-    if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(input)) return Number(input);
-    if (input === 'Infinity' || input === '+Infinity' || input === '.inf') return Infinity;
-    if (input === '-Infinity' || input === '-.inf') return -Infinity;
-    if (input === '.nan') return Number.NaN;
-    if (input === 'true') return true;
-    if (input === 'false') return false;
-    if (input === 'null') return null;
-    return input;
-  }
-
   it('inferValueType should be consistent', () => {
     fc.assert(
       fc.property(fc.string(), (input) => {

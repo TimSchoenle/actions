@@ -204,6 +204,24 @@ level1:
     expect(doc.count).toBe(42);
   });
 
+  // Regression: these all reach the file as numbers, not as the literal text that was passed in.
+  // The fuzz test's expectation used to cover only plain decimals, so `0x0` silently disagreed with
+  // the implementation until a seed happened to generate it.
+  it.each([
+    ['0x0', 0],
+    ['0xFF', 255],
+    ['-0x1f', -31],
+    ['0o777', 511],
+    ['1e5', 100_000],
+  ])('should infer %s as the number %s', async (input, expected) => {
+    await fs.writeFile(tmpFile, 'count: initial\n');
+    await modifyYaml(tmpFile, 'count', input);
+    const { parse } = await import('yaml');
+    const doc = parse(await fs.readFile(tmpFile, 'utf-8'));
+    expect(doc.count).toBe(expected);
+    expect(typeof doc.count).toBe('number');
+  });
+
   it('should handle array index access', async () => {
     await fs.writeFile(tmpFile, 'items:\n  - one\n  - two\n');
     await modifyYaml(tmpFile, 'items.1', 'three');
