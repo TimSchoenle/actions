@@ -128,7 +128,7 @@ runs:
 
     - name: Resolve Base Branch
       id: resolve-base-branch
-      uses: TimSchoenle/actions/actions/helper/resolve-base-branch@a99f2d5e7d0e687c22e5499917b1adb3d4a76c7f # tag=actions-helper-resolve-base-branch-v1.2.1
+      uses: TimSchoenle/actions/actions/helper/resolve-base-branch@3f494a9fdbe97d9680d892fe5726464c428acd73 # tag=actions-helper-resolve-base-branch-v1.3.0
       with:
         repository: ${{ inputs.helm-repo }}
         token: ${{ steps.generate_token.outputs.token }}
