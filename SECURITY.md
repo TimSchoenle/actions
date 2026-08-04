@@ -16,15 +16,15 @@ Any version not listed in the following tables is not supported.
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Close Pull Request](./actions/common/close-pull-request) | [actions-common-close-pull-request-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-close-pull-request-v1.2.1) | :white_check_mark: |
-| [Commit Changes](./actions/common/commit-changes) | [actions-common-commit-changes-v1.2.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v1.2.2) | :white_check_mark: |
-| [Common Modify YAML](./actions/common/modify-yaml) | [actions-common-modify-yaml-v1.3.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-modify-yaml-v1.3.1) | :white_check_mark: |
+| [Close Pull Request](./actions/common/close-pull-request) | [actions-common-close-pull-request-v1.3.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-close-pull-request-v1.3.0) | :white_check_mark: |
+| [Commit Changes](./actions/common/commit-changes) | [actions-common-commit-changes-v1.3.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v1.3.0) | :white_check_mark: |
+| [Common Modify YAML](./actions/common/modify-yaml) | [actions-common-modify-yaml-v1.4.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-modify-yaml-v1.4.1) | :white_check_mark: |
 | [Common Read YAML](./actions/common/read-yaml) | [actions-common-read-yaml-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-read-yaml-v1.1.2) | :white_check_mark: |
-| [Create Branch](./actions/common/create-branch) | [actions-common-create-branch-v1.3.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-branch-v1.3.1) | :white_check_mark: |
+| [Create Branch](./actions/common/create-branch) | [actions-common-create-branch-v1.4.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-branch-v1.4.0) | :white_check_mark: |
 | [Create Pull Request](./actions/common/create-pull-request) | [actions-common-create-pull-request-v1.0.10](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-pull-request-v1.0.10) | :white_check_mark: |
 | [Delete-Branch](./actions/common/delete-branch) | [actions-common-delete-branch-v1.3.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-delete-branch-v1.3.0) | :white_check_mark: |
-| [Get App Git Identity](./actions/common/get-app-git-identity) | [actions-common-get-app-git-identity-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-get-app-git-identity-v1.2.1) | :white_check_mark: |
-| [Render Template](./actions/common/render-template) | [actions-common-render-template-v1.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-v1.0.1) | :white_check_mark: |
+| [Get App Git Identity](./actions/common/get-app-git-identity) | [actions-common-get-app-git-identity-v1.3.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-get-app-git-identity-v1.3.0) | :white_check_mark: |
+| [Render Template](./actions/common/render-template) | [actions-common-render-template-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-v1.1.0) | :white_check_mark: |
 | [Render Template And Commit](./actions/common/render-template-and-commit) | [actions-common-render-template-and-commit-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-and-commit-v1.1.1) | :white_check_mark: |
 | [Setup App Git Identity](./actions/common/setup-app-git-identity) | [actions-common-setup-app-git-identity-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-setup-app-git-identity-v1.2.1) | :white_check_mark: |
 
@@ -40,8 +40,8 @@ Any version not listed in the following tables is not supported.
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Helper Verify-branch-name](./actions/helper/verify-branch-name) | [actions-helper-verify-branch-name-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-branch-name-v1.2.1) | :white_check_mark: |
-| [Resolve Branch](./actions/helper/resolve-base-branch) | [actions-helper-resolve-base-branch-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-resolve-base-branch-v1.2.1) | :white_check_mark: |
-| [Verify Commit Authors](./actions/helper/verify-commit-authors) | [actions-helper-verify-commit-authors-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v1.2.1) | :white_check_mark: |
+| [Resolve Branch](./actions/helper/resolve-base-branch) | [actions-helper-resolve-base-branch-v1.3.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-resolve-base-branch-v1.3.0) | :white_check_mark: |
+| [Verify Commit Authors](./actions/helper/verify-commit-authors) | [actions-helper-verify-commit-authors-v1.3.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v1.3.0) | :white_check_mark: |
 
 ### Java-gradle
 
@@ -61,7 +61,7 @@ Any version not listed in the following tables is not supported.
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Rust Auto-format](./actions/rust/auto-format) | [actions-rust-auto-format-v1.1.8](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v1.1.8) | :white_check_mark: |
+| [Rust Auto-format](./actions/rust/auto-format) | [actions-rust-auto-format-v1.1.9](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v1.1.9) | :white_check_mark: |
 | [Rust Cargo-check](./actions/rust/cargo-check) | [actions-rust-cargo-check-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.1.5) | :white_check_mark: |
 | [Rust Clippy](./actions/rust/clippy) | [actions-rust-clippy-v1.1.9](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-clippy-v1.1.9) | :white_check_mark: |
 | [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | [actions-rust-coverage-codecov-v1.1.34](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.34) | :white_check_mark: |
