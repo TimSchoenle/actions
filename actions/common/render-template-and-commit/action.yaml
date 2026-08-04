@@ -70,7 +70,7 @@ runs:
   steps:
     - name: Render Template
       id: render
-      uses: TimSchoenle/actions/actions/common/render-template@252ad581f80b7a48fe5c26a6b7e7bad317767183 # tag=actions-common-render-template-v1.0.1
+      uses: TimSchoenle/actions/actions/common/render-template@2f4ad47204c9bc9f8e0e50ded4e841c57b555396 # tag=actions-common-render-template-v1.1.0
       with:
         template: ${{ inputs.template }}
         output: ${{ inputs.output }}
