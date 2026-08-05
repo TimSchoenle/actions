@@ -28,7 +28,7 @@
   "actions/rust/clippy": "1.1.9",
   "actions/rust/coverage-codecov": "1.1.35",
   "actions/rust/test": "1.1.1",
-  "actions/maintenance/ensure-actions-are-executed": "1.2.1",
+  "actions/maintenance/ensure-actions-are-executed": "1.3.0",
   "actions/common/render-template": "1.1.0",
   "actions/common/render-template-and-commit": "1.1.1"
 }
