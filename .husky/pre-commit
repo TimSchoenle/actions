@@ -1,3 +1,0 @@
-# Serialized: the action.yaml task regenerates src/generated/action-io.ts from the very files the
-# prettier task rewrites, so the two must not run against each other.
-bunx lint-staged --concurrent false
