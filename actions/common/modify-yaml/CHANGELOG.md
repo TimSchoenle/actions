@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.4.1...actions-common-modify-yaml-v1.4.2) (2026-08-06)
+
+
+### Tests
+
+* **modify-yaml:** stop the fuzz fixture descending into arrays ([#1373](https://github.com/TimSchoenle/actions/issues/1373)) ([a7ab675](https://github.com/TimSchoenle/actions/commit/a7ab67521bea460716c6579d806cc42e8f3dc3e3))
+
 ## [1.4.1](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.4.0...actions-common-modify-yaml-v1.4.1) (2026-08-04)
 
 
