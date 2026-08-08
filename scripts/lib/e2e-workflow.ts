@@ -34,7 +34,7 @@ export const VERIFY_WORKFLOW_PREFIX = 'verify-action-';
  * bump lands here and in the generated workflows together and the drift check stays satisfied.
  */
 export const PINNED = {
-  hardenRunner: 'step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0',
+  hardenRunner: 'step-security/harden-runner@b09bb98e06d4d774595224525879c09bc6e98c40 # v2.20.1',
   checkout: 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1',
   createAppToken: 'actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0',
   setupBun:
