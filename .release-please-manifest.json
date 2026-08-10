@@ -6,7 +6,7 @@
   "actions/common/setup-app-git-identity": "1.3.0",
   "actions/common/get-app-git-identity": "1.3.0",
   "actions/bun/setup-cached": "1.1.10",
-  "workflows/maintenance/auto-bun-prettier": "1.1.25",
+  "workflows/maintenance/auto-bun-prettier": "1.1.26",
   "actions/common/commit-changes": "1.3.0",
   "workflows/maintenance/auto-approve-renovate": "1.4.18",
   "actions/helper/verify-commit-authors": "1.3.0",
