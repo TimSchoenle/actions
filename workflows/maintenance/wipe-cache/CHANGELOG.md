@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.11](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-wipe-cache-meta-v1.1.10...workflows-maintenance-wipe-cache-meta-v1.1.11) (2026-08-11)
+
+
+### Miscellaneous
+
+* **deps:** update step-security/harden-runner action to v2.20.1 ([#1391](https://github.com/TimSchoenle/actions/issues/1391)) ([206a5e5](https://github.com/TimSchoenle/actions/commit/206a5e5776fb03b204e748eccf50664b30ae4269))
+
 ## [1.1.10](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-wipe-cache-meta-v1.1.9...workflows-maintenance-wipe-cache-meta-v1.1.10) (2026-07-12)
 
 
