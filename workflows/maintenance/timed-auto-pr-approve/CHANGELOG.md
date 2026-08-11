@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.30](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.29...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.30) (2026-08-11)
+
+
+### Miscellaneous
+
+* **deps:** update step-security/harden-runner action to v2.20.1 ([#1391](https://github.com/TimSchoenle/actions/issues/1391)) ([206a5e5](https://github.com/TimSchoenle/actions/commit/206a5e5776fb03b204e748eccf50664b30ae4269))
+
 ## [1.2.29](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.28...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.29) (2026-08-06)
 
 
