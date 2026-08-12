@@ -87,7 +87,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@e8af15f00459da30900d926bf8fbb9dea5a56495 # tag=actions-common-commit-changes-v1.3.0
+        uses: TimSchoenle/actions/actions/common/commit-changes@0a6ad3014d13b1baa2e6ab1966603fe88ed5887b # tag=actions-common-commit-changes-v1.3.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -297,7 +297,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@e8af15f00459da30900d926bf8fbb9dea5a56495 # tag=actions-common-commit-changes-v1.3.0
+        uses: TimSchoenle/actions/actions/common/commit-changes@0a6ad3014d13b1baa2e6ab1966603fe88ed5887b # tag=actions-common-commit-changes-v1.3.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -482,7 +482,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@e8af15f00459da30900d926bf8fbb9dea5a56495 # tag=actions-common-commit-changes-v1.3.0
+        uses: TimSchoenle/actions/actions/common/commit-changes@0a6ad3014d13b1baa2e6ab1966603fe88ed5887b # tag=actions-common-commit-changes-v1.3.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -651,7 +651,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@e8af15f00459da30900d926bf8fbb9dea5a56495 # tag=actions-common-commit-changes-v1.3.0
+        uses: TimSchoenle/actions/actions/common/commit-changes@0a6ad3014d13b1baa2e6ab1966603fe88ed5887b # tag=actions-common-commit-changes-v1.3.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -784,7 +784,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@e8af15f00459da30900d926bf8fbb9dea5a56495 # tag=actions-common-commit-changes-v1.3.0
+        uses: TimSchoenle/actions/actions/common/commit-changes@0a6ad3014d13b1baa2e6ab1966603fe88ed5887b # tag=actions-common-commit-changes-v1.3.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -924,7 +924,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@e8af15f00459da30900d926bf8fbb9dea5a56495 # tag=actions-common-commit-changes-v1.3.0
+        uses: TimSchoenle/actions/actions/common/commit-changes@0a6ad3014d13b1baa2e6ab1966603fe88ed5887b # tag=actions-common-commit-changes-v1.3.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
