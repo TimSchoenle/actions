@@ -66,8 +66,8 @@ Here is a list of all currently maintained actions in this repository:
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | Auto approve Pull Requests with the given user ids and branches. | [actions-maintenance-auto-approve-pr-v1.3.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.3.0) | `uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@c2a89dd764db49f63ee6a1ab15d2ab24255576f6 # tag=actions-maintenance-auto-approve-pr-v1.3.0` |
-| [Maintenance Ensure-actions-are-executed](./actions/maintenance/ensure-actions-are-executed) | Ensures selected checks completed successfully when they were started. | [actions-maintenance-ensure-actions-are-executed-v1.3.1](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v1.3.1) | `uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@actions-maintenance-ensure-actions-are-executed-v1.3.1 # tag=actions-maintenance-ensure-actions-are-executed-v1.3.1` |
+| [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | Auto approve Pull Requests with the given user ids and branches. | [actions-maintenance-auto-approve-pr-v1.3.1](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.3.1) | `uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@actions-maintenance-auto-approve-pr-v1.3.1 # tag=actions-maintenance-auto-approve-pr-v1.3.1` |
+| [Maintenance Ensure-actions-are-executed](./actions/maintenance/ensure-actions-are-executed) | Ensures selected checks completed successfully when they were started. | [actions-maintenance-ensure-actions-are-executed-v1.3.1](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v1.3.1) | `uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@92ff2aadf5e122d6d734841ccabea91c15a7314d # tag=actions-maintenance-ensure-actions-are-executed-v1.3.1` |
 
 ### Rust
 
