@@ -92,7 +92,7 @@ jobs:
 
       - name: Aggregate verify checks
         id: verify
-        uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@8b17f68e9dc9836b7a1164181ca3ceca1bdf6e0e # tag=actions-maintenance-ensure-actions-are-executed-v1.3.0
+        uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@92ff2aadf5e122d6d734841ccabea91c15a7314d # tag=actions-maintenance-ensure-actions-are-executed-v1.3.1
         with:
           token: ${{ github.token }}
           ref: ${{ steps.target.outputs.sha }}
