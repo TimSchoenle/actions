@@ -219,7 +219,7 @@ jobs:
       # closing "nothing" would report a second, misleading failure on top of the real one.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@9fbc10ef6fd97b85a5164a1a19de78a24f130879 # tag=actions-common-close-pull-request-v1.3.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@ca183a35122222b9e4b1764fae5095d92a91cf2e # tag=actions-common-close-pull-request-v1.3.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -417,7 +417,7 @@ jobs:
       # closing "nothing" would report a second, misleading failure on top of the real one.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@9fbc10ef6fd97b85a5164a1a19de78a24f130879 # tag=actions-common-close-pull-request-v1.3.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@ca183a35122222b9e4b1764fae5095d92a91cf2e # tag=actions-common-close-pull-request-v1.3.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -542,7 +542,7 @@ jobs:
       # closing "nothing" would report a second, misleading failure on top of the real one.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@9fbc10ef6fd97b85a5164a1a19de78a24f130879 # tag=actions-common-close-pull-request-v1.3.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@ca183a35122222b9e4b1764fae5095d92a91cf2e # tag=actions-common-close-pull-request-v1.3.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -719,7 +719,7 @@ jobs:
       # closing "nothing" would report a second, misleading failure on top of the real one.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@9fbc10ef6fd97b85a5164a1a19de78a24f130879 # tag=actions-common-close-pull-request-v1.3.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@ca183a35122222b9e4b1764fae5095d92a91cf2e # tag=actions-common-close-pull-request-v1.3.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -859,7 +859,7 @@ jobs:
       # closing "nothing" would report a second, misleading failure on top of the real one.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@9fbc10ef6fd97b85a5164a1a19de78a24f130879 # tag=actions-common-close-pull-request-v1.3.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@ca183a35122222b9e4b1764fae5095d92a91cf2e # tag=actions-common-close-pull-request-v1.3.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -946,7 +946,7 @@ jobs:
           pr-branch-prefix: test/idem/${{ env.TEST_ID }}
 
       - name: Close First PR
-        uses: TimSchoenle/actions/actions/common/close-pull-request@9fbc10ef6fd97b85a5164a1a19de78a24f130879 # tag=actions-common-close-pull-request-v1.3.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@ca183a35122222b9e4b1764fae5095d92a91cf2e # tag=actions-common-close-pull-request-v1.3.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -1021,7 +1021,7 @@ jobs:
 
       - name: Cleanup PR
         if: always() && steps.second-run.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@9fbc10ef6fd97b85a5164a1a19de78a24f130879 # tag=actions-common-close-pull-request-v1.3.0
+        uses: TimSchoenle/actions/actions/common/close-pull-request@ca183a35122222b9e4b1764fae5095d92a91cf2e # tag=actions-common-close-pull-request-v1.3.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
