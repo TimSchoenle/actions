@@ -56,7 +56,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@f331b8c387997398a01bf146451f8bc141c860bb # tag=actions-common-create-branch-v1.4.0
+        uses: TimSchoenle/actions/actions/common/create-branch@a8b2bff1808af807bed9ae766d344163d0d4e480 # tag=actions-common-create-branch-v1.4.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -259,7 +259,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@f331b8c387997398a01bf146451f8bc141c860bb # tag=actions-common-create-branch-v1.4.0
+        uses: TimSchoenle/actions/actions/common/create-branch@a8b2bff1808af807bed9ae766d344163d0d4e480 # tag=actions-common-create-branch-v1.4.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -456,7 +456,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@f331b8c387997398a01bf146451f8bc141c860bb # tag=actions-common-create-branch-v1.4.0
+        uses: TimSchoenle/actions/actions/common/create-branch@a8b2bff1808af807bed9ae766d344163d0d4e480 # tag=actions-common-create-branch-v1.4.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -623,7 +623,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@f331b8c387997398a01bf146451f8bc141c860bb # tag=actions-common-create-branch-v1.4.0
+        uses: TimSchoenle/actions/actions/common/create-branch@a8b2bff1808af807bed9ae766d344163d0d4e480 # tag=actions-common-create-branch-v1.4.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -758,7 +758,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@f331b8c387997398a01bf146451f8bc141c860bb # tag=actions-common-create-branch-v1.4.0
+        uses: TimSchoenle/actions/actions/common/create-branch@a8b2bff1808af807bed9ae766d344163d0d4e480 # tag=actions-common-create-branch-v1.4.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -898,7 +898,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@f331b8c387997398a01bf146451f8bc141c860bb # tag=actions-common-create-branch-v1.4.0
+        uses: TimSchoenle/actions/actions/common/create-branch@a8b2bff1808af807bed9ae766d344163d0d4e480 # tag=actions-common-create-branch-v1.4.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
