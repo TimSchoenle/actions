@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-common-render-template-v1.1.0...actions-common-render-template-v1.1.1) (2026-08-13)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26.2.0 ([#1401](https://github.com/TimSchoenle/actions/issues/1401)) ([047b6bb](https://github.com/TimSchoenle/actions/commit/047b6bb721b9f9b51b65f58fc7b9f1600dda00f2))
+
 ## [1.1.0](https://github.com/TimSchoenle/actions/compare/actions-common-render-template-v1.0.1...actions-common-render-template-v1.1.0) (2026-08-04)
 
 
