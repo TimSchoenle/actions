@@ -231,7 +231,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@f7fee33b242c9a529c5246415d29d9d23e511fd3 # tag=actions-common-delete-branch-v1.3.0
+        uses: TimSchoenle/actions/actions/common/delete-branch@ffb4ac89df04182fc06f77e88e1c52a557641f55 # tag=actions-common-delete-branch-v1.3.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
