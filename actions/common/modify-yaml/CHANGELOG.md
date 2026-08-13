@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.3](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.4.2...actions-common-modify-yaml-v1.4.3) (2026-08-13)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26.2.0 ([#1401](https://github.com/TimSchoenle/actions/issues/1401)) ([047b6bb](https://github.com/TimSchoenle/actions/commit/047b6bb721b9f9b51b65f58fc7b9f1600dda00f2))
+
 ## [1.4.2](https://github.com/TimSchoenle/actions/compare/actions-common-modify-yaml-v1.4.1...actions-common-modify-yaml-v1.4.2) (2026-08-06)
 
 
