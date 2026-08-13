@@ -1,5 +1,5 @@
 ﻿name: Auto Format
-description: 'Reusable workflow to auto-format code using Bun (Prettier) and commit changes.'
+description: 'Reusable workflow to auto-format code by running a "bun run" script and commit changes.'
 
 on:
   workflow_call:

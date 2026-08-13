@@ -294,9 +294,9 @@ export const EXTRA_JOBS_FILE = 'extra-jobs.yaml';
  * Job ids declared in an extra-jobs fragment, so the summary job can depend on them.
  *
  * The fragment stores its jobs at column zero — a valid standalone YAML mapping — and the generator
- * indents them on the way in. Storing them pre-indented instead put them at an indentation Prettier
- * does not consider canonical, and it silently reformatted the file to column zero anyway, which
- * turned every nested key into an apparent job id.
+ * indents them on the way in. Storing them pre-indented instead put them at an indentation the
+ * formatter does not consider canonical, and it silently reformatted the file to column zero
+ * anyway, which turned every nested key into an apparent job id.
  */
 export function extraJobIds(fragment: string): string[] {
   const ids: string[] = [];

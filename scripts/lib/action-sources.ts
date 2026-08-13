@@ -7,7 +7,7 @@ import { ROOT_DIR, Sys } from './utils.js';
 /**
  * Directory holding every file this generator writes, relative to the action directory.
  *
- * Keeping the generated sources in one place is what lets ESLint and Prettier ignore them wholesale
+ * Keeping the generated sources in one place is what lets ESLint and oxfmt ignore them wholesale
  * — `**\/src/generated/` is listed in both — so a rendered file only has to compile, not to survive
  * a formatter that would otherwise rewrite it into permanent drift.
  */
