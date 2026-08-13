@@ -146,7 +146,7 @@ runs:
     # One step for the whole file update: a composite cannot loop, so N images cannot be N steps.
     - name: Apply Chart Updates
       id: apply
-      uses: TimSchoenle/actions/actions/helm/apply-chart-updates@aebfd5f7e68f91a047f417b12c4d4eb3f78c5740 # tag=actions-helm-apply-chart-updates-v1.2.0
+      uses: TimSchoenle/actions/actions/helm/apply-chart-updates@64ea1ec370145ec92148b80717c12033b82375cd # tag=actions-helm-apply-chart-updates-v1.2.1
       with:
         chart-path: ${{ inputs.chart-path }}
         images: ${{ inputs.images }}
