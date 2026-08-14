@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.16](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.15...actions-java-gradle-auto-spotless-v1.1.16) (2026-08-14)
+
+
+### Miscellaneous
+
+* **deps:** update timschoenle/actions/actions/common/commit-changes to vactions-common-commit-changes-v1.3.1 ([#1423](https://github.com/TimSchoenle/actions/issues/1423)) ([1970c22](https://github.com/TimSchoenle/actions/commit/1970c22fedd537783f7de853eb5fcee86ce0e076))
+
 ## [1.1.15](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.14...actions-java-gradle-auto-spotless-v1.1.15) (2026-08-06)
 
 
