@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.27](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.26...workflows-maintenance-auto-bun-prettier-meta-v1.1.27) (2026-08-14)
+
+
+### Build System
+
+* replace prettier with oxfmt ([f954656](https://github.com/TimSchoenle/actions/commit/f95465634120e87f91c6a6021f910cdbab9dd804))
+
+
+### Miscellaneous
+
+* **deps:** update timschoenle/actions/actions/common/commit-changes to vactions-common-commit-changes-v1.3.1 ([#1423](https://github.com/TimSchoenle/actions/issues/1423)) ([1970c22](https://github.com/TimSchoenle/actions/commit/1970c22fedd537783f7de853eb5fcee86ce0e076))
+
 ## [1.1.26](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.25...workflows-maintenance-auto-bun-prettier-meta-v1.1.26) (2026-08-10)
 
 
