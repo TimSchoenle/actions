@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.31](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.30...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.31) (2026-08-15)
+
+
+### Miscellaneous
+
+* **deps:** update timschoenle/actions/actions/helper/verify-commit-authors to vactions-helper-verify-commit-authors-v1.3.1 ([#1439](https://github.com/TimSchoenle/actions/issues/1439)) ([4deaa9b](https://github.com/TimSchoenle/actions/commit/4deaa9b51271c0cab6118b77bb0ba8fe0c768164))
+
 ## [1.2.30](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.29...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.30) (2026-08-11)
 
 
