@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.38](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v1.1.37...actions-rust-coverage-codecov-v1.1.38) (2026-08-17)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#1422](https://github.com/TimSchoenle/actions/issues/1422)) ([86d0d12](https://github.com/TimSchoenle/actions/commit/86d0d12003a992bfca2bed850ca2aae48ada5914))
+* **deps:** update all non-major action updates ([#1450](https://github.com/TimSchoenle/actions/issues/1450)) ([c1e4197](https://github.com/TimSchoenle/actions/commit/c1e4197e436ff8080f3e7b9c56c254b0ad823adc))
+
 ## [1.1.37](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v1.1.36...actions-rust-coverage-codecov-v1.1.37) (2026-08-12)
 
 
