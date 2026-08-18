@@ -20,7 +20,7 @@ Any version not listed in the following tables is not supported.
 | [Commit Changes](./actions/common/commit-changes) | [actions-common-commit-changes-v1.3.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v1.3.1) | :white_check_mark: |
 | [Common Modify YAML](./actions/common/modify-yaml) | [actions-common-modify-yaml-v1.4.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-modify-yaml-v1.4.3) | :white_check_mark: |
 | [Common Read YAML](./actions/common/read-yaml) | [actions-common-read-yaml-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-read-yaml-v1.2.1) | :white_check_mark: |
-| [Create Branch](./actions/common/create-branch) | [actions-common-create-branch-v1.4.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-branch-v1.4.1) | :white_check_mark: |
+| [Create Branch](./actions/common/create-branch) | [actions-common-create-branch-v1.4.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-branch-v1.4.2) | :white_check_mark: |
 | [Create Pull Request](./actions/common/create-pull-request) | [actions-common-create-pull-request-v1.0.12](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-pull-request-v1.0.12) | :white_check_mark: |
 | [Delete-Branch](./actions/common/delete-branch) | [actions-common-delete-branch-v1.3.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-delete-branch-v1.3.2) | :white_check_mark: |
 | [Get App Git Identity](./actions/common/get-app-git-identity) | [actions-common-get-app-git-identity-v1.3.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-get-app-git-identity-v1.3.1) | :white_check_mark: |
