@@ -15,12 +15,14 @@ const WORKSPACE = path.resolve('/workspace');
 const DEFAULTS: RawInputs = {
   source_directory: '.',
   example: 'config-schema',
+  bin: '',
   package: '',
   features: '',
   dockerfile: '',
   contract: '',
   image: '',
   contract_path: '/config/contract.json',
+  extra_args: '',
 };
 
 function options(overrides: Partial<RawInputs> = {}) {
@@ -67,6 +69,37 @@ describe('cargoArguments', () => {
       '--path',
       '/config/contract.json',
     ]);
+  });
+
+  // The flag comes from the target's own kind, so a run cannot select `--bin` and then name the
+  // example, which is the one way these two could disagree.
+  it('selects a binary target with --bin rather than --example', () => {
+    const args = cargoArguments(options({ example: '', bin: 'config-contract' }), 'contract');
+
+    expect(args.slice(0, 4)).toEqual(['run', '--quiet', '--bin', 'config-contract']);
+    expect(args).not.toContain('--example');
+  });
+
+  it("appends the caller's own arguments after the two the action supplies", () => {
+    const args = cargoArguments(options({ extra_args: '--service api' }), 'contract');
+
+    expect(args.slice(args.indexOf('--'))).toEqual([
+      '--',
+      '--format',
+      'contract',
+      '--path',
+      '/config/contract.json',
+      '--service',
+      'api',
+    ]);
+  });
+
+  it('emits nothing at all for an empty extra_args', () => {
+    expect(cargoArguments(options({ extra_args: '   ' }), 'contract')).toEqual(cargoArguments(options(), 'contract'));
+  });
+
+  it('carries a quoted generator argument through as one argument', () => {
+    expect(cargoArguments(options({ extra_args: '--label "two words"' }), 'labels')).toContain('two words');
   });
 
   it('passes a workspace member as -p', () => {

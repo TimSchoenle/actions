@@ -7,9 +7,16 @@ inputs:
     required: false
     default: '.'
   example:
-    description: 'Name of the cargo example that renders the contract, built on terrace_config::schema::cli::Cli'
+    description: 'Name of the cargo example that renders the contract, built on terrace_config::schema::cli::Cli.
+      Mutually exclusive with bin. When neither is given, the example config-schema is used.'
     required: false
-    default: 'config-schema'
+    default: ''
+  bin:
+    description: 'Name of the cargo binary that renders the contract, for a generator that has to be a binary rather
+      than an example — one that other crates link, or that a container build runs as a compiled artefact.
+      Mutually exclusive with example.'
+    required: false
+    default: ''
   package:
     description: 'Workspace member owning the generator, passed to cargo as -p. Defaults to the root package.'
     required: false
@@ -34,6 +41,12 @@ inputs:
     description: 'Where the contract is embedded in the image. Must match the Dockerfile COPY.'
     required: false
     default: '/config/contract.json'
+  extra_args:
+    description: 'Extra arguments for the generator itself, appended after the action''s own --format and --path.
+      Split shell-style — whitespace separates, and '' or " quote a value containing spaces — into an argument
+      vector that is never re-parsed by a shell. --format and --path are the action''s own and are refused here.'
+    required: false
+    default: ''
 
 outputs:
   checks_run:
