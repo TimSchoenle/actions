@@ -5,6 +5,7 @@ import { parse } from 'yaml';
 import { ROOT_DIR, Sys } from '../../utils.js';
 import { getRepoInfo } from '../git-utils.js';
 import { getManifestVersions, getTagCommitSha } from '../utils.js';
+import { sortDocumentationItems } from './sort.js';
 
 import type { DocumentationItem, Parser } from '../types.js';
 
@@ -110,6 +111,6 @@ export class WorkflowParser implements Parser {
         path: dir,
       });
     }
-    return items;
+    return sortDocumentationItems(items);
   }
 }
