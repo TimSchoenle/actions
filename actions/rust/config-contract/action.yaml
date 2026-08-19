@@ -1,0 +1,50 @@
+name: 'Rust Config Contract'
+description: 'Action that checks a terrace-config contract, its Dockerfile LABEL block and a built image against the configuration types they claim to describe.'
+
+inputs:
+  source_directory:
+    description: 'Directory containing the Rust project, relative to the workspace. The generator runs here, and dockerfile and contract resolve beneath it.'
+    required: false
+    default: '.'
+  example:
+    description: 'Name of the cargo example that renders the contract, built on terrace_config::schema::cli::Cli'
+    required: false
+    default: 'config-schema'
+  package:
+    description: 'Workspace member owning the generator, passed to cargo as -p. Defaults to the root package.'
+    required: false
+    default: ''
+  features:
+    description: 'Cargo features the generator needs, passed to cargo as --features. Comma- or whitespace-separated.'
+    required: false
+    default: ''
+  dockerfile:
+    description: 'Dockerfile whose terrace-config:labels region is checked. Empty to skip.'
+    required: false
+    default: 'Dockerfile'
+  contract:
+    description: 'Committed contract document that is checked for drift. Empty to skip.'
+    required: false
+    default: 'docs/config.contract.json'
+  image:
+    description: 'Built image to inspect, e.g. myservice:test. Empty to skip every image check.'
+    required: false
+    default: ''
+  contract_path:
+    description: 'Where the contract is embedded in the image. Must match the Dockerfile COPY.'
+    required: false
+    default: '/config/contract.json'
+
+outputs:
+  checks_run:
+    description: 'Space-separated ids of the checks that ran, in the order they were evaluated.'
+  checks_skipped:
+    description: 'Space-separated ids of the checks that were skipped because their input was empty.'
+  contract_checksum:
+    description: 'SHA-256 of the generated contract, as lowercase hex. Reproducible across builds, so it identifies the configuration surface rather than the build.'
+  labels:
+    description: 'The label set this contract publishes, as a JSON object. What a push step would have to put on the image.'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

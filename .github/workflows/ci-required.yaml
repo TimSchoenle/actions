@@ -47,6 +47,7 @@ on:
       - Verify Java-gradle Setup-base-environment
       - Verify Maintenance Auto-approve-pr
       - Verify Maintenance Ensure-actions-are-executed
+      - Verify Rust Config-contract
       - Verify Test Setup-e2e
     # >>> generated: verify-workflows
     types:
