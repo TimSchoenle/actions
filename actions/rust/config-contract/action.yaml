@@ -1,0 +1,241 @@
+name: 'Rust Config Contract'
+description: 'Action that checks a terrace-config contract, its Dockerfile LABEL block and a built image against the configuration types they claim to describe.'
+
+inputs:
+  repository:
+    description: 'Target repository in the format owner/repo. Defaults to the current repository.'
+    required: false
+    default: ${{ github.repository }}
+  branch:
+    description: 'Target branch to checkout. Defaults to the current branch.'
+    required: false
+    default: ${{ github.head_ref || github.ref_name }}
+  source_directory:
+    description: 'Directory containing the Rust project'
+    required: false
+    default: '.'
+  example:
+    description: 'Name of the cargo example that renders the contract, built on terrace_config::schema::cli::Cli'
+    required: false
+    default: 'config-schema'
+  package:
+    description: 'Workspace member owning the generator, passed to cargo as -p. Defaults to the root package.'
+    required: false
+    default: ''
+  features:
+    description: 'Cargo features the generator needs, passed to cargo as --features'
+    required: false
+    default: ''
+  dockerfile:
+    description: 'Dockerfile whose terrace-config:labels region is checked. Empty to skip.'
+    required: false
+    default: 'Dockerfile'
+  contract:
+    description: 'Committed contract document that is checked for drift. Empty to skip.'
+    required: false
+    default: 'docs/config.contract.json'
+  image:
+    description: 'Built image to inspect, e.g. myservice:test. Empty to skip every image check.'
+    required: false
+    default: ''
+  contract_path:
+    description: 'Where the contract is embedded in the image. Must match the Dockerfile COPY.'
+    required: false
+    default: '/config/contract.json'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      with:
+        repository: ${{ inputs.repository }}
+        persist-credentials: false
+        fetch-depth: 0
+        ref: ${{ inputs.branch }}
+
+    - name: Install stable toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+
+    # One run of one generator over one source tree, into files every step below reads. The three
+    # renderings are one set — the document, the labels that make it discoverable, and the block a
+    # Dockerfile carries — and generating them separately is the one arrangement in which they can
+    # disagree with each other rather than with what is committed.
+    - name: Render the contract, its labels and its LABEL block
+      shell: bash
+      working-directory: ${{ inputs.source_directory }}
+      env:
+        EXAMPLE: ${{ inputs.example }}
+        PACKAGE: ${{ inputs.package }}
+        FEATURES: ${{ inputs.features }}
+        CONTRACT_PATH: ${{ inputs.contract_path }}
+      run: |
+        set -euo pipefail
+
+        # `if` rather than `[ … ] && …`: under `set -e` a false test as the last command of a
+        # script is a failing script, and an empty optional input is the normal case here.
+        args=(run --quiet --example "$EXAMPLE")
+        if [ -n "$PACKAGE" ]; then
+          args+=(-p "$PACKAGE")
+        fi
+        if [ -n "$FEATURES" ]; then
+          args+=(--features "$FEATURES")
+        fi
+
+        for format in contract labels dockerfile; do
+          cargo "${args[@]}" -- --format "$format" --path "$CONTRACT_PATH" \
+            > "${RUNNER_TEMP}/generated.${format}"
+        done
+
+        # A generator that wrote nothing would make every comparison below trivially true, which
+        # is the one failure this whole scheme cannot afford.
+        for format in contract labels dockerfile; do
+          if [ ! -s "${RUNNER_TEMP}/generated.${format}" ]; then
+            echo "::error::\`--format ${format}\` produced nothing, so nothing was compared." >&2
+            exit 1
+          fi
+        done
+
+    # The cheap half: it needs no image, and it reports a renamed key in the pull request that
+    # renamed it, in a diff a reviewer reads rather than in a build log nobody opens.
+    #
+    # Cut at the markers rather than by line count. `grep -A2` and its relatives read correctly
+    # right up until a fourth label is added, and then compare two of three lines and pass.
+    - name: Check the Dockerfile's LABEL block against the contract
+      if: ${{ inputs.dockerfile != '' }}
+      shell: bash
+      working-directory: ${{ inputs.source_directory }}
+      env:
+        DOCKERFILE: ${{ inputs.dockerfile }}
+      run: |
+        set -euo pipefail
+
+        if [ ! -f "$DOCKERFILE" ]; then
+          echo "::error::${DOCKERFILE} does not exist." >&2
+          exit 1
+        fi
+
+        awk '
+          /^# terrace-config:labels:begin$/ { inside = 1 }
+          inside                           { print }
+          /^# terrace-config:labels:end$/   { inside = 0 }
+        ' "$DOCKERFILE" > "${RUNNER_TEMP}/committed.dockerfile"
+
+        if [ ! -s "${RUNNER_TEMP}/committed.dockerfile" ]; then
+          echo "::error file=${DOCKERFILE}::the terrace-config:labels region is missing or empty, so the generated LABEL block has nowhere to go and nothing to be compared against. Paste the output of \`--format dockerfile\`, markers included." >&2
+          exit 1
+        fi
+
+        if ! diff -u "${RUNNER_TEMP}/generated.dockerfile" "${RUNNER_TEMP}/committed.dockerfile"; then
+          echo "::error file=${DOCKERFILE}::the terrace-config:labels region is not the block this contract publishes. Paste the output of \`--format dockerfile\`." >&2
+          exit 1
+        fi
+
+    # `--format contract` is rendered without `--version`, `--revision` or `--created`, so it is
+    # byte-reproducible across rebuilds and releases: the committed copy describes the
+    # configuration surface, and the copy inside an image additionally names the build it came
+    # from. That is what lets this be a diff rather than a semantic comparison.
+    - name: Check the committed contract against the types
+      if: ${{ inputs.contract != '' }}
+      shell: bash
+      working-directory: ${{ inputs.source_directory }}
+      env:
+        CONTRACT: ${{ inputs.contract }}
+      run: |
+        set -euo pipefail
+
+        if [ ! -f "$CONTRACT" ]; then
+          echo "::error::${CONTRACT} does not exist. Redirect \`--format contract\` into it and commit the result." >&2
+          exit 1
+        fi
+
+        if ! diff -u "${RUNNER_TEMP}/generated.contract" "$CONTRACT"; then
+          echo "::error file=${CONTRACT}::the committed contract is not the one these types produce. Regenerate it with \`--format contract\` and commit the diff." >&2
+          exit 1
+        fi
+
+    # The half no source diff can give, and the reason a hand-written LABEL block is safe at all.
+    # A diff sees the recipe: it cannot see a build argument that failed to interpolate, a label a
+    # base image overrode, or a LABEL line deleted on a branch nobody diffed. This sees what a
+    # registry will actually serve.
+    #
+    # Run it after the build and before the push, where a failure costs a retry instead of a
+    # release. Extra labels are ignored on purpose — every image carries
+    # `org.opencontainers.image.*` and whatever its base contributed, and none of that is this
+    # document's business.
+    - name: Verify the image carries the contract labels
+      if: ${{ inputs.image != '' }}
+      shell: bash
+      env:
+        IMAGE: ${{ inputs.image }}
+      run: |
+        set -euo pipefail
+
+        # Present on every GitHub-hosted runner, absent on plenty of self-hosted ones. Named
+        # rather than assumed: without it the loop below reads nothing and the step would exit 0,
+        # which is an unrun check reported as a passing image.
+        if ! command -v jq > /dev/null 2>&1; then
+          echo "::error::jq is not on PATH, so no comparison was made. This is not a passing image — it is an unrun check." >&2
+          exit 1
+        fi
+
+        docker inspect --format '{{json .Config.Labels}}' "$IMAGE" > "${RUNNER_TEMP}/image.labels.json"
+
+        # `docker inspect` reports `.Config.Labels` and `crane config` reports `.config.Labels`;
+        # reading the wrong one yields `null`, and a careless comparison treats that as "nothing
+        # to compare". An image with no labels at all reports `{}`, so the two are distinguishable
+        # and only the one meaning "the reader was wrong" is refused here.
+        kind="$(jq -r 'type' "${RUNNER_TEMP}/image.labels.json")"
+        if [ "$kind" != "object" ]; then
+          echo "::error::${IMAGE}: the label set read as ${kind}, not an object, so nothing was compared." >&2
+          exit 1
+        fi
+
+        # Every violation before exiting. A build that names one missing label and hides two is a
+        # second round trip through a pipeline that already took minutes.
+        status=0
+        while IFS='=' read -r name expected; do
+          if [ -z "$name" ]; then
+            continue
+          fi
+          # Presence and value are asked separately: a label that is absent and a label whose
+          # value is empty are different defects, and one `.[$name]` cannot tell them apart.
+          if ! jq -e --arg name "$name" 'has($name)' "${RUNNER_TEMP}/image.labels.json" > /dev/null; then
+            echo "::error::${IMAGE}: carries no \`${name}\`, so nothing can discover this contract from its config blob." >&2
+            status=1
+            continue
+          fi
+          found="$(jq -r --arg name "$name" '.[$name]' "${RUNNER_TEMP}/image.labels.json")"
+          if [ "$found" != "$expected" ]; then
+            echo "::error::${IMAGE}: \`${name}\` is \`${found}\`, and this contract's is \`${expected}\`." >&2
+            status=1
+          fi
+        done < "${RUNNER_TEMP}/generated.labels"
+
+        exit "$status"
+
+    # The label says where the document is; this says something is actually there. It deliberately
+    # does not compare the two documents: the copy in an image carries the version, revision and
+    # timestamp of the build that made it, so it is not the byte-reproducible copy the drift check
+    # above uses, and comparing them needs an export from that same build rather than a fresh run.
+    - name: Verify the contract is embedded where its label says
+      if: ${{ inputs.image != '' }}
+      shell: bash
+      env:
+        IMAGE: ${{ inputs.image }}
+        CONTRACT_PATH: ${{ inputs.contract_path }}
+      run: |
+        set -euo pipefail
+
+        container="$(docker create "$IMAGE")"
+        trap 'docker rm --force "$container" > /dev/null 2>&1 || true' EXIT
+
+        if ! docker cp "${container}:${CONTRACT_PATH}" "${RUNNER_TEMP}/embedded.contract" 2> /dev/null; then
+          echo "::error::${IMAGE}: nothing is at \`${CONTRACT_PATH}\`, which is the path its own \`dev.terrace.config.contract.path\` label advertises. The image is not self-describing; check the COPY that was meant to put it there." >&2
+          exit 1
+        fi
+
+        if ! jq -e 'type == "object" and has("terrace_contract")' "${RUNNER_TEMP}/embedded.contract" > /dev/null; then
+          echo "::error::${IMAGE}: the file at \`${CONTRACT_PATH}\` is not a terrace-config contract." >&2
+          exit 1
+        fi
