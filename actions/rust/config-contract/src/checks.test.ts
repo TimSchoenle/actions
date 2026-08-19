@@ -40,12 +40,14 @@ const IMAGE_LABELS: Record<string, string> = {
 const DEFAULTS: RawInputs = {
   source_directory: '.',
   example: 'config-schema',
+  bin: '',
   package: '',
   features: '',
   dockerfile: 'Dockerfile',
   contract: 'docs/config.contract.json',
   image: IMAGE,
   contract_path: EMBEDDED_PATH,
+  extra_args: '',
 };
 
 interface Scenario {
@@ -189,6 +191,50 @@ describe('runChecks', () => {
       });
 
       expect(report.findings[0].file).toBe('services/api/Dockerfile');
+    });
+
+    // A Dockerfile builds several images, and each runtime stage carries its own LABEL block. Every
+    // one of them is a place the same contract is published from, so every one of them is compared.
+    describe('a Dockerfile with a region per stage', () => {
+      const staged = (...blocks: string[]): Record<string, string> => ({
+        ...DEFAULT_FILES,
+        Dockerfile: ['FROM scratch AS api', ...blocks].join('\n'),
+      });
+
+      it('accepts every region that carries the block this contract publishes', async () => {
+        expect((await run({ files: staged(LABEL_BLOCK, 'FROM scratch AS worker', LABEL_BLOCK) })).findings).toEqual([]);
+      });
+
+      it('reports every stale region rather than the first', async () => {
+        const stale = LABEL_BLOCK.replace('"1"', '"2"');
+        const report = await run({ files: staged(stale, 'FROM scratch AS worker', LABEL_BLOCK, stale) });
+
+        expect(checksOf(report.findings)).toEqual(['dockerfile-block', 'dockerfile-block']);
+      });
+
+      it('anchors each finding to the line the stale region opens on', async () => {
+        const stale = LABEL_BLOCK.replace('"1"', '"2"');
+        const report = await run({ files: staged(LABEL_BLOCK, stale) });
+
+        expect(report.findings).toHaveLength(1);
+        expect(report.findings[0].line).toBe(7);
+        expect(report.findings[0].message).toContain('at line 7');
+      });
+
+      it('reports a region with nothing in it as empty, without a diff of the whole block', async () => {
+        const report = await run({ files: staged(LABEL_BLOCK, `${REGION_BEGIN}\n${REGION_END}\n`) });
+
+        expect(report.findings).toHaveLength(1);
+        expect(report.findings[0].message).toContain('has nothing in it');
+      });
+
+      // Which of three is undecided, so none of them is compared: refusing the file is the only
+      // answer that does not pick one arbitrarily.
+      it('refuses a file whose regions are nested rather than sequential', async () => {
+        const report = await run({ files: staged(REGION_BEGIN, REGION_BEGIN, 'LABEL a=1', REGION_END) });
+
+        expect(report.findings[0].message).toContain('inside another');
+      });
     });
   });
 

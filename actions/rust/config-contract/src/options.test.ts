@@ -4,7 +4,7 @@ import { UnsafePathError } from 'actions-util';
 import { describe, expect, it } from 'vitest';
 
 import { InvalidInputError } from './errors.js';
-import { parseEmbeddedContractPath, parseFeatures, resolveOptions } from './options.js';
+import { parseEmbeddedContractPath, parseFeatures, parseGeneratorTarget, resolveOptions } from './options.js';
 
 import type { RawInputs } from './options.js';
 
@@ -12,13 +12,15 @@ const WORKSPACE = path.resolve('/workspace');
 
 const DEFAULTS: RawInputs = {
   source_directory: '.',
-  example: 'config-schema',
+  example: '',
+  bin: '',
   package: '',
   features: '',
   dockerfile: 'Dockerfile',
   contract: 'docs/config.contract.json',
   image: '',
   contract_path: '/config/contract.json',
+  extra_args: '',
 };
 
 function resolve(overrides: Partial<RawInputs> = {}) {
@@ -85,14 +87,50 @@ describe('parseEmbeddedContractPath', () => {
   });
 });
 
+// Exactly one of the two names the generator, and neither is the historic default. A manifest
+// default is indistinguishable from a value the caller wrote, so the fallback lives here instead:
+// with `example` defaulted in `action.yaml`, every workflow naming a `bin` would also be naming an
+// example, and the exclusion could not be enforced at all.
+describe('parseGeneratorTarget', () => {
+  it('defaults to the example every workflow written before bin existed relies on', () => {
+    expect(parseGeneratorTarget('', '')).toEqual({ kind: 'example', name: 'config-schema' });
+  });
+
+  it.each([
+    { name: 'an example', example: 'schema', bin: '', expected: { kind: 'example', name: 'schema' } },
+    { name: 'a bin', example: '', bin: 'config-contract', expected: { kind: 'bin', name: 'config-contract' } },
+  ])('selects $name when it is the only one named', ({ example, bin, expected }) => {
+    expect(parseGeneratorTarget(example, bin)).toEqual(expected);
+  });
+
+  // Silently preferring one is how a workflow whose author believes it runs the example and whose
+  // runner runs the bin survives a review.
+  it('refuses both rather than resolving them by precedence', () => {
+    expect(() => parseGeneratorTarget('schema', 'config-contract')).toThrow(InvalidInputError);
+    expect(() => parseGeneratorTarget('schema', 'config-contract')).toThrow(/name one target/);
+  });
+
+  it('names bin as the input to remove, since example is the one with a history', () => {
+    expect(() => parseGeneratorTarget('schema', 'config-contract')).toThrow(/^bin: /);
+  });
+
+  it.each(['--offline', 'a b', 'a;b', '../evil'])(
+    'refuses %s as a bin, which cargo would not read as a target',
+    (bin) => {
+      expect(() => parseGeneratorTarget('', bin)).toThrow(InvalidInputError);
+    },
+  );
+});
+
 describe('resolveOptions', () => {
   it('resolves the defaults an unconfigured workflow gets', () => {
     const options = resolve();
 
     expect(options.sourceDirectory).toBe(WORKSPACE);
-    expect(options.example).toBe('config-schema');
+    expect(options.target).toEqual({ kind: 'example', name: 'config-schema' });
     expect(options.packageName).toBeUndefined();
     expect(options.features).toEqual([]);
+    expect(options.extraArgs).toEqual([]);
     expect(options.image).toBeUndefined();
     expect(options.dockerfile?.absolute).toBe(path.join(WORKSPACE, 'Dockerfile'));
     expect(options.contract?.absolute).toBe(path.join(WORKSPACE, 'docs', 'config.contract.json'));
@@ -123,11 +161,22 @@ describe('resolveOptions', () => {
   it.each([
     { name: 'an example that is a flag', overrides: { example: '--manifest-path' } },
     { name: 'an example with a space', overrides: { example: 'config schema' } },
-    { name: 'an empty example, which would run no generator', overrides: { example: '' } },
+    { name: 'a bin that is a flag', overrides: { bin: '--manifest-path' } },
+    { name: 'a bin with a space', overrides: { bin: 'config contract' } },
     { name: 'a package that is a flag', overrides: { package: '-Zunstable' } },
     { name: 'an image that is a flag', overrides: { image: '--privileged' } },
+    { name: 'a generator argument the action supplies itself', overrides: { extra_args: '--format labels' } },
+    { name: 'a generator argument with an unclosed quote', overrides: { extra_args: '--service "api' } },
   ])('refuses $name', ({ overrides }) => {
     expect(() => resolve(overrides)).toThrow(InvalidInputError);
+  });
+
+  it('reads a bin as the target cargo selects with --bin', () => {
+    expect(resolve({ bin: 'config-contract' }).target).toEqual({ kind: 'bin', name: 'config-contract' });
+  });
+
+  it('splits the generator arguments into a vector', () => {
+    expect(resolve({ extra_args: '--service api' }).extraArgs).toEqual(['--service', 'api']);
   });
 
   it.each([

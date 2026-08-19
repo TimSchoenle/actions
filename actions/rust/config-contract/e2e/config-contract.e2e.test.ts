@@ -105,6 +105,11 @@ function dockerRules(scene: Scene): StubRule[] {
   ];
 }
 
+/** The `--format` one recorded invocation asked for, found by name rather than by position. */
+function formatOf(args: readonly string[]): string | undefined {
+  return args[args.indexOf('--format') + 1];
+}
+
 describe('config-contract', () => {
   let workspace: Workspace;
   let stubs: StubCommands;
@@ -171,8 +176,65 @@ describe('config-contract', () => {
       const invocations = await stubs.invocationsOf('cargo');
 
       expect(invocations).toHaveLength(3);
-      expect(invocations.map((invocation) => invocation.args.at(-3))).toEqual(['contract', 'labels', 'dockerfile']);
+      expect(invocations.map((invocation) => formatOf(invocation.args))).toEqual(['contract', 'labels', 'dockerfile']);
       expect(invocations.every((invocation) => invocation.cwd === workspace.path)).toBe(true);
+    });
+
+    // A generator that links every service crate, or that a container build runs as a compiled
+    // artefact out of `/out`, has to be a `[[bin]]`. `cargo run --example` cannot reach either.
+    it('selects a binary target with --bin when the workflow names one', async () => {
+      await check({ bin: 'config-contract' });
+
+      const [first] = await stubs.argumentsOf('cargo');
+
+      expect(first.slice(0, 4)).toEqual(['run', '--quiet', '--bin', 'config-contract']);
+      expect(first).not.toContain('--example');
+    });
+
+    // One generator renders the contract. A workflow carrying the example it no longer uses next to
+    // the bin that replaced it believes one thing while the runner does another.
+    it('refuses a workflow that names both a bin and an example, and runs nothing', async () => {
+      const result = await check({ bin: 'config-contract', example: 'config-schema' }, 'failure');
+
+      expect(result.errors.join('\n')).toContain('name one target');
+      await expect(stubs.invocations()).resolves.toEqual([]);
+    });
+
+    // The generator that renders nine contracts, one per published image, is selected by an argument
+    // only the repository owning it knows the spelling of.
+    it("hands the generator the workflow's own arguments, after its own two", async () => {
+      await check({ extra_args: '--service api --strict' });
+
+      const [first] = await stubs.argumentsOf('cargo');
+
+      expect(first.slice(first.indexOf('--'))).toEqual([
+        '--',
+        '--format',
+        'contract',
+        '--path',
+        EMBEDDED_PATH,
+        '--service',
+        'api',
+        '--strict',
+      ]);
+    });
+
+    // The whole reason `extra_args` is parsed rather than interpolated: nothing downstream re-splits,
+    // so a quoted value arrives at the generator as the one argument the workflow wrote.
+    it('carries a quoted generator argument through as a single argument', async () => {
+      await check({ extra_args: '--label "two words"' });
+
+      const [first] = await stubs.argumentsOf('cargo');
+
+      expect(first).toContain('two words');
+      expect(first).not.toContain('"two');
+    });
+
+    it("refuses a generator argument that is one of the action's own, and runs nothing", async () => {
+      const result = await check({ extra_args: '--format labels' }, 'failure');
+
+      expect(result.errors.join('\n')).toContain('extra_args');
+      await expect(stubs.invocations()).resolves.toEqual([]);
     });
 
     // The composite this replaces could not assert any of this. A generator run with the wrong
@@ -273,7 +335,7 @@ describe('config-contract', () => {
       const renamed = DOCKERFILE.replaceAll('dev.terrace', 'dev.other');
       const result = await check({}, 'failure', {}, { Dockerfile: renamed, 'docs/config.contract.json': CONTRACT });
 
-      expect(result.errors.join('\n')).toContain('terrace-config:labels region is not the block');
+      expect(result.errors.join('\n')).toContain('is not the block this contract publishes');
     });
 
     // An unrun check is not a passing image.
@@ -300,6 +362,56 @@ describe('config-contract', () => {
 
       expect(result.outputs['checks_skipped']).toBe('dockerfile-block');
       expect(result.stdout).toContain('dockerfile-block');
+    });
+
+    // A Dockerfile builds several images, and a file with three runtime stages carries three LABEL
+    // blocks. Each is a place the same contract is published from, so each is compared.
+    describe('a Dockerfile with a marked region per runtime stage', () => {
+      const staged = (...blocks: string[]): WorkspaceFiles => ({
+        Dockerfile: ['FROM rust:1 AS build', ...blocks, 'ENTRYPOINT ["/app"]', ''].join('\n'),
+        'docs/config.contract.json': CONTRACT,
+      });
+
+      it('accepts three stages that all carry the block this contract publishes', async () => {
+        const result = await check(
+          {},
+          'success',
+          {},
+          staged(
+            'FROM scratch AS api',
+            LABEL_BLOCK,
+            'FROM scratch AS worker',
+            LABEL_BLOCK,
+            'FROM scratch AS notifier',
+            LABEL_BLOCK,
+          ),
+        );
+
+        expect(result.errors).toEqual([]);
+        expect(result.outputs['checks_run']).toContain('dockerfile-block');
+      });
+
+      // A stage that names one stale block and hides two is a second round trip through a pipeline
+      // that already took minutes.
+      it('reports every stale region rather than the first, each at its own line', async () => {
+        const stale = LABEL_BLOCK.replace('sha256:abc', 'sha256:stale');
+        const result = await check({}, 'failure', {}, staged(stale, 'FROM scratch AS worker', LABEL_BLOCK, stale));
+        const regionFaults = result.errors.filter((message) => message.includes('is not the block this contract'));
+
+        expect(regionFaults).toHaveLength(2);
+        expect(new Set(regionFaults.map((message) => /at line (\d+)/.exec(message)?.[1])).size).toBe(2);
+      });
+
+      it('refuses a file whose regions are nested rather than sequential', async () => {
+        const result = await check(
+          {},
+          'failure',
+          {},
+          staged('# terrace-config:labels:begin', LABEL_BLOCK, '# terrace-config:labels:end'),
+        );
+
+        expect(result.errors.join('\n')).toContain('inside another');
+      });
     });
   });
 

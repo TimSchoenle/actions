@@ -16,12 +16,14 @@ import { createActionIo } from 'actions-util';
 export const ActionInput = {
   source_directory: 'source_directory',
   example: 'example',
+  bin: 'bin',
   package: 'package',
   features: 'features',
   dockerfile: 'dockerfile',
   contract: 'contract',
   image: 'image',
   contract_path: 'contract_path',
+  extra_args: 'extra_args',
 } as const;
 
 export type ActionInput = (typeof ActionInput)[keyof typeof ActionInput];

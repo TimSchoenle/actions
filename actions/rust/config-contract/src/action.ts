@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 
 import * as core from '@actions/core';
-import { quoteForLog, runAction, workspaceRoot } from 'actions-util';
+import { quoteAllForLog, quoteForLog, runAction, workspaceRoot } from 'actions-util';
 
 import { runChecks } from './checks.js';
 import { createCommandRunner } from './command.js';
@@ -14,7 +14,7 @@ import { createCargoGenerator, renderAll } from './generator.js';
 import { labelsAsJson, parseLabelLines } from './labels.js';
 import { resolveOptions } from './options.js';
 
-import type { CheckReport, FileReader } from './checks.js';
+import type { CheckReport, FileReader, Finding } from './checks.js';
 import type { CommandRunner } from './command.js';
 import type { ContractOptions, RawInputs } from './options.js';
 
@@ -41,12 +41,14 @@ function readInputs(): RawInputs {
   return {
     source_directory: getInput('source_directory'),
     example: getInput('example'),
+    bin: getInput('bin'),
     package: getInput('package'),
     features: getInput('features'),
     dockerfile: getInput('dockerfile'),
     contract: getInput('contract'),
     image: getInput('image'),
     contract_path: getInput('contract_path'),
+    extra_args: getInput('extra_args'),
   };
 }
 
@@ -65,19 +67,33 @@ function temporaryDirectory(): string {
  * `${{ github.event.inputs.example }}` into any of these.
  */
 function announce(options: ContractOptions): void {
-  const target = options.packageName === undefined ? options.example : `${options.example} in ${options.packageName}`;
+  const { kind, name } = options.target;
+  const where = options.packageName === undefined ? name : `${name} in ${options.packageName}`;
 
-  core.info(`Rendering the contract from the ${quoteForLog(target)} example...`);
+  core.info(`Rendering the contract from the ${quoteForLog(where)} ${kind}...`);
 
   if (options.features.length > 0) {
     core.info(`Features: ${quoteForLog(options.features.join(','))}.`);
   }
+
+  if (options.extraArgs.length > 0) {
+    core.info(`Generator arguments: ${quoteAllForLog(options.extraArgs)}.`);
+  }
 }
 
 /** Reports what ran, what did not, and every fault that was found. */
+/** The annotation properties a finding carries, which is a file, a file and a line, or neither. */
+function annotationFor(finding: Finding): core.AnnotationProperties {
+  if (finding.file === undefined) {
+    return {};
+  }
+
+  return finding.line === undefined ? { file: finding.file } : { file: finding.file, startLine: finding.line };
+}
+
 function report(result: CheckReport): void {
   for (const finding of result.findings) {
-    core.error(finding.message, finding.file === undefined ? {} : { file: finding.file });
+    core.error(finding.message, annotationFor(finding));
   }
 
   if (result.skipped.length > 0) {

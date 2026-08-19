@@ -116,13 +116,16 @@ describe('config-contract under hostile input', () => {
   }
 
   describe('inputs that become arguments to cargo', () => {
-    it.each(['example', 'package', 'features'] as const)('refuses a workflow command payload in %s', async (input) => {
-      const result = await check({ [input]: commandInjectionPayload() }, 'failure');
+    it.each(['example', 'bin', 'package', 'features'] as const)(
+      'refuses a workflow command payload in %s',
+      async (input) => {
+        const result = await check({ [input]: commandInjectionPayload() }, 'failure');
 
-      expectCleanRejection(result, new RegExp(input));
-      expectNoInjection(result);
-      await expect(stubs.invocations()).resolves.toEqual([]);
-    });
+        expectCleanRejection(result, new RegExp(input));
+        expectNoInjection(result);
+        await expect(stubs.invocations()).resolves.toEqual([]);
+      },
+    );
 
     it.each([
       { name: 'a cargo flag', value: '--manifest-path=/etc/passwd' },
@@ -160,6 +163,72 @@ describe('config-contract under hostile input', () => {
 
       expectCleanRejection(result, /example/);
       await expect(stubs.invocations()).resolves.toEqual([]);
+    });
+
+    it.each([
+      { name: 'a cargo flag', value: '--manifest-path=/etc/passwd' },
+      { name: 'a second argument smuggled in by a space', value: 'config-contract --offline' },
+      { name: 'a shell metacharacter', value: 'config-contract;id' },
+    ])('refuses $name in bin, and runs nothing at all', async ({ value }) => {
+      const result = await check({ bin: value }, 'failure');
+
+      expectCleanRejection(result, /bin/);
+      await expect(stubs.invocations()).resolves.toEqual([]);
+    });
+  });
+
+  /**
+   * `extra_args` is the one input whose grammar this action does not own: the arguments belong to a
+   * generator only the calling repository knows. What is checked is therefore the shape — that a
+   * value arrives as arguments rather than as a command line, that it cannot restate the two
+   * arguments the action depends on, and that it cannot carry a line into the log.
+   */
+  describe('the generator arguments, whose grammar this action does not own', () => {
+    it.each([
+      { name: 'the format the run is about', value: '--format labels' },
+      { name: 'the path the embedded check compares against', value: '--path /etc/passwd' },
+      { name: 'the format written with an equals sign', value: '--format=labels' },
+    ])('refuses a second spelling of $name, and runs nothing', async ({ value }) => {
+      const result = await check({ extra_args: value }, 'failure');
+
+      expectCleanRejection(result, /extra_args/);
+      await expect(stubs.invocations()).resolves.toEqual([]);
+    });
+
+    it('refuses an unclosed quote rather than guessing where the argument ends', async () => {
+      expectCleanRejection(await check({ extra_args: '--service "api' }, 'failure'), /extra_args/);
+    });
+
+    it('refuses an oversized list rather than assembling a command line out of it', async () => {
+      const result = await check({ extra_args: oversized(LARGEST_DELIVERABLE_INPUT) }, 'failure');
+
+      expectCleanRejection(result, /extra_args/);
+      await expect(stubs.invocations()).resolves.toEqual([]);
+    });
+
+    // The action echoes what it is about to run, and `core.info` writes to stdout verbatim. A
+    // newline inside an argument would be a second line for the runner to read as a command, which
+    // is why an argument may not hold one however it was quoted.
+    it('refuses an argument carrying a newline, whatever quoted it', async () => {
+      const result = await check({ extra_args: `--service "api\n::error::forged"` }, 'failure');
+
+      expectCleanRejection(result, /control character/);
+      expectNoInjection(result);
+    });
+
+    // Split, not interpolated: the payload becomes arguments the generator is handed, and the log
+    // line announcing them is quoted rather than echoed.
+    it('carries a payload into the argument vector without forging a command in the log', async () => {
+      const result = await check({ extra_args: 'a$(id) b`id` c;id' }, 'any');
+
+      expectNoInjection(result);
+      await expect(everyArgument()).resolves.toContain('a$(id)');
+    });
+
+    it('never lets a quoted value become two arguments', async () => {
+      await check({ extra_args: `--service "api worker"` }, 'success');
+
+      await expect(everyArgument()).resolves.toContain('api worker');
     });
   });
 
@@ -343,11 +412,48 @@ describe('config-contract under hostile input', () => {
       expectNoInjection(result);
     });
 
-    it('refuses a Dockerfile whose marked region appears twice, rather than picking one', async () => {
-      const doubled = `FROM scratch\n${LABEL_BLOCK}${LABEL_BLOCK}`;
-      const result = await check({ contract: '', image: '' }, 'failure', {}, { Dockerfile: doubled });
+    // A Dockerfile builds several images, so several regions is the arrangement this check exists
+    // for rather than a fault. What is refused is a file where which region is which cannot be told.
+    it('compares each of two marked regions rather than picking one', async () => {
+      const stale = LABEL_BLOCK.replace('"1"', '"2"');
+      const result = await check(
+        { contract: '', image: '' },
+        'failure',
+        {},
+        { Dockerfile: `FROM scratch\n${stale}${stale}` },
+      );
 
-      expect(result.errors.join('\n')).toContain('more than one marked region');
+      expect(result.errors.filter((message) => message.includes('is not the block this contract'))).toHaveLength(2);
+    });
+
+    it('accepts two marked regions that both carry the block this contract publishes', async () => {
+      const result = await check(
+        { contract: '', image: '' },
+        'success',
+        {},
+        {
+          Dockerfile: `FROM scratch\n${LABEL_BLOCK}FROM scratch AS second\n${LABEL_BLOCK}`,
+        },
+      );
+
+      expect(result.errors).toEqual([]);
+    });
+
+    it('refuses a Dockerfile whose regions are nested, rather than picking a boundary', async () => {
+      const nested = `FROM scratch\n# terrace-config:labels:begin\n${LABEL_BLOCK}# terrace-config:labels:end\n`;
+      const result = await check({ contract: '', image: '' }, 'failure', {}, { Dockerfile: nested });
+
+      expect(result.errors.join('\n')).toContain('inside another');
+    });
+
+    // Every region becomes its own annotation, so a file generated to hold thousands of them is a
+    // log flood rather than a report.
+    it('refuses a Dockerfile carrying more marked regions than a Dockerfile builds', async () => {
+      const many = `FROM scratch\n${LABEL_BLOCK.repeat(40)}`;
+      const result = await check({ contract: '', image: '' }, 'failure', {}, { Dockerfile: many });
+
+      expect(result.errors.join('\n')).toContain('marked regions');
+      expect(result.errors.length).toBeLessThan(10);
     });
 
     it('reports a directory where a contract should be as a file it cannot read', async () => {

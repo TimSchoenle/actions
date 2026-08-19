@@ -31,11 +31,18 @@ export const CARGO = 'cargo';
 /**
  * The argument vector for one rendering.
  *
- * Assembled as a vector rather than a command line, so a feature list or an example name is one
+ * Assembled as a vector rather than a command line, so a feature list or a target name is one
  * argument whatever it contains — and validated before it gets here, so it cannot be a flag.
+ *
+ * `--example` or `--bin` comes from the target's own kind rather than from a branch, so the flag and
+ * the name cannot be selected independently and therefore cannot disagree.
+ *
+ * The caller's own arguments go last, after the two the action supplies. Order is not the point —
+ * a generator parses flags in any order — but a fixed position is: the two arguments this action
+ * depends on sit where every message about them says they do, whatever the caller appends.
  */
 export function cargoArguments(options: ContractOptions, format: ContractFormat): string[] {
-  const args = ['run', '--quiet', '--example', options.example];
+  const args = ['run', '--quiet', `--${options.target.kind}`, options.target.name];
 
   if (options.packageName !== undefined) {
     args.push('-p', options.packageName);
@@ -45,7 +52,7 @@ export function cargoArguments(options: ContractOptions, format: ContractFormat)
     args.push('--features', options.features.join(','));
   }
 
-  return [...args, '--', '--format', format, '--path', options.embeddedContractPath];
+  return [...args, '--', '--format', format, '--path', options.embeddedContractPath, ...options.extraArgs];
 }
 
 /** Binds {@link ContractGenerator} to `cargo run` in the source directory. */

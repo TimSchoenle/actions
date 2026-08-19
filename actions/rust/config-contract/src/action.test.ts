@@ -32,13 +32,15 @@ const CONTAINER = 'e'.repeat(64);
 
 const DEFAULT_INPUTS: Record<string, string> = {
   source_directory: '.',
-  example: 'config-schema',
+  example: '',
+  bin: '',
   package: '',
   features: '',
   dockerfile: 'Dockerfile',
   contract: 'docs/config.contract.json',
   image: 'myservice:test',
   contract_path: '/config/contract.json',
+  extra_args: '',
 };
 
 function setInputs(overrides: Record<string, string> = {}): void {
@@ -72,7 +74,7 @@ function dependencies(scene: Scene = {}): ActionDependencies & { commands: strin
       Promise.resolve({ exitCode, stdout, stderr: '' });
 
     if (command === 'cargo') {
-      const format = args.at(-3) as keyof typeof renderings;
+      const format = args[args.indexOf('--format') + 1] as keyof typeof renderings;
 
       return answer(renderings[format], scene.generatorExitCode ?? 0);
     }
@@ -127,11 +129,11 @@ describe('config-contract action', () => {
 
     await run(deps);
 
-    expect(deps.commands.filter(([command]) => command === 'cargo').map((command) => command.at(-3))).toEqual([
-      'contract',
-      'labels',
-      'dockerfile',
-    ]);
+    expect(
+      deps.commands
+        .filter(([command]) => command === 'cargo')
+        .map((command) => command[command.indexOf('--format') + 1]),
+    ).toEqual(['contract', 'labels', 'dockerfile']);
   });
 
   it('annotates every fault and then fails once', async () => {
@@ -193,9 +195,12 @@ describe('config-contract action', () => {
 
   it.each<{ name: string; inputs: Record<string, string> }>([
     { name: 'an example that is a flag', inputs: { example: '--offline' } },
+    { name: 'a bin that is a flag', inputs: { bin: '--offline' } },
+    { name: 'an example and a bin at once', inputs: { example: 'config-schema', bin: 'config-contract' } },
     { name: 'an image that is a flag', inputs: { image: '--privileged' } },
     { name: 'a contract path that is relative', inputs: { contract_path: 'config/contract.json' } },
     { name: 'a dockerfile that escapes the checkout', inputs: { dockerfile: '../../etc/passwd' } },
+    { name: 'a generator argument the action supplies itself', inputs: { extra_args: '--path /etc/passwd' } },
   ])('refuses $name before running anything', async ({ inputs }) => {
     setInputs(inputs);
     const deps = dependencies();
@@ -214,5 +219,50 @@ describe('config-contract action', () => {
     await run(dependencies());
 
     expect(core.info).toHaveBeenCalledWith(expect.stringContaining('"config-schema,cli"'));
+  });
+
+  it('quotes the generator arguments it echoes', async () => {
+    setInputs({ extra_args: '--service api' });
+
+    await run(dependencies());
+
+    expect(core.info).toHaveBeenCalledWith(expect.stringContaining('"--service", "api"'));
+  });
+
+  it('runs the binary a workflow names, and says so before it runs it', async () => {
+    setInputs({ bin: 'config-contract' });
+    const deps = dependencies();
+
+    await run(deps);
+
+    expect(deps.commands[0].slice(0, 4)).toEqual(['cargo', 'run', '--quiet', '--bin']);
+    expect(core.info).toHaveBeenCalledWith(expect.stringContaining('bin...'));
+  });
+
+  it('hands the generator its own arguments, after the two the action supplies', async () => {
+    setInputs({ extra_args: '--service api' });
+    const deps = dependencies();
+
+    await run(deps);
+
+    expect(deps.commands[0].slice(-2)).toEqual(['--service', 'api']);
+  });
+
+  // The block is published from every runtime stage, so every stage is a place it can go stale.
+  it('annotates each stale region of a Dockerfile at the line it opens on', async () => {
+    const stale = LABEL_BLOCK.replace('"1"', '"2"');
+
+    await run(
+      dependencies({ files: { Dockerfile: `FROM scratch\n${stale}${stale}`, 'docs/config.contract.json': CONTRACT } }),
+    );
+
+    expect(core.error).toHaveBeenCalledWith(expect.stringContaining('at line 2'), {
+      file: 'Dockerfile',
+      startLine: 2,
+    });
+    expect(core.error).toHaveBeenCalledWith(expect.stringContaining('at line 5'), {
+      file: 'Dockerfile',
+      startLine: 5,
+    });
   });
 });

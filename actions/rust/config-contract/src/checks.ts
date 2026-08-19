@@ -14,10 +14,11 @@ import path from 'node:path';
 
 import { isContractDocument } from './contract-document.js';
 import { diffContent } from './diff.js';
-import { describeRegionProblem, extractLabelRegion } from './dockerfile-region.js';
+import { describeRegionProblem, extractLabelRegions, isEmptyRegion } from './dockerfile-region.js';
 import { describeLabelFault, findLabelFaults, readImageLabels } from './labels.js';
 
 import type { ImageInspector } from './docker.js';
+import type { LabelRegion } from './dockerfile-region.js';
 import type { Renderings } from './generator.js';
 import type { ContractLabel } from './labels.js';
 import type { ContractOptions, OptionalPath } from './options.js';
@@ -45,6 +46,13 @@ export interface Finding {
   readonly message: string;
   /** Repository-relative path the annotation is anchored to, when the fault is in a file. */
   readonly file?: string;
+  /**
+   * 1-based line the annotation is anchored to, when the fault is at one.
+   *
+   * A Dockerfile may carry a marked region per stage, and a message saying only that "the region" is
+   * wrong leaves the reader to work out which of three. Anchored, the annotation lands on it.
+   */
+  readonly line?: number;
 }
 
 /** What a run of the checks concluded. */
@@ -72,14 +80,50 @@ export interface CheckContext {
 /** Name the copy of the embedded contract is given, inside the step's own temporary directory. */
 const EMBEDDED_COPY = 'embedded.contract.json';
 
-/** Builds a finding for one check, anchored to a file when there is one to anchor to. */
-function findingIn(check: CheckId, file: string | undefined, message: string): Finding[] {
-  return [file === undefined ? { check, message } : { check, message, file }];
+/** Builds a finding for one check, anchored to a file — and to a line in it — when there is one. */
+function findingIn(check: CheckId, file: string | undefined, message: string, line?: number): Finding[] {
+  if (file === undefined) {
+    return [{ check, message }];
+  }
+
+  return [line === undefined ? { check, message, file } : { check, message, file, line }];
+}
+
+/**
+ * Compares one marked region against the block this contract publishes.
+ *
+ * Every region is held to the same block, because every region is a place the same contract is
+ * published from. A file whose three stages carry three different blocks has two stages shipping
+ * labels no contract stands behind, and that is the fault rather than the arrangement.
+ */
+function checkRegion(context: CheckContext, dockerfile: OptionalPath, region: LabelRegion): Finding[] {
+  const fault = (message: string): Finding[] =>
+    findingIn(DOCKERFILE_BLOCK, dockerfile.workspaceRelative, message, region.line);
+
+  if (isEmptyRegion(region)) {
+    return fault(
+      `${dockerfile.input}: the terrace-config:labels region at line ${region.line} has nothing in it. ` +
+        'Paste the output of `--format dockerfile` between its markers.',
+    );
+  }
+
+  const difference = diffContent(context.renderings.dockerfile, region.content);
+
+  return difference === undefined
+    ? []
+    : fault(
+        `${dockerfile.input}: the terrace-config:labels region at line ${region.line} is not the block this ` +
+          `contract publishes. Paste the output of \`--format dockerfile\`.\n${difference}`,
+      );
 }
 
 /**
  * The cheap half: it needs no image, and it reports a renamed key in the pull request that renamed
  * it, in a diff a reviewer reads rather than in a build log nobody opens.
+ *
+ * Every region is compared and every mismatch reported, on the rule the whole action runs on: a file
+ * with three stages that names one stale block and hides two is a second round trip through a
+ * pipeline that already took minutes.
  */
 async function checkDockerfileBlock(context: CheckContext, dockerfile: OptionalPath): Promise<Finding[]> {
   const fault = (message: string): Finding[] => findingIn(DOCKERFILE_BLOCK, dockerfile.workspaceRelative, message);
@@ -89,20 +133,13 @@ async function checkDockerfileBlock(context: CheckContext, dockerfile: OptionalP
     return fault(`${dockerfile.input} does not exist, so its LABEL block was never compared.`);
   }
 
-  const region = extractLabelRegion(content);
+  const outcome = extractLabelRegions(content);
 
-  if (region.kind === 'problem') {
-    return fault(`${dockerfile.input} ${describeRegionProblem(region.problem)}`);
+  if (outcome.kind === 'problem') {
+    return fault(`${dockerfile.input} ${describeRegionProblem(outcome.problem)}`);
   }
 
-  const difference = diffContent(context.renderings.dockerfile, region.content);
-
-  return difference === undefined
-    ? []
-    : fault(
-        `${dockerfile.input}: the terrace-config:labels region is not the block this contract publishes. ` +
-          `Paste the output of \`--format dockerfile\`.\n${difference}`,
-      );
+  return outcome.regions.flatMap((region) => checkRegion(context, dockerfile, region));
 }
 
 /**

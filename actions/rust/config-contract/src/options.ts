@@ -13,13 +13,24 @@ import path from 'node:path';
 
 import { resolveWithinWorkspace } from 'actions-util';
 
+import { parseArgumentVector } from './argument-vector.js';
 import { InvalidInputError } from './errors.js';
 import { parseImageReference } from './image-reference.js';
 
 import type { ImageReference } from './image-reference.js';
 
-/** Cargo's name grammar for an example target or a workspace member. */
+/** Cargo's name grammar for an example target, a binary target or a workspace member. */
 const CARGO_NAME = /^[A-Za-z0-9_][A-Za-z0-9_-]{0,63}$/;
+
+/**
+ * The example a workflow gets when it names neither target.
+ *
+ * Lives here rather than in `action.yaml` because `example` and `bin` are mutually exclusive, and a
+ * manifest default is indistinguishable from a value the caller wrote: with a default in the
+ * manifest, every workflow that named a `bin` would also be naming an `example`, and the exclusion
+ * could not be enforced at all.
+ */
+const DEFAULT_EXAMPLE = 'config-schema';
 
 /**
  * Cargo's feature-name grammar.
@@ -46,12 +57,28 @@ const RELATIVE_SEGMENTS = new Set(['', '.', '..']);
 export interface RawInputs {
   readonly source_directory: string;
   readonly example: string;
+  readonly bin: string;
   readonly package: string;
   readonly features: string;
   readonly dockerfile: string;
   readonly contract: string;
   readonly image: string;
   readonly contract_path: string;
+  readonly extra_args: string;
+}
+
+/**
+ * The cargo target the generator is, and the flag that selects it.
+ *
+ * Two kinds because a generator is not always free to be an example. One that links every service
+ * crate in the workspace, or that a container build runs as a compiled artefact out of the build
+ * stage rather than through `cargo run`, has to be a `[[bin]]`; an example cannot be either of
+ * those things. The kind is the flag, so there is one place where the two can disagree and it is
+ * this type.
+ */
+export interface GeneratorTarget {
+  readonly kind: 'bin' | 'example';
+  readonly name: string;
 }
 
 /** A path input that may be omitted, kept alongside the spelling the caller used. */
@@ -73,7 +100,8 @@ export interface OptionalPath {
 export interface ContractOptions {
   /** Absolute directory the generator runs in, and the root the two file inputs resolve against. */
   readonly sourceDirectory: string;
-  readonly example: string;
+  /** The cargo target that renders the contract, and how cargo is told to select it. */
+  readonly target: GeneratorTarget;
   /** The `-p` argument, or `undefined` for the root package. */
   readonly packageName: string | undefined;
   /** Features in the order given, deduplicated. Empty when none were requested. */
@@ -86,6 +114,8 @@ export interface ContractOptions {
   readonly image: ImageReference | undefined;
   /** Absolute path the contract is expected at inside the image. */
   readonly embeddedContractPath: string;
+  /** The generator's own arguments, appended after the two the action supplies. */
+  readonly extraArgs: readonly string[];
 }
 
 function parseCargoName(value: string, input: string): string {
@@ -97,6 +127,32 @@ function parseCargoName(value: string, input: string): string {
   }
 
   return value;
+}
+
+/**
+ * Decides which cargo target renders the contract.
+ *
+ * Exactly one of the two, and naming both is refused rather than resolved by precedence: a workflow
+ * that carries an `example` it no longer uses alongside the `bin` that replaced it is a workflow
+ * whose author believes one thing and whose runner does another, and silently preferring either one
+ * is how that belief survives a review. Naming neither is the historic default, which is what keeps
+ * every workflow written before `bin` existed running unchanged.
+ *
+ * @throws {InvalidInputError} when both are named, or when the one that is named is not a target name.
+ */
+export function parseGeneratorTarget(example: string, bin: string): GeneratorTarget {
+  if (example !== '' && bin !== '') {
+    throw new InvalidInputError(
+      'bin',
+      `cannot be given alongside example ('${example}'). One generator renders the contract, so name one target.`,
+    );
+  }
+
+  if (bin !== '') {
+    return { kind: 'bin', name: parseCargoName(bin, 'bin') };
+  }
+
+  return { kind: 'example', name: parseCargoName(example === '' ? DEFAULT_EXAMPLE : example, 'example') };
 }
 
 /** Splits, validates and deduplicates the feature list, preserving the order it was written in. */
@@ -182,12 +238,13 @@ export function resolveOptions(raw: RawInputs, workspace: string): ContractOptio
 
   return {
     sourceDirectory,
-    example: parseCargoName(raw.example, 'example'),
+    target: parseGeneratorTarget(raw.example, raw.bin),
     packageName: raw.package === '' ? undefined : parseCargoName(raw.package, 'package'),
     features: parseFeatures(raw.features),
     dockerfile: optionalPath(raw.dockerfile, sourceDirectory, workspace, 'dockerfile'),
     contract: optionalPath(raw.contract, sourceDirectory, workspace, 'contract'),
     image: raw.image === '' ? undefined : parseImageReference(raw.image),
     embeddedContractPath: parseEmbeddedContractPath(raw.contract_path),
+    extraArgs: parseArgumentVector(raw.extra_args, 'extra_args'),
   };
 }
