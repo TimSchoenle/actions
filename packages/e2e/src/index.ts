@@ -16,5 +16,6 @@ export * from './github-file-commands.js';
 export * from './run-action.js';
 export * from './runtime.js';
 export * from './scratch-repo.js';
+export * from './stub-commands.js';
 export * from './workflow-commands.js';
 export * from './workspace.js';

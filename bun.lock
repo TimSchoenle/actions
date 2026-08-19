@@ -299,6 +299,23 @@
         "vitest": "4.1.10",
       },
     },
+    "actions/rust/config-contract": {
+      "name": "actions-rust-config-contract",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "@actions/exec": "3.0.0",
+        "actions-util": "workspace:*",
+      },
+      "devDependencies": {
+        "@fast-check/vitest": "0.4.1",
+        "@types/node": "26.2.0",
+        "actions-e2e": "workspace:*",
+        "fast-check": "4.9.0",
+        "typescript": "6.0.3",
+        "vitest": "4.1.10",
+      },
+    },
     "packages/e2e": {
       "name": "actions-e2e",
       "version": "1.0.0",
@@ -604,6 +621,8 @@
     "actions-maintenance-auto-approve-pr": ["actions-maintenance-auto-approve-pr@workspace:actions/maintenance/auto-approve-pr"],
 
     "actions-maintenance-ensure-actions-are-executed": ["actions-maintenance-ensure-actions-are-executed@workspace:actions/maintenance/ensure-actions-are-executed"],
+
+    "actions-rust-config-contract": ["actions-rust-config-contract@workspace:actions/rust/config-contract"],
 
     "actions-util": ["actions-util@workspace:packages/ts-util"],
 

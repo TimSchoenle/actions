@@ -161,6 +161,11 @@
       "release-type": "simple",
       "component": "actions-common-render-template-and-commit",
       "include-component-in-tag": true
+    },
+    "actions/rust/config-contract": {
+      "release-type": "simple",
+      "component": "actions-rust-config-contract",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
