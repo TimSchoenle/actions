@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/TimSchoenle/actions/compare/actions-maintenance-auto-approve-pr-v1.3.1...actions-maintenance-auto-approve-pr-v1.3.2) (2026-08-19)
+
+
+### Dependencies
+
+* **deps:** lock file maintenance ([#1452](https://github.com/TimSchoenle/actions/issues/1452)) ([c0d2560](https://github.com/TimSchoenle/actions/commit/c0d256049a03ea4fc29aba1d71b862e33f6d6429))
+
 ## [1.3.1](https://github.com/TimSchoenle/actions/compare/actions-maintenance-auto-approve-pr-v1.3.0...actions-maintenance-auto-approve-pr-v1.3.1) (2026-08-12)
 
 
