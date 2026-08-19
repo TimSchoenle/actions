@@ -2,6 +2,7 @@ import path from 'node:path';
 
 import { ROOT_DIR, Sys } from '../../utils.js';
 import { getRepoInfo } from '../git-utils.js';
+import { sortDocumentationItems } from './sort.js';
 
 import type { DocumentationItem, Parser } from '../types.js';
 
@@ -34,6 +35,6 @@ export class RenovateParser implements Parser {
         path: file,
       });
     }
-    return items;
+    return sortDocumentationItems(items);
   }
 }
