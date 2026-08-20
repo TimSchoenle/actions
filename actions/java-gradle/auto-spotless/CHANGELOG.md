@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.17](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.16...actions-java-gradle-auto-spotless-v1.1.17) (2026-08-20)
+
+
+### Miscellaneous
+
+* **deps:** update step-security/harden-runner action to v2.21.0 ([#1474](https://github.com/TimSchoenle/actions/issues/1474)) ([5f77c7a](https://github.com/TimSchoenle/actions/commit/5f77c7a65b4e99f62c9ecdeaa22766a35dc017c5))
+* **deps:** update step-security/harden-runner action to v2.21.0 ([#1513](https://github.com/TimSchoenle/actions/issues/1513)) ([71715a0](https://github.com/TimSchoenle/actions/commit/71715a04001a9398d4f6baf46c8032c79d6836ff))
+* **deps:** update timschoenle/actions/actions/common/commit-changes to vactions-common-commit-changes-v1.3.2 ([#1481](https://github.com/TimSchoenle/actions/issues/1481)) ([72d51c7](https://github.com/TimSchoenle/actions/commit/72d51c771b5b3b0f108b4a2ed5962d5ba209969a))
+
 ## [1.1.16](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.15...actions-java-gradle-auto-spotless-v1.1.16) (2026-08-14)
 
 
