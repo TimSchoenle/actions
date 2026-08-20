@@ -17,7 +17,7 @@
   "actions/common/delete-branch": "1.3.2",
   "actions/common/create-branch": "1.4.2",
   "actions/helper/resolve-base-branch": "1.3.2",
-  "actions/java-gradle/setup-base-environment": "1.2.9",
+  "actions/java-gradle/setup-base-environment": "1.2.10",
   "workflows/maintenance/wipe-cache": "1.1.11",
   "workflows/maintenance/auto-rebase": "1.1.6",
   "actions/java-gradle/auto-spotless": "1.1.16",
