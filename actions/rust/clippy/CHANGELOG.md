@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.10](https://github.com/TimSchoenle/actions/compare/actions-rust-clippy-v1.1.9...actions-rust-clippy-v1.1.10) (2026-08-20)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#1451](https://github.com/TimSchoenle/actions/issues/1451)) ([b6f5e6e](https://github.com/TimSchoenle/actions/commit/b6f5e6e6e949bda4bc2fece68569488403e6e0ee))
+* **deps:** update step-security/harden-runner action to v2.21.0 ([#1474](https://github.com/TimSchoenle/actions/issues/1474)) ([5f77c7a](https://github.com/TimSchoenle/actions/commit/5f77c7a65b4e99f62c9ecdeaa22766a35dc017c5))
+* **deps:** update step-security/harden-runner action to v2.21.0 ([#1513](https://github.com/TimSchoenle/actions/issues/1513)) ([71715a0](https://github.com/TimSchoenle/actions/commit/71715a04001a9398d4f6baf46c8032c79d6836ff))
+
 ## [1.1.9](https://github.com/TimSchoenle/actions/compare/actions-rust-clippy-v1.1.8...actions-rust-clippy-v1.1.9) (2026-08-01)
 
 
