@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.2.32](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.31...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.32) (2026-08-20)
+
+
+### Miscellaneous
+
+* **deps:** update step-security/harden-runner action to v2.21.0 ([#1466](https://github.com/TimSchoenle/actions/issues/1466)) ([a6f2bcf](https://github.com/TimSchoenle/actions/commit/a6f2bcfb6f6797cce00a99cbe72738ce144559cc))
+* **deps:** update step-security/harden-runner action to v2.21.0 ([#1474](https://github.com/TimSchoenle/actions/issues/1474)) ([5f77c7a](https://github.com/TimSchoenle/actions/commit/5f77c7a65b4e99f62c9ecdeaa22766a35dc017c5))
+* **deps:** update step-security/harden-runner action to v2.21.0 ([#1513](https://github.com/TimSchoenle/actions/issues/1513)) ([71715a0](https://github.com/TimSchoenle/actions/commit/71715a04001a9398d4f6baf46c8032c79d6836ff))
+* **deps:** update timschoenle/actions/actions/helper/verify-commit-authors to vactions-helper-verify-commit-authors-v1.3.2 ([#1479](https://github.com/TimSchoenle/actions/issues/1479)) ([217abb9](https://github.com/TimSchoenle/actions/commit/217abb9eb68cc2dee96cbeb5b4fc81d825776140))
+
 ## [1.2.31](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.30...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.31) (2026-08-15)
 
 
