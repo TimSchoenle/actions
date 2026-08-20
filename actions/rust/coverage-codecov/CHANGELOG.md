@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.39](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v1.1.38...actions-rust-coverage-codecov-v1.1.39) (2026-08-20)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#1464](https://github.com/TimSchoenle/actions/issues/1464)) ([6a02fe5](https://github.com/TimSchoenle/actions/commit/6a02fe52e6190f41c8c32d4f2c6c7357b57e221c))
+* **deps:** update all non-major action updates ([#1471](https://github.com/TimSchoenle/actions/issues/1471)) ([dfe8118](https://github.com/TimSchoenle/actions/commit/dfe81184450670ae9247aa49bca61e49ea03ae9f))
+* **deps:** update all non-major action updates ([#1473](https://github.com/TimSchoenle/actions/issues/1473)) ([08e66e1](https://github.com/TimSchoenle/actions/commit/08e66e19315b7a32f56d8a6db3ed7ddfff0a3611))
+* **deps:** update all non-major action updates ([#1475](https://github.com/TimSchoenle/actions/issues/1475)) ([26c6a27](https://github.com/TimSchoenle/actions/commit/26c6a27a7cc128b8966357836209071c71a03506))
+* **deps:** update step-security/harden-runner action to v2.21.0 ([#1474](https://github.com/TimSchoenle/actions/issues/1474)) ([5f77c7a](https://github.com/TimSchoenle/actions/commit/5f77c7a65b4e99f62c9ecdeaa22766a35dc017c5))
+* **deps:** update step-security/harden-runner action to v2.21.0 ([#1513](https://github.com/TimSchoenle/actions/issues/1513)) ([71715a0](https://github.com/TimSchoenle/actions/commit/71715a04001a9398d4f6baf46c8032c79d6836ff))
+
 ## [1.1.38](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v1.1.37...actions-rust-coverage-codecov-v1.1.38) (2026-08-17)
 
 
