@@ -36,6 +36,7 @@ on:
       - Verify Common Get-app-git-identity
       - Verify Common Modify-yaml
       - Verify Common Read-yaml
+      - Verify Common Readme-variables
       - Verify Common Render-template
       - Verify Common Setup-app-git-identity
       - Verify Helm Apply-chart-updates

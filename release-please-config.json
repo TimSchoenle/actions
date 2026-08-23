@@ -166,6 +166,11 @@
       "release-type": "simple",
       "component": "actions-rust-config-contract",
       "include-component-in-tag": true
+    },
+    "actions/common/readme-variables": {
+      "release-type": "simple",
+      "component": "actions-common-readme-variables",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
