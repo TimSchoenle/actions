@@ -165,6 +165,23 @@
         "vitest": "4.1.10",
       },
     },
+    "actions/common/readme-variables": {
+      "name": "actions-common-readme-variables",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "actions-util": "workspace:*",
+        "yaml": "2.9.0",
+      },
+      "devDependencies": {
+        "@fast-check/vitest": "0.4.1",
+        "@types/node": "26.2.0",
+        "actions-e2e": "workspace:*",
+        "fast-check": "4.9.0",
+        "typescript": "6.0.3",
+        "vitest": "4.1.10",
+      },
+    },
     "actions/common/render-template": {
       "name": "actions-common-render-template",
       "version": "1.0.0",
@@ -603,6 +620,8 @@
     "actions-common-modify-yaml": ["actions-common-modify-yaml@workspace:actions/common/modify-yaml"],
 
     "actions-common-read-yaml": ["actions-common-read-yaml@workspace:actions/common/read-yaml"],
+
+    "actions-common-readme-variables": ["actions-common-readme-variables@workspace:actions/common/readme-variables"],
 
     "actions-common-render-template": ["actions-common-render-template@workspace:actions/common/render-template"],
 

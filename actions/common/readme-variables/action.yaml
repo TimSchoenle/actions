@@ -1,0 +1,42 @@
+name: 'Common Readme Variables'
+description: 'Collect the standard README render payload — repository facts, release, toolchain and a docs index — as strict JSON for render-template'
+
+inputs:
+  manifest:
+    description: 'Path to the manifest the release and toolchain facts are read from. Empty auto-detects Cargo.toml, package.json, Chart.yaml or gradle.properties, in that order.'
+    required: false
+    default: ''
+  docs-dir:
+    description: 'Directory walked to build the documentation index. A directory that does not exist yields an empty index, which is not an error.'
+    required: false
+    default: 'docs'
+  extra:
+    description: "Strict JSON object deep-merged over the derived payload. This is where a repository's own generator output — configuration tables, publish targets — joins the render."
+    required: false
+    default: '{}'
+  repository:
+    description: 'Repository the payload describes, as owner/name.'
+    required: false
+    default: ${{ github.repository }}
+  branch:
+    description: 'Branch permanent links point at.'
+    required: false
+    default: ${{ github.ref_name }}
+  tag-prefix:
+    description: 'Prefix joined to the version to form `release.tag`. Empty means the tag is the bare version.'
+    required: false
+    default: 'v'
+
+outputs:
+  variables:
+    description: "The render payload as strict JSON on one line, ready to hand to render-template's `variables` input"
+  version:
+    description: 'The version read from the manifest'
+  tag:
+    description: 'The version with `tag-prefix` applied'
+  manifest-path:
+    description: 'Path of the manifest the facts were read from, as given or as detected'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

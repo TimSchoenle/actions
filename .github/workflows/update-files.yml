@@ -46,9 +46,15 @@ jobs:
           ref: ${{ github.head_ref }}
           token: ${{ steps.generate_token.outputs.token }}
 
+      # This job writes the bundles `check-action-dist` rebuilds and compares byte-for-byte, so the
+      # Bun here must be the pinned one. Bun's minifier renames identifiers between releases, and an
+      # empty bun-version is what makes setup-bun fall through to bun-version-file; setup-cached
+      # defaults it to 'latest', which would win otherwise — as it did when Bun 1.4.0 shipped and
+      # this job started committing bundles the pinned-Bun check rejected on every pull request.
       - name: Setup Bun
         uses: TimSchoenle/actions/actions/bun/setup-cached@cbdcf6fd08b46059064bc9c91efa6b610a9ee7db # tag=actions-bun-setup-cached-v1.1.10
         with:
+          bun-version: ''
           bun-version-file: '.bun-version'
 
       - name: Build All Workspaces
