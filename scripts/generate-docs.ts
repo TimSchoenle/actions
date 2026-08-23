@@ -20,26 +20,40 @@ const SECURITY_TEMPLATE_PATH = path.join(ROOT_DIR, 'scripts', 'templates', 'SECU
 const README_PATH = path.join(ROOT_DIR, 'README.md');
 const SECURITY_PATH = path.join(ROOT_DIR, 'SECURITY.md');
 
+// A category heading sits one level under the kind heading that introduces it: `#### Bun` under
+// `### Actions`, in both generated files.
+const CATEGORY_HEADING_LEVEL = 4;
+
 export async function main() {
   console.log('🔍 Scanning repository...');
 
   // 1. Actions
   const actionParser = new ActionParser();
   const actions = await actionParser.parse();
-  const actionsOutput = await generateSection(actions, ['Action', 'Description', 'Version', 'Usage'], (item) => {
-    const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;
-    const desc = item.description.replaceAll('\n', ' ').trim();
-    return [link, desc, item.version ?? 'N/A', item.usage || ''];
-  });
+  const actionsOutput = await generateSection(
+    actions,
+    ['Action', 'Description', 'Version', 'Usage'],
+    (item) => {
+      const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;
+      const desc = item.description.replaceAll('\n', ' ').trim();
+      return [link, desc, item.version ?? 'N/A', item.usage || ''];
+    },
+    CATEGORY_HEADING_LEVEL,
+  );
 
   // 2. Workflows
   const workflowParser = new WorkflowParser();
   const workflows = await workflowParser.parse();
-  const workflowsOutput = await generateSection(workflows, ['Workflow', 'Description', 'Version', 'Usage'], (item) => {
-    const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;
-    const desc = item.description.replaceAll('\n', ' ').trim();
-    return [link, desc, item.version ?? 'N/A', item.usage || ''];
-  });
+  const workflowsOutput = await generateSection(
+    workflows,
+    ['Workflow', 'Description', 'Version', 'Usage'],
+    (item) => {
+      const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;
+      const desc = item.description.replaceAll('\n', ' ').trim();
+      return [link, desc, item.version ?? 'N/A', item.usage || ''];
+    },
+    CATEGORY_HEADING_LEVEL,
+  );
 
   // 3. Configs
   let configsOutput = '';
@@ -48,8 +62,7 @@ export async function main() {
   const githubConfigs = await githubConfigParser.parse();
 
   if (githubConfigs.length > 0) {
-    configsOutput += '### GitHub Rulesets\n\n';
-    configsOutput += 'To use, you need to download the rules and Import the ruleset.\n\n';
+    configsOutput += `${'#'.repeat(CATEGORY_HEADING_LEVEL)} GitHub Rulesets\n\n`;
     configsOutput += await generateMarkdownTable(githubConfigs, ['Config', 'Description'], (item) => {
       const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;
       const desc = item.description.replaceAll('\n', ' ').trim();
@@ -65,11 +78,16 @@ export async function main() {
     configsOutput += '\n';
   }
 
-  configsOutput += await generateSection(renovateConfigs, ['Config', 'Description', 'Usage'], (item) => {
-    const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;
-    const desc = item.description.replaceAll('\n', ' ').trim();
-    return [link, desc, item.usage || ''];
-  });
+  configsOutput += await generateSection(
+    renovateConfigs,
+    ['Config', 'Description', 'Usage'],
+    (item) => {
+      const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;
+      const desc = item.description.replaceAll('\n', ' ').trim();
+      return [link, desc, item.usage || ''];
+    },
+    CATEGORY_HEADING_LEVEL,
+  );
 
   // 4. Update README
   await updateReadme(actionsOutput, workflowsOutput, configsOutput);
@@ -121,6 +139,7 @@ async function updateSecurity(actions: DocumentationItem[], workflows: Documenta
         const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;
         return [link, item.version!, ':white_check_mark:'];
       },
+      CATEGORY_HEADING_LEVEL,
     );
   }
 
@@ -137,6 +156,7 @@ async function updateSecurity(actions: DocumentationItem[], workflows: Documenta
         const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;
         return [link, item.version!, ':white_check_mark:'];
       },
+      CATEGORY_HEADING_LEVEL,
     );
   }
 

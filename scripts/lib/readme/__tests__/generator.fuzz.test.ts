@@ -100,7 +100,7 @@ describe('generator fuzzing', () => {
       const headers = ['Name'];
       const mapper = (item: DocumentationItem) => [item.name];
 
-      const section = await generateSection(items, headers, mapper);
+      const section = await generateSection(items, headers, mapper, 3);
 
       // Extract unique categories from items
       const categories = [...new Set(items.map((i) => i.category))];
@@ -127,7 +127,7 @@ describe('generator fuzzing', () => {
       const headers = ['Name'];
       const mapper = (item: DocumentationItem) => [item.name];
 
-      const section = await generateSection(items, headers, mapper);
+      const section = await generateSection(items, headers, mapper, 3);
 
       // Categories should appear in alphabetical order
       const alphaPos = section.indexOf('### Alpha');
@@ -158,10 +158,24 @@ describe('generator fuzzing', () => {
         const headers = ['Name'];
         const mapper = (item: DocumentationItem) => [item.name];
 
-        const section = await generateSection(items, headers, mapper);
+        const section = await generateSection(items, headers, mapper, 3);
 
         expect(section).toContain(`### ${category}`);
         expect(section).toContain(name);
+      },
+    );
+
+    test.prop([fc.integer({ min: 1, max: 6 }), fc.string({ minLength: 1 })])(
+      'should write the category heading at the requested depth',
+      async (headingLevel, category) => {
+        const items: DocumentationItem[] = [
+          { name: 'name', description: 'test', version: '1.0', usage: 'use', category, path: 'path' },
+        ];
+        const mapper = (item: DocumentationItem) => [item.name];
+
+        const section = await generateSection(items, ['Name'], mapper, headingLevel);
+
+        expect(section).toContain(`${'#'.repeat(headingLevel)} ${category}`);
       },
     );
   });

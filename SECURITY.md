@@ -1,18 +1,27 @@
+<!--
+Generated from scripts/templates/SECURITY.md by `bun run generate-docs`. Edit the template, not this
+file.
+
+The version tables come from .release-please-manifest.json, so a component that releases appears
+here in the same pull request that releases it.
+-->
+
 # Security Policy
 
 ## Supported Versions
 
-Any version not listed in the following tables is not supported.
+Each component is versioned on its own. Only the versions listed below are supported; anything older
+is not, including older versions of a component whose neighbours have since released.
 
 ### Actions
 
-### Bun
+#### Bun
 
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Bun Setup-cached](./actions/bun/setup-cached) | [actions-bun-setup-cached-v1.1.10](https://github.com/TimSchoenle/actions/releases/tag/actions-bun-setup-cached-v1.1.10) | :white_check_mark: |
 
-### Common
+#### Common
 
 | Component | Version | Supported |
 | --- | --- | --- |
@@ -29,14 +38,14 @@ Any version not listed in the following tables is not supported.
 | [Render Template And Commit](./actions/common/render-template-and-commit) | [actions-common-render-template-and-commit-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-and-commit-v1.1.3) | :white_check_mark: |
 | [Setup App Git Identity](./actions/common/setup-app-git-identity) | [actions-common-setup-app-git-identity-v1.3.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-setup-app-git-identity-v1.3.2) | :white_check_mark: |
 
-### Helm
+#### Helm
 
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Apply Helm Chart Updates](./actions/helm/apply-chart-updates) | [actions-helm-apply-chart-updates-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-apply-chart-updates-v1.2.1) | :white_check_mark: |
 | [Update Helm Chart Version](./actions/helm/update-chart-version) | [actions-helm-update-chart-version-v1.6.3](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.6.3) | :white_check_mark: |
 
-### Helper
+#### Helper
 
 | Component | Version | Supported |
 | --- | --- | --- |
@@ -44,21 +53,21 @@ Any version not listed in the following tables is not supported.
 | [Resolve Branch](./actions/helper/resolve-base-branch) | [actions-helper-resolve-base-branch-v1.3.2](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-resolve-base-branch-v1.3.2) | :white_check_mark: |
 | [Verify Commit Authors](./actions/helper/verify-commit-authors) | [actions-helper-verify-commit-authors-v1.3.2](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v1.3.2) | :white_check_mark: |
 
-### Java-gradle
+#### Java-gradle
 
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | [actions-java-gradle-auto-spotless-v1.1.16](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v1.1.16) | :white_check_mark: |
 | [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | [actions-java-gradle-setup-base-environment-v1.2.9](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.9) | :white_check_mark: |
 
-### Maintenance
+#### Maintenance
 
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | [actions-maintenance-auto-approve-pr-v1.3.2](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.3.2) | :white_check_mark: |
 | [Maintenance Ensure-actions-are-executed](./actions/maintenance/ensure-actions-are-executed) | [actions-maintenance-ensure-actions-are-executed-v1.3.2](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v1.3.2) | :white_check_mark: |
 
-### Rust
+#### Rust
 
 | Component | Version | Supported |
 | --- | --- | --- |
@@ -69,7 +78,7 @@ Any version not listed in the following tables is not supported.
 | [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | [actions-rust-coverage-codecov-v1.1.39](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.39) | :white_check_mark: |
 | [Rust Test](./actions/rust/test) | [actions-rust-test-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.1) | :white_check_mark: |
 
-### Test
+#### Test
 
 | Component | Version | Supported |
 | --- | --- | --- |
@@ -78,7 +87,7 @@ Any version not listed in the following tables is not supported.
 
 ### Workflows
 
-### Maintenance
+#### Maintenance
 
 | Component | Version | Supported |
 | --- | --- | --- |
@@ -92,23 +101,27 @@ Any version not listed in the following tables is not supported.
 
 ## Reporting a Vulnerability
 
-We accept vulnerability reports via GitHub's **Private Vulnerability Reporting** feature.
+Do not open a public issue. Reports go through GitHub's private vulnerability reporting:
 
-1. Go to the **Security** tab of this repository.
-2. Click on **Report a vulnerability** to open a private advisory.
-3. Provide details of the vulnerability.
+1. Open the **Security** tab of this repository.
+2. Choose **Report a vulnerability** to open a private advisory.
+3. Describe the vulnerability, the component it affects, and how to reproduce it.
 
-This ensures that the report is handled securely and privately. Valid reports will be investigated and addressed as soon as possible.
+The advisory stays private until a fix is released.
 
 ## Security Measures
 
-This repository employs several automated security measures to ensure the integrity and safety of the code:
+CodeQL analyses every push to `main`, every pull request, and runs again every Monday. `zizmor` lints
+the workflow files under its pedantic persona and `actionlint` checks their syntax, both on the same
+triggers. Renovate opens the dependency updates and auto-merges the non-major ones once they have
+aged.
 
-- **CodeQL Analysis**: Automated vulnerability scanning is run on every push and pull request.
-- **Dependency Updates**: Renovate is used to keep dependencies up-to-date and secure.
-- **Action Linting**: `zizmor` is used to lint GitHub Actions workflows for security issues.
-- **Branch Protection**: Main branch is protected and requires passing status checks before merging.
+`main` is protected: a change reaches it through a pull request with an approval, signed commits, and
+the required checks green.
 
 ## Supply Chain Security
 
-- **Protected Tags**: All Git tags are immutable and protected. They can only be created through our automated release CI process.
+Release tags are immutable and a repository ruleset restricts who may create them to the release bot,
+so a tag cannot be moved to a different commit after a consumer has pinned it. Every action here is
+published with its bundle committed, and CI rebuilds that bundle and compares it byte for byte
+against what the branch carries.
