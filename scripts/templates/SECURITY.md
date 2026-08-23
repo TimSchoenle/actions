@@ -1,30 +1,43 @@
+<!--
+Generated from scripts/templates/SECURITY.md by `bun run generate-docs`. Edit the template, not this
+file.
+
+The version tables come from .release-please-manifest.json, so a component that releases appears
+here in the same pull request that releases it.
+-->
+
 # Security Policy
 
 ## Supported Versions
 
-Any version not listed in the following tables is not supported.
+Each component is versioned on its own. Only the versions listed below are supported; anything older
+is not, including older versions of a component whose neighbours have since released.
 
 <!-- SUPPORTED_VERSIONS_TABLE -->
 
 ## Reporting a Vulnerability
 
-We accept vulnerability reports via GitHub's **Private Vulnerability Reporting** feature.
+Do not open a public issue. Reports go through GitHub's private vulnerability reporting:
 
-1. Go to the **Security** tab of this repository.
-2. Click on **Report a vulnerability** to open a private advisory.
-3. Provide details of the vulnerability.
+1. Open the **Security** tab of this repository.
+2. Choose **Report a vulnerability** to open a private advisory.
+3. Describe the vulnerability, the component it affects, and how to reproduce it.
 
-This ensures that the report is handled securely and privately. Valid reports will be investigated and addressed as soon as possible.
+The advisory stays private until a fix is released.
 
 ## Security Measures
 
-This repository employs several automated security measures to ensure the integrity and safety of the code:
+CodeQL analyses every push to `main`, every pull request, and runs again every Monday. `zizmor` lints
+the workflow files under its pedantic persona and `actionlint` checks their syntax, both on the same
+triggers. Renovate opens the dependency updates and auto-merges the non-major ones once they have
+aged.
 
-- **CodeQL Analysis**: Automated vulnerability scanning is run on every push and pull request.
-- **Dependency Updates**: Renovate is used to keep dependencies up-to-date and secure.
-- **Action Linting**: `zizmor` is used to lint GitHub Actions workflows for security issues.
-- **Branch Protection**: Main branch is protected and requires passing status checks before merging.
+`main` is protected: a change reaches it through a pull request with an approval, signed commits, and
+the required checks green.
 
 ## Supply Chain Security
 
-- **Protected Tags**: All Git tags are immutable and protected. They can only be created through our automated release CI process.
+Release tags are immutable and a repository ruleset restricts who may create them to the release bot,
+so a tag cannot be moved to a different commit after a consumer has pinned it. Every action here is
+published with its bundle committed, and CI rebuilds that bundle and compares it byte for byte
+against what the branch carries.

@@ -31,7 +31,7 @@ describe('Generator', () => {
       const headers = ['Name'];
       const mapper = (item: DocumentationItem) => [item.name];
 
-      const result = await generateSection(items, headers, mapper);
+      const result = await generateSection(items, headers, mapper, 3);
 
       // Check Categories (alphabetical order of category name)
       // Fruit comes before Veggie
@@ -45,6 +45,15 @@ describe('Generator', () => {
       const appleIndex = result.indexOf('| B_Apple |');
       expect(bananaIndex).toBeGreaterThan(-1);
       expect(appleIndex).toBeGreaterThan(bananaIndex);
+    });
+
+    // A category heading is never the top of its own section, so the depth belongs to the caller.
+    it('should write category headings at the requested depth', async () => {
+      const items: DocumentationItem[] = [{ name: 'Item', description: 'Desc', category: 'Fruit', path: 'path/a' }];
+      const mapper = (item: DocumentationItem) => [item.name];
+
+      expect(await generateSection(items, ['Name'], mapper, 4)).toContain('#### Fruit\n');
+      expect(await generateSection(items, ['Name'], mapper, 3)).toContain('### Fruit\n');
     });
   });
 });

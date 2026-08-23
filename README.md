@@ -1,30 +1,78 @@
-# CI Repository
+<!--
+Generated from scripts/templates/README.md by `bun run generate-docs`. Edit the template, not this
+file.
 
-## 🤖 Keep Actions Up-to-Date
+Every row below is read out of the repository itself. Each `action.yaml`, `workflow.yaml` and
+`configs/*.json` supplies its own name and description, `.release-please-manifest.json` supplies the
+released version, and every tag is resolved to the commit it points at, so the `uses:` lines are SHA
+pins rather than moving references.
 
-These actions use a specific versioning format (e.g. `actions-name-v1.0.0`) to support multiple actions in one repository.
+The update-readme job in .github/workflows/update-files.yml runs the same command on every pull
+request and commits the result back to the branch. An edit made here is overwritten, not merged.
+-->
 
-To ensure **Renovate** can correctly detect new versions and auto-merge updates, simply extend our shared configuration in your `renovate.json`:
+# Actions
+
+Composite and Node GitHub Actions, reusable workflows and shared Renovate presets, each released
+under its own tag.
+
+[![CI](https://img.shields.io/github/actions/workflow/status/TimSchoenle/actions/scripts-ci.yml?branch=main&label=ci)](https://github.com/TimSchoenle/actions/actions/workflows/scripts-ci.yml)
+[![License](https://img.shields.io/github/license/TimSchoenle/actions)](LICENSE)
+
+## What this is
+
+One repository holding the CI parts the other repositories in this account call: the actions under
+`actions/`, the callable workflows under `workflows/`, and the Renovate presets and branch rulesets
+under `configs/`.
+
+Each directory is its own release-please component, so `actions/rust/clippy` and
+`actions/bun/setup-cached` are versioned and tagged apart from each other. A tag names the component
+it belongs to, as `actions-<path>-vX.Y.Z` or `workflows-<path>-vX.Y.Z`. The tables below carry the
+current tag of every component and the `uses:` line that pins it.
+
+## Quick start
+
+Copy a `uses:` line from the tables below. It pins the released tag to the commit that tag points
+at, and repeats the tag in a trailing comment.
+
+Then extend the shared Renovate preset in your `renovate.json`:
 
 ```json
 {
-  "extends": [
-    "github>TimSchoenle/actions//configs/renovate/base"
-  ]
+  "extends": ["github>TimSchoenle/actions//configs/renovate/base"]
 }
 ```
 
-## 🚀 Available Actions
+The preset installs a regex manager that matches exactly that shape. It also turns Renovate's
+built-in github-actions manager off for this repository, so a pin written without its `# tag=`
+comment matches nothing and never moves. The versioning regex carries the component prefix through
+as its `compatibility` group. That is what stops a release of `actions-rust-clippy` being offered as
+an upgrade to `actions-bun-setup-cached`.
 
-Here is a list of all currently maintained actions in this repository:
+## Table of contents
 
-### Bun
+- [Usage](#usage)
+  - [Actions](#actions)
+  - [Reusable workflows](#reusable-workflows)
+  - [Shared configurations](#shared-configurations)
+- [Contributing](#contributing)
+- [Security](#security)
+- [License](#license)
+
+## Usage
+
+### Actions
+
+The first column links to the action's directory. Its `action.yaml` declares the inputs and the
+outputs. Where an action needs more than that, a README sits next to it.
+
+#### Bun
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
 | [Bun Setup-cached](./actions/bun/setup-cached) | Sets up Bun and manages dependency caching. | [actions-bun-setup-cached-v1.1.10](https://github.com/TimSchoenle/actions/releases/tag/actions-bun-setup-cached-v1.1.10) | `uses: TimSchoenle/actions/actions/bun/setup-cached@cbdcf6fd08b46059064bc9c91efa6b610a9ee7db # tag=actions-bun-setup-cached-v1.1.10` |
 
-### Common
+#### Common
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
@@ -41,14 +89,14 @@ Here is a list of all currently maintained actions in this repository:
 | [Render Template And Commit](./actions/common/render-template-and-commit) | Renders a Handlebars template to a file and commits the result as a verified bot commit, skipping the commit when the render changed nothing. | [actions-common-render-template-and-commit-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-and-commit-v1.1.3) | `uses: TimSchoenle/actions/actions/common/render-template-and-commit@15d83f02081c9dc8a844646199c63792dcccdfa8 # tag=actions-common-render-template-and-commit-v1.1.3` |
 | [Setup App Git Identity](./actions/common/setup-app-git-identity) | Configures git with the identity of a GitHub App bot and outputs the bot details. | [actions-common-setup-app-git-identity-v1.3.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-setup-app-git-identity-v1.3.2) | `uses: TimSchoenle/actions/actions/common/setup-app-git-identity@913a73dd361f9720cd5fe1c9544a0efa708062cd # tag=actions-common-setup-app-git-identity-v1.3.2` |
 
-### Helm
+#### Helm
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
 | [Apply Helm Chart Updates](./actions/helm/apply-chart-updates) | Applies a set of templated image updates to a Helm chart's values.yaml and bumps Chart.yaml, preserving comments and structure. Every image carries its own version and digest. | [actions-helm-apply-chart-updates-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-apply-chart-updates-v1.2.1) | `uses: TimSchoenle/actions/actions/helm/apply-chart-updates@64ea1ec370145ec92148b80717c12033b82375cd # tag=actions-helm-apply-chart-updates-v1.2.1` |
 | [Update Helm Chart Version](./actions/helm/update-chart-version) | Updates a Helm chart's image tags, version and appVersion, then opens a Pull Request. Every image carries its own version and digest, so one call can move a chart with many services. This action requires a bot account with access to the charts repo. | [actions-helm-update-chart-version-v1.6.3](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.6.3) | `uses: TimSchoenle/actions/actions/helm/update-chart-version@3b83076da17618c3221049eb1e671f20e8403694 # tag=actions-helm-update-chart-version-v1.6.3` |
 
-### Helper
+#### Helper
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
@@ -56,21 +104,21 @@ Here is a list of all currently maintained actions in this repository:
 | [Resolve Branch](./actions/helper/resolve-base-branch) | Resolve the given base branch or return default branch. With optional existence check. | [actions-helper-resolve-base-branch-v1.3.2](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-resolve-base-branch-v1.3.2) | `uses: TimSchoenle/actions/actions/helper/resolve-base-branch@45e613e1449fb05c672e2817d48e161d35f15704 # tag=actions-helper-resolve-base-branch-v1.3.2` |
 | [Verify Commit Authors](./actions/helper/verify-commit-authors) | Verifies that all commits in a PR are authored by a specific set of users and are signed. | [actions-helper-verify-commit-authors-v1.3.2](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v1.3.2) | `uses: TimSchoenle/actions/actions/helper/verify-commit-authors@7f0fe78248481f8d61f8a683bcd86b783b1251a0 # tag=actions-helper-verify-commit-authors-v1.3.2` |
 
-### Java-gradle
+#### Java-gradle
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
 | [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | Automatically apply spotless formatting and commit changes. | [actions-java-gradle-auto-spotless-v1.1.16](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v1.1.16) | `uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@84fb33691fb190da99c4a84c4bf56737f12bb972 # tag=actions-java-gradle-auto-spotless-v1.1.16` |
 | [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | Setup Java and Gradle environment for building, with opinionated default settings | [actions-java-gradle-setup-base-environment-v1.2.9](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.9) | `uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@e9ac4a44bc0c474dc91d1e0e69d61d8bf8aa8f46 # tag=actions-java-gradle-setup-base-environment-v1.2.9` |
 
-### Maintenance
+#### Maintenance
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
 | [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | Auto approve Pull Requests with the given user ids and branches. | [actions-maintenance-auto-approve-pr-v1.3.2](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.3.2) | `uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@abf371d5c6afa750195ca35b42161c472b9a6f6f # tag=actions-maintenance-auto-approve-pr-v1.3.2` |
 | [Maintenance Ensure-actions-are-executed](./actions/maintenance/ensure-actions-are-executed) | Ensures selected checks completed successfully when they were started. | [actions-maintenance-ensure-actions-are-executed-v1.3.2](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v1.3.2) | `uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@c837042661a52c9e413ec0d6eb13a013152e98b3 # tag=actions-maintenance-ensure-actions-are-executed-v1.3.2` |
 
-### Rust
+#### Rust
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
@@ -81,7 +129,7 @@ Here is a list of all currently maintained actions in this repository:
 | [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | Action that runs cargo llvm-cov to generate code coverage and uploads to Codecov. | [actions-rust-coverage-codecov-v1.1.39](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.39) | `uses: TimSchoenle/actions/actions/rust/coverage-codecov@207f2cffd44a2c761e4cffe05133190db5f70577 # tag=actions-rust-coverage-codecov-v1.1.39` |
 | [Rust Test](./actions/rust/test) | Action that runs cargo nextest to verify Rust code passes tests. | [actions-rust-test-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.1) | `uses: TimSchoenle/actions/actions/rust/test@c6844b562767b6e68fff4d39bdf9eced6e29b318 # tag=actions-rust-test-v1.1.1` |
 
-### Test
+#### Test
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
@@ -89,8 +137,12 @@ Here is a list of all currently maintained actions in this repository:
 
 
 
-## 🔄 Reusable Workflows
-### Maintenance
+### Reusable workflows
+
+Releasing one of these publishes it onto its tag at `.github/workflows/<category>-<name>.yaml`,
+which is the path the `uses:` line resolves. Read and change the source under `workflows/`.
+
+#### Maintenance
 
 | Workflow | Description | Version | Usage |
 | --- | --- | --- | --- |
@@ -102,11 +154,12 @@ Here is a list of all currently maintained actions in this repository:
 
 
 
-## ⚙️ Shared Configurations
+### Shared configurations
 
-### GitHub Rulesets
+The Renovate presets are consumed through `extends`. The ruleset files are GitHub's own export
+format: download one and import it under the repository's Settings, then Rules.
 
-To use, you need to download the rules and Import the ruleset.
+#### GitHub Rulesets
 
 | Config | Description |
 | --- | --- |
@@ -116,7 +169,7 @@ To use, you need to download the rules and Import the ruleset.
 | [Renovate Branches: Trusted Bots & Admins Only](./configs/github-rulesets/branch-renovate_only-allow-trusted-bots-and-admins.json) | Restricts access to Renovate branches, allowing only trusted bots (Renovate, Automatic Release Manager) and admins to manage them, while enforcing code quality and signature requirements. |
 
 
-### Renovate
+#### Renovate
 
 | Config | Description | Usage |
 | --- | --- | --- |
@@ -128,42 +181,18 @@ To use, you need to download the rules and Import the ruleset.
 
 
 
-## 📦 Development
+## Contributing
 
-### Prerequisites
+Issues and pull requests are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers the commit
+convention release-please reads, the interactive generators that scaffold a new action or workflow,
+and the checks CI runs. This file and SECURITY.md are generated. An edit to either is reverted on
+the next pull request.
 
-- [Bun](https://bun.sh) (latest version)
+## Security
 
-### Creating a New Action
-To create a new action, run the interactive CLI:
+Do not open a public issue for a vulnerability. [SECURITY.md](SECURITY.md) has the private reporting
+route and the list of supported versions.
 
-```bash
-bun run create-action
-```
-This command will guide you through setting up the action structure, `action.yaml`, and initial workflow files.
+## License
 
-### Removing an Action
-To safely remove an action and its associated configuration:
-
-```bash
-bun run remove-action
-```
-This ensures all related files and configurations are properly cleaned up.
-
-### Creating a New Workflow
-To create a new reusable workflow, run:
-
-```bash
-bun run create-workflow
-```
-This will set up the workflow structure, `workflow.yaml`, `README.md`, and configs.
-
-### Removing a Workflow
-To remove a reusable workflow:
-
-```bash
-bun run remove-workflow
-```
-
-> [!NOTE]
-> The documentation (this README) is automatically generated and updated via CI on every push and PR. You do not need to manually update it.
+Every action, workflow and config here is published under the terms in [LICENSE](LICENSE).

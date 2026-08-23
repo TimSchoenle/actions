@@ -57,6 +57,10 @@ vi.mock('../lib/readme/git-utils.js', () => ({
   getRepoInfo: mocks.getRepoInfo,
 }));
 
+// Both generated files put a category heading one level under the kind heading above it, so all
+// five calls below pass the same depth.
+const CATEGORY_HEADING_LEVEL = 4;
+
 describe('Generate Readme Script', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -141,6 +145,7 @@ describe('Generate Readme Script', () => {
       mockActions,
       ['Action', 'Description', 'Version', 'Usage'],
       expect.any(Function),
+      CATEGORY_HEADING_LEVEL,
     );
 
     // Workflows (README)
@@ -149,6 +154,7 @@ describe('Generate Readme Script', () => {
       mockWorkflows,
       ['Workflow', 'Description', 'Version', 'Usage'],
       expect.any(Function),
+      CATEGORY_HEADING_LEVEL,
     );
 
     // Configs (README)
@@ -157,6 +163,7 @@ describe('Generate Readme Script', () => {
       mockConfigs,
       ['Config', 'Description', 'Usage'],
       expect.any(Function),
+      CATEGORY_HEADING_LEVEL,
     );
 
     // Actions (SECURITY)
@@ -165,6 +172,7 @@ describe('Generate Readme Script', () => {
       mockActions,
       ['Component', 'Version', 'Supported'],
       expect.any(Function),
+      CATEGORY_HEADING_LEVEL,
     );
 
     // Workflows (SECURITY)
@@ -173,6 +181,7 @@ describe('Generate Readme Script', () => {
       mockWorkflows,
       ['Component', 'Version', 'Supported'],
       expect.any(Function),
+      CATEGORY_HEADING_LEVEL,
     );
 
     // Verify getRepoInfo was called
