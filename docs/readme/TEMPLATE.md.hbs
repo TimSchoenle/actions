@@ -1,0 +1,127 @@
+{{!--
+  Starting point for `.github/templates/README.md.hbs`.
+
+  Copy this file, then work through every `TODO` and delete the ones that do not apply. Sections are
+  omitted when they do not apply — never reordered, never replaced with something else. GUIDE.md has
+  the rules; PROSE.md governs every sentence you write into it.
+
+  This block is a Handlebars comment and does NOT survive into the rendered file. The HTML comment
+  below it does, which is the point: it is what someone about to edit the wrong file will read.
+--}}
+<!--
+Generated from .github/templates/README.md.hbs — edit that file, not this one.
+
+CI renders it on every pull request and commits the result back to the branch. A push to {{ repo.branch }}
+whose README.md does not match its template fails the `readme` job in .github/workflows/docs.yaml,
+which is a required check.
+
+The payload comes from TimSchoenle/actions/actions/common/readme-variables, which reads
+{{ repo.manifest }} and walks docs/. TODO: name the repository's own generator here too, if it has one.
+
+Nothing in this comment may contain a mustache that is not a real reference.
+-->
+
+# {{ repo.name }}
+
+{{ repo.description }}
+
+{{!-- TODO: at most five, every one a link, in this order. Delete any that do not apply. --}}
+[![Release](https://img.shields.io/github/v/release/{{ repo.slug }}?sort=semver)]({{ repo.url }}/releases)
+[![Build](https://img.shields.io/github/actions/workflow/status/{{ repo.slug }}/ci.yaml?branch={{ repo.branch }})]({{ repo.url }}/actions/workflows/ci.yaml)
+[![License](https://img.shields.io/github/license/{{ repo.slug }})](LICENSE)
+{{#if toolchain.msrv}}[![Rust](https://img.shields.io/badge/rust-{{ toolchain.msrv }}-orange)](https://www.rust-lang.org){{/if}}
+
+## What this is
+
+{{!-- TODO: two to four sentences. The problem it solves and who it is for. Not a feature list in
+     prose. Name the mechanism, not its shape — see PROSE.md. --}}
+
+## Quick start
+
+{{!-- TODO: one copy-pasteable block that reaches a working result in under a minute. Interpolate
+     every version and image name; type none of them. --}}
+
+```bash
+TODO
+```
+
+{{!-- TODO: keep this section only if the rendered file exceeds 100 lines. GitHub builds its own
+     Outline from headings, so a short README does not need one. --}}
+## Table of contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Compatibility](#compatibility)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [Security](#security)
+- [License](#license)
+
+## Features
+
+{{!-- TODO: each bullet a capability with a consequence, not an adjective. Vary the frame — a run of
+     identical bold-lead bullets reads as generated. Cap at eight. --}}
+
+## Installation
+
+{{!-- TODO: one subsection per supported channel. Delete the rest.
+     A library with `publish = false` documents the tagged git dependency and says it is not
+     published — never write an install line for a registry that does not have it. --}}
+
+### TODO channel
+
+```bash
+TODO
+```
+
+## Usage
+
+{{!-- TODO: at least one runnable example per channel. Every fence language-tagged. --}}
+
+## Configuration
+
+{{!-- TODO: the full generated table only if it fits in roughly forty rows. Past that, keep the five
+     most-used keys here and link a generated docs/CONFIGURATION.md.
+     A triple-stash emits pre-rendered Markdown as-is instead of escaping it. --}}
+
+{{{ configTable }}}
+
+## Operations
+
+{{!-- TODO: services only. Probes, security posture, image provenance. Delete for a library. --}}
+
+## Compatibility
+
+| | Supported |
+| --- | --- |
+{{#if toolchain.msrv}}| Rust | {{ toolchain.msrv }}{{#if toolchain.edition}} (edition {{ toolchain.edition }}){{/if}} |
+{{/if}}{{#if toolchain.jdk}}| JDK | {{ toolchain.jdk }} |
+{{/if}}{{#if toolchain.node}}| Node | {{ toolchain.node }} |
+{{/if}}{{#if toolchain.kubeVersion}}| Kubernetes | {{ toolchain.kubeVersion }} |
+{{/if}}
+
+## Documentation
+
+{{#if docs}}
+| Document | Purpose |
+| --- | --- |
+{{#each docs}}| [{{ title }}]({{ path }}) | {{ default (mdCell summary) "—" }} |
+{{/each}}
+{{/if}}
+
+## Contributing
+
+Issues and pull requests are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers the commit convention
+and the checks CI runs. Several files here are generated; each one says so in its first few lines,
+and editing the output instead of the template will be reverted by CI.
+
+## Security
+
+Do not open a public issue for a vulnerability. [SECURITY.md](SECURITY.md) has the reporting
+instructions and the supported versions.
+
+## License
+
+{{#if repo.license}}`{{ repo.license }}`. {{/if}}See [LICENSE](LICENSE) for the terms.

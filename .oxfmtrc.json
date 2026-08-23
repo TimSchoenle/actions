@@ -9,6 +9,7 @@
     "README.md",
     "**/CHANGELOG.md",
     "SECURITY.md",
+    "**/*.hbs",
     ".husky/**",
     "bun.lock",
     "**/index.js",
