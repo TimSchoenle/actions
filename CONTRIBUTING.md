@@ -73,3 +73,10 @@ only identity permitted to create a release tag.
 Two rules cover most of what gets sent back in review. Name the mechanism rather than its shape: an
 action resolves a tag to the commit SHA it points at, it does not handle versioning. And delete any
 sentence that would be equally true of a different repository.
+
+Both are the short form of [docs/readme/PROSE.md](docs/readme/PROSE.md), which is the full contract
+and covers every README, template, `docs/` page, commit body and pull request description here.
+
+Doc comments have their own contract in [docs/doc-comments/](docs/doc-comments/README.md). It says
+what carries a comment, what that comment has to state before it states anything else, and which lint
+gate holds it in place per ecosystem.
