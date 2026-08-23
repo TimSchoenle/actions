@@ -33,7 +33,7 @@
     "@types/node": "26.2.0",
     "@typescript-eslint/eslint-plugin": "8.67.0",
     "@typescript-eslint/parser": "8.67.0",
-    "@vitest/coverage-v8": "4.1.10",
+    "@vitest/coverage-v8": "4.1.11",
     "ansi-escapes": "7.3.0",
     "chardet": "2.2.0",
     "cli-width": "4.1.0",
@@ -54,7 +54,7 @@
     "signal-exit": "4.1.0",
     "typescript": "6.0.3",
     "typescript-eslint": "8.67.0",
-    "vitest": "4.1.10",
+    "vitest": "4.1.11",
     "wrap-ansi": "10.0.1",
     "yaml": "2.9.0"
   },
