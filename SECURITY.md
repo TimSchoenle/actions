@@ -26,7 +26,7 @@ is not, including older versions of a component whose neighbours have since rele
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Close Pull Request](./actions/common/close-pull-request) | [actions-common-close-pull-request-v1.3.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-close-pull-request-v1.3.2) | :white_check_mark: |
-| [Commit Changes](./actions/common/commit-changes) | [actions-common-commit-changes-v1.3.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v1.3.2) | :white_check_mark: |
+| [Commit Changes](./actions/common/commit-changes) | [actions-common-commit-changes-v1.3.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v1.3.3) | :white_check_mark: |
 | [Common Modify YAML](./actions/common/modify-yaml) | [actions-common-modify-yaml-v1.4.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-modify-yaml-v1.4.3) | :white_check_mark: |
 | [Common Read YAML](./actions/common/read-yaml) | [actions-common-read-yaml-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-read-yaml-v1.2.1) | :white_check_mark: |
 | [Common Readme Variables](./actions/common/readme-variables) | [actions-common-readme-variables-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-readme-variables-v1.1.0) | :white_check_mark: |
