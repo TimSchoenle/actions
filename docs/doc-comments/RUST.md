@@ -24,7 +24,6 @@ crate cannot be held to a looser standard than the crate it writes code for.
 missing_docs = "warn"
 
 [workspace.lints.clippy]
-pedantic = { level = "warn", priority = -1 }
 missing_errors_doc = "warn"
 missing_panics_doc = "warn"
 doc_markdown = "warn"
@@ -39,8 +38,15 @@ private_intra_doc_links = "warn"
 unescaped_backticks = "warn"
 ```
 
-`missing_errors_doc` and `missing_panics_doc` are already in `pedantic`; naming them again is how the
-next reader learns they are deliberate rather than swept in with the group. `missing_safety_doc` is
+`missing_errors_doc` and `missing_panics_doc` live inside `pedantic`, and naming them individually is
+what enables them without it.
+
+**Do not add `clippy::pedantic` as part of this gate.** It is a code-quality decision, not a
+documentation one, and the two are separate. terrace-config carries `pedantic` because that crate
+chose it, not because the standard asks for it. Taking it during a documentation pass on a repository
+that never had it buries the change: mp-stats-legacy-viewer reported 102 findings the moment it went
+on, none of them about doc comments, and the pass had started applying them before the gate was
+corrected. A repository that wants `pedantic` should take it in a pull request that says so. `missing_safety_doc` is
 warn by default and needs no line, and in a crate with `unsafe_code = "forbid"` it can never fire.
 
 `clippy::missing_docs_in_private_items` is deliberately absent. See
