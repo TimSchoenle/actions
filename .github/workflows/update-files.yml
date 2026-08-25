@@ -62,7 +62,7 @@ jobs:
 
       - name: Commit and Push if changed
         id: auto-commit
-        uses: TimSchoenle/actions/actions/common/commit-changes@76719ba61e9b9cf1ffafdc3cb895308055a7f3bd # tag=actions-common-commit-changes-v1.3.2
+        uses: TimSchoenle/actions/actions/common/commit-changes@57e5492e68be560bddac3c6fc9ba0a944cfee961 # tag=actions-common-commit-changes-v1.3.3
         with:
           commit_message: 'build: auto-update compiled artifacts'
           file_pattern: 'actions/**/dist/**/* actions/**/src/generated/**/* workflows/**/dist/**/* workflows/**/src/generated/**/*'
@@ -145,7 +145,7 @@ jobs:
 
       - name: Commit and Push if changed
         id: auto-commit
-        uses: TimSchoenle/actions/actions/common/commit-changes@76719ba61e9b9cf1ffafdc3cb895308055a7f3bd # tag=actions-common-commit-changes-v1.3.2
+        uses: TimSchoenle/actions/actions/common/commit-changes@57e5492e68be560bddac3c6fc9ba0a944cfee961 # tag=actions-common-commit-changes-v1.3.3
         with:
           commit_message: 'ci: auto-update generated workflows'
           file_pattern: '.github/workflows/verify-action-*.yaml .github/workflows/ci-required.yaml'
@@ -210,7 +210,7 @@ jobs:
 
       - name: Commit and Push if changed
         id: auto-commit
-        uses: TimSchoenle/actions/actions/common/commit-changes@76719ba61e9b9cf1ffafdc3cb895308055a7f3bd # tag=actions-common-commit-changes-v1.3.2
+        uses: TimSchoenle/actions/actions/common/commit-changes@57e5492e68be560bddac3c6fc9ba0a944cfee961 # tag=actions-common-commit-changes-v1.3.3
         with:
           commit_message: 'docs: auto-update documentation'
           file_pattern: 'README.md SECURITY.md'
