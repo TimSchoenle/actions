@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.4](https://github.com/TimSchoenle/actions/compare/actions-common-render-template-and-commit-v1.1.3...actions-common-render-template-and-commit-v1.1.4) (2026-08-30)
+
+
+### Miscellaneous
+
+* **deps:** update step-security/harden-runner action to v2.21.0 ([#1474](https://github.com/TimSchoenle/actions/issues/1474)) ([5f77c7a](https://github.com/TimSchoenle/actions/commit/5f77c7a65b4e99f62c9ecdeaa22766a35dc017c5))
+* **deps:** update step-security/harden-runner action to v2.21.0 ([#1513](https://github.com/TimSchoenle/actions/issues/1513)) ([71715a0](https://github.com/TimSchoenle/actions/commit/71715a04001a9398d4f6baf46c8032c79d6836ff))
+* **deps:** update timschoenle/actions/actions/common/commit-changes to vactions-common-commit-changes-v1.3.2 ([#1481](https://github.com/TimSchoenle/actions/issues/1481)) ([72d51c7](https://github.com/TimSchoenle/actions/commit/72d51c771b5b3b0f108b4a2ed5962d5ba209969a))
+* **deps:** update timschoenle/actions/actions/common/commit-changes to vactions-common-commit-changes-v1.3.3 ([#1538](https://github.com/TimSchoenle/actions/issues/1538)) ([89ac5eb](https://github.com/TimSchoenle/actions/commit/89ac5eb44203cf9be3cceabba947053fa590d1da))
+
 ## [1.1.3](https://github.com/TimSchoenle/actions/compare/actions-common-render-template-and-commit-v1.1.2...actions-common-render-template-and-commit-v1.1.3) (2026-08-13)
 
 

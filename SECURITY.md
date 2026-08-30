@@ -35,7 +35,7 @@ is not, including older versions of a component whose neighbours have since rele
 | [Delete-Branch](./actions/common/delete-branch) | [actions-common-delete-branch-v1.3.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-delete-branch-v1.3.3) | :white_check_mark: |
 | [Get App Git Identity](./actions/common/get-app-git-identity) | [actions-common-get-app-git-identity-v1.3.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-get-app-git-identity-v1.3.3) | :white_check_mark: |
 | [Render Template](./actions/common/render-template) | [actions-common-render-template-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-v1.1.1) | :white_check_mark: |
-| [Render Template And Commit](./actions/common/render-template-and-commit) | [actions-common-render-template-and-commit-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-and-commit-v1.1.3) | :white_check_mark: |
+| [Render Template And Commit](./actions/common/render-template-and-commit) | [actions-common-render-template-and-commit-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-and-commit-v1.1.4) | :white_check_mark: |
 | [Setup App Git Identity](./actions/common/setup-app-git-identity) | [actions-common-setup-app-git-identity-v1.3.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-setup-app-git-identity-v1.3.3) | :white_check_mark: |
 
 #### Helm
