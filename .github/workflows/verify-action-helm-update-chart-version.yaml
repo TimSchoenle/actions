@@ -45,7 +45,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
+        uses: TimSchoenle/actions/actions/test/setup-e2e@51bbb07f9ccf8d9f5a8de245e2d6f2812638e989 # tag=actions-test-setup-e2e-v1.2.3
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -113,7 +113,7 @@ jobs:
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
+        uses: TimSchoenle/actions/actions/test/setup-e2e@51bbb07f9ccf8d9f5a8de245e2d6f2812638e989 # tag=actions-test-setup-e2e-v1.2.3
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -248,7 +248,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
+        uses: TimSchoenle/actions/actions/test/setup-e2e@51bbb07f9ccf8d9f5a8de245e2d6f2812638e989 # tag=actions-test-setup-e2e-v1.2.3
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -332,7 +332,7 @@ jobs:
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
+        uses: TimSchoenle/actions/actions/test/setup-e2e@51bbb07f9ccf8d9f5a8de245e2d6f2812638e989 # tag=actions-test-setup-e2e-v1.2.3
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -445,7 +445,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
+        uses: TimSchoenle/actions/actions/test/setup-e2e@51bbb07f9ccf8d9f5a8de245e2d6f2812638e989 # tag=actions-test-setup-e2e-v1.2.3
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -508,7 +508,7 @@ jobs:
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
+        uses: TimSchoenle/actions/actions/test/setup-e2e@51bbb07f9ccf8d9f5a8de245e2d6f2812638e989 # tag=actions-test-setup-e2e-v1.2.3
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -612,7 +612,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
+        uses: TimSchoenle/actions/actions/test/setup-e2e@51bbb07f9ccf8d9f5a8de245e2d6f2812638e989 # tag=actions-test-setup-e2e-v1.2.3
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -678,7 +678,7 @@ jobs:
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
+        uses: TimSchoenle/actions/actions/test/setup-e2e@51bbb07f9ccf8d9f5a8de245e2d6f2812638e989 # tag=actions-test-setup-e2e-v1.2.3
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -747,7 +747,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
+        uses: TimSchoenle/actions/actions/test/setup-e2e@51bbb07f9ccf8d9f5a8de245e2d6f2812638e989 # tag=actions-test-setup-e2e-v1.2.3
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -810,7 +810,7 @@ jobs:
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
+        uses: TimSchoenle/actions/actions/test/setup-e2e@51bbb07f9ccf8d9f5a8de245e2d6f2812638e989 # tag=actions-test-setup-e2e-v1.2.3
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -887,7 +887,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
+        uses: TimSchoenle/actions/actions/test/setup-e2e@51bbb07f9ccf8d9f5a8de245e2d6f2812638e989 # tag=actions-test-setup-e2e-v1.2.3
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -957,7 +957,7 @@ jobs:
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
+        uses: TimSchoenle/actions/actions/test/setup-e2e@51bbb07f9ccf8d9f5a8de245e2d6f2812638e989 # tag=actions-test-setup-e2e-v1.2.3
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -986,7 +986,7 @@ jobs:
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@9aabf0be4b0008aa5bdc479b556851c3a5c54d93 # tag=actions-test-setup-e2e-v1.2.2
+        uses: TimSchoenle/actions/actions/test/setup-e2e@51bbb07f9ccf8d9f5a8de245e2d6f2812638e989 # tag=actions-test-setup-e2e-v1.2.3
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}

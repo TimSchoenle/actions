@@ -133,7 +133,7 @@ outputs. Where an action needs more than that, a README sits next to it.
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Setup E2E Test](./actions/test/setup-e2e) | Sets up the environment for E2E testing: generates token, checks out test repo, and checks out actions code. | [actions-test-setup-e2e-v1.2.3](https://github.com/TimSchoenle/actions/releases/tag/actions-test-setup-e2e-v1.2.3) | `uses: TimSchoenle/actions/actions/test/setup-e2e@actions-test-setup-e2e-v1.2.3 # tag=actions-test-setup-e2e-v1.2.3` |
+| [Setup E2E Test](./actions/test/setup-e2e) | Sets up the environment for E2E testing: generates token, checks out test repo, and checks out actions code. | [actions-test-setup-e2e-v1.2.3](https://github.com/TimSchoenle/actions/releases/tag/actions-test-setup-e2e-v1.2.3) | `uses: TimSchoenle/actions/actions/test/setup-e2e@51bbb07f9ccf8d9f5a8de245e2d6f2812638e989 # tag=actions-test-setup-e2e-v1.2.3` |
 
 
 
