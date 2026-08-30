@@ -29,7 +29,7 @@
   "actions/rust/coverage-codecov": "1.1.40",
   "actions/rust/test": "1.1.1",
   "actions/maintenance/ensure-actions-are-executed": "1.4.0",
-  "actions/common/render-template": "1.1.1",
+  "actions/common/render-template": "1.1.2",
   "actions/common/render-template-and-commit": "1.1.4",
   "actions/rust/config-contract": "1.1.0",
   "actions/common/readme-variables": "1.1.0"
