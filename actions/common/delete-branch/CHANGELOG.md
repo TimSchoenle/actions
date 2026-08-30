@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/TimSchoenle/actions/compare/actions-common-delete-branch-v1.3.3...actions-common-delete-branch-v1.4.0) (2026-08-30)
+
+
+### Features
+
+* defer and retry the work GitHub's rate limit refuses ([#1563](https://github.com/TimSchoenle/actions/issues/1563)) ([fe97452](https://github.com/TimSchoenle/actions/commit/fe9745292ab281cf31f2c62d7e93e5f0f6b15d2d))
+
 ## [1.3.3](https://github.com/TimSchoenle/actions/compare/actions-common-delete-branch-v1.3.2...actions-common-delete-branch-v1.3.3) (2026-08-30)
 
 
