@@ -4,6 +4,10 @@
 # defaults declared in action.yaml resolve from a real pull_request payload. Only the runner can
 # evaluate a workflow expression, so no harness can stand in for it. Everything else this action does
 # is covered by e2e/verify-branch-name.e2e.test.ts.
+#
+# `uses: pinned:<key>` names an entry of PINNED in scripts/lib/e2e-workflow.ts and is substituted on
+# the way in. Writing a ref out in full here would be a second pin for the same action, and one no
+# Renovate manager reads — it would bump the generated copy alone and leave this file behind.
 
 verify-payload-fallback:
   name: Test Pull Request Payload Fallback
@@ -15,7 +19,7 @@ verify-payload-fallback:
     # A shorter allowlist than the generated job's: this one only checks out and runs a local
     # action — no dependency install, no cache, no API call — so github.com is the whole of it.
     - name: Harden Runner
-      uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+      uses: pinned:hardenRunner
       with:
         egress-policy: block
         allowed-endpoints: >
@@ -23,7 +27,7 @@ verify-payload-fallback:
           objects.githubusercontent.com:443
 
     - name: Checkout
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      uses: pinned:checkout
       with:
         persist-credentials: false
 

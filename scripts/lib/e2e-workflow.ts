@@ -312,6 +312,48 @@ export function extraJobIds(fragment: string): string[] {
   return ids;
 }
 
+/**
+ * Refs a fragment may reach, keyed as {@link PINNED} names them.
+ *
+ * A `Map` rather than an index into `PINNED`, so a key read out of a file on disk cannot address
+ * anything but a pin.
+ */
+const PIN_BY_KEY: ReadonlyMap<string, string> = new Map(Object.entries(PINNED));
+
+/**
+ * The only form a fragment may use to reach an action it does not own: `uses: pinned:<key>`.
+ *
+ * A fragment is copied into the generated workflow verbatim, so a `uses:` written out in full there
+ * is a *second* pin for an action `PINNED` already carries — and one no manager in `renovate.json`
+ * can see, because those read this file alone. Renovate then bumps the generated copy on its own,
+ * the drift check fails, and the regenerate job answers by reverting the bump, so the update can
+ * never land. Naming a key instead keeps one pin per action, in the one place Renovate looks.
+ *
+ * `renovate-managers.test.ts` fails a fragment that writes a ref out in full.
+ */
+const PIN_PLACEHOLDER = /^(\s*uses:[ \t]*)pinned:(\w+)[ \t]*$/gm;
+
+/**
+ * Substitutes a fragment's `pinned:<key>` placeholders with the refs from {@link PINNED}.
+ *
+ * Throws rather than passing an unresolved placeholder through: `uses: pinned:foo` is not a valid
+ * action reference, and a workflow carrying one fails only once a runner has reached that job.
+ */
+export function resolvePins(fragment: string): string {
+  return fragment.replaceAll(PIN_PLACEHOLDER, (_match, prefix: string, key: string) => {
+    const pin = PIN_BY_KEY.get(key);
+
+    if (pin === undefined) {
+      throw new Error(
+        `Unknown pin 'pinned:${key}' in an extra-jobs fragment. Add the action to PINNED in ` +
+          `scripts/lib/e2e-workflow.ts, or name one of: ${[...PIN_BY_KEY.keys()].join(', ')}.`,
+      );
+    }
+
+    return `${prefix}${pin}`;
+  });
+}
+
 /** Indents a fragment's jobs to sit under the workflow's `jobs:` key. */
 function indentJobs(fragment: string): string {
   return fragment
@@ -324,7 +366,8 @@ function indentJobs(fragment: string): string {
 export function renderE2eWorkflow(action: E2eAction, extraJobs = ''): string {
   const name = workflowName(action);
   const secondary = needsSecondaryIdentity(action);
-  const extraIds = extraJobIds(extraJobs);
+  const resolvedExtraJobs = resolvePins(extraJobs);
+  const extraIds = extraJobIds(resolvedExtraJobs);
   // `install` is in the summary's needs as well as `e2e`'s: a failed install leaves `e2e` *skipped*,
   // and a summary that only watched `e2e` would read that absence as nothing having gone wrong.
   const needs = ['install', 'e2e', ...extraIds].map((id) => `      - ${id}`).join('\n');
@@ -418,7 +461,7 @@ ${secondary ? secondaryTokenStep() : ''}
           }
           E2E_TEST_REPOSITORY: ${TEST_OWNER}/${TEST_REPO_NAME}
         run: bun run e2e ${action.actionPath}
-${extraJobs === '' ? '' : `\n${indentJobs(extraJobs).trimEnd()}\n`}
+${resolvedExtraJobs === '' ? '' : `\n${indentJobs(resolvedExtraJobs).trimEnd()}\n`}
   # <<< generated: summary (run 'bun run generate-ci-required' to update)
   summary:
     name: 'CI Summary: ${titleCase(action.category)} ${titleCase(action.name)}'
