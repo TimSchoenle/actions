@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.4](https://github.com/TimSchoenle/actions/compare/actions-common-create-branch-v1.4.3...actions-common-create-branch-v1.4.4) (2026-08-30)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26.3.0 ([#1544](https://github.com/TimSchoenle/actions/issues/1544)) ([7999a4b](https://github.com/TimSchoenle/actions/commit/7999a4b5182f3240afd7e8b99a48b793ebd9ca42))
+* **deps:** update dependency @types/node to v26.4.0 ([#1554](https://github.com/TimSchoenle/actions/issues/1554)) ([1750e5e](https://github.com/TimSchoenle/actions/commit/1750e5e356affe436dcf08ee5cc03e47232e230e))
+
 ## [1.4.3](https://github.com/TimSchoenle/actions/compare/actions-common-create-branch-v1.4.2...actions-common-create-branch-v1.4.3) (2026-08-28)
 
 
