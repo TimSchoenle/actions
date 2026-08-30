@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.5.0](https://github.com/TimSchoenle/actions/compare/actions-common-create-branch-v1.4.4...actions-common-create-branch-v1.5.0) (2026-08-30)
+
+
+### Features
+
+* defer and retry the work GitHub's rate limit refuses ([#1563](https://github.com/TimSchoenle/actions/issues/1563)) ([fe97452](https://github.com/TimSchoenle/actions/commit/fe9745292ab281cf31f2c62d7e93e5f0f6b15d2d))
+
+
+### Bug Fixes
+
+* survive the GitHub App rate limits that keep breaking CI ([#1558](https://github.com/TimSchoenle/actions/issues/1558)) ([fc8eb1c](https://github.com/TimSchoenle/actions/commit/fc8eb1c4a022605d9c0d3fcf17a3755816365b32))
+
 ## [1.4.4](https://github.com/TimSchoenle/actions/compare/actions-common-create-branch-v1.4.3...actions-common-create-branch-v1.4.4) (2026-08-30)
 
 
