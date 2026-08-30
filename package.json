@@ -28,7 +28,7 @@
     "@eslint/compat": "2.1.0",
     "@eslint/js": "10.0.1",
     "@fast-check/vitest": "0.4.1",
-    "@inquirer/prompts": "8.6.0",
+    "@inquirer/prompts": "8.7.0",
     "@types/bun": "1.4.0",
     "@types/node": "26.3.0",
     "@typescript-eslint/eslint-plugin": "8.68.0",
