@@ -76,7 +76,7 @@ is not, including older versions of a component whose neighbours have since rele
 | [Rust Clippy](./actions/rust/clippy) | [actions-rust-clippy-v1.1.9](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-clippy-v1.1.9) | :white_check_mark: |
 | [Rust Config Contract](./actions/rust/config-contract) | [actions-rust-config-contract-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-config-contract-v1.1.0) | :white_check_mark: |
 | [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | [actions-rust-coverage-codecov-v1.1.40](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.40) | :white_check_mark: |
-| [Rust Test](./actions/rust/test) | [actions-rust-test-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.1) | :white_check_mark: |
+| [Rust Test](./actions/rust/test) | [actions-rust-test-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.2) | :white_check_mark: |
 
 #### Test
 
