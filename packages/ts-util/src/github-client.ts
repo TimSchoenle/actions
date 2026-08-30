@@ -6,9 +6,12 @@ import { errorMessage } from './errors.js';
 /**
  * How the shared Octokit rides out a request GitHub rejected for rate limiting.
  *
- * `maxDelayMs` is a *per-attempt* ceiling, not a total budget: no single wait exceeds it, and a limit
- * whose reset lies further out than the ceiling is treated as un-waitable — the error propagates
- * rather than parking a billed Actions runner for minutes on a reset it cannot afford to wait for.
+ * Two bounds, deliberately separate. `maxDelayMs` is a *per-attempt* ceiling: no single wait exceeds
+ * it, and a limit whose reset lies further out is treated as un-waitable. `maxTotalDelayMs` bounds
+ * what the attempts may cost *together*. Either one being reached is a decision to stop waiting and
+ * fail — an exhausted hourly installation budget can be most of an hour from its reset, and parking a
+ * runner on that is worse than failing and letting the deferred re-run sweep pick the work up once
+ * the window has actually reopened.
  */
 export interface RetryPolicy {
   /** How many times a rate-limited request is retried before its error is surfaced. */
@@ -17,19 +20,29 @@ export interface RetryPolicy {
   baseDelayMs: number;
   /** The longest any single wait may be. A required wait above this abandons the retries. */
   maxDelayMs: number;
+  /**
+   * The longest a single request may spend waiting across *all* of its attempts.
+   *
+   * `maxDelayMs` alone bounds no total: three retries at the per-attempt ceiling would idle a runner
+   * for three times that ceiling without anything saying so. This is the bound an operator actually
+   * budgets for, and the one that decides when a refusal stops being worth waiting on.
+   */
+  maxTotalDelayMs: number;
 }
 
 /**
- * Defaults tuned for GitHub Actions, where a job is billed for every second it waits.
+ * Defaults tuned for GitHub Actions, where a job holds a runner for every second it waits.
  *
- * A secondary (abuse) rate limit clears in seconds to about a minute, so the one-minute ceiling rides
- * out the common case. A primary-limit reset that is tens of minutes away is deliberately *not*
- * waited for: failing fast and letting the workflow be re-run is cheaper than idling the runner.
+ * A secondary (abuse) rate limit clears in seconds to a few minutes, which the three-minute ceiling
+ * rides out. A primary-limit reset tens of minutes away is deliberately *not* waited for, and the
+ * five-minute total keeps three such waits from quietly compounding into a quarter-hour of idling:
+ * failing fast and letting the work be re-run is cheaper than holding the runner.
  */
 export const DEFAULT_RETRY_POLICY: RetryPolicy = {
   maxRetries: 3,
   baseDelayMs: 1_000,
   maxDelayMs: 180_000,
+  maxTotalDelayMs: 300_000,
 };
 
 /**
@@ -39,11 +52,19 @@ export const DEFAULT_RETRY_POLICY: RetryPolicy = {
 export interface RetryClock {
   now(): number;
   sleep(milliseconds: number): Promise<void>;
+  /**
+   * A uniform draw from `[0, 1)`, used to jitter every wait.
+   *
+   * Injected rather than reached for directly so a test can pin the jitter and still assert on exact
+   * delays; omitted, it falls back to `Math.random`.
+   */
+  random?(): number;
 }
 
 const REAL_CLOCK: RetryClock = {
   now: () => Date.now(),
   sleep: (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
+  random: () => Math.random(),
 };
 
 /** The statuses GitHub uses to refuse a request for rate limiting; every retry decision starts here. */
@@ -54,6 +75,24 @@ const MIN_DELAY_MS = 1_000;
 
 /** Added to a reset wait to cover clock skew, so we never wake a hair before the window reopens. */
 const RESET_BUFFER_MS = 1_000;
+
+/**
+ * The window a wait GitHub itself dictated is smeared across.
+ *
+ * A `Retry-After` or a reset epoch names one instant, and every job refused by the same installation
+ * budget is handed that same instant — so without a spread the whole batch wakes on the same second
+ * and collides again. The spread is only ever added: waking *before* the window reopens would
+ * guarantee another refusal, so the dictated wait is a floor, never an average.
+ */
+const DICTATED_SPREAD_MS = 5_000;
+
+/**
+ * The `title` on the annotation written when a rate limit outlives the retries.
+ *
+ * A stable key, unlike the message text, so tooling that reacts to these failures — the deferred
+ * re-run sweep in `scripts/rerun-rate-limited.ts` — can recognise one without matching on prose.
+ */
+export const RATE_LIMIT_ANNOTATION_TITLE = 'GitHub API rate limit';
 
 /** The subset of an Octokit `RequestError` this module reads, without depending on its exact type. */
 interface HttpErrorShape {
@@ -175,6 +214,22 @@ function backoffMs(attempt: number, policy: RetryPolicy): number {
 }
 
 /**
+ * Spreads a wait we chose ourselves across the whole interval below it ("full jitter").
+ *
+ * The backoff schedule is identical in every job, so an unjittered one has every job that lost the
+ * same race retry on the same tick, and lose it again together. Drawing uniformly from `[0, delay]`
+ * is what breaks that lockstep; the floor keeps the draw from becoming a busy loop.
+ */
+function withFullJitter(milliseconds: number, random: () => number): number {
+  return Math.max(MIN_DELAY_MS, Math.round(random() * milliseconds));
+}
+
+/** Smears a wait GitHub dictated forwards only, never past the per-attempt ceiling. */
+function withSpread(milliseconds: number, policy: RetryPolicy, random: () => number): number {
+  return Math.min(milliseconds + Math.round(random() * DICTATED_SPREAD_MS), policy.maxDelayMs);
+}
+
+/**
  * Bounds a computed wait to the policy: a wait longer than the ceiling returns `undefined` (abandon
  * the retries); anything shorter is floored to {@link MIN_DELAY_MS}.
  */
@@ -184,6 +239,11 @@ function boundedDelay(milliseconds: number, policy: RetryPolicy): number | undef
   }
 
   return Math.max(milliseconds, MIN_DELAY_MS);
+}
+
+/** The backoff this loop picks for itself when GitHub named no wait, jittered across its interval. */
+function chosenDelay(attempt: number, policy: RetryPolicy, random: () => number): number {
+  return withFullJitter(backoffMs(attempt, policy), random);
 }
 
 /**
@@ -198,12 +258,16 @@ function boundedDelay(milliseconds: number, policy: RetryPolicy): number | undef
  *  3. A GraphQL rate-limit payload, a secondary-limit message, or a bare 429 — no time was given, so
  *     back off exponentially.
  * A 403 carrying none of these is a permission or availability error, which retrying cannot mend.
+ *
+ * Whether to retry at all is decided on the *unjittered* wait, so the answer does not turn on a coin
+ * flip; the jitter is applied only to the wait that decision keeps.
  */
 export function rateLimitDelayMs(
   error: unknown,
   attempt: number,
   policy: RetryPolicy,
   nowMs: number,
+  random: () => number = Math.random,
 ): number | undefined {
   if (!isRateLimitError(error)) {
     return undefined;
@@ -214,43 +278,80 @@ export function rateLimitDelayMs(
 
   const retryAfterSeconds = nonNegativeInt(headers['retry-after']);
   if (retryAfterSeconds !== undefined) {
-    return boundedDelay(retryAfterSeconds * 1_000, policy);
+    const dictated = boundedDelay(retryAfterSeconds * 1_000, policy);
+
+    return dictated === undefined ? undefined : withSpread(dictated, policy, random);
   }
 
   if (headers['x-ratelimit-remaining'] === '0') {
     const resetEpochSeconds = nonNegativeInt(headers['x-ratelimit-reset']);
     if (resetEpochSeconds !== undefined) {
-      return boundedDelay(resetEpochSeconds * 1_000 - nowMs + RESET_BUFFER_MS, policy);
+      const dictated = boundedDelay(resetEpochSeconds * 1_000 - nowMs + RESET_BUFFER_MS, policy);
+
+      return dictated === undefined ? undefined : withSpread(dictated, policy, random);
     }
 
-    return boundedDelay(backoffMs(attempt, policy), policy);
+    return chosenDelay(attempt, policy, random);
   }
 
   if (isGraphqlRateLimited(error) || isSecondaryRateLimit(error) || status === 429) {
-    return boundedDelay(backoffMs(attempt, policy), policy);
+    return chosenDelay(attempt, policy, random);
   }
 
   return undefined;
 }
 
+/** Renders a millisecond budget the way the log lines quote it. */
+function asSeconds(milliseconds: number): number {
+  return Math.ceil(milliseconds / 1_000);
+}
+
+/** Either the wait to serve before the next attempt, or the reason there will not be one. */
+type RetryDecision = { delayMs: number } | { giveUp: string };
+
 /**
- * Names the rate limit a retry loop is about to give up on.
+ * Decides the fate of one rate-limited attempt, and names the bound that ended it.
+ *
+ * Three separate bounds can stop a retry, and an operator can only act on the one that actually
+ * bit — "still refused after 3 retries" calls for cutting call volume, while "exceeds the total wait
+ * budget" calls for a deferred re-run instead of a longer wait. The raw error names none of them.
+ */
+function decideRetry(
+  error: unknown,
+  attempt: number,
+  waitedMs: number,
+  policy: RetryPolicy,
+  nowMs: number,
+  random: () => number,
+): RetryDecision {
+  if (attempt >= policy.maxRetries) {
+    return { giveUp: `it is still in force after ${policy.maxRetries} retries` };
+  }
+
+  const delayMs = rateLimitDelayMs(error, attempt, policy, nowMs, random);
+  if (delayMs === undefined) {
+    return { giveUp: `the wait it requires exceeds the ${asSeconds(policy.maxDelayMs)}s per-attempt ceiling` };
+  }
+
+  if (waitedMs + delayMs > policy.maxTotalDelayMs) {
+    return { giveUp: `riding it out would exceed the ${asSeconds(policy.maxTotalDelayMs)}s total wait budget` };
+  }
+
+  return { delayMs };
+}
+
+/**
+ * Names the rate limit a retry loop has given up on, under a stable annotation title.
  *
  * The raw error says only that GitHub refused the request; it never says that the refusal was ridden
  * out to the end of the policy, which is the part an operator can act on — a GraphQL refusal least of
- * all, since it reads as an ordinary response error.
+ * all, since it reads as an ordinary response error. The title is what lets the deferred re-run sweep
+ * tell this failure apart from every other way a job can go red, without matching on prose.
  */
-function warnUnretried(error: unknown, attempt: number, policy: RetryPolicy, owns: (error: unknown) => boolean): void {
-  if (!owns(error)) {
-    return;
-  }
-
-  const reason =
-    attempt >= policy.maxRetries
-      ? `it is still in force after ${policy.maxRetries} retries`
-      : `the wait it requires exceeds the ${Math.ceil(policy.maxDelayMs / 1_000)}s ceiling`;
-
-  core.warning(`GitHub API rate limit hit and not ridden out — ${reason}: ${errorMessage(error)}`);
+function reportUnretried(error: unknown, reason: string): void {
+  core.error(`GitHub API rate limit hit and not ridden out — ${reason}: ${errorMessage(error)}`, {
+    title: RATE_LIMIT_ANNOTATION_TITLE,
+  });
 }
 
 /**
@@ -258,6 +359,9 @@ function warnUnretried(error: unknown, attempt: number, policy: RetryPolicy, own
  *
  * A rate-limited request is rejected *before* GitHub acts on it, so replaying one — even a mutation —
  * cannot double an effect; the only requests retried here are those that never ran.
+ *
+ * Every wait is jittered, because these actions do not run alone: a release batch puts dozens of jobs
+ * on one installation budget, and an unjittered schedule has all of them retry on the same tick.
  */
 export async function requestWithRateLimitRetry<T>(
   perform: () => Promise<T>,
@@ -271,24 +375,31 @@ export async function requestWithRateLimitRetry<T>(
    */
   owns: (error: unknown) => boolean = isRateLimitError,
 ): Promise<T> {
+  const random = clock.random?.bind(clock) ?? Math.random;
+  let waitedMs = 0;
+
   for (let attempt = 0; ; attempt += 1) {
     try {
       return await perform();
     } catch (error) {
-      const delayMs =
-        owns(error) && attempt < policy.maxRetries ? rateLimitDelayMs(error, attempt, policy, clock.now()) : undefined;
+      if (!owns(error)) {
+        throw error;
+      }
 
-      if (delayMs === undefined) {
-        warnUnretried(error, attempt, policy, owns);
+      const decision = decideRetry(error, attempt, waitedMs, policy, clock.now(), random);
+      if ('giveUp' in decision) {
+        reportUnretried(error, decision.giveUp);
 
         throw error;
       }
 
+      waitedMs += decision.delayMs;
       core.info(
-        `GitHub API rate limit hit (${errorMessage(error)}); retrying in ${Math.ceil(delayMs / 1_000)}s ` +
-          `(attempt ${attempt + 1} of ${policy.maxRetries}).`,
+        `GitHub API rate limit hit (${errorMessage(error)}); retrying in ${asSeconds(decision.delayMs)}s ` +
+          `(attempt ${attempt + 1} of ${policy.maxRetries}, ${asSeconds(waitedMs)}s of the ` +
+          `${asSeconds(policy.maxTotalDelayMs)}s wait budget spent).`,
       );
-      await clock.sleep(delayMs);
+      await clock.sleep(decision.delayMs);
     }
   }
 }
