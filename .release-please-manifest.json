@@ -15,7 +15,7 @@
   "actions/test/setup-e2e": "1.2.3",
   "actions/common/close-pull-request": "1.3.3",
   "actions/common/delete-branch": "1.3.2",
-  "actions/common/create-branch": "1.4.3",
+  "actions/common/create-branch": "1.4.4",
   "actions/helper/resolve-base-branch": "1.3.2",
   "actions/java-gradle/setup-base-environment": "1.2.9",
   "workflows/maintenance/wipe-cache": "1.1.11",
