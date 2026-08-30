@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.4](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.6.3...actions-helm-update-chart-version-v1.6.4) (2026-08-30)
+
+
+### Miscellaneous
+
+* **deps:** update step-security/harden-runner action to v2.21.0 ([#1474](https://github.com/TimSchoenle/actions/issues/1474)) ([5f77c7a](https://github.com/TimSchoenle/actions/commit/5f77c7a65b4e99f62c9ecdeaa22766a35dc017c5))
+* **deps:** update step-security/harden-runner action to v2.21.0 ([#1513](https://github.com/TimSchoenle/actions/issues/1513)) ([71715a0](https://github.com/TimSchoenle/actions/commit/71715a04001a9398d4f6baf46c8032c79d6836ff))
+* **deps:** update timschoenle/actions/actions/helper/resolve-base-branch to vactions-helper-resolve-base-branch-v1.3.2 ([#1486](https://github.com/TimSchoenle/actions/issues/1486)) ([141bad4](https://github.com/TimSchoenle/actions/commit/141bad499117f05b9720140b0ef6b00abd8a3168))
+
 ## [1.6.3](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.6.2...actions-helm-update-chart-version-v1.6.3) (2026-08-16)
 
 
