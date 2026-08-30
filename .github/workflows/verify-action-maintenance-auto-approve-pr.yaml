@@ -12,11 +12,13 @@ on:
       - 'feature/maintenance/auto-approve-pr'
     paths:
       - 'actions/maintenance/auto-approve-pr/**'
+      - '!actions/maintenance/auto-approve-pr/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-maintenance-auto-approve-pr.yaml'
   pull_request:
     paths:
       - 'actions/maintenance/auto-approve-pr/**'
+      - '!actions/maintenance/auto-approve-pr/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-maintenance-auto-approve-pr.yaml'
   workflow_dispatch:

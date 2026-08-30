@@ -12,11 +12,13 @@ on:
       - 'feature/common/readme-variables'
     paths:
       - 'actions/common/readme-variables/**'
+      - '!actions/common/readme-variables/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-readme-variables.yaml'
   pull_request:
     paths:
       - 'actions/common/readme-variables/**'
+      - '!actions/common/readme-variables/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-readme-variables.yaml'
   workflow_dispatch:

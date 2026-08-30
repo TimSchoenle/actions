@@ -12,11 +12,13 @@ on:
       - 'feature/common/commit-changes'
     paths:
       - 'actions/common/commit-changes/**'
+      - '!actions/common/commit-changes/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-commit-changes.yaml'
   pull_request:
     paths:
       - 'actions/common/commit-changes/**'
+      - '!actions/common/commit-changes/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-commit-changes.yaml'
   workflow_dispatch:

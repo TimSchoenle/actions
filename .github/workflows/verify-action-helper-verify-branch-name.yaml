@@ -12,11 +12,13 @@ on:
       - 'feature/helper/verify-branch-name'
     paths:
       - 'actions/helper/verify-branch-name/**'
+      - '!actions/helper/verify-branch-name/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-helper-verify-branch-name.yaml'
   pull_request:
     paths:
       - 'actions/helper/verify-branch-name/**'
+      - '!actions/helper/verify-branch-name/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-helper-verify-branch-name.yaml'
   workflow_dispatch:

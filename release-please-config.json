@@ -1,6 +1,5 @@
 {
-  "separate-pull-requests": true,
-  "always-update": true,
+  "separate-pull-requests": false,
   "packages": {
     "actions/helm/apply-chart-updates": {
       "release-type": "simple",

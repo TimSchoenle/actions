@@ -6,7 +6,10 @@ on:
 permissions: {}
 
 jobs:
+  # Release-please branches carry only generated CHANGELOG.md and manifest edits, both of which
+  # release-please already emits formatted. See the note in update-files.yml.
   auto-format:
+    if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     name: Auto Format
     uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@bbf82ddbb5ee7e6778a2a8e18f2fa12d353270e2 # tag=workflows-maintenance-auto-bun-prettier-v1.1.28
     secrets:

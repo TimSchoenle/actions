@@ -12,11 +12,13 @@ on:
       - 'feature/maintenance/ensure-actions-are-executed'
     paths:
       - 'actions/maintenance/ensure-actions-are-executed/**'
+      - '!actions/maintenance/ensure-actions-are-executed/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-maintenance-ensure-actions-are-executed.yaml'
   pull_request:
     paths:
       - 'actions/maintenance/ensure-actions-are-executed/**'
+      - '!actions/maintenance/ensure-actions-are-executed/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-maintenance-ensure-actions-are-executed.yaml'
   workflow_dispatch:

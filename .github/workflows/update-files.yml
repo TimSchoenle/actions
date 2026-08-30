@@ -11,7 +11,19 @@ concurrency:
 permissions: {}
 
 jobs:
+  # A release-please branch only ever carries `.release-please-manifest.json` and per-package
+  # CHANGELOG.md edits, so none of these three jobs has anything to do there: nothing to build,
+  # nothing left for the formatter, and regenerating the README is actively wrong — the manifest on
+  # a release branch already holds the *next* version, whose tag does not exist yet, so the usage
+  # column falls back from the pinned SHA to a bare `@tag` and commits an unpinned README.
+  #
+  # Guarding the first job is enough to skip the chain: the two downstream jobs need it and gate on
+  # it reporting no changes, and a job that needs a skipped job is itself skipped.
+  #
+  # This is also the single biggest draw on the maintenance app's hourly API budget. Every release
+  # branch release-please rewrote fired this workflow again, and there were ~24 of them open at once.
   update-builds:
+    if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     name: Build Actions and Commit
     environment:
       name: ci
