@@ -12,11 +12,13 @@ on:
       - 'feature/common/delete-branch'
     paths:
       - 'actions/common/delete-branch/**'
+      - '!actions/common/delete-branch/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-delete-branch.yaml'
   pull_request:
     paths:
       - 'actions/common/delete-branch/**'
+      - '!actions/common/delete-branch/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-delete-branch.yaml'
   workflow_dispatch:

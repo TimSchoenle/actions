@@ -12,11 +12,13 @@ on:
       - 'feature/common/modify-yaml'
     paths:
       - 'actions/common/modify-yaml/**'
+      - '!actions/common/modify-yaml/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-modify-yaml.yaml'
   pull_request:
     paths:
       - 'actions/common/modify-yaml/**'
+      - '!actions/common/modify-yaml/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-modify-yaml.yaml'
   workflow_dispatch:

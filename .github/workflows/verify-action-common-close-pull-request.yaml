@@ -12,11 +12,13 @@ on:
       - 'feature/common/close-pull-request'
     paths:
       - 'actions/common/close-pull-request/**'
+      - '!actions/common/close-pull-request/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-close-pull-request.yaml'
   pull_request:
     paths:
       - 'actions/common/close-pull-request/**'
+      - '!actions/common/close-pull-request/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-close-pull-request.yaml'
   workflow_dispatch:

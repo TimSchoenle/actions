@@ -12,11 +12,13 @@ on:
       - 'feature/common/get-app-git-identity'
     paths:
       - 'actions/common/get-app-git-identity/**'
+      - '!actions/common/get-app-git-identity/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-get-app-git-identity.yaml'
   pull_request:
     paths:
       - 'actions/common/get-app-git-identity/**'
+      - '!actions/common/get-app-git-identity/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-get-app-git-identity.yaml'
   workflow_dispatch:

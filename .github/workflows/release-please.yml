@@ -18,8 +18,6 @@ jobs:
       name: release
       deployment: false
     runs-on: ubuntu-latest
-    outputs:
-      paths_released: ${{ steps.release.outputs.paths_released }}
     permissions:
       contents: write # to create release commits and tags
       pull-requests: write # to manage release PRs
@@ -42,6 +40,14 @@ jobs:
         with:
           token: ${{ steps.generate_token.outputs.token }}
 
+  # Every `workflows/*` package is published twice: release-please tags the source tree as
+  # `<component>-meta-v<version>`, and publish-workflow below re-tags a clean, consumer-shaped tree
+  # as `<component>-v<version>`. This job decides which of those clean tags are still missing.
+  #
+  # It derives that from the manifest and the tags that actually exist, deliberately *not* from
+  # release-please's `paths_released` output. That makes it idempotent and self-healing: a publish
+  # leg that failed — on a rate limit, say — is simply retried on the next push to main, whereas
+  # `paths_released` is only populated on the one run that created the release.
   prepare-matrix:
     name: Prepare Workflow Matrix
     environment:
@@ -128,7 +134,6 @@ jobs:
       matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
     permissions:
       contents: write # to push release tags and commits
-      pull-requests: write # to update PR labels after release
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
@@ -143,7 +148,6 @@ jobs:
           private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
           permission-contents: write
           permission-workflows: write
-          permission-pull-requests: write
           permission-metadata: read
 
       - name: Checkout Repository
@@ -179,40 +183,56 @@ jobs:
             echo "tag_name=$TAG_NAME"
             echo "meta_tag_name=$META_TAG_NAME"
             echo "target_file=$TARGET_FILE"
+            echo "main_sha=$GITHUB_SHA"
           } >> "$GITHUB_OUTPUT"
 
+      # The notes come from the component's own changelog, never from the release pull request body.
+      # Release-please bundles every pending component into a single pull request, so that body
+      # carries all of their notes at once and using it would stamp the whole bundle onto each
+      # individual workflow release. The changelog section is per component by construction.
       - name: Get Release Notes
         id: notes
         env:
-          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
           PKG: ${{ steps.vars.outputs.pkg }}
           VERSION: ${{ steps.vars.outputs.version }}
         run: |
-          NOTES="Release $PKG $VERSION"
-          CURRENT_SHA=$(git rev-parse HEAD)
-          PR_NUMBER=$(gh pr list --search "$CURRENT_SHA" --state merged --json number --jq '.[0].number')
+          set -euo pipefail
 
-          if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
-              echo "Found PR #$PR_NUMBER"
-              PR_BODY=$(gh pr view "$PR_NUMBER" --json body --jq .body)
-              if [ -n "$PR_BODY" ]; then
-                # Escape output for multiline strings
-                EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-                {
-                  echo "release_notes<<$EOF"
-                  echo "$PR_BODY"
-                  echo "$EOF"
-                  echo "pr_number=$PR_NUMBER"
-                } >> "$GITHUB_OUTPUT"
-              fi
+          CHANGELOG="$PKG/CHANGELOG.md"
+          NOTES=""
+
+          if [ -f "$CHANGELOG" ]; then
+            # Release-please writes each entry as `## [1.2.3](<compare url>) (<date>)`, except a
+            # component's first release, which has nothing to compare against and is written bare as
+            # `## 1.0.0 (<date>)`. Take the body between this version's heading and the next one.
+            #
+            # Matched by literal prefix, never by regex: the version would have to be escaped into
+            # one, and getting that wrong fails *open* — `[?1.2.3]?` reads as a character class, so
+            # every heading matches, nothing terminates the scan, and the release gets the entire
+            # changelog. The trailing `]` or space is what stops `1.1.1` matching `## [1.1.12]`.
+            NOTES=$(awk -v ver="$VERSION" '
+              BEGIN { linked = "## [" ver "]"; bare = "## " ver " " }
+              substr($0, 1, length(linked)) == linked { found = 1; next }
+              substr($0, 1, length(bare)) == bare { found = 1; next }
+              found && substr($0, 1, 3) == "## " { exit }
+              found { print }
+            ' "$CHANGELOG")
+          else
+            echo "::warning::No changelog at $CHANGELOG; falling back to a generic release note."
           fi
 
-          if [ -z "$PR_BODY" ]; then
-              echo "release_notes=$NOTES" >> "$GITHUB_OUTPUT"
+          # A section that is present but empty is as useless as a missing one.
+          if [ -z "$(printf '%s' "$NOTES" | tr -d '[:space:]')" ]; then
+            echo "::warning::No changelog section for $VERSION in $CHANGELOG; using a generic release note."
+            NOTES="Release $PKG $VERSION"
           fi
 
-          # Capture the SHA of main (HEAD) before we switch branches for the clean release
-          echo "main_sha=$CURRENT_SHA" >> "$GITHUB_OUTPUT"
+          DELIMITER="EOF_$(dd if=/dev/urandom bs=15 count=1 status=none | base64 | tr -dc '[:alnum:]')"
+          {
+            echo "release_notes<<$DELIMITER"
+            echo "$NOTES"
+            echo "$DELIMITER"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Prepare Release Artifacts
         id: prepare_artifacts
@@ -315,7 +335,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           TREE_SHA: ${{ steps.create_tree.outputs.tree_sha }}
-          MAIN_SHA: ${{ steps.notes.outputs.main_sha }}
+          MAIN_SHA: ${{ steps.vars.outputs.main_sha }}
           COMPONENT_NAME: ${{ steps.vars.outputs.component_name }}
           VERSION: ${{ steps.vars.outputs.version }}
         with:
@@ -365,7 +385,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           META_TAG_NAME: ${{ steps.vars.outputs.meta_tag_name }}
-          MAIN_SHA: ${{ steps.notes.outputs.main_sha }}
+          MAIN_SHA: ${{ steps.vars.outputs.main_sha }}
         with:
           github-token: ${{ steps.generate_token.outputs.token }}
           script: |
@@ -394,11 +414,55 @@ jobs:
         run: |
           gh release create "$TAG_NAME" --title "${COMPONENT_NAME} ${VERSION}" --notes "$NOTES" -R "$REPO" --latest=false
 
+  # Flipping the release pull request's label is one operation on one pull request, so it does not
+  # belong inside the publish matrix. With releases bundled, every leg of that matrix resolves to the
+  # *same* pull request and they would race on it. Runs whenever the matrix ran at all: a partially
+  # failed publish still tagged something, and the leg that failed is retried on the next push.
+  label-release-pr:
+    name: Mark Release PR Tagged
+    environment:
+      name: release
+      deployment: false
+    needs: publish-workflow
+    if: always() && needs.publish-workflow.result != 'skipped'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write # to update release PR labels
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        with:
+          egress-policy: audit
+
+      - name: Generate Bot Token
+        id: generate_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          permission-pull-requests: write
+          permission-metadata: read
+
       - name: Update PR Labels
-        if: always() && steps.notes.outputs.pr_number != ''
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
-          PR_NUMBER: ${{ steps.notes.outputs.pr_number }}
+          SHA: ${{ github.sha }}
+          REPO: ${{ github.repository }}
         run: |
+          set -euo pipefail
+
+          # Best-effort throughout. The label is cosmetic — release-please sets it itself when it
+          # creates the releases — so a failure here must not redden a run whose tags all landed.
+          # That matters most exactly when it is most likely to fail: an exhausted API budget.
+          #
+          # This job does not check out the repository, so every gh call needs an explicit -R.
+          PR_NUMBER=$(gh pr list --search "$SHA" --state merged --json number --jq '.[0].number' -R "$REPO" || echo '')
+
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
+            echo "::warning::No merged pull request found for $SHA; nothing to label."
+            exit 0
+          fi
+
           echo "Updating labels for PR #$PR_NUMBER"
-          gh pr edit "$PR_NUMBER" --remove-label "autorelease: pending" --add-label "autorelease: tagged" || echo "Label update failed/skipped"
+          gh pr edit "$PR_NUMBER" --remove-label "autorelease: pending" --add-label "autorelease: tagged" -R "$REPO" ||
+            echo "::warning::Could not update labels on PR #$PR_NUMBER."

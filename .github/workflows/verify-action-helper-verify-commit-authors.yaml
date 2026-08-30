@@ -12,11 +12,13 @@ on:
       - 'feature/helper/verify-commit-authors'
     paths:
       - 'actions/helper/verify-commit-authors/**'
+      - '!actions/helper/verify-commit-authors/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-helper-verify-commit-authors.yaml'
   pull_request:
     paths:
       - 'actions/helper/verify-commit-authors/**'
+      - '!actions/helper/verify-commit-authors/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-helper-verify-commit-authors.yaml'
   workflow_dispatch:

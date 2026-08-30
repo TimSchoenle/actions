@@ -362,6 +362,27 @@ function indentJobs(fragment: string): string {
     .join('\n');
 }
 
+/**
+ * The `paths` filter shared by this workflow's push and pull_request triggers.
+ *
+ * The negation is what keeps release pull requests cheap. `<action>/**` also matches the action's
+ * own CHANGELOG.md, which release-please rewrites on every release, so a changelog-only diff used
+ * to run the action's entire end-to-end suite for nothing — and the bundled release pull request
+ * touches every changelog at once. GitHub evaluates these last-match-wins, so the negation has to
+ * follow the glob it narrows. Excluding a workflow here cannot wedge the required-check gate:
+ * ensure-actions-are-executed reads a check that never started as "not a failure".
+ */
+function triggerPaths(action: E2eAction): string {
+  return [
+    `'${action.actionPath}/**'`,
+    `'!${action.actionPath}/CHANGELOG.md'`,
+    `'packages/e2e/**'`,
+    `'.github/workflows/${workflowFileName(action)}'`,
+  ]
+    .map((pattern) => `      - ${pattern}`)
+    .join('\n');
+}
+
 /** Renders the complete workflow for one action. */
 export function renderE2eWorkflow(action: E2eAction, extraJobs = ''): string {
   const name = workflowName(action);
@@ -385,14 +406,10 @@ on:
       - main
       - 'feature/${action.actionPath.replace('actions/', '')}'
     paths:
-      - '${action.actionPath}/**'
-      - 'packages/e2e/**'
-      - '.github/workflows/${workflowFileName(action)}'
+${triggerPaths(action)}
   pull_request:
     paths:
-      - '${action.actionPath}/**'
-      - 'packages/e2e/**'
-      - '.github/workflows/${workflowFileName(action)}'
+${triggerPaths(action)}
   workflow_dispatch:
 
 concurrency:

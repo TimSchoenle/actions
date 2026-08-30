@@ -12,11 +12,13 @@ on:
       - 'feature/rust/config-contract'
     paths:
       - 'actions/rust/config-contract/**'
+      - '!actions/rust/config-contract/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-rust-config-contract.yaml'
   pull_request:
     paths:
       - 'actions/rust/config-contract/**'
+      - '!actions/rust/config-contract/CHANGELOG.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-rust-config-contract.yaml'
   workflow_dispatch:
