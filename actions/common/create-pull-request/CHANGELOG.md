@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.13](https://github.com/TimSchoenle/actions/compare/actions-common-create-pull-request-v1.0.12...actions-common-create-pull-request-v1.0.13) (2026-08-30)
+
+
+### Miscellaneous
+
+* **deps:** update step-security/harden-runner action to v2.21.0 ([#1474](https://github.com/TimSchoenle/actions/issues/1474)) ([5f77c7a](https://github.com/TimSchoenle/actions/commit/5f77c7a65b4e99f62c9ecdeaa22766a35dc017c5))
+* **deps:** update step-security/harden-runner action to v2.21.0 ([#1513](https://github.com/TimSchoenle/actions/issues/1513)) ([71715a0](https://github.com/TimSchoenle/actions/commit/71715a04001a9398d4f6baf46c8032c79d6836ff))
+* **deps:** update timschoenle/actions/actions/common/commit-changes to vactions-common-commit-changes-v1.3.2 ([#1481](https://github.com/TimSchoenle/actions/issues/1481)) ([72d51c7](https://github.com/TimSchoenle/actions/commit/72d51c771b5b3b0f108b4a2ed5962d5ba209969a))
+* **deps:** update timschoenle/actions/actions/common/commit-changes to vactions-common-commit-changes-v1.3.3 ([#1538](https://github.com/TimSchoenle/actions/issues/1538)) ([89ac5eb](https://github.com/TimSchoenle/actions/commit/89ac5eb44203cf9be3cceabba947053fa590d1da))
+* **deps:** update timschoenle/actions/actions/common/create-branch to vactions-common-create-branch-v1.4.2 ([#1478](https://github.com/TimSchoenle/actions/issues/1478)) ([30dadf2](https://github.com/TimSchoenle/actions/commit/30dadf2a7b25b450687a0381d8a43c9ad3fc0056))
+* **deps:** update timschoenle/actions/actions/common/create-branch to vactions-common-create-branch-v1.4.3 ([#1547](https://github.com/TimSchoenle/actions/issues/1547)) ([fb2889c](https://github.com/TimSchoenle/actions/commit/fb2889c5af5f8245f9c217fcd32824513ac8ccbf))
+* **deps:** update timschoenle/actions/actions/common/create-branch to vactions-common-create-branch-v1.4.4 ([#1559](https://github.com/TimSchoenle/actions/issues/1559)) ([9f837e1](https://github.com/TimSchoenle/actions/commit/9f837e1d6acba74a63ceef5719f7226a2386f3be))
+* **deps:** update timschoenle/actions/actions/common/create-branch to vactions-common-create-branch-v1.5.0 ([#1568](https://github.com/TimSchoenle/actions/issues/1568)) ([48a6918](https://github.com/TimSchoenle/actions/commit/48a6918530b3056a3bfb97f5e9befff34ac5424b))
+
 ## [1.0.12](https://github.com/TimSchoenle/actions/compare/actions-common-create-pull-request-v1.0.11...actions-common-create-pull-request-v1.0.12) (2026-08-15)
 
 

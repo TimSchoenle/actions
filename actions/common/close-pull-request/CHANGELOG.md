@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.4.0](https://github.com/TimSchoenle/actions/compare/actions-common-close-pull-request-v1.3.3...actions-common-close-pull-request-v1.4.0) (2026-08-30)
+
+
+### Features
+
+* defer and retry the work GitHub's rate limit refuses ([#1563](https://github.com/TimSchoenle/actions/issues/1563)) ([fe97452](https://github.com/TimSchoenle/actions/commit/fe9745292ab281cf31f2c62d7e93e5f0f6b15d2d))
+
+
+### Bug Fixes
+
+* survive the GitHub App rate limits that keep breaking CI ([#1558](https://github.com/TimSchoenle/actions/issues/1558)) ([fc8eb1c](https://github.com/TimSchoenle/actions/commit/fc8eb1c4a022605d9c0d3fcf17a3755816365b32))
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26.3.0 ([#1544](https://github.com/TimSchoenle/actions/issues/1544)) ([7999a4b](https://github.com/TimSchoenle/actions/commit/7999a4b5182f3240afd7e8b99a48b793ebd9ca42))
+* **deps:** update dependency @types/node to v26.4.0 ([#1554](https://github.com/TimSchoenle/actions/issues/1554)) ([1750e5e](https://github.com/TimSchoenle/actions/commit/1750e5e356affe436dcf08ee5cc03e47232e230e))
+
 ## [1.3.3](https://github.com/TimSchoenle/actions/compare/actions-common-close-pull-request-v1.3.2...actions-common-close-pull-request-v1.3.3) (2026-08-27)
 
 
