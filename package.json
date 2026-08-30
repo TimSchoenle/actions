@@ -15,6 +15,7 @@
     "generate-action-sources": "bun scripts/generate-action-sources.ts",
     "check-action-sources": "bun scripts/generate-action-sources.ts --check",
     "check-action-dist": "bun scripts/check-action-dist.ts",
+    "rerun-rate-limited": "bun scripts/rerun-rate-limited.ts",
     "lint": "eslint \"scripts/**/*.ts\" \"actions/**/src/**/*.ts\" \"packages/**/src/**/*.ts\"",
     "typecheck": "bun run generate-action-sources && bun run --workspaces typecheck",
     "format": "oxfmt .",

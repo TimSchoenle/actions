@@ -6,6 +6,7 @@ import {
   createOctokit,
   DEFAULT_RETRY_POLICY,
   isRateLimitError,
+  RATE_LIMIT_ANNOTATION_TITLE,
   rateLimitDelayMs,
   requestWithRateLimitRetry,
   type RetryClock,
@@ -15,7 +16,17 @@ import {
 vi.mock('@actions/github');
 vi.mock('@actions/core');
 
-const POLICY: RetryPolicy = { maxRetries: 3, baseDelayMs: 1_000, maxDelayMs: 60_000 };
+const POLICY: RetryPolicy = { maxRetries: 3, baseDelayMs: 1_000, maxDelayMs: 60_000, maxTotalDelayMs: 300_000 };
+
+/**
+ * Jitter draws pinned to the ends of their range, so every delay below can still be asserted exactly.
+ *
+ * A wait GitHub dictated is only ever smeared *forwards*, so `NO_JITTER` leaves it exactly as
+ * dictated. A backoff this module picked for itself is drawn from the whole interval below its cap,
+ * so `FULL_JITTER` is what reproduces the nominal schedule and `NO_JITTER` collapses it to the floor.
+ */
+const NO_JITTER = () => 0;
+const FULL_JITTER = () => 1;
 
 /** Builds an object shaped like an Octokit `RequestError`. */
 function httpError(
@@ -45,13 +56,17 @@ function graphqlError(
   });
 }
 
-/** A clock that never advances and records every requested sleep instead of waiting. */
-function fakeClock(nowMs = 0): RetryClock & { sleeps: number[] } {
+/**
+ * A clock that never advances, records every requested sleep instead of waiting, and holds its jitter
+ * at the low end so the schedules asserted below are exact.
+ */
+function fakeClock(nowMs = 0, random: () => number = NO_JITTER): RetryClock & { sleeps: number[] } {
   const sleeps: number[] = [];
 
   return {
     sleeps,
     now: () => nowMs,
+    random,
     sleep: (milliseconds) => {
       sleeps.push(milliseconds);
 
@@ -62,41 +77,41 @@ function fakeClock(nowMs = 0): RetryClock & { sleeps: number[] } {
 
 describe('rateLimitDelayMs', () => {
   it('does not retry a non-HTTP error', () => {
-    expect(rateLimitDelayMs(new Error('socket hang up'), 0, POLICY, 0)).toBeUndefined();
+    expect(rateLimitDelayMs(new Error('socket hang up'), 0, POLICY, 0, NO_JITTER)).toBeUndefined();
   });
 
   it.each([200, 404, 422, 500, 502])('does not retry status %i', (status) => {
-    expect(rateLimitDelayMs(httpError(status), 0, POLICY, 0)).toBeUndefined();
+    expect(rateLimitDelayMs(httpError(status), 0, POLICY, 0, NO_JITTER)).toBeUndefined();
   });
 
   it('does not retry a 403 that carries no rate-limit signal', () => {
     const error = httpError(403, { message: 'Resource not accessible by integration' });
 
-    expect(rateLimitDelayMs(error, 0, POLICY, 0)).toBeUndefined();
+    expect(rateLimitDelayMs(error, 0, POLICY, 0, NO_JITTER)).toBeUndefined();
   });
 
   it('honours a Retry-After header', () => {
     const error = httpError(403, { headers: { 'retry-after': '5' } });
 
-    expect(rateLimitDelayMs(error, 0, POLICY, 0)).toBe(5_000);
+    expect(rateLimitDelayMs(error, 0, POLICY, 0, NO_JITTER)).toBe(5_000);
   });
 
   it('reads headers carried directly on the error, not only under response', () => {
     const error = Object.assign(new Error('secondary'), { status: 429, headers: { 'retry-after': '3' } });
 
-    expect(rateLimitDelayMs(error, 0, POLICY, 0)).toBe(3_000);
+    expect(rateLimitDelayMs(error, 0, POLICY, 0, NO_JITTER)).toBe(3_000);
   });
 
   it('floors a zero-second Retry-After to the minimum delay', () => {
     const error = httpError(429, { headers: { 'retry-after': '0' } });
 
-    expect(rateLimitDelayMs(error, 0, POLICY, 0)).toBe(1_000);
+    expect(rateLimitDelayMs(error, 0, POLICY, 0, NO_JITTER)).toBe(1_000);
   });
 
   it('abandons retries when Retry-After exceeds the ceiling', () => {
     const error = httpError(403, { headers: { 'retry-after': '120' } });
 
-    expect(rateLimitDelayMs(error, 0, POLICY, 0)).toBeUndefined();
+    expect(rateLimitDelayMs(error, 0, POLICY, 0, NO_JITTER)).toBeUndefined();
   });
 
   it('waits for the reset when the primary budget is exhausted', () => {
@@ -107,7 +122,7 @@ describe('rateLimitDelayMs', () => {
     });
 
     // 10s until reset, plus the 1s skew buffer.
-    expect(rateLimitDelayMs(error, 0, POLICY, nowMs)).toBe(11_000);
+    expect(rateLimitDelayMs(error, 0, POLICY, nowMs, NO_JITTER)).toBe(11_000);
   });
 
   it('floors a reset already in the past to the minimum delay', () => {
@@ -115,7 +130,7 @@ describe('rateLimitDelayMs', () => {
       headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': '1' },
     });
 
-    expect(rateLimitDelayMs(error, 0, POLICY, 10_000_000)).toBe(1_000);
+    expect(rateLimitDelayMs(error, 0, POLICY, 10_000_000, NO_JITTER)).toBe(1_000);
   });
 
   it('abandons retries when the reset is further out than the ceiling', () => {
@@ -124,32 +139,32 @@ describe('rateLimitDelayMs', () => {
       headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': '3600' },
     });
 
-    expect(rateLimitDelayMs(error, 0, POLICY, nowMs)).toBeUndefined();
+    expect(rateLimitDelayMs(error, 0, POLICY, nowMs, NO_JITTER)).toBeUndefined();
   });
 
   it('backs off exponentially when the budget is spent but no reset is given', () => {
     const error = httpError(403, { headers: { 'x-ratelimit-remaining': '0' } });
 
-    expect(rateLimitDelayMs(error, 0, POLICY, 0)).toBe(1_000);
-    expect(rateLimitDelayMs(error, 1, POLICY, 0)).toBe(2_000);
-    expect(rateLimitDelayMs(error, 2, POLICY, 0)).toBe(4_000);
+    expect(rateLimitDelayMs(error, 0, POLICY, 0, FULL_JITTER)).toBe(1_000);
+    expect(rateLimitDelayMs(error, 1, POLICY, 0, FULL_JITTER)).toBe(2_000);
+    expect(rateLimitDelayMs(error, 2, POLICY, 0, FULL_JITTER)).toBe(4_000);
   });
 
   it('backs off on a secondary rate limit that arrives without a Retry-After', () => {
     const error = httpError(403, { data: { message: 'You have exceeded a secondary rate limit' } });
 
-    expect(rateLimitDelayMs(error, 0, POLICY, 0)).toBe(1_000);
-    expect(rateLimitDelayMs(error, 3, POLICY, 0)).toBe(8_000);
+    expect(rateLimitDelayMs(error, 0, POLICY, 0, FULL_JITTER)).toBe(1_000);
+    expect(rateLimitDelayMs(error, 3, POLICY, 0, FULL_JITTER)).toBe(8_000);
   });
 
   it('backs off on a bare 429 with no headers', () => {
-    expect(rateLimitDelayMs(httpError(429), 0, POLICY, 0)).toBe(1_000);
+    expect(rateLimitDelayMs(httpError(429), 0, POLICY, 0, FULL_JITTER)).toBe(1_000);
   });
 
   it('caps exponential backoff at the ceiling', () => {
     const error = httpError(429);
 
-    expect(rateLimitDelayMs(error, 20, POLICY, 0)).toBe(POLICY.maxDelayMs);
+    expect(rateLimitDelayMs(error, 20, POLICY, 0, FULL_JITTER)).toBe(POLICY.maxDelayMs);
   });
 
   // GitHub answers a rate-limited GraphQL call with HTTP 200 and an `errors` payload, so none of the
@@ -157,14 +172,14 @@ describe('rateLimitDelayMs', () => {
   it('backs off on a GraphQL rate-limit payload that carries no status', () => {
     const error = graphqlError('API rate limit already exceeded for installation ID 103406604.');
 
-    expect(rateLimitDelayMs(error, 0, POLICY, 0)).toBe(1_000);
-    expect(rateLimitDelayMs(error, 2, POLICY, 0)).toBe(4_000);
+    expect(rateLimitDelayMs(error, 0, POLICY, 0, FULL_JITTER)).toBe(1_000);
+    expect(rateLimitDelayMs(error, 2, POLICY, 0, FULL_JITTER)).toBe(4_000);
   });
 
   it('recognises a RATE_LIMITED entry whose message does not say so', () => {
     const error = graphqlError('You have exceeded your quota.', { type: 'RATE_LIMITED' });
 
-    expect(rateLimitDelayMs(error, 0, POLICY, 0)).toBe(1_000);
+    expect(rateLimitDelayMs(error, 0, POLICY, 0, FULL_JITTER)).toBe(1_000);
   });
 
   it('waits for the reset carried on a GraphQL rate-limit error', () => {
@@ -173,13 +188,54 @@ describe('rateLimitDelayMs', () => {
     });
 
     // 10s until reset, plus the 1s skew buffer.
-    expect(rateLimitDelayMs(error, 0, POLICY, 0)).toBe(11_000);
+    expect(rateLimitDelayMs(error, 0, POLICY, 0, NO_JITTER)).toBe(11_000);
   });
 
   it('does not retry a GraphQL error that is not a rate limit', () => {
     const error = graphqlError('Could not resolve to a Repository with the name "o/r".');
 
-    expect(rateLimitDelayMs(error, 0, POLICY, 0)).toBeUndefined();
+    expect(rateLimitDelayMs(error, 0, POLICY, 0, NO_JITTER)).toBeUndefined();
+  });
+});
+
+// Dozens of jobs share one installation budget during a release batch, and every one of them runs
+// the same backoff schedule. Jitter is the only thing standing between that and a herd which loses
+// the same race together, waits the same interval, and collides again on the same tick.
+describe('jitter', () => {
+  it('draws a backoff it chose itself from the whole interval below the cap', () => {
+    const error = httpError(429);
+
+    // attempt 2 caps at 4s; a mid-range draw must land inside the interval, not on its edge.
+    expect(rateLimitDelayMs(error, 2, POLICY, 0, () => 0.5)).toBe(2_000);
+  });
+
+  it('never lets a jittered backoff fall below the floor, which would be a busy loop', () => {
+    // The floor is 1s; attempt 5 caps at 32s, and the lowest draw must still not undercut it.
+    expect(rateLimitDelayMs(httpError(429), 5, POLICY, 0, NO_JITTER)).toBe(1_000);
+  });
+
+  it('smears a wait GitHub dictated forwards only, never waking before the window reopens', () => {
+    const error = httpError(403, { headers: { 'retry-after': '5' } });
+
+    expect(rateLimitDelayMs(error, 0, POLICY, 0, NO_JITTER)).toBe(5_000);
+    expect(rateLimitDelayMs(error, 0, POLICY, 0, () => 0.5)).toBeGreaterThan(5_000);
+    expect(rateLimitDelayMs(error, 0, POLICY, 0, FULL_JITTER)).toBe(10_000);
+  });
+
+  it('keeps a spread dictated wait under the per-attempt ceiling', () => {
+    const error = httpError(403, { headers: { 'retry-after': '59' } });
+
+    expect(rateLimitDelayMs(error, 0, POLICY, 0, FULL_JITTER)).toBe(POLICY.maxDelayMs);
+  });
+
+  // Whether to retry at all must not turn on a coin flip: a wait too long to serve is abandoned for
+  // every draw, and one short enough is served for every draw.
+  it('decides whether to retry on the unjittered wait', () => {
+    const tooLong = httpError(403, { headers: { 'retry-after': '61' } });
+
+    for (const roll of [NO_JITTER, () => 0.5, FULL_JITTER]) {
+      expect(rateLimitDelayMs(tooLong, 0, POLICY, 0, roll)).toBeUndefined();
+    }
   });
 });
 
@@ -203,6 +259,10 @@ describe('isRateLimitError', () => {
 });
 
 describe('requestWithRateLimitRetry', () => {
+  beforeEach(() => {
+    vi.mocked(core.error).mockClear();
+  });
+
   it('returns the result without sleeping when the request succeeds', async () => {
     const clock = fakeClock();
     const perform = vi.fn().mockResolvedValue('ok');
@@ -265,22 +325,44 @@ describe('requestWithRateLimitRetry', () => {
     expect(clock.sleeps).toEqual([1_000]);
   });
 
-  it('warns that a rate limit outlived the ceiling, which the raw error does not say', async () => {
-    vi.mocked(core.warning).mockClear();
+  it('stops once serving the next wait would overrun the total budget', async () => {
+    const policy: RetryPolicy = { ...POLICY, maxRetries: 5, maxTotalDelayMs: 5_000 };
+    const clock = fakeClock();
+    const error = httpError(403, { headers: { 'retry-after': '3' } });
+    const perform = vi.fn().mockRejectedValue(error);
+
+    await expect(requestWithRateLimitRetry(perform, policy, clock)).rejects.toBe(error);
+    // One 3s wait fits; a second would put the pair over the 5s budget, so the retries stop well
+    // short of maxRetries.
+    expect(clock.sleeps).toEqual([3_000]);
+    expect(perform).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(core.error).mock.calls[0][0]).toContain('total wait budget');
+  });
+
+  it('names the rate limit it gave up on under a stable annotation title', async () => {
     const error = graphqlError('API rate limit already exceeded for installation ID 1.', {
       headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': '3600' },
     });
 
     await expect(requestWithRateLimitRetry(vi.fn().mockRejectedValue(error), POLICY, fakeClock())).rejects.toBe(error);
-    expect(vi.mocked(core.warning).mock.calls[0][0]).toContain('rate limit');
+
+    const [message, properties] = vi.mocked(core.error).mock.calls[0];
+    expect(message).toContain('per-attempt ceiling');
+    expect(properties).toEqual({ title: RATE_LIMIT_ANNOTATION_TITLE });
+  });
+
+  it('says that the retries themselves ran out, not that the wait was too long', async () => {
+    const error = httpError(429, { headers: { 'retry-after': '1' } });
+
+    await expect(requestWithRateLimitRetry(vi.fn().mockRejectedValue(error), POLICY, fakeClock())).rejects.toBe(error);
+    expect(vi.mocked(core.error).mock.calls[0][0]).toContain(`after ${POLICY.maxRetries} retries`);
   });
 
   it('stays silent about a failure that is not a rate limit', async () => {
-    vi.mocked(core.warning).mockClear();
     const error = httpError(500);
 
     await expect(requestWithRateLimitRetry(vi.fn().mockRejectedValue(error), POLICY, fakeClock())).rejects.toBe(error);
-    expect(core.warning).not.toHaveBeenCalled();
+    expect(core.error).not.toHaveBeenCalled();
   });
 });
 
@@ -400,5 +482,13 @@ describe('DEFAULT_RETRY_POLICY', () => {
     // The ceiling must sit at or above the base, or the first backoff would already be clipped.
     expect(DEFAULT_RETRY_POLICY.maxDelayMs).toBeGreaterThanOrEqual(DEFAULT_RETRY_POLICY.baseDelayMs);
     expect(Number.isFinite(DEFAULT_RETRY_POLICY.maxDelayMs)).toBe(true);
+    // A total below the per-attempt ceiling would make that ceiling unreachable and misleading.
+    expect(DEFAULT_RETRY_POLICY.maxTotalDelayMs).toBeGreaterThanOrEqual(DEFAULT_RETRY_POLICY.maxDelayMs);
+    expect(Number.isFinite(DEFAULT_RETRY_POLICY.maxTotalDelayMs)).toBe(true);
+    // ...and a total that covers every retry at the ceiling would leave the budget with nothing to
+    // bound, which is the state this policy was in before the budget existed.
+    expect(DEFAULT_RETRY_POLICY.maxTotalDelayMs).toBeLessThan(
+      DEFAULT_RETRY_POLICY.maxDelayMs * DEFAULT_RETRY_POLICY.maxRetries,
+    );
   });
 });
