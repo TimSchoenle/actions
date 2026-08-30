@@ -15,3 +15,21 @@ jobs:
     secrets:
       APP_ID: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
       PRIVATE_KEY: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
+
+  # `auto-format` is a reusable-workflow call, so the check it publishes is named after *both* jobs
+  # ("Auto Format / Auto Format") and only exists while the call actually runs. On a release-please
+  # branch the `if:` above skips the caller, GitHub reports the bare caller name instead, and a
+  # branch-protection rule that requires the nested name waits for a status that will never arrive.
+  #
+  # This job is a plain job, so it always reports under exactly this name — it is the one safe thing
+  # for branch protection to require. See scripts/lib/required-checks.ts for the contract.
+  gate:
+    name: Auto Format Gate
+    needs: auto-format
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Fail if auto-format did not succeed
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
