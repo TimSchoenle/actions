@@ -57,6 +57,38 @@ Scripts CI runs those, plus `check-action-sources`, `check-action-dist` and `che
 each of which fails when a committed output no longer matches its source. `zizmor` and `actionlint`
 read the workflow files in the Security workflow; CodeQL analyses the TypeScript in its own.
 
+## Required status checks
+
+The default-branch ruleset marks a handful of contexts required. Two properties decide whether a
+context is safe to require, and neither is visible in the workflow that produces it:
+
+- **It must report on every pull request.** GitHub has no "not applicable" state, so a context that
+  is sometimes absent leaves the pull request on _Expected — waiting for status to be reported_
+  forever. A path-filtered workflow can never supply one. Neither can a reusable-workflow call: its
+  checks are named `<caller job> / <called job>` while the call runs, and only `<caller job>` while
+  it is skipped, so neither name is always there. A plain job is safe — a skipped one still reports,
+  and branch protection accepts it.
+- **It must report after the work it gates.** `ci-required` aggregates the path-filtered
+  `verify-action-*` workflows, and it does so from a `workflow_run` trigger, whose check runs land on
+  the default branch rather than on the pull request head. Only the commit status it POSTs reaches
+  the pull request, so `ci-required` is the context to require — never the `Aggregate verify checks`
+  job name, which on a pull request evaluates before any verify workflow has started and passes with
+  zero matches.
+
+[`scripts/lib/required-checks.ts`](scripts/lib/required-checks.ts) lists the required contexts and
+the reason for each. Its contract test proves every listed context is produced unconditionally by the
+workflow that owns it, and names the contexts that must never be required. GitHub remains the source
+of truth for enforcement; reconcile the two after changing either:
+
+```bash
+bun run check-required-checks            # report drift
+bun run check-required-checks -- --apply # rewrite the ruleset to match the manifest
+```
+
+Both read the ruleset, so they need a `gh` login with `repo` scope and are not part of CI. Apply only
+once every listed context is already produced on `main`: a context required before the workflow that
+produces it has landed blocks every open pull request instead of gating it.
+
 ## Commits
 
 Conventional Commits, because release-please reads them. The type decides the version bump for the

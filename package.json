@@ -10,6 +10,7 @@
     "remove-workflow": "bun scripts/remove-workflow.ts",
     "generate-docs": "bun scripts/generate-docs.ts",
     "generate-ci-required": "bun scripts/generate-ci-required.ts",
+    "check-required-checks": "bun scripts/check-required-checks.ts",
     "generate-e2e-workflows": "bun scripts/generate-e2e-workflows.ts",
     "check-e2e-workflows": "bun scripts/generate-e2e-workflows.ts --check",
     "generate-action-sources": "bun scripts/generate-action-sources.ts",
