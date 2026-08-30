@@ -19,7 +19,7 @@ is not, including older versions of a component whose neighbours have since rele
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Bun Setup-cached](./actions/bun/setup-cached) | [actions-bun-setup-cached-v1.1.10](https://github.com/TimSchoenle/actions/releases/tag/actions-bun-setup-cached-v1.1.10) | :white_check_mark: |
+| [Bun Setup-cached](./actions/bun/setup-cached) | [actions-bun-setup-cached-v1.1.11](https://github.com/TimSchoenle/actions/releases/tag/actions-bun-setup-cached-v1.1.11) | :white_check_mark: |
 
 #### Common
 
