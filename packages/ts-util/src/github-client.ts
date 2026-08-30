@@ -124,6 +124,51 @@ function isSecondaryRateLimit(error: unknown): boolean {
   return text.includes('secondary rate limit') || text.includes('abuse');
 }
 
+/** Reads the top-level `errors` array a `GraphqlResponseError` carries, or an empty list. */
+function graphqlErrors(error: unknown): unknown[] {
+  if (typeof error !== 'object' || error === null) {
+    return [];
+  }
+
+  const { errors } = error as { errors?: unknown };
+
+  return Array.isArray(errors) ? errors : [];
+}
+
+/** The `type` GitHub puts on a GraphQL error entry it rejected for rate limiting. */
+const GRAPHQL_RATE_LIMITED_TYPE = 'RATE_LIMITED';
+
+/** Matches the wording GitHub uses for a rate-limit refusal, primary and secondary alike. */
+const RATE_LIMIT_MESSAGE = /rate limit/i;
+
+/**
+ * Recognises a GraphQL request GitHub refused for rate limiting.
+ *
+ * The GraphQL API answers such a refusal with HTTP **200** and an `errors` payload, so there is no
+ * status to classify by: `@octokit/graphql` turns that payload into a `GraphqlResponseError` that
+ * carries the response headers but none of the HTTP signals the rest of this module reads. Every
+ * write these actions perform — commits, branches, pull requests — goes through GraphQL, so this is
+ * the path that matters most, not an edge case.
+ */
+function isGraphqlRateLimited(error: unknown): boolean {
+  return graphqlErrors(error).some((entry) => {
+    if (typeof entry !== 'object' || entry === null) {
+      return false;
+    }
+
+    const { message, type } = entry as { message?: unknown; type?: unknown };
+
+    return type === GRAPHQL_RATE_LIMITED_TYPE || (typeof message === 'string' && RATE_LIMIT_MESSAGE.test(message));
+  });
+}
+
+/** Whether GitHub refused this request for rate limiting, over either the REST or the GraphQL path. */
+export function isRateLimitError(error: unknown): boolean {
+  const status = httpStatus(error);
+
+  return (status !== undefined && RATE_LIMIT_STATUSES.has(status)) || isGraphqlRateLimited(error);
+}
+
 /** Exponential backoff, capped at the policy ceiling. */
 function backoffMs(attempt: number, policy: RetryPolicy): number {
   return Math.min(policy.baseDelayMs * 2 ** attempt, policy.maxDelayMs);
@@ -150,7 +195,8 @@ function boundedDelay(milliseconds: number, policy: RetryPolicy): number | undef
  *  1. `Retry-After` — GitHub stating the exact wait (secondary limits, and any explicit header).
  *  2. `x-ratelimit-remaining: 0` with `x-ratelimit-reset` — the primary budget is spent; wait for the
  *     window to reopen.
- *  3. A secondary-limit message, or a bare 429 — no time was given, so back off exponentially.
+ *  3. A GraphQL rate-limit payload, a secondary-limit message, or a bare 429 — no time was given, so
+ *     back off exponentially.
  * A 403 carrying none of these is a permission or availability error, which retrying cannot mend.
  */
 export function rateLimitDelayMs(
@@ -159,11 +205,11 @@ export function rateLimitDelayMs(
   policy: RetryPolicy,
   nowMs: number,
 ): number | undefined {
-  const status = httpStatus(error);
-  if (status === undefined || !RATE_LIMIT_STATUSES.has(status)) {
+  if (!isRateLimitError(error)) {
     return undefined;
   }
 
+  const status = httpStatus(error);
   const headers = httpHeaders(error);
 
   const retryAfterSeconds = nonNegativeInt(headers['retry-after']);
@@ -180,11 +226,31 @@ export function rateLimitDelayMs(
     return boundedDelay(backoffMs(attempt, policy), policy);
   }
 
-  if (isSecondaryRateLimit(error) || status === 429) {
+  if (isGraphqlRateLimited(error) || isSecondaryRateLimit(error) || status === 429) {
     return boundedDelay(backoffMs(attempt, policy), policy);
   }
 
   return undefined;
+}
+
+/**
+ * Names the rate limit a retry loop is about to give up on.
+ *
+ * The raw error says only that GitHub refused the request; it never says that the refusal was ridden
+ * out to the end of the policy, which is the part an operator can act on — a GraphQL refusal least of
+ * all, since it reads as an ordinary response error.
+ */
+function warnUnretried(error: unknown, attempt: number, policy: RetryPolicy, owns: (error: unknown) => boolean): void {
+  if (!owns(error)) {
+    return;
+  }
+
+  const reason =
+    attempt >= policy.maxRetries
+      ? `it is still in force after ${policy.maxRetries} retries`
+      : `the wait it requires exceeds the ${Math.ceil(policy.maxDelayMs / 1_000)}s ceiling`;
+
+  core.warning(`GitHub API rate limit hit and not ridden out — ${reason}: ${errorMessage(error)}`);
 }
 
 /**
@@ -197,13 +263,24 @@ export async function requestWithRateLimitRetry<T>(
   perform: () => Promise<T>,
   policy: RetryPolicy,
   clock: RetryClock = REAL_CLOCK,
+  /**
+   * Narrows which failures this loop is responsible for. It exists so the two seams in
+   * {@link rateLimitRetryPlugin} cannot both retry the same error: the GraphQL seam sits on top of
+   * the retried `request` hook, so everything it sees except an HTTP 200 rate-limit payload has
+   * already had its retries spent underneath.
+   */
+  owns: (error: unknown) => boolean = isRateLimitError,
 ): Promise<T> {
   for (let attempt = 0; ; attempt += 1) {
     try {
       return await perform();
     } catch (error) {
-      const delayMs = attempt < policy.maxRetries ? rateLimitDelayMs(error, attempt, policy, clock.now()) : undefined;
+      const delayMs =
+        owns(error) && attempt < policy.maxRetries ? rateLimitDelayMs(error, attempt, policy, clock.now()) : undefined;
+
       if (delayMs === undefined) {
+        warnUnretried(error, attempt, policy, owns);
+
         throw error;
       }
 
@@ -217,25 +294,60 @@ export async function requestWithRateLimitRetry<T>(
 }
 
 /**
- * Just the hook surface the retry plugin touches, borrowed from the real Octokit type so the wrapped
- * `request` and its result stay precisely typed rather than widened to `unknown` — and so the plugin
+ * Just the surface the retry plugin touches, borrowed from the real Octokit type so the wrapped
+ * `request` and `graphql` stay precisely typed rather than widened to `unknown` — and so the plugin
  * remains assignable to `getOctokit`'s plugin parameter.
  */
-type HookableOctokit = Pick<ReturnType<typeof github.getOctokit>, 'hook'>;
+type RetryableOctokit = Pick<ReturnType<typeof github.getOctokit>, 'graphql' | 'hook'>;
+
+/** The `graphql` callable Octokit exposes, together with the two properties it carries. */
+type GraphqlApi = RetryableOctokit['graphql'];
+
+/**
+ * Rebuilds a `graphql` callable so the rate limits its transport cannot see are retried, preserving
+ * the properties the callable carries.
+ *
+ * Only HTTP 200 rate-limit payloads are this seam's to retry; an HTTP-level rate limit has already
+ * been through the retried `request` hook below it, and retrying it again here would multiply both
+ * the attempts and the waiting.
+ *
+ * `defaults` is wrapped rather than passed through, so a derived client keeps the retry instead of
+ * silently dropping back to the bare API.
+ */
+function withGraphqlRetry(graphqlApi: GraphqlApi, policy: RetryPolicy, clock: RetryClock): GraphqlApi {
+  const call = (...parameters: Parameters<GraphqlApi>): ReturnType<GraphqlApi> =>
+    requestWithRateLimitRetry(() => graphqlApi(...parameters), policy, clock, isGraphqlRateLimited);
+
+  return Object.assign(call as GraphqlApi, {
+    defaults: (newDefaults: Parameters<GraphqlApi['defaults']>[0]): GraphqlApi =>
+      withGraphqlRetry(graphqlApi.defaults(newDefaults), policy, clock),
+    endpoint: graphqlApi.endpoint,
+  });
+}
 
 /**
  * Binds an Octokit instance to a rate-limit retry policy.
  *
- * Delivered as an Octokit plugin rather than a post-construction tweak for two reasons: it wraps
- * `request`, through which Octokit routes both REST and GraphQL, so one seam covers every call; and
- * because `getOctokit` runs plugins only on a real instance, a test that mocks `getOctokit` never
- * reaches the wrap — the retry is exercised directly through {@link requestWithRateLimitRetry}.
+ * Delivered as an Octokit plugin rather than a post-construction tweak because `getOctokit` accepts
+ * one, and because Octokit merges a plugin's return value onto the instance — which is the only
+ * supported way to reach the second of the two seams this needs:
+ *
+ *  * `request` covers everything that fails as an HTTP error, REST and GraphQL transport alike;
+ *  * `graphql` covers what `request` structurally cannot. GitHub answers a rate-limited GraphQL call
+ *    with HTTP 200 and an `errors` payload, and `@octokit/graphql` raises that as an error only
+ *    *after* the request hook has already returned the successful response — so a rate-limited
+ *    mutation never reached the retry at all until it was wrapped here.
+ *
+ * `getOctokit` runs plugins only on a real instance, so a test that mocks it never reaches either
+ * wrap; both are exercised directly through {@link requestWithRateLimitRetry}.
  */
 function rateLimitRetryPlugin(policy: RetryPolicy, clock: RetryClock) {
-  return (octokit: HookableOctokit): void => {
+  return (octokit: RetryableOctokit): { graphql: GraphqlApi } => {
     octokit.hook.wrap('request', (request, options) =>
       requestWithRateLimitRetry(() => Promise.resolve(request(options)), policy, clock),
     );
+
+    return { graphql: withGraphqlRetry(octokit.graphql, policy, clock) };
   };
 }
 
