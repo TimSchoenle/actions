@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.4.0](https://github.com/TimSchoenle/actions/compare/actions-maintenance-auto-approve-pr-v1.3.2...actions-maintenance-auto-approve-pr-v1.4.0) (2026-08-30)
+
+
+### Features
+
+* defer and retry the work GitHub's rate limit refuses ([#1563](https://github.com/TimSchoenle/actions/issues/1563)) ([fe97452](https://github.com/TimSchoenle/actions/commit/fe9745292ab281cf31f2c62d7e93e5f0f6b15d2d))
+
+
+### Bug Fixes
+
+* survive the GitHub App rate limits that keep breaking CI ([#1558](https://github.com/TimSchoenle/actions/issues/1558)) ([fc8eb1c](https://github.com/TimSchoenle/actions/commit/fc8eb1c4a022605d9c0d3fcf17a3755816365b32))
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26.3.0 ([#1544](https://github.com/TimSchoenle/actions/issues/1544)) ([7999a4b](https://github.com/TimSchoenle/actions/commit/7999a4b5182f3240afd7e8b99a48b793ebd9ca42))
+* **deps:** update dependency @types/node to v26.4.0 ([#1554](https://github.com/TimSchoenle/actions/issues/1554)) ([1750e5e](https://github.com/TimSchoenle/actions/commit/1750e5e356affe436dcf08ee5cc03e47232e230e))
+* **deps:** update dependency bun to v1.4.0 ([#1528](https://github.com/TimSchoenle/actions/issues/1528)) ([a5b5384](https://github.com/TimSchoenle/actions/commit/a5b53841db8a5092c7df882f607b641f79d90b44))
+* **deps:** update step-security/harden-runner action to v2.21.0 ([#1474](https://github.com/TimSchoenle/actions/issues/1474)) ([5f77c7a](https://github.com/TimSchoenle/actions/commit/5f77c7a65b4e99f62c9ecdeaa22766a35dc017c5))
+* **deps:** update step-security/harden-runner action to v2.21.0 ([#1513](https://github.com/TimSchoenle/actions/issues/1513)) ([71715a0](https://github.com/TimSchoenle/actions/commit/71715a04001a9398d4f6baf46c8032c79d6836ff))
+* **deps:** update vitest monorepo to v4.1.11 ([#1522](https://github.com/TimSchoenle/actions/issues/1522)) ([97d8a8c](https://github.com/TimSchoenle/actions/commit/97d8a8c31d16965ebb2336b6a0417582d4a2817c))
+
+
+### Dependencies
+
+* **deps:** lock file maintenance ([#1535](https://github.com/TimSchoenle/actions/issues/1535)) ([f822b27](https://github.com/TimSchoenle/actions/commit/f822b272bae418e4b0858c37df5812cfc5a6da9b))
+
 ## [1.3.2](https://github.com/TimSchoenle/actions/compare/actions-maintenance-auto-approve-pr-v1.3.1...actions-maintenance-auto-approve-pr-v1.3.2) (2026-08-19)
 
 

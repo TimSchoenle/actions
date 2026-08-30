@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.33](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.32...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.33) (2026-08-30)
+
+
+### Bug Fixes
+
+* survive the GitHub App rate limits that keep breaking CI ([#1558](https://github.com/TimSchoenle/actions/issues/1558)) ([fc8eb1c](https://github.com/TimSchoenle/actions/commit/fc8eb1c4a022605d9c0d3fcf17a3755816365b32))
+
 ## [1.2.32](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.31...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.32) (2026-08-20)
 
 

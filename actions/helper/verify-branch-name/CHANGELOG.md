@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.3](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-branch-name-v1.3.2...actions-helper-verify-branch-name-v1.3.3) (2026-08-30)
+
+
+### Bug Fixes
+
+* **e2e:** resolve extra-jobs pins from the generator, not the fragment ([#1566](https://github.com/TimSchoenle/actions/issues/1566)) ([c28f8a6](https://github.com/TimSchoenle/actions/commit/c28f8a6fb4c3e89e1705f68f55b766eefdbf6dac))
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26.3.0 ([#1544](https://github.com/TimSchoenle/actions/issues/1544)) ([7999a4b](https://github.com/TimSchoenle/actions/commit/7999a4b5182f3240afd7e8b99a48b793ebd9ca42))
+* **deps:** update dependency @types/node to v26.4.0 ([#1554](https://github.com/TimSchoenle/actions/issues/1554)) ([1750e5e](https://github.com/TimSchoenle/actions/commit/1750e5e356affe436dcf08ee5cc03e47232e230e))
+
 ## [1.3.2](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-branch-name-v1.3.1...actions-helper-verify-branch-name-v1.3.2) (2026-08-23)
 
 
