@@ -115,7 +115,7 @@ outputs. Where an action needs more than that, a README sits next to it.
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | Auto approve Pull Requests with the given user ids and branches. | [actions-maintenance-auto-approve-pr-v1.3.2](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.3.2) | `uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@abf371d5c6afa750195ca35b42161c472b9a6f6f # tag=actions-maintenance-auto-approve-pr-v1.3.2` |
+| [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | Auto approve Pull Requests with the given user ids and branches. | [actions-maintenance-auto-approve-pr-v1.4.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.4.0) | `uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@actions-maintenance-auto-approve-pr-v1.4.0 # tag=actions-maintenance-auto-approve-pr-v1.4.0` |
 | [Maintenance Ensure-actions-are-executed](./actions/maintenance/ensure-actions-are-executed) | Ensures selected checks completed successfully when they were started. | [actions-maintenance-ensure-actions-are-executed-v1.4.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v1.4.0) | `uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@20c48f8128fc1e8fc99048cbd136acf72a925124 # tag=actions-maintenance-ensure-actions-are-executed-v1.4.0` |
 
 #### Rust
