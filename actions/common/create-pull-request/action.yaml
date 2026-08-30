@@ -80,7 +80,7 @@ runs:
 
     - name: Create Branch
       id: branch
-      uses: TimSchoenle/actions/actions/common/create-branch@eebcc1d0a53fa82802187feae9a2eca9e6c175d5 # tag=actions-common-create-branch-v1.4.4
+      uses: TimSchoenle/actions/actions/common/create-branch@e6aca7309910609235446a9552751c102e233a2a # tag=actions-common-create-branch-v1.5.0
       with:
         token: ${{ steps.generate_token.outputs.token }}
         repository: ${{ inputs.repository }}
