@@ -72,7 +72,7 @@ is not, including older versions of a component whose neighbours have since rele
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Rust Auto-format](./actions/rust/auto-format) | [actions-rust-auto-format-v1.1.11](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v1.1.11) | :white_check_mark: |
-| [Rust Cargo-check](./actions/rust/cargo-check) | [actions-rust-cargo-check-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.1.5) | :white_check_mark: |
+| [Rust Cargo-check](./actions/rust/cargo-check) | [actions-rust-cargo-check-v1.1.6](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.1.6) | :white_check_mark: |
 | [Rust Clippy](./actions/rust/clippy) | [actions-rust-clippy-v1.1.9](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-clippy-v1.1.9) | :white_check_mark: |
 | [Rust Config Contract](./actions/rust/config-contract) | [actions-rust-config-contract-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-config-contract-v1.1.0) | :white_check_mark: |
 | [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | [actions-rust-coverage-codecov-v1.1.40](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.40) | :white_check_mark: |
