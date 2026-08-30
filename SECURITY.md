@@ -51,7 +51,7 @@ is not, including older versions of a component whose neighbours have since rele
 | --- | --- | --- |
 | [Helper Verify-branch-name](./actions/helper/verify-branch-name) | [actions-helper-verify-branch-name-v1.3.2](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-branch-name-v1.3.2) | :white_check_mark: |
 | [Resolve Branch](./actions/helper/resolve-base-branch) | [actions-helper-resolve-base-branch-v1.3.2](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-resolve-base-branch-v1.3.2) | :white_check_mark: |
-| [Verify Commit Authors](./actions/helper/verify-commit-authors) | [actions-helper-verify-commit-authors-v1.3.2](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v1.3.2) | :white_check_mark: |
+| [Verify Commit Authors](./actions/helper/verify-commit-authors) | [actions-helper-verify-commit-authors-v1.4.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v1.4.0) | :white_check_mark: |
 
 #### Java-gradle
 
