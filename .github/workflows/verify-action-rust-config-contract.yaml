@@ -73,7 +73,7 @@ jobs:
       # it to 'latest', which would win otherwise. It reinstalls on every run whatever the cache did,
       # which is what validates the restored tree against the lockfile before the next job trusts it.
       - name: Setup Bun And Install
-        uses: TimSchoenle/actions/actions/bun/setup-cached@cbdcf6fd08b46059064bc9c91efa6b610a9ee7db # tag=actions-bun-setup-cached-v1.1.10
+        uses: TimSchoenle/actions/actions/bun/setup-cached@e16a1e466faf8ec751b26289c1898143a253269f # tag=actions-bun-setup-cached-v1.1.11
         with:
           bun-version: ''
           bun-version-file: '.bun-version'
