@@ -82,7 +82,7 @@ runs:
     - name: Commit Rendered File
       id: commit
       if: steps.render.outputs.changed == 'true'
-      uses: TimSchoenle/actions/actions/common/commit-changes@57e5492e68be560bddac3c6fc9ba0a944cfee961 # tag=actions-common-commit-changes-v1.3.3
+      uses: TimSchoenle/actions/actions/common/commit-changes@e16a1e466faf8ec751b26289c1898143a253269f # tag=actions-common-commit-changes-v1.4.0
       with:
         token: ${{ inputs.token }}
         commit_message: ${{ inputs.commit_message }}
