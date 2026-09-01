@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.29](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.28...workflows-maintenance-auto-bun-prettier-meta-v1.1.29) (2026-09-01)
+
+
+### Miscellaneous
+
+* **deps:** update timschoenle/actions/actions/bun/setup-cached to vactions-bun-setup-cached-v1.1.11 ([#1576](https://github.com/TimSchoenle/actions/issues/1576)) ([14103f5](https://github.com/TimSchoenle/actions/commit/14103f521e483ff628614e484bb5e31df3fba2ac))
+* **deps:** update timschoenle/actions/actions/common/commit-changes to vactions-common-commit-changes-v1.4.0 ([#1582](https://github.com/TimSchoenle/actions/issues/1582)) ([321d34c](https://github.com/TimSchoenle/actions/commit/321d34c3aba7a458e567f3f169f441bf1a893d11))
+
 ## [1.1.28](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.27...workflows-maintenance-auto-bun-prettier-meta-v1.1.28) (2026-08-30)
 
 
