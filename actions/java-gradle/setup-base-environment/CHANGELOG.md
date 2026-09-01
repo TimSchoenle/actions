@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.11](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-setup-base-environment-v1.2.10...actions-java-gradle-setup-base-environment-v1.2.11) (2026-09-01)
+
+
+### Miscellaneous
+
+* **deps:** update actions/setup-java action to v6 ([#1545](https://github.com/TimSchoenle/actions/issues/1545)) ([5474dc3](https://github.com/TimSchoenle/actions/commit/5474dc34296bf369d41e39e2ef400401cd48cf57))
+
 ## [1.2.10](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-setup-base-environment-v1.2.9...actions-java-gradle-setup-base-environment-v1.2.10) (2026-08-30)
 
 
