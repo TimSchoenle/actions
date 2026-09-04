@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.22](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.4.21...workflows-maintenance-auto-approve-renovate-meta-v1.4.22) (2026-09-04)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#1593](https://github.com/TimSchoenle/actions/issues/1593)) ([b02192f](https://github.com/TimSchoenle/actions/commit/b02192fa2c6545fa920b1e366bbf3572715990e2))
+* **deps:** update timschoenle/actions/actions/maintenance/auto-approve-pr to vactions-maintenance-auto-approve-pr-v1.4.0 ([#1587](https://github.com/TimSchoenle/actions/issues/1587)) ([3565192](https://github.com/TimSchoenle/actions/commit/3565192697f06d2970d7216d97655ec03a4b3abd))
+
 ## [1.4.21](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-approve-renovate-meta-v1.4.20...workflows-maintenance-auto-approve-renovate-meta-v1.4.21) (2026-08-20)
 
 

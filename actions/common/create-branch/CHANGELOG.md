@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/TimSchoenle/actions/compare/actions-common-create-branch-v1.5.0...actions-common-create-branch-v1.5.1) (2026-09-04)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26.4.1 ([#1599](https://github.com/TimSchoenle/actions/issues/1599)) ([c98ff8c](https://github.com/TimSchoenle/actions/commit/c98ff8c7d60e9f3056648b460e9eaefa8fdf04a1))
+
 ## [1.5.0](https://github.com/TimSchoenle/actions/compare/actions-common-create-branch-v1.4.4...actions-common-create-branch-v1.5.0) (2026-08-30)
 
 
