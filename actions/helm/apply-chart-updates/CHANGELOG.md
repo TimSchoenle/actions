@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3](https://github.com/TimSchoenle/actions/compare/actions-helm-apply-chart-updates-v1.2.2...actions-helm-apply-chart-updates-v1.2.3) (2026-09-04)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26.4.1 ([#1599](https://github.com/TimSchoenle/actions/issues/1599)) ([c98ff8c](https://github.com/TimSchoenle/actions/commit/c98ff8c7d60e9f3056648b460e9eaefa8fdf04a1))
+
 ## [1.2.2](https://github.com/TimSchoenle/actions/compare/actions-helm-apply-chart-updates-v1.2.1...actions-helm-apply-chart-updates-v1.2.2) (2026-08-30)
 
 

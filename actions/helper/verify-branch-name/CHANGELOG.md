@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.4](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-branch-name-v1.3.3...actions-helper-verify-branch-name-v1.3.4) (2026-09-04)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26.4.1 ([#1599](https://github.com/TimSchoenle/actions/issues/1599)) ([c98ff8c](https://github.com/TimSchoenle/actions/commit/c98ff8c7d60e9f3056648b460e9eaefa8fdf04a1))
+
 ## [1.3.3](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-branch-name-v1.3.2...actions-helper-verify-branch-name-v1.3.3) (2026-08-30)
 
 
