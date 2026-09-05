@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.44](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v1.1.43...actions-rust-coverage-codecov-v1.1.44) (2026-09-05)
+
+
+### Miscellaneous
+
+* **deps:** update step-security/harden-runner action to v2.21.1 ([#1595](https://github.com/TimSchoenle/actions/issues/1595)) ([1e82247](https://github.com/TimSchoenle/actions/commit/1e82247dbfa70e01d8614907211ea6850f7472d3))
+* **deps:** update taiki-e/install-action action to v2.87.4 ([#1603](https://github.com/TimSchoenle/actions/issues/1603)) ([bc220ab](https://github.com/TimSchoenle/actions/commit/bc220abf1dacca4516c0384c366b528ac9f7ca07))
+
 ## [1.1.43](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v1.1.42...actions-rust-coverage-codecov-v1.1.43) (2026-09-04)
 
 
