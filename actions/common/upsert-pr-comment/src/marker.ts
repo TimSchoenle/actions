@@ -6,6 +6,7 @@
  * mechanism: no state is carried between runs, and a workflow re-run — or a run on a different
  * runner, in a different job, after the cache was wiped — finds the same comment from the body alone.
  */
+import { quoteForLog } from 'actions-util';
 
 /**
  * Namespace every marker carries, so a key like `size` cannot collide with the sticky-comment
@@ -48,7 +49,7 @@ export function markerFor(identifier: string): string {
   if (!IDENTIFIER_PATTERN.test(identifier)) {
     throw new InvalidIdentifierError(
       `identifier must be 1-64 characters of letters, digits, '.', '_' or '-', starting with a letter or digit, ` +
-        `got ${JSON.stringify(identifier)}`,
+        `got ${quoteForLog(identifier)}`,
     );
   }
 

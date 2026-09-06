@@ -70,8 +70,12 @@ describe('upsert-pr-comment (adversarial)', () => {
       await expect(scratch.issueComments(prNumber)).resolves.toEqual([]);
     });
 
+    // The character sits *inside* the identifier rather than at its end. Inputs arrive as
+    // environment variables and `@actions/core` trims them, so a trailing carriage return, line feed
+    // or line separator is gone before the action ever sees it: a case shaped that way would assert
+    // on `@actions/core`'s trimming instead of on this action refusing the character.
     it.each(INPUT_HOSTILE_CHARACTERS)('refuses one carrying $name, which $risk', async ({ value }) => {
-      const result = await run({ identifier: `size${value}`, body: 'report' });
+      const result = await run({ identifier: `size${value}report`, body: 'report' });
 
       expectCleanRejection(result);
       expectNoInjection(result);

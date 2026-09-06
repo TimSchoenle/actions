@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { composeBody, hasMarker, InvalidIdentifierError, markerFor, MAX_COMMENT_LENGTH } from './marker.js';
 
+/** Written by code point, so this file itself holds no line-breaking character. */
+const LINE_SEPARATOR = String.fromCodePoint(0x20_28);
+
 describe('markerFor', () => {
   it('builds a namespaced HTML comment', () => {
     expect(markerFor('docker-image-size')).toBe('<!-- timschoenle/actions:pr-comment:docker-image-size -->');
@@ -21,6 +24,7 @@ describe('markerFor', () => {
     ['a slash', 'owner/size'],
     ['a colon', 'ns:size'],
     ['a non-ASCII letter', 'größe'],
+    ['a line separator', `size${LINE_SEPARATOR}other`],
     ['65 characters', 'x'.repeat(65)],
   ])('rejects an identifier carrying %s', (_name, identifier) => {
     expect(() => markerFor(identifier)).toThrow(InvalidIdentifierError);
@@ -28,6 +32,12 @@ describe('markerFor', () => {
 
   it('names the offending value in the message, quoted', () => {
     expect(() => markerFor('a b')).toThrow('"a b"');
+  });
+
+  // The message becomes an `::error::` annotation, so a character JSON leaves literal reaches the
+  // step log intact. `quoteForLog` is what escapes the ones above U+001F that JSON does not.
+  it('escapes a character the log would otherwise render, rather than passing it through', () => {
+    expect(() => markerFor(`size${LINE_SEPARATOR}other`)).toThrow(String.raw`"size\u2028other"`);
   });
 });
 
