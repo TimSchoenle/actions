@@ -1,7 +1,7 @@
 import { createOctokit } from 'actions-util/client';
 import { fetchPullRequestCommits } from 'actions-util/commits';
 
-import type { PullRequestCoordinates } from './pull-request-url.js';
+import type { PullRequestCoordinates } from 'actions-util';
 import type { PullRequestCommits } from 'actions-util/commits';
 
 /** A pull request reduced to the fields the auto-approval decision needs. */

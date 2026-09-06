@@ -1,7 +1,14 @@
+/**
+ * Turning the pull request URL a workflow hands an action into the coordinates the API needs.
+ *
+ * Shared rather than per-action because every action that acts on a pull request receives it the
+ * same way — `${{ github.event.pull_request.html_url }}` — and each one that re-derived the parse
+ * would be free to be laxer than the others about what it accepts.
+ */
+import type { RepositoryCoordinates } from './github.js';
+
 /** A pull request addressed by its repository and number. */
-export interface PullRequestCoordinates {
-  owner: string;
-  repo: string;
+export interface PullRequestCoordinates extends RepositoryCoordinates {
   number: number;
 }
 
@@ -15,8 +22,8 @@ const PULL_REQUEST_URL_PATTERN = /\/([^/\s]+)\/([^/\s]+)\/pull\/(\d+)/;
 /**
  * Extracts the repository and number a pull request URL points at.
  *
- * Rejecting a URL it cannot parse — rather than approving against a repository or number guessed from
- * a partial match — is what keeps this safe to drive auto-approval: the target of the approval must be
+ * Rejecting a URL it cannot parse — rather than acting against a repository or number guessed from a
+ * partial match — is what keeps this safe to drive a write with: the target of the write must be
  * exactly the pull request the caller named.
  *
  * @throws if the URL does not contain an `owner/repo/pull/<number>` segment.

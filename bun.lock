@@ -215,6 +215,23 @@
         "vitest": "4.1.11",
       },
     },
+    "actions/common/upsert-pr-comment": {
+      "name": "actions-common-upsert-pr-comment",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "@actions/github": "9.1.1",
+        "actions-util": "workspace:*",
+      },
+      "devDependencies": {
+        "@fast-check/vitest": "0.4.1",
+        "@types/node": "26.4.1",
+        "actions-e2e": "workspace:*",
+        "fast-check": "4.9.0",
+        "typescript": "6.0.3",
+        "vitest": "4.1.11",
+      },
+    },
     "actions/helm/apply-chart-updates": {
       "name": "actions-helm-apply-chart-updates",
       "version": "1.0.0",
@@ -628,6 +645,8 @@
     "actions-common-render-template": ["actions-common-render-template@workspace:actions/common/render-template"],
 
     "actions-common-setup-app-git-identity": ["actions-common-setup-app-git-identity@workspace:actions/common/setup-app-git-identity"],
+
+    "actions-common-upsert-pr-comment": ["actions-common-upsert-pr-comment@workspace:actions/common/upsert-pr-comment"],
 
     "actions-e2e": ["actions-e2e@workspace:packages/e2e"],
 

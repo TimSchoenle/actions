@@ -1,6 +1,4 @@
-import { parseUserIds, verifyBranch, verifyCommits } from 'actions-util';
-
-import { parsePullRequestUrl } from './pull-request-url.js';
+import { parsePullRequestUrl, parseUserIds, verifyBranch, verifyCommits } from 'actions-util';
 
 import type { AutoApproveApi } from './github-api.js';
 

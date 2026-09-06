@@ -1,0 +1,42 @@
+name: 'Upsert PR Comment'
+description: 'Posts a comment on a pull request, updating the previous comment carrying the same identifier.'
+
+inputs:
+  token:
+    description: 'GitHub Token with pull-requests: write access.'
+    required: true
+  pr_url:
+    description: 'URL of the pull request to comment on (e.g. "https://github.com/owner/repo/pull/123").'
+    required: false
+    default: ${{ github.event.pull_request.html_url }}
+  identifier:
+    description: 'Stable key naming this comment, e.g. "docker-image-size". Letters, digits, ".", "_" and "-", up to 64 characters. It is written into the comment as a hidden marker, which is how a later run finds the comment to update.'
+    required: true
+  body:
+    description: 'Markdown body of the comment. Exactly one of body or body_file must be given.'
+    required: false
+    default: ''
+  body_file:
+    description: 'Path, relative to the workspace, of a file holding the markdown body. Exactly one of body or body_file must be given.'
+    required: false
+    default: ''
+  update_existing:
+    description: 'Update the previous comment carrying the identifier instead of adding one. When false, every run posts a new comment.'
+    required: false
+    default: 'true'
+  author:
+    description: 'Only update a comment posted by this login (e.g. "my-app[bot]"). Empty accepts any author: anyone who can comment can then paste the marker, and the run fails when GitHub refuses to edit their comment. Set it on a repository that takes pull requests from untrusted contributors.'
+    required: false
+    default: ''
+
+outputs:
+  comment_id:
+    description: 'ID of the comment that was created or updated.'
+  comment_url:
+    description: 'URL of the comment that was created or updated.'
+  operation:
+    description: 'What the run did: "created", "updated" or "unchanged".'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

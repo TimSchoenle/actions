@@ -1,0 +1,101 @@
+import { describe, expect, it } from 'vitest';
+
+import { composeBody, hasMarker, InvalidIdentifierError, markerFor, MAX_COMMENT_LENGTH } from './marker.js';
+
+describe('markerFor', () => {
+  it('builds a namespaced HTML comment', () => {
+    expect(markerFor('docker-image-size')).toBe('<!-- timschoenle/actions:pr-comment:docker-image-size -->');
+  });
+
+  it.each(['a', 'A1', '1', 'a_b', 'a.b', 'a-b', 'x'.repeat(64)])('accepts the identifier %j', (identifier) => {
+    expect(() => markerFor(identifier)).not.toThrow();
+  });
+
+  it.each([
+    ['empty', ''],
+    ['a closing delimiter', 'size --><script>'],
+    ['a newline', 'size\nother'],
+    ['a carriage return', 'size\rother'],
+    ['a space', 'image size'],
+    ['a leading hyphen', '-size'],
+    ['a slash', 'owner/size'],
+    ['a colon', 'ns:size'],
+    ['a non-ASCII letter', 'größe'],
+    ['65 characters', 'x'.repeat(65)],
+  ])('rejects an identifier carrying %s', (_name, identifier) => {
+    expect(() => markerFor(identifier)).toThrow(InvalidIdentifierError);
+  });
+
+  it('names the offending value in the message, quoted', () => {
+    expect(() => markerFor('a b')).toThrow('"a b"');
+  });
+});
+
+describe('hasMarker', () => {
+  const marker = markerFor('size');
+
+  it('finds the marker on the first line', () => {
+    expect(hasMarker(`${marker}\n\nbody`, marker)).toBe(true);
+  });
+
+  it('finds a marker a later edit pushed down the body', () => {
+    expect(hasMarker(`intro\n${marker}\nbody`, marker)).toBe(true);
+  });
+
+  it('tolerates trailing whitespace on the marker line', () => {
+    expect(hasMarker(`${marker}  \n\nbody`, marker)).toBe(true);
+  });
+
+  it('does not match a marker embedded in a line of prose', () => {
+    expect(hasMarker(`see ${marker} for details`, marker)).toBe(false);
+  });
+
+  it('does not match a different identifier', () => {
+    expect(hasMarker(`${markerFor('other')}\n\nbody`, marker)).toBe(false);
+  });
+
+  it('does not match a prefix of the identifier', () => {
+    expect(hasMarker(`${markerFor('siz')}\n\nbody`, marker)).toBe(false);
+  });
+});
+
+describe('composeBody', () => {
+  it('puts the marker ahead of the body', () => {
+    expect(composeBody('size', 'the report')).toEqual({
+      text: '<!-- timschoenle/actions:pr-comment:size -->\n\nthe report',
+      truncated: false,
+    });
+  });
+
+  it('leaves a body that fits untouched', () => {
+    const body = 'x'.repeat(1000);
+
+    expect(composeBody('size', body).text).toContain(body);
+  });
+
+  it('cuts a body that does not fit, and says so', () => {
+    const result = composeBody('size', 'x'.repeat(MAX_COMMENT_LENGTH));
+
+    expect(result.truncated).toBe(true);
+    expect(result.text.length).toBeLessThanOrEqual(MAX_COMMENT_LENGTH);
+    expect(result.text).toContain('The rest of this comment was cut');
+  });
+
+  it('keeps the marker findable after a cut', () => {
+    const result = composeBody('size', 'x'.repeat(MAX_COMMENT_LENGTH * 2));
+
+    expect(hasMarker(result.text, markerFor('size'))).toBe(true);
+  });
+
+  it('never cuts an astral character in half', () => {
+    // A body of emoji is the shortest way to land a cut between the halves of a surrogate pair.
+    const result = composeBody('size', '🐳'.repeat(MAX_COMMENT_LENGTH));
+
+    expect(result.text).not.toMatch(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/u);
+    expect(result.text.length).toBeLessThanOrEqual(MAX_COMMENT_LENGTH);
+  });
+
+  it('rejects an identifier that would escape the marker', () => {
+    expect(() => composeBody('size --> <img src=x>', 'body')).toThrow(InvalidIdentifierError);
+  });
+});

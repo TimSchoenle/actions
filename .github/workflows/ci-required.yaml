@@ -39,6 +39,7 @@ on:
       - Verify Common Readme-variables
       - Verify Common Render-template
       - Verify Common Setup-app-git-identity
+      - Verify Common Upsert-pr-comment
       - Verify Helm Apply-chart-updates
       - Verify Helm Update Chart Version
       - Verify Helper Resolve-base-branch
