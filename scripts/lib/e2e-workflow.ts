@@ -194,6 +194,7 @@ const TOKEN_PERMISSIONS: Readonly<Record<string, TokenPermissions>> = {
   'actions/common/delete-branch': { contents: 'write' },
   'actions/common/get-app-git-identity': { metadata: 'read' },
   'actions/common/setup-app-git-identity': { metadata: 'read' },
+  'actions/common/upsert-pr-comment': { contents: 'write', 'pull-requests': 'write' },
   'actions/helper/resolve-base-branch': { contents: 'write' },
   'actions/helper/verify-commit-authors': { contents: 'write', 'pull-requests': 'write' },
   'actions/maintenance/auto-approve-pr': { contents: 'write', 'pull-requests': 'write' },

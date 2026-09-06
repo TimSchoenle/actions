@@ -58,6 +58,14 @@ export type CheckStatus = 'queued' | 'in_progress' | 'completed';
 /** The outcomes a completed check run can report. */
 export type CheckConclusion = 'success' | 'failure' | 'neutral' | 'cancelled' | 'skipped' | 'timed_out';
 
+/** One comment on a pull request, with the identity that distinguishes it from an identical one. */
+export interface IssueCommentRecord {
+  id: number;
+  body: string;
+  /** Login of whoever posted it, e.g. `my-app[bot]`. */
+  author: string;
+}
+
 /**
  * Whether a failed `deleteRef` means the ref was already gone.
  *
@@ -431,6 +439,17 @@ export class ScratchRepo {
 
   /** The comment bodies on a pull request, which is how several actions report what they did. */
   async issueComments(number: number): Promise<string[]> {
+    return (await this.issueCommentRecords(number)).map((comment) => comment.body);
+  }
+
+  /**
+   * The comments on a pull request with their identities, oldest first.
+   *
+   * The bodies alone cannot answer the question `upsert-pr-comment` turns on — whether a second run
+   * rewrote the same comment or added another one — because two runs reporting the same thing produce
+   * the same body either way. Only the id distinguishes them.
+   */
+  async issueCommentRecords(number: number): Promise<IssueCommentRecord[]> {
     const { data } = await this.octokit.rest.issues.listComments({
       owner: this.owner,
       repo: this.repo,
@@ -438,7 +457,29 @@ export class ScratchRepo {
       per_page: MAX_PAGE_SIZE,
     });
 
-    return data.map((comment) => comment.body ?? '');
+    return data.map((comment) => ({ id: comment.id, body: comment.body ?? '', author: comment.user?.login ?? '' }));
+  }
+
+  /**
+   * Posts a comment as the acting identity, as a fixture for the actions that read comments.
+   *
+   * It needs no teardown of its own: a comment lives on its pull request, and the pull request is
+   * already registered.
+   */
+  async createIssueComment(number: number, body: string): Promise<number> {
+    const { data } = await this.octokit.rest.issues.createComment({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: number,
+      body,
+    });
+
+    return data.id;
+  }
+
+  /** Deletes a comment, for the case where an action has to cope with the one it wrote being gone. */
+  async deleteIssueComment(commentId: number): Promise<void> {
+    await this.octokit.rest.issues.deleteComment({ owner: this.owner, repo: this.repo, comment_id: commentId });
   }
 
   /**
