@@ -84,16 +84,8 @@ jobs:
 
       - name: Comment on PR
         if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request' && inputs.pr_comment != ''
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@30bc73a560c7aac65f449b23378b9fd7782f8d39 # tag=actions-common-upsert-pr-comment-v1.1.0
         with:
-          github-token: ${{ steps.generate_token.outputs.token }}
-          script: |
-            const { PR_COMMENT } = process.env
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: PR_COMMENT
-            })
-        env:
-          PR_COMMENT: ${{ inputs.pr_comment }}
+          token: ${{ steps.generate_token.outputs.token }}
+          identifier: 'auto-bun-prettier'
+          body: ${{ inputs.pr_comment }}

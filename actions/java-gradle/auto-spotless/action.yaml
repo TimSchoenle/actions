@@ -111,17 +111,8 @@ runs:
 
     - name: Comment on PR
       if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request' && inputs.repository == github.repository
-      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
-      env:
-        COMMENT_MESSAGE: ${{ inputs.comment_message }}
-        REPO_OWNER: ${{ steps.parse_repo.outputs.owner }}
-        REPO_NAME: ${{ steps.parse_repo.outputs.repo_name }}
+      uses: TimSchoenle/actions/actions/common/upsert-pr-comment@30bc73a560c7aac65f449b23378b9fd7782f8d39 # tag=actions-common-upsert-pr-comment-v1.1.0
       with:
-        github-token: ${{ steps.generate_token.outputs.token }}
-        script: |
-          github.rest.issues.createComment({
-            owner: process.env.REPO_OWNER,
-            repo: process.env.REPO_NAME,
-            issue_number: context.issue.number,
-            body: process.env.COMMENT_MESSAGE
-          })
+        token: ${{ steps.generate_token.outputs.token }}
+        identifier: 'java-gradle-auto-spotless'
+        body: ${{ inputs.comment_message }}
