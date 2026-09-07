@@ -84,7 +84,7 @@ jobs:
 
       - name: Run render-template-and-commit
         id: run
-        uses: ./tmp/actions-code/actions/common/render-template-and-commit
+        uses: $/actions/common/render-template-and-commit
         with:
           template: render-test/README.hbs
           output: render-test/out/README.md
@@ -233,7 +233,7 @@ jobs:
 
       - name: First Run
         id: first
-        uses: ./tmp/actions-code/actions/common/render-template-and-commit
+        uses: $/actions/common/render-template-and-commit
         with:
           template: render-test/README.hbs
           output: render-test/out/README.md
@@ -245,7 +245,7 @@ jobs:
 
       - name: Second Run With The Same Inputs
         id: second
-        uses: ./tmp/actions-code/actions/common/render-template-and-commit
+        uses: $/actions/common/render-template-and-commit
         with:
           template: render-test/README.hbs
           output: render-test/out/README.md
@@ -259,7 +259,7 @@ jobs:
       # diff that is not a real change.
       - name: Third Run With The Variables Reordered
         id: third
-        uses: ./tmp/actions-code/actions/common/render-template-and-commit
+        uses: $/actions/common/render-template-and-commit
         with:
           template: render-test/README.hbs
           output: render-test/out/README.md
@@ -355,7 +355,7 @@ jobs:
 
       - name: Run render-template-and-commit
         id: run
-        uses: ./tmp/actions-code/actions/common/render-template-and-commit
+        uses: $/actions/common/render-template-and-commit
         with:
           template: render-test/README.hbs
           output: render-test/out/README.md
@@ -463,7 +463,7 @@ jobs:
       - name: Run render-template-and-commit (expect failure)
         id: run
         continue-on-error: true
-        uses: ./tmp/actions-code/actions/common/render-template-and-commit
+        uses: $/actions/common/render-template-and-commit
         with:
           template: render-test/README.hbs
           output: render-test/out/README.md
