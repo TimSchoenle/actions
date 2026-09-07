@@ -82,16 +82,11 @@ jobs:
 
       - name: Comment on PR
         if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request'
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@30bc73a560c7aac65f449b23378b9fd7782f8d39 # tag=actions-common-upsert-pr-comment-v1.1.0
         with:
-          github-token: ${{ steps.generate_token.outputs.token }}
-          script: |
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: '🏗️ Build artifacts (`dist/` and `src/generated/`) have been auto-updated.'
-            })
+          token: ${{ steps.generate_token.outputs.token }}
+          identifier: 'update-builds'
+          body: 'Build artifacts (`dist/` and `src/generated/`) have been auto-updated.'
 
   # The verify-action-* workflows for actions with e2e cases are generated from
   # scripts/lib/e2e-workflow.ts, which holds their pinned action refs. Renovate updates that file and
@@ -165,16 +160,11 @@ jobs:
 
       - name: Comment on PR
         if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request'
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@30bc73a560c7aac65f449b23378b9fd7782f8d39 # tag=actions-common-upsert-pr-comment-v1.1.0
         with:
-          github-token: ${{ steps.generate_token.outputs.token }}
-          script: |
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: '⚙️ Generated `verify-action-*` workflows have been rebuilt from `scripts/lib/e2e-workflow.ts`.'
-            })
+          token: ${{ steps.generate_token.outputs.token }}
+          identifier: 'update-generated-workflows'
+          body: 'Generated `verify-action-*` workflows have been rebuilt from `scripts/lib/e2e-workflow.ts`.'
 
   update-readme:
     name: Update README
@@ -230,13 +220,8 @@ jobs:
 
       - name: Comment on PR
         if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request'
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@30bc73a560c7aac65f449b23378b9fd7782f8d39 # tag=actions-common-upsert-pr-comment-v1.1.0
         with:
-          github-token: ${{ steps.generate_token.outputs.token }}
-          script: |
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: '📝 `README.md` and `SECURITY.md` have been auto-updated with the latest details.'
-            })
+          token: ${{ steps.generate_token.outputs.token }}
+          identifier: 'update-readme'
+          body: '`README.md` and `SECURITY.md` have been auto-updated with the latest details.'
