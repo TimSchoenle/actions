@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.5.0](https://github.com/TimSchoenle/actions/compare/actions-common-get-app-git-identity-v1.4.1...actions-common-get-app-git-identity-v1.5.0) (2026-09-07)
+
+
+### Features
+
+* **Action/Upsert-PrComment:** add new action ([#1620](https://github.com/TimSchoenle/actions/issues/1620)) ([9f1921a](https://github.com/TimSchoenle/actions/commit/9f1921a5628905bec449d714154a94bf22cf1107))
+
+
+### Miscellaneous
+
+* **deps:** update vitest monorepo to v5 ([#1619](https://github.com/TimSchoenle/actions/issues/1619)) ([9e0ec8d](https://github.com/TimSchoenle/actions/commit/9e0ec8d28fd551f5f9d6f3cb95c2c476e32d1f2a))
+
 ## [1.4.1](https://github.com/TimSchoenle/actions/compare/actions-common-get-app-git-identity-v1.4.0...actions-common-get-app-git-identity-v1.4.1) (2026-09-04)
 
 
