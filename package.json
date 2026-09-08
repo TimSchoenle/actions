@@ -48,7 +48,7 @@
     "eslint-plugin-unicorn": "74.0.0",
     "husky": "9.1.7",
     "iconv-lite": "0.7.3",
-    "lint-staged": "17.4.1",
+    "lint-staged": "17.5.0",
     "mute-stream": "4.0.0",
     "oxfmt": "0.66.0",
     "run-async": "4.0.6",
