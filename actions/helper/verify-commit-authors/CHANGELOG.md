@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.5.0...actions-helper-verify-commit-authors-v1.5.1) (2026-09-10)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/bun to v1.4.1 ([#1627](https://github.com/TimSchoenle/actions/issues/1627)) ([cebfecd](https://github.com/TimSchoenle/actions/commit/cebfecdc7a512c038bc658ab20bcc2df605af30f))
+
 ## [1.5.0](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-commit-authors-v1.4.1...actions-helper-verify-commit-authors-v1.5.0) (2026-09-07)
 
 

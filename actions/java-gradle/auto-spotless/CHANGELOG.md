@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.21](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.20...actions-java-gradle-auto-spotless-v1.1.21) (2026-09-10)
+
+
+### Code Refactoring
+
+* replace manual PR comments with upsert shared PR comment ac… ([#1622](https://github.com/TimSchoenle/actions/issues/1622)) ([ec4185c](https://github.com/TimSchoenle/actions/commit/ec4185cc3c2dcb2ecc55669c82e7a37491abf722))
+
+
+### Miscellaneous
+
+* **deps:** update timschoenle/actions/actions/common/commit-changes to vactions-common-commit-changes-v1.5.0 ([#1636](https://github.com/TimSchoenle/actions/issues/1636)) ([593d895](https://github.com/TimSchoenle/actions/commit/593d89569e5731fcc44048649b31f26210911348))
+
 ## [1.1.20](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.19...actions-java-gradle-auto-spotless-v1.1.20) (2026-09-07)
 
 
