@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.7](https://github.com/TimSchoenle/actions/compare/actions-common-render-template-and-commit-v1.1.6...actions-common-render-template-and-commit-v1.1.7) (2026-09-10)
+
+
+### Miscellaneous
+
+* **deps:** update timschoenle/actions/actions/common/commit-changes to vactions-common-commit-changes-v1.5.0 ([#1636](https://github.com/TimSchoenle/actions/issues/1636)) ([593d895](https://github.com/TimSchoenle/actions/commit/593d89569e5731fcc44048649b31f26210911348))
+
 ## [1.1.6](https://github.com/TimSchoenle/actions/compare/actions-common-render-template-and-commit-v1.1.5...actions-common-render-template-and-commit-v1.1.6) (2026-09-07)
 
 
