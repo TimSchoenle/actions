@@ -15,8 +15,8 @@ const MAX_PAGE_SIZE = 100;
  *
  * A 403 is deliberately *not* here, although it is what GitHub answers when the token may open issues
  * but may not edit somebody else's. Falling back on it would open a fresh issue on every single run:
- * the issue that provoked the refusal is still the oldest one carrying the marker, so the next run
- * finds it, is refused again, and adds another. Failing instead says exactly once that the marker was
+ * the issue that provoked the refusal is still the one this action's scan keeps finding, so the next
+ * run finds it, is refused again, and adds another. Failing instead says exactly once that the marker was
  * found on an issue this identity does not own, which the `author` input is there to prevent. A rate
  * limit reports as 403 too, which is a second reason not to read that status as "deleted".
  */
@@ -66,11 +66,20 @@ export function createIssueApi(token: string): IssueApi {
   return {
     async *issues({ owner, repo }: RepositoryCoordinates, state: IssueSearchState): AsyncIterable<ExistingIssue> {
       // `octokit.paginate.iterator` is what keeps the early exit real: abandoning the loop after the
-      // first match stops the generator, and the pages beyond it are never requested.
+      // first match stops the generator, and the pages beyond it are never requested. Ordering the
+      // scan by most-recently-*updated* first (rather than creation order) is what keeps that exit
+      // early on a repository with a long history: the issue this action manages gets touched by
+      // every `created`/`updated`/`reopened` run, so it resurfaces near the front of the listing every
+      // time this scan needs it again, independent of how many other issues or pull requests the
+      // repository has accumulated. A repository-wide scan has no per-container bound the way
+      // `upsert-pr-comment`'s per-pull-request comment listing does, so getting this wrong is the
+      // difference between one page and hundreds.
       const pages = octokit.paginate.iterator(octokit.rest.issues.listForRepo, {
+        direction: 'desc',
         owner,
         per_page: MAX_PAGE_SIZE,
         repo,
+        sort: 'updated',
         state,
       });
 

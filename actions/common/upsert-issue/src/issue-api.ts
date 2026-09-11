@@ -51,11 +51,11 @@ export type IssueSearchState = 'open' | 'all';
 /** The GitHub operations this action needs, kept minimal so it can be faked in tests. */
 export interface IssueApi {
   /**
-   * Every issue on the repository, oldest first.
+   * Every issue on the repository, most recently updated first.
    *
    * An iterable rather than an array because the caller stops at the first match, which on a
-   * repository with many issues is the difference between one request and a dozen. Never yields a
-   * pull request -- GitHub models one as an issue with a branch, and this action's scope is plain
+   * repository with a long history is the difference between one request and hundreds. Never yields
+   * a pull request -- GitHub models one as an issue with a branch, and this action's scope is plain
    * issues only.
    */
   issues(target: RepositoryCoordinates, state: IssueSearchState): AsyncIterable<ExistingIssue>;

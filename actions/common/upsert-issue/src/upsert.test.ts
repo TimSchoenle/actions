@@ -176,7 +176,7 @@ describe('upsertIssue', () => {
     expect(api.updateIssue).not.toHaveBeenCalled();
   });
 
-  it('takes the oldest marked issue when a race left duplicates', async () => {
+  it('takes the first marked issue the scan serves when a race left duplicates', async () => {
     const api = fakeApi([
       [issue({ body: `${marker}\n\nold`, number: 2 }), issue({ body: `${marker}\n\nold`, number: 3 })],
     ]);

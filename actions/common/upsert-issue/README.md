@@ -87,9 +87,9 @@ An issue deleted between the scan and the write becomes a new issue rather than 
 card must not stop this month's from being posted.
 
 A refusal to edit somebody else's issue does **not** fall back. Anyone who can open an issue on the repository can
-paste the marker, and falling back there would add an issue on every run forever: the pasted issue is still the
-oldest one carrying the marker, so the next run finds it and is refused again. The step fails once instead. Set
-`author` to the login the workflow posts as to skip such an issue outright.
+paste the marker, and falling back there would add an issue on every run forever: the pasted issue is still the one
+this action's scan finds, so the next run finds it and is refused again. The step fails once instead. Set `author` to
+the login the workflow posts as to skip such an issue outright.
 
 `listForRepo`, the endpoint this action scans, returns pull requests alongside issues — GitHub models a pull request
 as an issue with a branch. A pull request is never matched, even one carrying a forged marker in its body: this
@@ -98,8 +98,9 @@ action's scope is plain issues only.
 ## Concurrency
 
 Two jobs posting the same identifier at the same time both find nothing and both post. Give the caller a
-`concurrency:` group if that is reachable. The duplicate is not permanent: the oldest issue carrying the marker is the
-one every later run updates, so the pair does not alternate.
+`concurrency:` group if that is reachable. The duplicate is not permanent: this action's scan orders issues by when
+they were last updated, so the one a later run touches stays at the front of that ordering and keeps being the one
+every run after that finds. The pair does not alternate.
 
 ## Size
 
@@ -112,10 +113,15 @@ of the body, so it survives the cut.
 Finding the marked issue uses the plain issue listing (`GET /repos/{owner}/{repo}/issues`), paginated and scanned
 client-side, not `GET /search/issues`. The search index is eventually consistent: an issue created moments ago can be
 briefly invisible to it, so a workflow running on every push or every scheduled tick has a real chance of failing to
-find the issue it just created and piling up duplicates. The trade-off is cost: `search_state: all`
-on a repository carrying many closed issues can take several pages to rule a match out. `search_state: open` bounds
-that at whatever a well-maintained repository keeps open, at the price of never finding (and so never reopening) a
-manually closed match.
+find the issue it just created and piling up duplicates.
+
+The listing is ordered by most recently *updated*, not by creation date. This action touches its own issue on every
+`created`, `updated` or `reopened` run, so a state card in routine use stays near the front of that ordering and the
+scan that finds it stays cheap no matter how much other history the repository has accumulated. The cost lands on the
+cases where nothing has touched the issue recently: the first run ever, or a repository where the caller has stopped
+running this action against it. `search_state: all` on such a repository can take several pages to rule a match out;
+`search_state: open` bounds that at whatever a well-maintained repository keeps open, at the price of never finding
+(and so never reopening) a manually closed match.
 
 ## Outputs
 

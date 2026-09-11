@@ -65,7 +65,7 @@ describe('createIssueApi', () => {
     octokit = mockOctokit();
   });
 
-  it('reads every page of issues, oldest first', async () => {
+  it('reads every page of issues, most recently updated first', async () => {
     servePages(octokit, [
       [
         {
@@ -112,9 +112,11 @@ describe('createIssueApi', () => {
       },
     ]);
     expect(octokit.paginate.iterator).toHaveBeenCalledWith(octokit.rest.issues.listForRepo, {
+      direction: 'desc',
       owner: 'owner',
       per_page: 100,
       repo: 'repo',
+      sort: 'updated',
       state: 'all',
     });
   });
@@ -299,7 +301,7 @@ describe('createIssueApi', () => {
   });
 
   // Falling back here would open an issue on every run: the issue that caused the refusal keeps
-  // being the oldest one carrying the marker, so the next run finds it and is refused again.
+  // being the one this action's scan finds, so the next run finds it and is refused again.
   it('does not treat a refusal to edit somebody else’s issue as an issue that is gone', async () => {
     octokit.rest.issues.update.mockRejectedValue(httpError(403, 'Must have write access to edit this issue'));
 

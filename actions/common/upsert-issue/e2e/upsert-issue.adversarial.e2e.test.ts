@@ -43,6 +43,8 @@ const ACTION_DIRECTORY = fileURLToPath(new URL('..', import.meta.url));
 describe('upsert-issue (adversarial)', () => {
   const scratch = ScratchRepo.fromEnvironment('upsert-issue-adv');
 
+  // See the non-adversarial suite for why: the shared scratch repository's history is almost
+  // entirely pull requests, and `search_state: open` keeps a fresh identifier's "not found" scan cheap.
   function run(
     inputs: ProvidedInputs<ActionInput>,
     expected: ExpectedOutcome = 'failure',
@@ -50,7 +52,13 @@ describe('upsert-issue (adversarial)', () => {
   ): Promise<ActionRunResult<ActionOutput>> {
     return runAction<ActionInput, ActionOutput>({
       actionDirectory: ACTION_DIRECTORY,
-      inputs: { repository: scratch.repository, title: '[e2e] adversarial', token: scratch.token, ...inputs },
+      inputs: {
+        repository: scratch.repository,
+        search_state: 'open',
+        title: '[e2e] adversarial',
+        token: scratch.token,
+        ...inputs,
+      },
       secrets: [scratch.token],
       expect: expected,
       files,

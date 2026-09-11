@@ -24,6 +24,11 @@ const ACTION_DIRECTORY = fileURLToPath(new URL('..', import.meta.url));
 describe('upsert-issue', () => {
   const scratch = ScratchRepo.fromEnvironment('upsert-issue');
 
+  // The shared scratch repository carries years of history from every other action's suite, almost
+  // all of it pull requests rather than issues. `search_state: open` keeps that irrelevant to a case
+  // that never closes what it opens -- only the handful of cases exercising `reopen_if_closed`
+  // override back to `all`, which the most-recently-updated scan order (see `github-api.ts`) keeps
+  // cheap because a target closed moments ago surfaces on the first page regardless of history size.
   function run(
     inputs: ProvidedInputs<ActionInput>,
     expected: ExpectedOutcome = 'success',
@@ -31,7 +36,7 @@ describe('upsert-issue', () => {
   ): Promise<ActionRunResult<ActionOutput>> {
     return runAction<ActionInput, ActionOutput>({
       actionDirectory: ACTION_DIRECTORY,
-      inputs: { repository: scratch.repository, token: scratch.token, ...inputs },
+      inputs: { repository: scratch.repository, search_state: 'open', token: scratch.token, ...inputs },
       secrets: [scratch.token],
       expect: expected,
       files,
@@ -40,8 +45,13 @@ describe('upsert-issue', () => {
 
   afterAll(() => scratch.teardown());
 
+  // Every case below uses its own `identifier`, even where the underlying scenario could share one.
+  // These tests run against a shared, long-lived scratch repository with no per-case teardown -- only
+  // the describe-level `afterAll` -- so an identifier reused across cases would let one case's issue
+  // answer another's scan, making the outcome depend on run order instead of on what each case sets up.
+
   it('opens an issue carrying the hidden marker', async () => {
-    const result = await run({ body: 'repo is healthy', identifier: 'repo-state', title: '[e2e] create' });
+    const result = await run({ body: 'repo is healthy', identifier: 'e2e-create', title: '[e2e] create' });
     scratch.trackIssue(Number(result.outputs.issue_number));
 
     expect(result.outputs.operation).toBe('created');
@@ -49,14 +59,14 @@ describe('upsert-issue', () => {
     const record = await scratch.issueRecord(Number(result.outputs.issue_number));
 
     expect(record.title).toBe('[e2e] create');
-    expect(record.body).toBe(`${markerFor('repo-state')}\n\nrepo is healthy`);
+    expect(record.body).toBe(`${markerFor('e2e-create')}\n\nrepo is healthy`);
   });
 
   it('rewrites the title and body on a later run instead of opening one', async () => {
-    const first = await run({ body: 'v1', identifier: 'repo-state', title: '[e2e] update v1' });
+    const first = await run({ body: 'v1', identifier: 'e2e-rewrite', title: '[e2e] update v1' });
     scratch.trackIssue(Number(first.outputs.issue_number));
 
-    const second = await run({ body: 'v2', identifier: 'repo-state', title: '[e2e] update v2' });
+    const second = await run({ body: 'v2', identifier: 'e2e-rewrite', title: '[e2e] update v2' });
 
     expect(second.outputs.operation).toBe('updated');
     expect(second.outputs.issue_number).toBe(first.outputs.issue_number);
@@ -68,7 +78,7 @@ describe('upsert-issue', () => {
   });
 
   it('writes nothing at all when nothing has changed', async () => {
-    const inputs = { body: 'steady', identifier: 'repo-state', title: '[e2e] unchanged' };
+    const inputs = { body: 'steady', identifier: 'e2e-unchanged', title: '[e2e] unchanged' };
     const first = await run(inputs);
     scratch.trackIssue(Number(first.outputs.issue_number));
 
@@ -78,12 +88,14 @@ describe('upsert-issue', () => {
   });
 
   it('reopens a closed matching issue whose content already matches', async () => {
-    const inputs = { body: 'still true', identifier: 'repo-state', title: '[e2e] reopen' };
+    const inputs = { body: 'still true', identifier: 'e2e-reopen', title: '[e2e] reopen' };
     const first = await run(inputs);
     scratch.trackIssue(Number(first.outputs.issue_number));
     await scratch.closeIssue(Number(first.outputs.issue_number));
 
-    const second = await run(inputs);
+    // A closed issue is invisible to `search_state: open` by definition, so finding it back needs
+    // `all`.
+    const second = await run({ ...inputs, search_state: 'all' });
 
     expect(second.outputs).toMatchObject({ issue_number: first.outputs.issue_number, operation: 'reopened' });
     await expect(scratch.issueRecord(Number(second.outputs.issue_number))).resolves.toMatchObject({ state: 'open' });
@@ -92,7 +104,7 @@ describe('upsert-issue', () => {
   it('updates a closed matching issue in place and leaves it closed when reopen_if_closed is false', async () => {
     const first = await run({
       body: 'v1',
-      identifier: 'repo-state',
+      identifier: 'e2e-stay-closed',
       reopen_if_closed: 'false',
       title: '[e2e] stay-closed',
     });
@@ -101,8 +113,9 @@ describe('upsert-issue', () => {
 
     const second = await run({
       body: 'v2',
-      identifier: 'repo-state',
+      identifier: 'e2e-stay-closed',
       reopen_if_closed: 'false',
+      search_state: 'all',
       title: '[e2e] stay-closed',
     });
 
@@ -117,7 +130,7 @@ describe('upsert-issue', () => {
   it('enforces the label set on every run, adding and removing as the input changes', async () => {
     const first = await run({
       body: 'x',
-      identifier: 'repo-state',
+      identifier: 'e2e-labels',
       labels: 'e2e-bug',
       title: '[e2e] labels',
     });
@@ -128,7 +141,7 @@ describe('upsert-issue', () => {
 
     const second = await run({
       body: 'x',
-      identifier: 'repo-state',
+      identifier: 'e2e-labels',
       labels: 'e2e-enhancement',
       title: '[e2e] labels',
     });
@@ -208,6 +221,7 @@ describe('upsert-issue', () => {
     const { author } = await scratch.issueRecord(seeded.number);
 
     const result = await run({ author, body: 'newer', identifier: 'author-match', title: '[e2e] author-match' });
+    scratch.trackIssue(Number(result.outputs.issue_number));
 
     expect(result.outputs).toMatchObject({ issue_number: String(seeded.number), operation: 'updated' });
   });
