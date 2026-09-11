@@ -1,0 +1,57 @@
+name: 'Upsert Issue'
+description: 'Opens or updates a repository issue, updating the previous issue carrying the same identifier.'
+
+inputs:
+  token:
+    description: 'GitHub Token with issues: write access.'
+    required: true
+  repository:
+    description: 'Repository to open/update the issue on, as "owner/repo".'
+    required: false
+    default: ${{ github.repository }}
+  identifier:
+    description: 'Stable key naming this issue, e.g. "repo-state:Name". Letters, digits, ".", "_" and "-", up to 64 characters. It is written into the issue body as a hidden marker, which is how a later run finds the issue to update.'
+    required: true
+  title:
+    description: 'Issue title. Rewritten every run that finds the issue by marker -- the marker, not the title, is the identity, so the title may change between runs without losing it.'
+    required: true
+  body:
+    description: 'Markdown body of the issue. Exactly one of body or body_file must be given.'
+    required: false
+    default: ''
+  body_file:
+    description: 'Path, relative to the workspace, of a file holding the markdown body. Exactly one of body or body_file must be given.'
+    required: false
+    default: ''
+  labels:
+    description: 'Multiline list of labels the issue must carry. Enforced on every run: a label present here and missing from the issue is added, and one absent here but present on the issue is removed. A label that does not yet exist on the repository is created.'
+    required: false
+    default: ''
+  update_existing:
+    description: 'Update the previous issue carrying the identifier instead of opening one. When false, every run opens a new issue.'
+    required: false
+    default: 'true'
+  search_state:
+    description: '"open" or "all". Scope of the issue listing searched for the marker. "all" also finds a manually closed issue so it can be reopened; "open" is cheaper on a repository with many closed issues.'
+    required: false
+    default: 'all'
+  reopen_if_closed:
+    description: 'Reopen a closed issue carrying the marker. When false, a closed matching issue is updated in place and left closed rather than reopened.'
+    required: false
+    default: 'true'
+  author:
+    description: 'Only match an issue opened by this login (e.g. "my-app[bot]"). Empty accepts any author: anyone who can open an issue can then paste the marker, and the run fails when GitHub refuses to edit their issue. Set it on a repository that takes issues from untrusted contributors.'
+    required: false
+    default: ''
+
+outputs:
+  issue_number:
+    description: 'Number of the issue that was created or updated.'
+  issue_url:
+    description: 'URL of that issue.'
+  operation:
+    description: 'What the run did: "created", "updated", "reopened" or "unchanged".'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

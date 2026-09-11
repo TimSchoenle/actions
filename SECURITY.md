@@ -37,6 +37,7 @@ is not, including older versions of a component whose neighbours have since rele
 | [Render Template](./actions/common/render-template) | [actions-common-render-template-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-v1.2.1) | :white_check_mark: |
 | [Render Template And Commit](./actions/common/render-template-and-commit) | [actions-common-render-template-and-commit-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-and-commit-v1.1.7) | :white_check_mark: |
 | [Setup App Git Identity](./actions/common/setup-app-git-identity) | [actions-common-setup-app-git-identity-v1.5.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-setup-app-git-identity-v1.5.1) | :white_check_mark: |
+| [Upsert Issue](./actions/common/upsert-issue) | [actions-common-upsert-issue-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-upsert-issue-v1.0.0) | :white_check_mark: |
 | [Upsert PR Comment](./actions/common/upsert-pr-comment) | [actions-common-upsert-pr-comment-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-upsert-pr-comment-v1.1.1) | :white_check_mark: |
 
 #### Helm

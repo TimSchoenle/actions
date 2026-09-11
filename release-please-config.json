@@ -175,6 +175,11 @@
       "release-type": "simple",
       "component": "actions-common-readme-variables",
       "include-component-in-tag": true
+    },
+    "actions/common/upsert-issue": {
+      "release-type": "simple",
+      "component": "actions-common-upsert-issue",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
