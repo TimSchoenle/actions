@@ -11,7 +11,7 @@ jobs:
   auto-format:
     if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     name: Auto Format
-    uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@43ec2db1ec37dde702ff24ef2f8d25064a1d5d7f # tag=workflows-maintenance-auto-bun-prettier-v1.1.32
+    uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@e8c19a7718b5f21a87db09c5410c90ed392b61cc # tag=workflows-maintenance-auto-bun-prettier-v1.1.33
     secrets:
       APP_ID: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
       PRIVATE_KEY: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
