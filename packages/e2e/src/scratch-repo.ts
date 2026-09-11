@@ -131,6 +131,7 @@ export class ScratchRepo {
   private readonly octokit: ReturnType<typeof createOctokit>;
   private readonly branches = new Set<string>();
   private readonly pullRequests = new Set<number>();
+  private readonly issues = new Set<number>();
 
   private constructor(
     private readonly scope: string,
@@ -240,6 +241,11 @@ export class ScratchRepo {
   /** Schedules a pull request the action under test opened, so teardown closes it. */
   trackPullRequest(number: number): void {
     this.pullRequests.add(number);
+  }
+
+  /** Schedules an issue the action under test opened, so teardown closes it. */
+  trackIssue(number: number): void {
+    this.issues.add(number);
   }
 
   /** The repository's default branch, which is what most actions resolve a base against. */
@@ -413,6 +419,51 @@ export class ScratchRepo {
     };
   }
 
+  /**
+   * Opens an issue through the raw API, as a fixture for the actions that read or update issues.
+   *
+   * Setup deliberately does not go through the action under test: a case whose fixture is built by the
+   * very code it is asserting on cannot distinguish a correct result from two matching bugs.
+   */
+  async createIssueRecord(title: string, body = '', labels: string[] = []): Promise<{ number: number; url: string }> {
+    const { data } = await this.octokit.rest.issues.create({ body, labels, owner: this.owner, repo: this.repo, title });
+
+    this.issues.add(data.number);
+
+    return { number: data.number, url: data.html_url };
+  }
+
+  /** Reads an issue, for asserting on what an action did to it. */
+  async issueRecord(number: number): Promise<{
+    number: number;
+    title: string;
+    body: string | null;
+    state: string;
+    labels: string[];
+    author: string;
+  }> {
+    const { data } = await this.octokit.rest.issues.get({ issue_number: number, owner: this.owner, repo: this.repo });
+
+    return {
+      author: data.user?.login ?? '',
+      body: data.body ?? null,
+      labels: data.labels.map((label) => (typeof label === 'string' ? label : (label.name ?? ''))),
+      number: data.number,
+      state: data.state,
+      title: data.title,
+    };
+  }
+
+  /** Closes an issue, for a test needing to set up a "previously closed" fixture. */
+  async closeIssue(number: number): Promise<void> {
+    await this.octokit.rest.issues.update({
+      issue_number: number,
+      owner: this.owner,
+      repo: this.repo,
+      state: 'closed',
+    });
+  }
+
   /** The review states left on a pull request, in the order they were submitted. */
   async reviewStates(number: number): Promise<string[]> {
     const { data } = await this.octokit.rest.pulls.listReviews({
@@ -521,6 +572,33 @@ export class ScratchRepo {
     return failures;
   }
 
+  /**
+   * Closes every tracked issue, describing the ones that would not close.
+   *
+   * A 404 is not a failure here: an adversarial case may have deleted the issue on purpose, and the
+   * action's own fallback opens a *different* issue that the case tracks separately.
+   */
+  private async closeIssues(): Promise<string[]> {
+    const failures: string[] = [];
+
+    for (const number of this.issues) {
+      try {
+        await this.octokit.rest.issues.update({
+          issue_number: number,
+          owner: this.owner,
+          repo: this.repo,
+          state: 'closed',
+        });
+      } catch (error) {
+        if (!hasStatus(error, 404)) {
+          failures.push(`issue #${number}: ${errorMessage(error)}`);
+        }
+      }
+    }
+
+    return failures;
+  }
+
   /** Deletes every reserved branch, tolerating the ones that were never created. */
   /**
    * Deletes one branch, and confirms it is gone rather than trusting the response.
@@ -584,9 +662,14 @@ export class ScratchRepo {
    * repository full of stale refs.
    */
   async teardown(): Promise<void> {
-    const failures = [...(await this.closePullRequests()), ...(await this.deleteBranches())];
+    const failures = [
+      ...(await this.closePullRequests()),
+      ...(await this.closeIssues()),
+      ...(await this.deleteBranches()),
+    ];
 
     this.pullRequests.clear();
+    this.issues.clear();
     this.branches.clear();
 
     if (failures.length > 0) {
