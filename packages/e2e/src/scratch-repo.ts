@@ -464,6 +464,41 @@ export class ScratchRepo {
     });
   }
 
+  /**
+   * Waits for an issue to appear in the plain issue listing, most-recently-updated first.
+   *
+   * `GET /repos/{owner}/{repo}/issues` can lag a write it should already reflect -- confirmed directly
+   * against the real API (a freshly created issue was invisible to `state=open&sort=updated` for
+   * several seconds straight), not assumed. A case that creates or closes an issue and then relies on
+   * the action under test scanning that same listing right afterward needs this the same way a ref
+   * read needs {@link ScratchRepo.headOf}.
+   *
+   * Returns whether the issue became visible, rather than throwing, so a case can decide for itself
+   * whether that absence is the point of the assertion or a reason to fail.
+   */
+  async waitForIssueListed(number: number, state: 'all' | 'open' = 'open'): Promise<boolean> {
+    for (const delayMs of [0, ...CONVERGENCE_DELAYS_MS, 8_000]) {
+      if (delayMs > 0) {
+        await sleep(delayMs);
+      }
+
+      const { data } = await this.octokit.rest.issues.listForRepo({
+        direction: 'desc',
+        owner: this.owner,
+        per_page: MAX_PAGE_SIZE,
+        repo: this.repo,
+        sort: 'updated',
+        state,
+      });
+
+      if (data.some((issue) => issue.number === number)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   /** The review states left on a pull request, in the order they were submitted. */
   async reviewStates(number: number): Promise<string[]> {
     const { data } = await this.octokit.rest.pulls.listReviews({

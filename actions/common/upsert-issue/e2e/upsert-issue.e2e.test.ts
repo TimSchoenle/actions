@@ -17,6 +17,11 @@ import type { ActionRunResult, ExpectedOutcome, ProvidedInputs, WorkspaceFiles }
  * the decision table says they should. Every case here therefore runs the action twice (or seeds a
  * fixture through the raw API) and asserts on issue *identity*, not only on its fields -- two runs
  * reporting the same thing are indistinguishable by fields alone.
+ *
+ * A case that writes something and then immediately relies on the action's own scan finding it calls
+ * `scratch.waitForIssueListed` first. `GET /repos/{owner}/{repo}/issues` can lag a write it should
+ * already reflect by several seconds -- confirmed directly against the real API, not assumed -- and
+ * without that wait, a fast retry would look like the action failed to find something it should have.
  */
 
 const ACTION_DIRECTORY = fileURLToPath(new URL('..', import.meta.url));
@@ -65,6 +70,7 @@ describe('upsert-issue', () => {
   it('rewrites the title and body on a later run instead of opening one', async () => {
     const first = await run({ body: 'v1', identifier: 'e2e-rewrite', title: '[e2e] update v1' });
     scratch.trackIssue(Number(first.outputs.issue_number));
+    await scratch.waitForIssueListed(Number(first.outputs.issue_number), 'open');
 
     const second = await run({ body: 'v2', identifier: 'e2e-rewrite', title: '[e2e] update v2' });
 
@@ -81,6 +87,7 @@ describe('upsert-issue', () => {
     const inputs = { body: 'steady', identifier: 'e2e-unchanged', title: '[e2e] unchanged' };
     const first = await run(inputs);
     scratch.trackIssue(Number(first.outputs.issue_number));
+    await scratch.waitForIssueListed(Number(first.outputs.issue_number), 'open');
 
     const second = await run(inputs);
 
@@ -95,6 +102,7 @@ describe('upsert-issue', () => {
 
     // A closed issue is invisible to `search_state: open` by definition, so finding it back needs
     // `all`.
+    await scratch.waitForIssueListed(Number(first.outputs.issue_number), 'all');
     const second = await run({ ...inputs, search_state: 'all' });
 
     expect(second.outputs).toMatchObject({ issue_number: first.outputs.issue_number, operation: 'reopened' });
@@ -110,6 +118,7 @@ describe('upsert-issue', () => {
     });
     scratch.trackIssue(Number(first.outputs.issue_number));
     await scratch.closeIssue(Number(first.outputs.issue_number));
+    await scratch.waitForIssueListed(Number(first.outputs.issue_number), 'all');
 
     const second = await run({
       body: 'v2',
@@ -138,6 +147,7 @@ describe('upsert-issue', () => {
     await expect(scratch.issueRecord(Number(first.outputs.issue_number))).resolves.toMatchObject({
       labels: ['e2e-bug'],
     });
+    await scratch.waitForIssueListed(Number(first.outputs.issue_number), 'open');
 
     const second = await run({
       body: 'x',
@@ -157,6 +167,7 @@ describe('upsert-issue', () => {
     scratch.trackIssue(Number(state.outputs.issue_number));
     const coverage = await run({ body: 'coverage', identifier: 'two-ids-coverage', title: '[e2e] coverage' });
     scratch.trackIssue(Number(coverage.outputs.issue_number));
+    await scratch.waitForIssueListed(Number(state.outputs.issue_number), 'open');
 
     const again = await run({ body: 'state v2', identifier: 'two-ids-state', title: '[e2e] state' });
 
@@ -219,6 +230,7 @@ describe('upsert-issue', () => {
   it('updates a marked issue opened by the required author', async () => {
     const seeded = await scratch.createIssueRecord('[e2e] author-match', `${markerFor('author-match')}\n\nolder`);
     const { author } = await scratch.issueRecord(seeded.number);
+    await scratch.waitForIssueListed(seeded.number, 'open');
 
     const result = await run({ author, body: 'newer', identifier: 'author-match', title: '[e2e] author-match' });
     scratch.trackIssue(Number(result.outputs.issue_number));
