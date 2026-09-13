@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.17](https://github.com/TimSchoenle/actions/compare/actions-rust-auto-format-v1.1.16...actions-rust-auto-format-v1.1.17) (2026-09-13)
+
+
+### Miscellaneous
+
+* **deps:** update actions-rust-lang/setup-rust-toolchain action to v2 ([#1666](https://github.com/TimSchoenle/actions/issues/1666)) ([d6ced0c](https://github.com/TimSchoenle/actions/commit/d6ced0c3fe61fb88391117add288e283fa015eed))
+
 ## [1.1.16](https://github.com/TimSchoenle/actions/compare/actions-rust-auto-format-v1.1.15...actions-rust-auto-format-v1.1.16) (2026-09-11)
 
 
