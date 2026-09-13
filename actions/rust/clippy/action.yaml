@@ -39,3 +39,4 @@ runs:
       uses: clechasseur/rs-clippy-check@20f338ad6648dedb921c00b023bc30c971ab9ed7 # v6.0.7
       with:
         args: ${{ inputs.clippy_arguments }}
+        working-directory: ${{ inputs.source_directory }}
