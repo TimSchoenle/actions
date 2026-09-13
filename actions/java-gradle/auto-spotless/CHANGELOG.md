@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.23](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.22...actions-java-gradle-auto-spotless-v1.1.23) (2026-09-13)
+
+
+### Miscellaneous
+
+* **deps:** update timschoenle/actions/actions/common/upsert-pr-comment to vactions-common-upsert-pr-comment-v1.1.1 ([#1657](https://github.com/TimSchoenle/actions/issues/1657)) ([a152050](https://github.com/TimSchoenle/actions/commit/a152050423531db5b9f83130b6f128ea727b81b1))
+
 ## [1.1.22](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.21...actions-java-gradle-auto-spotless-v1.1.22) (2026-09-11)
 
 
