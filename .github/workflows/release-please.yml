@@ -158,7 +158,7 @@ jobs:
           persist-credentials: true
 
       - name: Configure Git Identity
-        uses: TimSchoenle/actions/actions/common/setup-app-git-identity@c7e430537b061a61687ed9308048fc319c97a59c # tag=actions-common-setup-app-git-identity-v1.4.1
+        uses: TimSchoenle/actions/actions/common/setup-app-git-identity@cf936b448984595778c82c079af93d0bb5d49297 # tag=actions-common-setup-app-git-identity-v1.5.1
         with:
           app-slug: ${{ steps.generate_token.outputs.app-slug }}
           token: ${{ steps.generate_token.outputs.token }}
