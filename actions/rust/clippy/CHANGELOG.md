@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.11](https://github.com/TimSchoenle/actions/compare/actions-rust-clippy-v1.1.10...actions-rust-clippy-v1.1.11) (2026-09-13)
+
+
+### Bug Fixes
+
+* **rust/clippy:** honor source_directory when running clippy ([#1673](https://github.com/TimSchoenle/actions/issues/1673)) ([b873a49](https://github.com/TimSchoenle/actions/commit/b873a49d58f515723aac668cf982a1df772495ab))
+
+
+### Miscellaneous
+
+* **deps:** update actions-rust-lang/setup-rust-toolchain action to v2 ([#1666](https://github.com/TimSchoenle/actions/issues/1666)) ([d6ced0c](https://github.com/TimSchoenle/actions/commit/d6ced0c3fe61fb88391117add288e283fa015eed))
+
 ## [1.1.10](https://github.com/TimSchoenle/actions/compare/actions-rust-clippy-v1.1.9...actions-rust-clippy-v1.1.10) (2026-08-30)
 
 
