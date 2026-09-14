@@ -13,7 +13,7 @@
       "devDependencies": {
         "@eslint/compat": "2.1.1",
         "@eslint/js": "10.0.1",
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@inquirer/prompts": "8.7.2",
         "@types/bun": "1.4.2",
         "@types/node": "26.5.1",
@@ -54,7 +54,7 @@
         "actions-util": "workspace:*",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.0",
@@ -72,7 +72,7 @@
         "actions-util": "workspace:*",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.0",
@@ -89,7 +89,7 @@
         "actions-util": "workspace:*",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.0",
@@ -106,7 +106,7 @@
         "actions-util": "workspace:*",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.0",
@@ -123,7 +123,7 @@
         "actions-util": "workspace:*",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.0",
@@ -139,7 +139,7 @@
         "actions-util": "workspace:*",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.0",
@@ -157,7 +157,7 @@
         "yaml": "2.9.0",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.0",
@@ -174,7 +174,7 @@
         "yaml": "2.9.0",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.0",
@@ -191,7 +191,7 @@
         "handlebars": "4.7.9",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.0",
@@ -224,7 +224,7 @@
         "actions-util": "workspace:*",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.0",
@@ -241,7 +241,7 @@
         "actions-util": "workspace:*",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.0",
@@ -257,7 +257,7 @@
         "actions-util": "workspace:*",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.0",
@@ -275,7 +275,7 @@
         "actions-util": "workspace:*",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.0",
@@ -291,7 +291,7 @@
         "actions-util": "workspace:*",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.0",
@@ -308,7 +308,7 @@
         "actions-util": "workspace:*",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.0",
@@ -325,7 +325,7 @@
         "actions-util": "workspace:*",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.0",
@@ -342,7 +342,7 @@
         "actions-util": "workspace:*",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.0",
@@ -359,7 +359,7 @@
         "actions-util": "workspace:*",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.0",
@@ -376,7 +376,7 @@
         "yaml": "2.9.0",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "fast-check": "4.10.0",
         "typescript": "6.0.3",
@@ -392,7 +392,7 @@
         "yaml": "2.9.0",
       },
       "devDependencies": {
-        "@fast-check/vitest": "0.4.1",
+        "@fast-check/vitest": "0.5.0",
         "@types/node": "26.5.1",
         "fast-check": "4.10.0",
         "typescript": "6.0.3",
@@ -445,7 +445,7 @@
 
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.7.3", "", { "dependencies": { "@eslint/core": "^1.2.1", "levn": "^0.4.1" } }, "sha512-IkO+/KEUvwbVpiURZg+P7zF74z5Jxe0UgJxVni+RtoHQ6IZieXaO02kmadomap/q+l6bc/jdPGGqTjhuZnuz1Q=="],
 
-    "@fast-check/vitest": ["@fast-check/vitest@0.4.1", "", { "dependencies": { "fast-check": "^3.0.0 || ^4.0.0" }, "peerDependencies": { "vitest": "^4.1.0" } }, "sha512-OX6TecB+ZzRfPc49jcPChcV1cf5aDu77CdDU8liecWVam7eD7mPvJNP50b9bBSTxVoGN5wzxrX9PIcCnqgC8bg=="],
+    "@fast-check/vitest": ["@fast-check/vitest@0.5.0", "", { "dependencies": { "fast-check": "^3.0.0 || ^4.0.0" }, "peerDependencies": { "vitest": "^4.1.0 || ^5.0.0" } }, "sha512-Kgbj2smuq1P4OhGKuPATs5i2fAxNmGbJ/zSmTrzWhQSLUrHREbKWgv9WGbNUOXcx77q6joLVMmTygyXuwP2Bog=="],
 
     "@humanfs/core": ["@humanfs/core@0.19.2", "", { "dependencies": { "@humanfs/types": "^0.15.0" } }, "sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA=="],
 
