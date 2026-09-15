@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.24](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.23...actions-java-gradle-auto-spotless-v1.1.24) (2026-09-15)
+
+
+### Miscellaneous
+
+* **deps:** update timschoenle/actions/actions/java-gradle/setup-base-environment to vactions-java-gradle-setup-base-environment-v1.2.12 ([#1679](https://github.com/TimSchoenle/actions/issues/1679)) ([98f071e](https://github.com/TimSchoenle/actions/commit/98f071e61b7b974913250346785554b1cb207da9))
+
 ## [1.1.23](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.22...actions-java-gradle-auto-spotless-v1.1.23) (2026-09-13)
 
 
