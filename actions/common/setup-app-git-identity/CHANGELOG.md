@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.5.2](https://github.com/TimSchoenle/actions/compare/actions-common-setup-app-git-identity-v1.5.1...actions-common-setup-app-git-identity-v1.5.2) (2026-09-15)
+
+
+### Bug Fixes
+
+* **deps:** update dependency yaml to v2.9.1 ([#1684](https://github.com/TimSchoenle/actions/issues/1684)) ([f228af0](https://github.com/TimSchoenle/actions/commit/f228af08cc1a1eedaf5ab6a68925fcfbaeca7908))
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26.5.0 ([#1661](https://github.com/TimSchoenle/actions/issues/1661)) ([2923099](https://github.com/TimSchoenle/actions/commit/29230993e5ebf615ce70bde86cbdc4e1791b7adc))
+
+
+### Dependencies
+
+* **deps:** lock file maintenance ([#1680](https://github.com/TimSchoenle/actions/issues/1680)) ([a7d833d](https://github.com/TimSchoenle/actions/commit/a7d833dc40338a230a034935086cac940f34c7d9))
+
 ## [1.5.1](https://github.com/TimSchoenle/actions/compare/actions-common-setup-app-git-identity-v1.5.0...actions-common-setup-app-git-identity-v1.5.1) (2026-09-10)
 
 
