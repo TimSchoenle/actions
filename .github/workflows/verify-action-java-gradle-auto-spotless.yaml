@@ -153,7 +153,7 @@ jobs:
           "${sdk_install_dir}/gradle-${GRADLE_VERSION}/bin/gradle" wrapper --gradle-version "${GRADLE_VERSION}"
 
       - name: Commit Initial Unformatted Files
-        uses: ./tmp/actions-code/actions/common/commit-changes
+        uses: $/actions/common/commit-changes
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -170,7 +170,7 @@ jobs:
 
       - name: Run Auto-Spotless Action
         id: auto_spotless
-        uses: ./tmp/actions-code/actions/java-gradle/auto-spotless
+        uses: $/actions/java-gradle/auto-spotless
         with:
           bot_app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           bot_private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
