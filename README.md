@@ -161,6 +161,14 @@ which is the path the `uses:` line resolves. Read and change the source under `w
 The Renovate presets are consumed through `extends`. The ruleset files are GitHub's own export
 format: download one and import it under the repository's Settings, then Rules.
 
+Each Checkstyle ruleset lives in its own directory under `configs/checkstyle/`, alongside a
+`configs/checkstyle/_shared/` directory holding Lombok-annotation suppressions common to every
+ruleset. Checkstyle's `${config_loc}` is a convention property your build tool sets to a local
+directory (Gradle's `checkstyle.configDirectory`, Maven's `propertyExpansion`) — it is never
+derived from a remote `configLocation` URL — so a ruleset only resolves its suppression files, its
+`../_shared/` sibling included, once you vendor both directories into your project and point your
+build tool's config directory at your copy of the ruleset directory.
+
 #### GitHub Rulesets
 
 | Config | Description |
@@ -180,6 +188,14 @@ format: download one and import it under the repository's Settings, then Rules.
 | [ci-automerge](./configs/renovate/ci-automerge.json) | Auto-merge rules for all none major Github Actions including custom actions defined in this repository. | `"extends": ["github>TimSchoenle/actions//configs/renovate/ci-automerge"]` |
 | [default](./configs/renovate/default.json) | Default configuration for Renovate | `"extends": ["github>TimSchoenle/actions//configs/renovate/default"]` |
 | [workflows](./configs/renovate/workflows.json) | Versioning rules for all custom Reusable Workflows defined in this repository | `"extends": ["github>TimSchoenle/actions//configs/renovate/workflows"]` |
+
+
+#### Checkstyle
+
+| Config | Description | Usage |
+| --- | --- | --- |
+| [Application](./configs/checkstyle/application/checkstyle.xml) | Latest Palantir Baseline Checkstyle plus strict final locals/parameters, explicit `this` qualification, and Lombok-annotation-aware suppressions, for application and service code. Unlike the Library ruleset, it omits DesignForExtension and JavadocMethod since this code has no public API surface to document or keep extension-safe. | Vendor `configs/checkstyle/application/` and `configs/checkstyle/_shared/` into your project, then point your build tool's config directory (Gradle `configDirectory`, Maven `config_loc`) at your copy of `configs/checkstyle/application/`. |
+| [Library](./configs/checkstyle/library/checkstyle.xml) | Latest Palantir Baseline Checkstyle plus strict final locals/parameters, explicit `this` qualification, and Lombok-annotation-aware suppressions. Enforces DesignForExtension and a strengthened JavadocMethod so every public and protected member of the library's API is documented and safe to extend. | Vendor `configs/checkstyle/library/` and `configs/checkstyle/_shared/` into your project, then point your build tool's config directory (Gradle `configDirectory`, Maven `config_loc`) at your copy of `configs/checkstyle/library/`. |
 
 
 

@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { generateMarkdownTable, generateSection } from './lib/readme/generator.js';
 import { getRepoInfo } from './lib/readme/git-utils.js';
 import { ActionParser } from './lib/readme/parsers/action-parser.js';
+import { CheckstyleParser } from './lib/readme/parsers/checkstyle-parser.js';
 import { GithubConfigParser } from './lib/readme/parsers/github-config-parser.js';
 import { RenovateParser } from './lib/readme/parsers/renovate-parser.js';
 import { WorkflowParser } from './lib/readme/parsers/workflow-parser.js';
@@ -80,6 +81,24 @@ export async function main() {
 
   configsOutput += await generateSection(
     renovateConfigs,
+    ['Config', 'Description', 'Usage'],
+    (item) => {
+      const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;
+      const desc = item.description.replaceAll('\n', ' ').trim();
+      return [link, desc, item.usage || ''];
+    },
+    CATEGORY_HEADING_LEVEL,
+  );
+
+  const checkstyleParser = new CheckstyleParser();
+  const checkstyleConfigs = await checkstyleParser.parse();
+
+  if (configsOutput && checkstyleConfigs.length > 0) {
+    configsOutput += '\n';
+  }
+
+  configsOutput += await generateSection(
+    checkstyleConfigs,
     ['Config', 'Description', 'Usage'],
     (item) => {
       const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;

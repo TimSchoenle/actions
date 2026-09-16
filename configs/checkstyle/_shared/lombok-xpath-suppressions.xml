@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionXpathFilter Experimental Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2_xpath_experimental.dtd">
+
+<!--
+  Shared between every ruleset in configs/checkstyle/ (referenced via ${config_loc}/../_shared/...)
+  so the Lombok-specific exceptions below have one source of truth instead of drifting copies.
+
+  Lombok generates its members (getters, setters, constructors, equals/hashCode/toString, builders,
+  etc.) after Checkstyle parses the source, so Checkstyle never sees generated code and almost never
+  conflicts with it. What follows covers the few cases where a check draws a conclusion from what the
+  developer's own source text does NOT say, and Lombok is what silently supplies the missing part:
+
+    - @UtilityClass makes every member static and adds a private constructor, but neither the
+      "static" keyword nor the constructor appear in source. RequireThis would otherwise demand
+      "this." on what become static members - itself invalid syntax once Lombok is done.
+    - @Value (and the @FieldDefaults it is implemented in terms of) makes fields private and final,
+      and the class itself final, without ever writing those keywords in source.
+    - lombok.val infers the type of, and forces the finality of, a local variable without the
+      "final" keyword ever appearing in source.
+
+  HideUtilityClassConstructor is deliberately NOT suppressed here: since Checkstyle 10.20 it has a
+  built-in `ignoreAnnotatedBy` property, configured directly on the module in checkstyle.xml, which
+  is more precise and robust than an xpath match (see checkstyle.xml in each ruleset directory).
+
+  Every query below is anchored on CLASS_DEF's own annotation rather than any node carrying a
+  same-named annotation. This matters because Spring's unrelated field/parameter-level
+  @org.springframework.beans.factory.annotation.Value can never legally target a class (it has no
+  ElementType.TYPE in its @Target), so anchoring on CLASS_DEF avoids also suppressing checks for
+  classes that merely inject a Spring-managed property with the same-named but unrelated annotation.
+  This does not help against a fully-qualified `@lombok.Value` / `@lombok.experimental.UtilityClass`
+  reference in place of the plain imported name; that is a known, accepted limitation of matching
+  annotations by simple name, shared with essentially every xpath-suppression file in the wild.
+-->
+<suppressions>
+    <!-- @UtilityClass: every member becomes static and gets a synthesized private constructor;
+         RequireThis would otherwise require "this." inside what becomes a fully static class. -->
+    <suppress-xpath checks="RequireThis"
+                    query="//CLASS_DEF[./MODIFIERS/ANNOTATION/IDENT[@text='UtilityClass']]/descendant-or-self::node()"/>
+
+    <!-- @Value / @FieldDefaults: fields are made private and final, and the class final, without
+         those keywords ever appearing in source. -->
+    <suppress-xpath checks="VisibilityModifier"
+                    query="//CLASS_DEF[./MODIFIERS/ANNOTATION/IDENT[@text='Value' or @text='FieldDefaults']]/descendant-or-self::node()"/>
+    <suppress-xpath checks="MutableException"
+                    query="//CLASS_DEF[./MODIFIERS/ANNOTATION/IDENT[@text='Value' or @text='FieldDefaults']]/descendant-or-self::node()"/>
+    <suppress-xpath checks="FinalClass"
+                    query="//CLASS_DEF[./MODIFIERS/ANNOTATION/IDENT[@text='Value' or @text='FieldDefaults']]/descendant-or-self::node()"/>
+
+    <!-- lombok.val: infers the type and forces the immutability of a local variable, but the
+         "final" keyword this check wants is never written. Native Java `var` is deliberately NOT
+         matched here - unlike lombok.val, it carries no immutability guarantee to rely on. -->
+    <suppress-xpath checks="FinalLocalVariable"
+                    query="//VARIABLE_DEF[./TYPE/IDENT[@text='val']]/descendant-or-self::node()"/>
+</suppressions>
