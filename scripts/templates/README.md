@@ -80,6 +80,14 @@ which is the path the `uses:` line resolves. Read and change the source under `w
 The Renovate presets are consumed through `extends`. The ruleset files are GitHub's own export
 format: download one and import it under the repository's Settings, then Rules.
 
+Each Checkstyle ruleset lives in its own directory under `configs/checkstyle/`, alongside a
+`configs/checkstyle/_shared/` directory holding Lombok-annotation suppressions common to every
+ruleset. Checkstyle's `${config_loc}` is a convention property your build tool sets to a local
+directory (Gradle's `checkstyle.configDirectory`, Maven's `propertyExpansion`) — it is never
+derived from a remote `configLocation` URL — so a ruleset only resolves its suppression files, its
+`../_shared/` sibling included, once you vendor both directories into your project and point your
+build tool's config directory at your copy of the ruleset directory.
+
 <!-- CONFIGS_TABLE -->
 
 ## Contributing
