@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   actionParse: vi.fn(),
   workflowParse: vi.fn(),
   renovateParse: vi.fn(),
+  checkstyleParse: vi.fn(),
   generateSection: vi.fn(),
   getRepoInfo: vi.fn(),
   sysFile: vi.fn(),
@@ -49,6 +50,14 @@ vi.mock('../lib/readme/parsers/renovate-parser.js', () => ({
   },
 }));
 
+vi.mock('../lib/readme/parsers/checkstyle-parser.js', () => ({
+  CheckstyleParser: class {
+    async parse() {
+      return mocks.checkstyleParse();
+    }
+  },
+}));
+
 vi.mock('../lib/readme/generator.js', () => ({
   generateSection: mocks.generateSection,
 }));
@@ -69,6 +78,7 @@ describe('Generate Readme Script', () => {
     mocks.actionParse.mockResolvedValue([]);
     mocks.workflowParse.mockResolvedValue([]);
     mocks.renovateParse.mockResolvedValue([]);
+    mocks.checkstyleParse.mockResolvedValue([]);
     mocks.generateSection.mockResolvedValue('');
     mocks.getRepoInfo.mockResolvedValue('owner/repo');
     mocks.sysGlob.mockReturnValue({
@@ -114,13 +124,26 @@ describe('Generate Readme Script', () => {
       },
     ];
 
+    const mockCheckstyleConfigs: DocumentationItem[] = [
+      {
+        name: 'Default',
+        description: 'Default Ruleset',
+        usage:
+          "Vendor `configs/checkstyle/default/` and `configs/checkstyle/_shared/` into your project, then point your build tool's config directory (Gradle `configDirectory`, Maven `config_loc`) at your copy of `configs/checkstyle/default/`.",
+        category: 'Checkstyle',
+        path: 'configs/checkstyle/default/checkstyle.xml',
+      },
+    ];
+
     mocks.actionParse.mockResolvedValue(mockActions);
     mocks.workflowParse.mockResolvedValue(mockWorkflows);
     mocks.renovateParse.mockResolvedValue(mockConfigs);
+    mocks.checkstyleParse.mockResolvedValue(mockCheckstyleConfigs);
     mocks.generateSection
       .mockResolvedValueOnce('### Test Action Table')
       .mockResolvedValueOnce('### Test Workflow Table')
-      .mockResolvedValueOnce('### Test Config Table');
+      .mockResolvedValueOnce('### Test Config Table')
+      .mockResolvedValueOnce('### Test Checkstyle Table');
 
     mocks.sysFile.mockReturnValue({
       exists: async () => true,
@@ -135,9 +158,10 @@ describe('Generate Readme Script', () => {
     expect(mocks.actionParse).toHaveBeenCalledTimes(1);
     expect(mocks.workflowParse).toHaveBeenCalledTimes(1);
     expect(mocks.renovateParse).toHaveBeenCalledTimes(1);
+    expect(mocks.checkstyleParse).toHaveBeenCalledTimes(1);
 
     // Verify generateSection was called with correct arguments
-    expect(mocks.generateSection).toHaveBeenCalledTimes(5);
+    expect(mocks.generateSection).toHaveBeenCalledTimes(6);
 
     // Actions (README)
     expect(mocks.generateSection).toHaveBeenNthCalledWith(
@@ -166,9 +190,18 @@ describe('Generate Readme Script', () => {
       CATEGORY_HEADING_LEVEL,
     );
 
-    // Actions (SECURITY)
+    // Checkstyle Configs (README)
     expect(mocks.generateSection).toHaveBeenNthCalledWith(
       4,
+      mockCheckstyleConfigs,
+      ['Config', 'Description', 'Usage'],
+      expect.any(Function),
+      CATEGORY_HEADING_LEVEL,
+    );
+
+    // Actions (SECURITY)
+    expect(mocks.generateSection).toHaveBeenNthCalledWith(
+      5,
       mockActions,
       ['Component', 'Version', 'Supported'],
       expect.any(Function),
@@ -177,7 +210,7 @@ describe('Generate Readme Script', () => {
 
     // Workflows (SECURITY)
     expect(mocks.generateSection).toHaveBeenNthCalledWith(
-      5,
+      6,
       mockWorkflows,
       ['Component', 'Version', 'Supported'],
       expect.any(Function),
@@ -198,6 +231,7 @@ describe('Generate Readme Script', () => {
     expect(writtenContent).toContain('Test Action Table');
     expect(writtenContent).toContain('Test Workflow Table');
     expect(writtenContent).toContain('Test Config Table');
+    expect(writtenContent).toContain('Test Checkstyle Table');
   });
 
   it('should handle template not found', async () => {

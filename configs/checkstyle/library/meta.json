@@ -1,0 +1,4 @@
+{
+  "name": "Library",
+  "description": "Latest Palantir Baseline Checkstyle plus strict final locals/parameters, explicit `this` qualification, and Lombok-annotation-aware suppressions. Enforces DesignForExtension and a strengthened JavadocMethod so every public and protected member of the library's API is documented and safe to extend."
+}
