@@ -16,12 +16,28 @@ permissions: {}
 
 jobs:
   analyze:
-    name: Analyze
+    name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
     permissions:
       actions: read # Required for CodeQL to read action configurations
       contents: read # Required to fetch code
       security-events: write # Required to upload SARIF results to GitHub Security tab
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # build-mode is per-language because a single `codeql database init` call applies one
+        # build-mode to every language passed to it, and javascript/actions are interpreted
+        # languages that only support build-mode: none - they'd fail init if grouped with java's
+        # build-mode: manual in one job. Splitting into a matrix keeps each language's init call
+        # single-language, which is the only way to give java its own build-mode.
+        include:
+          - language: java
+            build-mode: manual
+          - language: javascript
+            build-mode: none
+          - language: actions
+            build-mode: none
 
     steps:
       - name: Harden Runner
@@ -34,36 +50,43 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        with:
+          config-file: ./.github/codeql/codeql-config.yml
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+
       # build-mode: manual, because autobuild only looks for a build file at the repo root and the
       # Gradle root for the only Java in this repo lives at configs/checkstyle/ instead - the
       # explicit build steps below are the fix, not a workaround. compat-check now has a real
       # sourceSet (see configs/checkstyle/compat-check/build.gradle.kts) so this actually invokes
       # javac, with Lombok annotation processing, giving CodeQL full type resolution instead of
       # falling back to source-only extraction.
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
-        with:
-          config-file: ./.github/codeql/codeql-config.yml
-          build-mode: manual
-
       - name: Set up Java
+        if: matrix.language == 'java'
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
         with:
           java-version: '21'
           distribution: temurin
 
       - name: Setup Gradle
+        if: matrix.language == 'java'
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
 
       - name: Make gradlew executable
+        if: matrix.language == 'java'
         working-directory: configs/checkstyle
         shell: bash
         run: chmod +x ./gradlew
 
       - name: Build Java code
+        if: matrix.language == 'java'
         working-directory: configs/checkstyle
         shell: bash
         run: ./gradlew :checkstyle-application:compileJava :checkstyle-library:compileJava :compat-check:compileJava --no-daemon
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        with:
+          category: '/language:${{ matrix.language }}'
