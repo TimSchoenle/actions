@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/TimSchoenle/actions/compare/configs-checkstyle-application-v1.0.1...configs-checkstyle-application-v1.0.2) (2026-09-17)
+
+
+### Bug Fixes
+
+* **configs/checkstyle:** restore the executable bit on gradlew ([#1707](https://github.com/TimSchoenle/actions/issues/1707)) ([a8e40ca](https://github.com/TimSchoenle/actions/commit/a8e40ca0d6b53e0ee2d4ced641d4ca2b1779d442))
+
 ## [1.0.1](https://github.com/TimSchoenle/actions/compare/configs-checkstyle-application-v1.0.0...configs-checkstyle-application-v1.0.1) (2026-09-17)
 
 
