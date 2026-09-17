@@ -1,2 +1,8 @@
+# JitPack only looks for a Gradle/Maven build file at the repo root by default; this repo's root
+# is the TypeScript/Bun monorepo, not the Gradle build for configs/checkstyle, so an explicit
+# install command is required to point it at that subdirectory. `publishToMavenLocal` (rather than
+# plain `build`) is what actually populates ~/.m2/repository, which is what JitPack serves from.
 jdk:
   - openjdk21
+install:
+  - cd configs/checkstyle && ./gradlew build publishToMavenLocal
