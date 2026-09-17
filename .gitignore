@@ -21,6 +21,7 @@ packages/*/dist/
 # Java
 *.class
 *.jar
+!configs/checkstyle/gradle/wrapper/gradle-wrapper.jar
 *.war
 *.ear
 *.nar

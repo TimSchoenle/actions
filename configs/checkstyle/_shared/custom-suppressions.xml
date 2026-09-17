@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<!--
+  Empty placeholder packaged into checkstyle-application.jar / checkstyle-library.jar so the
+  `custom-suppressions.xml` SuppressionFilter (see checkstyle.xml in each ruleset directory) always
+  resolves via `classpath:` without requiring a jar consumer to set Checkstyle's configDirectory.
+
+  A jar consumer who wants their own local suppressions on top of this ruleset cannot edit this
+  file, since it ships inside the dependency: add a second, project-local `SuppressionFilter` (or
+  `SuppressionXpathFilter`) module in your own Checkstyle config instead. Checkstyle composes any
+  number of these filters, so this is fully supported and does not conflict with the packaged ones.
+
+  Vendored consumers keep the original behavior unchanged: this file is never copied into
+  application/ or library/, only into the jar, so `${config_loc}/custom-suppressions.xml` in a
+  vendored checkstyle.xml still resolves against whatever the vendoring consumer places in their own
+  config directory (or resolves to nothing, since the property is marked optional="true").
+-->
+<suppressions>
+</suppressions>
