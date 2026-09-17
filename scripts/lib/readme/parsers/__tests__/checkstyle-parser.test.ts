@@ -42,17 +42,24 @@ describe('CheckstyleParser', () => {
       expect(result?.usage).toContain(
         'Vendor `configs/checkstyle/strict/` and `configs/checkstyle/_shared/` into your project',
       );
-      // Gradle: reads the config out of the jar via a resolved configuration, not off disk.
+      // Gradle: reads the config out of the jar via a resolved configuration, not off disk. The
+      // groupId is TimSchoenle's claimed JitPack custom domain (`de.timscho`) with the repo name
+      // folded in for this multi-module build - never the bare `de.timscho` (401s: that's only
+      // valid for a single-module repo) and never `com.github.<owner>.<repo>` (superseded once the
+      // domain claim went live).
       expect(result?.usage).toContain('```kotlin');
       expect(result?.usage).toContain(
-        'checkstyleConfig("de.timscho:checkstyle-strict:configs-checkstyle-strict-v1.0.0")',
+        'checkstyleConfig("de.timscho.repo:checkstyle-strict:configs-checkstyle-strict-v1.0.0")',
       );
-      expect(result?.usage).toContain('checkstyle("de.timscho:checkstyle-strict:configs-checkstyle-strict-v1.0.0")');
+      expect(result?.usage).toContain(
+        'checkstyle("de.timscho.repo:checkstyle-strict:configs-checkstyle-strict-v1.0.0")',
+      );
+      expect(result?.usage).toContain('checkstyle("com.puppycrawl.tools:checkstyle:${checkstyle.toolVersion}")');
       expect(result?.usage).toContain('resources.text.fromArchiveEntry(checkstyleConfig, "checkstyle.xml")');
       // Maven: configLocation resolved against the plugin's own dependency.
       expect(result?.usage).toContain('```xml');
       expect(result?.usage).toContain('<configLocation>checkstyle.xml</configLocation>');
-      expect(result?.usage).toContain('<groupId>de.timscho</groupId>');
+      expect(result?.usage).toContain('<groupId>de.timscho.repo</groupId>');
       expect(result?.usage).toContain('<artifactId>checkstyle-strict</artifactId>');
       expect(result?.usage).toContain('<version>configs-checkstyle-strict-v1.0.0</version>');
     });
