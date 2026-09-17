@@ -180,6 +180,16 @@
       "release-type": "simple",
       "component": "actions-common-upsert-issue",
       "include-component-in-tag": true
+    },
+    "configs/checkstyle/application": {
+      "release-type": "simple",
+      "component": "configs-checkstyle-application",
+      "include-component-in-tag": true
+    },
+    "configs/checkstyle/library": {
+      "release-type": "simple",
+      "component": "configs-checkstyle-library",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

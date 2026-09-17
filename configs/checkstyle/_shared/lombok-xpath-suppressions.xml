@@ -13,13 +13,33 @@
   conflicts with it. What follows covers the few cases where a check draws a conclusion from what the
   developer's own source text does NOT say, and Lombok is what silently supplies the missing part:
 
-    - @UtilityClass makes every member static and adds a private constructor, but neither the
-      "static" keyword nor the constructor appear in source. RequireThis would otherwise demand
-      "this." on what become static members - itself invalid syntax once Lombok is done.
-    - @Value (and the @FieldDefaults it is implemented in terms of) makes fields private and final,
-      and the class itself final, without ever writing those keywords in source.
+    - @UtilityClass makes every member static, marks the class itself final, and adds a private
+      constructor, but none of "static", "final", or the constructor ever appear in source (see
+      https://projectlombok.org/features/experimental/UtilityClass). RequireThis would otherwise
+      demand "this." on what become static members; FinalClass would otherwise demand "final" on
+      the class; DesignForExtension would otherwise demand every method be proven safe to override
+      on what becomes a non-extensible, fully static class. A field Lombok will make static is also
+      still classified as MemberName (instance-field naming), not StaticVariableName, since that
+      classification comes from the "static" keyword in source too - a real divergence here, not
+      just a theoretical one: MemberName is configured to require 2+ characters while
+      StaticVariableName is left at Checkstyle's default, which allows 1+, so a single-character
+      field name is wrongly rejected unless MemberName is suppressed for it too. (Lombok never adds
+      "final" to a @UtilityClass field, only "static", so there is no equivalent ConstantName
+      concern.)
+    - @Value makes fields private and final and the class itself final, without ever writing those
+      keywords in source. @FieldDefaults - the annotation @Value is implemented in terms of - can
+      be applied on its own to set the same field-level defaults (`makeFinal`, `level`), but never
+      touches the class itself: a bare @FieldDefaults class is never made final by Lombok, so
+      FinalClass is suppressed for @Value only, not for @FieldDefaults
+      (https://projectlombok.org/features/experimental/FieldDefaults).
     - lombok.val infers the type of, and forces the finality of, a local variable without the
-      "final" keyword ever appearing in source.
+      "final" keyword ever appearing in source. Checkstyle classifies a variable as final or not
+      from that keyword alone, so it also checks a `val` variable's name against
+      LocalVariableName's (non-final) pattern rather than LocalFinalVariableName's - in this
+      ruleset a real divergence, not just a theoretical one: LocalVariableName is configured to
+      require 2+ characters while LocalFinalVariableName is left at Checkstyle's default, which
+      allows 1+, so a single-character `val` name is wrongly rejected unless LocalVariableName is
+      suppressed for it too.
 
   HideUtilityClassConstructor is deliberately NOT suppressed here: since Checkstyle 10.20 it has a
   built-in `ignoreAnnotatedBy` property, configured directly on the module in checkstyle.xml, which
@@ -35,23 +55,39 @@
   annotations by simple name, shared with essentially every xpath-suppression file in the wild.
 -->
 <suppressions>
-    <!-- @UtilityClass: every member becomes static and gets a synthesized private constructor;
-         RequireThis would otherwise require "this." inside what becomes a fully static class. -->
+    <!-- @UtilityClass: every member becomes static, the class becomes final, and it gets a
+         synthesized private constructor. RequireThis would otherwise require "this." inside what
+         becomes a fully static class; FinalClass would otherwise demand the "final" keyword;
+         DesignForExtension would otherwise demand every method be proven safe to override on a
+         class that Lombok has already made both final and fully static. -->
     <suppress-xpath checks="RequireThis"
                     query="//CLASS_DEF[./MODIFIERS/ANNOTATION/IDENT[@text='UtilityClass']]/descendant-or-self::node()"/>
+    <suppress-xpath checks="FinalClass"
+                    query="//CLASS_DEF[./MODIFIERS/ANNOTATION/IDENT[@text='UtilityClass']]/descendant-or-self::node()"/>
+    <suppress-xpath checks="DesignForExtension"
+                    query="//CLASS_DEF[./MODIFIERS/ANNOTATION/IDENT[@text='UtilityClass']]/descendant-or-self::node()"/>
+    <suppress-xpath checks="MemberName"
+                    query="//CLASS_DEF[./MODIFIERS/ANNOTATION/IDENT[@text='UtilityClass']]/descendant-or-self::node()"/>
 
-    <!-- @Value / @FieldDefaults: fields are made private and final, and the class final, without
-         those keywords ever appearing in source. -->
+    <!-- @Value / @FieldDefaults: both can make fields private and/or final without those keywords
+         ever appearing in source, so both are matched for the two field-level checks. Only @Value
+         also makes the class itself final - @FieldDefaults never does, on its own, regardless of
+         its makeFinal/level properties - so FinalClass below matches @Value alone. -->
     <suppress-xpath checks="VisibilityModifier"
                     query="//CLASS_DEF[./MODIFIERS/ANNOTATION/IDENT[@text='Value' or @text='FieldDefaults']]/descendant-or-self::node()"/>
     <suppress-xpath checks="MutableException"
                     query="//CLASS_DEF[./MODIFIERS/ANNOTATION/IDENT[@text='Value' or @text='FieldDefaults']]/descendant-or-self::node()"/>
     <suppress-xpath checks="FinalClass"
-                    query="//CLASS_DEF[./MODIFIERS/ANNOTATION/IDENT[@text='Value' or @text='FieldDefaults']]/descendant-or-self::node()"/>
+                    query="//CLASS_DEF[./MODIFIERS/ANNOTATION/IDENT[@text='Value']]/descendant-or-self::node()"/>
 
     <!-- lombok.val: infers the type and forces the immutability of a local variable, but the
          "final" keyword this check wants is never written. Native Java `var` is deliberately NOT
-         matched here - unlike lombok.val, it carries no immutability guarantee to rely on. -->
+         matched here - unlike lombok.val, it carries no immutability guarantee to rely on. Both
+         FinalLocalVariable and LocalVariableName are suppressed: the variable is checked as
+         non-final by both, since Checkstyle's final/non-final classification comes from the
+         "final" keyword in source, which `val` never writes. -->
     <suppress-xpath checks="FinalLocalVariable"
+                    query="//VARIABLE_DEF[./TYPE/IDENT[@text='val']]/descendant-or-self::node()"/>
+    <suppress-xpath checks="LocalVariableName"
                     query="//VARIABLE_DEF[./TYPE/IDENT[@text='val']]/descendant-or-self::node()"/>
 </suppressions>
