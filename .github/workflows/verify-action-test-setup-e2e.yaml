@@ -39,14 +39,9 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
       - name: Run setup-e2e
         id: setup
-        uses: ./actions/test/setup-e2e
+        uses: $/actions/test/setup-e2e
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}

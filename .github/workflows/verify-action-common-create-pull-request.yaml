@@ -62,7 +62,7 @@ jobs:
 
       - name: Run create-pull-request (with changes)
         id: create-pr
-        uses: ./tmp/actions-code/actions/common/create-pull-request
+        uses: $/actions/common/create-pull-request
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -195,7 +195,7 @@ jobs:
 
       - name: Run create-pull-request (no changes)
         id: create-pr
-        uses: ./tmp/actions-code/actions/common/create-pull-request
+        uses: $/actions/common/create-pull-request
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -266,7 +266,7 @@ jobs:
 
       - name: Run create-pull-request (commit should be skipped)
         id: create-pr
-        uses: ./tmp/actions-code/actions/common/create-pull-request
+        uses: $/actions/common/create-pull-request
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -346,7 +346,7 @@ jobs:
 
       - name: Create First PR (establish branch history)
         id: create-pr-initial
-        uses: ./tmp/actions-code/actions/common/create-pull-request
+        uses: $/actions/common/create-pull-request
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -378,7 +378,7 @@ jobs:
 
       - name: Create Second PR with Branch Reset
         id: create-pr-reset
-        uses: ./tmp/actions-code/actions/common/create-pull-request
+        uses: $/actions/common/create-pull-request
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
