@@ -34,13 +34,36 @@ jobs:
         with:
           persist-credentials: false
 
+      # build-mode: manual, because autobuild only looks for a build file at the repo root and the
+      # Gradle root for the only Java in this repo lives at configs/checkstyle/ instead - the
+      # explicit build steps below are the fix, not a workaround. compat-check now has a real
+      # sourceSet (see configs/checkstyle/compat-check/build.gradle.kts) so this actually invokes
+      # javac, with Lombok annotation processing, giving CodeQL full type resolution instead of
+      # falling back to source-only extraction.
       - name: Initialize CodeQL
         uses: github/codeql-action/init@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
         with:
           config-file: ./.github/codeql/codeql-config.yml
+          build-mode: manual
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+      - name: Set up Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
+        with:
+          java-version: '21'
+          distribution: temurin
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
+
+      - name: Make gradlew executable
+        working-directory: configs/checkstyle
+        shell: bash
+        run: chmod +x ./gradlew
+
+      - name: Build Java code
+        working-directory: configs/checkstyle
+        shell: bash
+        run: ./gradlew :checkstyle-application:compileJava :checkstyle-library:compileJava :compat-check:compileJava --no-daemon
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
