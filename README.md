@@ -210,13 +210,15 @@ repositories {
     maven { url = uri("https://jitpack.io") }
 }
 
-dependencies {
-    checkstyleConfig("de.timscho:checkstyle-application:configs-checkstyle-application-v1.0.2")
-    checkstyle("de.timscho:checkstyle-application:configs-checkstyle-application-v1.0.2")
+checkstyle {
+    toolVersion = "<your checkstyle version>"
+    config = resources.text.fromArchiveEntry(checkstyleConfig, "checkstyle.xml")
 }
 
-checkstyle {
-    config = resources.text.fromArchiveEntry(checkstyleConfig, "checkstyle.xml")
+dependencies {
+    checkstyleConfig("de.timscho.actions:checkstyle-application:configs-checkstyle-application-v1.0.2")
+    checkstyle("de.timscho.actions:checkstyle-application:configs-checkstyle-application-v1.0.2")
+    checkstyle("com.puppycrawl.tools:checkstyle:${checkstyle.toolVersion}")
 }
 ```
 
@@ -240,7 +242,7 @@ checkstyle {
       </configuration>
       <dependencies>
         <dependency>
-          <groupId>de.timscho</groupId>
+          <groupId>de.timscho.actions</groupId>
           <artifactId>checkstyle-application</artifactId>
           <version>configs-checkstyle-application-v1.0.2</version>
         </dependency>
@@ -263,13 +265,15 @@ repositories {
     maven { url = uri("https://jitpack.io") }
 }
 
-dependencies {
-    checkstyleConfig("de.timscho:checkstyle-library:configs-checkstyle-library-v1.0.2")
-    checkstyle("de.timscho:checkstyle-library:configs-checkstyle-library-v1.0.2")
+checkstyle {
+    toolVersion = "<your checkstyle version>"
+    config = resources.text.fromArchiveEntry(checkstyleConfig, "checkstyle.xml")
 }
 
-checkstyle {
-    config = resources.text.fromArchiveEntry(checkstyleConfig, "checkstyle.xml")
+dependencies {
+    checkstyleConfig("de.timscho.actions:checkstyle-library:configs-checkstyle-library-v1.0.2")
+    checkstyle("de.timscho.actions:checkstyle-library:configs-checkstyle-library-v1.0.2")
+    checkstyle("com.puppycrawl.tools:checkstyle:${checkstyle.toolVersion}")
 }
 ```
 
@@ -293,7 +297,7 @@ checkstyle {
       </configuration>
       <dependencies>
         <dependency>
-          <groupId>de.timscho</groupId>
+          <groupId>de.timscho.actions</groupId>
           <artifactId>checkstyle-library</artifactId>
           <version>configs-checkstyle-library-v1.0.2</version>
         </dependency>
