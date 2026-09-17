@@ -192,10 +192,18 @@ build tool's config directory at your copy of the ruleset directory.
 
 #### Checkstyle
 
-| Config | Description | Usage |
+| Config | Description | Version |
 | --- | --- | --- |
-| [Application](./configs/checkstyle/application/checkstyle.xml) | Latest Palantir Baseline Checkstyle plus strict final locals/parameters, explicit `this` qualification, and Lombok-annotation-aware suppressions, for application and service code. Unlike the Library ruleset, it omits DesignForExtension and JavadocMethod since this code has no public API surface to document or keep extension-safe. | Vendor `configs/checkstyle/application/` and `configs/checkstyle/_shared/` into your project, then point your build tool's config directory (Gradle `configDirectory`, Maven `config_loc`) at your copy of `configs/checkstyle/application/`. |
-| [Library](./configs/checkstyle/library/checkstyle.xml) | Latest Palantir Baseline Checkstyle plus strict final locals/parameters, explicit `this` qualification, and Lombok-annotation-aware suppressions. Enforces DesignForExtension and a strengthened JavadocMethod so every public and protected member of the library's API is documented and safe to extend. | Vendor `configs/checkstyle/library/` and `configs/checkstyle/_shared/` into your project, then point your build tool's config directory (Gradle `configDirectory`, Maven `config_loc`) at your copy of `configs/checkstyle/library/`. |
+| [Application](./configs/checkstyle/application/checkstyle.xml) | Latest Palantir Baseline Checkstyle plus strict final locals/parameters, explicit `this` qualification, and Lombok-annotation-aware suppressions, for application and service code. Unlike the Library ruleset, it omits DesignForExtension and JavadocMethod since this code has no public API surface to document or keep extension-safe. | N/A |
+| [Library](./configs/checkstyle/library/checkstyle.xml) | Latest Palantir Baseline Checkstyle plus strict final locals/parameters, explicit `this` qualification, and Lombok-annotation-aware suppressions. Enforces DesignForExtension and a strengthened JavadocMethod so every public and protected member of the library's API is documented and safe to extend. | N/A |
+
+##### Application
+
+Vendor `configs/checkstyle/application/` and `configs/checkstyle/_shared/` into your project, then point your build tool's config directory (Gradle `configDirectory`, Maven `config_loc`) at your copy of `configs/checkstyle/application/`.
+
+##### Library
+
+Vendor `configs/checkstyle/library/` and `configs/checkstyle/_shared/` into your project, then point your build tool's config directory (Gradle `configDirectory`, Maven `config_loc`) at your copy of `configs/checkstyle/library/`.
 
 
 

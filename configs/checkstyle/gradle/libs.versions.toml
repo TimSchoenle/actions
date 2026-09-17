@@ -1,0 +1,5 @@
+[versions]
+checkstyle = "14.1.0"
+
+[libraries]
+checkstyle = { module = "com.puppycrawl.tools:checkstyle", version.ref = "checkstyle" }

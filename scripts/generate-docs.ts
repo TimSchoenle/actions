@@ -97,16 +97,22 @@ export async function main() {
     configsOutput += '\n';
   }
 
-  configsOutput += await generateSection(
-    checkstyleConfigs,
-    ['Config', 'Description', 'Usage'],
-    (item) => {
+  // Checkstyle's Gradle/Maven usage is a real fenced code block per ruleset, not a one-line
+  // table cell, so it's rendered as its own subsection under the summary table instead of going
+  // through generateSection like the other catalogues.
+  if (checkstyleConfigs.length > 0) {
+    configsOutput += `${'#'.repeat(CATEGORY_HEADING_LEVEL)} Checkstyle\n\n`;
+    configsOutput += await generateMarkdownTable(checkstyleConfigs, ['Config', 'Description', 'Version'], (item) => {
       const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;
       const desc = item.description.replaceAll('\n', ' ').trim();
-      return [link, desc, item.usage || ''];
-    },
-    CATEGORY_HEADING_LEVEL,
-  );
+      return [link, desc, item.version ?? 'N/A'];
+    });
+    configsOutput += '\n';
+
+    for (const item of checkstyleConfigs) {
+      configsOutput += `${'#'.repeat(CATEGORY_HEADING_LEVEL + 1)} ${item.name}\n\n${item.usage}\n\n`;
+    }
+  }
 
   // 4. Update README
   await updateReadme(actionsOutput, workflowsOutput, configsOutput);
