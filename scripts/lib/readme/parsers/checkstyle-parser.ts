@@ -7,9 +7,23 @@ import { sortDocumentationItems } from './sort.js';
 
 import type { DocumentationItem, Parser } from '../types.js';
 
-// Must match the `allprojects { group = ... }` override in configs/checkstyle/build.gradle.kts -
-// JitPack publishes under that group verbatim, not its `com.github.<user>` default.
-const JITPACK_GROUP_ID = 'de.timscho';
+// `de.timscho` is TimSchoenle's account-level custom domain on JitPack (DNS TXT at
+// git.timscho.de -> https://github.com/TimSchoenle; see
+// https://github.com/jitpack/jitpack.io/blob/main/private/_index.en.md#custom-domain), which
+// replaces the `com.github.<owner>` prefix JitPack would otherwise use - it does NOT publish
+// under whatever `allprojects { group = ... }` the build itself sets (also `de.timscho`, by
+// coincidence; see configs/checkstyle/build.gradle.kts). The repo name still gets folded in for a
+// multi-module build the way `com.github.<owner>.<repo>` would (this one publishes two modules -
+// checkstyle-application and checkstyle-library), so the working coordinate is
+// `de.timscho.<repo>:<artifactId>:<version>`, confirmed by resolving
+// de/timscho/actions/checkstyle-library/<tag>/....pom directly - never the bare `de.timscho`
+// that 401s, and not `com.github.<owner>.<repo>` either now that the domain claim is live.
+const JITPACK_CUSTOM_GROUP_ID = 'de.timscho';
+
+function jitpackGroupId(repoId: string): string {
+  const repoName = repoId.split('/')[1];
+  return `${JITPACK_CUSTOM_GROUP_ID}.${repoName}`;
+}
 
 /**
  * `config_loc` is a convention property every build tool sets to a local directory of its own
@@ -44,11 +58,20 @@ export function parseCheckstyleMeta(
   let usage = vendorUsage;
   let versionLink: string | undefined;
   if (version) {
+    const jitpackGroup = jitpackGroupId(repoId);
     // Both snippets pull the config out of the jar rather than off disk: Gradle's
     // `resources.text.fromArchiveEntry` reads `checkstyle.xml` out of a resolved configuration's
     // jar, and Maven's checkstyle plugin resolves `configLocation` against its own `<dependencies>`
     // classpath. Both need the artifact on the tool's own classpath too, so the suppression
     // files' `classpath:` URIs (see the doc comment above) resolve at check time.
+    //
+    // Gradle only: adding the ruleset jar to the `checkstyle` configuration isn't enough by
+    // itself. That configuration's `com.puppycrawl.tools:checkstyle` dependency is normally added
+    // automatically from `toolVersion` via `Configuration.defaultDependencies`, but that mechanism
+    // backs off the moment anything else is added to the configuration explicitly - so without
+    // re-adding the tool by hand, checkstyleMain fails with
+    // `ClassNotFoundException: CheckstyleAntTask`. Maven doesn't have this problem: the plugin
+    // pulls in its own checkstyle dependency regardless of what else is listed alongside it.
     const gradleSnippet = [
       '```kotlin',
       'val checkstyleConfig: Configuration by configurations.creating',
@@ -57,13 +80,15 @@ export function parseCheckstyleMeta(
       '    maven { url = uri("https://jitpack.io") }',
       '}',
       '',
-      'dependencies {',
-      `    checkstyleConfig("${JITPACK_GROUP_ID}:${artifactId}:${version}")`,
-      `    checkstyle("${JITPACK_GROUP_ID}:${artifactId}:${version}")`,
+      'checkstyle {',
+      '    toolVersion = "<your checkstyle version>"',
+      '    config = resources.text.fromArchiveEntry(checkstyleConfig, "checkstyle.xml")',
       '}',
       '',
-      'checkstyle {',
-      '    config = resources.text.fromArchiveEntry(checkstyleConfig, "checkstyle.xml")',
+      'dependencies {',
+      `    checkstyleConfig("${jitpackGroup}:${artifactId}:${version}")`,
+      `    checkstyle("${jitpackGroup}:${artifactId}:${version}")`,
+      '    checkstyle("com.puppycrawl.tools:checkstyle:${checkstyle.toolVersion}")',
       '}',
       '```',
     ].join('\n');
@@ -87,7 +112,7 @@ export function parseCheckstyleMeta(
       '      </configuration>',
       '      <dependencies>',
       '        <dependency>',
-      `          <groupId>${JITPACK_GROUP_ID}</groupId>`,
+      `          <groupId>${jitpackGroup}</groupId>`,
       `          <artifactId>${artifactId}</artifactId>`,
       `          <version>${version}</version>`,
       '        </dependency>',
