@@ -58,9 +58,13 @@ vi.mock('../lib/readme/parsers/checkstyle-parser.js', () => ({
   },
 }));
 
-vi.mock('../lib/readme/generator.js', () => ({
-  generateSection: mocks.generateSection,
-}));
+vi.mock('../lib/readme/generator.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/readme/generator.js')>();
+  return {
+    ...actual,
+    generateSection: mocks.generateSection,
+  };
+});
 
 vi.mock('../lib/readme/git-utils.js', () => ({
   getRepoInfo: mocks.getRepoInfo,
@@ -128,8 +132,10 @@ describe('Generate Readme Script', () => {
       {
         name: 'Default',
         description: 'Default Ruleset',
+        version:
+          '[configs-checkstyle-default-v1.0.0](https://github.com/owner/repo/releases/tag/configs-checkstyle-default-v1.0.0)',
         usage:
-          "Vendor `configs/checkstyle/default/` and `configs/checkstyle/_shared/` into your project, then point your build tool's config directory (Gradle `configDirectory`, Maven `config_loc`) at your copy of `configs/checkstyle/default/`.",
+          'Vendor `configs/checkstyle/default/` and `configs/checkstyle/_shared/` into your project, then point your build tool\'s config directory (Gradle `configDirectory`, Maven `config_loc`) at your copy of `configs/checkstyle/default/`. Or depend on it directly via [JitPack](https://jitpack.io), no vendoring or config directory required:\n\n**Gradle (Kotlin DSL)**\n\n```kotlin\ndependencies {\n    checkstyle("de.timscho:checkstyle-default:configs-checkstyle-default-v1.0.0")\n}\n```',
         category: 'Checkstyle',
         path: 'configs/checkstyle/default/checkstyle.xml',
       },
@@ -142,8 +148,7 @@ describe('Generate Readme Script', () => {
     mocks.generateSection
       .mockResolvedValueOnce('### Test Action Table')
       .mockResolvedValueOnce('### Test Workflow Table')
-      .mockResolvedValueOnce('### Test Config Table')
-      .mockResolvedValueOnce('### Test Checkstyle Table');
+      .mockResolvedValueOnce('### Test Config Table');
 
     mocks.sysFile.mockReturnValue({
       exists: async () => true,
@@ -161,7 +166,7 @@ describe('Generate Readme Script', () => {
     expect(mocks.checkstyleParse).toHaveBeenCalledTimes(1);
 
     // Verify generateSection was called with correct arguments
-    expect(mocks.generateSection).toHaveBeenCalledTimes(6);
+    expect(mocks.generateSection).toHaveBeenCalledTimes(5);
 
     // Actions (README)
     expect(mocks.generateSection).toHaveBeenNthCalledWith(
@@ -190,18 +195,13 @@ describe('Generate Readme Script', () => {
       CATEGORY_HEADING_LEVEL,
     );
 
-    // Checkstyle Configs (README)
-    expect(mocks.generateSection).toHaveBeenNthCalledWith(
-      4,
-      mockCheckstyleConfigs,
-      ['Config', 'Description', 'Usage'],
-      expect.any(Function),
-      CATEGORY_HEADING_LEVEL,
-    );
+    // Checkstyle renders its own table (real generateMarkdownTable, not generateSection) plus a
+    // subsection per ruleset carrying its fenced Gradle/Maven usage - asserted on written content
+    // below instead of a generateSection call.
 
     // Actions (SECURITY)
     expect(mocks.generateSection).toHaveBeenNthCalledWith(
-      5,
+      4,
       mockActions,
       ['Component', 'Version', 'Supported'],
       expect.any(Function),
@@ -210,7 +210,7 @@ describe('Generate Readme Script', () => {
 
     // Workflows (SECURITY)
     expect(mocks.generateSection).toHaveBeenNthCalledWith(
-      6,
+      5,
       mockWorkflows,
       ['Component', 'Version', 'Supported'],
       expect.any(Function),
@@ -231,7 +231,16 @@ describe('Generate Readme Script', () => {
     expect(writtenContent).toContain('Test Action Table');
     expect(writtenContent).toContain('Test Workflow Table');
     expect(writtenContent).toContain('Test Config Table');
-    expect(writtenContent).toContain('Test Checkstyle Table');
+
+    // Checkstyle table (real generateMarkdownTable output)
+    expect(writtenContent).toContain('#### Checkstyle');
+    expect(writtenContent).toContain(
+      '| [Default](./configs/checkstyle/default/checkstyle.xml) | Default Ruleset | [configs-checkstyle-default-v1.0.0](https://github.com/owner/repo/releases/tag/configs-checkstyle-default-v1.0.0) |',
+    );
+    // Per-ruleset subsection carrying the fenced Gradle/Maven usage block
+    expect(writtenContent).toContain('##### Default');
+    expect(writtenContent).toContain('```kotlin');
+    expect(writtenContent).toContain('checkstyle("de.timscho:checkstyle-default:configs-checkstyle-default-v1.0.0")');
   });
 
   it('should handle template not found', async () => {

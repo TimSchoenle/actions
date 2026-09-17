@@ -17,9 +17,6 @@
     <!-- Suppress test resources -->
     <suppress files="[/\\]src[/\\]test[/\\]resources.*" checks="." />
 
-    <!-- JavadocStyle enforces existence of package-info.java package-level Javadoc; we consider this a bug. -->
-    <suppress files="package-info.java" checks="JavadocStyle" />
-
     <!-- non-code classes -->
     <suppress files="\.(bdr|eot|gif|gzip|jar|json|otf|png|svg|ttf|woff|zip)$" checks="FileTabCharacter" />
     <suppress files="\.(bdr|eot|gif|gzip|jar|json|otf|png|svg|ttf|woff|zip)$" checks="NewlineAtEndOfFile" />
