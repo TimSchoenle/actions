@@ -194,8 +194,8 @@ build tool's config directory at your copy of the ruleset directory.
 
 | Config | Description | Version |
 | --- | --- | --- |
-| [Application](./configs/checkstyle/application/checkstyle.xml) | Latest Palantir Baseline Checkstyle plus strict final locals/parameters, explicit `this` qualification, and Lombok-annotation-aware suppressions, for application and service code. Unlike the Library ruleset, it omits DesignForExtension and JavadocMethod since this code has no public API surface to document or keep extension-safe. | [configs-checkstyle-application-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/configs-checkstyle-application-v1.0.0) |
-| [Library](./configs/checkstyle/library/checkstyle.xml) | Latest Palantir Baseline Checkstyle plus strict final locals/parameters, explicit `this` qualification, and Lombok-annotation-aware suppressions. Enforces DesignForExtension and a strengthened JavadocMethod so every public and protected member of the library's API is documented and safe to extend. | [configs-checkstyle-library-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/configs-checkstyle-library-v1.0.0) |
+| [Application](./configs/checkstyle/application/checkstyle.xml) | Latest Palantir Baseline Checkstyle plus strict final locals/parameters, explicit `this` qualification, and Lombok-annotation-aware suppressions, for application and service code. Unlike the Library ruleset, it omits DesignForExtension and JavadocMethod since this code has no public API surface to document or keep extension-safe. | [configs-checkstyle-application-v1.0.1](https://github.com/TimSchoenle/actions/releases/tag/configs-checkstyle-application-v1.0.1) |
+| [Library](./configs/checkstyle/library/checkstyle.xml) | Latest Palantir Baseline Checkstyle plus strict final locals/parameters, explicit `this` qualification, and Lombok-annotation-aware suppressions. Enforces DesignForExtension and a strengthened JavadocMethod so every public and protected member of the library's API is documented and safe to extend. | [configs-checkstyle-library-v1.0.1](https://github.com/TimSchoenle/actions/releases/tag/configs-checkstyle-library-v1.0.1) |
 
 ##### Application
 
@@ -211,8 +211,8 @@ repositories {
 }
 
 dependencies {
-    checkstyleConfig("de.timscho:checkstyle-application:configs-checkstyle-application-v1.0.0")
-    checkstyle("de.timscho:checkstyle-application:configs-checkstyle-application-v1.0.0")
+    checkstyleConfig("de.timscho:checkstyle-application:configs-checkstyle-application-v1.0.1")
+    checkstyle("de.timscho:checkstyle-application:configs-checkstyle-application-v1.0.1")
 }
 
 checkstyle {
@@ -242,7 +242,7 @@ checkstyle {
         <dependency>
           <groupId>de.timscho</groupId>
           <artifactId>checkstyle-application</artifactId>
-          <version>configs-checkstyle-application-v1.0.0</version>
+          <version>configs-checkstyle-application-v1.0.1</version>
         </dependency>
       </dependencies>
     </plugin>
@@ -264,8 +264,8 @@ repositories {
 }
 
 dependencies {
-    checkstyleConfig("de.timscho:checkstyle-library:configs-checkstyle-library-v1.0.0")
-    checkstyle("de.timscho:checkstyle-library:configs-checkstyle-library-v1.0.0")
+    checkstyleConfig("de.timscho:checkstyle-library:configs-checkstyle-library-v1.0.1")
+    checkstyle("de.timscho:checkstyle-library:configs-checkstyle-library-v1.0.1")
 }
 
 checkstyle {
@@ -295,7 +295,7 @@ checkstyle {
         <dependency>
           <groupId>de.timscho</groupId>
           <artifactId>checkstyle-library</artifactId>
-          <version>configs-checkstyle-library-v1.0.0</version>
+          <version>configs-checkstyle-library-v1.0.1</version>
         </dependency>
       </dependencies>
     </plugin>
