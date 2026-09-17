@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/TimSchoenle/actions/compare/configs-checkstyle-library-v1.0.0...configs-checkstyle-library-v1.0.1) (2026-09-17)
+
+
+### Bug Fixes
+
+* **configs/checkstyle:** document JitPack publish path in application and library builds ([65a031e](https://github.com/TimSchoenle/actions/commit/65a031e25346c787b8ed3b8228ff578b341bb82f))
+
 ## 1.0.0 (2026-09-17)
 
 
