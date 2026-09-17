@@ -35,6 +35,6 @@
   "actions/common/readme-variables": "1.2.2",
   "actions/common/upsert-pr-comment": "1.1.2",
   "actions/common/upsert-issue": "1.1.1",
-  "configs/checkstyle/application": "1.0.0",
-  "configs/checkstyle/library": "1.0.0"
+  "configs/checkstyle/application": "1.0.1",
+  "configs/checkstyle/library": "1.0.1"
 }
