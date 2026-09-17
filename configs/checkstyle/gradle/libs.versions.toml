@@ -1,7 +1,0 @@
-[versions]
-checkstyle = "14.1.0"
-lombok = "1.18.48"
-
-[libraries]
-checkstyle = { module = "com.puppycrawl.tools:checkstyle", version.ref = "checkstyle" }
-lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
