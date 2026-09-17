@@ -11,15 +11,45 @@
 
 plugins {
     checkstyle
+    java
 }
 
 checkstyle {
     toolVersion = libs.versions.checkstyle.get()
+    // The Checkstyle plugin auto-generates a checkstyleMain/checkstyleTest task bound to `check`
+    // for every java sourceSet (now non-empty, see sourceSets below, so CodeQL has real javac
+    // invocations to trace). Those auto-tasks would look for a default
+    // config/checkstyle/checkstyle.xml that doesn't exist here - every actual Checkstyle run in
+    // this module is one of the manually configured tasks further down instead.
+    sourceSets = emptyList()
 }
 
 val fixturesDir = layout.projectDirectory.dir("src/fixtures")
 val sharedLombokFixtures = fixturesDir.dir("shared/lombok")
 val negativeControlDir = layout.projectDirectory.dir("src/negative-control")
+
+// Real compilation of the fixtures (with Lombok annotation processing), purely so CodeQL's Java
+// build-tracing has actual javac invocations to attach to - the Checkstyle tasks below parse
+// these same fixtures directly from source and never compile them, so without this sourceSet
+// CodeQL would have nothing to extract for Java at all. This is not otherwise part of the
+// Checkstyle compatibility verification: `check`/`build` failing here means a fixture stopped
+// compiling, an orthogonal signal from the Checkstyle rule assertions in verifyCheckstyleCompat.
+sourceSets {
+    main {
+        java.setSrcDirs(
+            listOf(
+                fixturesDir.dir("application/clean"),
+                fixturesDir.dir("library/clean"),
+                sharedLombokFixtures,
+            ),
+        )
+    }
+}
+
+dependencies {
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
+}
 
 // rulesetDirName's own directory also holds the *publishable* module's build/ output (see
 // ../application/build.gradle.kts): reading checkstyle.xml straight out of that directory makes
