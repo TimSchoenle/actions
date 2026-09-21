@@ -13,7 +13,7 @@
   "semanticCommits": "enabled",
   "semanticCommitType": "deps",
   "labels": ["dependencies"],
-  "rebaseWhen": "conflicted",
+  "rebaseWhen": "behind-base-branch",
   "prCreation": "immediate",
   "timezone": "Europe/Berlin",
   "minimumReleaseAge": "3 days",
