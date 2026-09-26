@@ -55,6 +55,7 @@ an upgrade to `actions-bun-setup-cached`.
   - [Actions](#actions)
   - [Reusable workflows](#reusable-workflows)
   - [Shared configurations](#shared-configurations)
+- [Documentation](#documentation)
 - [Contributing](#contributing)
 - [Security](#security)
 - [License](#license)
@@ -89,6 +90,16 @@ derived from a remote `configLocation` URL — so a ruleset only resolves its su
 build tool's config directory at your copy of the ruleset directory.
 
 <!-- CONFIGS_TABLE -->
+
+## Documentation
+
+`docs/` holds the two writing standards every repository in this account is held to. Other
+repositories link them from their own `CONTRIBUTING.md` instead of keeping a copy.
+
+| Document | Purpose |
+| --- | --- |
+| [docs/readme/README.md](docs/readme/README.md) | What a README contains and in what order, how its prose is written, the template it starts from and the CI job that keeps it rendered. |
+| [docs/doc-comments/README.md](docs/doc-comments/README.md) | What carries a doc comment and what it says, with an annex each for Rust, Java and TypeScript. |
 
 ## Contributing
 

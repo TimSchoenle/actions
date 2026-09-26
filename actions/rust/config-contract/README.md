@@ -11,8 +11,8 @@ two. The line-count variant compares two of three lines and passes the moment a 
 ## What it does
 
 1. **Renders once.** `contract`, `labels` and `dockerfile` come from one run of one generator over one source tree. The
-   three renderings are one set — the document, the labels that make it discoverable, and the block a Dockerfile carries
-   — and generating them separately is the one arrangement in which they can disagree with each other rather than with
+   three renderings are one set: the document, the labels that make it discoverable and the block a Dockerfile carries.
+   Generating them separately is the one arrangement in which they can disagree with each other rather than with
    what is committed. A rendering that came out empty is refused. The generator is a cargo example or a cargo binary,
    and may take arguments of its own.
 2. **Diffs every marked region of the Dockerfile** against the generated block, cut at the markers rather than by line
@@ -31,7 +31,7 @@ took minutes.
 ## Requirements
 
 The action runs in the workspace it is given: it does **not** check out the repository and does **not** install a
-toolchain. Both belong to the job, and both are wrong to redo here — this step runs *after* the image is built, where a
+toolchain. Both belong to the job, and both are wrong to redo here. This step runs *after* the image is built, where a
 fresh checkout would discard what the build produced.
 
 - `actions/checkout` has run.
@@ -79,7 +79,7 @@ neither uses the example `config-schema`, which is what every workflow written b
 
 A workspace publishing several images renders one contract per image, selected by an argument only that repository knows
 the spelling of. `extra_args` carries it. The action checks **one** contract per invocation, so a repository with nine of
-them runs the step nine times — in a matrix, or as nine steps in the job that already built the images:
+them runs the step nine times, in a matrix or as nine steps in the job that already built the images:
 
 ```yaml
 strategy:
@@ -97,8 +97,8 @@ steps:
       image: ${{ matrix.service }}:test
 ```
 
-`extra_args` is split shell-style — whitespace separates arguments, and `'` or `"` quote one containing spaces — into a
-vector that no shell ever re-reads. There is no escape character: a backslash is an ordinary character, because it is one
+`extra_args` is split shell-style into a vector that no shell ever re-reads. Whitespace separates arguments, and `'` or
+`"` quotes one containing spaces. There is no escape character: a backslash is an ordinary character, because it is one
 in the Windows paths and regular expressions an argument may carry. `--format` and `--path` are the action's own and are
 refused, in both the `--format labels` and `--format=labels` spellings, since a second spelling of either would leave the
 action reporting on a rendering it did not ask for.
@@ -137,7 +137,7 @@ Every one of these is validated before anything is read or run. The path inputs 
 `bin`, `package`, `features`, `image` and `contract_path` are confined to the grammars cargo and docker document, because
 they become arguments to those tools and a workflow may pass `${{ github.event.* }}` into any of them.
 
-`extra_args` is the one input whose grammar this action does not own — the arguments belong to a generator only the
+`extra_args` is the one input whose grammar this action does not own. The arguments belong to a generator only the
 calling repository knows. What is checked there is the *shape*: that the value becomes arguments rather than a command
 line, that no argument holds a control character (a newline inside one would be a second line for the runner to read as a
 workflow command), that it does not restate `--format` or `--path`, and that the list is bounded.
@@ -168,7 +168,7 @@ LABEL dev.terrace.config.contract.digest="sha256:…"
 A Dockerfile may carry **one or more** regions, because a Dockerfile may build more than one image: a file with three
 runtime stages carries three `LABEL` blocks, and each is a place this contract is published from. Every region is
 compared against the same generated block, every mismatch is reported, and each annotation is anchored to the line its
-opening marker is on — so a file with three stages and one stale block says which one.
+opening marker is on, so a file with three stages and one stale block says which one.
 
 Refused, not skipped:
 
@@ -183,7 +183,7 @@ A region holding nothing but its markers is a **finding on that region** rather 
 regions are still worth comparing, and "this one is empty" is more use than a diff of the whole block against nothing.
 
 A stray `:end` with nothing open is ignored. The opening marker is what defines a region, so a file carrying only a stray
-closing one has no regions at all — which is what "carries no `:begin` marker" already says.
+closing one has no regions at all, which is what "carries no `:begin` marker" already says.
 
 ## What it deliberately does not do
 
@@ -194,9 +194,9 @@ So this checks the document is *there* and is a contract, and the full compariso
 
 That is a deliberate boundary rather than a gap waiting to be filled. A repository that also wants the in-image document
 compared keeps that half in its own build, where the export stage it needs already exists, and still takes everything
-else from here — including the check that the `contract_path` its own label advertises has a contract behind it.
+else from here, including the check that the `contract_path` its own label advertises has a contract behind it.
 
-**It checks one contract per invocation.** A workspace that renders several — one per published image — runs the step
+**It checks one contract per invocation.** A workspace that renders several, one per published image, runs the step
 once per contract, with `extra_args` selecting which. A list of contracts in one invocation was considered and rejected:
 it would make `contract_checksum` and `labels` ambiguous outputs, and it would leave the Dockerfile regions with no way
 to say which region belongs to which contract. A matrix answers both, in a form the annotations can be read against.
