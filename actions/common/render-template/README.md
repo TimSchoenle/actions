@@ -108,7 +108,7 @@ Set `strict: false` to render undefined references as empty strings instead.
 Every `.hbs` file under `partials-dir` is registered, recursively. A partial is addressed by its path relative to that
 directory, without the extension:
 
-```
+```text
 docs/partials/footer.hbs         →  {{> footer }}
 docs/partials/tables/actions.hbs →  {{> tables/actions }}
 ```
