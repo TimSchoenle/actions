@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.3](https://github.com/TimSchoenle/actions/compare/actions-common-render-template-v1.2.2...actions-common-render-template-v1.2.3) (2026-09-26)
+
+
+### Documentation
+
+* link the writing standards from the README and meet the em dash budget ([#1735](https://github.com/TimSchoenle/actions/issues/1735)) ([a023481](https://github.com/TimSchoenle/actions/commit/a023481958881925e74a5cf1bd5fc3c0d24ebdb4))
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26.6.1 ([#1723](https://github.com/TimSchoenle/actions/issues/1723)) ([7e2332e](https://github.com/TimSchoenle/actions/commit/7e2332ef582f74d957ca5ec3b9913e3dd6e11c2e))
+* **deps:** update dependency fast-check to v4.10.1 ([#1717](https://github.com/TimSchoenle/actions/issues/1717)) ([12b58b6](https://github.com/TimSchoenle/actions/commit/12b58b6a7917f3308da59b5bd59fa1b649ddcfd2))
+
 ## [1.2.2](https://github.com/TimSchoenle/actions/compare/actions-common-render-template-v1.2.1...actions-common-render-template-v1.2.2) (2026-09-15)
 
 

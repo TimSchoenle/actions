@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.3](https://github.com/TimSchoenle/actions/compare/actions-common-setup-app-git-identity-v1.5.2...actions-common-setup-app-git-identity-v1.5.3) (2026-09-26)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26.6.1 ([#1723](https://github.com/TimSchoenle/actions/issues/1723)) ([7e2332e](https://github.com/TimSchoenle/actions/commit/7e2332ef582f74d957ca5ec3b9913e3dd6e11c2e))
+
 ## [1.5.2](https://github.com/TimSchoenle/actions/compare/actions-common-setup-app-git-identity-v1.5.1...actions-common-setup-app-git-identity-v1.5.2) (2026-09-15)
 
 

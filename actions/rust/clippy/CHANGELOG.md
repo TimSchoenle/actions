@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.12](https://github.com/TimSchoenle/actions/compare/actions-rust-clippy-v1.1.11...actions-rust-clippy-v1.1.12) (2026-09-26)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates (minor) ([#1722](https://github.com/TimSchoenle/actions/issues/1722)) ([1418795](https://github.com/TimSchoenle/actions/commit/1418795f3aa86514c290e14259ed70602e36fc1f))
+
 ## [1.1.11](https://github.com/TimSchoenle/actions/compare/actions-rust-clippy-v1.1.10...actions-rust-clippy-v1.1.11) (2026-09-13)
 
 
