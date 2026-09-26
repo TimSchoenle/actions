@@ -2,7 +2,7 @@
 
 Renders a [Handlebars](https://handlebarsjs.com/) template file to an output file from a JSON map of variables.
 
-Built for generated documentation — a README assembled from a list of actions is the case it is designed around — but the
+Built for generated documentation, with a README assembled from a list of actions as the case it is designed around. The
 inputs are generic, so it renders CHANGELOGs, docs pages and config files just as well.
 
 Rendering is **deterministic**: the same template and the same variables always produce byte-identical output. That is
@@ -69,7 +69,7 @@ differing line so the log alone tells you whether it is a real change or a stray
 | `checksum`    | SHA-256 of the rendered content, as lowercase hex.                               |
 | `output-path` | The path written to, as given.                                                   |
 
-An unchanged file is left completely untouched — not rewritten with identical bytes — so its modification time survives.
+An unchanged file is left completely untouched, not rewritten with identical bytes, so its modification time survives.
 
 ## Variables
 
@@ -77,13 +77,13 @@ An unchanged file is left completely untouched — not rewritten with identical 
 nested objects, arrays, strings, numbers, booleans and `null`.
 
 Keys that would reach the object prototype (`__proto__`, `constructor`, `prototype`) are rejected anywhere in the
-document, and a template can never resolve a prototype member — `{{ constructor.constructor }}` and friends render as
+document, and a template can never resolve a prototype member: `{{ constructor.constructor }}` and friends render as
 nothing.
 
 ## Strict mode
 
 With `strict: true` (the default), every root-scope name a template reads must exist in `variables`. This covers more
-than Handlebars' own strict option, which only guards a bare `{{ name }}` — these all fail here, and would otherwise
+than Handlebars' own strict option, which only guards a bare `{{ name }}`. These all fail here, and would otherwise
 render a silently empty table:
 
 ```hbs
@@ -114,7 +114,7 @@ docs/partials/tables/actions.hbs →  {{> tables/actions }}
 ```
 
 Partials are compiled with the same options as the template and may use the same helpers. They are **not** re-indented to
-the column their `{{> }}` call sits at — Handlebars does that by default, which is right for HTML and wrong for Markdown,
+the column their `{{> }}` call sits at. Handlebars does that by default, which is right for HTML and wrong for Markdown,
 where four leading spaces turn a table into a code block.
 
 Pointing `partials-dir` at something that is not a readable directory fails the step rather than rendering a template
@@ -132,7 +132,7 @@ from unchanged inputs has to come out byte-identical.
 | `mdCell value`     | Escapes a value for one table cell: `\` and `|` are escaped, newlines become `<br>`.             |
 | `mdEscape value`   | Escapes Markdown structural characters in inline text.                                            |
 
-`mdCell` is the one a generated table needs most — an action description containing a pipe would otherwise split the
+`mdCell` is the one a generated table needs most. An action description containing a pipe would otherwise split the
 column, and one containing a newline would end the row.
 
 ### Ordering

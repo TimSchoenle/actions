@@ -27,8 +27,8 @@ suggestion.
 
 ### With a repository's own generator
 
-Facts this action cannot derive — configuration tables, publish targets, a rendered example file — arrive through
-`extra` and are merged over the derived payload:
+Facts this action cannot derive, such as configuration tables, publish targets or a rendered example file, arrive
+through `extra` and are merged over the derived payload:
 
 ```yaml
 - name: Generate the configuration payload
@@ -106,7 +106,7 @@ description is set to match it.
 | `gradle.properties` | `version` | `jdk`, `gradle` |
 
 `Cargo.toml` is read without a TOML parser. What a README quotes is a handful of top-level string fields in the
-`[package]` table, and the parse is anchored to the line start — a dependency's version sits inside an inline table and
+`[package]` table, and the parse is anchored to the line start. A dependency's version sits inside an inline table and
 never starts a line, so `version` cannot come from one.
 
 A member manifest carrying `version.workspace = true` fails with a message naming the workspace root, rather than
@@ -118,7 +118,7 @@ be computed. A project that computes its version writes it to the properties fil
 ## Docs index
 
 Every file under `docs-dir`, depth-first and sorted, so the rendered table cannot reorder itself between runners.
-Markdown is indexed by its own first heading and first paragraph — front matter, fenced blocks and the HTML comment
+Markdown is indexed by its own first heading and first paragraph. Front matter, fenced blocks and the HTML comment
 banner that opens every generated file are all skipped. Anything else is indexed by path with no summary, because
 `docs/config.contract.json` is a document a reader follows a link to and leaving it out would make the table lie.
 
@@ -135,7 +135,7 @@ without waiting for a release here.
   make the result depend on what the reader happened to find.
 - **`null` replaces**, which is how a caller deletes a derived field while leaving the name defined for strict mode.
 
-Keys that would reach `Object.prototype` — `__proto__`, `constructor`, `prototype` — are rejected rather than stripped,
+Keys that would reach `Object.prototype` (`__proto__`, `constructor`, `prototype`) are rejected rather than stripped,
 on the same terms as render-template's variables: this payload is rendered by that template, and
 `{{ constructor.constructor }}` is the classic Handlebars sandbox escape.
 
