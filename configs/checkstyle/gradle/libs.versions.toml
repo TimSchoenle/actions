@@ -1,5 +1,5 @@
 [versions]
-checkstyle = "14.1.0"
+checkstyle = "14.3.0"
 lombok = "1.18.48"
 
 [libraries]
