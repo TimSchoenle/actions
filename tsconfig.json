@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
@@ -13,16 +12,15 @@
     "forceConsistentCasingInFileNames": true,
     "verbatimModuleSyntax": true,
     "resolveJsonModule": true,
-    "baseUrl": ".",
     "rootDir": ".",
     "paths": {
-      "actions-util": ["packages/ts-util/src/index.ts"],
-      "actions-util/branches": ["packages/ts-util/src/github-branches.ts"],
-      "actions-util/identity": ["packages/ts-util/src/github-identity.ts"],
-      "actions-util/commits": ["packages/ts-util/src/github-commits.ts"],
-      "actions-util/client": ["packages/ts-util/src/github-client.ts"],
-      "actions-util/read-after-write": ["packages/ts-util/src/read-after-write.ts"],
-      "actions-e2e": ["packages/e2e/src/index.ts"]
+      "actions-util": ["./packages/ts-util/src/index.ts"],
+      "actions-util/branches": ["./packages/ts-util/src/github-branches.ts"],
+      "actions-util/identity": ["./packages/ts-util/src/github-identity.ts"],
+      "actions-util/commits": ["./packages/ts-util/src/github-commits.ts"],
+      "actions-util/client": ["./packages/ts-util/src/github-client.ts"],
+      "actions-util/read-after-write": ["./packages/ts-util/src/read-after-write.ts"],
+      "actions-e2e": ["./packages/e2e/src/index.ts"]
     }
   },
   "include": ["scripts/**/*", "actions/**/*", "packages/**/*"],
