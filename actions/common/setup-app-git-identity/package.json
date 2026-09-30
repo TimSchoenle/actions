@@ -19,6 +19,6 @@
     "actions-e2e": "workspace:*",
     "@types/node": "26.6.3",
     "@typescript/native": "npm:typescript@7.0.2",
-    "vitest": "5.0.0"
+    "vitest": "5.0.2"
   }
 }
