@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.5.3](https://github.com/TimSchoenle/actions/compare/actions-maintenance-ensure-actions-are-executed-v1.5.2...actions-maintenance-ensure-actions-are-executed-v1.5.3) (2026-10-02)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26.6.1 ([#1723](https://github.com/TimSchoenle/actions/issues/1723)) ([7e2332e](https://github.com/TimSchoenle/actions/commit/7e2332ef582f74d957ca5ec3b9913e3dd6e11c2e))
+* **deps:** update dependency @types/node to v26.6.3 ([#1728](https://github.com/TimSchoenle/actions/issues/1728)) ([7307232](https://github.com/TimSchoenle/actions/commit/7307232c67390db5ecbeb5b444b048afdc24fb89))
+* **deps:** update dependency fast-check to v4.10.1 ([#1717](https://github.com/TimSchoenle/actions/issues/1717)) ([12b58b6](https://github.com/TimSchoenle/actions/commit/12b58b6a7917f3308da59b5bd59fa1b649ddcfd2))
+* **deps:** update dependency fast-check to v4.10.2 ([#1730](https://github.com/TimSchoenle/actions/issues/1730)) ([5dce227](https://github.com/TimSchoenle/actions/commit/5dce227fbce775d186af5dfb89d3f79f86be6a2f))
+* **deps:** update dependency typescript to v7 ([#1143](https://github.com/TimSchoenle/actions/issues/1143)) ([98f1d03](https://github.com/TimSchoenle/actions/commit/98f1d03512a2223e231fe66291bf77a74ec640f1))
+* **deps:** update vitest monorepo to v5.0.2 ([#1721](https://github.com/TimSchoenle/actions/issues/1721)) ([c0fb63e](https://github.com/TimSchoenle/actions/commit/c0fb63e2355714dae78131c3773b9184ec3f1fba))
+
+
+### Dependencies
+
+* **deps:** lock file maintenance ([#1725](https://github.com/TimSchoenle/actions/issues/1725)) ([82a5380](https://github.com/TimSchoenle/actions/commit/82a53807b20ab62253d6192aa52964a8417462f6))
+
 ## [1.5.2](https://github.com/TimSchoenle/actions/compare/actions-maintenance-ensure-actions-are-executed-v1.5.1...actions-maintenance-ensure-actions-are-executed-v1.5.2) (2026-09-15)
 
 
