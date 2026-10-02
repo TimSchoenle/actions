@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.5.3](https://github.com/TimSchoenle/actions/compare/actions-common-setup-app-git-identity-v1.5.2...actions-common-setup-app-git-identity-v1.5.3) (2026-10-02)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26.6.1 ([#1723](https://github.com/TimSchoenle/actions/issues/1723)) ([7e2332e](https://github.com/TimSchoenle/actions/commit/7e2332ef582f74d957ca5ec3b9913e3dd6e11c2e))
+* **deps:** update dependency @types/node to v26.6.3 ([#1728](https://github.com/TimSchoenle/actions/issues/1728)) ([7307232](https://github.com/TimSchoenle/actions/commit/7307232c67390db5ecbeb5b444b048afdc24fb89))
+* **deps:** update dependency typescript to v7 ([#1143](https://github.com/TimSchoenle/actions/issues/1143)) ([98f1d03](https://github.com/TimSchoenle/actions/commit/98f1d03512a2223e231fe66291bf77a74ec640f1))
+* **deps:** update vitest monorepo to v5.0.2 ([#1721](https://github.com/TimSchoenle/actions/issues/1721)) ([c0fb63e](https://github.com/TimSchoenle/actions/commit/c0fb63e2355714dae78131c3773b9184ec3f1fba))
+
+
+### Dependencies
+
+* **deps:** lock file maintenance ([#1725](https://github.com/TimSchoenle/actions/issues/1725)) ([82a5380](https://github.com/TimSchoenle/actions/commit/82a53807b20ab62253d6192aa52964a8417462f6))
+
 ## [1.5.2](https://github.com/TimSchoenle/actions/compare/actions-common-setup-app-git-identity-v1.5.1...actions-common-setup-app-git-identity-v1.5.2) (2026-09-15)
 
 
