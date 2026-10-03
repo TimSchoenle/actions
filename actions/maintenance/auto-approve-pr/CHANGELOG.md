@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.4](https://github.com/TimSchoenle/actions/compare/actions-maintenance-auto-approve-pr-v1.5.3...actions-maintenance-auto-approve-pr-v1.5.4) (2026-10-03)
+
+
+### Miscellaneous
+
+* **deps:** update vitest monorepo to v5.0.3 ([#1759](https://github.com/TimSchoenle/actions/issues/1759)) ([2747329](https://github.com/TimSchoenle/actions/commit/2747329bac8690cb7da29c31735874e4c83c7384))
+
 ## [1.5.3](https://github.com/TimSchoenle/actions/compare/actions-maintenance-auto-approve-pr-v1.5.2...actions-maintenance-auto-approve-pr-v1.5.3) (2026-10-02)
 
 

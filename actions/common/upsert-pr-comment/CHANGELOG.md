@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.4](https://github.com/TimSchoenle/actions/compare/actions-common-upsert-pr-comment-v1.1.3...actions-common-upsert-pr-comment-v1.1.4) (2026-10-03)
+
+
+### Miscellaneous
+
+* **deps:** update vitest monorepo to v5.0.3 ([#1759](https://github.com/TimSchoenle/actions/issues/1759)) ([2747329](https://github.com/TimSchoenle/actions/commit/2747329bac8690cb7da29c31735874e4c83c7384))
+
 ## [1.1.3](https://github.com/TimSchoenle/actions/compare/actions-common-upsert-pr-comment-v1.1.2...actions-common-upsert-pr-comment-v1.1.3) (2026-10-02)
 
 
