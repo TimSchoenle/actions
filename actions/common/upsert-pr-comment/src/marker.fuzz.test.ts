@@ -1,7 +1,7 @@
 import { fc, it } from '@fast-check/vitest';
 import { describe, expect } from 'vitest';
 
-import { composeBody, hasMarker, markerFor, MAX_COMMENT_LENGTH } from './marker.js';
+import { carriesMarkerLine, composeBody, hasMarker, markerFor, MAX_COMMENT_LENGTH } from './marker.js';
 
 const identifier = fc.stringMatching(/^[\dA-Za-z][\w.-]{0,63}$/);
 
@@ -13,6 +13,29 @@ describe('marker properties', () => {
     expect(marker.split('-->')).toHaveLength(2);
     expect(marker.endsWith('-->')).toBe(true);
   });
+
+  // `carriesMarkerLine` spells the marker shape out by hand, so this is what keeps it in step with
+  // `markerFor`: every marker that can be built is one a body is refused for carrying, and a string
+  // that is not one is never mistaken for it.
+  it.prop([identifier])('finds every marker markerFor builds, on any line', (value) => {
+    expect(carriesMarkerLine(`report\n  ${markerFor(value)}\r\nmore`)).toBe(true);
+  });
+
+  it.prop([fc.string().filter((value) => !value.includes('\n'))])(
+    'finds a marker-shaped line exactly when markerFor would build it',
+    (value) => {
+      const line = `<!-- timschoenle/actions:pr-comment:${value} -->`;
+      let built: string | undefined;
+
+      try {
+        built = markerFor(value);
+      } catch {
+        built = undefined;
+      }
+
+      expect(carriesMarkerLine(line)).toBe(built === line);
+    },
+  );
 
   it.prop([identifier, identifier])('matches its own identifier and no other', (left, right) => {
     const body = `${markerFor(left)}\n\nbody`;

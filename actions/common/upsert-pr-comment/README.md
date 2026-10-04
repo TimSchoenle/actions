@@ -41,15 +41,65 @@ Any other trigger has to supply it.
 | ----------------- | -------- | ------------------------------------------------ | --------------------------------------------------------------- |
 | `token`           | yes      |                                                  | Token with `pull-requests: write`.                              |
 | `identifier`      | yes      |                                                  | Stable key naming the comment. See below.                       |
-| `body`            | no       | `''`                                             | Markdown to post. Exclusive with `body_file`.                   |
-| `body_file`       | no       | `''`                                             | Workspace-relative file holding the markdown. Exclusive with `body`. |
+| `body`            | no       | `''`                                             | Markdown to post.                                               |
+| `body_file`       | no       | `''`                                             | Workspace-relative file holding the markdown.                   |
+| `body_lines`      | no       | `''`                                             | Lines to post; blank ones are dropped. See below.               |
+| `header`          | no       | `''`                                             | Markdown above the surviving `body_lines`.                      |
+| `footer`          | no       | `''`                                             | Markdown below the surviving `body_lines`.                      |
 | `pr_url`          | no       | `${{ github.event.pull_request.html_url }}`      | The pull request to comment on.                                 |
 | `update_existing` | no       | `true`                                           | `false` posts a new comment every run.                          |
 | `author`          | no       | `''`                                             | Only update a comment posted by this login.                     |
 
-Exactly one of `body` and `body_file` must be non-empty; setting both fails the step rather than picking one. Prefer
-`body_file` for anything a build step generated — a report routed through a `${{ }}` expression has to survive the
-runner's own quoting first.
+Exactly one of `body`, `body_file` and `body_lines` must be non-empty; setting two fails the step rather than picking
+one. Prefer `body_file` for anything a build step generated. A report routed through a `${{ }}` expression has to
+survive the runner's own quoting first.
+
+`header` and `footer` are only valid with `body_lines`. Setting either alongside `body` or `body_file` fails the step,
+because ignoring it would post a comment missing text the workflow asked for.
+
+A body carrying a marker of this action on a line of its own fails the step, whichever input it came from. A run finds
+its comment by a marker on any line, so a planted `<!-- timschoenle/actions:pr-comment:other -->` would let the next
+run for `other` find this comment and overwrite it. A marker inside a line of prose is not matched and is allowed.
+
+An empty `body` or `body_file` fails the step. The action cannot tell a generator that broke from one with nothing to
+report, so only `body_lines` can skip.
+
+### `body_lines`
+
+A comment assembled from a fixed list, where each line is gated by an earlier step's output. The runner evaluates every
+`${{ }}` before the action starts, so the action sees lines, some of them empty:
+
+```yaml
+- name: Comment on PR
+  if: github.event_name == 'pull_request'
+  uses: <owner>/actions/actions/common/upsert-pr-comment@<ref>
+  with:
+    token: ${{ steps.token.outputs.token }}
+    identifier: render-generated-files
+    header: 'Re-rendered from the configuration types in `crates/config`:'
+    body_lines: |
+      ${{ steps.readme.outputs.changes_detected == 'true' && '- `README.md`, from `.github/templates/README.md.hbs`' || '' }}
+      ${{ steps.example-config.outputs.changes_detected == 'true' && '- `config.example.toml`, from `.github/templates/config.example.toml.hbs`' || '' }}
+```
+
+A line that is empty or whitespace after trimming is dropped. The rest are kept verbatim and in input order, so an
+indented sub-bullet stays nested. `header`, the surviving lines and `footer` are joined with one blank line between
+each. CRLF line endings split the same as LF.
+
+When no line survives, the action logs `Nothing to report; no comment posted.`, sets `operation` to `skipped` and makes
+no API call. A comment from an earlier run is left as it is: it described that run's push and is still true of it. The
+skip happens before `pr_url` is read, so it also passes on a `push` event, where `pr_url` is empty. `header` and
+`footer` alone never make a comment.
+
+Write `body_lines` as a block scalar (`|`). A single-line value whose one expression evaluates to `''` arrives as an
+empty input, which reads as unset and fails the step instead of skipping.
+
+`cond && 'text' || ''` returns `''` whenever the middle value is falsy, so it only works when that value is non-empty
+literal text. Every line in the example above is.
+
+`body_lines` is not escaped. Interpolate only literal text and step outputs the workflow itself computed. A value a
+contributor controls, such as a branch name or a pull request title, turns the line into a script-injection path. Write
+it to a file and pass that as `body_file`.
 
 ### `identifier`
 
@@ -68,6 +118,7 @@ each other's comment.
 | One does, with a different body                | It is rewritten. `operation: updated`         |
 | One does, with exactly this body               | Nothing is written. `operation: unchanged`    |
 | One did, and has since been deleted            | A new comment. `operation: created`           |
+| No `body_lines` line survived                  | Nothing is read or written. `operation: skipped` |
 
 The `unchanged` case is not only an optimisation: rewriting a comment with its own text still moves it in every
 "recently updated" view.
@@ -96,6 +147,6 @@ of the body, so it survives the cut.
 
 | Output        | Description                                            |
 | ------------- | ------------------------------------------------------ |
-| `comment_id`  | ID of the comment that was created or updated.         |
-| `comment_url` | URL of that comment.                                   |
-| `operation`   | `created`, `updated` or `unchanged`.                   |
+| `comment_id`  | ID of the comment that was created or updated. Empty when skipped. |
+| `comment_url` | URL of that comment. Empty when skipped.               |
+| `operation`   | `created`, `updated`, `unchanged` or `skipped`.        |

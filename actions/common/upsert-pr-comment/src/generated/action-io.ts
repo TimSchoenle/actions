@@ -19,6 +19,9 @@ export const ActionInput = {
   identifier: 'identifier',
   body: 'body',
   body_file: 'body_file',
+  body_lines: 'body_lines',
+  header: 'header',
+  footer: 'footer',
   update_existing: 'update_existing',
   author: 'author',
 } as const;
