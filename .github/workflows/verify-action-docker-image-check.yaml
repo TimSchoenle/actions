@@ -174,8 +174,16 @@ jobs:
         with:
           persist-credentials: false
 
+      # Built from a copy under RUNNER_TEMP with 2 MiB of zeros added: .Size counts unpacked bytes, so
+      # the image lands at a known size between the 1 MiB limit below and the default warning, and the
+      # workspace stays clean for the assertion that the action itself writes nothing there.
       - name: Build Fixture Image
-        run: docker build --tag image-check-e2e:test actions/docker/image-check/e2e/fixture
+        run: |
+          set -euo pipefail
+          context="$RUNNER_TEMP/image-check-fixture"
+          cp -r actions/docker/image-check/e2e/fixture "$context"
+          head -c 2097152 /dev/zero > "$context/payload.bin"
+          docker build --tag image-check-e2e:test "$context"
 
       - name: Run Test (Scan And Upload)
         id: check
@@ -199,7 +207,7 @@ jobs:
 
           EXPECTED_SIZE=$(docker image inspect --format '{{.Size}}' -- image-check-e2e:test)
           [ "$SIZE_BYTES" = "$EXPECTED_SIZE" ] || { echo "::error::size-bytes '$SIZE_BYTES', expected '$EXPECTED_SIZE'"; exit 1; }
-          [ "$SIZE_MIB" = "0.0" ] || { echo "::error::size-mib '$SIZE_MIB', expected '0.0'"; exit 1; }
+          [ "$SIZE_MIB" = "2.0" ] || { echo "::error::size-mib '$SIZE_MIB', expected '2.0'"; exit 1; }
           [ "$OVER_WARNING" = "false" ] || { echo "::error::over-warning '$OVER_WARNING', expected 'false'"; exit 1; }
           [[ "$FINDINGS" =~ ^[0-9]+$ ]] || { echo "::error::findings '$FINDINGS' is not a count"; exit 1; }
           [ -z "$COMMENT_URL" ] || { echo "::error::comment: none wrote a comment: $COMMENT_URL"; exit 1; }
@@ -221,7 +229,7 @@ jobs:
         uses: ./actions/docker/image-check
         with:
           image: image-check-e2e:test
-          size-limit-mib: '0.001'
+          size-limit-mib: '1'
           upload-sarif: 'false'
           comment: none
 
@@ -243,7 +251,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          [ "$LIMITED_OUTCOME" = "failure" ] || { echo "::error::a 0.001 MiB limit did not fail the step ($LIMITED_OUTCOME)"; exit 1; }
+          [ "$LIMITED_OUTCOME" = "failure" ] || { echo "::error::a 1 MiB limit did not fail a 2 MiB image ($LIMITED_OUTCOME)"; exit 1; }
           [[ "$LIMITED_FINDINGS" =~ ^[0-9]+$ ]] || { echo "::error::the limit failed before the report phase published findings"; exit 1; }
           [ "$MISSING_OUTCOME" = "failure" ] || { echo "::error::an image that was never built did not fail ($MISSING_OUTCOME)"; exit 1; }
           [ -z "$MISSING_FINDINGS" ] || { echo "::error::Trivy ran against an image that was never built"; exit 1; }
@@ -282,8 +290,16 @@ jobs:
         with:
           persist-credentials: false
 
+      # Built from a copy under RUNNER_TEMP with 2 MiB of zeros added: .Size counts unpacked bytes, so
+      # the image lands at a known size between the 1 MiB limit below and the default warning, and the
+      # workspace stays clean for the assertion that the action itself writes nothing there.
       - name: Build Fixture Image
-        run: docker build --tag image-check-e2e:test actions/docker/image-check/e2e/fixture
+        run: |
+          set -euo pipefail
+          context="$RUNNER_TEMP/image-check-fixture"
+          cp -r actions/docker/image-check/e2e/fixture "$context"
+          head -c 2097152 /dev/zero > "$context/payload.bin"
+          docker build --tag image-check-e2e:test "$context"
 
       - name: Run Test (Summary Leg)
         uses: ./actions/docker/image-check
