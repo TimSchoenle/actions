@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/TimSchoenle/actions/compare/actions-common-upsert-pr-comment-v1.1.3...actions-common-upsert-pr-comment-v1.2.0) (2026-10-04)
+
+
+### Features
+
+* **Action/Upsert-PrComment:** add body_lines with header, footer and skip ([#1760](https://github.com/TimSchoenle/actions/issues/1760)) ([40228ab](https://github.com/TimSchoenle/actions/commit/40228abf5c658de76ab539b7f9fc8dd8afb3ff5f))
+
+
+### Miscellaneous
+
+* **deps:** update vitest monorepo to v5.0.3 ([#1759](https://github.com/TimSchoenle/actions/issues/1759)) ([2747329](https://github.com/TimSchoenle/actions/commit/2747329bac8690cb7da29c31735874e4c83c7384))
+
 ## [1.1.3](https://github.com/TimSchoenle/actions/compare/actions-common-upsert-pr-comment-v1.1.2...actions-common-upsert-pr-comment-v1.1.3) (2026-10-02)
 
 
