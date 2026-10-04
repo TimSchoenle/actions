@@ -154,6 +154,30 @@ describe('upsert-pr-comment', () => {
     await expect(scratch.issueComments(numberOf(prUrl))).resolves.toEqual([`${markerFor('size')}\n\n${report}`]);
   });
 
+  // A quiet run must leave the earlier comment exactly as it was: it is still true of the push it
+  // described, and deleting it would erase the record of that push.
+  it('posts the surviving body_lines, then skips a run where none survive', async () => {
+    const prUrl = await openPullRequest('body-lines');
+    const gated = { pr_url: prUrl, identifier: 'rendered', header: 'Re-rendered:', footer: 'Checked again.' };
+
+    const first = await run({ ...gated, body_lines: '- `README.md`\n\n  - from `README.md.hbs`\n' });
+
+    expect(first.outputs.operation).toBe('created');
+
+    const posted = `${markerFor('rendered')}\n\nRe-rendered:\n\n- \`README.md\`\n  - from \`README.md.hbs\`\n\nChecked again.`;
+
+    await expect(scratch.issueComments(numberOf(prUrl))).resolves.toEqual([posted]);
+
+    const second = await run({ ...gated, body_lines: '\n  \n' });
+
+    expect(second.outputs).toEqual({ comment_id: '', comment_url: '', operation: 'skipped' });
+
+    const comments = await scratch.issueCommentRecords(numberOf(prUrl));
+
+    expect(comments).toHaveLength(1);
+    expect(comments[0]).toMatchObject({ body: posted, id: Number(first.outputs.comment_id) });
+  });
+
   it('ignores a marked comment posted by anyone but the required author', async () => {
     const prUrl = await openPullRequest('author-filter');
     const forged = await scratch.createIssueComment(numberOf(prUrl), `${markerFor('size')}\n\nnot ours`);

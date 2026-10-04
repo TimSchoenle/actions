@@ -13,11 +13,23 @@ inputs:
     description: 'Stable key naming this comment, e.g. "docker-image-size". Letters, digits, ".", "_" and "-", up to 64 characters. It is written into the comment as a hidden marker, which is how a later run finds the comment to update.'
     required: true
   body:
-    description: 'Markdown body of the comment. Exactly one of body or body_file must be given.'
+    description: 'Markdown body of the comment. Exactly one of body, body_file or body_lines must be given.'
     required: false
     default: ''
   body_file:
-    description: 'Path, relative to the workspace, of a file holding the markdown body. Exactly one of body or body_file must be given.'
+    description: 'Path, relative to the workspace, of a file holding the markdown body. Exactly one of body, body_file or body_lines must be given.'
+    required: false
+    default: ''
+  body_lines:
+    description: 'Newline-separated markdown lines. Lines that are empty or whitespace are dropped; the rest are kept verbatim, in order. When no line survives, no comment is posted and operation is "skipped". Exactly one of body, body_file or body_lines must be given.'
+    required: false
+    default: ''
+  header:
+    description: 'Markdown placed above the surviving body_lines, separated by one blank line. Only valid with body_lines.'
+    required: false
+    default: ''
+  footer:
+    description: 'Markdown placed below the surviving body_lines, separated by one blank line. Only valid with body_lines.'
     required: false
     default: ''
   update_existing:
@@ -31,11 +43,11 @@ inputs:
 
 outputs:
   comment_id:
-    description: 'ID of the comment that was created or updated.'
+    description: 'ID of the comment that was created or updated. Empty when operation is "skipped".'
   comment_url:
-    description: 'URL of the comment that was created or updated.'
+    description: 'URL of the comment that was created or updated. Empty when operation is "skipped".'
   operation:
-    description: 'What the run did: "created", "updated" or "unchanged".'
+    description: 'What the run did: "created", "updated", "unchanged", or "skipped" when body_lines was set and no line survived, so no API call was made.'
 
 runs:
   using: 'node20'
