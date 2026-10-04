@@ -8,6 +8,9 @@
 # and the egress allowlists stay free of Docker Hub and its rate limits. Trivy still downloads its
 # vulnerability database and writes a real SARIF log; a scratch image simply has no packages in it.
 #
+# Trivy's install script fetches the binary through get.trivy.dev, which redirects to the GitHub
+# release; its database comes from mirror.gcr.io, with ghcr.io as the fallback.
+#
 # Pull requests from a fork run these too. Their GITHUB_TOKEN is read-only, so there the assertions
 # flip to the skip path: no SARIF upload, no fragment, no comment.
 #
@@ -31,6 +34,7 @@ verify-composite:
           codeload.github.com:443
           objects.githubusercontent.com:443
           release-assets.githubusercontent.com:443
+          get.trivy.dev:443
           *.actions.githubusercontent.com:443
           *.blob.core.windows.net:443
           mirror.gcr.io:443
@@ -138,6 +142,7 @@ verify-summary-legs:
           codeload.github.com:443
           objects.githubusercontent.com:443
           release-assets.githubusercontent.com:443
+          get.trivy.dev:443
           *.actions.githubusercontent.com:443
           *.blob.core.windows.net:443
           mirror.gcr.io:443

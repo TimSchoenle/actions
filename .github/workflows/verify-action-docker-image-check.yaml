@@ -161,6 +161,7 @@ jobs:
             codeload.github.com:443
             objects.githubusercontent.com:443
             release-assets.githubusercontent.com:443
+            get.trivy.dev:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
             mirror.gcr.io:443
@@ -268,6 +269,7 @@ jobs:
             codeload.github.com:443
             objects.githubusercontent.com:443
             release-assets.githubusercontent.com:443
+            get.trivy.dev:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
             mirror.gcr.io:443

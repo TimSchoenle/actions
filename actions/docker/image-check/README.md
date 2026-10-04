@@ -149,6 +149,11 @@ carries the result. A fork that has since been deleted counts as a fork.
 The composite runs its TypeScript with the `node` on the runner's `PATH`, which every GitHub-hosted runner has. A
 self-hosted runner needs Node.js 20 or later installed.
 
+A job that blocks egress (for example with `step-security/harden-runner`) has to allow what Trivy reaches:
+`github.com`, `get.trivy.dev` and `release-assets.githubusercontent.com` for the binary, `mirror.gcr.io` and `ghcr.io`
+for the vulnerability database, `api.github.com` for the SARIF upload and the comment, and the Actions cache and
+artifact hosts (`*.actions.githubusercontent.com`, `*.blob.core.windows.net`).
+
 ## Comment
 
 `per-image`, identifier `docker-image-size-linux-amd64`:
