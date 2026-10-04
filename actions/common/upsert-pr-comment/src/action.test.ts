@@ -193,6 +193,45 @@ describe('upsert-pr-comment action', () => {
     expect(core.info).toHaveBeenCalledWith('Nothing to report; no comment posted.');
   });
 
+  // The runner has already evaluated every `${{ }}`. Anything still shaped like a reference is text a
+  // value carried in, and expanding it here would hand that value the job's environment and token.
+  it('posts references to secrets, variables and commands verbatim, expanding none of them', async () => {
+    const api = fakeApi();
+    const canary = 'canary-0c47-secret';
+    vi.stubEnv('UPSERT_CANARY', canary);
+    const references = [
+      '${{ secrets.GITHUB_TOKEN }}',
+      '${{ env.UPSERT_CANARY }}',
+      '{{ UPSERT_CANARY }}',
+      '$UPSERT_CANARY ${UPSERT_CANARY} %UPSERT_CANARY%',
+      '$INPUT_TOKEN ${process.env.INPUT_TOKEN}',
+      '$(printenv UPSERT_CANARY) `printenv INPUT_TOKEN`',
+    ];
+    setInputs({ body: '', body_lines: references.join('\n'), header: '$UPSERT_CANARY', footer: '%INPUT_TOKEN%' });
+
+    await run(api);
+
+    const posted = api.createComment.mock.calls[0]?.[1];
+
+    expect(posted).toBe(
+      `<!-- timschoenle/actions:pr-comment:docker-image-size -->\n\n$UPSERT_CANARY\n\n${references.join('\n')}` +
+        '\n\n%INPUT_TOKEN%',
+    );
+    expect(posted).not.toContain(canary);
+    expect(posted).not.toContain(defaultInputs.token);
+  });
+
+  it('refuses a marker line planted through body_lines before reading any comment', async () => {
+    const api = fakeApi();
+    setInputs({ body: '', body_lines: '- README.md\n<!-- timschoenle/actions:pr-comment:other -->' });
+
+    await run(api);
+
+    expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('carries a comment marker'));
+    expect(api.comments).not.toHaveBeenCalled();
+    expect(api.createComment).not.toHaveBeenCalled();
+  });
+
   it('fails a run that would skip on an identifier that would escape the marker', async () => {
     setInputs({ body: '', body_lines: '\n', identifier: 'size --> <img src=x>' });
 

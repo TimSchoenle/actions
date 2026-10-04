@@ -57,6 +57,10 @@ survive the runner's own quoting first.
 `header` and `footer` are only valid with `body_lines`. Setting either alongside `body` or `body_file` fails the step,
 because ignoring it would post a comment missing text the workflow asked for.
 
+A body carrying a marker of this action on a line of its own fails the step, whichever input it came from. A run finds
+its comment by a marker on any line, so a planted `<!-- timschoenle/actions:pr-comment:other -->` would let the next
+run for `other` find this comment and overwrite it. A marker inside a line of prose is not matched and is allowed.
+
 An empty `body` or `body_file` fails the step. The action cannot tell a generator that broke from one with nothing to
 report, so only `body_lines` can skip.
 

@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { composeBody, hasMarker, InvalidIdentifierError, markerFor, MAX_COMMENT_LENGTH } from './marker.js';
+import {
+  carriesMarkerLine,
+  composeBody,
+  hasMarker,
+  InvalidIdentifierError,
+  markerFor,
+  MAX_COMMENT_LENGTH,
+} from './marker.js';
 
 /** Written by code point, so this file itself holds no line-breaking character. */
 const LINE_SEPARATOR = String.fromCodePoint(0x20_28);
@@ -66,6 +73,27 @@ describe('hasMarker', () => {
 
   it('does not match a prefix of the identifier', () => {
     expect(hasMarker(`${markerFor('siz')}\n\nbody`, marker)).toBe(false);
+  });
+});
+
+describe('carriesMarkerLine', () => {
+  it.each([
+    ['on a line of its own', `report\n${markerFor('other')}\nmore`],
+    ['indented, which hasMarker trims away', `report\n   ${markerFor('other')}`],
+    ['ahead of a carriage return', `${markerFor('other')}\r\nreport`],
+    ['for the identifier being posted', `report\n${markerFor('size')}`],
+  ])('finds a marker %s', (_name, body) => {
+    expect(carriesMarkerLine(body)).toBe(true);
+  });
+
+  it.each([
+    ['embedded in a line of prose', `see ${markerFor('other')} for details`],
+    ['from another namespace', '<!-- someone-else:pr-comment:other -->'],
+    ['for an identifier markerFor refuses', '<!-- timschoenle/actions:pr-comment:-bad -->'],
+    ['split by a line separator, which hasMarker does not split on', `x${LINE_SEPARATOR}${markerFor('other')}`],
+    ['absent', 'a plain report'],
+  ])('ignores one %s, which no run would find', (_name, body) => {
+    expect(carriesMarkerLine(body)).toBe(false);
   });
 });
 

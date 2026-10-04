@@ -61,6 +61,26 @@ export function hasMarker(body: string, marker: string): boolean {
   return body.split('\n').some((line) => line.trim() === marker);
 }
 
+/**
+ * Every marker {@link markerFor} can build, whatever its identifier.
+ *
+ * Spelled out rather than built from {@link MARKER_NAMESPACE} and {@link IDENTIFIER_PATTERN}, which
+ * would make it a non-literal pattern. `marker.fuzz.test.ts` holds the two in step.
+ */
+const ANY_MARKER_PATTERN = /^<!-- timschoenle\/actions:pr-comment:[\dA-Za-z][\w.-]{0,63} -->$/;
+
+/**
+ * Whether a body carries, on a line of its own, a marker for any identifier.
+ *
+ * {@link hasMarker} accepts a marker on any line, so a body holding `<!-- …:other -->` on a line of
+ * its own would be found by the next run for `other`, which would then overwrite this comment
+ * instead of its own. Lines are split and trimmed exactly as `hasMarker` does, so this answers
+ * "would any run find this body" rather than approximating it.
+ */
+export function carriesMarkerLine(body: string): boolean {
+  return body.split('\n').some((line) => ANY_MARKER_PATTERN.test(line.trim()));
+}
+
 /** A body composed for posting, and whether anything had to be cut to fit. */
 export interface ComposedBody {
   text: string;

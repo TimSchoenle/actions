@@ -13,6 +13,8 @@ import { readFile } from 'node:fs/promises';
 
 import { quoteForLog, resolveWithinWorkspace } from 'actions-util';
 
+import { carriesMarkerLine } from './marker.js';
+
 /** The body inputs, exactly as the runner delivered them. */
 export interface BodySource {
   body: string;
@@ -87,14 +89,30 @@ function validateSource({ body, bodyFile, bodyLines, header, footer }: BodySourc
  *
  * @returns the markdown, or `undefined` when `body_lines` was given and no line survived.
  * @throws {@link BodySourceError} if the inputs do not name exactly one source, `header` or `footer`
- * is set without `body_lines`, or the file is empty.
+ * is set without `body_lines`, the file is empty, or the body carries a marker line of its own.
  * @throws {@link UnsafePathError} if `body_file` leaves the workspace.
  */
 export async function resolveBody(source: BodySource, workspace: string): Promise<string | undefined> {
   validateSource(source);
 
-  const { body, bodyFile, bodyLines, header, footer } = source;
+  const markdown = await readSource(source, workspace);
 
+  // The value is not echoed: it may carry whatever the workflow interpolated into it.
+  if (markdown !== undefined && carriesMarkerLine(markdown)) {
+    throw new BodySourceError(
+      'the body carries a comment marker on a line of its own, which would let a later run for that ' +
+        'identifier find and overwrite this comment',
+    );
+  }
+
+  return markdown;
+}
+
+/** The markdown the one validated source names, or `undefined` when `body_lines` left nothing. */
+async function readSource(
+  { body, bodyFile, bodyLines, header, footer }: BodySource,
+  workspace: string,
+): Promise<string | undefined> {
   if (bodyLines !== '') {
     return composeLines(bodyLines, header, footer);
   }

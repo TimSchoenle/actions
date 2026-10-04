@@ -101,6 +101,32 @@ describe('resolveBody', () => {
     await expect(resolveBody(inputs, workspace)).resolves.toBeUndefined();
   });
 
+  // A planted marker line would let the next run for that identifier overwrite this comment.
+  describe('a marker line planted in the body', () => {
+    const planted = '<!-- timschoenle/actions:pr-comment:other -->';
+
+    beforeAll(() => writeFile(path.join(workspace, 'planted.md'), `report\n${planted}\n`, 'utf8'));
+
+    it.each([
+      ['body', { body: `report\n${planted}` }],
+      ['body_file', { bodyFile: 'planted.md' }],
+      ['body_lines', { bodyLines: `- README.md\n  ${planted}\n` }],
+      ['header', { bodyLines: '- README.md', header: `Updated:\n${planted}` }],
+      ['footer', { bodyLines: '- README.md', footer: `${planted}\r\nClosing.` }],
+    ])('is refused through %s', async (_input, inputs) => {
+      await expect(resolveBody(source(inputs), workspace)).rejects.toThrow(
+        new BodySourceError(
+          'the body carries a comment marker on a line of its own, which would let a later run for that ' +
+            'identifier find and overwrite this comment',
+        ),
+      );
+    });
+
+    it('is not checked on a skip, where nothing is posted for a run to find', async () => {
+      await expect(resolveBody(source({ bodyLines: '\n', header: planted }), workspace)).resolves.toBeUndefined();
+    });
+  });
+
   it('refuses a file that holds nothing but whitespace', async () => {
     await expect(resolveBody(source({ bodyFile: 'blank.md' }), workspace)).rejects.toThrow('is empty');
   });
