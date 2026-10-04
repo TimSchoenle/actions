@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.4](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-branch-name-v1.4.3...actions-helper-verify-branch-name-v1.4.4) (2026-10-04)
+
+
+### Miscellaneous
+
+* **deps:** update vitest monorepo to v5.0.3 ([#1759](https://github.com/TimSchoenle/actions/issues/1759)) ([2747329](https://github.com/TimSchoenle/actions/commit/2747329bac8690cb7da29c31735874e4c83c7384))
+
 ## [1.4.3](https://github.com/TimSchoenle/actions/compare/actions-helper-verify-branch-name-v1.4.2...actions-helper-verify-branch-name-v1.4.3) (2026-10-02)
 
 
