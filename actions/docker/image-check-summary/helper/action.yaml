@@ -1,0 +1,19 @@
+name: 'Docker Image Check Summary Helper'
+description: 'Internal to actions/docker/image-check-summary, which runs this bundle with node after downloading the fragments. Not a public action: its inputs and outputs change without notice.'
+
+inputs:
+  directory:
+    description: 'Directory download-artifact wrote the fragments to, one subdirectory per artifact. A missing directory holds no fragments.'
+    required: true
+
+outputs:
+  body:
+    description: 'Markdown body of the summary comment.'
+  images:
+    description: 'Number of fragments read, after duplicates were collapsed.'
+  write_comment:
+    description: 'true when the comment step should run: a pull request from this repository, with at least one fragment.'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

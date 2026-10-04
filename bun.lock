@@ -250,6 +250,35 @@
         "vitest": "5.0.3",
       },
     },
+    "actions/docker/image-check-summary/helper": {
+      "name": "actions-docker-image-check-summary-helper",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "actions-util": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "26.6.3",
+        "@typescript/native": "npm:typescript@7.0.2",
+        "actions-e2e": "workspace:*",
+        "vitest": "5.0.3",
+      },
+    },
+    "actions/docker/image-check/helper": {
+      "name": "actions-docker-image-check-helper",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "@actions/exec": "3.0.0",
+        "actions-util": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "26.6.3",
+        "@typescript/native": "npm:typescript@7.0.2",
+        "actions-e2e": "workspace:*",
+        "vitest": "5.0.3",
+      },
+    },
     "actions/helm/apply-chart-updates": {
       "name": "actions-helm-apply-chart-updates",
       "version": "1.0.0",
@@ -713,6 +742,10 @@
     "actions-common-upsert-issue": ["actions-common-upsert-issue@workspace:actions/common/upsert-issue"],
 
     "actions-common-upsert-pr-comment": ["actions-common-upsert-pr-comment@workspace:actions/common/upsert-pr-comment"],
+
+    "actions-docker-image-check-helper": ["actions-docker-image-check-helper@workspace:actions/docker/image-check/helper"],
+
+    "actions-docker-image-check-summary-helper": ["actions-docker-image-check-summary-helper@workspace:actions/docker/image-check-summary/helper"],
 
     "actions-e2e": ["actions-e2e@workspace:packages/e2e"],
 

@@ -35,6 +35,8 @@
   "actions/common/readme-variables": "1.2.3",
   "actions/common/upsert-pr-comment": "1.1.3",
   "actions/common/upsert-issue": "1.1.2",
+  "actions/docker/image-check": "1.0.0",
+  "actions/docker/image-check-summary": "1.0.0",
   "configs/checkstyle/application": "1.0.2",
   "configs/checkstyle/library": "1.0.2"
 }

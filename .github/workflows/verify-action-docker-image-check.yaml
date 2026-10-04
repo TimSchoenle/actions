@@ -1,0 +1,360 @@
+# GENERATED — do not edit by hand. Run `bun run generate-e2e-workflows` to rebuild this file
+# from the actions that have an `e2e/` directory. The drift test in CI fails if it is out of date.
+#
+# The cases live in `actions/docker/image-check/e2e/` and are ordinary vitest files. This
+# workflow supplies only what they cannot get on a laptop: a token scoped to the scratch repository.
+name: Verify Docker Image-check
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/docker/image-check'
+    paths:
+      - 'actions/docker/image-check/**'
+      - '!actions/docker/image-check/CHANGELOG.md'
+      - 'packages/e2e/**'
+      - '.github/workflows/verify-action-docker-image-check.yaml'
+  pull_request:
+    paths:
+      - 'actions/docker/image-check/**'
+      - '!actions/docker/image-check/CHANGELOG.md'
+      - 'packages/e2e/**'
+      - '.github/workflows/verify-action-docker-image-check.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  install:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      cache-key: ${{ steps.key.outputs.value }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            objects.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            registry.npmjs.org:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Compute Cache Key
+        id: key
+        env:
+          CACHE_KEY: e2e-workspace-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+        run: echo "value=$CACHE_KEY" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Workspace Dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            actions/*/*/node_modules
+          key: ${{ steps.key.outputs.value }}
+
+      # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
+      # it to 'latest', which would win otherwise. It reinstalls on every run whatever the cache did,
+      # which is what validates the restored tree against the lockfile before the next job trusts it.
+      - name: Setup Bun And Install
+        uses: TimSchoenle/actions/actions/bun/setup-cached@e16a1e466faf8ec751b26289c1898143a253269f # tag=actions-bun-setup-cached-v1.1.11
+        with:
+          bun-version: ''
+          bun-version-file: '.bun-version'
+
+  e2e:
+    needs: install
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: End-to-end
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            objects.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            api.github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # setup-bun rather than setup-cached: the cached wrapper runs `bun install` on every job, cache
+      # hit or not, and this job is the one that must have no route to a package registry at all.
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: '.bun-version'
+
+      # Restored, never installed, and never saved. `fail-on-cache-miss` is what keeps that honest:
+      # without it a miss would leave the suite to fail later on a missing import, several confusing
+      # minutes further on.
+      - name: Restore Dependencies
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            actions/*/*/node_modules
+          key: ${{ needs.install.outputs.cache-key }}
+          fail-on-cache-miss: true
+
+      # The cases run `dist/index.js`, the bundle GitHub itself would run, so nothing is built here.
+      - name: Generate Token
+        id: token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: TimSchoenle
+          repositories: actions-testing
+          permission-metadata: read
+
+      - name: Run End-to-end Cases
+        env:
+          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          # An installation token cannot call `GET /user`, so the suite resolves its own account by
+          # app slug instead. Without this a case matching commit authors fails only in CI.
+          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
+          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+        run: bun run e2e actions/docker/image-check
+
+  verify-composite:
+    name: Test Composite Against A Built Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+      security-events: write # to upload the SARIF
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            mirror.gcr.io:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
+            storage.googleapis.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build Fixture Image
+        run: docker build --tag image-check-e2e:test actions/docker/image-check/e2e/fixture
+
+      - name: Run Test (Scan And Upload)
+        id: check
+        uses: ./actions/docker/image-check
+        with:
+          image: image-check-e2e:test
+          platform: linux/amd64
+          sarif-category: image-check-e2e
+          comment: none
+
+      - name: Assert Scan And Upload
+        env:
+          SIZE_BYTES: ${{ steps.check.outputs.size-bytes }}
+          SIZE_MIB: ${{ steps.check.outputs.size-mib }}
+          OVER_WARNING: ${{ steps.check.outputs.over-warning }}
+          FINDINGS: ${{ steps.check.outputs.findings }}
+          SARIF_PATH: ${{ steps.check.outputs.sarif-path }}
+          COMMENT_URL: ${{ steps.check.outputs.comment-url }}
+        run: |
+          set -euo pipefail
+
+          EXPECTED_SIZE=$(docker image inspect --format '{{.Size}}' -- image-check-e2e:test)
+          [ "$SIZE_BYTES" = "$EXPECTED_SIZE" ] || { echo "::error::size-bytes '$SIZE_BYTES', expected '$EXPECTED_SIZE'"; exit 1; }
+          [ "$SIZE_MIB" = "0.0" ] || { echo "::error::size-mib '$SIZE_MIB', expected '0.0'"; exit 1; }
+          [ "$OVER_WARNING" = "false" ] || { echo "::error::over-warning '$OVER_WARNING', expected 'false'"; exit 1; }
+          [[ "$FINDINGS" =~ ^[0-9]+$ ]] || { echo "::error::findings '$FINDINGS' is not a count"; exit 1; }
+          [ -z "$COMMENT_URL" ] || { echo "::error::comment: none wrote a comment: $COMMENT_URL"; exit 1; }
+
+          case "$SARIF_PATH" in
+            "$RUNNER_TEMP"/*) ;;
+            *) echo "::error::sarif-path '$SARIF_PATH' is not under RUNNER_TEMP"; exit 1 ;;
+          esac
+
+          jq -e '.runs | type == "array"' "$SARIF_PATH" > /dev/null || { echo "::error::sarif-path holds no SARIF log"; exit 1; }
+          [ -z "$(git status --porcelain)" ] || { echo "::error::the action left files in the workspace"; git status --porcelain; exit 1; }
+
+          echo "✅ Measured $SIZE_BYTES bytes, scanned to $FINDINGS finding(s), SARIF under RUNNER_TEMP"
+
+      # The limit fails the step, but only in the last phase: findings must already be published.
+      - name: Run Test (Size Limit)
+        id: limited
+        continue-on-error: true
+        uses: ./actions/docker/image-check
+        with:
+          image: image-check-e2e:test
+          size-limit-mib: '0.001'
+          upload-sarif: 'false'
+          comment: none
+
+      - name: Run Test (Image Never Loaded)
+        id: missing
+        continue-on-error: true
+        uses: ./actions/docker/image-check
+        with:
+          image: image-check-e2e:never-built
+          upload-sarif: 'false'
+          comment: none
+
+      - name: Assert Gates And Refusals
+        env:
+          LIMITED_OUTCOME: ${{ steps.limited.outcome }}
+          LIMITED_FINDINGS: ${{ steps.limited.outputs.findings }}
+          MISSING_OUTCOME: ${{ steps.missing.outcome }}
+          MISSING_FINDINGS: ${{ steps.missing.outputs.findings }}
+        run: |
+          set -euo pipefail
+
+          [ "$LIMITED_OUTCOME" = "failure" ] || { echo "::error::a 0.001 MiB limit did not fail the step ($LIMITED_OUTCOME)"; exit 1; }
+          [[ "$LIMITED_FINDINGS" =~ ^[0-9]+$ ]] || { echo "::error::the limit failed before the report phase published findings"; exit 1; }
+          [ "$MISSING_OUTCOME" = "failure" ] || { echo "::error::an image that was never built did not fail ($MISSING_OUTCOME)"; exit 1; }
+          [ -z "$MISSING_FINDINGS" ] || { echo "::error::Trivy ran against an image that was never built"; exit 1; }
+
+          echo "✅ The limit failed last, and a missing image failed first"
+
+  verify-summary-legs:
+    name: Test Summary Leg (${{ matrix.platform }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    strategy:
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            mirror.gcr.io:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
+            storage.googleapis.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build Fixture Image
+        run: docker build --tag image-check-e2e:test actions/docker/image-check/e2e/fixture
+
+      - name: Run Test (Summary Leg)
+        uses: ./actions/docker/image-check
+        with:
+          image: image-check-e2e:test
+          platform: ${{ matrix.platform }}
+          upload-sarif: 'false'
+          comment: summary
+
+  verify-summary:
+    name: Test Summary Comment
+    needs: verify-summary-legs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+      pull-requests: write # to upsert the summary comment
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run Test (Summary)
+        id: summary
+        uses: ./actions/docker/image-check-summary
+        with:
+          identifier: image-check-e2e-summary
+
+      # Fragments are uploaded only on a pull request whose token can write, so that is the only
+      # event on which there is a table to post.
+      - name: Assert Summary
+        env:
+          SAME_REPOSITORY_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+          IMAGES: ${{ steps.summary.outputs.images }}
+          COMMENT_URL: ${{ steps.summary.outputs.comment-url }}
+        run: |
+          set -euo pipefail
+
+          if [ "$SAME_REPOSITORY_PR" = "true" ]; then
+            [ "$IMAGES" = "2" ] || { echo "::error::expected 2 fragments, read '$IMAGES'"; exit 1; }
+            [ -n "$COMMENT_URL" ] || { echo "::error::no summary comment was written"; exit 1; }
+            echo "✅ Two legs, one table: $COMMENT_URL"
+          else
+            [ "$IMAGES" = "0" ] || { echo "::error::expected no fragments outside a same-repository pull request, read '$IMAGES'"; exit 1; }
+            [ -z "$COMMENT_URL" ] || { echo "::error::a comment was written outside a same-repository pull request"; exit 1; }
+            echo "✅ Nothing to post on this event, and nothing posted"
+          fi
+
+  # <<< generated: summary (run 'bun run generate-ci-required' to update)
+  summary:
+    name: 'CI Summary: Docker Image-check'
+    if: ${{ always() }}
+    needs:
+      - install
+      - e2e
+      - verify-composite
+      - verify-summary-legs
+      - verify-summary
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Fail if any verify job did not succeed
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
+  # >>> generated: summary

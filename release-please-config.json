@@ -181,6 +181,16 @@
       "component": "actions-common-upsert-issue",
       "include-component-in-tag": true
     },
+    "actions/docker/image-check": {
+      "release-type": "simple",
+      "component": "actions-docker-image-check",
+      "include-component-in-tag": true
+    },
+    "actions/docker/image-check-summary": {
+      "release-type": "simple",
+      "component": "actions-docker-image-check-summary",
+      "include-component-in-tag": true
+    },
     "configs/checkstyle/application": {
       "release-type": "simple",
       "component": "configs-checkstyle-application",

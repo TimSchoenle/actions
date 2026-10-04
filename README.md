@@ -92,6 +92,13 @@ outputs. Where an action needs more than that, a README sits next to it.
 | [Upsert Issue](./actions/common/upsert-issue) | Opens or updates a repository issue, updating the previous issue carrying the same identifier. | [actions-common-upsert-issue-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-upsert-issue-v1.1.2) | `uses: TimSchoenle/actions/actions/common/upsert-issue@7e8fd61045447d321c5139eea8f2e2b766333f8b # tag=actions-common-upsert-issue-v1.1.2` |
 | [Upsert PR Comment](./actions/common/upsert-pr-comment) | Posts a comment on a pull request, updating the previous comment carrying the same identifier. | [actions-common-upsert-pr-comment-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-upsert-pr-comment-v1.1.3) | `uses: TimSchoenle/actions/actions/common/upsert-pr-comment@7e8fd61045447d321c5139eea8f2e2b766333f8b # tag=actions-common-upsert-pr-comment-v1.1.3` |
 
+#### Docker
+
+| Action | Description | Version | Usage |
+| --- | --- | --- | --- |
+| [Docker Image Check](./actions/docker/image-check) | Measures a locally loaded image, warns past a size threshold, scans it with Trivy, uploads the SARIF to code scanning and reports the result on the pull request. | [actions-docker-image-check-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-v1.0.0) | `uses: TimSchoenle/actions/actions/docker/image-check@actions-docker-image-check-v1.0.0 # tag=actions-docker-image-check-v1.0.0` |
+| [Docker Image Check Summary](./actions/docker/image-check-summary) | Collects the fragments docker/image-check legs uploaded with comment: summary and posts one table of every image on the pull request. | [actions-docker-image-check-summary-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-summary-v1.0.0) | `uses: TimSchoenle/actions/actions/docker/image-check-summary@actions-docker-image-check-summary-v1.0.0 # tag=actions-docker-image-check-summary-v1.0.0` |
+
 #### Helm
 
 | Action | Description | Version | Usage |

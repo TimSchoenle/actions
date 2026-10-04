@@ -40,6 +40,13 @@ is not, including older versions of a component whose neighbours have since rele
 | [Upsert Issue](./actions/common/upsert-issue) | [actions-common-upsert-issue-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-upsert-issue-v1.1.2) | :white_check_mark: |
 | [Upsert PR Comment](./actions/common/upsert-pr-comment) | [actions-common-upsert-pr-comment-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-upsert-pr-comment-v1.1.3) | :white_check_mark: |
 
+#### Docker
+
+| Component | Version | Supported |
+| --- | --- | --- |
+| [Docker Image Check](./actions/docker/image-check) | [actions-docker-image-check-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-v1.0.0) | :white_check_mark: |
+| [Docker Image Check Summary](./actions/docker/image-check-summary) | [actions-docker-image-check-summary-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-summary-v1.0.0) | :white_check_mark: |
+
 #### Helm
 
 | Component | Version | Supported |
