@@ -1,0 +1,24 @@
+{
+  "name": "actions-docker-image-check-helper",
+  "version": "1.0.0",
+  "description": "Internal helper of actions/docker/image-check: validation, measurement, reporting and gates.",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "bun run ../../../../scripts/build-action.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "actions-util": "workspace:*",
+    "@actions/core": "3.0.1",
+    "@actions/exec": "3.0.0"
+  },
+  "devDependencies": {
+    "actions-e2e": "workspace:*",
+    "@types/node": "26.6.3",
+    "@typescript/native": "npm:typescript@7.0.2",
+    "vitest": "5.0.3"
+  }
+}

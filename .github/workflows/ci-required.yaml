@@ -41,6 +41,8 @@ on:
       - Verify Common Setup-app-git-identity
       - Verify Common Upsert-issue
       - Verify Common Upsert-pr-comment
+      - Verify Docker Image-check
+      - Verify Docker Image-check-summary
       - Verify Helm Apply-chart-updates
       - Verify Helm Update Chart Version
       - Verify Helper Resolve-base-branch
