@@ -1,4 +1,0 @@
-{
-  "name": "Application",
-  "description": "Latest Palantir Baseline Checkstyle plus strict final locals/parameters, explicit `this` qualification, and Lombok-annotation-aware suppressions, for application and service code. Unlike the Library ruleset, it omits DesignForExtension and JavadocMethod since this code has no public API surface to document or keep extension-safe."
-}
