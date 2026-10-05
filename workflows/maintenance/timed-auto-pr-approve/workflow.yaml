@@ -136,7 +136,7 @@ jobs:
 
       - name: Verify Commits
         id: verify
-        uses: TimSchoenle/actions/actions/helper/verify-commit-authors@7e8fd61045447d321c5139eea8f2e2b766333f8b # tag=actions-helper-verify-commit-authors-v1.5.3
+        uses: TimSchoenle/actions/actions/helper/verify-commit-authors@7568f9a485ca91c369095414ce4d9f1a8237df21 # tag=actions-helper-verify-commit-authors-v1.5.4
         with:
           pr_url: ${{ matrix.url }}
           github_token: ${{ steps.generate_token.outputs.token }}
