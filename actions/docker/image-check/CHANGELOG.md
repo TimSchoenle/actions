@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-docker-image-check-v1.1.0...actions-docker-image-check-v1.1.1) (2026-10-06)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26.6.4 ([#1777](https://github.com/TimSchoenle/actions/issues/1777)) ([481bf53](https://github.com/TimSchoenle/actions/commit/481bf536ec8ed826eeb5b5a80c457f8c815948fa))
+* **deps:** update timschoenle/actions/actions/common/upsert-pr-comment to vactions-common-upsert-pr-comment-v1.2.0 ([#1781](https://github.com/TimSchoenle/actions/issues/1781)) ([e21f12c](https://github.com/TimSchoenle/actions/commit/e21f12c3c785dbc143c2dbddc1cb6659da86bb0b))
+
 ## [1.1.0](https://github.com/TimSchoenle/actions/compare/actions-docker-image-check-v1.0.0...actions-docker-image-check-v1.1.0) (2026-10-04)
 
 

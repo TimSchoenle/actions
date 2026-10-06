@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.5](https://github.com/TimSchoenle/actions/compare/actions-common-readme-variables-v1.2.4...actions-common-readme-variables-v1.2.5) (2026-10-06)
+
+
+### Miscellaneous
+
+* **deps:** update dependency @types/node to v26.6.4 ([#1777](https://github.com/TimSchoenle/actions/issues/1777)) ([481bf53](https://github.com/TimSchoenle/actions/commit/481bf536ec8ed826eeb5b5a80c457f8c815948fa))
+
 ## [1.2.4](https://github.com/TimSchoenle/actions/compare/actions-common-readme-variables-v1.2.3...actions-common-readme-variables-v1.2.4) (2026-10-04)
 
 
