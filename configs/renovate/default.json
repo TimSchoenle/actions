@@ -65,6 +65,18 @@
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "all non-major action updates"
+    },
+    {
+      "description": "terrace-config and terrace-legal: one PR for every update of either, whatever its type. Cargo git dependencies on GitHub resolve to packageName `TimSchoenle/<repo>` (older Renovate: the full git URL), never to the crate name, and JitPack publishes the Java modules under `com.github.TimSchoenle.<repo>`.",
+      "matchPackageNames": [
+        "/^(?:https://github\\.com/)?TimSchoenle/terrace-(?:config|legal)(?:\\.git)?$/i",
+        "/^com\\.github\\.TimSchoenle\\.terrace-(?:config|legal):/i"
+      ],
+      "groupName": "terrace-config and terrace-legal",
+      "groupSlug": "terrace",
+      "separateMajorMinor": false,
+      "separateMultipleMajor": false,
+      "separateMinorPatch": false
     }
   ]
 }
