@@ -204,6 +204,16 @@ describe('renderTemplate', () => {
     it('reports a missing partial as a render error', () => {
       expect(() => render('{{> absent }}')).toThrow(TemplateRenderError);
     });
+
+    // V8's own message for this reads as a fault in the action, not as a mistake in the template.
+    it('reports partials that include each other as recursion, not as a stack overflow', () => {
+      const partials = [partial('ping', 'a{{> pong }}'), partial('pong', 'b{{> ping }}')];
+      const attempt = (): string => render('{{> ping }}', {}, { partials });
+
+      expect(attempt).toThrow(TemplateRenderError);
+      expect(attempt).toThrow(/partial includes itself/);
+      expect(attempt).not.toThrow(/Maximum call stack/);
+    });
   });
 
   it('is deterministic across repeated renders of the same request', () => {

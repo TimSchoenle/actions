@@ -5,8 +5,11 @@ import {
   DECEPTIVE_PATHS,
   expectCleanRejection,
   expectNoInjection,
+  expectSecretNotLeaked,
   fileCommandInjectionPayload,
   LARGEST_DELIVERABLE_INPUT,
+  linkOutside,
+  OUTSIDE_SECRET,
   oversized,
   REDOS_PATTERNS,
   runAction,
@@ -17,7 +20,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 
 import type { ActionInput, ActionOutput } from '../src/generated/action-io.js';
-import type { ExpectedOutcome, ProvidedInputs } from 'actions-e2e';
+import type { ExpectedOutcome, OutsideTarget, ProvidedInputs } from 'actions-e2e';
 
 /**
  * Hostile cases for `actions/helm/apply-chart-updates`.
@@ -32,6 +35,8 @@ import type { ExpectedOutcome, ProvidedInputs } from 'actions-e2e';
 const ACTION_DIRECTORY = fileURLToPath(new URL('..', import.meta.url));
 
 const CHART_PATH = 'charts/app';
+
+const SYMLINKS = await Workspace.symlinksSupported();
 const DIGEST = `sha256:${'a'.repeat(64)}`;
 
 const CHART = 'apiVersion: v2\nname: app\nversion: 1.0.0\nappVersion: "v0.1.0"\n';
@@ -104,6 +109,68 @@ describe('apply-chart-updates under hostile input', () => {
 
       expectCleanRejection(result, /chart-path/);
       expect(result.outputs).toEqual({});
+    });
+  });
+
+  // The write is what makes this the sharpest of the link cases: `values.yaml` committed as a link to
+  // a YAML file elsewhere on the runner would have that file rewritten in place, under a write token.
+  describe.runIf(SYMLINKS)('symbolic links that leave the workspace', () => {
+    let outside: OutsideTarget | undefined;
+
+    afterEach(async () => {
+      await outside?.dispose();
+      outside = undefined;
+    });
+
+    function applyIn(prepared: Workspace): ReturnType<typeof runAction<ActionInput, ActionOutput>> {
+      workspace = prepared;
+
+      return runAction<ActionInput, ActionOutput>({
+        actionDirectory: ACTION_DIRECTORY,
+        inputs: {
+          'chart-path': CHART_PATH,
+          images: JSON.stringify({ 'services.api.image.tag': { tag: 'v0.2.0', digest: DIGEST } }),
+        },
+        workspace,
+        expect: 'failure',
+      });
+    }
+
+    it('refuses a values.yaml that links outside, and rewrites nothing through it', async () => {
+      const prepared = await Workspace.create({ [`${CHART_PATH}/Chart.yaml`]: CHART });
+      const original = `${VALUES}leak: ${OUTSIDE_SECRET}\n`;
+
+      outside = await linkOutside(prepared, `${CHART_PATH}/values.yaml`, original);
+
+      const result = await applyIn(prepared);
+
+      expectCleanRejection(result, /chart-path resolves outside the workspace through a symbolic link/);
+      expectSecretNotLeaked(result, OUTSIDE_SECRET);
+      await expect(outside.read('target'), 'the file outside must be untouched').resolves.toBe(original);
+    });
+
+    it('refuses a Chart.yaml that links outside, before reading its version', async () => {
+      const prepared = await Workspace.create({ [`${CHART_PATH}/values.yaml`]: VALUES });
+      const original = `${CHART}description: ${OUTSIDE_SECRET}\n`;
+
+      outside = await linkOutside(prepared, `${CHART_PATH}/Chart.yaml`, original);
+
+      const result = await applyIn(prepared);
+
+      expectCleanRejection(result, /chart-path resolves outside the workspace through a symbolic link/);
+      await expect(outside.read('target')).resolves.toBe(original);
+    });
+
+    it('refuses a chart directory that links outside, and rewrites neither file in it', async () => {
+      const prepared = await Workspace.create();
+
+      outside = await linkOutside(prepared, CHART_PATH, { 'Chart.yaml': CHART, 'values.yaml': VALUES });
+
+      const result = await applyIn(prepared);
+
+      expectCleanRejection(result, /chart-path resolves outside the workspace through a symbolic link/);
+      await expect(outside.read('values.yaml')).resolves.toBe(VALUES);
+      await expect(outside.read('Chart.yaml')).resolves.toBe(CHART);
     });
   });
 
@@ -189,7 +256,10 @@ describe('apply-chart-updates under hostile input', () => {
     });
 
     it('truncates a changelog that would overflow a pull request body', async () => {
-      const result = await apply({ changelog: oversized(LARGEST_DELIVERABLE_INPUT), 'changelog-max-bytes': '2000' });
+      const result = await apply({
+        changelog: oversized(LARGEST_DELIVERABLE_INPUT),
+        'changelog-max-bytes': '2000',
+      });
       const markdown = result.outputs['changelog-markdown'] ?? '';
 
       expect(new TextEncoder().encode(markdown).length).toBeLessThan(3000);

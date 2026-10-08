@@ -9,7 +9,7 @@
  */
 import { readFile } from 'node:fs/promises';
 
-import { quoteForLog, resolveWithinWorkspace } from 'actions-util';
+import { quoteForLog, resolveRealWithinWorkspace } from 'actions-util';
 
 /** The two body inputs, exactly as the runner delivered them. */
 export interface BodySource {
@@ -48,7 +48,7 @@ export async function resolveBody({ body, bodyFile }: BodySource, workspace: str
     throw new BodySourceError("one of 'body' and 'body_file' must be set");
   }
 
-  const contents = await readFile(resolveWithinWorkspace(bodyFile, workspace, 'body_file'), 'utf8');
+  const contents = await readFile(await resolveRealWithinWorkspace(bodyFile, workspace, 'body_file'), 'utf8');
 
   if (contents.trim() === '') {
     throw new BodySourceError(`body_file ${quoteForLog(bodyFile)} is empty`);

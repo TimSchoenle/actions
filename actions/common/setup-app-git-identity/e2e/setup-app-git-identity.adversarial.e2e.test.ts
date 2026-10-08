@@ -10,6 +10,7 @@ import {
   ScratchRepo,
   TRAVERSAL_PATHS,
   Workspace,
+  expectSecretNotLeaked,
 } from 'actions-e2e';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -200,11 +201,15 @@ describe('setup-app-git-identity under hostile input', () => {
       }
     });
 
-    it('never echoes the token', async () => {
+    // The config is scanned as well as the run: an action that writes git configuration is one line
+    // away from the `http.extraheader` credential that would outlive the step on disk.
+    it('never echoes the token, nor writes it into the git config', async () => {
       const result = await setup(APP_SLUG, 'success');
 
-      expect(result.stdout).not.toContain(scratch.token);
-      expect(result.stderr).not.toContain(scratch.token);
+      expectSecretNotLeaked(result, scratch.token, {
+        'local git config': await workspace.git(['config', '--local', '--list']),
+        'global git config': await workspace.git(['config', '--global', '--list']),
+      });
     });
 
     it('handles a slug far longer than any app name', async () => {

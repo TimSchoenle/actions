@@ -9,6 +9,7 @@ import {
   runAction,
   ScratchRepo,
   TRAVERSAL_PATHS,
+  expectSecretNotLeaked,
 } from 'actions-e2e';
 import { afterAll, describe, expect, it } from 'vitest';
 
@@ -126,8 +127,7 @@ describe('get-app-git-identity under hostile input', () => {
     it('never echoes the token', async () => {
       const result = await run(APP_SLUG, 'success');
 
-      expect(result.stdout).not.toContain(scratch.token);
-      expect(result.stderr).not.toContain(scratch.token);
+      expectSecretNotLeaked(result, scratch.token);
     });
 
     it('fails cleanly on an unusable token rather than publishing an identity', async () => {

@@ -5,9 +5,12 @@ import {
   DECEPTIVE_PATHS,
   expectCleanRejection,
   expectNoInjection,
+  expectSecretNotLeaked,
   fileCommandInjectionPayload,
   INPUT_HOSTILE_CHARACTERS,
   LARGEST_DELIVERABLE_INPUT,
+  linkOutside,
+  OUTSIDE_SECRET,
   oversized,
   runAction,
   StubCommands,
@@ -17,7 +20,14 @@ import {
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { ActionInput, ActionOutput } from '../src/generated/action-io.js';
-import type { ActionRunResult, ExpectedOutcome, ProvidedInputs, StubRule, WorkspaceFiles } from 'actions-e2e';
+import type {
+  ActionRunResult,
+  ExpectedOutcome,
+  OutsideTarget,
+  ProvidedInputs,
+  StubRule,
+  WorkspaceFiles,
+} from 'actions-e2e';
 
 /**
  * Hostile cases for `actions/rust/config-contract`.
@@ -35,6 +45,8 @@ import type { ActionRunResult, ExpectedOutcome, ProvidedInputs, StubRule, Worksp
  */
 
 const ACTION_DIRECTORY = fileURLToPath(new URL('..', import.meta.url));
+
+const SYMLINKS = await Workspace.symlinksSupported();
 
 const IMAGE = 'myservice:test';
 const CONTAINER = 'd'.repeat(64);
@@ -304,6 +316,68 @@ describe('config-contract under hostile input', () => {
     });
   });
 
+  describe.runIf(SYMLINKS)('symbolic links that leave the workspace', () => {
+    let outside: OutsideTarget | undefined;
+
+    afterEach(async () => {
+      await outside?.dispose();
+      outside = undefined;
+    });
+
+    /** A checkout from `files`, with `linkPath` committed as a link to `contents` outside it. */
+    async function checkWithLink(
+      files: WorkspaceFiles,
+      linkPath: string,
+      contents: string | WorkspaceFiles,
+      inputs: ProvidedInputs<ActionInput> = {},
+    ): Promise<ActionRunResult<ActionOutput>> {
+      workspace = await Workspace.create(files);
+      outside = await linkOutside(workspace, linkPath, contents);
+      stubs = await StubCommands.create({ cargo: cargoRules({}), docker: dockerRules({}) });
+
+      return runAction<ActionInput, ActionOutput>({
+        actionDirectory: ACTION_DIRECTORY,
+        inputs: { image: IMAGE, ...inputs },
+        env: { PATH: stubs.pathPrepended() },
+        workspace,
+        expect: 'failure',
+      });
+    }
+
+    // A mismatching contract is reported as a diff, which would quote whatever the link points at.
+    it('refuses a committed contract that links outside, and quotes nothing it holds', async () => {
+      const result = await checkWithLink(
+        { Dockerfile: DOCKERFILE },
+        'docs/config.contract.json',
+        `{"leak":"${OUTSIDE_SECRET}"}\n`,
+      );
+
+      expectCleanRejection(result, /^contract resolves outside the workspace through a symbolic link/);
+      expectSecretNotLeaked(result, OUTSIDE_SECRET);
+      await expect(stubs.invocations(), 'nothing may run before the paths are settled').resolves.toEqual([]);
+    });
+
+    it('refuses a Dockerfile that links outside', async () => {
+      const result = await checkWithLink({ 'docs/config.contract.json': CONTRACT }, 'Dockerfile', OUTSIDE_SECRET);
+
+      expectCleanRejection(result, /^dockerfile resolves outside the workspace through a symbolic link/);
+      expectSecretNotLeaked(result, OUTSIDE_SECRET);
+    });
+
+    // The generator runs *in* the source directory, so a linked one would build code from elsewhere.
+    it('refuses a source directory that links outside, and builds nothing there', async () => {
+      const result = await checkWithLink(
+        {},
+        'service',
+        { Dockerfile: DOCKERFILE, 'docs/config.contract.json': CONTRACT },
+        { source_directory: 'service' },
+      );
+
+      expectCleanRejection(result, /^source_directory resolves outside the workspace through a symbolic link/);
+      await expect(stubs.invocations()).resolves.toEqual([]);
+    });
+  });
+
   describe('generated output, which is built from the repository under test', () => {
     // The renderings come out of a build of the code being checked. On a `pull_request` run that is
     // content the pull request author wrote, and it reaches the log through every annotation.
@@ -368,7 +442,9 @@ describe('config-contract under hostile input', () => {
     });
 
     it('refuses an image whose inspect output is not JSON at all', async () => {
-      const result = await check({ dockerfile: '', contract: '' }, 'failure', { imageLabels: '<template error>' });
+      const result = await check({ dockerfile: '', contract: '' }, 'failure', {
+        imageLabels: '<template error>',
+      });
 
       expectCleanRejection(result, /did not answer with JSON/);
     });

@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
+import path from 'node:path';
 
 import * as core from '@actions/core';
-import { quoteAllForLog, quoteForLog, runAction, workspaceRoot } from 'actions-util';
+import { quoteAllForLog, quoteForLog, resolveRealWithinWorkspace, runAction, workspaceRoot } from 'actions-util';
 
 import { runChecks } from './checks.js';
 import { createCommandRunner } from './command.js';
@@ -19,7 +20,7 @@ import type { CommandRunner } from './command.js';
 import type { ContractOptions, RawInputs } from './options.js';
 
 /**
- * The three things this action cannot do for itself, injected so its wiring stays testable.
+ * The things this action cannot do for itself, injected so its wiring stays testable.
  *
  * Deliberately the *ports*, not the modules built on them: the generator, the docker inspector and
  * the checks are all constructed here from these, so a test of `run` still exercises the argument
@@ -29,11 +30,44 @@ export interface ActionDependencies {
   readonly runCommand: CommandRunner;
   readonly readFile: FileReader;
   readonly isDirectory: (absolutePath: string) => Promise<boolean>;
+  /** Rejects a workspace-relative path that a symbolic link carries outside the workspace. */
+  readonly assertContained: (relativePath: string, workspace: string, input: string) => Promise<unknown>;
 }
 
 /** The real ports, bound to a process and a filesystem. */
 function defaultDependencies(): ActionDependencies {
-  return { runCommand: createCommandRunner(), readFile: createFileReader(), isDirectory };
+  return {
+    runCommand: createCommandRunner(),
+    readFile: createFileReader(),
+    isDirectory,
+    assertContained: resolveRealWithinWorkspace,
+  };
+}
+
+/**
+ * Refuses a path input that a symbolic link carries out of the workspace.
+ *
+ * Kept out of `resolveOptions`, which is pure over strings and so cannot see a link: the same
+ * `contract` spelling is safe or not depending on what the checkout put on disk. A committed contract
+ * linked to a file outside would otherwise be read and, on a mismatch, quoted back in the diff.
+ */
+async function assertNoLinkLeavesWorkspace(
+  options: ContractOptions,
+  workspace: string,
+  assertContained: ActionDependencies['assertContained'],
+): Promise<void> {
+  const sourceDirectory = path.relative(workspace, options.sourceDirectory) || '.';
+
+  await assertContained(sourceDirectory, workspace, 'source_directory');
+
+  for (const [input, entry] of [
+    ['dockerfile', options.dockerfile],
+    ['contract', options.contract],
+  ] as const) {
+    if (entry !== undefined) {
+      await assertContained(entry.workspaceRelative, workspace, input);
+    }
+  }
 }
 
 /** Reads every input in one place, so `resolveOptions` stays a pure function over strings. */
@@ -118,6 +152,8 @@ export function run(dependencies: ActionDependencies = defaultDependencies()): P
   return runAction(async () => {
     const raw = readInputs();
     const options = resolveOptions(raw, workspaceRoot());
+
+    await assertNoLinkLeavesWorkspace(options, workspaceRoot(), dependencies.assertContained);
 
     // Asked here rather than left to the generator: `@actions/exec` reports a working directory it
     // cannot enter in terms of an absolute path, which names the runner's layout instead of the

@@ -29,6 +29,15 @@ describe('parseWorkflowCommands', () => {
   it('reads commands out of a CRLF stream', () => {
     expect(parseWorkflowCommands('::error::broke\r\n::warning::odd\r\n').errors).toEqual(['broke']);
   });
+
+  // The runner's `ReadLine` ends a line at a lone CR as well, so this is two lines to it.
+  it('reads a command that follows a lone carriage return', () => {
+    expect(parseWorkflowCommands('progress 10%\r::error::forged').errors).toEqual(['forged']);
+  });
+
+  it('reads a command behind leading whitespace, which the runner trims before matching', () => {
+    expect(parseWorkflowCommands('  \t::warning::indented').warnings).toEqual(['indented']);
+  });
 });
 
 describe('redact', () => {

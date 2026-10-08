@@ -7,7 +7,8 @@
  * Neither has a legitimate use here: every one of these actions operates on the checked-out
  * repository, and a workflow that means a file outside it has taken a wrong turn.
  */
-import { isAbsolute, relative, resolve } from 'node:path';
+import { lstat, realpath } from 'node:fs/promises';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 
 import { quoteForLog } from './log.js';
 
@@ -61,6 +62,83 @@ export function resolveWithinWorkspace(value: string, workspace: string, inputNa
 
   if (fromRoot.startsWith('..') || isAbsolute(fromRoot)) {
     throw new UnsafePathError(`${inputName} resolves outside the workspace: ${quoteForLog(value)}`);
+  }
+
+  return resolved;
+}
+
+/** `realpath` of the deepest part of `target` that exists, with the missing remainder re-appended. */
+async function realpathOfExisting(target: string, value: string, inputName: string): Promise<string> {
+  const missing: string[] = [];
+  let current = target;
+
+  for (;;) {
+    try {
+      await lstat(current);
+    } catch (error) {
+      if (!isMissing(error) || dirname(current) === current) {
+        throw error;
+      }
+
+      missing.unshift(basename(current));
+      current = dirname(current);
+      continue;
+    }
+
+    try {
+      return join(await realpath(current), ...missing);
+    } catch (error) {
+      // `lstat` found an entry that `realpath` cannot follow: a link to nothing. Writing through it
+      // would create its target, wherever that is, so it is refused rather than reasoned about.
+      if (isMissing(error)) {
+        throw new UnsafePathError(
+          `${inputName} is a symbolic link to a path that does not exist: ${quoteForLog(value)}`,
+        );
+      }
+
+      throw error;
+    }
+  }
+}
+
+function isMissing(error: unknown): boolean {
+  const code = (error as NodeJS.ErrnoException | undefined)?.code;
+
+  return code === 'ENOENT' || code === 'ENOTDIR';
+}
+
+/**
+ * {@link resolveWithinWorkspace}, then the same question asked of where the path *really* lands.
+ *
+ * The lexical check reads the path as written, and a symbolic link is invisible to it: a pull
+ * request can commit `README.hbs` as a link to `/proc/self/environ`, and `README.hbs` is a spotless
+ * relative path. Git records the link and checkout materialises it, so an action that only checked
+ * the spelling reads the step's environment — token included — or writes through the link onto
+ * whatever it names. This resolves every link on the way, the workspace's own included (a runner's
+ * temp directory may itself sit behind one), and applies the containment rule to the result.
+ *
+ * Links that stay inside the workspace are followed as before: the rule is about where a path lands,
+ * not about links as such. A path that does not exist yet — an output about to be written — is
+ * judged by its deepest existing ancestor, since that is where the write would be redirected.
+ *
+ * Checked once, before use. A workspace the action's own process does not control could swap a
+ * directory for a link in between, but the threat here is content committed to a repository, and
+ * that is fixed by the time the step runs.
+ *
+ * @returns the absolute resolved path, as {@link resolveWithinWorkspace} does — unrewritten, so
+ * error messages and reported paths keep naming what the caller wrote.
+ * @throws {UnsafePathError} on anything {@link resolveWithinWorkspace} rejects, on a path that a link
+ * carries outside the workspace, and on a dangling link.
+ */
+export async function resolveRealWithinWorkspace(value: string, workspace: string, inputName: string): Promise<string> {
+  const resolved = resolveWithinWorkspace(value, workspace, inputName);
+  const realRoot = await realpath(resolve(workspace));
+  const fromRoot = relative(realRoot, await realpathOfExisting(resolved, value, inputName));
+
+  if (fromRoot.startsWith('..') || isAbsolute(fromRoot)) {
+    throw new UnsafePathError(
+      `${inputName} resolves outside the workspace through a symbolic link: ${quoteForLog(value)}`,
+    );
   }
 
   return resolved;

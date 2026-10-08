@@ -8,6 +8,8 @@ import {
   oversized,
   runAction,
   ScratchRepo,
+  expectNoCrash,
+  expectSecretNotLeaked,
 } from 'actions-e2e';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -150,7 +152,10 @@ describe('close-pull-request under hostile input', () => {
     });
 
     it('does not comment on a pull request it could not close', async () => {
-      const result = await run({ pull_request_id: '999999999', comment: commandInjectionPayload('never posted') });
+      const result = await run({
+        pull_request_id: '999999999',
+        comment: commandInjectionPayload('never posted'),
+      });
 
       expect(result.outputs).toEqual({ closed: 'false' });
       expectNoInjection(result);
@@ -162,7 +167,7 @@ describe('close-pull-request under hostile input', () => {
       const result = await run({ pull_request_id: String(number), comment: oversized(60_000) }, 'any');
 
       // Either it posts or GitHub refuses the body; both are decisions. A crash is not.
-      expect(result.stderr).not.toContain('UnhandledPromiseRejection');
+      expectNoCrash(result);
       expectNoInjection(result);
     });
   });
@@ -186,8 +191,7 @@ describe('close-pull-request under hostile input', () => {
     it('never echoes the token', async () => {
       const result = await run({ pull_request_id: commandInjectionPayload('1') }, 'any');
 
-      expect(result.stdout).not.toContain(scratch.token);
-      expect(result.stderr).not.toContain(scratch.token);
+      expectSecretNotLeaked(result, scratch.token);
     });
   });
 });

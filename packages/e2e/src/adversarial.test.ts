@@ -3,15 +3,18 @@ import { describe, expect, it } from 'vitest';
 import {
   commandInjectionPayload,
   expectCleanRejection,
+  expectNoCrash,
   expectNoFileCommandForgery,
   expectNoForgedCommands,
   expectNoInjection,
+  expectSecretNotLeaked,
   fileCommandInjectionPayload,
   FORGERY_MARKER,
   HOSTILE_CHARACTERS,
   LARGEST_DELIVERABLE_INPUT,
   oversized,
   REDOS_PATTERNS,
+  RUNNER_LINE_BREAKS,
   TRAVERSAL_PATHS,
   yamlAliasBomb,
 } from './adversarial.js';
@@ -67,6 +70,20 @@ describe('commandInjectionPayload', () => {
     expect(commandInjectionPayload('1.2.3').split('\n')[0]).toBe('1.2.3');
   });
 
+  it.each(RUNNER_LINE_BREAKS)('forges the same commands when its lines end in $name', ({ value }) => {
+    const commands = parseWorkflowCommands(commandInjectionPayload('1.2.3', value));
+
+    expect(commands.errors).toEqual([`${FORGERY_MARKER}-error`]);
+    expect(commands.masks).toEqual([`${FORGERY_MARKER}-add-mask`]);
+  });
+
+  it('includes the commands a caller can re-enable, since those have the most leverage', () => {
+    const payload = commandInjectionPayload();
+
+    expect(payload).toContain(`::set-env name=${FORGERY_MARKER}::`);
+    expect(payload).toContain(`::add-path name=${FORGERY_MARKER}::`);
+  });
+
   it('carries the marker on every forged line, so an assertion can name them exactly', () => {
     const forged = commandInjectionPayload()
       .split('\n')
@@ -92,6 +109,15 @@ describe('expectNoForgedCommands', () => {
     // Nothing lands in `errors`, `warnings` or `masks` — only the raw-stream half sees this one.
     expect(parseWorkflowCommands(stdout).errors).toEqual([]);
     expect(() => expectNoForgedCommands(resultOf(stdout))).toThrow();
+  });
+
+  // The defect this catches: an escaper that handles `\n` and forgets `\r`. The runner still splits.
+  it('fails when the value reached stdout with only lone carriage returns between its lines', () => {
+    expect(() => expectNoForgedCommands(resultOf(echoedRaw(commandInjectionPayload('1', '\r'))))).toThrow();
+  });
+
+  it('passes when a carriage-return payload was quoted onto a single line', () => {
+    expect(() => expectNoForgedCommands(resultOf(echoedQuoted(commandInjectionPayload('1', '\r'))))).not.toThrow();
   });
 
   it('tolerates a command the action legitimately issued', () => {
@@ -159,6 +185,101 @@ describe('expectCleanRejection', () => {
     const result = { ...resultOf('::error::Unknown error occurred\n'), exitCode: 1 };
 
     expect(() => expectCleanRejection(result, /not found/)).toThrow();
+  });
+});
+
+describe('expectNoCrash', () => {
+  /** What `runAction` in `actions-util` writes for a failure: the chain on debug, the message on error. */
+  function failedWith(head: string, message: string, stderr = ''): ActionRunResult<string> {
+    const stack = `${head}: ${message}\n    at run (/action/dist/index.js:1:1)`;
+    const escaped = stack.replaceAll('%', '%25').replaceAll('\n', '%0A');
+
+    return { ...resultOf(`::debug::${escaped}\n::error::${message}\n`), exitCode: 1, stderr };
+  }
+
+  it('accepts a domain error, whatever it wraps', () => {
+    const result = failedWith('ExtraParseError', 'extra: not valid JSON.');
+    const wrapped = { ...result, debug: [`${result.debug[0]}\nCaused by: SyntaxError: Unexpected token`] };
+
+    expect(() => expectNoCrash(wrapped)).not.toThrow();
+  });
+
+  it.each([
+    ['TypeError', "Cannot read properties of undefined (reading 'tag')"],
+    ['RangeError', 'Maximum call stack size exceeded'],
+    ['SyntaxError', 'Unexpected end of JSON input'],
+  ])('rejects a %s that nothing caught', (head, message) => {
+    expect(() => expectNoCrash(failedWith(head, message))).toThrow();
+  });
+
+  // `getBooleanInput` refuses `yes` with a bare `TypeError`; the message is the explanation.
+  it("accepts @actions/core's own refusal of a boolean input", () => {
+    const message =
+      'Input does not meet YAML 1.2 "Core Schema" specification: silent_fail\n' +
+      'Support boolean input list: `true | True | TRUE | false | False | FALSE`';
+
+    expect(() => expectNoCrash(failedWith('TypeError', message))).not.toThrow();
+  });
+
+  it('still rejects any other TypeError', () => {
+    expect(() => expectNoCrash(failedWith('TypeError', 'Input does not meet expectations'))).toThrow();
+  });
+
+  it('rejects a fault in the annotation even when the head was rewrapped as a plain Error', () => {
+    expect(() => expectNoCrash(failedWith('Error', 'payload.release is not iterable'))).toThrow();
+  });
+
+  it('rejects a stack printed to stderr, which only an uncaught error leaves there', () => {
+    const stderr = 'file:///action/dist/index.js:1\nError: boom\n    at run (/action/dist/index.js:1:1)\n';
+
+    expect(() => expectNoCrash({ ...resultOf(''), exitCode: 1, stderr })).toThrow();
+  });
+
+  it('accepts a successful run with nothing on stderr', () => {
+    expect(() => expectNoCrash(resultOf('done\n'))).not.toThrow();
+  });
+});
+
+describe('expectSecretNotLeaked', () => {
+  const secret = 'ghs_e2eSecretValue0123456789';
+  const base64 = (text: string): string => Buffer.from(text, 'utf8').toString('base64');
+
+  it('accepts a run that registered the secret with add-mask and printed it nowhere else', () => {
+    expect(() => expectSecretNotLeaked(resultOf(`::add-mask::${secret}\nworking\n`), secret)).not.toThrow();
+  });
+
+  it.each([
+    ['the log', resultOf(`token is ${secret}\n`)],
+    ['an output', resultOf('', `token<<ghadelimiter\n${secret}\nghadelimiter\n`)],
+    ['an exported variable', resultOf('', '', `LEAK=${secret}\n`)],
+    ['the step summary', { ...resultOf(''), stepSummary: `| token | ${secret} |` }],
+    ['stderr, percent-encoded', { ...resultOf(''), stderr: `GET https://x?t=${encodeURIComponent(secret)}` }],
+    ['the log, as a git basic credential', resultOf(`AUTHORIZATION: basic ${base64(`x-access-token:${secret}`)}\n`)],
+  ])('rejects the secret in %s', (_, result) => {
+    expect(() => expectSecretNotLeaked(result, secret)).toThrow();
+  });
+
+  it('scans what the case hands it besides the run', () => {
+    const gitConfig = `[http]\n\textraheader = AUTHORIZATION: basic ${base64(`x-access-token:${secret}`)}\n`;
+
+    expect(() => expectSecretNotLeaked(resultOf(''), secret, { '.git/config': gitConfig })).toThrow();
+  });
+
+  it('never prints the secret in its own failure message', () => {
+    let failure: unknown;
+
+    try {
+      expectSecretNotLeaked(resultOf(`token is ${secret}\n`), secret);
+    } catch (error) {
+      failure = error;
+    }
+
+    expect(failure).toBeInstanceOf(Error);
+    expect((failure as Error).message).not.toContain(secret);
+  });
+
+  it('refuses a secret short enough to match ordinary text', () => {
+    expect(() => expectSecretNotLeaked(resultOf('a'), 'abc')).toThrow();
   });
 });
 

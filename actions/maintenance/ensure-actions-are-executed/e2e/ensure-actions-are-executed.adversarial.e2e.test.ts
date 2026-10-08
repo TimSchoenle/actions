@@ -9,6 +9,8 @@ import {
   REDOS_PATTERNS,
   runAction,
   ScratchRepo,
+  expectNoCrash,
+  expectSecretNotLeaked,
 } from 'actions-e2e';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -73,7 +75,7 @@ describe('ensure-actions-are-executed under hostile input', () => {
         // `PATTERN_MATCH_TIMEOUT_MS` turns the hang into a failed step. Either outcome is fine; taking
         // minutes is not, because a gate that never returns never gates.
         expect(elapsed, 'a matcher must not burn a runner').toBeLessThan(60_000);
-        expect(result.stderr).not.toContain('UnhandledPromiseRejection');
+        expectNoCrash(result);
         expectNoInjection(result);
       },
       120_000,
@@ -211,8 +213,7 @@ describe('ensure-actions-are-executed under hostile input', () => {
     it('never echoes the token', async () => {
       const result = await run({ checks: commandInjectionPayload('build') }, 'any');
 
-      expect(result.stdout).not.toContain(scratch.token);
-      expect(result.stderr).not.toContain(scratch.token);
+      expectSecretNotLeaked(result, scratch.token);
     });
 
     it('handles a checks list far longer than any workflow would declare', async () => {
@@ -221,14 +222,14 @@ describe('ensure-actions-are-executed under hostile input', () => {
         'any',
       );
 
-      expect(result.stderr).not.toContain('UnhandledPromiseRejection');
+      expectNoCrash(result);
       expectNoInjection(result);
     }, 120_000);
 
     it('handles a single matcher far longer than any check name', async () => {
       const result = await run({ checks: oversized(20_000) }, 'any');
 
-      expect(result.stderr).not.toContain('UnhandledPromiseRejection');
+      expectNoCrash(result);
       expectNoInjection(result);
     });
   });

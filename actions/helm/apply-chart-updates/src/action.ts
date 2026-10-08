@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import { quoteForLog, runAction } from 'actions-util';
 
 import { sanitizeChangelog } from './changelog.js';
-import { readChartVersion, resolveChartFiles } from './chart-files.js';
+import { assertChartFilesContained, readChartVersion, resolveChartFiles } from './chart-files.js';
 import { assertSemver, bumpChartVersion, parseBumpKind } from './chart-version.js';
 import { getInput, setOutput } from './generated/action-io.js';
 import { compilePattern, parseImages, parsePositiveInteger, parseVariables } from './inputs.js';
@@ -49,10 +49,12 @@ function resolveChartVersion(explicit: string, bump: string, current: string): s
  * `changelog-max-bytes` must not be discovered after the chart has already been rewritten.
  */
 async function buildPlan(): Promise<Plan> {
-  const { chartFile, valuesFile, relativePaths } = resolveChartFiles(
-    getInput('chart-path', { required: true }),
-    process.env.GITHUB_WORKSPACE ?? process.cwd(),
-  );
+  const workspace = process.env.GITHUB_WORKSPACE ?? process.cwd();
+  const chartFiles = resolveChartFiles(getInput('chart-path', { required: true }), workspace);
+
+  await assertChartFilesContained(chartFiles, workspace);
+
+  const { chartFile, valuesFile, relativePaths } = chartFiles;
 
   const previousChartVersion = await readChartVersion(chartFile);
   const appVersion = getInput('app-version');

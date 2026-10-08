@@ -11,7 +11,7 @@
  */
 import { readFile } from 'node:fs/promises';
 
-import { quoteForLog, resolveWithinWorkspace } from 'actions-util';
+import { quoteForLog, resolveRealWithinWorkspace } from 'actions-util';
 
 import { carriesMarkerLine } from './marker.js';
 
@@ -121,7 +121,7 @@ async function readSource(
     return body;
   }
 
-  const contents = await readFile(resolveWithinWorkspace(bodyFile, workspace, 'body_file'), 'utf8');
+  const contents = await readFile(await resolveRealWithinWorkspace(bodyFile, workspace, 'body_file'), 'utf8');
 
   if (contents.trim() === '') {
     throw new BodySourceError(`body_file ${quoteForLog(bodyFile)} is empty`);
