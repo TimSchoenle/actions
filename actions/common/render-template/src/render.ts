@@ -60,6 +60,20 @@ function reason(error: unknown): string {
 }
 
 /**
+ * Why a render failed, in terms of the template rather than of the engine.
+ *
+ * A render that recurses without end exhausts the stack, and V8's own message for that —
+ * `Maximum call stack size exceeded` — reads as a fault in the action. Variables cannot nest deeply
+ * enough to cause it (`variables.ts` bounds them), so in practice the cause is a partial that
+ * includes itself, directly or through another, and the message says so.
+ */
+function renderFailureReason(error: unknown): string {
+  return error instanceof RangeError && error.message.includes('Maximum call stack size exceeded')
+    ? 'Rendering recursed without end; a partial includes itself, directly or through another partial.'
+    : reason(error);
+}
+
+/**
  * Compiles one source eagerly, attributing a syntax error to the file it is actually in.
  *
  * `compile` alone is lazy: it returns a delegate that parses on first invocation, so a malformed
@@ -159,6 +173,6 @@ export function renderTemplate(request: RenderRequest): string {
   try {
     return template(request.variables, RUNTIME_OPTIONS);
   } catch (error) {
-    throw new TemplateRenderError(request.templatePath, reason(error), error);
+    throw new TemplateRenderError(request.templatePath, renderFailureReason(error), error);
   }
 }

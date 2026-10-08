@@ -8,6 +8,8 @@ import {
   oversized,
   runAction,
   ScratchRepo,
+  expectNoCrash,
+  expectSecretNotLeaked,
 } from 'actions-e2e';
 import { afterAll, describe, expect, it } from 'vitest';
 
@@ -56,7 +58,10 @@ describe('resolve-base-branch under hostile input', () => {
     it.each([
       { name: 'an unusable token', inputs: { token: 'ghp_000000000000000000000000000000000000' } },
       { name: 'an empty token', inputs: { token: '' } },
-      { name: 'a repository that does not exist', inputs: { repository: `${scratch.owner}/not-a-real-repo-4f3a9b` } },
+      {
+        name: 'a repository that does not exist',
+        inputs: { repository: `${scratch.owner}/not-a-real-repo-4f3a9b` },
+      },
       { name: 'a malformed repository', inputs: { repository: 'not-a-slug' } },
     ])('does not silence $name, even with silent_fail set', async ({ inputs }) => {
       const result = await run({ ...inputs, branch_name: 'test/adv/whatever', silent_fail: 'true' }, 'failure');
@@ -128,14 +133,13 @@ describe('resolve-base-branch under hostile input', () => {
     it('never echoes the token', async () => {
       const result = await run({ branch_name: commandInjectionPayload('test/adv/leak'), silent_fail: 'true' }, 'any');
 
-      expect(result.stdout).not.toContain(scratch.token);
-      expect(result.stderr).not.toContain(scratch.token);
+      expectSecretNotLeaked(result, scratch.token);
     });
 
     it('handles a branch name far longer than any ref git would accept', async () => {
       const result = await run({ branch_name: `test/adv/${oversized(5000)}`, silent_fail: 'true' }, 'any');
 
-      expect(result.stderr).not.toContain('UnhandledPromiseRejection');
+      expectNoCrash(result);
       expectNoInjection(result);
     });
 

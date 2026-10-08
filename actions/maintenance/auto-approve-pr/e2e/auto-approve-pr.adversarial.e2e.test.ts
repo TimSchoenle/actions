@@ -9,6 +9,8 @@ import {
   REDOS_PATTERNS,
   runAction,
   ScratchRepo,
+  expectNoCrash,
+  expectSecretNotLeaked,
 } from 'actions-e2e';
 import { afterAll, describe, expect, it } from 'vitest';
 
@@ -169,8 +171,7 @@ describe('auto-approve-pr under hostile input', () => {
     it('never echoes the token', async () => {
       const result = await run({ pr_url: commandInjectionPayload('https://github.com/o/r/pull/1') });
 
-      expect(result.stdout).not.toContain(scratch.token);
-      expect(result.stderr).not.toContain(scratch.token);
+      expectSecretNotLeaked(result, scratch.token);
     });
 
     it('publishes nothing to the environment of later steps', async () => {
@@ -183,7 +184,7 @@ describe('auto-approve-pr under hostile input', () => {
     it('handles an approval message far longer than a person would write', async () => {
       const result = await run({ auto_approve_message: oversized(60_000) });
 
-      expect(result.stderr).not.toContain('UnhandledPromiseRejection');
+      expectNoCrash(result);
       expectNotApproved(result);
     });
   });

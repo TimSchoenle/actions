@@ -4,11 +4,15 @@ import {
   commandInjectionPayload,
   expectCleanRejection,
   expectNoInjection,
+  expectSecretNotLeaked,
+  linkOutside,
+  OUTSIDE_SECRET,
   INPUT_HOSTILE_CHARACTERS,
   oversized,
   runAction,
   ScratchRepo,
   TRAVERSAL_PATHS,
+  Workspace,
 } from 'actions-e2e';
 import { afterAll, describe, expect, it } from 'vitest';
 
@@ -40,6 +44,8 @@ import type { ActionRunResult, ExpectedOutcome, ProvidedInputs, WorkspaceFiles }
 
 const ACTION_DIRECTORY = fileURLToPath(new URL('..', import.meta.url));
 
+const SYMLINKS = await Workspace.symlinksSupported();
+
 describe('upsert-issue (adversarial)', () => {
   const scratch = ScratchRepo.fromEnvironment('upsert-issue-adv');
 
@@ -48,7 +54,7 @@ describe('upsert-issue (adversarial)', () => {
   function run(
     inputs: ProvidedInputs<ActionInput>,
     expected: ExpectedOutcome = 'failure',
-    files?: WorkspaceFiles,
+    files?: Workspace | WorkspaceFiles,
   ): Promise<ActionRunResult<ActionOutput>> {
     return runAction<ActionInput, ActionOutput>({
       actionDirectory: ACTION_DIRECTORY,
@@ -61,7 +67,7 @@ describe('upsert-issue (adversarial)', () => {
       },
       secrets: [scratch.token],
       expect: expected,
-      files,
+      ...(files instanceof Workspace ? { workspace: files } : { files }),
     });
   }
 
@@ -138,6 +144,30 @@ describe('upsert-issue (adversarial)', () => {
 
       expectCleanRejection(result);
       expectNoInjection(result);
+    });
+
+    // A pull request can commit `report.md` as a link to `/proc/self/environ`. The path is spotless;
+    // posting what it points at would publish the step's environment, token included.
+    it.runIf(SYMLINKS)('refuses a body_file that links outside, and posts nothing it holds', async () => {
+      const workspace = await Workspace.create();
+      const outside = await linkOutside(
+        workspace,
+        'report.md',
+        `${OUTSIDE_SECRET}
+`,
+      );
+
+      try {
+        const result = await run({ body_file: 'report.md', identifier: 'linked' }, 'failure', workspace);
+
+        await trackIfOpened(result);
+
+        expectCleanRejection(result, /body_file resolves outside the workspace through a symbolic link/);
+        expectSecretNotLeaked(result, OUTSIDE_SECRET);
+      } finally {
+        await outside.dispose();
+        await workspace.dispose();
+      }
     });
 
     it('refuses both body and body_file rather than choosing one', async () => {

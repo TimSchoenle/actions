@@ -101,14 +101,18 @@ it('publishes a value that forges every workflow command, without any taking eff
 
 | Export | What it produces |
 | --- | --- |
-| `commandInjectionPayload()` | A value forging `::error::`, `::add-mask::`, `::stop-commands::` and the rest. |
+| `commandInjectionPayload(lead?, lineBreak?)` | A value forging `::error::`, `::add-mask::`, `::set-env::`, `::stop-commands::` and the rest. |
+| `RUNNER_LINE_BREAKS` | `\n`, a lone `\r` and `\r\n`: every way the runner ends a line, to run the payload through each. |
 | `fileCommandInjectionPayload()` | A value shaped like the `GITHUB_OUTPUT` heredoc format, to forge a second key. |
 | `HOSTILE_CHARACTERS` / `INPUT_HOSTILE_CHARACTERS` | Control, bidi and zero-width characters. The second list drops the ones the runner cannot deliver through an environment variable. |
 | `TRAVERSAL_PATHS` / `DECEPTIVE_PATHS` | Paths that escape a directory, and paths that only look like they do. |
+| `linkOutside(workspace, path, contents)` | A symbolic link at `path` to a file or directory outside the workspace, holding `OUTSIDE_SECRET`. |
 | `REDOS_PATTERNS` | Patterns whose backtracking is superlinear, each with a subject that triggers it. |
 | `yamlAliasBomb()`, `oversized()` | A geometrically expanding document, and a value of an exact size. |
 | `expectNoInjection(result)` | Nothing forged, on either the command stream or the command files. |
 | `expectCleanRejection(result, /reason/)` | Failed, annotated, and not by crashing. |
+| `expectNoCrash(result)` | No stack on stderr, no built-in error at the head of the failure chain, no V8 fault in an annotation. |
+| `expectSecretNotLeaked(result, secret, alsoScan?)` | The secret, verbatim, percent-encoded or as a base64 git credential, in no channel the run produced. |
 
 Two properties are worth stating because they are what make the assertions usable:
 
@@ -119,6 +123,14 @@ Two properties are worth stating because they are what make the assertions usabl
 - **A NUL cannot reach an action through an input.** The runner delivers inputs as environment
   variables, so `resolveInputEnv` refuses one with that reason rather than failing inside `spawn`.
   Exercise that character through file content.
+- **The command reader is exactly as lax as the runner, never laxer.** The runner reads stdout with
+  .NET's `ReadLine`, which ends a line at a lone `\r` too, and trims leading whitespace before looking
+  for `::`. `parseWorkflowCommands` does both, so an action that escapes `\n` and forgets `\r`
+  fails a case instead of passing it.
+- **Path containment is judged by where a path lands.** `TRAVERSAL_PATHS` only test the spelling;
+  `linkOutside` tests a spotless spelling that a committed symbolic link carries off the runner's
+  disk. Gate those cases with `describe.runIf(await Workspace.symlinksSupported())`, so a platform
+  that cannot create a link reports them as skipped rather than passed.
 
 ## Identity
 

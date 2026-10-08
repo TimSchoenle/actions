@@ -1,7 +1,7 @@
 import path from 'node:path';
 
 import * as core from '@actions/core';
-import { quoteForLog, resolveWithinWorkspace, runAction, workspaceRoot } from 'actions-util';
+import { quoteForLog, resolveRealWithinWorkspace, runAction, workspaceRoot } from 'actions-util';
 
 import { buildDocsIndex } from './docs.js';
 import { getInput, setOutput } from './generated/action-io.js';
@@ -10,7 +10,8 @@ import { parseExtra } from './merge.js';
 import { buildPayload, parseRepository, serializePayload } from './payload.js';
 
 /**
- * Resolves the manifest to read, and refuses one that would reach outside the checkout.
+ * Resolves the manifest to read, and refuses one that would reach outside the checkout — by its path
+ * or through a symbolic link committed in its place.
  *
  * The reported path is the one the caller wrote, so an error names `Cargo.toml` rather than
  * `/home/runner/work/repo/repo/Cargo.toml`. The absolute path is what the reader opens.
@@ -18,7 +19,7 @@ import { buildPayload, parseRepository, serializePayload } from './payload.js';
 async function resolveManifest(workspace: string, given: string): Promise<{ absolute: string; reported: string }> {
   const reported = given.trim() === '' ? await detectManifest(workspace) : given.trim();
 
-  return { absolute: resolveWithinWorkspace(reported, workspace, 'manifest'), reported };
+  return { absolute: await resolveRealWithinWorkspace(reported, workspace, 'manifest'), reported };
 }
 
 /**
@@ -34,7 +35,7 @@ export function run(): Promise<void> {
     const docsDir = getInput('docs-dir');
 
     if (docsDir.trim() !== '') {
-      resolveWithinWorkspace(docsDir, workspace, 'docs-dir');
+      await resolveRealWithinWorkspace(docsDir, workspace, 'docs-dir');
     }
 
     const repository = parseRepository(getInput('repository', { required: true }));

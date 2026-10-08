@@ -5,14 +5,18 @@ import {
   expectCleanRejection,
   expectNoFileCommandForgery,
   expectNoInjection,
+  expectSecretNotLeaked,
   fileCommandInjectionPayload,
   FORGERY_MARKER,
   INPUT_HOSTILE_CHARACTERS,
   LARGEST_DELIVERABLE_INPUT,
+  linkOutside,
+  OUTSIDE_SECRET,
   oversized,
   runAction,
   ScratchRepo,
   TRAVERSAL_PATHS,
+  Workspace,
 } from 'actions-e2e';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -33,6 +37,8 @@ import type { ActionRunResult, ExpectedOutcome, ProvidedInputs, WorkspaceFiles }
 
 const ACTION_DIRECTORY = fileURLToPath(new URL('..', import.meta.url));
 
+const SYMLINKS = await Workspace.symlinksSupported();
+
 describe('upsert-pr-comment (adversarial)', () => {
   const scratch = ScratchRepo.fromEnvironment('upsert-pr-comment-adv');
 
@@ -42,7 +48,7 @@ describe('upsert-pr-comment (adversarial)', () => {
   function run(
     inputs: ProvidedInputs<ActionInput>,
     expected: ExpectedOutcome = 'failure',
-    files?: WorkspaceFiles,
+    files?: Workspace | WorkspaceFiles,
     env?: Readonly<Record<string, string>>,
   ): Promise<ActionRunResult<ActionOutput>> {
     return runAction<ActionInput, ActionOutput>({
@@ -50,7 +56,7 @@ describe('upsert-pr-comment (adversarial)', () => {
       inputs: { token: scratch.token, pr_url: prUrl, ...inputs },
       secrets: [scratch.token],
       expect: expected,
-      files,
+      ...(files instanceof Workspace ? { workspace: files } : { files }),
       env,
     });
   }
@@ -144,6 +150,30 @@ describe('upsert-pr-comment (adversarial)', () => {
       expectNoInjection(result);
     });
 
+    // A pull request can commit `report.md` as a link to `/proc/self/environ`. The path is spotless;
+    // posting what it points at would publish the step's environment, token included.
+    it.runIf(SYMLINKS)('refuses a body_file that links outside, and posts nothing it holds', async () => {
+      const workspace = await Workspace.create();
+      const outside = await linkOutside(
+        workspace,
+        'report.md',
+        `${OUTSIDE_SECRET}
+`,
+      );
+
+      try {
+        const result = await run({ body_file: 'report.md', identifier: 'linked' }, 'failure', workspace);
+
+        await expect(postedUnder('linked')).resolves.toBeUndefined();
+
+        expectCleanRejection(result, /body_file resolves outside the workspace through a symbolic link/);
+        expectSecretNotLeaked(result, OUTSIDE_SECRET);
+      } finally {
+        await outside.dispose();
+        await workspace.dispose();
+      }
+    });
+
     it('refuses both body and body_file rather than choosing one', async () => {
       const result = await run({ identifier: 'both', body: 'inline', body_file: 'report.md' }, 'failure', {
         'report.md': 'from the file',
@@ -179,7 +209,12 @@ describe('upsert-pr-comment (adversarial)', () => {
       ].join('\n');
 
       const result = await run(
-        { identifier: 'lines-references', body_lines: references, header: '$INPUT_TOKEN', footer: '%INPUT_TOKEN%' },
+        {
+          identifier: 'lines-references',
+          body_lines: references,
+          header: '$INPUT_TOKEN',
+          footer: '%INPUT_TOKEN%',
+        },
         'success',
         undefined,
         canaryEnv,

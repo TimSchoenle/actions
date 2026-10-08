@@ -7,6 +7,8 @@ import {
   oversized,
   runAction,
   ScratchRepo,
+  expectNoCrash,
+  expectSecretNotLeaked,
 } from 'actions-e2e';
 import { createOctokit } from 'actions-util/client';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -80,9 +82,13 @@ describe('commit-changes under hostile input', () => {
         await workspace.write({ 'inside.txt': 'inside\n' });
 
         for (const pattern of ['../*', '../../*', '/etc/*', '../../../etc/hosts', 'C:/Windows/win.ini']) {
-          const result = await run(workspace, { branch, commit_message: 'test: escape', file_pattern: pattern });
+          const result = await run(workspace, {
+            branch,
+            commit_message: 'test: escape',
+            file_pattern: pattern,
+          });
 
-          expect(result.stderr, `pattern '${pattern}' crashed the action`).not.toContain('UnhandledPromiseRejection');
+          expectNoCrash(result);
           expectNoInjection(result);
 
           const head = result.outputs['commit_hash'];
@@ -209,7 +215,7 @@ describe('commit-changes under hostile input', () => {
 
         const result = await run(workspace, { branch, commit_message: `test: ${oversized(20_000)}` }, 'any');
 
-        expect(result.stderr).not.toContain('UnhandledPromiseRejection');
+        expectNoCrash(result);
         expectNoInjection(result);
       });
     });
@@ -226,8 +232,9 @@ describe('commit-changes under hostile input', () => {
           file_pattern: commandInjectionPayload('a.txt'),
         });
 
-        expect(result.stdout).not.toContain(scratch.token);
-        expect(result.stderr).not.toContain(scratch.token);
+        expectSecretNotLeaked(result, scratch.token, {
+          'local git config': await workspace.git(['config', '--local', '--list']),
+        });
         expectNoInjection(result);
       });
     });

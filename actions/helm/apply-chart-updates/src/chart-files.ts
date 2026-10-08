@@ -8,7 +8,7 @@
  */
 import { relative, resolve } from 'node:path';
 
-import { loadYaml, resolveWithinWorkspace } from 'actions-util';
+import { loadYaml, resolveRealWithinWorkspace, resolveWithinWorkspace } from 'actions-util';
 
 export const CHART_FILE_NAME = 'Chart.yaml';
 export const VALUES_FILE_NAME = 'values.yaml';
@@ -51,6 +51,22 @@ export function resolveChartFiles(chartPath: string, workspace: string): ChartFi
     valuesFile: resolve(chartDir, VALUES_FILE_NAME),
     relativePaths: [`${prefix}${CHART_FILE_NAME}`, `${prefix}${VALUES_FILE_NAME}`],
   };
+}
+
+/**
+ * Refuses a chart whose files a symbolic link carries outside the workspace.
+ *
+ * Separate from {@link resolveChartFiles}, which judges `chart-path` as written and so cannot see a
+ * link: a pull request can commit `values.yaml` as a link to any YAML file on the runner, and this
+ * action would then rewrite that file in place. Both files are checked, and the directory with them,
+ * since a link at any level of the path redirects the write.
+ *
+ * @throws {UnsafePathError} if either file resolves outside the workspace, or is a dangling link.
+ */
+export async function assertChartFilesContained(files: ChartFiles, workspace: string): Promise<void> {
+  for (const relativePath of files.relativePaths) {
+    await resolveRealWithinWorkspace(relativePath, workspace, 'chart-path');
+  }
 }
 
 /** Raised when `Chart.yaml` has no usable `version`. */

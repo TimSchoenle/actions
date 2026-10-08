@@ -8,6 +8,9 @@ import {
   DECEPTIVE_PATHS,
   expectCleanRejection,
   expectNoInjection,
+  expectSecretNotLeaked,
+  linkOutside,
+  OUTSIDE_SECRET,
   oversized,
   runAction,
   TRAVERSAL_PATHS,
@@ -16,7 +19,7 @@ import {
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { ActionInput, ActionOutput } from '../src/generated/action-io.js';
-import type { ExpectedOutcome, ProvidedInputs } from 'actions-e2e';
+import type { ExpectedOutcome, OutsideTarget, ProvidedInputs } from 'actions-e2e';
 
 /**
  * Hostile cases for `actions/common/render-template`.
@@ -33,6 +36,8 @@ const ACTION_DIRECTORY = fileURLToPath(new URL('..', import.meta.url));
 
 const TEMPLATE = 'README.hbs';
 const OUTPUT = 'out/README.md';
+
+const SYMLINKS = await Workspace.symlinksSupported();
 
 describe('render-template under hostile input', () => {
   let workspace: Workspace;
@@ -143,6 +148,80 @@ describe('render-template under hostile input', () => {
     });
   });
 
+  // Reported as skipped, never as passed, where the platform cannot create a link.
+  describe.runIf(SYMLINKS)('symbolic links that leave the workspace', () => {
+    let outside: OutsideTarget | undefined;
+
+    afterEach(async () => {
+      await outside?.dispose();
+      outside = undefined;
+    });
+
+    it('refuses a template that links outside, and renders none of what it points at', async () => {
+      workspace = await Workspace.create();
+      outside = await linkOutside(workspace, TEMPLATE, `${OUTSIDE_SECRET}\n`);
+
+      const result = await render({}, 'failure');
+
+      expectCleanRejection(result, /template/);
+      expectSecretNotLeaked(result, OUTSIDE_SECRET);
+      await expect(workspace.exists(OUTPUT), 'nothing may be rendered from it').resolves.toBe(false);
+    });
+
+    it('refuses an output that links outside, and writes nothing through it', async () => {
+      workspace = await Workspace.create({ [TEMPLATE]: 'overwritten\n' });
+      outside = await linkOutside(workspace, OUTPUT, `${OUTSIDE_SECRET}\n`);
+
+      const result = await render({}, 'failure');
+
+      expectCleanRejection(result, /output/);
+      await expect(outside.read('target'), 'the file outside must be untouched').resolves.toBe(`${OUTSIDE_SECRET}\n`);
+    });
+
+    it('refuses an output whose directory links outside, and creates nothing there', async () => {
+      workspace = await Workspace.create({ [TEMPLATE]: 'escaped\n' });
+      outside = await linkOutside(workspace, path.posix.dirname(OUTPUT), { 'keep.txt': 'kept\n' });
+
+      const result = await render({}, 'failure');
+
+      expectCleanRejection(result, /output/);
+      await expect(readdir(outside.path), 'no file may appear outside').resolves.toEqual(['keep.txt']);
+    });
+
+    // Check mode reads the existing output to compare against, and a mismatch is reported as a diff.
+    it('refuses to compare against an output that links outside, so no diff can quote it', async () => {
+      workspace = await Workspace.create({ [TEMPLATE]: 'rendered\n' });
+      outside = await linkOutside(workspace, OUTPUT, `${OUTSIDE_SECRET}\n`);
+
+      const result = await render({ check: 'true' }, 'failure');
+
+      expectCleanRejection(result, /output/);
+      expectSecretNotLeaked(result, OUTSIDE_SECRET);
+    });
+
+    it('refuses a partials directory that links outside', async () => {
+      workspace = await Workspace.create({ [TEMPLATE]: '{{> leak}}\n' });
+      outside = await linkOutside(workspace, 'partials', { 'leak.hbs': `${OUTSIDE_SECRET}\n` });
+
+      const result = await render({ 'partials-dir': 'partials' }, 'failure');
+
+      expectCleanRejection(result, /partials-dir/);
+      expectSecretNotLeaked(result, OUTSIDE_SECRET);
+      await expect(workspace.exists(OUTPUT)).resolves.toBe(false);
+    });
+
+    // The rule is about where a path lands, not about links as such: a repository that shares one
+    // template between two READMEs by linking it must keep working.
+    it('follows a link that stays inside the workspace', async () => {
+      workspace = await Workspace.create({ 'templates/shared.hbs': 'shared\n' });
+      await workspace.symlink(TEMPLATE, path.join(workspace.path, 'templates', 'shared.hbs'));
+
+      await render({});
+
+      await expect(workspace.read(OUTPUT)).resolves.toBe('shared\n');
+    });
+  });
+
   describe('workflow command injection', () => {
     it('renders a template full of workflow commands into the file and not into the log', async () => {
       const payload = commandInjectionPayload();
@@ -212,10 +291,9 @@ describe('render-template under hostile input', () => {
 
       const result = await render({ 'partials-dir': 'partials' }, 'failure');
 
-      expectCleanRejection(result);
-      expect(result.stderr, 'a stack overflow would kill the process, not fail the step').not.toContain(
-        'Maximum call stack',
-      );
+      // `expectCleanRejection` also rules out V8's `Maximum call stack size exceeded` reaching the
+      // annotation, which until it did was exactly what this case reported, and passed on.
+      expectCleanRejection(result, /partial includes itself/);
     }, 60_000);
   });
 

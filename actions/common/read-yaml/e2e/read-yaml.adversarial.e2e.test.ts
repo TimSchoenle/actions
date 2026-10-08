@@ -11,6 +11,7 @@ import {
   TRAVERSAL_PATHS,
   Workspace,
   yamlAliasBomb,
+  expectNoCrash,
 } from 'actions-e2e';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -180,7 +181,7 @@ describe('read-yaml under hostile input', () => {
         expectCleanRejection(result);
       }
 
-      expect(result.stderr).not.toContain('UnhandledPromiseRejection');
+      expectNoCrash(result);
     });
 
     it('carries a value far larger than any real chart value', async () => {

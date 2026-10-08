@@ -7,6 +7,8 @@ import {
   oversized,
   runAction,
   ScratchRepo,
+  expectNoCrash,
+  expectSecretNotLeaked,
 } from 'actions-e2e';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -148,7 +150,7 @@ describe('create-branch under hostile input', () => {
       // name, and a ref discovered only by a later `gh api` call is a ref nothing deletes.
       const result = await run({ branch_name: scratch.reserve(value) }, 'any');
 
-      expect(result.stderr).not.toContain('UnhandledPromiseRejection');
+      expectNoCrash(result);
 
       // Either it refused, or — for a name git happens to accept — it created exactly that name.
       if (result.exitCode === 0) {
@@ -183,8 +185,7 @@ describe('create-branch under hostile input', () => {
     it('never echoes the token', async () => {
       const result = await run({ branch_name: scratch.branch('leak') });
 
-      expect(result.stdout).not.toContain(scratch.token);
-      expect(result.stderr).not.toContain(scratch.token);
+      expectSecretNotLeaked(result, scratch.token);
     });
 
     it('handles a branch name far longer than any ref git would accept', async () => {
@@ -197,7 +198,7 @@ describe('create-branch under hostile input', () => {
         scratch.reserve(name);
       }
 
-      expect(result.stderr).not.toContain('UnhandledPromiseRejection');
+      expectNoCrash(result);
       expectNoInjection(result);
     });
 

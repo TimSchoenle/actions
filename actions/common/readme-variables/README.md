@@ -142,4 +142,7 @@ on the same terms as render-template's variables: this payload is rendered by th
 ## Paths
 
 `manifest` and `docs-dir` are validated against the workspace before a file is read. `..` and an absolute path are both
-refused, and the error names the path as the caller wrote it rather than as it resolved.
+refused, and so is a path that a symbolic link carries outside the workspace — a manifest or docs directory committed
+as a link to the runner's disk. Links that stay inside the workspace are followed. A link *inside* the docs tree is
+never followed, wherever it points, and is left out of the index. The error names the path as the caller wrote it
+rather than as it resolved.

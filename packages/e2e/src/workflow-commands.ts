@@ -17,6 +17,16 @@ const COMMAND_PREFIX = /^::([\w-]+)/;
 
 const SEPARATOR = '::';
 
+/**
+ * Where the runner ends one line of stdout and starts the next.
+ *
+ * The runner reads the stream with .NET's `StreamReader.ReadLine`, which ends a line at `\r\n`, at
+ * `\n` *and at a lone `\r`*. Splitting on `\r?\n` alone would read `value\r::error::x` as one line of
+ * text where the runner reads a forged annotation, so a reader laxer than the runner would let
+ * exactly the payload that matters pass unseen.
+ */
+export const RUNNER_LINE_BREAK = /\r\n|\r|\n/;
+
 /** The annotation channels a case can assert on. */
 export interface WorkflowCommands {
   errors: string[];
@@ -45,7 +55,9 @@ function emptyCommands(): WorkflowCommands {
 export function parseWorkflowCommands(stdout: string): WorkflowCommands {
   const commands = emptyCommands();
 
-  for (const line of stdout.split(/\r?\n/)) {
+  for (const rawLine of stdout.split(RUNNER_LINE_BREAK)) {
+    // The runner trims leading whitespace before it looks for `::`, so indentation hides nothing.
+    const line = rawLine.trimStart();
     const prefix = COMMAND_PREFIX.exec(line);
 
     if (!prefix) {

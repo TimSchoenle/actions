@@ -1,6 +1,7 @@
 import path from 'node:path';
 
 import * as core from '@actions/core';
+import { UnsafePathError } from 'actions-util';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { run } from './action.js';
@@ -55,10 +56,12 @@ interface Scene {
   generatorExitCode?: number;
   imageLabels?: string;
   directories?: string[];
+  /** Workspace-relative paths a symbolic link would carry outside the workspace. */
+  escapingLinks?: string[];
 }
 
-/** Wires the three ports to a scripted world, leaving every module built on them real. */
-function dependencies(scene: Scene = {}): ActionDependencies & { commands: string[][] } {
+/** Wires the ports to a scripted world, leaving every module built on them real. */
+function dependencies(scene: Scene = {}): ActionDependencies & { commands: string[][]; contained: string[][] } {
   const files = new Map(
     Object.entries(
       scene.files ?? { Dockerfile: `FROM scratch\n${LABEL_BLOCK}`, 'docs/config.contract.json': CONTRACT },
@@ -66,6 +69,7 @@ function dependencies(scene: Scene = {}): ActionDependencies & { commands: strin
   );
   const renderings = { contract: CONTRACT, labels: LABELS, dockerfile: LABEL_BLOCK, ...scene.renderings };
   const commands: string[][] = [];
+  const contained: string[][] = [];
 
   const runCommand = (command: string, args: readonly string[]): Promise<CommandResult> => {
     commands.push([command, ...args]);
@@ -92,10 +96,18 @@ function dependencies(scene: Scene = {}): ActionDependencies & { commands: strin
 
   return {
     commands,
+    contained,
     runCommand,
     readFile: (absolutePath) => Promise.resolve(files.get(path.resolve(absolutePath))),
     isDirectory: (absolutePath) =>
       Promise.resolve((scene.directories ?? [WORKSPACE]).some((entry) => path.resolve(entry) === absolutePath)),
+    assertContained: (relativePath, _workspace, input) => {
+      contained.push([input, relativePath]);
+
+      return (scene.escapingLinks ?? []).includes(relativePath)
+        ? Promise.reject(new UnsafePathError(`${input} resolves outside the workspace through a symbolic link`))
+        : Promise.resolve();
+    },
   };
 }
 
@@ -176,6 +188,27 @@ describe('config-contract action', () => {
     expect(deps.commands).toEqual([]);
   });
 
+  it('asks where every path input really lands, workspace-relative', async () => {
+    const deps = dependencies();
+
+    await run(deps);
+
+    expect(deps.contained).toEqual([
+      ['source_directory', '.'],
+      ['dockerfile', 'Dockerfile'],
+      ['contract', 'docs/config.contract.json'],
+    ]);
+  });
+
+  it('refuses a contract that a symbolic link carries outside the workspace, and runs nothing', async () => {
+    const deps = dependencies({ escapingLinks: ['docs/config.contract.json'] });
+
+    await run(deps);
+
+    expect(vi.mocked(core.setFailed).mock.calls[0][0]).toMatch(/^contract resolves outside the workspace/);
+    expect(deps.commands).toEqual([]);
+  });
+
   it('fails without comparing anything when the generator fails', async () => {
     const deps = dependencies({ generatorExitCode: 101 });
 
@@ -253,7 +286,9 @@ describe('config-contract action', () => {
     const stale = LABEL_BLOCK.replace('"1"', '"2"');
 
     await run(
-      dependencies({ files: { Dockerfile: `FROM scratch\n${stale}${stale}`, 'docs/config.contract.json': CONTRACT } }),
+      dependencies({
+        files: { Dockerfile: `FROM scratch\n${stale}${stale}`, 'docs/config.contract.json': CONTRACT },
+      }),
     );
 
     expect(core.error).toHaveBeenCalledWith(expect.stringContaining('at line 2'), {

@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { quoteForLog, resolveWithinWorkspace, runAction, workspaceRoot } from 'actions-util';
+import { quoteForLog, resolveRealWithinWorkspace, runAction, workspaceRoot } from 'actions-util';
 
 import { generateFile } from './generate.js';
 import { getBooleanInput, getInput, setOutput } from './generated/action-io.js';
@@ -8,21 +8,26 @@ import { getBooleanInput, getInput, setOutput } from './generated/action-io.js';
  * Rejects any path input that would reach outside the checkout.
  *
  * Validated, not rewritten: the action runs with the workspace as its working directory, so the
- * relative paths it is given already resolve inside it. The only ways out are `..` and an absolute
- * path, and both are refused here — before a single file is read or written, so a hostile `output`
- * cannot leave a partial file somewhere the workflow never looks. Reporting the paths as the caller
+ * relative paths it is given already resolve inside it. The ways out are `..`, an absolute path and a
+ * symbolic link committed to the repository, and all three are refused here — before a single file is
+ * read or written, so a hostile `output` cannot leave a partial file somewhere the workflow never
+ * looks, nor a linked `template` render the step's environment into one. Reporting the paths as the caller
  * wrote them is what keeps every downstream error message about `README.hbs` and not about
  * `/home/runner/work/repo/repo/README.hbs`.
  */
-function assertPathsWithinWorkspace(templatePath: string, outputPath: string, partialsDir: string): void {
+async function assertPathsWithinWorkspace(
+  templatePath: string,
+  outputPath: string,
+  partialsDir: string,
+): Promise<void> {
   const workspace = workspaceRoot();
 
-  resolveWithinWorkspace(templatePath, workspace, 'template');
-  resolveWithinWorkspace(outputPath, workspace, 'output');
+  await resolveRealWithinWorkspace(templatePath, workspace, 'template');
+  await resolveRealWithinWorkspace(outputPath, workspace, 'output');
 
   // An empty `partials-dir` means "no partials", which is not a path at all.
   if (partialsDir.trim() !== '') {
-    resolveWithinWorkspace(partialsDir, workspace, 'partials-dir');
+    await resolveRealWithinWorkspace(partialsDir, workspace, 'partials-dir');
   }
 }
 
@@ -41,7 +46,7 @@ export function run(): Promise<void> {
     const partialsDir = getInput('partials-dir');
     const check = getBooleanInput('check');
 
-    assertPathsWithinWorkspace(templatePath, outputPath, partialsDir);
+    await assertPathsWithinWorkspace(templatePath, outputPath, partialsDir);
 
     core.info(`${check ? 'Checking' : 'Rendering'} ${quoteForLog(outputPath)} from ${quoteForLog(templatePath)}...`);
 

@@ -7,6 +7,8 @@ import {
   oversized,
   runAction,
   ScratchRepo,
+  expectNoCrash,
+  expectSecretNotLeaked,
 } from 'actions-e2e';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -132,7 +134,7 @@ describe('delete-branch under hostile input', () => {
     ])('decides rather than crashes on $name', async ({ value }) => {
       const result = await run({ branch_name: value }, 'any');
 
-      expect(result.stderr, 'nothing may escape as an unhandled rejection').not.toContain('UnhandledPromiseRejection');
+      expectNoCrash(result);
       expect(['true', 'false']).toContain(result.outputs['deleted'] ?? 'false');
       expectNoInjection(result);
     });
@@ -191,14 +193,13 @@ describe('delete-branch under hostile input', () => {
     it('never echoes the token, whatever it is asked to do', async () => {
       const result = await run({ branch_name: commandInjectionPayload('test/adv/leak') }, 'any');
 
-      expect(result.stdout, 'the token must never reach the log').not.toContain(scratch.token);
-      expect(result.stderr).not.toContain(scratch.token);
+      expectSecretNotLeaked(result, scratch.token);
     });
 
     it('handles a branch name far longer than any ref git would accept', async () => {
       const result = await run({ branch_name: `test/adv/${oversized(5000)}` }, 'any');
 
-      expect(result.stderr).not.toContain('UnhandledPromiseRejection');
+      expectNoCrash(result);
       expectNoInjection(result);
     });
   });

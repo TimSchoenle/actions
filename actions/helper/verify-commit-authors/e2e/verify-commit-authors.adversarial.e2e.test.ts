@@ -8,6 +8,8 @@ import {
   oversized,
   runAction,
   ScratchRepo,
+  expectNoCrash,
+  expectSecretNotLeaked,
 } from 'actions-e2e';
 import { afterAll, describe, expect, it } from 'vitest';
 
@@ -168,14 +170,13 @@ describe('verify-commit-authors under hostile input', () => {
     it('never echoes the token', async () => {
       const result = await run({ pr_url: commandInjectionPayload('https://github.com/o/r/pull/1') }, 'failure');
 
-      expect(result.stdout).not.toContain(scratch.token);
-      expect(result.stderr).not.toContain(scratch.token);
+      expectSecretNotLeaked(result, scratch.token);
     });
 
     it('handles a URL far longer than any real one', async () => {
       const result = await run({ pr_url: `https://github.com/o/r/pull/1?${oversized(20_000)}` }, 'failure');
 
-      expect(result.stderr).not.toContain('UnhandledPromiseRejection');
+      expectNoCrash(result);
       expectNotVerified(result);
     });
 
