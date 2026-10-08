@@ -212,6 +212,19 @@ describe('expectNoCrash', () => {
     expect(() => expectNoCrash(failedWith(head, message))).toThrow();
   });
 
+  // `getBooleanInput` refuses `yes` with a bare `TypeError`; the message is the explanation.
+  it("accepts @actions/core's own refusal of a boolean input", () => {
+    const message =
+      'Input does not meet YAML 1.2 "Core Schema" specification: silent_fail\n' +
+      'Support boolean input list: `true | True | TRUE | false | False | FALSE`';
+
+    expect(() => expectNoCrash(failedWith('TypeError', message))).not.toThrow();
+  });
+
+  it('still rejects any other TypeError', () => {
+    expect(() => expectNoCrash(failedWith('TypeError', 'Input does not meet expectations'))).toThrow();
+  });
+
   it('rejects a fault in the annotation even when the head was rewrapped as a plain Error', () => {
     expect(() => expectNoCrash(failedWith('Error', 'payload.release is not iterable'))).toThrow();
   });

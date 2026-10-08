@@ -426,6 +426,19 @@ export function expectCleanRejection(result: ActionRunResult<string>, expectedMe
  */
 const BUILT_IN_ERROR_HEAD = /^(?:Aggregate|Eval|Range|Reference|Syntax|Type|URI)Error: /;
 
+/**
+ * The one built-in that is a deliberate refusal: `@actions/core`'s `getBooleanInput` rejects
+ * anything outside `true`/`True`/`TRUE`/`false`/`False`/`FALSE` by throwing a bare `TypeError`
+ * whose message names the input and lists the accepted spellings. The annotation already says
+ * everything a caller needs, so it is a rejection, not a crash, whatever its class.
+ */
+const ACTIONS_CORE_BOOLEAN_REJECTION = 'TypeError: Input does not meet YAML 1.2 "Core Schema" specification: ';
+
+/** Whether a failure chain is headed by a built-in error that nothing deliberately raised. */
+function isUncaughtBuiltIn(chain: string): boolean {
+  return BUILT_IN_ERROR_HEAD.test(chain) && !chain.startsWith(ACTIONS_CORE_BOOLEAN_REJECTION);
+}
+
 /** The messages V8 gives the faults an action's own code can hit, as opposed to its input. */
 const RUNTIME_FAULTS = [
   'Cannot read properties of',
@@ -459,7 +472,7 @@ export function expectNoCrash(result: ActionRunResult<string>): void {
   expect(result.stderr, 'nothing may be thrown past the action').not.toContain('UnhandledPromiseRejection');
   expect(result.stderr, 'an uncaught error leaves its stack on stderr').not.toMatch(STACK_FRAME);
   expect(
-    result.debug.filter((message) => BUILT_IN_ERROR_HEAD.test(message)),
+    result.debug.filter((message) => isUncaughtBuiltIn(message)),
     'a failure must be a domain error, not a built-in that nothing caught',
   ).toEqual([]);
   expect(
