@@ -185,7 +185,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@7568f9a485ca91c369095414ce4d9f1a8237df21 # tag=actions-common-delete-branch-v1.5.4
+        uses: TimSchoenle/actions/actions/common/delete-branch@c4068f4412c52bcf92d15f9bb255d37b2eafd0b7 # tag=actions-common-delete-branch-v1.5.5
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -304,7 +304,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@7568f9a485ca91c369095414ce4d9f1a8237df21 # tag=actions-common-delete-branch-v1.5.4
+        uses: TimSchoenle/actions/actions/common/delete-branch@c4068f4412c52bcf92d15f9bb255d37b2eafd0b7 # tag=actions-common-delete-branch-v1.5.5
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -389,7 +389,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@7568f9a485ca91c369095414ce4d9f1a8237df21 # tag=actions-common-delete-branch-v1.5.4
+        uses: TimSchoenle/actions/actions/common/delete-branch@c4068f4412c52bcf92d15f9bb255d37b2eafd0b7 # tag=actions-common-delete-branch-v1.5.5
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -500,7 +500,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@7568f9a485ca91c369095414ce4d9f1a8237df21 # tag=actions-common-delete-branch-v1.5.4
+        uses: TimSchoenle/actions/actions/common/delete-branch@c4068f4412c52bcf92d15f9bb255d37b2eafd0b7 # tag=actions-common-delete-branch-v1.5.5
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
