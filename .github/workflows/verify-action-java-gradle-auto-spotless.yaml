@@ -71,7 +71,7 @@ jobs:
 
       - name: Create Test Branch
         id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@7568f9a485ca91c369095414ce4d9f1a8237df21 # tag=actions-common-create-branch-v1.6.4
+        uses: TimSchoenle/actions/actions/common/create-branch@c4068f4412c52bcf92d15f9bb255d37b2eafd0b7 # tag=actions-common-create-branch-v1.6.5
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
