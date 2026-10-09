@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.6](https://github.com/TimSchoenle/actions/compare/actions-common-create-branch-v1.6.5...actions-common-create-branch-v1.6.6) (2026-10-09)
+
+
+### Bug Fixes
+
+* **actions:** refuse symlinks that carry a path out of the workspace ([#1786](https://github.com/TimSchoenle/actions/issues/1786)) ([936deb8](https://github.com/TimSchoenle/actions/commit/936deb8b64e240c2ec14ead000f5cf995c1b75e6))
+
 ## [1.6.5](https://github.com/TimSchoenle/actions/compare/actions-common-create-branch-v1.6.4...actions-common-create-branch-v1.6.5) (2026-10-06)
 
 

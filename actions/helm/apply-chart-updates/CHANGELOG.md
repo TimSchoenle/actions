@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.6](https://github.com/TimSchoenle/actions/compare/actions-helm-apply-chart-updates-v1.3.5...actions-helm-apply-chart-updates-v1.3.6) (2026-10-09)
+
+
+### Bug Fixes
+
+* **actions:** refuse symlinks that carry a path out of the workspace ([#1786](https://github.com/TimSchoenle/actions/issues/1786)) ([936deb8](https://github.com/TimSchoenle/actions/commit/936deb8b64e240c2ec14ead000f5cf995c1b75e6))
+
 ## [1.3.5](https://github.com/TimSchoenle/actions/compare/actions-helm-apply-chart-updates-v1.3.4...actions-helm-apply-chart-updates-v1.3.5) (2026-10-06)
 
 

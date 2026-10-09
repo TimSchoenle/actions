@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.5](https://github.com/TimSchoenle/actions/compare/actions-common-upsert-issue-v1.1.4...actions-common-upsert-issue-v1.1.5) (2026-10-09)
+
+
+### Bug Fixes
+
+* **actions:** refuse symlinks that carry a path out of the workspace ([#1786](https://github.com/TimSchoenle/actions/issues/1786)) ([936deb8](https://github.com/TimSchoenle/actions/commit/936deb8b64e240c2ec14ead000f5cf995c1b75e6))
+
 ## [1.1.4](https://github.com/TimSchoenle/actions/compare/actions-common-upsert-issue-v1.1.3...actions-common-upsert-issue-v1.1.4) (2026-10-06)
 
 

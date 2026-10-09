@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-docker-image-check-v1.1.1...actions-docker-image-check-v1.1.2) (2026-10-09)
+
+
+### Bug Fixes
+
+* **actions:** refuse symlinks that carry a path out of the workspace ([#1786](https://github.com/TimSchoenle/actions/issues/1786)) ([936deb8](https://github.com/TimSchoenle/actions/commit/936deb8b64e240c2ec14ead000f5cf995c1b75e6))
+
 ## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-docker-image-check-v1.1.0...actions-docker-image-check-v1.1.1) (2026-10-06)
 
 
