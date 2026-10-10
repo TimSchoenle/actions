@@ -52,7 +52,7 @@ is not, including older versions of a component whose neighbours have since rele
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Apply Helm Chart Updates](./actions/helm/apply-chart-updates) | [actions-helm-apply-chart-updates-v1.3.6](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-apply-chart-updates-v1.3.6) | :white_check_mark: |
-| [Update Helm Chart Version](./actions/helm/update-chart-version) | [actions-helm-update-chart-version-v1.6.16](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.6.16) | :white_check_mark: |
+| [Update Helm Chart Version](./actions/helm/update-chart-version) | [actions-helm-update-chart-version-v1.6.17](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.6.17) | :white_check_mark: |
 
 #### Helper
 
@@ -106,11 +106,11 @@ is not, including older versions of a component whose neighbours have since rele
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Auto Format](./workflows/maintenance/auto-bun-prettier) | [workflows-maintenance-auto-bun-prettier-v1.1.38](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-bun-prettier-v1.1.38) | :white_check_mark: |
-| [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | [workflows-maintenance-timed-auto-pr-approve-v1.2.40](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-timed-auto-pr-approve-v1.2.40) | :white_check_mark: |
-| [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | [workflows-maintenance-auto-approve-renovate-v1.4.28](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-approve-renovate-v1.4.28) | :white_check_mark: |
+| [Auto Format](./workflows/maintenance/auto-bun-prettier) | [workflows-maintenance-auto-bun-prettier-v1.1.39](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-bun-prettier-v1.1.39) | :white_check_mark: |
+| [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | [workflows-maintenance-timed-auto-pr-approve-v1.2.41](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-timed-auto-pr-approve-v1.2.41) | :white_check_mark: |
+| [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | [workflows-maintenance-auto-approve-renovate-v1.4.29](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-approve-renovate-v1.4.29) | :white_check_mark: |
 | [Maintenance Auto-rebase](./workflows/maintenance/auto-rebase) | [workflows-maintenance-auto-rebase-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-rebase-v1.1.7) | :white_check_mark: |
-| [Maintenance Wipe-cache](./workflows/maintenance/wipe-cache) | [workflows-maintenance-wipe-cache-v1.1.13](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-wipe-cache-v1.1.13) | :white_check_mark: |
+| [Maintenance Wipe-cache](./workflows/maintenance/wipe-cache) | [workflows-maintenance-wipe-cache-v1.1.14](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-wipe-cache-v1.1.14) | :white_check_mark: |
 
 
 
