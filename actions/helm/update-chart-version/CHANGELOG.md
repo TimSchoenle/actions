@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.16](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.6.15...actions-helm-update-chart-version-v1.6.16) (2026-10-10)
+
+
+### Miscellaneous
+
+* **deps:** update timschoenle/actions/actions/common/create-pull-request to vactions-common-create-pull-request-v1.0.21 ([#1797](https://github.com/TimSchoenle/actions/issues/1797)) ([2c2487d](https://github.com/TimSchoenle/actions/commit/2c2487dde8a0cd5291acfa756634b534df7e8b3b))
+* **deps:** update timschoenle/actions/actions/helm/apply-chart-updates to vactions-helm-apply-chart-updates-v1.3.6 ([#1809](https://github.com/TimSchoenle/actions/issues/1809)) ([32c879e](https://github.com/TimSchoenle/actions/commit/32c879edee4436c50ebc459a7773624229e3c8bb))
+* **deps:** update timschoenle/actions/actions/helper/resolve-base-branch to vactions-helper-resolve-base-branch-v1.5.6 ([#1810](https://github.com/TimSchoenle/actions/issues/1810)) ([cbd9f97](https://github.com/TimSchoenle/actions/commit/cbd9f97cc75130e44745eaf27d6a9e32ff0150b2))
+
 ## [1.6.15](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.6.14...actions-helm-update-chart-version-v1.6.15) (2026-10-06)
 
 

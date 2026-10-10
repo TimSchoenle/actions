@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.4](https://github.com/TimSchoenle/actions/compare/actions-test-setup-e2e-v1.2.3...actions-test-setup-e2e-v1.2.4) (2026-10-10)
+
+
+### Bug Fixes
+
+* **actions/test/setup-e2e:** scope the app token to contents and pull requests ([#1814](https://github.com/TimSchoenle/actions/issues/1814)) ([6037381](https://github.com/TimSchoenle/actions/commit/60373819aadc7c550b5c4828d016e60f128f71b0))
+
 ## [1.2.3](https://github.com/TimSchoenle/actions/compare/actions-test-setup-e2e-v1.2.2...actions-test-setup-e2e-v1.2.3) (2026-08-30)
 
 

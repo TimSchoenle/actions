@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.3](https://github.com/TimSchoenle/actions/compare/actions-docker-image-check-v1.1.2...actions-docker-image-check-v1.1.3) (2026-10-10)
+
+
+### Miscellaneous
+
+* **deps:** update all non-major action updates ([#1815](https://github.com/TimSchoenle/actions/issues/1815)) ([bfcb063](https://github.com/TimSchoenle/actions/commit/bfcb063539b34f28086f3f9a967faa974ffea2a2))
+* **deps:** update timschoenle/actions/actions/common/upsert-pr-comment to vactions-common-upsert-pr-comment-v1.2.2 ([#1808](https://github.com/TimSchoenle/actions/issues/1808)) ([7a0e9d4](https://github.com/TimSchoenle/actions/commit/7a0e9d406f537b52b077d87d7e0e66851c1030d2))
+
 ## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-docker-image-check-v1.1.1...actions-docker-image-check-v1.1.2) (2026-10-09)
 
 
