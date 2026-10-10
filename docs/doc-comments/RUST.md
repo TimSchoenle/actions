@@ -74,15 +74,16 @@ from [GUIDE.md](./GUIDE.md#anatomy), where the whole comment becomes the index e
 
 ## The `docsrs` trap
 
-Current terrace-config `src/lib.rs` ends its attribute block with:
+terrace-config's crate root used to end its attribute block with:
 
 ```rust
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 ```
 
 That line no longer compiles. `doc_auto_cfg` was **removed in Rust 1.92.0** and merged into
-`doc_cfg`, so the moment anything sets `--cfg docsrs` the build fails with `E0557: feature has been
-removed`. It is currently invisible for two reasons that both stop being true at once: nothing in CI
+`doc_cfg`, so the moment anything sets `--cfg docsrs` the build fails with
+`E0557: feature has been removed`. It stayed invisible for two reasons that both stop being true at
+once: nothing in CI
 passes `--cfg docsrs`, and the crate is `publish = false`, so docs.rs never builds it and the
 `rustdoc-args` under `[package.metadata.docs.rs]` are read by nothing.
 
@@ -98,10 +99,12 @@ to make per crate:
 
 - **Stable only.** Delete both lines and the `[package.metadata.docs.rs]` table. Feature badges are
   lost, and the gated `doc` attributes described below carry the same information as prose.
-- **Keep the badges.** Add a `cargo +nightly doc --all-features` step with `RUSTDOCFLAGS="--cfg
-  docsrs -D warnings"`, and accept that one CI job pins nightly.
+- **Keep the badges.** Add a `cargo +nightly doc --all-features` step with
+  `RUSTDOCFLAGS="--cfg docsrs -D warnings"`, and accept that one CI job pins nightly.
 
-Take the first for anything `publish = false`. The metadata table has no reader.
+Take the first for anything `publish = false`. The metadata table has no reader. terrace-config did:
+`rust/src/lib.rs` now carries neither attribute, and `rust/Cargo.toml` has no
+`[package.metadata.docs.rs]` table.
 
 ## Feature-gated documentation
 

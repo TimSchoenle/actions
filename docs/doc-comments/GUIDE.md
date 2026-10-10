@@ -63,8 +63,8 @@ cannot tell those apart. A reviewer can.
 Four parts, always in this order.
 
 1. **Summary sentence.** One sentence, third person present indicative, on one line, ending in a
-   period. Start with the verb: `Resolves a tag to the commit SHA it points at.` Never `This function
-   resolves`, and never `Resolve`. Rustdoc and Javadoc both cut the index entry at the end of the
+   period. Start with the verb: `Resolves a tag to the commit SHA it points at.` Never
+   `This function resolves`, and never `Resolve`. Rustdoc and Javadoc both cut the index entry at the end of the
    first sentence, so a summary running to four lines becomes a search result nobody can scan.
 2. **A blank line.** Both tools treat the first paragraph as the summary, so the blank line is what
    separates the index entry from the body. Without it the whole comment is the summary.
@@ -91,8 +91,8 @@ item in front of you and stop when you run out of facts.
 | Constant           | Where the value came from. A number with no provenance is the one comment that is always worth writing.                                                                                                    |
 | Module or package  | What belongs here and what deliberately does not.                                                                                                                                                          |
 
-Most items finish at the first sentence of that row, and that is the correct length. `Returns the
-configured user, or `None` when unset or blank.` is a complete doc comment. Nothing has to be added to
+Most items finish at the first sentence of that row, and that is the correct length.
+``Returns the configured user, or `None` when unset or blank.`` is a complete doc comment. Nothing has to be added to
 it, and adding anything makes it worse.
 
 The rest of the row is where the real content is, and it is almost never narrative:
@@ -113,7 +113,8 @@ and putting it there is what turns an API reference into a changelog with a tabl
 | `//`, plain comment   | Whoever edits the line     | Why the code is written this way. Never rendered, never a caller's problem. |
 | `//!`, `package-info` | Whoever is new to the area | The design record. Alternatives rejected, and what would reopen them.       |
 
-`crates/config/src/github.rs` in Portfolio already splits it correctly, and the split is easy to miss.
+`crates/config/src/github.rs` in Portfolio already splits it correctly, across two comments on one
+field.
 The rustdoc on `token` tells a caller how to supply a secret without it reaching the environment.
 Directly underneath, a plain `//` comment explains why the field is `skip_serializing`, and it opens
 by saying so:
@@ -151,7 +152,7 @@ already.
 
 ## What never goes in one
 
-- **The type.** `@param timeout the timeout` and `/// The username as an `Option<String>`.`
+- **The type.** `@param timeout the timeout` and ``/// The username as an `Option<String>`.``
 - **The name, reworded.** `/// Sets the timeout.` above `set_timeout` earns its line only by adding
   the unit, the range, or what happens at zero.
 - **A section that exists because a lint asked for it.** `# Errors` reading _returns an error if the
@@ -176,8 +177,8 @@ subject is already on screen. Start with the verb.
 
 ### The type, restated as prose
 
-`Returns a `Result` containing the parsed configuration, or an error.` Every word of that is in the
-signature. What the reader needs is which configuration, parsed from what, and which errors.
+``Returns a `Result` containing the parsed configuration, or an error.`` Every word of that is in
+the signature. What the reader needs is which configuration, parsed from what, and which errors.
 
 ### Ceremony sections
 
@@ -305,21 +306,25 @@ written to a template. Read twenty of them and cut every sentence that fails the
 
 ## Rollout
 
-One pull request per repository, gate included. The order is chosen so that the repositories whose
-comments other repositories read get fixed first.
+One pull request per repository, gate included. The order put the repositories whose comments other
+repositories read first. Status is as of 2026-10-10, read from each repository's lint configuration;
+a new repository takes the gate in its first pull request rather than joining this table.
 
-| Order | Repository                                                                                     | Scope                                                                                                    |
-| ----- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| 1     | terrace-config                                                                                 | Closest already. Fix the `docsrs` defect in [RUST.md](./RUST.md#the-docsrs-trap) and add `missing_docs`. |
-| 2     | csp-shell                                                                                      | Library. Crate root, every export, doctests on the builder.                                              |
-| 3     | Portfolio                                                                                      | `crates/config` is the model. `crates/data`, `apps/*` follow it.                                         |
-| 4     | TankoVault                                                                                     | Multi-service. One root comment per service saying what it owns.                                         |
-| 5     | senec-v3-collector, s3-bucket-perma-link, cloudflare-access-webhook-redirect, netcup-offer-bot | Single-purpose services. Root comment plus the failure posture.                                          |
-| 6     | mp-stats-legacy-viewer                                                                         | Root comment covering the sharded binary format, which nothing else records.                             |
-| 7     | gradle-jextract                                                                                | `package-info.java` currently carries `@NullMarked` and no comment.                                      |
-| 8     | rewrite-recipes                                                                                | Recipe classes. The catalog strings are already prose, so this is maintainer documentation only.         |
-| 9     | actions                                                                                        | Maintainer-facing only. `action.yaml` stays the user-facing contract.                                    |
-| 10    | helm-charts                                                                                    | Audit `# --` coverage against `values.schema.json`, which is generated.                                  |
+| Order | Repository                                                                                     | Scope                                                                                            | Status                                                                                               |
+| ----- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| 1     | terrace-config                                                                                 | Fix the `docsrs` defect in [RUST.md](./RUST.md#the-docsrs-trap) and add `missing_docs`.          | Done. Took the stable-only option; `missing_docs` and the `doc` job are in place.                    |
+| 2     | csp-shell                                                                                      | Library. Crate root, every export, doctests on the builder.                                      | `missing_docs` declared.                                                                             |
+| 3     | Portfolio                                                                                      | `crates/config` is the model. `crates/data`, `apps/*` follow it.                                 | `missing_docs` declared.                                                                             |
+| 4     | TankoVault                                                                                     | Multi-service. One root comment per service saying what it owns.                                 | `missing_docs` declared.                                                                             |
+| 5     | senec-v3-collector, s3-bucket-perma-link, cloudflare-access-webhook-redirect, netcup-offer-bot | Single-purpose services. Root comment plus the failure posture.                                  | `missing_docs` declared in each.                                                                     |
+| 6     | mp-stats-legacy-viewer                                                                         | Root comment covering the sharded binary format, which nothing else records.                     | `missing_docs` declared.                                                                             |
+| 7     | gradle-jextract                                                                                | Every `package-info.java`, and the doclint gate.                                                 | Done in TimSchoenle/gradle-jextract#218. The reference Java gate, see [JAVA.md](./JAVA.md#the-gate). |
+| 8     | rewrite-recipes                                                                                | Recipe classes. The catalog strings are already prose, so this is maintainer documentation only. | Done in TimSchoenle/rewrite-recipes#129.                                                             |
+| 9     | actions                                                                                        | Maintainer-facing only. `action.yaml` stays the user-facing contract.                            | Open. The TypeScript gate is not installed, see [TYPESCRIPT.md](./TYPESCRIPT.md#the-gate).           |
+| 10    | helm-charts                                                                                    | Audit `# --` coverage against `values.schema.json`, which is generated.                          | Not confirmed.                                                                                       |
+
+`missing_docs` declared is the part a search can see. Whether the clippy half of the gate fails CI is
+a property of the workflow, covered in [RUST.md](./RUST.md#the-ci-job).
 
 Archived repositories are out of scope. So is `actions-testing`, which has no source.
 
