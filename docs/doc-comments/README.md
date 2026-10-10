@@ -15,7 +15,7 @@ is a second copy, and the compiler only checks the first one.
 | ----------------------------------- | ------------------------------------------------------------------------------------------ |
 | [GUIDE.md](./GUIDE.md)              | Writing or reviewing any doc comment. What carries one, what it has to say, the tells, and the rollout order. |
 | [RUST.md](./RUST.md)                | Working in a Rust repository. Lint tables, doctests, feature-gated documentation, the `docsrs` defect. |
-| [JAVA.md](./JAVA.md)                | Working in gradle-jextract or rewrite-recipes. Doclint groups, `package-info.java`, snippets. |
+| [JAVA.md](./JAVA.md)                | Working in gradle-jextract or rewrite-recipes. The doclint gate and its two spellings, Checkstyle, `package-info.java`, snippets. |
 | [TYPESCRIPT.md](./TYPESCRIPT.md)    | Working in actions or TimSchoenle. The allowed tag set, and why it is short.                |
 | [PROSE.md](../readme/PROSE.md)      | Always. It already claims doc comments as its scope, and this standard does not restate it. |
 

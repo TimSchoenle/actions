@@ -8,6 +8,7 @@ The Javadoc half of [GUIDE.md](./GUIDE.md), for gradle-jextract (JDK 25) and rew
 - [Current state](#current-state)
 - [The gate](#the-gate)
 - [What doclint checks](#what-doclint-checks)
+- [What Checkstyle adds](#what-checkstyle-adds)
 - [`package-info.java` is the root comment](#package-infojava-is-the-root-comment)
 - [The three audience tags](#the-three-audience-tags)
 - [JSpecify already says it](#jspecify-already-says-it)
@@ -17,20 +18,20 @@ The Javadoc half of [GUIDE.md](./GUIDE.md), for gradle-jextract (JDK 25) and rew
 
 ## Current state
 
-Neither repository has any Javadoc. `MigrateGuiToNewApi` carries none on the class, none on the
-visitor, and none on the four `MethodMatcher` constants that encode the actual migration. The one
-`package-info.java` in gradle-jextract holds `@NullMarked` and nothing else:
+Both repositories carry the standard: gradle-jextract since TimSchoenle/gradle-jextract#218, and
+rewrite-recipes since TimSchoenle/rewrite-recipes#129. Their builds are the reference gates, and each
+records a trap this page now repeats.
 
-```java
-@org.jspecify.annotations.NullMarked
-package de.timscho.jextract;
-```
-
-That file already exists, which means the rewrite for these two repositories is additive. Nothing has
-to be undone first.
+- **gradle-jextract**, `build.gradle.kts`. Holds `de.timscho.jextract.internal` out of doclint with
+  `-Xdoclint/package`, because Lombok and the buildConfig plugin write members nobody can comment,
+  and excludes the same packages from the published Javadoc jar so the gate covers exactly what
+  ships. Both spellings, `-a.b` and `-a.b.*`, are needed: the wildcard matches subpackages and not
+  the package itself.
+- **rewrite-recipes**, `buildSrc/src/main/kotlin/rewrite.java-conventions.gradle.kts`. The plain
+  form below, in one convention plugin.
 
 gradle-jextract publishes a Javadoc jar through `JavadocJar.Javadoc()` in the vanniktech publish
-plugin, so its comments are already an artefact consumers download. They are currently an empty one.
+plugin, so its comments are an artefact consumers download.
 
 ## The gate
 
@@ -43,17 +44,34 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.withType<Javadoc>().configureEach {
     (options as StandardJavadocDocletOptions).apply {
-        addStringOption("Xdoclint:all/protected", "-quiet")
+        memberLevel = JavadocMemberLevel.PROTECTED
+        addStringOption("Xdoclint:all", "-quiet")
         addBooleanOption("Werror", true)
+        tags(
+            "apiNote:a:API Note:",
+            "implSpec:a:Implementation Requirements:",
+            "implNote:a:Implementation Note:",
+        )
     }
 }
 ```
 
 `/protected` is the access level, and it is the right one: it covers public and protected members,
-which is exactly the surface a consumer of a Gradle plugin or a recipe catalog can reach. Package-private
-and private members fall under the judgement rule in [GUIDE.md](./GUIDE.md#what-carries-one).
+which is exactly the surface a consumer of a Gradle plugin or a recipe catalog can reach.
+Package-private and private members fall under the judgement rule in
+[GUIDE.md](./GUIDE.md#what-carries-one).
+
+**The two halves spell the level differently.** `javac` takes it as the `/protected` suffix. The
+`javadoc` tool rejects that suffix and takes the level from its own `-protected` flag, which is what
+`memberLevel` sets. Copying the `javac` spelling onto the `javadoc` task fails the task before it
+reads a single comment.
 
 `-Werror` is what makes it a gate. Without it doclint prints and the build stays green.
+
+`tags(...)` registers [the three audience tags](#the-three-audience-tags). The standard doclet knows
+`@apiNote`, `@implSpec` and `@implNote` only inside the JDK's own build. Anywhere else an
+unregistered block tag is a `javadoc` error, so the first `@implNote` fails the build whether or not
+`-Werror` is set.
 
 ## What doclint checks
 
@@ -76,6 +94,28 @@ needs it cannot tell it was ever a link.
 demand a `@param` on a parameter whose name says everything. Keep it on and treat the demand as a
 prompt rather than a form. A `@param` that has nothing to add about unit, range, nullability or what
 happens at zero is telling you the parameter is either misnamed or should not be in the signature.
+
+## What Checkstyle adds
+
+The shared rulesets in [`configs/checkstyle/`](../../configs/checkstyle) check Javadoc too, and
+they overlap doclint without matching it.
+
+| Module                              | Library tier                                                              | Application tier |
+| ----------------------------------- | ------------------------------------------------------------------------- | ---------------- |
+| `JavadocMethod`                     | Public and protected members; `@Override` exempt; `allowMissingReturnTag` | Omitted          |
+| `AtclauseOrder`                     | `@param`, `@return`, `@throws`, `@deprecated`                             | Same             |
+| `NonEmptyAtclauseDescription`       | On                                                                        | On               |
+| `JavadocTagContinuationIndentation` | Offset `0`                                                                | Same             |
+
+`allowMissingReturnTag` is there for the inline `{@return}` tag. Checkstyle does not read it, so
+without the property it demands a trailing `@return` on a comment that already has one. Doclint does
+read it, which is why the `missing` group still fails a return value documented nowhere. Write
+`{@return the resolved path}` as the summary of a getter rather than a summary plus a `@return`
+saying the same thing.
+
+The application tier omits `JavadocMethod` because an application has no API surface for a
+consumer to reach. Doclint at the `/protected` level is still the gate there; what drops is the
+second, stricter check.
 
 ## `package-info.java` is the root comment
 
@@ -116,6 +156,8 @@ contract without anyone deciding to make it one.
 
 Plain body text before any tag is the specification itself, which binds everyone.
 
+None of the three works until it is registered on the `javadoc` task, as [the gate](#the-gate) does.
+
 ## JSpecify already says it
 
 Both repositories are `@NullMarked`. That annotation is checked by a static analyser and by any
@@ -137,7 +179,9 @@ using:
 ```
 
 The referenced file lives in a snippet source set and is compiled by the build, so an example that
-stops compiling breaks CI. An inline `<pre>{@code ...}</pre>` block is checked by nothing, which puts
+stops compiling breaks CI. The `javadoc` task finds it through `--snippet-path`, which has to name
+that source set's directory; without the option, `javadoc` looks only in a `snippet-files`
+directory beside the package. An inline `<pre>{@code ...}</pre>` block is checked by nothing, which puts
 it in the same category as a Rust `ignore` doctest.
 
 This is the only mechanism in Java that gets examples to the level Rust doctests reach by default. Use
@@ -165,25 +209,22 @@ wording.
 
 `getDisplayName()` and `getDescription()` are rendered into the recipe catalog and read by people
 choosing a recipe. They are user-facing prose and they are covered by
-[PROSE.md](../readme/PROSE.md), not by this file. `"Migrates safe Gui API renames from InvUI v1 to
-v2."` is already correct: it names the mechanism, and the word _safe_ is doing real work.
+[PROSE.md](../readme/PROSE.md), not by this file: one line that names the mechanism, with every
+qualifier doing real work.
 
-The Javadoc on the recipe class answers a different question, for a maintainer:
+The Javadoc on the recipe class answers a different question, for a maintainer. This is
+`MigrateGuiToNewApi` in rewrite-recipes:
 
 ```java
 /**
- * Renames the four {@code Gui} members that moved without changing semantics between InvUI 1.x
- * and 2.x.
+ * Renames the three {@code Gui} members that kept their meaning across InvUI 1.x and 2.x.
  *
- * <p>Only renames. {@code normal(Consumer)} is migrated through a template rather than a rename
- * because v2 moved the consumer onto the builder, and anything whose argument list changed shape
- * is deliberately out of scope: a partial migration that compiles is worse than one that does not.
- *
- * @implNote The matchers are held as constants so the visitor allocates none per file. A recipe
- *           runs over every source in a repository, and {@code MethodMatcher} parses its pattern
- *           on construction.
+ * <p>{@code normal(Consumer)} did not, and is replaced by an immediately invoked supplier that
+ * applies the consumer to {@code Gui.builder()}. A rename would have left the consumer sitting in
+ * the argument list of a factory that no longer takes one.
  */
 ```
 
-The description says what it does. The Javadoc says what it refuses to do and why, which is the fact
-that stops the next person extending it in the direction that breaks builds.
+The summary says what the recipe does and where that stops. The second paragraph names the one
+member that is not a rename and why a rename would have been wrong, which is the fact the next
+person needs before adding a matcher to the same visitor.

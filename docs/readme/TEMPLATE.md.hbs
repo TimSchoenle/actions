@@ -16,7 +16,8 @@ whose README.md does not match its template fails the `readme` job in .github/wo
 which is a required check.
 
 The payload comes from TimSchoenle/actions/actions/common/readme-variables, which reads
-{{ repo.manifest }} and walks docs/. TODO: name the repository's own generator here too, if it has one.
+{{ repo.manifest }} and walks docs/. TODO: name the repository's own generator here too, if it has one,
+and correct the workflow file and job name above if the gate lives somewhere else.
 
 Nothing in this comment may contain a mustache that is not a real reference.
 -->
@@ -29,7 +30,7 @@ Nothing in this comment may contain a mustache that is not a real reference.
 [![Release](https://img.shields.io/github/v/release/{{ repo.slug }}?sort=semver)]({{ repo.url }}/releases)
 [![Build](https://img.shields.io/github/actions/workflow/status/{{ repo.slug }}/ci.yaml?branch={{ repo.branch }})]({{ repo.url }}/actions/workflows/ci.yaml)
 [![License](https://img.shields.io/github/license/{{ repo.slug }})](LICENSE)
-{{#if toolchain.msrv}}[![Rust](https://img.shields.io/badge/rust-{{ toolchain.msrv }}-orange)](https://www.rust-lang.org){{/if}}
+{{#if toolchain.msrv}}[![Rust](https://img.shields.io/badge/rust-{{ toolchain.msrv }}-orange)](https://www.rust-lang.org){{/if}}{{#if toolchain.jdk}}[![JDK](https://img.shields.io/badge/jdk-{{ toolchain.jdk }}-orange)](https://openjdk.org){{/if}}
 
 ## What this is
 
@@ -84,7 +85,9 @@ TODO
 
 {{!-- TODO: the full generated table only if it fits in roughly forty rows. Past that, keep the five
      most-used keys here and link a generated docs/CONFIGURATION.md.
-     A triple-stash emits pre-rendered Markdown as-is instead of escaping it. --}}
+     `configTable` is not in the readme-variables payload. It has to arrive through `extra` from the
+     repository's own generator, or strict mode fails the render; delete this section if there is
+     none. A triple-stash emits pre-rendered Markdown as-is instead of escaping it. --}}
 
 {{{ configTable }}}
 
@@ -94,17 +97,21 @@ TODO
 
 ## Compatibility
 
+{{!-- TODO: every row is guarded, so a manifest with no toolchain facts renders a bare header.
+     Delete the section in that case, or add rows for what the repository supports. --}}
+
 | | Supported |
 | --- | --- |
 {{#if toolchain.msrv}}| Rust | {{ toolchain.msrv }}{{#if toolchain.edition}} (edition {{ toolchain.edition }}){{/if}} |
 {{/if}}{{#if toolchain.jdk}}| JDK | {{ toolchain.jdk }} |
 {{/if}}{{#if toolchain.node}}| Node | {{ toolchain.node }} |
+{{/if}}{{#if toolchain.gradle}}| Gradle | {{ toolchain.gradle }} |
 {{/if}}{{#if toolchain.kubeVersion}}| Kubernetes | {{ toolchain.kubeVersion }} |
 {{/if}}
 
+{{#if docs}}
 ## Documentation
 
-{{#if docs}}
 | Document | Purpose |
 | --- | --- |
 {{#each docs}}| [{{ title }}]({{ path }}) | {{ default (mdCell summary) "—" }} |

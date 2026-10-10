@@ -30,31 +30,47 @@ documentation.
 ## The payload
 
 [readme-variables](../../actions/common/readme-variables) reads the repository's manifest, walks
-`docs/`, and emits one strict-JSON object. Its README documents every field; the shape is:
+`docs-dir` (default `docs`), and emits one strict-JSON object. Its README documents every field. The
+shape, with `?` marking a key that is omitted when the manifest has no value for it:
 
-```json
-{
-  "repo": { "owner", "name", "slug", "branch", "url", "ecosystem", "manifest",
-            "package", "description", "license", "homepage" },
-  "release": { "version", "tag" },
-  "toolchain": { "msrv" | "jdk" | "node", "edition", "gradle", "appVersion", "kubeVersion" },
-  "docs": [ { "path", "title", "summary" } ]
-}
+```text
+repo       owner, name, slug, branch, url, ecosystem, manifest,
+           package?, description?, license?, homepage?
+release    version, tag
+toolchain  depends on the manifest, see below; every key is optional
+docs[]     path, title, summary
 ```
 
 It reads `Cargo.toml`, `package.json`, `Chart.yaml` or `gradle.properties`, detected in that order or
-named through the `manifest` input. Nothing reaches it from the network, the clock or the environment,
-which is what lets `check: 'true'` be a merge gate rather than a suggestion.
+named through the `manifest` input:
 
-**Absent facts are omitted, not emitted empty.** `repo.package`, `repo.description`, `repo.license`
-and `repo.homepage` are left out when the manifest has none, so strict mode fails on a template that
-names one. That is the signal you want: a blank where a project's one-liner belongs is worse than a
-red step. Either add the field to the manifest — the right answer — or guard the reference with
-`{{#if repo.description}}`.
+| Manifest            | `repo.ecosystem` | `release.version`          | `toolchain`                                                                             |
+| ------------------- | ---------------- | -------------------------- | --------------------------------------------------------------------------------------- |
+| `Cargo.toml`        | `cargo`          | `[package] version`        | `msrv` from `rust-version`, `edition`                                                   |
+| `package.json`      | `npm`            | `version`                  | `node` from `engines.node`                                                              |
+| `Chart.yaml`        | `chart`          | `version`, the chart's own | `appVersion`, `kubeVersion`                                                             |
+| `gradle.properties` | `gradle`         | `version`                  | `jdk` from `javaVersion`, `java.version` or `jdkVersion`; `gradle` from `gradleVersion` |
 
-Anything the action cannot derive — configuration tables, publish targets, a rendered example file —
-comes from the repository's own generator through the `extra` input, deep-merged over the derived
-payload.
+`release.tag` is `release.version` with the `tag-prefix` input joined in front. The default is `v`.
+A repository whose tags are not `v1.2.3` sets the prefix, or sets it to `''` for a bare version.
+
+`docs` lists every file under `docs-dir`, sorted. A Markdown file contributes its first heading as
+`title` and its first paragraph as `summary`. Any other file is listed by path, with `summary` set
+to `''`. A missing `docs-dir` yields `[]` and is not an error.
+
+Nothing reaches the payload from the network, the clock or the environment. That is what lets
+`check: 'true'` be a merge gate rather than a suggestion.
+
+**Absent facts are omitted, not emitted empty.** `repo.package`, `repo.description`, `repo.license`,
+`repo.homepage` and every `toolchain` key are left out when the manifest has none, so a bare
+`{{ repo.description }}` fails the render in strict mode. That is the signal you want: a blank where a
+project's one-liner belongs is worse than a red step. Either add the field to the manifest, which is
+the right answer, or guard the reference with `{{#if repo.description}}`.
+
+Anything the action cannot derive, such as configuration tables, publish targets or a rendered
+example file, comes from the repository's own generator through the `extra` input and is deep-merged
+over the derived payload. [The first trap](#extra-merges-and-a-same-named-key-replaces) is what that
+merge does to a key both sides define.
 
 ## Section order
 
@@ -97,9 +113,10 @@ most-used keys, and a link to a generated `docs/CONFIGURATION.md`.
 - Exactly one `H1`. No skipped heading levels. **No emoji in headings.**
 - Under **400 rendered lines**. Past that, content moves to `docs/` and the generated documentation
   table links it.
-- **At most five badges**, every one a link, in this order: release/version, CI, coverage, licence,
-  MSRV or JDK. Drop one that does not apply rather than substituting a decorative one. No visitor
-  counters, no "made with love".
+- **At most five badges**, every one a link, in five slots and this order: what is published
+  (release, registry or image), CI, coverage or the archetype's own badge (API docs, live site),
+  licence, toolchain (MSRV or JDK). [Archetypes](#archetypes) lists which apply. Drop one that does
+  not apply rather than substituting a decorative one. No visitor counters, no "made with love".
 - Every fenced block is language-tagged.
 - In-repo links are relative; cross-repo links are absolute.
 - Never put a fenced config dump where its comments will be parsed as headings. It wrecks the
@@ -109,14 +126,14 @@ most-used keys, and a link to a generated `docs/CONFIGURATION.md`.
 
 The order never changes. What changes is which sections apply and which badges resolve.
 
-| Archetype        | Install sections                   | Dropped                           | Badges                                 |
-| ---------------- | ---------------------------------- | --------------------------------- | -------------------------------------- |
-| Library          | package manager, or git dependency | Operations                        | registry, docs, CI, licence, MSRV      |
-| Service          | Docker, Helm, source               | —                                 | image, CI, coverage, licence, MSRV     |
-| Application      | Docker, source                     | —                                 | CI, coverage, licence, MSRV, live site |
-| Chart collection | Helm                               | Configuration, which is per chart | CI, licence                            |
-| JVM artefact     | Gradle, Maven                      | Operations                        | Maven Central, CI, licence, JDK        |
-| CI monorepo      | —                                  | Configuration, Operations         | CI, licence                            |
+| Archetype        | Install sections                   | Dropped                           | Badges                                |
+| ---------------- | ---------------------------------- | --------------------------------- | ------------------------------------- |
+| Library          | package manager, or git dependency | Operations                        | registry, CI, docs, licence, MSRV     |
+| Service          | Docker, Helm, source               | —                                 | image, CI, coverage, licence, MSRV    |
+| Application      | Docker, source                     | —                                 | release, CI, live site, licence, MSRV |
+| Chart collection | Helm                               | Configuration, which is per chart | CI, licence                           |
+| JVM artefact     | Gradle, Maven                      | Operations                        | Maven Central, CI, licence, JDK       |
+| CI monorepo      | —                                  | Configuration, Operations         | CI, licence                           |
 
 A library that is not published to a registry documents the tagged git dependency and says so. Do not
 write a `cargo add` line for a crate with `publish = false`.
@@ -150,7 +167,7 @@ jobs:
       contents: read # the commit is made through the App token below
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@<sha> # v2.21.0
+        uses: step-security/harden-runner@<sha> # v2.22.0
         with:
           egress-policy: audit
 
@@ -165,7 +182,7 @@ jobs:
           permission-contents: write
 
       - name: Checkout
-        uses: actions/checkout@<sha> # v7
+        uses: actions/checkout@<sha> # v7.0.1
         with:
           ref: ${{ github.head_ref }}
           persist-credentials: false
@@ -181,13 +198,13 @@ jobs:
 
       - name: Collect the README payload
         id: variables
-        uses: TimSchoenle/actions/actions/common/readme-variables@b5b5c9e047f00ffa00b7772536c8bdb4f158f706 # tag=actions-common-readme-variables-v1.1.0
+        uses: TimSchoenle/actions/actions/common/readme-variables@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-readme-variables-v1.2.6
         with:
           branch: ${{ github.event.repository.default_branch }}
           extra: ${{ steps.config.outputs.json }}
 
       - name: Render and commit the README
-        uses: TimSchoenle/actions/actions/common/render-template-and-commit@15d83f02081c9dc8a844646199c63792dcccdfa8 # tag=actions-common-render-template-and-commit-v1.1.3
+        uses: TimSchoenle/actions/actions/common/render-template-and-commit@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-common-render-template-and-commit-v1.1.14
         with:
           template: .github/templates/README.md.hbs
           output: README.md
@@ -203,12 +220,12 @@ jobs:
       contents: read
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@<sha> # v2.21.0
+        uses: step-security/harden-runner@<sha> # v2.22.0
         with:
           egress-policy: audit
 
       - name: Checkout
-        uses: actions/checkout@<sha> # v7
+        uses: actions/checkout@<sha> # v7.0.1
         with:
           persist-credentials: false
 
@@ -221,13 +238,13 @@ jobs:
 
       - name: Collect the README payload
         id: variables
-        uses: TimSchoenle/actions/actions/common/readme-variables@b5b5c9e047f00ffa00b7772536c8bdb4f158f706 # tag=actions-common-readme-variables-v1.1.0
+        uses: TimSchoenle/actions/actions/common/readme-variables@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-readme-variables-v1.2.6
         with:
           branch: ${{ github.event.repository.default_branch }}
           extra: ${{ steps.config.outputs.json }}
 
       - name: Verify README.md is current
-        uses: TimSchoenle/actions/actions/common/render-template@3b7d152374ee63e720e7c16bed8b088b40554911 # tag=actions-common-render-template-v1.1.1
+        uses: TimSchoenle/actions/actions/common/render-template@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-render-template-v1.2.6
         with:
           template: .github/templates/README.md.hbs
           output: README.md
@@ -237,6 +254,10 @@ jobs:
 
 The `# tag=` comment is not decoration. Renovate matches it to keep the pin current, and a pin without
 one goes stale silently.
+
+Renovate does not read this page, so the pins above are only as current as its last edit. Before
+copying one, check the action's `CHANGELOG.md` for a newer release; the commit that a tag such as
+`actions-common-readme-variables-v1.2.6` points at is the SHA to pin.
 
 Adapting an existing docs workflow is preferred over replacing it, and the repository's own payload
 generator is never deleted — that generator is where the configuration tables come from.
@@ -254,6 +275,9 @@ generator rather than working around them in the template.
 
 Arrays replace rather than concatenate. A caller supplying `publish.crates` means _these are the
 crates_; appending to a derived list would make the result depend on what the reader happened to find.
+
+`null` replaces too, which is how a generator removes a derived value while keeping the name defined
+for strict mode. Keys named `__proto__`, `constructor` or `prototype` anywhere in `extra` fail the step.
 
 ### Set `branch` explicitly
 
@@ -284,15 +308,25 @@ build that could not configure reported `"id" not defined in undefined`.
 Prefer reading values out of files over invoking a build tool at all. A build that cannot configure is
 one more thing between the facts and the render.
 
-### Strict mode does not descend into blocks
+### Strict mode checks root names, not what is inside them
 
-`{{ missing }}` throws. `{{#each missing}}` renders nothing, silently. Names _inside_ an `{{#each}}`
-body are not checked either, so give optional fields a fallback:
+render-template's strict mode goes further than Handlebars' own. Before rendering, it checks the root
+name of every path the template reads, including block, helper and sub-expression arguments.
+`{{ missing }}`, `{{#each missing}}` and `{{#if missing}}` all fail the step when `missing` is not in
+the payload. Two things still pass silently:
 
-```handlebars
-{{#each docs}}| [{{path}}]({{path}}) |
-  {{default (mdCell summary) '—'}}
-  |
+- **A deeper segment of an argument.** Only the first segment is checked, so `{{#if toolchain.msrv}}`
+  is allowed when `toolchain` exists without `msrv`. That is what makes guarding an optional field
+  work, and it is also why a typo such as `{{#each toolchain.nodes}}` renders an empty block instead
+  of failing. A bare `{{ toolchain.nodes }}` does fail.
+- **Names inside a block body.** Inside `{{#each docs}}`, `{{ summary }}` resolves against one
+  element, whose shape the payload does not declare, so it is not checked.
+
+Give a field that may be empty a fallback, and keep a table row on one line, since every newline in
+the template is a newline in the rendered table:
+
+```text
+{{#each docs}}| [{{ title }}]({{ path }}) | {{ default (mdCell summary) "—" }} |
 {{/each}}
 ```
 
@@ -306,4 +340,5 @@ body are not checked either, so give optional fields a fallback:
 6. Both [PROSE.md](./PROSE.md) checks are within budget.
 7. Every fence is language-tagged; every in-repo link resolves.
 8. The quick start has been run from a clean checkout.
-9. The repository description and topics match what the payload emits.
+9. The GitHub repository description matches `repo.description`. The payload reads it from the
+   manifest, never from the API, so the web UI is the copy that has to follow.
