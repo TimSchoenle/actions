@@ -1,0 +1,122 @@
+name: 'Security CodeQL'
+description: 'CodeQL analysis without a build, with test sources excluded so test fixtures do not raise alerts.'
+
+# Default setup takes a configuration file only through the `github-codeql-config-file` repository
+# property, and custom properties exist for organizations alone. A repository owned by a personal
+# account therefore cannot exclude anything from default setup, and its test fixtures — a fixed key,
+# an assertion message that formats a value named `secret` — raise the same alerts as production code.
+# This workflow is the advanced setup those repositories call instead.
+#
+# Default setup has to be turned off before the first run: GitHub rejects an advanced-setup upload
+# while it is enabled. Each upload is categorised `/language:<language>`, the category default setup
+# writes, so the switch does not open a second analysis stream per language.
+
+on:
+  workflow_call:
+    inputs:
+      languages:
+        description: >-
+          JSON array of CodeQL languages to analyse, one job each, for example '["rust", "actions"]'.
+          Every language runs with build-mode none, so only languages that support it work here:
+          actions, c-cpp, csharp, java-kotlin, javascript-typescript, python, ruby and rust.
+        required: true
+        type: string
+      paths_ignore:
+        description: >-
+          Additional glob patterns to exclude, one per line, appended to the shared list. Blank lines
+          and lines starting with `#` are skipped.
+        required: false
+        type: string
+        default: ''
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-codeql
+  # A scheduled or default-branch analysis is the baseline pull requests are compared against, so
+  # only pull request runs are cancelled when a newer commit arrives.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions: {}
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read # Required for CodeQL to read workflow run metadata in private repositories
+      contents: read # Required to fetch code
+      security-events: write # Required to upload SARIF results to GitHub Security tab
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ${{ fromJSON(inputs.languages) }}
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # The configuration is assembled here and passed inline because a release of this workflow
+      # publishes only the workflow file; a configuration file next to it would not reach the caller.
+      #
+      # `paths-ignore` applies to every language in this workflow because none of them is built.
+      # It matches whole files, so a `#[cfg(test)] mod tests { ... }` block written inside a
+      # production source file is still analysed; only test modules in their own file are excluded.
+      - name: Assemble CodeQL configuration
+        id: config
+        shell: bash
+        env:
+          EXTRA_PATHS_IGNORE: ${{ inputs.paths_ignore }}
+        run: |
+          set -euo pipefail
+
+          # Cargo integration tests and benchmarks, and Rust unit-test modules split into their own
+          # file (`mod tests;`, `foo_tests.rs`, `foo_test.rs`).
+          # Gradle and Maven test source sets, including `java-test-fixtures`.
+          # Vitest and Jest suites.
+          defaults='[
+            "**/tests/**",
+            "**/benches/**",
+            "**/tests.rs",
+            "**/*_tests.rs",
+            "**/*_test.rs",
+            "**/src/test/**",
+            "**/src/testFixtures/**",
+            "**/__tests__/**",
+            "**/*.test.*",
+            "**/*.spec.*"
+          ]'
+
+          # JSON is valid YAML, and `jq -c` keeps it on one line, so the output needs no delimiter.
+          config="$(jq -cn --argjson defaults "$defaults" --arg extra "$EXTRA_PATHS_IGNORE" '
+            ($extra
+              | split("\n")
+              | map(gsub("^\\s+|\\s+$"; ""))
+              | map(select(length > 0 and (startswith("#") | not)))) as $extra
+            | {
+                name: "Security CodeQL",
+                "paths-ignore": ($defaults + $extra | unique)
+              }')"
+
+          echo "::group::CodeQL configuration"
+          jq . <<<"$config"
+          echo "::endgroup::"
+          echo "config=$config" >> "$GITHUB_OUTPUT"
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          config: ${{ steps.config.outputs.config }}
+          languages: ${{ matrix.language }}
+          build-mode: none
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          category: '/language:${{ matrix.language }}'

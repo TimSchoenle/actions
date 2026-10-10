@@ -200,6 +200,11 @@
       "release-type": "simple",
       "component": "configs-checkstyle-library",
       "include-component-in-tag": true
+    },
+    "workflows/security/codeql": {
+      "release-type": "simple",
+      "component": "workflows-security-codeql-meta",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

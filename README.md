@@ -162,6 +162,12 @@ which is the path the `uses:` line resolves. Read and change the source under `w
 | [Maintenance Auto-rebase](./workflows/maintenance/auto-rebase) | Automatically rebases open PRs with a given label. | [workflows-maintenance-auto-rebase-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-rebase-v1.1.7) | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-rebase.yaml@112057eff67d583e17eda2b173bc5d67eb83fb4f # tag=workflows-maintenance-auto-rebase-v1.1.7` |
 | [Maintenance Wipe-cache](./workflows/maintenance/wipe-cache) | Workflow to wipe all cache entries for the given branch. | [workflows-maintenance-wipe-cache-v1.1.13](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-wipe-cache-v1.1.13) | `uses: TimSchoenle/actions/.github/workflows/maintenance-wipe-cache.yaml@103a601a6e8778074ac41d9dd03870d1989463b6 # tag=workflows-maintenance-wipe-cache-v1.1.13` |
 
+#### Security
+
+| Workflow | Description | Version | Usage |
+| --- | --- | --- | --- |
+| [Security CodeQL](./workflows/security/codeql) | CodeQL analysis without a build, with test sources excluded so test fixtures do not raise alerts. | [workflows-security-codeql-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/workflows-security-codeql-v1.0.0) | `uses: TimSchoenle/actions/.github/workflows/security-codeql.yaml@workflows-security-codeql-v1.0.0 # tag=workflows-security-codeql-v1.0.0` |
+
 
 
 ### Shared configurations

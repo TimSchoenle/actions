@@ -106,6 +106,12 @@ is not, including older versions of a component whose neighbours have since rele
 | [Maintenance Auto-rebase](./workflows/maintenance/auto-rebase) | [workflows-maintenance-auto-rebase-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-rebase-v1.1.7) | :white_check_mark: |
 | [Maintenance Wipe-cache](./workflows/maintenance/wipe-cache) | [workflows-maintenance-wipe-cache-v1.1.13](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-wipe-cache-v1.1.13) | :white_check_mark: |
 
+#### Security
+
+| Component | Version | Supported |
+| --- | --- | --- |
+| [Security CodeQL](./workflows/security/codeql) | [workflows-security-codeql-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/workflows-security-codeql-v1.0.0) | :white_check_mark: |
+
 
 
 ## Reporting a Vulnerability

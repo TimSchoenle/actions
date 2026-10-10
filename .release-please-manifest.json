@@ -38,5 +38,6 @@
   "actions/docker/image-check": "1.1.2",
   "actions/docker/image-check-summary": "1.1.2",
   "configs/checkstyle/application": "1.0.2",
-  "configs/checkstyle/library": "1.0.2"
+  "configs/checkstyle/library": "1.0.2",
+  "workflows/security/codeql": "1.0.0"
 }
