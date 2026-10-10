@@ -64,7 +64,7 @@ Four parts, always in this order.
 
 1. **Summary sentence.** One sentence, third person present indicative, on one line, ending in a
    period. Start with the verb: `Resolves a tag to the commit SHA it points at.` Never `This function
-   resolves`, and never `Resolve`. Rustdoc and Javadoc both cut the index entry at the end of the
+resolves`, and never `Resolve`. Rustdoc and Javadoc both cut the index entry at the end of the
    first sentence, so a summary running to four lines becomes a search result nobody can scan.
 2. **A blank line.** Both tools treat the first paragraph as the summary, so the blank line is what
    separates the index entry from the body. Without it the whole comment is the summary.
@@ -242,7 +242,7 @@ a rewrite that adds doc comments to those items would be writing the second copy
 
 | Repository      | Where the user-facing text lives                         | Rendered into                        |
 | --------------- | -------------------------------------------------------- | ------------------------------------ |
-| actions         | `description:` in each `action.yaml` and `workflow.yaml` | `README.md`, `SECURITY.md`           |
+| actions         | `description:` in each `action.yaml` and `workflow.yaml` | the root `README.md` tables          |
 | helm-charts     | `# --` comments in `values.yaml`                         | each chart's `README.md`             |
 | rewrite-recipes | `getDisplayName()` and `getDescription()`                | the OpenRewrite catalog              |
 | Portfolio       | `///` on config fields                                   | `config.example.toml`, README tables |
@@ -256,11 +256,11 @@ recipe is written this way, what the visitor refuses to touch, which key the val
 The gate goes in the same pull request as the comments. A rewrite without one is undone by the next
 feature branch, because nothing stops an undocumented `pub fn` landing on Tuesday.
 
-| Ecosystem  | Gate                                                                                    | Detail                           |
-| ---------- | --------------------------------------------------------------------------------------- | -------------------------------- |
-| Rust       | `missing_docs`, the rustdoc lint table, `RUSTDOCFLAGS: -D warnings`, `cargo test --doc` | [RUST.md](./RUST.md)             |
-| Java       | `-Xdoclint:all -Werror` on `javac` and on the `javadoc` task                            | [JAVA.md](./JAVA.md)             |
-| TypeScript | `eslint-plugin-tsdoc`, plus `jsdoc/require-jsdoc` scoped to exported items              | [TYPESCRIPT.md](./TYPESCRIPT.md) |
+| Ecosystem  | Gate                                                                                                               | Detail                           |
+| ---------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
+| Rust       | `missing_docs`, the rustdoc lint table, `RUSTDOCFLAGS: -D warnings`, clippy with `-D warnings`, `cargo test --doc` | [RUST.md](./RUST.md)             |
+| Java       | `-Xdoclint:all/protected -Werror` on `javac` and on the `javadoc` task, plus the Checkstyle Javadoc modules        | [JAVA.md](./JAVA.md)             |
+| TypeScript | `eslint-plugin-tsdoc`, plus `jsdoc/require-jsdoc` scoped to exported items. Not installed yet                      | [TYPESCRIPT.md](./TYPESCRIPT.md) |
 
 None of them catch a comment that restates its signature, which is the failure this document is
 mostly about. That one is a review criterion, and pretending a linter could do it would produce

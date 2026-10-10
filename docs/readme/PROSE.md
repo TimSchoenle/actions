@@ -22,6 +22,7 @@ applied to a real repository.
 - [Worked examples](#worked-examples)
 - [Checks](#checks)
 - [Before you commit](#before-you-commit)
+- [Scope](#scope)
 
 ## The one test
 
@@ -38,17 +39,19 @@ A corollary: a sentence that would be true in any README belongs in none of them
 The code comments in these repositories are already written the right way. The READMEs are not.
 Closing that gap is the whole job.
 
-From `crates/config/examples/config-schema.rs`:
+From Portfolio's
+[`crates/config/src/schema.rs`](https://github.com/TimSchoenle/Portfolio/blob/main/crates/config/src/schema.rs):
 
-> One flat table of every key says that a deployment needs a GitHub token. It does not.
-> `github.*` belongs to `update-repos`, a build-time tool that lists repositories and exits
-> during the image build; the SSR server never loads it and never sees it.
+> One flat table of every key says that a deployment needs a GitHub token. It does not:
+> `github.*` belongs to `update-repos`, a build-time tool that exits during the image build, and
+> the SSR server never loads it. The scopes are split the way the binaries are.
 
 Note what that does. It states a wrong belief, refuses it in three words, then gives the
-mechanism that makes the refusal true. No sentence is decorative. The second sentence is three
-words long because three words was enough.
+mechanism that makes the refusal true. No clause is decorative. The refusal is three words long
+because three words was enough.
 
-From `.github/workflows/update-files.yaml`:
+From Portfolio's
+[`.github/workflows/update-files.yaml`](https://github.com/TimSchoenle/Portfolio/blob/main/.github/workflows/update-files.yaml):
 
 > Thirty lines of `sed` used to live here, and the region it cut was the one thing this workflow
 > and the gate in `build.yaml` had to agree about — written by hand in one file and read by hand
@@ -279,16 +282,17 @@ Two of these rules are mechanical enough to measure. Run them against a rendered
 Em dashes outside tables and definition lists, budget **five per document**:
 
 ````bash
-awk '/^```/{f=!f; next} !f' README.md   | sed -e '/^|/d' -e '/^[0-9]\+\. /d' -e 's/`[^`]*`//g'   | grep -o '—' | wc -l
+awk '/^```/{f=!f; next} f{next} /<!--/{c=1} c{if (/-->/) c=0; next} 1' README.md   | sed -e '/^|/d' -e '/^[0-9]\+\. /d' -e 's/`[^`]*`//g'   | grep -o '—' | wc -l
 ````
 
-That strips fenced blocks, table rows, numbered definition lists and inline code before counting.
-A check that miscounts is a check people learn to ignore.
+That strips fenced blocks, HTML comments (the provenance banner among them), table rows, numbered
+definition lists and inline code before counting. A check that miscounts is a check people learn
+to ignore.
 
-Consecutive bullets sharing the `**Bold** —` frame, budget **three**:
+Consecutive bullets sharing the `**Bold** —` frame, budget **three**. This prints the longest run:
 
 ```bash
-grep -c '^- \*\*.*\*\* —' README.md
+awk '/^- \*\*.*\*\* —/{r++; if (r>m) m=r; next} {r=0} END{print m+0}' README.md
 ```
 
 Sentence length distribution. There is no threshold to pass; this is for information only:

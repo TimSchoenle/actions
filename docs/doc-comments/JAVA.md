@@ -8,6 +8,7 @@ The Javadoc half of [GUIDE.md](./GUIDE.md), for gradle-jextract (JDK 25) and rew
 - [Current state](#current-state)
 - [The gate](#the-gate)
 - [What doclint checks](#what-doclint-checks)
+- [What Checkstyle adds](#what-checkstyle-adds)
 - [`package-info.java` is the root comment](#package-infojava-is-the-root-comment)
 - [The three audience tags](#the-three-audience-tags)
 - [JSpecify already says it](#jspecify-already-says-it)
@@ -76,6 +77,28 @@ needs it cannot tell it was ever a link.
 demand a `@param` on a parameter whose name says everything. Keep it on and treat the demand as a
 prompt rather than a form. A `@param` that has nothing to add about unit, range, nullability or what
 happens at zero is telling you the parameter is either misnamed or should not be in the signature.
+
+## What Checkstyle adds
+
+The shared rulesets in [`configs/checkstyle/`](../../configs/checkstyle) check Javadoc too, and
+they overlap doclint without matching it.
+
+| Module                              | Library tier                                                              | Application tier |
+| ----------------------------------- | ------------------------------------------------------------------------- | ---------------- |
+| `JavadocMethod`                     | Public and protected members; `@Override` exempt; `allowMissingReturnTag` | Omitted          |
+| `AtclauseOrder`                     | `@param`, `@return`, `@throws`, `@deprecated`                             | Same             |
+| `NonEmptyAtclauseDescription`       | On                                                                        | On               |
+| `JavadocTagContinuationIndentation` | Offset `0`                                                                | Same             |
+
+`allowMissingReturnTag` is there for the inline `{@return}` tag. Checkstyle does not read it, so
+without the property it demands a trailing `@return` on a comment that already has one. Doclint does
+read it, which is why the `missing` group still fails a return value documented nowhere. Write
+`{@return the resolved path}` as the summary of a getter rather than a summary plus a `@return`
+saying the same thing.
+
+The application tier omits `JavadocMethod` because an application has no API surface for a
+consumer to reach. Doclint at the `/protected` level is still the gate there; what drops is the
+second, stricter check.
 
 ## `package-info.java` is the root comment
 

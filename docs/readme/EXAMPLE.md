@@ -3,10 +3,11 @@ A finished README for a real repository, kept here as the target rather than a d
 
 It is TimSchoenle/Portfolio: a Rust Dioxus fullstack application with a Docker image and a Helm
 chart. Every version, image name, licence identifier and configuration key below is interpolated
-from the payload; none is typed. 248 lines, one H1, and both PROSE.md checks inside budget.
+from the payload; none is typed. 249 lines, one H1, and both PROSE.md checks inside budget.
 
 Read GUIDE.md for the rules this satisfies and PROSE.md for how its sentences are written.
-Anything below this comment is the rendered output, unedited.
+Everything below this comment is a rendered snapshot. Portfolio's own README has changed since it
+was taken, and this copy is not kept in step with it: it is the reference shape, not a mirror.
 -->
 
 <!--
@@ -21,8 +22,9 @@ The payload comes from one command:
     cargo run -q -p portfolio-config --features config-schema \
       --example config-schema -- --format variables
 
-Shared sections (banner, badges, install, compatibility, docs index, contributing, security,
-licence) are partials from TimSchoenle/actions at templates/readme/, pinned by tag.
+The repository's own facts (name, description, version, licence, toolchain and the docs/ index)
+come from TimSchoenle/actions/actions/common/readme-variables, which reads the root Cargo.toml and
+walks docs/.
 
 Nothing in this comment may contain a mustache that is not a real reference.
 -->
@@ -34,7 +36,7 @@ Dioxus fullstack (SSR + hydration) portfolio served by Axum.
 [![Release](https://img.shields.io/github/v/release/TimSchoenle/Portfolio?sort=semver)](https://github.com/TimSchoenle/Portfolio/releases)
 [![Build](https://img.shields.io/github/actions/workflow/status/TimSchoenle/Portfolio/build.yaml?branch=main)](https://github.com/TimSchoenle/Portfolio/actions/workflows/build.yaml)
 [![Site](https://img.shields.io/website?url=https%3A%2F%2Ftim-schoenle.de&label=tim-schoenle.de)](https://tim-schoenle.de)
-[![License](https://img.shields.io/badge/license-Proprietary-blue)](LICENSE)
+[![License](https://img.shields.io/badge/license-LicenseRef--Proprietary-blue)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.97-orange)](https://www.rust-lang.org)
 
 ## What this is

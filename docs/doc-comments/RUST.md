@@ -34,7 +34,6 @@ doc_include_without_cfg = "warn"
 
 [workspace.lints.rustdoc]
 broken_intra_doc_links = "deny"
-private_intra_doc_links = "warn"
 unescaped_backticks = "warn"
 ```
 
@@ -61,7 +60,7 @@ above.
 
 The rustdoc lints that are already warn by default and therefore need no line: `bare_urls`,
 `invalid_codeblock_attributes`, `invalid_html_tags`, `invalid_rust_codeblocks`,
-`redundant_explicit_links`, `unportable_markdown`. They only run under `rustdoc`, never `cargo check`,
+`private_intra_doc_links`, `redundant_explicit_links`, `unportable_markdown`. They only run under `rustdoc`, never `cargo check`,
 which is why the documentation job in [the CI section](#the-ci-job) has to exist as its own step.
 
 `broken_intra_doc_links` is denied rather than warned for one reason: a broken link renders as the
@@ -100,7 +99,7 @@ to make per crate:
 - **Stable only.** Delete both lines and the `[package.metadata.docs.rs]` table. Feature badges are
   lost, and the gated `doc` attributes described below carry the same information as prose.
 - **Keep the badges.** Add a `cargo +nightly doc --all-features` step with `RUSTDOCFLAGS="--cfg
-  docsrs -D warnings"`, and accept that one CI job pins nightly.
+docsrs -D warnings"`, and accept that one CI job pins nightly.
 
 Take the first for anything `publish = false`. The metadata table has no reader.
 
@@ -177,6 +176,22 @@ doc:
 
 The per-feature repetition is not thoroughness for its own sake. `--all-features` renders every gated
 section, so a link that only breaks when a feature is off never appears in that run.
+
+This job covers the rustc and rustdoc halves of the table. The clippy half, from
+`missing_errors_doc` down, only runs under clippy, and every entry is `warn`. A warning fails
+nothing unless the clippy run denies warnings, and the shared
+[`actions/rust/clippy`](../../actions/rust/clippy) action does not by default: its
+`clippy_arguments` input is `--all-features --all-targets`. Pass the deny flag through it:
+
+```yaml
+- uses: TimSchoenle/actions/actions/rust/clippy@<sha> # tag=actions-rust-clippy-v<version>
+  with:
+    clippy_arguments: '--all-features --all-targets -- -D warnings'
+```
+
+The shared [`actions/rust/test`](../../actions/rust/test) action runs `cargo nextest run`, and
+nextest does not run doctests. Keep the `cargo test --doc` step above even where that action is
+the test job.
 
 Add `doc` to the `needs:` list of whatever job gates the merge. A documentation job that is not
 required is a documentation job that goes red on `main` and stays there.
