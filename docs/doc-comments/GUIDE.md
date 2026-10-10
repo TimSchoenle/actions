@@ -64,7 +64,7 @@ Four parts, always in this order.
 
 1. **Summary sentence.** One sentence, third person present indicative, on one line, ending in a
    period. Start with the verb: `Resolves a tag to the commit SHA it points at.` Never `This function
-resolves`, and never `Resolve`. Rustdoc and Javadoc both cut the index entry at the end of the
+   resolves`, and never `Resolve`. Rustdoc and Javadoc both cut the index entry at the end of the
    first sentence, so a summary running to four lines becomes a search result nobody can scan.
 2. **A blank line.** Both tools treat the first paragraph as the summary, so the blank line is what
    separates the index entry from the body. Without it the whole comment is the summary.

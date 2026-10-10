@@ -99,7 +99,7 @@ to make per crate:
 - **Stable only.** Delete both lines and the `[package.metadata.docs.rs]` table. Feature badges are
   lost, and the gated `doc` attributes described below carry the same information as prose.
 - **Keep the badges.** Add a `cargo +nightly doc --all-features` step with `RUSTDOCFLAGS="--cfg
-docsrs -D warnings"`, and accept that one CI job pins nightly.
+  docsrs -D warnings"`, and accept that one CI job pins nightly.
 
 Take the first for anything `publish = false`. The metadata table has no reader.
 
