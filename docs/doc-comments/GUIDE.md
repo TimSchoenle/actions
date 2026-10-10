@@ -192,10 +192,11 @@ The strongest one, and no linter catches it. Text produced item by item comes ou
 five lines on everything, because each item was answered by the same prompt. Hand-written comments are
 wildly uneven: most say one thing, a few say a great deal.
 
-Portfolio's `crates/config` and `crates/data` hold 128 item comments with a median of **two lines**, a
-mean of 3.5, a standard deviation of 3.7, and **41% of them one line long**. The longest is 21 lines.
-That distribution is the signature of writing to the facts. A rewrite that lands at a mean of four
-with a standard deviation near one has restated 128 signatures.
+Portfolio's `crates/config/src` and `crates/data/src` hold 296 item comments with a median of **two
+lines**, a mean of 3.2, a standard deviation of 3.5, and **45% of them one line long**. The longest is
+22 lines. Those figures are from 2026-10-10 and move with the code; the shape is what matters. That
+distribution is the signature of writing to the facts. A rewrite that lands at a mean of four with a
+standard deviation near one has restated every signature it touched.
 
 There is a [check](#checks) for this, and like PROSE.md's burstiness section it is informational.
 Chasing the number produces its own pattern.

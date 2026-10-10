@@ -96,8 +96,8 @@ Ban on sight:
 - `it's not X, it's Y`
 - `X isn't about A, it's about B`
 
-`X rather than Y` is allowed only when the rejected alternative is real and named for a reason —
-"the load fails rather than picking one" is a genuine design decision. "Interactive sections
+`X rather than Y` is allowed only when the rejected alternative is real and named for a reason.
+"The load fails rather than picking one" is a genuine design decision. "Interactive sections
 rather than a static page" is not; nobody proposed a static page.
 
 ### No aphorisms
@@ -188,9 +188,9 @@ What to do instead: after a long sentence that establishes something, check whet
 point can be made in five words. Usually it can, and usually the long sentence was carrying two
 facts that should have been two sentences.
 
-For reference, the revised Portfolio README sits at a mean of 13 words, median 11, standard
-deviation 9, with a quarter of its sentences under eight words. That came out of cutting, not out
-of aiming for it.
+For reference, [EXAMPLE.md](./EXAMPLE.md) measures a mean of 11.4 words, median 9.5, standard
+deviation 6.9, with 28% of its sentences under eight words. That came out of cutting, not out of
+aiming for it. The [check](#checks) below reproduces those figures.
 
 ## What is not a rule
 
@@ -282,11 +282,12 @@ Two of these rules are mechanical enough to measure. Run them against a rendered
 Em dashes outside tables and definition lists, budget **five per document**:
 
 ````bash
-awk '/^```/{f=!f; next} f{next} /<!--/{c=1} c{if (/-->/) c=0; next} 1' README.md   | sed -e '/^|/d' -e '/^[0-9]\+\. /d' -e 's/`[^`]*`//g'   | grep -o '—' | wc -l
+awk '/^```/{f=!f; next} f{next} /<!--/{c=1} c{if (/-->/) c=0; next} 1' README.md   | sed -e '/^|/d' -e '/^>/d' -e '/^[0-9]\+\. /d' -e 's/`[^`]*`//g'   | grep -o '—' | wc -l
 ````
 
-That strips fenced blocks, HTML comments (the provenance banner among them), table rows, numbered
-definition lists and inline code before counting. A check that miscounts is a check people learn
+That strips fenced blocks, HTML comments (the provenance banner among them), table rows,
+blockquotes, numbered definition lists and inline code before counting. A blockquote is someone
+else's sentence, such as a quoted before-and-after example, and is not the document's own budget. A check that miscounts is a check people learn
 to ignore.
 
 Consecutive bullets sharing the `**Bold** —` frame, budget **three**. This prints the longest run:
@@ -327,7 +328,7 @@ produce prose written to pass a check.
 
 This applies to prose written by anyone, including a model. When a model drafts a README, template,
 `docs/` page, commit body or pull request description, this document is the review criteria rather
-than a suggestion — say so in the prompt and hand it this file.
+than a suggestion. Say so in the prompt and hand it this file.
 
 It lives here because this is the repository every other one already consumes from. Link to it from a
 `CONTRIBUTING.md` rather than copying it: a style guide with two copies is the drift this whole
