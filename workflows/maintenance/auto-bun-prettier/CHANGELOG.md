@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.38](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.37...workflows-maintenance-auto-bun-prettier-meta-v1.1.38) (2026-10-10)
+
+
+### Miscellaneous
+
+* **deps:** update timschoenle/actions/actions/common/commit-changes to vactions-common-commit-changes-v1.5.5 ([#1795](https://github.com/TimSchoenle/actions/issues/1795)) ([88f915c](https://github.com/TimSchoenle/actions/commit/88f915cc3dc99b9dced797851b1e48674a2eeebf))
+* **deps:** update timschoenle/actions/actions/common/upsert-pr-comment to vactions-common-upsert-pr-comment-v1.2.2 ([#1808](https://github.com/TimSchoenle/actions/issues/1808)) ([7a0e9d4](https://github.com/TimSchoenle/actions/commit/7a0e9d406f537b52b077d87d7e0e66851c1030d2))
+
 ## [1.1.37](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.36...workflows-maintenance-auto-bun-prettier-meta-v1.1.37) (2026-10-06)
 
 

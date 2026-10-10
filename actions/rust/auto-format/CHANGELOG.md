@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.21](https://github.com/TimSchoenle/actions/compare/actions-rust-auto-format-v1.1.20...actions-rust-auto-format-v1.1.21) (2026-10-10)
+
+
+### Miscellaneous
+
+* **deps:** update timschoenle/actions/actions/common/commit-changes to vactions-common-commit-changes-v1.5.5 ([#1795](https://github.com/TimSchoenle/actions/issues/1795)) ([88f915c](https://github.com/TimSchoenle/actions/commit/88f915cc3dc99b9dced797851b1e48674a2eeebf))
+
 ## [1.1.20](https://github.com/TimSchoenle/actions/compare/actions-rust-auto-format-v1.1.19...actions-rust-auto-format-v1.1.20) (2026-10-06)
 
 
