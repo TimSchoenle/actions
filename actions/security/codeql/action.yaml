@@ -1,0 +1,67 @@
+name: 'Security CodeQL'
+description: 'Runs CodeQL on one language with build-mode none, excluding test sources so fixtures and assertion messages do not raise alerts, and uploads the result to code scanning.'
+
+inputs:
+  language:
+    description: 'CodeQL language identifier, one per job: actions, c-cpp, csharp, java-kotlin, javascript-typescript, python, ruby or rust. Languages that need a build (go, swift) are refused.'
+    required: true
+  exclude-test-paths:
+    description: 'Exclude the shared test locations: Cargo tests and benches, Rust test modules in their own file, Gradle and Maven test source sets, and Vitest and Jest suites.'
+    required: false
+    default: 'true'
+  paths-ignore:
+    description: 'Additional glob patterns to exclude, one per line, relative to the repository root. Blank lines and lines starting with # are skipped.'
+    required: false
+    default: ''
+  category:
+    description: 'Code scanning category. Defaults to /language:<language>, the category default setup writes, so switching from default setup keeps one analysis per language.'
+    required: false
+    default: ''
+  upload:
+    description: 'Upload the SARIF to code scanning. Needs security-events: write.'
+    required: false
+    default: 'true'
+
+outputs:
+  config:
+    description: 'The CodeQL configuration passed to init, as one line of JSON.'
+    value: ${{ steps.prepare.outputs.config }}
+  category:
+    description: 'The category the analysis was recorded under.'
+    value: ${{ steps.prepare.outputs.category }}
+  sarif-output:
+    description: 'Absolute path of the directory holding the SARIF file.'
+    value: ${{ steps.analyze.outputs.sarif-output }}
+  sarif-id:
+    description: 'ID of the uploaded SARIF, when upload is true.'
+    value: ${{ steps.analyze.outputs.sarif-id }}
+
+runs:
+  using: 'composite'
+  steps:
+    # Validates every input before the CodeQL bundle is fetched, so a refused language or a pattern
+    # CodeQL would match literally fails in a second rather than after init.
+    - name: Prepare Configuration
+      id: prepare
+      shell: bash
+      env:
+        INPUT_LANGUAGE: ${{ inputs.language }}
+        INPUT_EXCLUDE_TEST_PATHS: ${{ inputs.exclude-test-paths }}
+        INPUT_PATHS_IGNORE: ${{ inputs.paths-ignore }}
+        INPUT_CATEGORY: ${{ inputs.category }}
+        INPUT_UPLOAD: ${{ inputs.upload }}
+      run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+      with:
+        languages: ${{ steps.prepare.outputs.language }}
+        build-mode: none
+        config: ${{ steps.prepare.outputs.config }}
+
+    - name: Perform CodeQL Analysis
+      id: analyze
+      uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+      with:
+        category: ${{ steps.prepare.outputs.category }}
+        upload: ${{ steps.prepare.outputs.upload }}

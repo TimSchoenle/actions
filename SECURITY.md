@@ -87,6 +87,12 @@ is not, including older versions of a component whose neighbours have since rele
 | [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | [actions-rust-coverage-codecov-v1.1.50](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.50) | :white_check_mark: |
 | [Rust Test](./actions/rust/test) | [actions-rust-test-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.2) | :white_check_mark: |
 
+#### Security
+
+| Component | Version | Supported |
+| --- | --- | --- |
+| [Security CodeQL](./actions/security/codeql) | [actions-security-codeql-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-security-codeql-v1.0.0) | :white_check_mark: |
+
 #### Test
 
 | Component | Version | Supported |

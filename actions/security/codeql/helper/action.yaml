@@ -1,0 +1,37 @@
+name: 'Security CodeQL Helper'
+description: 'Internal to actions/security/codeql, which runs this bundle with node before codeql-action/init. Not a public action: its inputs and outputs change without notice.'
+
+inputs:
+  language:
+    description: 'CodeQL language identifier that supports build-mode none.'
+    required: true
+  exclude_test_paths:
+    description: 'Whether the shared test paths are excluded.'
+    required: false
+    default: 'true'
+  paths_ignore:
+    description: 'Additional patterns to exclude, one per line. Blank lines and lines starting with # are skipped.'
+    required: false
+    default: ''
+  category:
+    description: 'Upload category. Empty derives /language:<language>.'
+    required: false
+    default: ''
+  upload:
+    description: 'Whether the SARIF is uploaded to code scanning.'
+    required: false
+    default: 'true'
+
+outputs:
+  language:
+    description: 'The language, trimmed and validated.'
+  config:
+    description: 'CodeQL configuration for the init config input, as one line of JSON.'
+  category:
+    description: 'Resolved upload category.'
+  upload:
+    description: 'always or never, for the analyze upload input.'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
