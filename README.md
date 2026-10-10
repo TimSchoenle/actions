@@ -139,6 +139,12 @@ outputs. Where an action needs more than that, a README sits next to it.
 | [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | Action that runs cargo llvm-cov to generate code coverage and uploads to Codecov. | [actions-rust-coverage-codecov-v1.1.50](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.50) | `uses: TimSchoenle/actions/actions/rust/coverage-codecov@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-rust-coverage-codecov-v1.1.50` |
 | [Rust Test](./actions/rust/test) | Action that runs cargo nextest to verify Rust code passes tests. | [actions-rust-test-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.2) | `uses: TimSchoenle/actions/actions/rust/test@e16a1e466faf8ec751b26289c1898143a253269f # tag=actions-rust-test-v1.1.2` |
 
+#### Security
+
+| Action | Description | Version | Usage |
+| --- | --- | --- | --- |
+| [Security CodeQL](./actions/security/codeql) | Runs CodeQL on one language with build-mode none, excluding test sources so fixtures and assertion messages do not raise alerts, and uploads the result to code scanning. | [actions-security-codeql-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-security-codeql-v1.0.0) | `uses: TimSchoenle/actions/actions/security/codeql@actions-security-codeql-v1.0.0 # tag=actions-security-codeql-v1.0.0` |
+
 #### Test
 
 | Action | Description | Version | Usage |

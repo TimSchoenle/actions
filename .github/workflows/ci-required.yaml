@@ -53,6 +53,7 @@ on:
       - Verify Maintenance Auto-approve-pr
       - Verify Maintenance Ensure-actions-are-executed
       - Verify Rust Config-contract
+      - Verify Security Codeql
       - Verify Test Setup-e2e
     # >>> generated: verify-workflows
     types:

@@ -397,6 +397,20 @@
         "vitest": "5.0.3",
       },
     },
+    "actions/security/codeql/helper": {
+      "name": "actions-security-codeql-helper",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "actions-util": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "26.6.4",
+        "@typescript/native": "npm:typescript@7.0.2",
+        "actions-e2e": "workspace:*",
+        "vitest": "5.0.3",
+      },
+    },
     "packages/e2e": {
       "name": "actions-e2e",
       "version": "1.0.0",
@@ -762,6 +776,8 @@
     "actions-maintenance-ensure-actions-are-executed": ["actions-maintenance-ensure-actions-are-executed@workspace:actions/maintenance/ensure-actions-are-executed"],
 
     "actions-rust-config-contract": ["actions-rust-config-contract@workspace:actions/rust/config-contract"],
+
+    "actions-security-codeql-helper": ["actions-security-codeql-helper@workspace:actions/security/codeql/helper"],
 
     "actions-util": ["actions-util@workspace:packages/ts-util"],
 

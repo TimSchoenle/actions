@@ -1,0 +1,107 @@
+# Jobs appended verbatim to the generated workflow for this action.
+#
+# The end-to-end cases drive the helper bundle only. This job runs what only the runner can: the
+# composite itself, with the real codeql-action init and analyze, over the fixture crate under
+# e2e/fixture. The crate has the same leak three times. The alert in src/lib.rs is the proof that the
+# analysis ran; the one in tests/leak.rs must be gone through the shared test paths, and the one in
+# src/vendored.rs through the paths-ignore input.
+#
+# The Rust extractor loads the crate through rust-analyzer, which needs the standard library's
+# source. The runner's toolchain ships without the rust-src component, and rustup fetches it from
+# static.rust-lang.org on first use; with that endpoint blocked the manifest fails to load, macros
+# are never expanded, and `println!` is not seen as a sink at all.
+#
+# Nothing is uploaded: the fixture's alert is planted, and this repository's code scanning is for
+# its own code. The assertions read the SARIF analyze leaves on disk instead.
+#
+# `uses: pinned:<key>` names an entry of PINNED in scripts/lib/e2e-workflow.ts and is substituted on
+# the way in. Writing a ref out in full here would be a second pin no Renovate manager reads.
+
+verify-composite:
+  name: Test Composite Against A Fixture Crate
+  runs-on: ubuntu-latest
+  permissions:
+    contents: read # to fetch code
+  steps:
+    - name: Harden Runner
+      uses: pinned:hardenRunner
+      with:
+        egress-policy: block
+        allowed-endpoints: >
+          github.com:443
+          api.github.com:443
+          codeload.github.com:443
+          uploads.github.com:443
+          objects.githubusercontent.com:443
+          release-assets.githubusercontent.com:443
+          *.actions.githubusercontent.com:443
+          *.blob.core.windows.net:443
+          static.rust-lang.org:443
+
+    - name: Checkout
+      uses: pinned:checkout
+      with:
+        persist-credentials: false
+
+    - name: Run Test (Fixture Crate)
+      id: analysis
+      uses: ./actions/security/codeql
+      with:
+        language: rust
+        upload: 'false'
+        paths-ignore: |
+          # Excluded by the caller, beside the shared test paths.
+          actions/security/codeql/e2e/fixture/src/vendored.rs
+
+    - name: Assert Fixture Crate
+      env:
+        CONFIG: ${{ steps.analysis.outputs.config }}
+        CATEGORY: ${{ steps.analysis.outputs.category }}
+        SARIF_OUTPUT: ${{ steps.analysis.outputs.sarif-output }}
+        SARIF_ID: ${{ steps.analysis.outputs.sarif-id }}
+      run: |
+        set -euo pipefail
+
+        [ "$CATEGORY" = "/language:rust" ] || { echo "::error::category '$CATEGORY', expected '/language:rust'"; exit 1; }
+        [ -z "$SARIF_ID" ] || { echo "::error::upload: false uploaded a SARIF ($SARIF_ID)"; exit 1; }
+        jq -e '."paths-ignore" | index("**/tests/**") != null' <<<"$CONFIG" > /dev/null \
+          || { echo "::error::the configuration does not exclude the shared test paths: $CONFIG"; exit 1; }
+
+        shopt -s nullglob
+        sarifs=("$SARIF_OUTPUT"/*.sarif)
+        [ "${#sarifs[@]}" -eq 1 ] || { echo "::error::expected one SARIF under '$SARIF_OUTPUT', found ${#sarifs[@]}"; exit 1; }
+
+        uris=$(jq -r '[.runs[] | (.results // [])[] | .locations[].physicalLocation.artifactLocation.uri] | unique | .[]' "${sarifs[0]}")
+        echo "Files with results:"
+        echo "$uris"
+
+        grep -qx 'actions/security/codeql/e2e/fixture/src/lib.rs' <<<"$uris" \
+          || { echo "::error::CodeQL reported nothing in src/lib.rs, so the analysis proves nothing"; exit 1; }
+        ! grep -q 'fixture/tests/' <<<"$uris" || { echo "::error::a result in tests/ survived the shared test paths"; exit 1; }
+        ! grep -q 'fixture/src/vendored.rs' <<<"$uris" || { echo "::error::a result in vendored.rs survived paths-ignore"; exit 1; }
+
+        echo "✅ src/lib.rs reported; tests/leak.rs and src/vendored.rs excluded"
+
+    # A negated pattern must fail in the prepare step, before init downloads anything.
+    - name: Run Test (Refused Pattern)
+      id: refused
+      continue-on-error: true
+      uses: ./actions/security/codeql
+      with:
+        language: rust
+        upload: 'false'
+        paths-ignore: '!actions/security/codeql/e2e/fixture/src/lib.rs'
+
+    - name: Assert Refused Pattern
+      env:
+        OUTCOME: ${{ steps.refused.outcome }}
+        CONFIG: ${{ steps.refused.outputs.config }}
+        SARIF_OUTPUT: ${{ steps.refused.outputs.sarif-output }}
+      run: |
+        set -euo pipefail
+
+        [ "$OUTCOME" = "failure" ] || { echo "::error::a negated pattern did not fail the step ($OUTCOME)"; exit 1; }
+        [ -z "$CONFIG" ] || { echo "::error::a refused input still produced a configuration"; exit 1; }
+        [ -z "$SARIF_OUTPUT" ] || { echo "::error::CodeQL ran after the inputs were refused"; exit 1; }
+
+        echo "✅ The negated pattern failed before CodeQL started"

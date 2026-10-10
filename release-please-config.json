@@ -200,6 +200,11 @@
       "release-type": "simple",
       "component": "configs-checkstyle-library",
       "include-component-in-tag": true
+    },
+    "actions/security/codeql": {
+      "release-type": "simple",
+      "component": "actions-security-codeql",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
