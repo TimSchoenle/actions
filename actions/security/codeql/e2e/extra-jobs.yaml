@@ -6,6 +6,11 @@
 # analysis ran; the one in tests/leak.rs must be gone through the shared test paths, and the one in
 # src/vendored.rs through the paths-ignore input.
 #
+# The Rust extractor loads the crate through rust-analyzer, which needs the standard library's
+# source. The runner's toolchain ships without the rust-src component, and rustup fetches it from
+# static.rust-lang.org on first use; with that endpoint blocked the manifest fails to load, macros
+# are never expanded, and `println!` is not seen as a sink at all.
+#
 # Nothing is uploaded: the fixture's alert is planted, and this repository's code scanning is for
 # its own code. The assertions read the SARIF analyze leaves on disk instead.
 #
@@ -31,6 +36,7 @@ verify-composite:
           release-assets.githubusercontent.com:443
           *.actions.githubusercontent.com:443
           *.blob.core.windows.net:443
+          static.rust-lang.org:443
 
     - name: Checkout
       uses: pinned:checkout

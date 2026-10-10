@@ -105,6 +105,9 @@ Patterns match whole files. A `#[cfg(test)] mod tests { ... }` block inside a pr
   absolute path, a `.` or `..` segment and a backslash.
 - **The configuration is passed inline** through `init`'s `config` input. A `config-file` in this repository would need
   a ref of its own beside the one pinning the action.
+- **Rust needs `static.rust-lang.org`.** The extractor reads the standard library's source, and rustup downloads the
+  `rust-src` component on first use. A job that blocks egress has to allow it, or the crate fails to load and macro
+  calls such as `println!` are never expanded, which hides every finding that flows through one.
 - **Checkout is the caller's.** The action analyses the workspace as it finds it.
 - The composite runs its TypeScript with the `node` on the runner's `PATH`; a self-hosted runner needs Node.js 20 or
   later installed.
