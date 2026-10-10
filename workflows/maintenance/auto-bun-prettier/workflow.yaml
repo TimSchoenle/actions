@@ -84,7 +84,7 @@ jobs:
 
       - name: Comment on PR
         if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request' && inputs.pr_comment != ''
-        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@7568f9a485ca91c369095414ce4d9f1a8237df21 # tag=actions-common-upsert-pr-comment-v1.2.0
+        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-upsert-pr-comment-v1.2.2
         with:
           token: ${{ steps.generate_token.outputs.token }}
           identifier: 'auto-bun-prettier'
