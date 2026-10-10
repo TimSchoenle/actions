@@ -43,6 +43,9 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    # Without a `permission-*` input the token carries every permission the App was granted. The
+    # suites that consume it create and delete branches, commit, and open, comment on and close
+    # pull requests in the test repository; nothing they do needs a third scope.
     - name: Generate Token
       id: generate_token
       uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
@@ -51,6 +54,8 @@ runs:
         private-key: ${{ inputs.private_key }}
         owner: ${{ inputs.test_owner }}
         repositories: ${{ inputs.test_repo_name }}
+        permission-contents: write
+        permission-pull-requests: write
 
     - name: Checkout Test Repo
       uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
