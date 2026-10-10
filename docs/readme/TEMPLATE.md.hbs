@@ -26,7 +26,8 @@ Nothing in this comment may contain a mustache that is not a real reference.
 
 {{ repo.description }}
 
-{{!-- TODO: at most five, every one a link, in this order. Delete any that do not apply. --}}
+{{!-- TODO: at most five, every one a link, in this order. Delete any that do not apply. A project
+     with a Helm chart keeps its chart badge directly after the release badge, even as a sixth. --}}
 [![Release](https://img.shields.io/github/v/release/{{ repo.slug }}?sort=semver)]({{ repo.url }}/releases)
 [![Build](https://img.shields.io/github/actions/workflow/status/{{ repo.slug }}/ci.yaml?branch={{ repo.branch }})]({{ repo.url }}/actions/workflows/ci.yaml)
 [![License](https://img.shields.io/github/license/{{ repo.slug }})](LICENSE)

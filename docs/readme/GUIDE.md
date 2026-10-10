@@ -117,6 +117,9 @@ most-used keys, and a link to a generated `docs/CONFIGURATION.md`.
   (release, registry or image), CI, coverage or the archetype's own badge (API docs, live site),
   licence, toolchain (MSRV or JDK). [Archetypes](#archetypes) lists which apply. Drop one that does
   not apply rather than substituting a decorative one. No visitor counters, no "made with love".
+- **A project with a Helm chart keeps its chart badge**, directly after the release or image badge
+  in the first slot. It is the one badge allowed to take the row to six: the chart is a second
+  published artefact with its own version, and a reader deploying to Kubernetes looks for it first.
 - Every fenced block is language-tagged.
 - In-repo links are relative; cross-repo links are absolute.
 - Never put a fenced config dump where its comments will be parsed as headings. It wrecks the
@@ -126,14 +129,14 @@ most-used keys, and a link to a generated `docs/CONFIGURATION.md`.
 
 The order never changes. What changes is which sections apply and which badges resolve.
 
-| Archetype        | Install sections                   | Dropped                           | Badges                                |
-| ---------------- | ---------------------------------- | --------------------------------- | ------------------------------------- |
-| Library          | package manager, or git dependency | Operations                        | registry, CI, docs, licence, MSRV     |
-| Service          | Docker, Helm, source               | —                                 | image, CI, coverage, licence, MSRV    |
-| Application      | Docker, source                     | —                                 | release, CI, live site, licence, MSRV |
-| Chart collection | Helm                               | Configuration, which is per chart | CI, licence                           |
-| JVM artefact     | Gradle, Maven                      | Operations                        | Maven Central, CI, licence, JDK       |
-| CI monorepo      | —                                  | Configuration, Operations         | CI, licence                           |
+| Archetype        | Install sections                   | Dropped                           | Badges                                                     |
+| ---------------- | ---------------------------------- | --------------------------------- | ---------------------------------------------------------- |
+| Library          | package manager, or git dependency | Operations                        | registry, CI, docs, licence, MSRV                          |
+| Service          | Docker, Helm, source               | —                                 | image, chart, CI, coverage, licence, MSRV                  |
+| Application      | Docker, source                     | —                                 | release, chart if one exists, CI, live site, licence, MSRV |
+| Chart collection | Helm                               | Configuration, which is per chart | CI, licence                                                |
+| JVM artefact     | Gradle, Maven                      | Operations                        | Maven Central, CI, licence, JDK                            |
+| CI monorepo      | —                                  | Configuration, Operations         | CI, licence                                                |
 
 A library that is not published to a registry documents the tagged git dependency and says so. Do not
 write a `cargo add` line for a crate with `publish = false`.
