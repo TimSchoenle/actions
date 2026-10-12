@@ -171,7 +171,7 @@ jobs:
       # reject_forks is off so the assertions hold for pull requests opened from a fork as well.
       - name: Run Test (Resolve From Payload)
         id: resolved
-        uses: ./actions/helper/verify-branch-name
+        uses: ./actions/helper/verify-branch-name # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
           branch_pattern: '.*'
           reject_forks: 'false'
@@ -181,7 +181,7 @@ jobs:
       # "head_ref not provided") proves a real branch name was resolved from the payload.
       - name: Run Test (Payload Branch Is Matched)
         id: mismatch
-        uses: ./actions/helper/verify-branch-name
+        uses: ./actions/helper/verify-branch-name # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
           branch_pattern: '^branch-that-cannot-exist--[0-9]{40}$'
           reject_forks: 'false'

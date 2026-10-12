@@ -1,4 +1,4 @@
-﻿name: 'Update Helm Chart Version'
+name: 'Update Helm Chart Version'
 description: "Updates a Helm chart's image tags, version and appVersion, then opens a Pull Request.
   Every image carries its own version and digest, so one call can move a chart with many services.
   This action requires a bot account with access to the charts repo."
@@ -125,6 +125,9 @@ runs:
         private-key: ${{ inputs.private-key }}
         owner: ${{ steps.parse.outputs.owner }}
         repositories: ${{ steps.parse.outputs.repo }}
+        # Read-only: this token only resolves the base branch and checks the chart repository out.
+        # The pull request is opened by create-pull-request below, which mints its own token.
+        permission-contents: read
 
     - name: Resolve Base Branch
       id: resolve-base-branch

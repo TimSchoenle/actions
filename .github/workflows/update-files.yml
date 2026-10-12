@@ -1,4 +1,4 @@
-﻿name: Update Files
+name: Update Files
 
 on:
   pull_request:

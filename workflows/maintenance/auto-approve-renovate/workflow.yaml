@@ -1,4 +1,4 @@
-﻿name: 'Maintenance Auto-approve-renovate'
+name: 'Maintenance Auto-approve-renovate'
 description: 'Reusable workflow to auto approve Renovate PRs, this is useful to auto merge Renovate PRs which have auto-merge enabled.'
 
 on:

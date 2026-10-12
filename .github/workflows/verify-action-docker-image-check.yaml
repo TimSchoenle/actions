@@ -187,7 +187,7 @@ jobs:
 
       - name: Run Test (Scan And Upload)
         id: check
-        uses: ./actions/docker/image-check
+        uses: ./actions/docker/image-check # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
           image: image-check-e2e:test
           platform: linux/amd64
@@ -226,7 +226,7 @@ jobs:
       - name: Run Test (Size Limit)
         id: limited
         continue-on-error: true
-        uses: ./actions/docker/image-check
+        uses: ./actions/docker/image-check # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
           image: image-check-e2e:test
           size-limit-mib: '1'
@@ -236,7 +236,7 @@ jobs:
       - name: Run Test (Image Never Loaded)
         id: missing
         continue-on-error: true
-        uses: ./actions/docker/image-check
+        uses: ./actions/docker/image-check # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
           image: image-check-e2e:never-built
           upload-sarif: 'false'
@@ -302,7 +302,7 @@ jobs:
           docker build --tag image-check-e2e:test "$context"
 
       - name: Run Test (Summary Leg)
-        uses: ./actions/docker/image-check
+        uses: ./actions/docker/image-check # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
           image: image-check-e2e:test
           platform: ${{ matrix.platform }}
@@ -335,7 +335,7 @@ jobs:
 
       - name: Run Test (Summary)
         id: summary
-        uses: ./actions/docker/image-check-summary
+        uses: ./actions/docker/image-check-summary # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
           identifier: image-check-e2e-summary
 

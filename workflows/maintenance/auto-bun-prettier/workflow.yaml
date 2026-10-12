@@ -1,4 +1,4 @@
-﻿name: Auto Format
+name: Auto Format
 description: 'Reusable workflow to auto-format code by running a "bun run" script and commit changes.'
 
 on:

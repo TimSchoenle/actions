@@ -1,4 +1,4 @@
-﻿name: 'Java-gradle Auto-spotless'
+name: 'Java-gradle Auto-spotless'
 description: 'Automatically apply spotless formatting and commit changes.'
 
 inputs:
