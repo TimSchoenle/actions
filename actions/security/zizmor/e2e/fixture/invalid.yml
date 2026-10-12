@@ -1,0 +1,7 @@
+# Valid YAML that is not a workflow: jobs must be a mapping. zizmor cannot load it, and with strict
+# collection that fails the run instead of dropping the file.
+name: Invalid Fixture
+
+on: push
+
+jobs: 5
