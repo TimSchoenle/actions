@@ -131,19 +131,21 @@ jobs:
           bun-version-file: '.bun-version'
 
       # ci-required watches the generated workflows by name, so a regenerated workflow that added or
-      # renamed a job leaves the required-check list stale unless both run together.
+      # renamed a job leaves the required-check list stale unless both run together. The Codecov
+      # component list is generated from the same actions/ tree, so it is rebuilt in the same pass.
       - name: Regenerate
         run: |
           set -euo pipefail
           bun run generate-e2e-workflows
           bun run generate-ci-required
+          bun run generate-codecov-components
 
       - name: Commit and Push if changed
         id: auto-commit
         uses: TimSchoenle/actions/actions/common/commit-changes@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-commit-changes-v1.5.6
         with:
           commit_message: 'ci: auto-update generated workflows'
-          file_pattern: '.github/workflows/verify-action-*.yaml .github/workflows/ci-required.yaml'
+          file_pattern: '.github/workflows/verify-action-*.yaml .github/workflows/ci-required.yaml .github/codecov.yml'
           token: ${{ steps.generate_token.outputs.token }}
 
       - name: Comment on PR
@@ -152,7 +154,7 @@ jobs:
         with:
           token: ${{ steps.generate_token.outputs.token }}
           identifier: 'update-generated-workflows'
-          body: 'Generated `verify-action-*` workflows have been rebuilt from `scripts/lib/e2e-workflow.ts`.'
+          body: 'Generated `verify-action-*` workflows, `ci-required.yaml` and the Codecov components in `.github/codecov.yml` have been rebuilt.'
 
   update-readme:
     name: Update README

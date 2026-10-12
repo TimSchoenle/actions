@@ -4,6 +4,8 @@ import { Sys } from '../lib/utils';
 import { selectPackage, getSubActions } from '../lib/action-utils';
 import { confirm, search } from '@inquirer/prompts';
 import { main as generateDocs } from '../generate-docs';
+import { main as generateCiRequired } from '../generate-ci-required';
+import { main as generateCodecovComponents } from '../generate-codecov-components';
 
 // Mock Dependencies
 import type * as UtilsTypes from '../lib/utils';
@@ -39,6 +41,10 @@ vi.mock('../generate-ci-required', () => ({
   main: vi.fn(),
 }));
 
+vi.mock('../generate-codecov-components', () => ({
+  main: vi.fn(),
+}));
+
 describe('remove-action', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -61,6 +67,8 @@ describe('remove-action', () => {
 
     expect(Sys.rm).toHaveBeenCalledWith(expect.stringContaining('sub1'), { recursive: true, force: true });
     expect(generateDocs).toHaveBeenCalled();
+    expect(generateCiRequired).toHaveBeenCalled();
+    expect(generateCodecovComponents).toHaveBeenCalled();
   });
 
   it('should remove package if last sub-action removed', async () => {
