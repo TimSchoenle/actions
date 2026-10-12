@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v1.1.51...actions-rust-coverage-codecov-v2.0.0) (2026-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **Actions/Rust-Coverage-Codecov:** upload with OIDC, Codecov JSON and JUnit test results ([#1840](https://github.com/TimSchoenle/actions/issues/1840))
+
+### Features
+
+* **Actions/Rust-Coverage-Codecov:** upload with OIDC, Codecov JSON and JUnit test results ([#1840](https://github.com/TimSchoenle/actions/issues/1840)) ([05d7234](https://github.com/TimSchoenle/actions/commit/05d7234f74d1ea6192b14bf78b1993adafa3e5d7))
+
 ## [1.1.51](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v1.1.50...actions-rust-coverage-codecov-v1.1.51) (2026-10-10)
 
 
