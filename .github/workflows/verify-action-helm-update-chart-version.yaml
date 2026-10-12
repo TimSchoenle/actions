@@ -97,7 +97,7 @@ jobs:
 
       - name: Run update-chart-version
         id: update
-        uses: ./tmp/actions-code/actions/helm/update-chart-version
+        uses: $/actions/helm/update-chart-version
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -307,7 +307,7 @@ jobs:
 
       - name: Run update-chart-version with three images at three versions
         id: update
-        uses: ./tmp/actions-code/actions/helm/update-chart-version
+        uses: $/actions/helm/update-chart-version
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -492,7 +492,7 @@ jobs:
 
       - name: Run update-chart-version with custom prefix
         id: update
-        uses: ./tmp/actions-code/actions/helm/update-chart-version
+        uses: $/actions/helm/update-chart-version
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -661,7 +661,7 @@ jobs:
 
       - name: Run update-chart-version
         id: update
-        uses: ./tmp/actions-code/actions/helm/update-chart-version
+        uses: $/actions/helm/update-chart-version
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -794,7 +794,7 @@ jobs:
 
       - name: Run update-chart-version with nested path
         id: update
-        uses: ./tmp/actions-code/actions/helm/update-chart-version
+        uses: $/actions/helm/update-chart-version
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -934,7 +934,7 @@ jobs:
 
       - name: First Run
         id: first-run
-        uses: ./tmp/actions-code/actions/helm/update-chart-version
+        uses: $/actions/helm/update-chart-version
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -970,7 +970,7 @@ jobs:
       # re-run targets the same branch and must reset it.
       - name: Second Run (same chart version, should reset branch and create new PR)
         id: second-run
-        uses: ./tmp/actions-code/actions/helm/update-chart-version
+        uses: $/actions/helm/update-chart-version
         with:
           app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
