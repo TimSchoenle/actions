@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.29](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.28...actions-java-gradle-auto-spotless-v1.1.29) (2026-10-12)
+
+
+### Bug Fixes
+
+* **actions:** strip the byte order marks that hid files from zizmor ([#1845](https://github.com/TimSchoenle/actions/issues/1845)) ([41f5d14](https://github.com/TimSchoenle/actions/commit/41f5d14e6ff3bb5fb34672ec22f2131414f703be))
+
 ## [1.1.28](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.27...actions-java-gradle-auto-spotless-v1.1.28) (2026-10-10)
 
 

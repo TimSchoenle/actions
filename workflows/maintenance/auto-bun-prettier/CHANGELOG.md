@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.39](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.38...workflows-maintenance-auto-bun-prettier-meta-v1.1.39) (2026-10-12)
+
+
+### Bug Fixes
+
+* **actions:** strip the byte order marks that hid files from zizmor ([#1845](https://github.com/TimSchoenle/actions/issues/1845)) ([41f5d14](https://github.com/TimSchoenle/actions/commit/41f5d14e6ff3bb5fb34672ec22f2131414f703be))
+
 ## [1.1.38](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-auto-bun-prettier-meta-v1.1.37...workflows-maintenance-auto-bun-prettier-meta-v1.1.38) (2026-10-10)
 
 
