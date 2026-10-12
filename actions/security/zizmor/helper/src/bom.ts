@@ -12,10 +12,9 @@
  * and are kept narrow on purpose. A file this scan misses is still caught by zizmor's own strict
  * collection, only without the full list.
  */
+import { spawn } from 'node:child_process';
 import { open, readdir } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
-
-import { getExecOutput } from '@actions/exec';
 
 import type { AuditInput } from './input-paths.js';
 
@@ -115,12 +114,48 @@ export async function collectCandidates(root: string, workspace: string): Promis
  */
 export type IgnoreFilter = (workspace: string, paths: readonly string[]) => Promise<Set<string>>;
 
+/** What a finished command left behind: its exit code (null when a signal ended it) and stdout. */
+interface CommandResult {
+  readonly exitCode: number | null;
+  readonly stdout: string;
+}
+
+/**
+ * Runs a command with `input` on its standard input, tolerating a command that exits unread.
+ *
+ * `@actions/exec` cannot be used here. A command that exits before reading its input closes the
+ * pipe, the pending write then fails with `EPIPE`, and that error is emitted on a stream nothing in
+ * `@actions/exec` listens to, so node exits on an uncaught exception. Whether the write loses that
+ * race depends on the platform's pipes: Linux loses it, Windows has never been seen to.
+ *
+ * @returns undefined when the command could not be started at all, such as with no git on `PATH`.
+ */
+export async function runWithInput(
+  command: string,
+  args: readonly string[],
+  input: Buffer,
+  cwd: string,
+): Promise<CommandResult | undefined> {
+  return new Promise((resolvePromise) => {
+    const child = spawn(command, args, { cwd, stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true });
+    const chunks: Buffer[] = [];
+
+    child.stdout.on('data', (chunk: Buffer) => chunks.push(chunk));
+    // The exit code says what happened; a write the command never read is not an error of its own.
+    child.stdin.on('error', () => undefined);
+    child.on('error', () => resolvePromise(undefined));
+    child.on('close', (exitCode) => resolvePromise({ exitCode, stdout: Buffer.concat(chunks).toString('utf8') }));
+    child.stdin.end(input);
+  });
+}
+
 /**
  * {@link IgnoreFilter} backed by `git check-ignore`.
  *
  * Outside a repository, or when git refuses one (a workspace owned by another user), nothing is
  * reported as ignored. That matches zizmor, which applies `.gitignore` only inside a repository, and
- * errs towards reporting a BOM rather than hiding one.
+ * errs towards reporting a BOM rather than hiding one. Git refuses either case before it reads the
+ * paths, which is why it runs through {@link runWithInput}.
  *
  * One divergence remains. An input that itself lies inside an ignored directory is walked by zizmor,
  * which matches each entry against the patterns on its own, while git counts the ignored parent. Such
@@ -131,22 +166,16 @@ export const gitIgnoreFilter: IgnoreFilter = async (workspace, paths) => {
     return new Set();
   }
 
-  let result: Awaited<ReturnType<typeof getExecOutput>>;
+  const result = await runWithInput(
+    'git',
+    ['check-ignore', '--no-index', '-z', '--stdin'],
+    Buffer.from(paths.map((path) => `${path}\0`).join(''), 'utf8'),
+    workspace,
+  );
 
-  try {
-    result = await getExecOutput('git', ['check-ignore', '--no-index', '-z', '--stdin'], {
-      cwd: workspace,
-      input: Buffer.from(paths.map((path) => `${path}\0`).join(''), 'utf8'),
-      ignoreReturnCode: true,
-      silent: true,
-    });
-  } catch {
-    // No git on PATH: nothing can be ignored by rules nobody can read.
-    return new Set();
-  }
-
-  // 0: some paths are ignored. 1: none are. Anything else is git declining to answer.
-  if (result.exitCode !== 0) {
+  // No git on PATH: nothing can be ignored by rules nobody can read. Exit 0: some paths are ignored.
+  // 1: none are. Anything else is git declining to answer.
+  if (result?.exitCode !== 0) {
     return new Set();
   }
 

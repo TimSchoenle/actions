@@ -10,6 +10,7 @@ import {
   findByteOrderMarks,
   gitIgnoreFilter,
   isCollectedAndBomSensitive,
+  runWithInput,
   startsWithByteOrderMark,
 } from './bom.js';
 
@@ -195,5 +196,37 @@ describe('gitIgnoreFilter', () => {
 
   it('asks git nothing for no paths', async () => {
     await expect(gitIgnoreFilter(join(workspace, 'missing'), [])).resolves.toEqual(new Set());
+  });
+
+  // Git refuses a non-repository before reading stdin; more than a pipe buffer of paths makes the
+  // write fail with EPIPE, which crashed the helper on Linux runners.
+  it('reports nothing as ignored outside a repository, however many paths it is given', async () => {
+    const paths = Array.from({ length: 20_000 }, (_, index) => `.github/workflows/${index}.yml`);
+
+    await expect(gitIgnoreFilter(workspace, paths)).resolves.toEqual(new Set());
+  });
+});
+
+describe('runWithInput', () => {
+  it('returns the exit code and stdout of a command that reads its input', async () => {
+    const script = 'process.stdin.pipe(process.stdout)';
+
+    await expect(runWithInput(process.execPath, ['-e', script], Buffer.from('a\0b'), workspace)).resolves.toEqual({
+      exitCode: 0,
+      stdout: 'a\0b',
+    });
+  });
+
+  it('survives a command that exits without reading a large input', async () => {
+    const input = Buffer.alloc(8 * 1024 * 1024, 'x');
+
+    await expect(runWithInput(process.execPath, ['-e', 'process.exit(3)'], input, workspace)).resolves.toEqual({
+      exitCode: 3,
+      stdout: '',
+    });
+  });
+
+  it('answers undefined for a command that cannot be started', async () => {
+    await expect(runWithInput('zizmor-test-no-such-command', [], Buffer.alloc(0), workspace)).resolves.toBeUndefined();
   });
 });
