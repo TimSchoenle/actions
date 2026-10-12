@@ -33,12 +33,30 @@ export type FailThreshold = Severity | 'none';
 export const FAIL_THRESHOLDS: readonly FailThreshold[] = [...SEVERITIES, 'none'];
 
 /**
- * A container image pinned by digest, with an optional tag kept for the reader.
+ * The three parts of a container image pinned by digest: repository, optional tag, digest.
  *
  * The image is set by the composite, never by a caller, so this guards against an edit to
- * `action.yaml` that drops the digest: a tag alone is a pointer the registry owner can move.
+ * `action.yaml` that drops the digest: a tag alone is a pointer the registry owner can move. Three
+ * flat patterns rather than one, so none has a quantified group a crafted value could backtrack on.
  */
-const PINNED_IMAGE = /^[a-z0-9]+(?:[._/-][a-z0-9]+)*(?::[A-Za-z0-9_][A-Za-z0-9._-]{0,127})?@sha256:[a-f0-9]{64}$/;
+const IMAGE_REPOSITORY = /^[a-z0-9][a-z0-9._/-]*$/;
+const IMAGE_TAG = /^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}$/;
+const IMAGE_DIGEST = /^sha256:[a-f0-9]{64}$/;
+
+/** Whether a reference is `repository[:tag]@sha256:<digest>`. */
+function isPinnedImage(image: string): boolean {
+  const at = image.indexOf('@');
+
+  if (at === -1 || !IMAGE_DIGEST.test(image.slice(at + 1))) {
+    return false;
+  }
+
+  const name = image.slice(0, at);
+  const colon = name.lastIndexOf(':');
+  const repository = colon === -1 ? name : name.slice(0, colon);
+
+  return IMAGE_REPOSITORY.test(repository) && (colon === -1 || IMAGE_TAG.test(name.slice(colon + 1)));
+}
 
 /** The raw strings the composite hands to the scan, keyed by the composite's own input names. */
 export interface RawScanInputs {
@@ -153,7 +171,7 @@ export function parseInputLines(value: string): string[] {
 export function parseImage(value: string): string {
   const image = value.trim();
 
-  if (!PINNED_IMAGE.test(image)) {
+  if (!isPinnedImage(image)) {
     throw new InvalidInputError('image', `${quoteForLog(image)} is not an image reference pinned by sha256 digest.`);
   }
 

@@ -137,4 +137,7 @@ component_management:
     - component_id: security-codeql
       name: security/codeql
       paths: ['actions/security/codeql/**']
+    - component_id: security-zizmor
+      name: security/zizmor
+      paths: ['actions/security/zizmor/**']
     # >>> generated: action-components
