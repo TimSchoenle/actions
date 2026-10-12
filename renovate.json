@@ -96,6 +96,12 @@
       "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
       "groupName": "ci dependencies",
       "groupSlug": "ci"
+    },
+    {
+      "description": "ghcr.io reports no release timestamps, and Renovate's default minimumReleaseAgeBehaviour=timestamp-required holds an update without one as pending for as long as the shared preset sets a minimumReleaseAge. Without this, every zizmor image bump waits on the Dependency Dashboard and never opens a pull request on its own.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/zizmorcore/zizmor"],
+      "minimumReleaseAge": null
     }
   ]
 }
