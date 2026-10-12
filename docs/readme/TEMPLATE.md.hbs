@@ -27,9 +27,11 @@ Nothing in this comment may contain a mustache that is not a real reference.
 {{ repo.description }}
 
 {{!-- TODO: at most five, every one a link, in this order. Delete any that do not apply. A project
-     with a Helm chart keeps its chart badge directly after the release badge, even as a sixth. --}}
+     with a Helm chart keeps its chart badge directly after the release badge, even as a sixth. The
+     coverage badge is for services only; other archetypes use that slot for their own badge. --}}
 [![Release](https://img.shields.io/github/v/release/{{ repo.slug }}?sort=semver)]({{ repo.url }}/releases)
 [![Build](https://img.shields.io/github/actions/workflow/status/{{ repo.slug }}/ci.yaml?branch={{ repo.branch }})]({{ repo.url }}/actions/workflows/ci.yaml)
+[![Coverage](https://codecov.io/gh/{{ repo.slug }}/graph/badge.svg)](https://codecov.io/gh/{{ repo.slug }})
 [![License](https://img.shields.io/github/license/{{ repo.slug }})](LICENSE)
 {{#if toolchain.msrv}}[![Rust](https://img.shields.io/badge/rust-{{ toolchain.msrv }}-orange)](https://www.rust-lang.org){{/if}}{{#if toolchain.jdk}}[![JDK](https://img.shields.io/badge/jdk-{{ toolchain.jdk }}-orange)](https://openjdk.org){{/if}}
 
