@@ -49,7 +49,7 @@ jobs:
 
       - name: Test coverage-codecov
         id: coverage
-        uses: ./actions/rust/coverage-codecov
+        uses: ./actions/rust/coverage-codecov # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
           source_directory: ${{ env.FIXTURE }}
           test_arguments: '--workspace --all-features'
@@ -131,7 +131,7 @@ jobs:
       - name: Test coverage-codecov
         id: coverage
         continue-on-error: true
-        uses: ./actions/rust/coverage-codecov
+        uses: ./actions/rust/coverage-codecov # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         env:
           FIXTURE_FAIL: '1'
         with:
@@ -190,7 +190,7 @@ jobs:
       - name: Test coverage-codecov
         id: coverage
         continue-on-error: true
-        uses: ./actions/rust/coverage-codecov
+        uses: ./actions/rust/coverage-codecov # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
           source_directory: ${{ env.FIXTURE }}
           test_arguments: ${{ matrix.test_arguments }}
