@@ -17,6 +17,7 @@ Composite and Node GitHub Actions, reusable workflows and shared Renovate preset
 under its own tag.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/{{REPO}}/scripts-ci.yml?branch=main&label=ci)](https://github.com/{{REPO}}/actions/workflows/scripts-ci.yml)
+[![Codecov](https://codecov.io/gh/{{REPO}}/graph/badge.svg)](https://codecov.io/gh/{{REPO}})
 [![License](https://img.shields.io/github/license/{{REPO}})](LICENSE)
 
 ## What this is
