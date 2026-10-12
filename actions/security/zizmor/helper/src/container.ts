@@ -134,8 +134,13 @@ export interface ContainerResult {
  * Starts the container, streaming zizmor's standard output into `sarifFile` and its log, line by
  * line and neutralised, into the step log.
  *
+ * The file is opened before docker starts, so a path that already exists fails the run up front, and
+ * a write error is held and reported once docker exits: an `error` event nothing listens to would end
+ * the process instead.
+ *
  * @param token - handed to the container as `GH_TOKEN` when the run is online.
- * @throws {@link ZizmorRunError} when `docker` cannot be started at all.
+ * @throws {@link ZizmorRunError} when `docker` cannot be started at all or the SARIF file cannot be
+ * written, and the file system's error when the file cannot be created.
  */
 export async function runContainer(
   run: ContainerRun,
@@ -144,6 +149,13 @@ export async function runContainer(
   writeLog: (line: string) => void,
 ): Promise<ContainerResult> {
   const sarif = createWriteStream(sarifFile, { flags: 'wx', mode: 0o600 });
+  let writeError: unknown;
+
+  sarif.on('error', (error) => {
+    writeError ??= error;
+  });
+  await once(sarif, 'open');
+
   const relay = new LineRelay(writeLog);
   const environment: Record<string, string> = {};
 
@@ -181,7 +193,15 @@ export async function runContainer(
   } finally {
     relay.flush();
     sarif.end();
-    await once(sarif, 'close');
+
+    // Not `once`, which rejects on an `error` event: the listener above already holds that error.
+    if (!sarif.closed) {
+      await new Promise((resolveClose) => sarif.once('close', resolveClose));
+    }
+  }
+
+  if (writeError !== undefined) {
+    throw new ZizmorRunError("zizmor's SARIF output could not be written.", { cause: writeError });
   }
 
   return { exitCode };
