@@ -67,6 +67,7 @@ is not, including older versions of a component whose neighbours have since rele
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | [actions-java-gradle-auto-spotless-v1.1.28](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v1.1.28) | :white_check_mark: |
+| [Java-Gradle Coverage (Codecov)](./actions/java-gradle/coverage-codecov) | [actions-java-gradle-coverage-codecov-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-coverage-codecov-v1.0.0) | :white_check_mark: |
 | [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | [actions-java-gradle-setup-base-environment-v1.2.13](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.13) | :white_check_mark: |
 
 #### Maintenance
