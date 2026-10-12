@@ -1,0 +1,90 @@
+# Codecov configuration. Codecov reads this file from the commit it is processing, so a change
+# here takes effect on the pull request that makes it.
+#
+# Everything above `component_management` is the baseline every repository in the estate carries
+# unchanged; the components below are this repository's own. Statuses are informational until the
+# rollout makes `codecov/patch` a required check.
+
+codecov:
+  require_ci_to_pass: true
+  notify:
+    wait_for_ci: true
+    # One coverage upload per commit, from the `coverage` job in scripts-ci.yml. Test results are a
+    # separate report type and do not count towards this.
+    after_n_builds: 1
+
+coverage:
+  precision: 2
+  round: down
+  range: '60...90'
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+        if_ci_failed: error
+        informational: true
+    patch:
+      default:
+        target: 80%
+        # A pull request that changes no measured line, such as a lockfile update, passes rather
+        # than reporting 0% of nothing.
+        if_not_found: success
+        informational: true
+
+comment:
+  layout: 'condensed_header, diff, flags, components, condensed_files, condensed_footer'
+  behavior: default
+  require_changes: 'coverage_drop OR uncovered_patch'
+
+github_checks:
+  annotations: false
+
+flag_management:
+  default_rules:
+    carryforward: true
+
+# `coverage.include` in vitest.config.ts already limits the report to TypeScript sources. These
+# repeat its exclusions and add the trees that are never measured, so a widened include cannot pull
+# fixtures, bundles or generated code into the figure.
+ignore:
+  - '**/fixture/**'
+  - 'actions/**/e2e/**'
+  - '**/generated/**'
+  - '**/dist/**'
+  - '**/*.test.ts'
+  - 'scripts/templates/**'
+  - 'configs/**'
+  - 'workflows/**'
+
+# One component per top-level category that has TypeScript sources, plus the repository scripts and
+# the shared packages, so a pull request's comment shows which part its coverage moved in.
+component_management:
+  individual_components:
+    - component_id: common
+      name: actions/common
+      paths: ['actions/common/**']
+    - component_id: docker
+      name: actions/docker
+      paths: ['actions/docker/**']
+    - component_id: helm
+      name: actions/helm
+      paths: ['actions/helm/**']
+    - component_id: helper
+      name: actions/helper
+      paths: ['actions/helper/**']
+    - component_id: maintenance
+      name: actions/maintenance
+      paths: ['actions/maintenance/**']
+    - component_id: rust
+      name: actions/rust
+      paths: ['actions/rust/**']
+    - component_id: security
+      name: actions/security
+      paths: ['actions/security/**']
+    - component_id: packages
+      name: packages
+      paths: ['packages/**']
+    - component_id: scripts
+      name: scripts
+      paths: ['scripts/**']

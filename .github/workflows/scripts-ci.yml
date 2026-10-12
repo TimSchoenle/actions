@@ -65,3 +65,58 @@ jobs:
 
       - name: Test
         run: bun run test
+
+  # Kept apart from `lint-and-test`, so a Codecov outage fails this job alone and the required
+  # `Lint & Test` check never holds `id-token: write`. The upload authenticates with this job's OIDC
+  # token, so the job needs no environment and no secret. `.github/codecov.yml` decides what the
+  # Codecov statuses check.
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read # Required to checkout the code
+      id-token: write # Required to authenticate the Codecov upload with OIDC
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: TimSchoenle/actions/actions/bun/setup-cached@e16a1e466faf8ec751b26289c1898143a253269f # tag=actions-bun-setup-cached-v1.1.11
+        with:
+          bun-version: ''
+          bun-version-file: '.bun-version'
+
+      # Writes coverage/lcov.info and coverage/junit.xml, the two files uploaded below.
+      - name: Test
+        run: bun run test
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          files: coverage/lcov.info
+          disable_search: true
+          disable_telem: true
+          flags: typescript
+          use_oidc: true
+          fail_ci_if_error: true
+
+      # Runs after a failed test step too: the failing cases are what Test Analytics records.
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          report_type: test_results
+          files: coverage/junit.xml
+          disable_search: true
+          disable_telem: true
+          flags: typescript
+          use_oidc: true
+          fail_ci_if_error: true
