@@ -38,7 +38,8 @@ inputs:
     required: false
     default: 'true'
   dry_run:
-    description: 'Run everything up to the upload and send nothing to Codecov.'
+    description: "Measure coverage and write both reports, then skip both uploads. The Codecov CLI's own dry run is
+      not used, because it still registers the commit with Codecov and so needs a token."
     required: false
     default: 'false'
 
@@ -194,9 +195,15 @@ runs:
           echo "::notice::No JUnit report at ${JUNIT_CANDIDATE}. Either the build failed before any test ran, or the repository's nextest config moves the store or the codecov profile's report."
         fi
 
+    - name: Skip uploads
+      if: ${{ inputs.dry_run == 'true' }}
+      shell: bash
+      run: echo "::notice::dry_run is true, so neither report is uploaded to Codecov."
+
     # `disable_search` because the report path is known. The CLI's search would otherwise add any
     # stray coverage file it finds under the checkout to the same upload.
     - name: Upload coverage to Codecov
+      if: ${{ inputs.dry_run != 'true' }}
       uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
       with:
         files: ${{ steps.paths.outputs.coverage_file }}
@@ -207,10 +214,9 @@ runs:
         use_oidc: ${{ inputs.use_oidc }}
         token: ${{ inputs.codecov_token }}
         fail_ci_if_error: ${{ inputs.fail_ci_if_error }}
-        dry_run: ${{ inputs.dry_run }}
 
     - name: Upload test results to Codecov
-      if: ${{ !cancelled() && inputs.test_results == 'true' && steps.junit.outputs.test_results_file != '' }}
+      if: ${{ !cancelled() && inputs.dry_run != 'true' && inputs.test_results == 'true' && steps.junit.outputs.test_results_file != '' }}
       uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
       with:
         report_type: test_results
@@ -222,4 +228,3 @@ runs:
         use_oidc: ${{ inputs.use_oidc }}
         token: ${{ inputs.codecov_token }}
         fail_ci_if_error: ${{ inputs.fail_ci_if_error }}
-        dry_run: ${{ inputs.dry_run }}

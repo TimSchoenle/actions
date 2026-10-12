@@ -1,7 +1,10 @@
 name: Verify Rust Coverage-codecov
 
 # Runs the action against the fixture workspace in `actions/rust/coverage-codecov/fixture` with
-# `dry_run`, so everything up to the upload is exercised and nothing reaches Codecov. The fixture
+# `dry_run`, so everything up to the upload is exercised and the two codecov-action steps are
+# skipped. This repository is not a Codecov project, and Codecov refuses even the CLI's own dry
+# run from a protected branch without a token. The first real upload is the pilot in a consuming
+# repository. The fixture
 # is committed rather than generated in a step, because the action checks the repository out
 # again and that checkout would delete an untracked fixture.
 
@@ -46,7 +49,7 @@ jobs:
 
       - name: Test coverage-codecov
         id: coverage
-        uses: $/actions/rust/coverage-codecov
+        uses: ./actions/rust/coverage-codecov
         with:
           source_directory: ${{ env.FIXTURE }}
           test_arguments: '--workspace --all-features'
@@ -128,7 +131,7 @@ jobs:
       - name: Test coverage-codecov
         id: coverage
         continue-on-error: true
-        uses: $/actions/rust/coverage-codecov
+        uses: ./actions/rust/coverage-codecov
         env:
           FIXTURE_FAIL: '1'
         with:
@@ -187,7 +190,7 @@ jobs:
       - name: Test coverage-codecov
         id: coverage
         continue-on-error: true
-        uses: $/actions/rust/coverage-codecov
+        uses: ./actions/rust/coverage-codecov
         with:
           source_directory: ${{ env.FIXTURE }}
           test_arguments: ${{ matrix.test_arguments }}
