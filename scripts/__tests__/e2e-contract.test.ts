@@ -38,7 +38,7 @@ const E2E_EXEMPTIONS: Record<string, string> = {
   'actions/rust/auto-format': 'composite: checks out inputs.repository as its own first step',
   'actions/rust/cargo-check': 'composite: checks out inputs.repository as its own first step',
   'actions/rust/clippy': 'composite: checks out inputs.repository as its own first step',
-  'actions/rust/coverage-codecov': 'composite: checks out inputs.repository, then uploads to Codecov',
+  'actions/rust/coverage-codecov': 'composite: checks out, measures with cargo-llvm-cov, then uploads to Codecov',
   'actions/rust/test': 'composite: checks out inputs.repository as its own first step',
   'actions/test/setup-e2e': 'composite: the harness for the workflows that still need one',
 };
