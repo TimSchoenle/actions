@@ -61,6 +61,11 @@
       "dependencyDashboardApproval": false
     },
     {
+      "description": "Every update is a deps(deps) commit, the type consumers' release-please configs show as Dependencies. config:best-practices pulls in :semanticPrefixFixDepsChoreOthers, whose packageRules override the top-level semanticCommitType and type most updates chore, which consumers hide. The .github/ rule below narrows this to ci for CI-only files.",
+      "matchPackageNames": ["*"],
+      "semanticCommitType": "deps"
+    },
+    {
       "description": "Group all minor and patch updates for GitHub Actions outside .github/, such as the action.yml of a published action. Updates under .github/ are taken over by the CI rules below.",
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["minor", "patch"],
