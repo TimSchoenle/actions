@@ -61,7 +61,7 @@
       "dependencyDashboardApproval": false
     },
     {
-      "description": "Group all minor and patch updates for GitHub Actions",
+      "description": "Group all minor and patch updates for GitHub Actions outside .github/, such as the action.yml of a published action. Updates under .github/ are taken over by the CI rules below.",
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "all non-major action updates"
@@ -77,6 +77,19 @@
       "separateMajorMinor": false,
       "separateMultipleMajor": false,
       "separateMinorPatch": false
+    },
+    {
+      "description": "Everything under .github/ is CI and never ships: commit it as ci(deps), a type release-please hides, so a CI update never cuts a release. Matches by file rather than manager, which covers the github-actions manager, the regex manager for TimSchoenle/actions pins and customManagers:githubActionsVersions alike. separateMinorPatch: false lives here because Renovate refuses it next to matchUpdateTypes; it keeps patch and minor updates on one branch instead of a patch- prefixed second one.",
+      "matchFileNames": [".github/**"],
+      "semanticCommitType": "ci",
+      "separateMinorPatch": false
+    },
+    {
+      "description": "One PR for every non-major CI update, across all managers. Majors stay outside the group so they arrive alone and are not auto-merged.",
+      "matchFileNames": [".github/**"],
+      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "groupName": "ci dependencies",
+      "groupSlug": "ci"
     }
   ]
 }

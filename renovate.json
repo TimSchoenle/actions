@@ -74,6 +74,19 @@
       "separateMajorMinor": false,
       "separateMinorPatch": false,
       "automerge": false
+    },
+    {
+      "description": "scripts/lib/e2e-workflow.ts is the source of the generated .github/workflows/verify-action-*.yaml, so its pins must land on the same branch as the generated copies, which the shared preset types as ci and groups as ci dependencies. Without this, an update splits across two branches and each fails the e2e workflow drift check. The type and the group mirror the preset's .github/** rules and must change with them.",
+      "matchFileNames": ["scripts/lib/e2e-workflow.ts"],
+      "semanticCommitType": "ci",
+      "separateMinorPatch": false
+    },
+    {
+      "description": "The group half of the rule above.",
+      "matchFileNames": ["scripts/lib/e2e-workflow.ts"],
+      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "groupName": "ci dependencies",
+      "groupSlug": "ci"
     }
   ]
 }
