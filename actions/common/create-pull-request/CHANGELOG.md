@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.24](https://github.com/TimSchoenle/actions/compare/actions-common-create-pull-request-v1.0.23...actions-common-create-pull-request-v1.0.24) (2026-10-12)
+
+
+### Bug Fixes
+
+* **actions:** strip the byte order marks that hid files from zizmor ([#1845](https://github.com/TimSchoenle/actions/issues/1845)) ([41f5d14](https://github.com/TimSchoenle/actions/commit/41f5d14e6ff3bb5fb34672ec22f2131414f703be))
+
 ## [1.0.23](https://github.com/TimSchoenle/actions/compare/actions-common-create-pull-request-v1.0.22...actions-common-create-pull-request-v1.0.23) (2026-10-10)
 
 

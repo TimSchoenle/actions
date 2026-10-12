@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-coverage-codecov-v1.1.0...actions-java-gradle-coverage-codecov-v1.1.1) (2026-10-12)
+
+
+### Dependencies
+
+* **deps:** update dependency org.junit:junit-bom to v6 ([#1843](https://github.com/TimSchoenle/actions/issues/1843)) ([7cc22a9](https://github.com/TimSchoenle/actions/commit/7cc22a9722ca578b23ad51f906b827556e1699f4))
+
 ## [1.1.0](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-coverage-codecov-v1.0.0...actions-java-gradle-coverage-codecov-v1.1.0) (2026-10-12)
 
 
