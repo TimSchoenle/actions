@@ -46,7 +46,7 @@ jobs:
 
       - name: Run setup-e2e
         id: setup
-        uses: ./actions/test/setup-e2e
+        uses: ./actions/test/setup-e2e # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}

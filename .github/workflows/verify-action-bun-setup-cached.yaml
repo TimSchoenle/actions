@@ -65,7 +65,7 @@ jobs:
 
       - name: Run Setup Cached (Expect Miss)
         id: setup
-        uses: ./actions/bun/setup-cached
+        uses: ./actions/bun/setup-cached # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
           working-directory: ${{ env.TEST_DIR }}
           cache-key-prefix: 'verify-${{ steps.generate.outputs.seed }}-'
@@ -127,7 +127,7 @@ jobs:
 
       - name: Run Setup Cached (Expect Hit)
         id: setup
-        uses: ./actions/bun/setup-cached
+        uses: ./actions/bun/setup-cached # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
           working-directory: ${{ env.TEST_DIR }}
           cache-key-prefix: 'verify-${{ needs.prime-cache.outputs.seed }}-'

@@ -45,7 +45,7 @@ verify-composite:
 
     - name: Run Test (Fixture Crate)
       id: analysis
-      uses: ./actions/security/codeql
+      uses: ./actions/security/codeql # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
       with:
         language: rust
         upload: 'false'
@@ -86,7 +86,7 @@ verify-composite:
     - name: Run Test (Refused Pattern)
       id: refused
       continue-on-error: true
-      uses: ./actions/security/codeql
+      uses: ./actions/security/codeql # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
       with:
         language: rust
         upload: 'false'

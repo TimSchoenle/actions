@@ -1,4 +1,4 @@
-﻿name: 'Auto-Approve & Merge Timed PRs'
+name: 'Auto-Approve & Merge Timed PRs'
 description: 'Reusable workflow that automatically verifies, approves, and merges Pull Requests that match a specific branch pattern and have been open for a configurable duration. It ensures all commits are signed and authored by trusted users.'
 
 on:

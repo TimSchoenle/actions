@@ -12,9 +12,14 @@ export default defineConfig({
     // End-to-end cases need credentials and a scratch repository, so they are not part of the unit
     // suite. `vitest.e2e.config.ts` runs them.
     exclude: [...configDefaults.exclude, E2E_TEST_PATTERN],
+    // The Coverage job in scripts-ci.yml uploads the JUnit file and `lcov.info` to Codecov.
+    reporters: ['default', 'junit'],
+    outputFile: {
+      junit: 'coverage/junit.xml',
+    },
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
       include: ['scripts/**/*.ts', 'actions/**/src/**/*.ts', 'packages/**/src/**/*.ts'],
       exclude: [
         '**/*.test.ts',

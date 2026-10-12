@@ -71,7 +71,7 @@ jobs:
 
       - name: Test setup-base-environment
         id: setup-base-environment
-        uses: ./actions/java-gradle/setup-base-environment
+        uses: ./actions/java-gradle/setup-base-environment # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
           java_version: ${{ matrix.java-version }}
           java_package: ${{ matrix.java-package }}
