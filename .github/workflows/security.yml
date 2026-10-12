@@ -18,7 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read # to fetch code
-      actions: read # to read action configurations
       security-events: write # to upload SARIF results
     steps:
       - name: Harden Runner
@@ -31,16 +30,24 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Find Custom Workflows
+      # zizmor collects workflows only from `.github/workflows`, so each reusable workflow under
+      # `workflows/` has to be named on a line of its own.
+      - name: Find Reusable Workflows
         id: find-workflows
         run: |
-          echo "workflow_files=$(find workflows -name '*.yaml' -o -name '*.yml' | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          {
+            echo 'workflow_files<<EOF'
+            find workflows -type f \( -name '*.yaml' -o -name '*.yml' \) | LC_ALL=C sort
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
 
       - name: Run Zizmor
-        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
+        uses: TimSchoenle/actions/actions/security/zizmor@ff1e7853c7953c8d7176325ea4912add4a3c5398 # tag=actions-security-zizmor-v1.1.0
         with:
-          persona: pedantic
-          inputs: . ${{ steps.find-workflows.outputs.workflow_files }}
+          inputs: |
+            .
+            ${{ steps.find-workflows.outputs.workflow_files }}
 
   action-lint:
     name: Action Lint
