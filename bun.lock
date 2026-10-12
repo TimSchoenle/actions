@@ -411,6 +411,21 @@
         "vitest": "5.0.3",
       },
     },
+    "actions/security/zizmor/helper": {
+      "name": "actions-security-zizmor-helper",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "@actions/exec": "3.0.0",
+        "actions-util": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "26.6.4",
+        "@typescript/native": "npm:typescript@7.0.2",
+        "actions-e2e": "workspace:*",
+        "vitest": "5.0.3",
+      },
+    },
     "packages/e2e": {
       "name": "actions-e2e",
       "version": "1.0.0",
@@ -778,6 +793,8 @@
     "actions-rust-config-contract": ["actions-rust-config-contract@workspace:actions/rust/config-contract"],
 
     "actions-security-codeql-helper": ["actions-security-codeql-helper@workspace:actions/security/codeql/helper"],
+
+    "actions-security-zizmor-helper": ["actions-security-zizmor-helper@workspace:actions/security/zizmor/helper"],
 
     "actions-util": ["actions-util@workspace:packages/ts-util"],
 

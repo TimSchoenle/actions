@@ -1,0 +1,69 @@
+name: 'Security Zizmor Helper'
+description: 'Internal to actions/security/zizmor, which runs this bundle with node once to run zizmor and once to gate its findings. Not a public action: its inputs and outputs change without notice.'
+
+inputs:
+  mode:
+    description: 'scan validates the inputs and runs zizmor in its container; gate counts the findings of a SARIF file.'
+    required: true
+  inputs:
+    description: 'Paths to audit, one per line, relative to the workspace. Blank lines and lines starting with # are skipped.'
+    required: false
+    default: '.'
+  persona:
+    description: 'regular, pedantic or auditor.'
+    required: false
+    default: 'pedantic'
+  online_audits:
+    description: 'Whether audits that query the GitHub API run.'
+    required: false
+    default: 'true'
+  min_severity:
+    description: 'Lowest severity zizmor reports. Empty reports every severity.'
+    required: false
+    default: ''
+  min_confidence:
+    description: 'Lowest confidence zizmor reports. Empty reports every confidence.'
+    required: false
+    default: ''
+  config:
+    description: 'zizmor configuration file, relative to the workspace. Empty lets zizmor discover one.'
+    required: false
+    default: ''
+  fail_on_severity:
+    description: 'Lowest severity that fails the gate, or none.'
+    required: false
+    default: 'informational'
+  strict_collection:
+    description: 'Whether an input zizmor cannot parse fails the run.'
+    required: false
+    default: 'true'
+  upload:
+    description: 'Whether the composite uploads the SARIF. Validated here and echoed as an output.'
+    required: false
+    default: 'true'
+  token:
+    description: 'Token handed to the container as GH_TOKEN when online audits are on.'
+    required: false
+    default: ''
+  image:
+    description: 'The zizmor container image, pinned by digest.'
+    required: false
+    default: ''
+  sarif_file:
+    description: 'SARIF file the gate reads.'
+    required: false
+    default: ''
+
+outputs:
+  sarif_file:
+    description: 'Absolute path of the SARIF zizmor wrote, set only when it ran and exited 0.'
+  upload:
+    description: 'true or false, for the composite upload step.'
+  findings:
+    description: 'Number of results in the SARIF.'
+  failing:
+    description: 'Number of results at or above fail_on_severity.'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

@@ -54,6 +54,7 @@ on:
       - Verify Maintenance Ensure-actions-are-executed
       - Verify Rust Config-contract
       - Verify Security Codeql
+      - Verify Security Zizmor
       - Verify Test Setup-e2e
     # >>> generated: verify-workflows
     types:
