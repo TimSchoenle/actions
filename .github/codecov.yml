@@ -57,34 +57,84 @@ ignore:
   - 'configs/**'
   - 'workflows/**'
 
-# One component per top-level category that has TypeScript sources, plus the repository scripts and
-# the shared packages, so a pull request's comment shows which part its coverage moved in.
+# One component per action that has TypeScript sources, plus the repository scripts and the shared
+# packages, so a pull request's comment shows which action its coverage moved in. Composite-only
+# actions contribute no measured line and get no component.
 component_management:
   individual_components:
-    - component_id: common
-      name: actions/common
-      paths: ['actions/common/**']
-    - component_id: docker
-      name: actions/docker
-      paths: ['actions/docker/**']
-    - component_id: helm
-      name: actions/helm
-      paths: ['actions/helm/**']
-    - component_id: helper
-      name: actions/helper
-      paths: ['actions/helper/**']
-    - component_id: maintenance
-      name: actions/maintenance
-      paths: ['actions/maintenance/**']
-    - component_id: rust
-      name: actions/rust
-      paths: ['actions/rust/**']
-    - component_id: security
-      name: actions/security
-      paths: ['actions/security/**']
     - component_id: packages
       name: packages
       paths: ['packages/**']
     - component_id: scripts
       name: scripts
       paths: ['scripts/**']
+    # GENERATED, do not edit by hand. Run `bun run generate-codecov-components` to rebuild this list
+    # from the actions on disk. The codecov-components drift test fails CI if it is out of sync.
+    # <<< generated: action-components
+    - component_id: common-close-pull-request
+      name: common/close-pull-request
+      paths: ['actions/common/close-pull-request/**']
+    - component_id: common-commit-changes
+      name: common/commit-changes
+      paths: ['actions/common/commit-changes/**']
+    - component_id: common-create-branch
+      name: common/create-branch
+      paths: ['actions/common/create-branch/**']
+    - component_id: common-delete-branch
+      name: common/delete-branch
+      paths: ['actions/common/delete-branch/**']
+    - component_id: common-get-app-git-identity
+      name: common/get-app-git-identity
+      paths: ['actions/common/get-app-git-identity/**']
+    - component_id: common-modify-yaml
+      name: common/modify-yaml
+      paths: ['actions/common/modify-yaml/**']
+    - component_id: common-read-yaml
+      name: common/read-yaml
+      paths: ['actions/common/read-yaml/**']
+    - component_id: common-readme-variables
+      name: common/readme-variables
+      paths: ['actions/common/readme-variables/**']
+    - component_id: common-render-template
+      name: common/render-template
+      paths: ['actions/common/render-template/**']
+    - component_id: common-setup-app-git-identity
+      name: common/setup-app-git-identity
+      paths: ['actions/common/setup-app-git-identity/**']
+    - component_id: common-upsert-issue
+      name: common/upsert-issue
+      paths: ['actions/common/upsert-issue/**']
+    - component_id: common-upsert-pr-comment
+      name: common/upsert-pr-comment
+      paths: ['actions/common/upsert-pr-comment/**']
+    - component_id: docker-image-check
+      name: docker/image-check
+      paths: ['actions/docker/image-check/**']
+    - component_id: docker-image-check-summary
+      name: docker/image-check-summary
+      paths: ['actions/docker/image-check-summary/**']
+    - component_id: helm-apply-chart-updates
+      name: helm/apply-chart-updates
+      paths: ['actions/helm/apply-chart-updates/**']
+    - component_id: helper-resolve-base-branch
+      name: helper/resolve-base-branch
+      paths: ['actions/helper/resolve-base-branch/**']
+    - component_id: helper-verify-branch-name
+      name: helper/verify-branch-name
+      paths: ['actions/helper/verify-branch-name/**']
+    - component_id: helper-verify-commit-authors
+      name: helper/verify-commit-authors
+      paths: ['actions/helper/verify-commit-authors/**']
+    - component_id: maintenance-auto-approve-pr
+      name: maintenance/auto-approve-pr
+      paths: ['actions/maintenance/auto-approve-pr/**']
+    - component_id: maintenance-ensure-actions-are-executed
+      name: maintenance/ensure-actions-are-executed
+      paths: ['actions/maintenance/ensure-actions-are-executed/**']
+    - component_id: rust-config-contract
+      name: rust/config-contract
+      paths: ['actions/rust/config-contract/**']
+    - component_id: security-codeql
+      name: security/codeql
+      paths: ['actions/security/codeql/**']
+    # >>> generated: action-components
