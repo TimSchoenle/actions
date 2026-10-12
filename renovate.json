@@ -40,6 +40,15 @@
         "'(?<depName>[\\w.-]+\\/[\\w.-]+)@(?<currentDigest>[a-fA-F0-9]{40}) # (?<currentValue>v[^'\\s#]+)'"
       ],
       "datasourceTemplate": "github-tags"
+    },
+    {
+      "description": "The zizmor container image that actions/security/zizmor runs. It is pinned in the composite's action.yaml as an environment value of a run step, which neither the github-actions nor the dockerfile manager reads, so without this Renovate would never update it. Tag and digest move together, and the bump ships as a release of the action. A contract test in scripts/__tests__ fails any digest-pinned image in an action.yaml that no manager matches.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^actions/security/zizmor/action\\.yaml$/"],
+      "matchStrings": [
+        "(?<depName>ghcr\\.io\\/zizmorcore\\/zizmor):(?<currentValue>[\\w.-]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
     }
   ],
   "packageRules": [

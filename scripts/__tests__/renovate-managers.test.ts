@@ -201,3 +201,58 @@ describe('Renovate coverage of the extra-jobs fragments', () => {
     }
   });
 });
+
+/**
+ * Contract between container images pinned inside an action and the managers that update them.
+ *
+ * An image a composite runs with `docker run` sits in a `run:` script or a step's `env:`, which the
+ * github-actions manager does not read: it only knows `uses: docker://...`. Such a pin is invisible
+ * to Renovate unless a customManager claims it, and an image frozen at one digest keeps every CVE
+ * published against it. `actions/security/zizmor` is the first; this holds for any that follow.
+ */
+describe('Renovate coverage of container images in actions', () => {
+  /** `registry/name:tag@sha256:digest` references, wherever an action.yaml spells one. */
+  const IMAGE_PIN = /[a-z0-9.-]+\.[a-z]{2,}\/[a-z0-9._/-]+:[\w.-]+@sha256:[a-f0-9]{64}/g;
+
+  /** The customManagers whose file patterns claim the given repository path. */
+  function managersFor(file: string): CustomManager[] {
+    return customManagers().filter((manager) =>
+      manager.managerFilePatterns.some(
+        (pattern) => pattern.startsWith('/') && pattern.endsWith('/') && new RegExp(pattern.slice(1, -1)).test(file),
+      ),
+    );
+  }
+
+  async function imagePins(): Promise<{ file: string; pin: string }[]> {
+    const pins: { file: string; pin: string }[] = [];
+
+    for (const file of await scanSorted('actions/*/*/action.yaml')) {
+      for (const pin of fs.readFileSync(path.join(ROOT_DIR, file), 'utf8').match(IMAGE_PIN) ?? []) {
+        pins.push({ file, pin });
+      }
+    }
+
+    return pins;
+  }
+
+  it('finds the zizmor image, so the scan below is not vacuous', async () => {
+    expect((await imagePins()).map(({ file }) => file)).toContain('actions/security/zizmor/action.yaml');
+  });
+
+  it('matches every pinned image with exactly one docker manager that reads its file', async () => {
+    for (const { file, pin } of await imagePins()) {
+      const matches = managersFor(file).flatMap((manager) =>
+        manager.matchStrings
+          .map((matchString) => new RegExp(matchString).exec(pin)?.groups)
+          .filter((groups) => groups !== undefined)
+          .map((groups) => ({ groups, datasource: manager.datasourceTemplate })),
+      );
+
+      expect(matches, `${file} pins ${pin}, which ${matches.length} customManager(s) match`).toHaveLength(1);
+      expect(matches[0]?.datasource).toBe('docker');
+      expect(
+        `${matches[0]?.groups['depName']}:${matches[0]?.groups['currentValue']}@${matches[0]?.groups['currentDigest']}`,
+      ).toBe(pin);
+    }
+  });
+});

@@ -145,6 +145,7 @@ outputs. Where an action needs more than that, a README sits next to it.
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
 | [Security CodeQL](./actions/security/codeql) | Runs CodeQL on one language with build-mode none, excluding test sources so fixtures and assertion messages do not raise alerts, and uploads the result to code scanning. | [actions-security-codeql-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-security-codeql-v1.1.0) | `uses: TimSchoenle/actions/actions/security/codeql@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-security-codeql-v1.1.0` |
+| [Security Zizmor](./actions/security/zizmor) | Runs zizmor over workflows and actions with strict collection, uploads the SARIF to code scanning under the category zizmor, and fails the job on an input zizmor cannot parse or a finding at or above a severity. | [actions-security-zizmor-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-security-zizmor-v1.0.0) | `uses: TimSchoenle/actions/actions/security/zizmor@actions-security-zizmor-v1.0.0 # tag=actions-security-zizmor-v1.0.0` |
 
 #### Test
 

@@ -40,5 +40,6 @@
   "configs/checkstyle/application": "1.0.2",
   "configs/checkstyle/library": "1.0.2",
   "actions/security/codeql": "1.1.0",
-  "actions/java-gradle/coverage-codecov": "1.1.0"
+  "actions/java-gradle/coverage-codecov": "1.1.0",
+  "actions/security/zizmor": "1.0.0"
 }

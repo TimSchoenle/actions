@@ -93,6 +93,7 @@ is not, including older versions of a component whose neighbours have since rele
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Security CodeQL](./actions/security/codeql) | [actions-security-codeql-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-security-codeql-v1.1.0) | :white_check_mark: |
+| [Security Zizmor](./actions/security/zizmor) | [actions-security-zizmor-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-security-zizmor-v1.0.0) | :white_check_mark: |
 
 #### Test
 

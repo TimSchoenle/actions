@@ -210,6 +210,11 @@
       "release-type": "simple",
       "component": "actions-java-gradle-coverage-codecov",
       "include-component-in-tag": true
+    },
+    "actions/security/zizmor": {
+      "release-type": "simple",
+      "component": "actions-security-zizmor",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
