@@ -1,7 +1,12 @@
-﻿name: Auto Format
+name: Auto Format
 
 on:
   pull_request:
+
+# A newer push to the pull request supersedes the run formatting the older head.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions: {}
 

@@ -1,4 +1,4 @@
-﻿name: Scripts CI
+name: Scripts CI
 
 on:
   push:

@@ -1,4 +1,4 @@
-﻿name: 'Rust Auto-format'
+name: 'Rust Auto-format'
 description: 'Action that runs cargo fmt and commits changes.'
 
 inputs:
