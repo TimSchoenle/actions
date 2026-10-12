@@ -34,11 +34,12 @@ const E2E_EXEMPTIONS: Record<string, string> = {
   'actions/common/create-pull-request': 'composite: orchestrates create-branch, commit-changes and the PR call',
   'actions/common/render-template-and-commit': 'composite: orchestrates render-template and commit-changes',
   'actions/java-gradle/auto-spotless': 'composite: checks out, sets up Java and Gradle, then commits',
+  'actions/java-gradle/coverage-codecov': 'composite: checks out, sets up Java and Gradle, then uploads to Codecov',
   'actions/java-gradle/setup-base-environment': 'composite: sets up Java, Gradle and their caches',
   'actions/rust/auto-format': 'composite: checks out inputs.repository as its own first step',
   'actions/rust/cargo-check': 'composite: checks out inputs.repository as its own first step',
   'actions/rust/clippy': 'composite: checks out inputs.repository as its own first step',
-  'actions/rust/coverage-codecov': 'composite: checks out inputs.repository, then uploads to Codecov',
+  'actions/rust/coverage-codecov': 'composite: checks out, measures with cargo-llvm-cov, then uploads to Codecov',
   'actions/rust/test': 'composite: checks out inputs.repository as its own first step',
   'actions/test/setup-e2e': 'composite: the harness for the workflows that still need one',
 };

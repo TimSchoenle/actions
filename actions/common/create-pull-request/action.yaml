@@ -1,4 +1,4 @@
-﻿name: 'Create Pull Request'
+name: 'Create Pull Request'
 description: 'Creates or updates a pull request using GitHub App authentication with optional branch reset.'
 
 inputs:
@@ -77,6 +77,11 @@ runs:
         private-key: ${{ inputs.private-key }}
         owner: ${{ steps.parse.outputs.owner }}
         repositories: ${{ steps.parse.outputs.repo }}
+        # Creating the branch and its commit needs `contents`, opening or finding the pull request
+        # needs `pull-requests`. A commit that touches `.github/workflows/` would also need
+        # `workflows`, which this action does not request.
+        permission-contents: write
+        permission-pull-requests: write
 
     - name: Create Branch
       id: branch

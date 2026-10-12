@@ -1,4 +1,4 @@
-﻿name: release-please
+name: release-please
 
 on:
   push:
@@ -27,12 +27,17 @@ jobs:
         with:
           egress-policy: audit
 
+      # release-please labels its pull request through the issues API, so `issues` is needed on top
+      # of the two permissions this job grants its own token.
       - name: Generate Bot Token
         id: generate_token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           app-id: ${{ secrets.RELEASE_BOT_APP_ID }}
           private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
 
       - name: Run release-please
         id: release

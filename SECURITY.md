@@ -67,6 +67,7 @@ is not, including older versions of a component whose neighbours have since rele
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | [actions-java-gradle-auto-spotless-v1.1.28](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v1.1.28) | :white_check_mark: |
+| [Java-Gradle Coverage (Codecov)](./actions/java-gradle/coverage-codecov) | [actions-java-gradle-coverage-codecov-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-coverage-codecov-v1.1.0) | :white_check_mark: |
 | [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | [actions-java-gradle-setup-base-environment-v1.2.13](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.13) | :white_check_mark: |
 
 #### Maintenance
@@ -84,7 +85,7 @@ is not, including older versions of a component whose neighbours have since rele
 | [Rust Cargo-check](./actions/rust/cargo-check) | [actions-rust-cargo-check-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.1.7) | :white_check_mark: |
 | [Rust Clippy](./actions/rust/clippy) | [actions-rust-clippy-v1.1.12](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-clippy-v1.1.12) | :white_check_mark: |
 | [Rust Config Contract](./actions/rust/config-contract) | [actions-rust-config-contract-v1.3.6](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-config-contract-v1.3.6) | :white_check_mark: |
-| [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | [actions-rust-coverage-codecov-v1.1.51](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v1.1.51) | :white_check_mark: |
+| [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | [actions-rust-coverage-codecov-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v2.0.0) | :white_check_mark: |
 | [Rust Test](./actions/rust/test) | [actions-rust-test-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.2) | :white_check_mark: |
 
 #### Security

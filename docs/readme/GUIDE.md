@@ -120,6 +120,10 @@ most-used keys, and a link to a generated `docs/CONFIGURATION.md`.
 - **A project with a Helm chart keeps its chart badge**, directly after the release or image badge
   in the first slot. It is the one badge allowed to take the row to six: the chart is a second
   published artefact with its own version, and a reader deploying to Kubernetes looks for it first.
+- **The coverage badge is Codecov's**, directly after CI:
+  `[![Coverage](https://codecov.io/gh/{{ repo.slug }}/graph/badge.svg)](https://codecov.io/gh/{{ repo.slug }})`.
+  It carries no `?token=`, which a public repository's badge does not need, and no `/branch/`
+  segment, because without one Codecov shows the default branch.
 - Every fenced block is language-tagged.
 - In-repo links are relative; cross-repo links are absolute.
 - Never put a fenced config dump where its comments will be parsed as headings. It wrecks the
