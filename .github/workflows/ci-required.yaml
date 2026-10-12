@@ -49,6 +49,7 @@ on:
       - Verify Helper Verify-branch-name
       - Verify Helper Verify-commit-authors
       - Verify Java-gradle Auto-spotless
+      - Verify Java-gradle Coverage-codecov
       - Verify Java-gradle Setup-base-environment
       - Verify Maintenance Auto-approve-pr
       - Verify Maintenance Ensure-actions-are-executed
