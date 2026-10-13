@@ -75,6 +75,25 @@ describe('close-pull-request', () => {
     await expect(scratch.issueComments(number)).resolves.toEqual([comment]);
   });
 
+  // Deleting a pull request's base branch makes GitHub close it, then refuse every update to it with a
+  // bare 422. Cleanup that deletes the base first and closes second hit exactly that on every run.
+  it('reports a pull request closed by the deletion of its base branch as closed', async () => {
+    const base = scratch.branch('closed-by-base-deletion-base');
+    const head = scratch.branch('closed-by-base-deletion-head');
+
+    await scratch.createBranch(base);
+    await scratch.createBranch(head);
+    await scratch.commitFile(head, `${head}/file.txt`, 'content\n', 'test: fixture for base deletion');
+    const number = await scratch.createPullRequest(head, base, '[e2e] closed-by-base-deletion');
+
+    await scratch.removeBranch(base);
+    await expect.poll(async () => (await scratch.pullRequest(number)).state, { timeout: 15_000 }).toBe('closed');
+
+    const result = await run({ pull_request_id: String(number) });
+
+    expect(result.outputs).toEqual({ closed: 'true' });
+  });
+
   // The shell version ran this case and asserted nothing at all about it.
   it('reports a pull request that does not exist without failing', async () => {
     const result = await run({ pull_request_id: '999999999' });

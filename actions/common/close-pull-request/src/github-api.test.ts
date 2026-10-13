@@ -89,6 +89,39 @@ describe('createPullRequestApi', () => {
     );
   });
 
+  // Deleting the base branch closes the pull request on GitHub's side, after which every update to it
+  // is refused with a bare 422 — the cleanup order that made the helm verify workflow fail every run.
+  it('treats a 422 on a pull request that reads back as closed as already closed', async () => {
+    octokit.rest.pulls.update.mockRejectedValue(httpError(422, 'Validation Failed'));
+    octokit.rest.pulls.get.mockResolvedValue({ data: { number: 42, state: 'closed' } });
+
+    await expect(createPullRequestApi('token').closePullRequest(repository, 42)).resolves.toBeUndefined();
+    expect(octokit.rest.pulls.get).toHaveBeenCalledWith({ ...repository, pull_number: 42 });
+  });
+
+  it('propagates a 422 on a pull request that still reads back as open', async () => {
+    octokit.rest.pulls.update.mockRejectedValue(httpError(422, 'Validation Failed'));
+    octokit.rest.pulls.get.mockResolvedValue({ data: { number: 42, state: 'open' } });
+
+    await expect(createPullRequestApi('token').closePullRequest(repository, 42)).rejects.toThrow('Validation Failed');
+  });
+
+  it('propagates the read-back failure when the state of a refused pull request cannot be read', async () => {
+    octokit.rest.pulls.update.mockRejectedValue(httpError(422, 'Validation Failed'));
+    octokit.rest.pulls.get.mockRejectedValue(httpError(500, 'Server error'));
+
+    await expect(createPullRequestApi('token').closePullRequest(repository, 42)).rejects.toThrow('Server error');
+  });
+
+  it('does not read the state back for a refusal other than 422', async () => {
+    octokit.rest.pulls.update.mockRejectedValue(httpError(403, 'Resource not accessible by integration'));
+
+    await expect(createPullRequestApi('token').closePullRequest(repository, 42)).rejects.toThrow(
+      'Resource not accessible by integration',
+    );
+    expect(octokit.rest.pulls.get).not.toHaveBeenCalled();
+  });
+
   it('comments through the issues endpoint, so the text lands in the conversation', async () => {
     octokit.rest.issues.createComment.mockResolvedValue({ data: { id: 1 } });
 

@@ -173,6 +173,11 @@ jobs:
       - name: Run Test (Fixture Crate)
         id: analysis
         uses: ./actions/security/codeql # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        env:
+          # On pull_request events CodeQL restricts results to the lines the PR changed, so any PR
+          # that does not touch the fixture yields no result in src/lib.rs and the assertion below
+          # fails. The fixture must be analysed in full regardless of the diff.
+          CODEQL_ACTION_DIFF_INFORMED_QUERIES: 'false'
         with:
           language: rust
           upload: 'false'

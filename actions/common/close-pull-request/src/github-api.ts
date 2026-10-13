@@ -1,8 +1,11 @@
-import { resolveExists } from 'actions-util';
+import { hasStatus, resolveExists } from 'actions-util';
 import { createOctokit } from 'actions-util/client';
 
 import type { PullRequestApi } from './close.js';
 import type { RepositoryCoordinates } from 'actions-util';
+
+/** GitHub's answer to an update it refuses on validation grounds. */
+const UNPROCESSABLE = 422;
 
 /**
  * Binds the {@link PullRequestApi} to the GitHub REST API.
@@ -19,9 +22,20 @@ export function createPullRequestApi(token: string): PullRequestApi {
 
   return {
     async closePullRequest({ owner, repo }: RepositoryCoordinates, pullRequestNumber: number): Promise<void> {
-      // Idempotent by design: the API accepts `state: closed` on an already-closed pull request and
-      // returns it unchanged, so a re-run of the workflow does not fail.
-      await octokit.rest.pulls.update({ owner, pull_number: pullRequestNumber, repo, state: 'closed' });
+      try {
+        // The API accepts `state: closed` on an already-closed pull request and returns it unchanged,
+        // so a re-run of the workflow does not fail.
+        await octokit.rest.pulls.update({ owner, pull_number: pullRequestNumber, repo, state: 'closed' });
+      } catch (error) {
+        // Except when the base branch is gone: GitHub closes the pull request itself as the branch is
+        // deleted, then refuses every update to it with a bare 422 "Validation Failed". The desired
+        // end state is already reached, so a 422 is settled by reading the state back. Anything that
+        // still reads as open is a genuine refusal and propagates.
+        if (hasStatus(error, UNPROCESSABLE) && (await isClosed(owner, repo, pullRequestNumber))) {
+          return;
+        }
+        throw error;
+      }
     },
 
     async commentOnPullRequest(
@@ -36,4 +50,10 @@ export function createPullRequestApi(token: string): PullRequestApi {
       return resolveExists(octokit.rest.pulls.get({ owner, pull_number: pullRequestNumber, repo }));
     },
   };
+
+  async function isClosed(owner: string, repo: string, pullRequestNumber: number): Promise<boolean> {
+    const { data } = await octokit.rest.pulls.get({ owner, pull_number: pullRequestNumber, repo });
+
+    return data.state === 'closed';
+  }
 }
