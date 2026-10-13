@@ -217,6 +217,19 @@ export class ScratchRepo {
   }
 
   /**
+   * A name unique to this suite *and run*, for state that lives outside refs, such as the hidden
+   * marker an issue is found by.
+   *
+   * A fixed name is shared by every run of the suite. Runs from different pull requests overlap in
+   * the one scratch repository, so one run's still-open issue answers another run's scan, and a case
+   * expecting `created` sees `unchanged`. Dot-separated with no slash, so it also fits names that
+   * reject a path separator.
+   */
+  identifier(caseName: string): string {
+    return `${this.scope}.${this.runId}.${caseName}`;
+  }
+
+  /**
    * Registers a ref name **verbatim**, outside this suite's namespace, for teardown.
    *
    * {@link branch} prefixes what it is given, which is right for a fixture and wrong for the one case
@@ -331,6 +344,20 @@ export class ScratchRepo {
     await this.headOf(branch, head);
 
     return head;
+  }
+
+  /**
+   * Deletes a branch mid-case, for fixtures that need one to disappear under the action under test.
+   *
+   * Goes through the same converging delete as teardown, so the branch is gone for every replica by
+   * the time this resolves. It stays registered: teardown treats an absent branch as cleaned up.
+   */
+  async removeBranch(branch: string): Promise<void> {
+    const failure = await this.deleteBranch(branch);
+
+    if (failure !== undefined) {
+      throw new Error(`Failed to delete ${failure}`);
+    }
   }
 
   /** Writes a file on a branch, producing a commit, and returns its SHA. */

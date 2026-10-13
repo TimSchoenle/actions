@@ -54,9 +54,12 @@ describe('upsert-issue', () => {
   // These tests run against a shared, long-lived scratch repository with no per-case teardown -- only
   // the describe-level `afterAll` -- so an identifier reused across cases would let one case's issue
   // answer another's scan, making the outcome depend on run order instead of on what each case sets up.
+  // The same holds across runs: concurrent runs share the repository, so each identifier is scoped to
+  // this run as well.
+  const id = (caseName: string): string => scratch.identifier(caseName);
 
   it('opens an issue carrying the hidden marker', async () => {
-    const result = await run({ body: 'repo is healthy', identifier: 'e2e-create', title: '[e2e] create' });
+    const result = await run({ body: 'repo is healthy', identifier: id('e2e-create'), title: '[e2e] create' });
     scratch.trackIssue(Number(result.outputs.issue_number));
 
     expect(result.outputs.operation).toBe('created');
@@ -64,15 +67,15 @@ describe('upsert-issue', () => {
     const record = await scratch.issueRecord(Number(result.outputs.issue_number));
 
     expect(record.title).toBe('[e2e] create');
-    expect(record.body).toBe(`${markerFor('e2e-create')}\n\nrepo is healthy`);
+    expect(record.body).toBe(`${markerFor(id('e2e-create'))}\n\nrepo is healthy`);
   });
 
   it('rewrites the title and body on a later run instead of opening one', async () => {
-    const first = await run({ body: 'v1', identifier: 'e2e-rewrite', title: '[e2e] update v1' });
+    const first = await run({ body: 'v1', identifier: id('e2e-rewrite'), title: '[e2e] update v1' });
     scratch.trackIssue(Number(first.outputs.issue_number));
     await scratch.waitForIssueListed(Number(first.outputs.issue_number), 'open');
 
-    const second = await run({ body: 'v2', identifier: 'e2e-rewrite', title: '[e2e] update v2' });
+    const second = await run({ body: 'v2', identifier: id('e2e-rewrite'), title: '[e2e] update v2' });
 
     expect(second.outputs.operation).toBe('updated');
     expect(second.outputs.issue_number).toBe(first.outputs.issue_number);
@@ -84,7 +87,7 @@ describe('upsert-issue', () => {
   });
 
   it('writes nothing at all when nothing has changed', async () => {
-    const inputs = { body: 'steady', identifier: 'e2e-unchanged', title: '[e2e] unchanged' };
+    const inputs = { body: 'steady', identifier: id('e2e-unchanged'), title: '[e2e] unchanged' };
     const first = await run(inputs);
     scratch.trackIssue(Number(first.outputs.issue_number));
     await scratch.waitForIssueListed(Number(first.outputs.issue_number), 'open');
@@ -95,7 +98,7 @@ describe('upsert-issue', () => {
   });
 
   it('reopens a closed matching issue whose content already matches', async () => {
-    const inputs = { body: 'still true', identifier: 'e2e-reopen', title: '[e2e] reopen' };
+    const inputs = { body: 'still true', identifier: id('e2e-reopen'), title: '[e2e] reopen' };
     const first = await run(inputs);
     scratch.trackIssue(Number(first.outputs.issue_number));
     await scratch.closeIssue(Number(first.outputs.issue_number));
@@ -112,7 +115,7 @@ describe('upsert-issue', () => {
   it('updates a closed matching issue in place and leaves it closed when reopen_if_closed is false', async () => {
     const first = await run({
       body: 'v1',
-      identifier: 'e2e-stay-closed',
+      identifier: id('e2e-stay-closed'),
       reopen_if_closed: 'false',
       title: '[e2e] stay-closed',
     });
@@ -122,7 +125,7 @@ describe('upsert-issue', () => {
 
     const second = await run({
       body: 'v2',
-      identifier: 'e2e-stay-closed',
+      identifier: id('e2e-stay-closed'),
       reopen_if_closed: 'false',
       search_state: 'all',
       title: '[e2e] stay-closed',
@@ -139,7 +142,7 @@ describe('upsert-issue', () => {
   it('enforces the label set on every run, adding and removing as the input changes', async () => {
     const first = await run({
       body: 'x',
-      identifier: 'e2e-labels',
+      identifier: id('e2e-labels'),
       labels: 'e2e-bug',
       title: '[e2e] labels',
     });
@@ -151,7 +154,7 @@ describe('upsert-issue', () => {
 
     const second = await run({
       body: 'x',
-      identifier: 'e2e-labels',
+      identifier: id('e2e-labels'),
       labels: 'e2e-enhancement',
       title: '[e2e] labels',
     });
@@ -163,13 +166,13 @@ describe('upsert-issue', () => {
   });
 
   it('keeps two identifiers in the same repository apart', async () => {
-    const state = await run({ body: 'state', identifier: 'two-ids-state', title: '[e2e] state' });
+    const state = await run({ body: 'state', identifier: id('two-ids-state'), title: '[e2e] state' });
     scratch.trackIssue(Number(state.outputs.issue_number));
-    const coverage = await run({ body: 'coverage', identifier: 'two-ids-coverage', title: '[e2e] coverage' });
+    const coverage = await run({ body: 'coverage', identifier: id('two-ids-coverage'), title: '[e2e] coverage' });
     scratch.trackIssue(Number(coverage.outputs.issue_number));
     await scratch.waitForIssueListed(Number(state.outputs.issue_number), 'open');
 
-    const again = await run({ body: 'state v2', identifier: 'two-ids-state', title: '[e2e] state' });
+    const again = await run({ body: 'state v2', identifier: id('two-ids-state'), title: '[e2e] state' });
 
     expect(again.outputs.operation).toBe('updated');
     expect(again.outputs.issue_number).toBe(state.outputs.issue_number);
@@ -179,7 +182,7 @@ describe('upsert-issue', () => {
   it('opens a new issue every run when updating is switched off', async () => {
     const first = await run({
       body: 'run one',
-      identifier: 'always-new',
+      identifier: id('always-new'),
       title: '[e2e] always-new',
       update_existing: 'false',
     });
@@ -187,7 +190,7 @@ describe('upsert-issue', () => {
 
     const second = await run({
       body: 'run two',
-      identifier: 'always-new',
+      identifier: id('always-new'),
       title: '[e2e] always-new',
       update_existing: 'false',
     });
@@ -201,24 +204,24 @@ describe('upsert-issue', () => {
     const report = '| repo | state |\n| --- | --- |\n| api | healthy |\n';
 
     const result = await run(
-      { body_file: 'reports/state.md', identifier: 'body-file', title: '[e2e] body-file' },
+      { body_file: 'reports/state.md', identifier: id('body-file'), title: '[e2e] body-file' },
       'success',
       { 'reports/state.md': report },
     );
     scratch.trackIssue(Number(result.outputs.issue_number));
 
     await expect(scratch.issueRecord(Number(result.outputs.issue_number))).resolves.toMatchObject({
-      body: `${markerFor('body-file')}\n\n${report}`,
+      body: `${markerFor(id('body-file'))}\n\n${report}`,
     });
   });
 
   it('ignores a marked issue opened by anyone but the required author', async () => {
-    const forged = await scratch.createIssueRecord('[e2e] forged', `${markerFor('author-filter')}\n\nnot ours`);
+    const forged = await scratch.createIssueRecord('[e2e] forged', `${markerFor(id('author-filter'))}\n\nnot ours`);
 
     const result = await run({
       author: 'nobody-at-all',
       body: 'ours',
-      identifier: 'author-filter',
+      identifier: id('author-filter'),
       title: '[e2e] author-filter',
     });
     scratch.trackIssue(Number(result.outputs.issue_number));
@@ -228,23 +231,23 @@ describe('upsert-issue', () => {
   });
 
   it('updates a marked issue opened by the required author', async () => {
-    const seeded = await scratch.createIssueRecord('[e2e] author-match', `${markerFor('author-match')}\n\nolder`);
+    const seeded = await scratch.createIssueRecord('[e2e] author-match', `${markerFor(id('author-match'))}\n\nolder`);
     const { author } = await scratch.issueRecord(seeded.number);
     await scratch.waitForIssueListed(seeded.number, 'open');
 
-    const result = await run({ author, body: 'newer', identifier: 'author-match', title: '[e2e] author-match' });
+    const result = await run({ author, body: 'newer', identifier: id('author-match'), title: '[e2e] author-match' });
     scratch.trackIssue(Number(result.outputs.issue_number));
 
     expect(result.outputs).toMatchObject({ issue_number: String(seeded.number), operation: 'updated' });
   });
 
   it('does not find a closed match when search_state is open, and opens a new issue instead', async () => {
-    const seeded = await scratch.createIssueRecord('[e2e] open-only', `${markerFor('open-only')}\n\nold`);
+    const seeded = await scratch.createIssueRecord('[e2e] open-only', `${markerFor(id('open-only'))}\n\nold`);
     await scratch.closeIssue(seeded.number);
 
     const result = await run({
       body: 'new',
-      identifier: 'open-only',
+      identifier: id('open-only'),
       search_state: 'open',
       title: '[e2e] open-only',
     });

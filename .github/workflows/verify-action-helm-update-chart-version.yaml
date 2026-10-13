@@ -207,16 +207,10 @@ jobs:
           echo "$FILES" | grep -q "charts/test-app/values.yaml" || { echo "::error::values.yaml not in PR"; exit 1; }
           echo "✅ PR files verified"
 
-      - name: Cleanup Base Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-delete-branch-v1.5.6
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.base-branch.outputs.branch }}
-
       # Guarded, not just `always()`: a run that failed before opening a PR has no number to close, and
-      # closing "nothing" would report a second, misleading failure on top of the real one.
+      # closing "nothing" would report a second, misleading failure on top of the real one. Runs before
+      # the base branch is deleted: GitHub closes a PR whose base disappears and then rejects any update
+      # to it with a 422, which pinned close-pull-request releases report as a failure.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
         uses: TimSchoenle/actions/actions/common/close-pull-request@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-close-pull-request-v1.5.6
@@ -224,6 +218,14 @@ jobs:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           pull_request_id: ${{ steps.update.outputs.pr_number }}
+
+      - name: Cleanup Base Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-delete-branch-v1.5.6
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.base-branch.outputs.branch }}
 
       - name: Cleanup Branch
         if: always()
@@ -405,16 +407,10 @@ jobs:
           fi
           echo "✅ Changelog carried through without acting on anything"
 
-      - name: Cleanup Base Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-delete-branch-v1.5.6
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.base-branch.outputs.branch }}
-
       # Guarded, not just `always()`: a run that failed before opening a PR has no number to close, and
-      # closing "nothing" would report a second, misleading failure on top of the real one.
+      # closing "nothing" would report a second, misleading failure on top of the real one. Runs before
+      # the base branch is deleted: GitHub closes a PR whose base disappears and then rejects any update
+      # to it with a 422, which pinned close-pull-request releases report as a failure.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
         uses: TimSchoenle/actions/actions/common/close-pull-request@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-close-pull-request-v1.5.6
@@ -422,6 +418,14 @@ jobs:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           pull_request_id: ${{ steps.update.outputs.pr_number }}
+
+      - name: Cleanup Base Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-delete-branch-v1.5.6
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.base-branch.outputs.branch }}
 
       - name: Cleanup Branch
         if: always()
@@ -530,16 +534,10 @@ jobs:
           [ "$ACTUAL_BRANCH" = "$EXPECTED_BRANCH" ] || { echo "::error::Branch mismatch: expected '$EXPECTED_BRANCH', got '$ACTUAL_BRANCH'"; exit 1; }
           echo "✅ Custom branch prefix verified: $ACTUAL_BRANCH"
 
-      - name: Cleanup Base Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-delete-branch-v1.5.6
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.base-branch.outputs.branch }}
-
       # Guarded, not just `always()`: a run that failed before opening a PR has no number to close, and
-      # closing "nothing" would report a second, misleading failure on top of the real one.
+      # closing "nothing" would report a second, misleading failure on top of the real one. Runs before
+      # the base branch is deleted: GitHub closes a PR whose base disappears and then rejects any update
+      # to it with a 422, which pinned close-pull-request releases report as a failure.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
         uses: TimSchoenle/actions/actions/common/close-pull-request@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-close-pull-request-v1.5.6
@@ -547,6 +545,14 @@ jobs:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           pull_request_id: ${{ steps.update.outputs.pr_number }}
+
+      - name: Cleanup Base Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-delete-branch-v1.5.6
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.base-branch.outputs.branch }}
 
       - name: Cleanup Branch
         if: always()
@@ -707,16 +713,10 @@ jobs:
           echo "$CHART_CONTENT" | grep -q "appVersion: $NEW_TAG" || { echo "::error::Expected appVersion $NEW_TAG"; exit 1; }
           echo "✅ appVersion set to $NEW_TAG"
 
-      - name: Cleanup Base Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-delete-branch-v1.5.6
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.base-branch.outputs.branch }}
-
       # Guarded, not just `always()`: a run that failed before opening a PR has no number to close, and
-      # closing "nothing" would report a second, misleading failure on top of the real one.
+      # closing "nothing" would report a second, misleading failure on top of the real one. Runs before
+      # the base branch is deleted: GitHub closes a PR whose base disappears and then rejects any update
+      # to it with a 422, which pinned close-pull-request releases report as a failure.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
         uses: TimSchoenle/actions/actions/common/close-pull-request@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-close-pull-request-v1.5.6
@@ -724,6 +724,14 @@ jobs:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           pull_request_id: ${{ steps.update.outputs.pr_number }}
+
+      - name: Cleanup Base Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-delete-branch-v1.5.6
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.base-branch.outputs.branch }}
 
       - name: Cleanup Branch
         if: always()
@@ -847,16 +855,10 @@ jobs:
           [ "$FILES" = "$EXPECTED" ] || { echo "::error::File mismatch. Got: $FILES"; exit 1; }
           echo "✅ Only chart files were changed"
 
-      - name: Cleanup Base Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-delete-branch-v1.5.6
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.base-branch.outputs.branch }}
-
       # Guarded, not just `always()`: a run that failed before opening a PR has no number to close, and
-      # closing "nothing" would report a second, misleading failure on top of the real one.
+      # closing "nothing" would report a second, misleading failure on top of the real one. Runs before
+      # the base branch is deleted: GitHub closes a PR whose base disappears and then rejects any update
+      # to it with a 422, which pinned close-pull-request releases report as a failure.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
         uses: TimSchoenle/actions/actions/common/close-pull-request@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-close-pull-request-v1.5.6
@@ -864,6 +866,14 @@ jobs:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           pull_request_id: ${{ steps.update.outputs.pr_number }}
+
+      - name: Cleanup Base Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-delete-branch-v1.5.6
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.base-branch.outputs.branch }}
 
       - name: Cleanup Branch
         if: always()
@@ -1011,14 +1021,7 @@ jobs:
           echo "$VALUES_CONTENT" | grep -qvF "sha256:f115" || { echo "::error::First digest still present — branch was not reset"; exit 1; }
           echo "✅ Branch was correctly reset; second run digest is present"
 
-      - name: Cleanup Base Branch
-        if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-delete-branch-v1.5.6
-        with:
-          token: ${{ steps.setup.outputs.token }}
-          repository: ${{ env.TEST_REPO }}
-          branch_name: ${{ steps.base-branch.outputs.branch }}
-
+      # Runs before the base branch is deleted, for the same reason as in the jobs above.
       - name: Cleanup PR
         if: always() && steps.second-run.outputs.pr_number != ''
         uses: TimSchoenle/actions/actions/common/close-pull-request@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-close-pull-request-v1.5.6
@@ -1026,6 +1029,14 @@ jobs:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           pull_request_id: ${{ steps.second-run.outputs.pr_number }}
+
+      - name: Cleanup Base Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-delete-branch-v1.5.6
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.base-branch.outputs.branch }}
 
       - name: Cleanup Branch
         if: always()
