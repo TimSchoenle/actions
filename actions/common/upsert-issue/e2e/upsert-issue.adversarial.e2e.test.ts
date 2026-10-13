@@ -114,7 +114,7 @@ describe('upsert-issue (adversarial)', () => {
     it('opens an issue full of workflow commands without letting the runner see them', async () => {
       const payload = commandInjectionPayload('repo is healthy');
 
-      const result = await run({ body: payload, identifier: 'injected-body' }, 'success');
+      const result = await run({ body: payload, identifier: scratch.identifier('injected-body') }, 'success');
       await trackIfOpened(result);
 
       expectNoInjection(result);
@@ -126,14 +126,17 @@ describe('upsert-issue (adversarial)', () => {
     });
 
     it('cuts an oversized body to what GitHub accepts instead of failing the build', async () => {
-      const result = await run({ body: oversized(MAX_ISSUE_BODY_LENGTH), identifier: 'oversized' }, 'success');
+      const result = await run(
+        { body: oversized(MAX_ISSUE_BODY_LENGTH), identifier: scratch.identifier('oversized') },
+        'success',
+      );
       await trackIfOpened(result);
 
       expect(result.warnings.join('\n')).toContain('cut short');
 
       const record = await scratch.issueRecord(Number(result.outputs.issue_number));
 
-      expect(record.body).toContain(markerFor('oversized'));
+      expect(record.body).toContain(markerFor(scratch.identifier('oversized')));
       expect(record.body?.length).toBeLessThanOrEqual(MAX_ISSUE_BODY_LENGTH);
     });
   });

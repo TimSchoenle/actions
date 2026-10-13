@@ -27,6 +27,35 @@ function mockOctokit(): OctokitMock {
   return octokit;
 }
 
+describe('ScratchRepo.identifier', () => {
+  beforeEach(() => {
+    mockOctokit();
+    vi.stubEnv('E2E_GITHUB_TOKEN', 'ghs_test_token');
+    vi.stubEnv('E2E_TEST_REPOSITORY', 'owner/repo');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('scopes a case name to the suite and the run', () => {
+    vi.stubEnv('GITHUB_RUN_ID', '123');
+    vi.stubEnv('GITHUB_RUN_ATTEMPT', '2');
+
+    expect(ScratchRepo.fromEnvironment('suite').identifier('create')).toBe('suite.123-2.create');
+  });
+
+  // Two runs reusing one identifier is the collision this exists to prevent.
+  it('differs between two runs of the same suite', () => {
+    vi.stubEnv('GITHUB_RUN_ID', '123');
+    const first = ScratchRepo.fromEnvironment('suite').identifier('create');
+    vi.stubEnv('GITHUB_RUN_ID', '124');
+    const second = ScratchRepo.fromEnvironment('suite').identifier('create');
+
+    expect(first).not.toBe(second);
+  });
+});
+
 describe('ScratchRepo.removeBranch', () => {
   let octokit: OctokitMock;
   let scratch: ScratchRepo;
