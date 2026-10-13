@@ -333,6 +333,20 @@ export class ScratchRepo {
     return head;
   }
 
+  /**
+   * Deletes a branch mid-case, for fixtures that need one to disappear under the action under test.
+   *
+   * Goes through the same converging delete as teardown, so the branch is gone for every replica by
+   * the time this resolves. It stays registered: teardown treats an absent branch as cleaned up.
+   */
+  async removeBranch(branch: string): Promise<void> {
+    const failure = await this.deleteBranch(branch);
+
+    if (failure !== undefined) {
+      throw new Error(`Failed to delete ${failure}`);
+    }
+  }
+
   /** Writes a file on a branch, producing a commit, and returns its SHA. */
   async commitFile(branch: string, filePath: string, contents: string, message: string): Promise<string> {
     const { data } = await this.octokit.rest.repos.createOrUpdateFileContents({
