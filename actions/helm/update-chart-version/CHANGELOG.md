@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.6.18](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.6.17...actions-helm-update-chart-version-v1.6.18) (2026-10-15)
+
+
+### Bug Fixes
+
+* **actions/common/close-pull-request:** treat a PR closed by base-branch deletion as closed ([#1857](https://github.com/TimSchoenle/actions/issues/1857)) ([a18dbef](https://github.com/TimSchoenle/actions/commit/a18dbef1932a4b4fd0b39d52260f93531ec25bcd))
+
+
+### Dependencies
+
+* **deps:** update timschoenle/actions/actions/common/create-pull-request to vactions-common-create-pull-request-v1.0.24 ([#1856](https://github.com/TimSchoenle/actions/issues/1856)) ([5fb5935](https://github.com/TimSchoenle/actions/commit/5fb5935c449667e370e220806e8eaf3d8b07eace))
+
 ## [1.6.17](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.6.16...actions-helm-update-chart-version-v1.6.17) (2026-10-12)
 
 

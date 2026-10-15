@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.25](https://github.com/TimSchoenle/actions/compare/actions-common-create-pull-request-v1.0.24...actions-common-create-pull-request-v1.0.25) (2026-10-15)
+
+
+### Bug Fixes
+
+* **actions/common/close-pull-request:** treat a PR closed by base-branch deletion as closed ([#1857](https://github.com/TimSchoenle/actions/issues/1857)) ([a18dbef](https://github.com/TimSchoenle/actions/commit/a18dbef1932a4b4fd0b39d52260f93531ec25bcd))
+
 ## [1.0.24](https://github.com/TimSchoenle/actions/compare/actions-common-create-pull-request-v1.0.23...actions-common-create-pull-request-v1.0.24) (2026-10-12)
 
 

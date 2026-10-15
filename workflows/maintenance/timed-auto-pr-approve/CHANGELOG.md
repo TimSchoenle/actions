@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.42](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.41...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.42) (2026-10-15)
+
+
+### Bug Fixes
+
+* **actions/common/close-pull-request:** treat a PR closed by base-branch deletion as closed ([#1857](https://github.com/TimSchoenle/actions/issues/1857)) ([a18dbef](https://github.com/TimSchoenle/actions/commit/a18dbef1932a4b4fd0b39d52260f93531ec25bcd))
+
 ## [1.2.41](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.40...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.41) (2026-10-12)
 
 
