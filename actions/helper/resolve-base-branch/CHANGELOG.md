@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.7](https://github.com/TimSchoenle/actions/compare/actions-helper-resolve-base-branch-v1.5.6...actions-helper-resolve-base-branch-v1.5.7) (2026-10-15)
+
+
+### Dependencies
+
+* **deps:** update dependency @types/node to v26.6.5 ([#1853](https://github.com/TimSchoenle/actions/issues/1853)) ([57df86d](https://github.com/TimSchoenle/actions/commit/57df86d54887c72d94867f77d17f45cdb2a6f016))
+* **deps:** update dependency bun to v1.4.3 ([#1858](https://github.com/TimSchoenle/actions/issues/1858)) ([be4a7c7](https://github.com/TimSchoenle/actions/commit/be4a7c7cf344bc87659a6dd7dfdbd17b0768d2e5))
+
 ## [1.5.6](https://github.com/TimSchoenle/actions/compare/actions-helper-resolve-base-branch-v1.5.5...actions-helper-resolve-base-branch-v1.5.6) (2026-10-09)
 
 

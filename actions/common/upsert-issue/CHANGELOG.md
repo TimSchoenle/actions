@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.6](https://github.com/TimSchoenle/actions/compare/actions-common-upsert-issue-v1.1.5...actions-common-upsert-issue-v1.1.6) (2026-10-15)
+
+
+### Bug Fixes
+
+* **actions/common/close-pull-request:** treat a PR closed by base-branch deletion as closed ([#1857](https://github.com/TimSchoenle/actions/issues/1857)) ([a18dbef](https://github.com/TimSchoenle/actions/commit/a18dbef1932a4b4fd0b39d52260f93531ec25bcd))
+
+
+### Dependencies
+
+* **deps:** update dependency @types/node to v26.6.5 ([#1853](https://github.com/TimSchoenle/actions/issues/1853)) ([57df86d](https://github.com/TimSchoenle/actions/commit/57df86d54887c72d94867f77d17f45cdb2a6f016))
+* **deps:** update dependency bun to v1.4.3 ([#1858](https://github.com/TimSchoenle/actions/issues/1858)) ([be4a7c7](https://github.com/TimSchoenle/actions/commit/be4a7c7cf344bc87659a6dd7dfdbd17b0768d2e5))
+
 ## [1.1.5](https://github.com/TimSchoenle/actions/compare/actions-common-upsert-issue-v1.1.4...actions-common-upsert-issue-v1.1.5) (2026-10-09)
 
 
