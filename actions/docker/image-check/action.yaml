@@ -139,7 +139,7 @@ runs:
     - name: Upsert Pull Request Comment
       id: comment
       if: steps.measure.outputs.write_comment == 'true'
-      uses: TimSchoenle/actions/actions/common/upsert-pr-comment@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-upsert-pr-comment-v1.2.2
+      uses: TimSchoenle/actions/actions/common/upsert-pr-comment@f33849da61e2397d3a9277762d09a1bf0d2b9d7c # tag=actions-common-upsert-pr-comment-v1.2.3
       with:
         token: ${{ inputs.token }}
         identifier: ${{ steps.measure.outputs.comment_identifier }}
