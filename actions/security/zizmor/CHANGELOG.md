@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-security-zizmor-v1.1.0...actions-security-zizmor-v1.1.1) (2026-10-15)
+
+
+### Dependencies
+
+* **deps:** update dependency @types/node to v26.6.5 ([#1853](https://github.com/TimSchoenle/actions/issues/1853)) ([57df86d](https://github.com/TimSchoenle/actions/commit/57df86d54887c72d94867f77d17f45cdb2a6f016))
+* **deps:** update dependency bun to v1.4.3 ([#1858](https://github.com/TimSchoenle/actions/issues/1858)) ([be4a7c7](https://github.com/TimSchoenle/actions/commit/be4a7c7cf344bc87659a6dd7dfdbd17b0768d2e5))
+* **deps:** update ghcr.io/zizmorcore/zizmor docker tag to v1.31.0 ([#1859](https://github.com/TimSchoenle/actions/issues/1859)) ([978c61a](https://github.com/TimSchoenle/actions/commit/978c61aa574b0c8751cfec8847e44f605e5f526c))
+
 ## [1.1.0](https://github.com/TimSchoenle/actions/compare/actions-security-zizmor-v1.0.0...actions-security-zizmor-v1.1.0) (2026-10-12)
 
 
