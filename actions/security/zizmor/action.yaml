@@ -78,7 +78,7 @@ runs:
         INPUT_STRICT_COLLECTION: ${{ inputs.strict-collection }}
         INPUT_UPLOAD: ${{ inputs.upload }}
         INPUT_TOKEN: ${{ inputs.token }}
-        INPUT_IMAGE: ghcr.io/zizmorcore/zizmor:1.31.0@sha256:5a91180aefd2c72e585a155ee15938ecc2911b64e7fade998bf79fbd16a07856
+        INPUT_IMAGE: ghcr.io/zizmorcore/zizmor:1.31.1@sha256:42d409dbb851d4c5d35a058cf042b828bea1e3f2884378c526eb0974780e18d9
       run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"
 
     # Reached only when zizmor loaded every input: a failed run leaves no SARIF, and uploading an
