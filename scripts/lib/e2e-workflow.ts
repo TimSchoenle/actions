@@ -36,7 +36,7 @@ export const VERIFY_WORKFLOW_PREFIX = 'verify-action-';
 export const PINNED = {
   hardenRunner: 'step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1',
   checkout: 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1',
-  createAppToken: 'actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0',
+  createAppToken: 'actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0',
   setupBun:
     'TimSchoenle/actions/actions/bun/setup-cached@e16a1e466faf8ec751b26289c1898143a253269f # tag=actions-bun-setup-cached-v1.1.11',
   // Used only by the test job, which must not install anything. Kept at the same versions
