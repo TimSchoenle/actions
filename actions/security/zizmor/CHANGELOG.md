@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-security-zizmor-v1.1.1...actions-security-zizmor-v1.1.2) (2026-10-17)
+
+
+### Dependencies
+
+* **deps:** update ghcr.io/zizmorcore/zizmor docker tag to v1.31.1 ([#1869](https://github.com/TimSchoenle/actions/issues/1869)) ([648ea57](https://github.com/TimSchoenle/actions/commit/648ea57110a0e9ed596ca77fa5503180653cc9e9))
+* **deps:** update vitest monorepo to v5.0.4 ([#1875](https://github.com/TimSchoenle/actions/issues/1875)) ([f1fd087](https://github.com/TimSchoenle/actions/commit/f1fd087ba71526256ab6d2f29e92d61c751675c8))
+
 ## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-security-zizmor-v1.1.0...actions-security-zizmor-v1.1.1) (2026-10-15)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.7](https://github.com/TimSchoenle/actions/compare/actions-common-upsert-issue-v1.1.6...actions-common-upsert-issue-v1.1.7) (2026-10-17)
+
+
+### Dependencies
+
+* **deps:** update vitest monorepo to v5.0.4 ([#1875](https://github.com/TimSchoenle/actions/issues/1875)) ([f1fd087](https://github.com/TimSchoenle/actions/commit/f1fd087ba71526256ab6d2f29e92d61c751675c8))
+
 ## [1.1.6](https://github.com/TimSchoenle/actions/compare/actions-common-upsert-issue-v1.1.5...actions-common-upsert-issue-v1.1.6) (2026-10-15)
 
 

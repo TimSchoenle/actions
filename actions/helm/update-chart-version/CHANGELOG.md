@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.6.19](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.6.18...actions-helm-update-chart-version-v1.6.19) (2026-10-17)
+
+
+### Dependencies
+
+* **deps:** update actions/create-github-app-token action to v3.3.0 ([#1877](https://github.com/TimSchoenle/actions/issues/1877)) ([b58d068](https://github.com/TimSchoenle/actions/commit/b58d06885d5fa61dbe0077a2f77cb32da8aff39b))
+* **deps:** update timschoenle/actions/actions/common/create-pull-request to vactions-common-create-pull-request-v1.0.25 ([#1866](https://github.com/TimSchoenle/actions/issues/1866)) ([93d8e47](https://github.com/TimSchoenle/actions/commit/93d8e4731ab1aa8cd67300c39ba75461bdedd116))
+* **deps:** update timschoenle/actions/actions/helm/apply-chart-updates to vactions-helm-apply-chart-updates-v1.3.7 ([#1870](https://github.com/TimSchoenle/actions/issues/1870)) ([464547a](https://github.com/TimSchoenle/actions/commit/464547ae8c1ab2b12be00b0d15cbc5f4c75492a4))
+* **deps:** update timschoenle/actions/actions/helper/resolve-base-branch to vactions-helper-resolve-base-branch-v1.5.7 ([#1871](https://github.com/TimSchoenle/actions/issues/1871)) ([69489e3](https://github.com/TimSchoenle/actions/commit/69489e37736446d48f343f300e70f3fb1b9ea297))
+
 ## [1.6.18](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.6.17...actions-helm-update-chart-version-v1.6.18) (2026-10-15)
 
 
