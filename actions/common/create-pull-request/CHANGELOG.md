@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.26](https://github.com/TimSchoenle/actions/compare/actions-common-create-pull-request-v1.0.25...actions-common-create-pull-request-v1.0.26) (2026-10-17)
+
+
+### Dependencies
+
+* **deps:** update actions/create-github-app-token action to v3.3.0 ([#1877](https://github.com/TimSchoenle/actions/issues/1877)) ([b58d068](https://github.com/TimSchoenle/actions/commit/b58d06885d5fa61dbe0077a2f77cb32da8aff39b))
+* **deps:** update timschoenle/actions/actions/common/commit-changes to vactions-common-commit-changes-v1.5.7 ([#1863](https://github.com/TimSchoenle/actions/issues/1863)) ([53301c7](https://github.com/TimSchoenle/actions/commit/53301c7a58911062547956f51f858e41cf57a975))
+* **deps:** update timschoenle/actions/actions/common/create-branch to vactions-common-create-branch-v1.6.7 ([#1865](https://github.com/TimSchoenle/actions/issues/1865)) ([f1f5476](https://github.com/TimSchoenle/actions/commit/f1f54769d6142547cbf20008172972e33c274cbe))
+
 ## [1.0.25](https://github.com/TimSchoenle/actions/compare/actions-common-create-pull-request-v1.0.24...actions-common-create-pull-request-v1.0.25) (2026-10-15)
 
 
