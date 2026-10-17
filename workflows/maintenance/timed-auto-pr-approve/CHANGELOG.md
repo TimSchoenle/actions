@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.43](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.42...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.43) (2026-10-17)
+
+
+### Dependencies
+
+* **deps:** update actions/create-github-app-token action to v3.3.0 ([#1877](https://github.com/TimSchoenle/actions/issues/1877)) ([b58d068](https://github.com/TimSchoenle/actions/commit/b58d06885d5fa61dbe0077a2f77cb32da8aff39b))
+* **deps:** update timschoenle/actions/actions/helper/verify-commit-authors to vactions-helper-verify-commit-authors-v1.5.7 ([#1872](https://github.com/TimSchoenle/actions/issues/1872)) ([3aec01b](https://github.com/TimSchoenle/actions/commit/3aec01b394ff357b6e2dcf984e3311bff6ef6bb8))
+
 ## [1.2.42](https://github.com/TimSchoenle/actions/compare/workflows-maintenance-timed-auto-pr-approve-meta-v1.2.41...workflows-maintenance-timed-auto-pr-approve-meta-v1.2.42) (2026-10-15)
 
 

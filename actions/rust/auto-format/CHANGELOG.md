@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.23](https://github.com/TimSchoenle/actions/compare/actions-rust-auto-format-v1.1.22...actions-rust-auto-format-v1.1.23) (2026-10-17)
+
+
+### Dependencies
+
+* **deps:** update actions/create-github-app-token action to v3.3.0 ([#1877](https://github.com/TimSchoenle/actions/issues/1877)) ([b58d068](https://github.com/TimSchoenle/actions/commit/b58d06885d5fa61dbe0077a2f77cb32da8aff39b))
+* **deps:** update timschoenle/actions/actions/common/commit-changes to vactions-common-commit-changes-v1.5.7 ([#1863](https://github.com/TimSchoenle/actions/issues/1863)) ([53301c7](https://github.com/TimSchoenle/actions/commit/53301c7a58911062547956f51f858e41cf57a975))
+
 ## [1.1.22](https://github.com/TimSchoenle/actions/compare/actions-rust-auto-format-v1.1.21...actions-rust-auto-format-v1.1.22) (2026-10-12)
 
 
