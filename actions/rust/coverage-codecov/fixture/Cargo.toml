@@ -1,5 +1,0 @@
-# Fixture for verify-action-rust-coverage-codecov. A workspace rather than a single package, so
-# `--workspace` in the action's default arguments means something here.
-[workspace]
-members = ["crates/arith"]
-resolver = "3"
