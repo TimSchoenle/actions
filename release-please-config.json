@@ -215,6 +215,11 @@
       "release-type": "simple",
       "component": "actions-security-zizmor",
       "include-component-in-tag": true
+    },
+    "actions/terrace/setup": {
+      "release-type": "simple",
+      "component": "actions-terrace-setup",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

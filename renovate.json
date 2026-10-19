@@ -23,7 +23,7 @@
       "autoReplaceStringTemplate": "'{{{depName}}}@{{#if newDigest}}{{{newDigest}}}{{/if}}{{#unless newDigest}}{{{newValue}}}{{/unless}} # tag={{{newValue}}}'"
     },
     {
-      "description": "Third-party actions pinned inside the end-to-end workflow generator, addressed by a subdirectory of their repository. These need depName and packageName to differ — the tags live on actions/cache, not on actions/cache/restore — which a single generic pattern cannot express, so each is listed explicitly and the contract test fails a new one that is not.",
+      "description": "Third-party actions pinned inside the end-to-end workflow generator, addressed by a subdirectory of their repository. These need depName and packageName to differ \u2014 the tags live on actions/cache, not on actions/cache/restore \u2014 which a single generic pattern cannot express, so each is listed explicitly and the contract test fails a new one that is not.",
       "customType": "regex",
       "managerFilePatterns": ["/^scripts/lib/e2e-workflow\\.ts$/"],
       "matchStrings": [
@@ -33,7 +33,7 @@
       "datasourceTemplate": "github-tags"
     },
     {
-      "description": "Third-party actions pinned inside the end-to-end workflow generator, addressed by repository. Anchored on the opening quote of the TypeScript string literal, which is what keeps it from also matching the subdirectory and internal forms above without needing a lookahead — re2, which Renovate uses, has none.",
+      "description": "Third-party actions pinned inside the end-to-end workflow generator, addressed by repository. Anchored on the opening quote of the TypeScript string literal, which is what keeps it from also matching the subdirectory and internal forms above without needing a lookahead \u2014 re2, which Renovate uses, has none.",
       "customType": "regex",
       "managerFilePatterns": ["/^scripts/lib/e2e-workflow\\.ts$/"],
       "matchStrings": [
@@ -49,6 +49,15 @@
         "(?<depName>ghcr\\.io\\/zizmorcore\\/zizmor):(?<currentValue>[\\w.-]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
       ],
       "datasourceTemplate": "docker"
+    },
+    {
+      "description": "The cosign and oras releases actions/terrace/setup installs, pinned as input defaults in its action.yaml with a `# renovate:` comment naming the datasource. Neither the github-actions manager nor any other reads an input default, so without this Renovate would never update them. The bump ships as a release of the action.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^actions/terrace/setup/action\\.yaml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[\\w-]+) depName=(?<depName>[\\w./-]+)(?: extractVersion=(?<extractVersion>\\S+))?\\s+default: '(?<currentValue>[^']+)'"
+      ],
+      "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>.*)${{/if}}"
     }
   ],
   "packageRules": [

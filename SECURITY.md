@@ -95,6 +95,12 @@ is not, including older versions of a component whose neighbours have since rele
 | [Security CodeQL](./actions/security/codeql) | [actions-security-codeql-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-security-codeql-v1.1.3) | :white_check_mark: |
 | [Security Zizmor](./actions/security/zizmor) | [actions-security-zizmor-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-security-zizmor-v1.1.2) | :white_check_mark: |
 
+#### Terrace
+
+| Component | Version | Supported |
+| --- | --- | --- |
+| [Terrace Setup](./actions/terrace/setup) | [actions-terrace-setup-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-setup-v1.0.0) | :white_check_mark: |
+
 #### Test
 
 | Component | Version | Supported |

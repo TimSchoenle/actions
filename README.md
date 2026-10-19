@@ -147,6 +147,12 @@ outputs. Where an action needs more than that, a README sits next to it.
 | [Security CodeQL](./actions/security/codeql) | Runs CodeQL on one language with build-mode none, excluding test sources so fixtures and assertion messages do not raise alerts, and uploads the result to code scanning. | [actions-security-codeql-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-security-codeql-v1.1.3) | `uses: TimSchoenle/actions/actions/security/codeql@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-security-codeql-v1.1.3` |
 | [Security Zizmor](./actions/security/zizmor) | Runs zizmor over workflows and actions with strict collection, uploads the SARIF to code scanning under the category zizmor, and fails the job on an input zizmor cannot parse or a finding at or above a severity. | [actions-security-zizmor-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-security-zizmor-v1.1.2) | `uses: TimSchoenle/actions/actions/security/zizmor@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-security-zizmor-v1.1.2` |
 
+#### Terrace
+
+| Action | Description | Version | Usage |
+| --- | --- | --- | --- |
+| [Terrace Setup](./actions/terrace/setup) | Installs a signature-verified terrace-contract release on PATH, together with cosign and, when asked, oras. The version comes from the version input or from the cli pin in terrace.yaml. | [actions-terrace-setup-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-setup-v1.0.0) | `uses: TimSchoenle/actions/actions/terrace/setup@actions-terrace-setup-v1.0.0 # tag=actions-terrace-setup-v1.0.0` |
+
 #### Test
 
 | Action | Description | Version | Usage |
