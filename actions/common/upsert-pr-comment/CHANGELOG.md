@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/TimSchoenle/actions/compare/actions-common-upsert-pr-comment-v1.2.5...actions-common-upsert-pr-comment-v1.3.0) (2026-10-19)
+
+
+### Features
+
+* **Actions/Upsert-PR-Comment:** add create_new to correct a comment without starting one ([#1897](https://github.com/TimSchoenle/actions/issues/1897)) ([45a32ac](https://github.com/TimSchoenle/actions/commit/45a32ac4f9b93188b14facc9652a2fad8456e959))
+
 ## [1.2.5](https://github.com/TimSchoenle/actions/compare/actions-common-upsert-pr-comment-v1.2.4...actions-common-upsert-pr-comment-v1.2.5) (2026-10-19)
 
 
