@@ -69,6 +69,13 @@ inputs:
     description: 'Prefix for the PR branch. The branch is <prefix>/<chart-name>/<new-chart-version>.'
     default: 'chore/helm/auto-update'
     required: false
+  pull-contracts:
+    description: "Refresh the chart's vendored configuration contracts from the images it now pins, with
+      terrace-contract pull, and commit them with the update. The charts repository must carry a terrace.yaml
+      at its root that pins the CLI (0.9 or newer) and names helm.signer, and the images must be pullable
+      without credentials. A chart without a config-contract.yaml is left as it is."
+    required: false
+    default: 'false'
 
 outputs:
   pr-url:
@@ -102,6 +109,7 @@ runs:
       env:
         CHART_PATH: ${{ inputs.chart-path }}
         HELM_REPO: ${{ inputs.helm-repo }}
+        PULL_CONTRACTS: ${{ inputs.pull-contracts }}
       run: |
         set -euo pipefail
 
@@ -116,6 +124,11 @@ runs:
 
         echo "owner=${HELM_REPO%%/*}" >> "$GITHUB_OUTPUT"
         echo "repo=${HELM_REPO#*/}" >> "$GITHUB_OUTPUT"
+
+        case "$PULL_CONTRACTS" in
+          true | false) ;;
+          *) echo "::error::pull-contracts must be true or false, got '$PULL_CONTRACTS'"; exit 1 ;;
+        esac
 
     - name: Generate Bot Token
       id: generate_token
@@ -163,6 +176,34 @@ runs:
         key-pattern: ${{ inputs.key-pattern }}
         value-pattern: ${{ inputs.value-pattern }}
 
+    # After the update, because the contract to fetch is the one the new digest carries, and pull reads
+    # the new appVersion. The version comes from the charts repository's own terrace.yaml, so the CLI
+    # that writes the contract is the one that repository's gates check it with.
+    - name: Install terrace-contract
+      if: inputs.pull-contracts == 'true'
+      uses: TimSchoenle/actions/actions/terrace/setup@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-terrace-setup-v1.1.0
+      with:
+        oras: 'true'
+
+    # The chart tree is the chart's parent directory, named explicitly rather than read from
+    # terrace.yaml, so the chart pulled is always the one chart-path names.
+    - name: Pull Configuration Contracts
+      id: contracts
+      if: inputs.pull-contracts == 'true'
+      shell: bash
+      env:
+        CHART_PATH: ${{ inputs.chart-path }}
+        FILES: ${{ steps.apply.outputs.files }}
+      run: |
+        set -euo pipefail
+
+        chart_path="${CHART_PATH%/}"
+        terrace-contract pull --charts "$(dirname "$chart_path")" "$(basename "$chart_path")"
+
+        # The contracts a declaration names live anywhere under the chart, so the chart directory is
+        # committed whole; nothing else in this checkout has been written.
+        echo "files=${FILES} ${chart_path}" >> "$GITHUB_OUTPUT"
+
     - name: Create Pull Request
       id: create-pr
       uses: TimSchoenle/actions/actions/common/create-pull-request@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-common-create-pull-request-v1.0.26
@@ -189,4 +230,4 @@ runs:
         reset_branch: 'true'
         commit_changes: 'true'
         commit_message: 'chore(${{ steps.parse.outputs.chart-name }}): update chart to ${{ steps.apply.outputs.chart-version }}'
-        file_pattern: ${{ steps.apply.outputs.files }}
+        file_pattern: ${{ steps.contracts.outputs.files || steps.apply.outputs.files }}
