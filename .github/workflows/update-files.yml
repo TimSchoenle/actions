@@ -62,7 +62,7 @@ jobs:
 
       - name: Commit and Push if changed
         id: auto-commit
-        uses: TimSchoenle/actions/actions/common/commit-changes@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-common-commit-changes-v1.5.8
+        uses: TimSchoenle/actions/actions/common/commit-changes@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-commit-changes-v1.5.9
         with:
           commit_message: 'build: auto-update compiled artifacts'
           file_pattern: 'actions/**/dist/**/* actions/**/src/generated/**/* workflows/**/dist/**/* workflows/**/src/generated/**/*'
@@ -70,7 +70,7 @@ jobs:
 
       - name: Comment on PR
         if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request'
-        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-common-upsert-pr-comment-v1.2.4
+        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
         with:
           token: ${{ steps.generate_token.outputs.token }}
           identifier: 'update-builds'
@@ -142,7 +142,7 @@ jobs:
 
       - name: Commit and Push if changed
         id: auto-commit
-        uses: TimSchoenle/actions/actions/common/commit-changes@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-common-commit-changes-v1.5.8
+        uses: TimSchoenle/actions/actions/common/commit-changes@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-commit-changes-v1.5.9
         with:
           commit_message: 'ci: auto-update generated workflows'
           file_pattern: '.github/workflows/verify-action-*.yaml .github/workflows/ci-required.yaml .github/codecov.yml'
@@ -150,7 +150,7 @@ jobs:
 
       - name: Comment on PR
         if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request'
-        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-common-upsert-pr-comment-v1.2.4
+        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
         with:
           token: ${{ steps.generate_token.outputs.token }}
           identifier: 'update-generated-workflows'
@@ -202,7 +202,7 @@ jobs:
 
       - name: Commit and Push if changed
         id: auto-commit
-        uses: TimSchoenle/actions/actions/common/commit-changes@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-common-commit-changes-v1.5.8
+        uses: TimSchoenle/actions/actions/common/commit-changes@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-commit-changes-v1.5.9
         with:
           commit_message: 'docs: auto-update documentation'
           file_pattern: 'README.md SECURITY.md'
@@ -210,7 +210,7 @@ jobs:
 
       - name: Comment on PR
         if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request'
-        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-common-upsert-pr-comment-v1.2.4
+        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
         with:
           token: ${{ steps.generate_token.outputs.token }}
           identifier: 'update-readme'
