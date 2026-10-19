@@ -13,7 +13,15 @@ const marker = markerFor('size');
 const composed = `${marker}\n\nthe report`;
 
 function request(overrides: Partial<UpsertRequest> = {}): UpsertRequest {
-  return { author: '', body: 'the report', identifier: 'size', target, updateExisting: true, ...overrides };
+  return {
+    author: '',
+    body: 'the report',
+    createNew: true,
+    identifier: 'size',
+    target,
+    updateExisting: true,
+    ...overrides,
+  };
 }
 
 function comment(overrides: Partial<ExistingComment> = {}): ExistingComment {
@@ -144,6 +152,29 @@ describe('upsertComment', () => {
     api.updateComment.mockRejectedValue(new Error('502 Bad Gateway'));
 
     await expect(upsertComment(api, request())).rejects.toThrow('502 Bad Gateway');
+    expect(api.createComment).not.toHaveBeenCalled();
+  });
+
+  it('updates the marked comment when creating is switched off', async () => {
+    const api = fakeApi([[comment({ body: `${marker}\n\nold`, id: 5 })]]);
+
+    await expect(upsertComment(api, request({ createNew: false }))).resolves.toMatchObject({ operation: 'updated' });
+    expect(api.createComment).not.toHaveBeenCalled();
+  });
+
+  it('posts nothing when creating is switched off and no comment carries the marker', async () => {
+    const api = fakeApi([[comment({ body: 'unrelated chatter' })]]);
+
+    await expect(upsertComment(api, request({ createNew: false }))).resolves.toBeUndefined();
+    expect(api.createComment).not.toHaveBeenCalled();
+    expect(api.updateComment).not.toHaveBeenCalled();
+  });
+
+  it('posts nothing when creating is switched off and the comment found is gone', async () => {
+    const api = fakeApi([[comment({ body: `${marker}\n\nold`, id: 5 })]]);
+    api.updateComment.mockRejectedValue(new CommentUnavailableError('comment 5 can no longer be updated'));
+
+    await expect(upsertComment(api, request({ createNew: false }))).resolves.toBeUndefined();
     expect(api.createComment).not.toHaveBeenCalled();
   });
 

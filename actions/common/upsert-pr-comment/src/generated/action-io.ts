@@ -23,6 +23,7 @@ export const ActionInput = {
   header: 'header',
   footer: 'footer',
   update_existing: 'update_existing',
+  create_new: 'create_new',
   author: 'author',
 } as const;
 

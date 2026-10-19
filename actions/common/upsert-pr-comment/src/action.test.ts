@@ -21,6 +21,7 @@ const defaultInputs: Inputs = {
   body: 'the report',
   body_file: '',
   body_lines: '',
+  create_new: 'true',
   footer: '',
   header: '',
   identifier: 'docker-image-size',
@@ -100,6 +101,27 @@ describe('upsert-pr-comment action', () => {
 
     expect(api.updateComment).toHaveBeenCalled();
     expect(outputs()).toMatchObject({ comment_id: '5', operation: 'updated' });
+  });
+
+  it('skips without posting when create_new is off and no comment carries the identifier', async () => {
+    setInputs({ create_new: 'false' });
+    const api = fakeApi();
+
+    await run(api);
+
+    expect(core.setFailed).not.toHaveBeenCalled();
+    expect(api.createComment).not.toHaveBeenCalled();
+    expect(outputs()).toEqual({ comment_id: '', comment_url: '', operation: 'skipped' });
+  });
+
+  it('refuses update_existing and create_new both off before touching the API', async () => {
+    setInputs({ create_new: 'false', update_existing: 'false' });
+    const api = fakeApi();
+
+    await run(api);
+
+    expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('both false'));
+    expect(api.comments).not.toHaveBeenCalled();
   });
 
   it('warns when a body had to be cut short', async () => {

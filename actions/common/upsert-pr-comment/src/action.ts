@@ -29,9 +29,18 @@ function report(outcome: UpsertOutcome): void {
   core.info(`${OPERATION_MESSAGES[outcome.operation]}: ${quoteUrlForLog(outcome.comment.url)}`);
 }
 
+/** Publishes the outputs of a run that posted nothing, and says why. */
+function skip(reason: string): void {
+  setOutput(ActionOutput.comment_id, '');
+  setOutput(ActionOutput.comment_url, '');
+  setOutput(ActionOutput.operation, 'skipped');
+  core.info(reason);
+}
+
 /**
- * Reads the action inputs and posts the comment, updating the one a previous run left behind, or
- * skips without an API call when `body_lines` left nothing to report.
+ * Reads the action inputs and posts the comment, updating the one a previous run left behind. Skips
+ * without an API call when `body_lines` left nothing to report, and without posting when
+ * `create_new` is off and there is no comment to update.
  *
  * @param api - injection seam for tests; defaults to the GitHub REST API bound to `token`.
  */
@@ -41,11 +50,16 @@ export function run(api?: CommentApi): Promise<void> {
     const identifier = getInput(ActionInput.identifier, { required: true });
     const prUrl = getInput(ActionInput.pr_url);
     const updateExisting = getBooleanInput(ActionInput.update_existing);
+    const createNew = getBooleanInput(ActionInput.create_new);
     const author = getInput(ActionInput.author);
 
     // Validated before a skip can return, so a bad identifier fails a quiet run too rather than
     // waiting for the first run that has something to report.
     markerFor(identifier);
+
+    if (!updateExisting && !createNew) {
+      throw new Error('update_existing and create_new are both false, so no run could ever post anything.');
+    }
 
     const body = await resolveBody(
       {
@@ -61,10 +75,7 @@ export function run(api?: CommentApi): Promise<void> {
     // Returning before the URL is parsed lets a skipped run pass on a `push` event, where `pr_url`
     // is empty. An existing comment is left alone: it is still true of the push it described.
     if (body === undefined) {
-      setOutput(ActionOutput.comment_id, '');
-      setOutput(ActionOutput.comment_url, '');
-      setOutput(ActionOutput.operation, 'skipped');
-      core.info('Nothing to report; no comment posted.');
+      skip('Nothing to report; no comment posted.');
 
       return;
     }
@@ -76,10 +87,17 @@ export function run(api?: CommentApi): Promise<void> {
     const outcome = await upsertComment(api ?? createCommentApi(token), {
       author,
       body,
+      createNew,
       identifier,
       target,
       updateExisting,
     });
+
+    if (outcome === undefined) {
+      skip('No comment this run may edit carries the identifier, and create_new is false; no comment posted.');
+
+      return;
+    }
 
     setOutput(ActionOutput.comment_id, String(outcome.comment.id));
     setOutput(ActionOutput.comment_url, outcome.comment.url);
