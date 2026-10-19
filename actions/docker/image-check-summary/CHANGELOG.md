@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.6](https://github.com/TimSchoenle/actions/compare/actions-docker-image-check-summary-v1.1.5...actions-docker-image-check-summary-v1.1.6) (2026-10-19)
+
+
+### Dependencies
+
+* **deps:** update timschoenle/actions/actions/common/upsert-pr-comment to vactions-common-upsert-pr-comment-v1.2.4 ([#1888](https://github.com/TimSchoenle/actions/issues/1888)) ([bab20b4](https://github.com/TimSchoenle/actions/commit/bab20b48b040571915b72878d5c06e3f554974f6))
+* **deps:** update vitest monorepo to v5.0.5 ([#1893](https://github.com/TimSchoenle/actions/issues/1893)) ([4203cad](https://github.com/TimSchoenle/actions/commit/4203cadcad81743fffb9b5577b792d4f7cc6755f))
+
 ## [1.1.5](https://github.com/TimSchoenle/actions/compare/actions-docker-image-check-summary-v1.1.4...actions-docker-image-check-summary-v1.1.5) (2026-10-17)
 
 
