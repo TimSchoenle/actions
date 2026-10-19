@@ -77,7 +77,9 @@ runs:
           exit 1
         fi
 
-        report="${RUNNER_TEMP}/terrace-contract-diff.txt"
+        # A file of its own per run, so a second call in the same job cannot overwrite the report the
+        # first one's `report` output still points at.
+        report="$(mktemp "${RUNNER_TEMP}/terrace-contract-diff.XXXXXX")"
 
         args=(diff --since "$SINCE" --exit-code)
         if [[ -n "$CHART" ]]; then

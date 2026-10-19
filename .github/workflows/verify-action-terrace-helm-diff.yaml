@@ -96,6 +96,7 @@ jobs:
           UNCHANGED: ${{ steps.unchanged.outputs.changed }}
         run: |
           set -euo pipefail
+          test -n "$KEY" || { echo "::error::the setup step names no removed key"; exit 1; }
           test "$CHANGED" = true || { echo "::error::a removed key was not reported as a change"; exit 1; }
           grep -F "$KEY" "$REPORT" | grep -q major || { echo "::error::the removed key is not reported as major"; exit 1; }
           grep -q 'impact: major' "$REPORT" || { echo "::error::the chart's impact is not major"; exit 1; }

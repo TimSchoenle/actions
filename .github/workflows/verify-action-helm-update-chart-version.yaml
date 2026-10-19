@@ -1051,7 +1051,7 @@ jobs:
   # pull-contracts against a real, signed image: the fixture chart from .github/testdata/terrace-helm,
   # seeded with a contract that is behind the one its image carries, so the pull has to rewrite it and
   # the rewrite has to reach the pull request. The image is "updated" to the digest it already pins,
-  # which keeps the expected contract the vendored one.
+  # which keeps the expected contract the vendored one and leaves values.yaml as it was.
   test-pull-contracts:
     environment:
       name: ci-e2e
@@ -1151,11 +1151,13 @@ jobs:
           files="$(gh pr view "$PR_NUMBER" --repo "$TEST_REPO" --json files --jq '.files[].path')"
           echo "Changed files:"
           echo "$files"
-          for file in Chart.yaml values.yaml contracts/viewer.json; do
-            grep -qxF "${CHART}/${file}" <<< "$files" || { echo "::error::${file} is not in the pull request"; exit 1; }
-          done
-          extra="$(grep -vxF -e "${CHART}/Chart.yaml" -e "${CHART}/values.yaml" -e "${CHART}/contracts/viewer.json" <<< "$files" || true)"
-          test -z "$extra" || { echo "::error::the pull request carries files nothing wrote: ${extra}"; exit 1; }
+          # values.yaml is not among them: the image is moved to the digest it already pins, so the
+          # update writes the same bytes and only the version bump and the pulled contract differ.
+          expected="$(printf '%s\n' "${CHART}/Chart.yaml" "${CHART}/contracts/viewer.json")"
+          if [[ "$(LC_ALL=C sort <<< "$files")" != "$expected" ]]; then
+            echo "::error::the pull request should change exactly Chart.yaml and the contract"
+            exit 1
+          fi
 
           gh api "/repos/$TEST_REPO/contents/${CHART}/contracts/viewer.json?ref=$BRANCH" --jq '.content' \
             | base64 -d > pulled.json
