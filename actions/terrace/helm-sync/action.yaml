@@ -109,12 +109,25 @@ runs:
           args+=(--since "$SINCE")
         fi
 
+        # The working tree under this directory as a tree object, written through a scratch index so
+        # the real one is left alone. Comparing it before and after the sync measures what the sync
+        # wrote, not what an earlier step left behind, and still sees a rewrite back to HEAD.
+        index="$(mktemp "${RUNNER_TEMP}/terrace-sync-index.XXXXXX")"
+        trap 'rm -f "$index"' EXIT
+        tree_state() {
+          rm -f "$index"
+          GIT_INDEX_FILE="$index" git read-tree HEAD
+          GIT_INDEX_FILE="$index" git add -A -- .
+          GIT_INDEX_FILE="$index" git write-tree
+        }
+        before="$(tree_state)"
+
         # The outcome is recorded before it is acted on, so `changed` is set even for a run where a
         # step failed after another had already written.
         status=0
         terrace-contract "${args[@]}" || status=$?
 
-        if [[ -n "$(git status --porcelain -- .)" ]]; then
+        if [[ "$(tree_state)" != "$before" ]]; then
           echo "changed=true" >> "$GITHUB_OUTPUT"
         else
           echo "changed=false" >> "$GITHUB_OUTPUT"

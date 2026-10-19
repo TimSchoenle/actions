@@ -29,6 +29,13 @@ inputs:
       request that never changed a contract gets no comment.'
     required: false
     default: ''
+  comment_author:
+    description: 'Only update a comment posted by this login, as for the author input of common/upsert-pr-comment,
+      e.g. "github-actions[bot]" when token is the job token. Empty accepts any author, so anyone who can comment can
+      paste the marker and make a later run fail when GitHub refuses to edit their comment. Set it on a repository
+      that takes pull requests from untrusted contributors.'
+    required: false
+    default: ''
   comment_identifier:
     description: 'Identifier of the pull request comment, as for common/upsert-pr-comment. Change it only to run
       this action twice on one pull request.'
@@ -102,9 +109,18 @@ runs:
         base_sha="$(git rev-parse --short "$SINCE")"
 
         if [[ "$changed" == true ]]; then
-          body="$(printf '### Configuration contract changes\n\nAgainst `%s`, at `%s`.\n\n<pre>\n%s\n</pre>\n' \
+          summary="$(printf '### Configuration contract changes\n\nAgainst `%s`, at `%s`.\n\n<pre>\n%s\n</pre>\n' \
             "$base_sha" "$head_sha" "$escaped")"
-          summary="$body"
+          # GitHub refuses a comment over 65536 characters, so a report that would not fit is cut at
+          # the last whole line under the limit, which no escape sequence spans. The job summary
+          # keeps all of it.
+          if (( ${#summary} > 60000 )); then
+            cut="$(awk -v max=58000 '{ n += length($0) + 1; if (n > max) exit; print }' <<< "$escaped")"
+            body="$(printf '### Configuration contract changes\n\nAgainst `%s`, at `%s`.\n\n<pre>\n%s\n</pre>\n\nThe report is cut short here; the job summary of this run holds all of it.\n' \
+              "$base_sha" "$head_sha" "$cut")"
+          else
+            body="$summary"
+          fi
         else
           # The comment only ever corrects an earlier one, so it says what changed since then.
           body="$(printf '### Configuration contract changes\n\nNo vendored configuration contract differs from `%s` any more, at `%s`.\n' \
@@ -133,3 +149,4 @@ runs:
         identifier: ${{ inputs.comment_identifier }}
         body: ${{ steps.diff.outputs.comment }}
         create_new: ${{ steps.diff.outputs.changed }}
+        author: ${{ inputs.comment_author }}

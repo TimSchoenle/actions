@@ -80,6 +80,25 @@ jobs:
           test -z "$COMMIT" || { echo "::error::a run without a token committed"; exit 1; }
           git diff --exit-code HEAD~1 -- "$FIXTURE" || { echo "::error::the rewrite is not the original file"; exit 1; }
 
+      # A file an earlier step left in the tree is not the sync's change: a second sync, with nothing
+      # left to rewrite, must report nothing even though the tree is dirty.
+      - name: Leave an unrelated file in the tree
+        run: echo 'not the sync' > "${FIXTURE}/unrelated.txt"
+
+      - name: Sync again over a dirty tree
+        id: again
+        uses: ./actions/terrace/helm-sync # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          pull: 'false'
+
+      - name: Verify the dirty tree was not reported as a change
+        env:
+          CHANGED: ${{ steps.again.outputs.changed }}
+        run: |
+          set -euo pipefail
+          test "$CHANGED" = false || { echo "::error::a file the sync did not write was reported as its change"; exit 1; }
+
   # The network half: the fixture pins a real, signed image, so a pull verifies its signature and
   # fetches the contract it carries, which must be the one already vendored. Audit rather than block,
   # because the registry redirects through hosts that are not stable enough to list.
