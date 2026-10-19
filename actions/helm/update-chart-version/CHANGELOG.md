@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.6.20...actions-helm-update-chart-version-v1.7.0) (2026-10-19)
+
+
+### Features
+
+* **Actions/Terrace:** add helm-sync, helm-check and helm-diff, and pull-contracts on update-chart-version ([#1900](https://github.com/TimSchoenle/actions/issues/1900)) ([6b2f418](https://github.com/TimSchoenle/actions/commit/6b2f4189ec28a67c2c507e4a1742bac415118a8d))
+
 ## [1.6.20](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.6.19...actions-helm-update-chart-version-v1.6.20) (2026-10-19)
 
 
