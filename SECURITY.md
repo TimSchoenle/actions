@@ -38,7 +38,7 @@ is not, including older versions of a component whose neighbours have since rele
 | [Render Template And Commit](./actions/common/render-template-and-commit) | [actions-common-render-template-and-commit-v1.1.16](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-and-commit-v1.1.16) | :white_check_mark: |
 | [Setup App Git Identity](./actions/common/setup-app-git-identity) | [actions-common-setup-app-git-identity-v1.5.9](https://github.com/TimSchoenle/actions/releases/tag/actions-common-setup-app-git-identity-v1.5.9) | :white_check_mark: |
 | [Upsert Issue](./actions/common/upsert-issue) | [actions-common-upsert-issue-v1.1.8](https://github.com/TimSchoenle/actions/releases/tag/actions-common-upsert-issue-v1.1.8) | :white_check_mark: |
-| [Upsert PR Comment](./actions/common/upsert-pr-comment) | [actions-common-upsert-pr-comment-v1.2.5](https://github.com/TimSchoenle/actions/releases/tag/actions-common-upsert-pr-comment-v1.2.5) | :white_check_mark: |
+| [Upsert PR Comment](./actions/common/upsert-pr-comment) | [actions-common-upsert-pr-comment-v1.3.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-upsert-pr-comment-v1.3.0) | :white_check_mark: |
 
 #### Docker
 
