@@ -61,6 +61,8 @@ describe('installTerrace', () => {
       '/tmp/SHA256SUMS.sigstore.json',
       '--certificate-identity-regexp',
       TERRACE_SIGNER,
+      '--certificate-github-workflow-repository',
+      'TimSchoenle/terrace-config',
       '--certificate-oidc-issuer',
       GITHUB_OIDC_ISSUER,
     ]);
@@ -161,5 +163,19 @@ describe('installOras', () => {
       'https://github.com/oras-project/oras/releases/download/v1.3.4/oras_1.3.4_checksums.txt',
     ]);
     expect(installed).toEqual({ version: '1.3.4', path: path.join('/cache/oras/1.3.4', 'oras') });
+  });
+});
+
+describe('TERRACE_SIGNER', () => {
+  const identity = (ref: string): string =>
+    `https://github.com/TimSchoenle/terrace-config/.github/workflows/release-cli.yml@${ref}`;
+
+  it('accepts only the release workflow on main', () => {
+    const signer = new RegExp(TERRACE_SIGNER);
+
+    expect(signer.test(identity('refs/heads/main'))).toBe(true);
+    expect(signer.test(identity('refs/heads/main-backup'))).toBe(false);
+    expect(signer.test(identity('refs/heads/feature'))).toBe(false);
+    expect(signer.test(identity('refs/pull/1/merge'))).toBe(false);
   });
 });

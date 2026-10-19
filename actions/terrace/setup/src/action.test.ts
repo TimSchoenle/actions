@@ -171,6 +171,23 @@ describe('terrace setup action', () => {
     expect(failure()).toBeUndefined();
   });
 
+  it('publishes nothing when oras fails to install', async () => {
+    setInputs({ version: '0.8.0', oras: 'true' });
+    const deps = dependencies();
+
+    vi.mocked(deps.ports.download).mockImplementation((url: string) =>
+      url.includes('oras')
+        ? Promise.reject(new Error('oras unavailable'))
+        : Promise.resolve(`/tmp/${path.posix.basename(url)}`),
+    );
+
+    await run(deps);
+
+    expect(failure()).toMatch(/oras unavailable/);
+    expect(deps.addPath).not.toHaveBeenCalled();
+    expect(core.setOutput).not.toHaveBeenCalled();
+  });
+
   it('fails when no release of the line is published', async () => {
     setInputs({ version: '1.0' });
     const deps = dependencies();

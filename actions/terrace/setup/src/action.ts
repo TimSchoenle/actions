@@ -172,6 +172,9 @@ export async function run(dependencies: ActionDependencies = defaultDependencies
     const { ports, runner } = dependencies;
     const cosign = await installCosign(ports, runner, cosignVersion);
     const terrace = await installTerrace(ports, runner, version, cosign.path);
+    // Every requested tool is installed before anything is published, so a failed step leaves
+    // nothing on PATH and no outputs for a later step to mistake for a working install.
+    const oras = wantsOras ? await installOras(ports, runner, orasVersion) : undefined;
 
     dependencies.addPath(path.dirname(cosign.path));
     dependencies.addPath(path.dirname(terrace.path));
@@ -179,9 +182,7 @@ export async function run(dependencies: ActionDependencies = defaultDependencies
     setOutput('path', terrace.path);
     setOutput('cosign_path', cosign.path);
 
-    if (wantsOras) {
-      const oras = await installOras(ports, runner, orasVersion);
-
+    if (oras !== undefined) {
       dependencies.addPath(path.dirname(oras.path));
       setOutput('oras_path', oras.path);
     } else {

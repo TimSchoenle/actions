@@ -23,8 +23,12 @@ import { RELEASE_TAG_PREFIX } from './version.js';
 
 import type { Architecture, Asset, Packaging, Platform } from './platform.js';
 
-/** The certificate identity every terrace-contract `SHA256SUMS` signature must carry. */
-export const TERRACE_SIGNER = String.raw`^https://github\.com/TimSchoenle/terrace-config/\.github/workflows/release-cli\.yml@`;
+/**
+ * The certificate identity every terrace-contract `SHA256SUMS` signature must carry: the release
+ * workflow as release-please calls it from `main`. Any other ref, a branch or a pull request
+ * included, can run the same workflow file and must not be able to sign a release.
+ */
+export const TERRACE_SIGNER = String.raw`^https://github\.com/TimSchoenle/terrace-config/\.github/workflows/release-cli\.yml@refs/heads/main$`;
 
 /** The OIDC issuer GitHub Actions signs under. */
 export const GITHUB_OIDC_ISSUER = 'https://token.actions.githubusercontent.com';
@@ -201,6 +205,8 @@ export async function installTerrace(
       bundle,
       '--certificate-identity-regexp',
       TERRACE_SIGNER,
+      '--certificate-github-workflow-repository',
+      RELEASE_REPOSITORY,
       '--certificate-oidc-issuer',
       GITHUB_OIDC_ISSUER,
     ]);
