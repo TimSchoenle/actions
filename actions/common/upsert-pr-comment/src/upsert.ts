@@ -14,6 +14,8 @@ export interface UpsertRequest {
   body: string;
   /** Whether a previous comment carrying the identifier is updated rather than added to. */
   updateExisting: boolean;
+  /** Whether a comment is posted when there is none to update. */
+  createNew: boolean;
   /** Login the previous comment must have been posted by; empty accepts any author. */
   author: string;
 }
@@ -64,16 +66,23 @@ async function findMarked(
  * all. Every other failure propagates, so a rate limit or an outage is never answered with a
  * duplicate.
  *
+ * With `createNew` off, every path that would post a new comment posts nothing instead, and the
+ * result is `undefined`: there is no comment to update, or the one found can no longer be edited.
+ *
  * @throws {@link InvalidIdentifierError} if the identifier cannot be turned into a marker, and
  * whatever the API raises for a failure that posting again would not mend.
  */
-export async function upsertComment(api: CommentApi, request: UpsertRequest): Promise<UpsertOutcome> {
+export async function upsertComment(api: CommentApi, request: UpsertRequest): Promise<UpsertOutcome | undefined> {
   const marker = markerFor(request.identifier);
   const { text, truncated } = composeBody(request.identifier, request.body);
 
   const existing = request.updateExisting ? await findMarked(api, request.target, marker, request.author) : undefined;
 
   if (existing === undefined) {
+    if (!request.createNew) {
+      return undefined;
+    }
+
     return { comment: await api.createComment(request.target, text), operation: 'created', truncated };
   }
 
@@ -89,6 +98,10 @@ export async function upsertComment(api: CommentApi, request: UpsertRequest): Pr
   } catch (error) {
     if (!(error instanceof CommentUnavailableError)) {
       throw error;
+    }
+
+    if (!request.createNew) {
+      return undefined;
     }
 
     return {

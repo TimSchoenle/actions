@@ -142,6 +142,23 @@ describe('upsert-pr-comment', () => {
     await expect(scratch.issueCommentRecords(numberOf(prUrl))).resolves.toHaveLength(2);
   });
 
+  // The "no longer applies" case: a report that went away has to correct the comment it left, and
+  // must not open one on a pull request that never had it.
+  it('only corrects an existing comment when creating is switched off', async () => {
+    const prUrl = await openPullRequest('update-only');
+
+    const nothing = await run({ pr_url: prUrl, identifier: 'size', body: 'no change', create_new: 'false' });
+
+    expect(nothing.outputs).toEqual({ comment_id: '', comment_url: '', operation: 'skipped' });
+    await expect(scratch.issueCommentRecords(numberOf(prUrl))).resolves.toHaveLength(0);
+
+    const first = await run({ pr_url: prUrl, identifier: 'size', body: 'image is 12 MB' });
+    const corrected = await run({ pr_url: prUrl, identifier: 'size', body: 'no change', create_new: 'false' });
+
+    expect(corrected.outputs).toMatchObject({ comment_id: first.outputs.comment_id, operation: 'updated' });
+    await expect(scratch.issueComments(numberOf(prUrl))).resolves.toEqual([`${markerFor('size')}\n\nno change`]);
+  });
+
   it('reads the body from a file in the workspace', async () => {
     const prUrl = await openPullRequest('body-file');
     const report = '| image | size |\n| --- | --- |\n| api | 12 MB |\n';
