@@ -1081,7 +1081,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-common-create-branch-v1.6.8
+        uses: TimSchoenle/actions/actions/common/create-branch@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-create-branch-v1.6.9
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -1105,7 +1105,7 @@ jobs:
           fi
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-common-commit-changes-v1.5.8
+        uses: TimSchoenle/actions/actions/common/commit-changes@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-commit-changes-v1.5.9
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -1168,7 +1168,7 @@ jobs:
 
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-common-close-pull-request-v1.5.8
+        uses: TimSchoenle/actions/actions/common/close-pull-request@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-close-pull-request-v1.5.9
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -1176,7 +1176,7 @@ jobs:
 
       - name: Cleanup Base Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-common-delete-branch-v1.5.8
+        uses: TimSchoenle/actions/actions/common/delete-branch@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-delete-branch-v1.5.9
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -1184,7 +1184,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always() && steps.update.outputs.chart-version != ''
-        uses: TimSchoenle/actions/actions/common/delete-branch@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-common-delete-branch-v1.5.8
+        uses: TimSchoenle/actions/actions/common/delete-branch@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-delete-branch-v1.5.9
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
