@@ -141,4 +141,7 @@ component_management:
     - component_id: security-zizmor
       name: security/zizmor
       paths: ['actions/security/zizmor/**']
+    - component_id: terrace-setup
+      name: terrace/setup
+      paths: ['actions/terrace/setup/**']
     # >>> generated: action-components

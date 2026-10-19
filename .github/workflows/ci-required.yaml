@@ -57,6 +57,7 @@ on:
       - Verify Rust Coverage-codecov
       - Verify Security Codeql
       - Verify Security Zizmor
+      - Verify Terrace Setup
       - Verify Test Setup-e2e
     # >>> generated: verify-workflows
     types:
