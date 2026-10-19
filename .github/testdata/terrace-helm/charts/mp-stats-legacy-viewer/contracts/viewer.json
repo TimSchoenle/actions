@@ -1,0 +1,881 @@
+{
+  "source": {
+    "image": "docker.io/timschoenle/mp-stats-legacy-viewer",
+    "digest": "sha256:b219ff217a3ef8453ca059871fe24ab7f3ece8d185c1027d2e9e701d52e90ddc",
+    "sha256": "b731dd0e5fa2c43408dc5881845883413577ebb1d9f900a37d919d32b7d8f815",
+    "fetched": "2026-10-14T04:56:56Z"
+  },
+  "contract": {
+    "terrace_contract": 1,
+    "producer": {
+      "name": "terrace-config",
+      "version": "0.15.1",
+      "loader": "figment"
+    },
+    "app": {
+      "name": "mp-stats-legacy-viewer",
+      "version": "v0.21.5",
+      "source": "https://github.com/TimSchoenle/mp-stats-legacy-viewer"
+    },
+    "schema": {
+      "schema_version": 2,
+      "dialect": {
+        "prefix": "MP_STATS_",
+        "nesting_separator": "__",
+        "indirection_suffix": "_FILE"
+      },
+      "loader": [
+        {
+          "env": "MP_STATS_CONFIG",
+          "role": "config",
+          "docs": "Names the TOML layer: a file, or a directory whose `*.toml` files are all merged in name order.",
+          "default": "config.toml"
+        },
+        {
+          "env": "MP_STATS_SECRETS_DIR",
+          "role": "secrets_dir",
+          "docs": "Names a directory of key-named files — a mounted Kubernetes `Secret` volume. Each file supplies the key its name spells.",
+          "default": null
+        },
+        {
+          "env": "MP_STATS_EXPLAIN",
+          "role": "reserved",
+          "docs": "Read directly from the environment before the layered config exists, so no file may supply it.",
+          "default": null
+        }
+      ],
+      "keys": [
+        {
+          "path": "server.bind_addr",
+          "env": "MP_STATS_SERVER__BIND_ADDR",
+          "env_file": "MP_STATS_SERVER__BIND_ADDR_FILE",
+          "secrets_file": "server__bind_addr",
+          "docs": "Address the HTTP listener binds.\n\nDeserialised as a `SocketAddr`, so an unparseable value fails at boot rather than at\n`bind` time.",
+          "ty": "SocketAddr",
+          "values": [],
+          "constraint": {
+            "type": "string"
+          },
+          "text_form": "unknown",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "0.0.0.0:8080",
+          "default_value": "0.0.0.0:8080",
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "server.dist_dir",
+          "env": "MP_STATS_SERVER__DIST_DIR",
+          "env_file": "MP_STATS_SERVER__DIST_DIR_FILE",
+          "secrets_file": "server__dist_dir",
+          "docs": "Directory holding the built frontend.\n\nIts `index.html` is both the SPA entry point and the fallback for unknown routes; the\nserver refuses to start without it.",
+          "ty": "PathBuf",
+          "values": [],
+          "constraint": {
+            "type": "string"
+          },
+          "text_form": "text",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "dist",
+          "default_value": "dist",
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "server.data_dir",
+          "env": "MP_STATS_SERVER__DATA_DIR",
+          "env_file": "MP_STATS_SERVER__DATA_DIR_FILE",
+          "secrets_file": "server__data_dir",
+          "docs": "Directory holding the converter's output, mounted at `/data`.",
+          "ty": "PathBuf",
+          "values": [],
+          "constraint": {
+            "type": "string"
+          },
+          "text_form": "text",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "data",
+          "default_value": "data",
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "server.csp.enabled",
+          "env": "MP_STATS_SERVER__CSP__ENABLED",
+          "env_file": "MP_STATS_SERVER__CSP__ENABLED_FILE",
+          "secrets_file": "server__csp__enabled",
+          "docs": "Send the header at all.\n\nOn by default, and the only reason to turn it off is that something in front of this\nserver already sets the header — two `Content-Security-Policy` headers on one response\nare intersected by the browser, so the effective policy becomes the strictest reading of\nboth and the page breaks in a way neither policy explains. Disabling it to make a page\nwork is fixing the symptom: the console names the directive that refused the resource,\nand the fix belongs in the shell or in the keys below.",
+          "ty": "bool",
+          "values": [],
+          "constraint": {
+            "type": "boolean"
+          },
+          "text_constraint": {
+            "pattern": "^\\s*(true|false)\\s*$",
+            "type": "string"
+          },
+          "text_form": "boolean",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "true",
+          "default_value": true,
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "server.csp.cloudflare.script_nonce",
+          "env": "MP_STATS_SERVER__CSP__CLOUDFLARE__SCRIPT_NONCE",
+          "env_file": "MP_STATS_SERVER__CSP__CLOUDFLARE__SCRIPT_NONCE_FILE",
+          "secrets_file": "server__csp__cloudflare__script_nonce",
+          "docs": "Reserve a per-response nonce in `script-src`.\n\nNeeded by every Cloudflare product that injects an inline `<script>` **at the edge** —\nBot Fight Mode, JavaScript Detections, the challenge platform. That script did not exist\nwhen the shell was hashed, so `script-src` refuses it and the detection silently never\nruns: bot management appears enabled and does nothing. Cloudflare's documented answer is\nto read the nonce out of the `Content-Security-Policy` response header and copy it onto\nwhat it injects, which is why nothing has to be stamped into the shell.\n\nTwo obligations come with it, and only the first is met from inside this process:\n\n1. The shell must be served `Cache-Control: no-cache`. The server does that for every\n   document it answers with while this key is `true` — a nonce served from a cache is\n   shared by every reader of that cache entry, which admits exactly the inline script the\n   nonce exists to constrain.\n2. No Cloudflare Cache Rule may cache the shell. A \"Cache Everything\" rule overrides the\n   origin `Cache-Control`, satisfying the first obligation at the origin and violating it\n   at the edge. Nothing here can detect that; it belongs in the deployment checklist.\n\nThe concession is real but narrow: an injected script that can already run could read the\nheader back off a same-origin fetch and admit further inline script. It cannot forge a\nnonce ahead of time — 128 CSPRNG bits, minted per response — and it reaches no off-origin\nhost that the rest of the policy does not already allow.",
+          "ty": "bool",
+          "values": [],
+          "constraint": {
+            "type": "boolean"
+          },
+          "text_constraint": {
+            "pattern": "^\\s*(true|false)\\s*$",
+            "type": "string"
+          },
+          "text_form": "boolean",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "false",
+          "default_value": false,
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "server.csp.cloudflare.turnstile",
+          "env": "MP_STATS_SERVER__CSP__CLOUDFLARE__TURNSTILE",
+          "env_file": "MP_STATS_SERVER__CSP__CLOUDFLARE__TURNSTILE_FILE",
+          "secrets_file": "server__csp__cloudflare__turnstile",
+          "docs": "Admit `https://challenges.cloudflare.com` in `script-src` **and** `frame-src`.\n\nFor a Turnstile widget rendered *in* a page this server serves. One origin, two\ndirectives, because Turnstile loads `api.js` and then frames the widget from the same\nhost; admitting the script without the frame renders an empty box.\n\nA managed-challenge interstitial needs nothing here — that is a Cloudflare-served\ndocument carrying its own policy.",
+          "ty": "bool",
+          "values": [],
+          "constraint": {
+            "type": "boolean"
+          },
+          "text_constraint": {
+            "pattern": "^\\s*(true|false)\\s*$",
+            "type": "string"
+          },
+          "text_form": "boolean",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "false",
+          "default_value": false,
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "server.csp.cloudflare.web_analytics",
+          "env": "MP_STATS_SERVER__CSP__CLOUDFLARE__WEB_ANALYTICS",
+          "env_file": "MP_STATS_SERVER__CSP__CLOUDFLARE__WEB_ANALYTICS_FILE",
+          "secrets_file": "server__csp__cloudflare__web_analytics",
+          "docs": "Admit Cloudflare Web Analytics: the beacon script, and the endpoint it reports to.\n\nFor the manual snippet only. The automatic injection Cloudflare performs at the edge is an\ninline `<script>` this server never saw, so it needs [`script_nonce`](Self::script_nonce)\nrather than these origins.",
+          "ty": "bool",
+          "values": [],
+          "constraint": {
+            "type": "boolean"
+          },
+          "text_constraint": {
+            "pattern": "^\\s*(true|false)\\s*$",
+            "type": "string"
+          },
+          "text_form": "boolean",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "false",
+          "default_value": false,
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "telemetry.log_filter",
+          "env": "MP_STATS_TELEMETRY__LOG_FILTER",
+          "env_file": "MP_STATS_TELEMETRY__LOG_FILTER_FILE",
+          "secrets_file": "telemetry__log_filter",
+          "docs": "`RUST_LOG`-style filter deciding which records are emitted at all, for example\n`info,mp_stats_server=debug`.\n\n`RUST_LOG` itself outranks this key when it is set, which is the one place in this\nconfiguration where a bare environment variable wins over the layered loader: it is the\nvariable every Rust operator already reaches for while a container is misbehaving, and a\nfilter is not a value a deployment can be wrong about for long.\n\nIt governs the Sentry sink too — see [`SentryConfig`].",
+          "ty": "String",
+          "values": [],
+          "constraint": {
+            "type": "string"
+          },
+          "text_form": "text",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "info",
+          "default_value": "info",
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "telemetry.json_logs",
+          "env": "MP_STATS_TELEMETRY__JSON_LOGS",
+          "env_file": "MP_STATS_TELEMETRY__JSON_LOGS_FILE",
+          "secrets_file": "telemetry__json_logs",
+          "docs": "Emit one JSON object per record instead of human-readable lines.\n\nOff by default because the default deployment of this repository is `docker run` on a\nterminal. A cluster shipping logs to a collector wants it on.",
+          "ty": "bool",
+          "values": [],
+          "constraint": {
+            "type": "boolean"
+          },
+          "text_constraint": {
+            "pattern": "^\\s*(true|false)\\s*$",
+            "type": "string"
+          },
+          "text_form": "boolean",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "false",
+          "default_value": false,
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "telemetry.sentry.enabled",
+          "env": "MP_STATS_TELEMETRY__SENTRY__ENABLED",
+          "env_file": "MP_STATS_TELEMETRY__SENTRY__ENABLED_FILE",
+          "secrets_file": "telemetry__sentry__enabled",
+          "docs": "Initialise the Sentry client. `false` installs no client, no panic hook, no `tracing`\nlayer and no HTTP middleware, so every other key here is inert and nothing leaves the\nprocess.",
+          "ty": "bool",
+          "values": [],
+          "constraint": {
+            "type": "boolean"
+          },
+          "text_constraint": {
+            "pattern": "^\\s*(true|false)\\s*$",
+            "type": "string"
+          },
+          "text_form": "boolean",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "false",
+          "default_value": false,
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "telemetry.sentry.dsn",
+          "env": "MP_STATS_TELEMETRY__SENTRY__DSN",
+          "env_file": "MP_STATS_TELEMETRY__SENTRY__DSN_FILE",
+          "secrets_file": "telemetry__sentry__dsn",
+          "docs": "Ingest URL, `https://<key>@<host>/<project>`.\n\nA [`SecretString`]: the embedded key is a bearer credential for\nthe project's ingest endpoint, and this struct is nested in a block that is logged with\n`?`. Prefer supplying it through the secrets directory or `_FILE` indirection rather than\nthrough the environment.\n\nAbsent while [`Self::enabled`] is set is a boot failure, not a silent no-op.",
+          "ty": "SecretString",
+          "values": [],
+          "constraint": {
+            "type": "string"
+          },
+          "text_form": "text",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": null,
+          "default_value": null,
+          "note": null,
+          "required": false,
+          "secret": true,
+          "reserved": false
+        },
+        {
+          "path": "telemetry.sentry.environment",
+          "env": "MP_STATS_TELEMETRY__SENTRY__ENVIRONMENT",
+          "env_file": "MP_STATS_TELEMETRY__SENTRY__ENVIRONMENT_FILE",
+          "secrets_file": "telemetry__sentry__environment",
+          "docs": "Environment tag on every event.\n\nLeft unset it is derived from the build rather than guessed: `production` for a release\nbinary — which every published image is — and `development` for a debug one. Set it\nexplicitly for anything in between, such as a staging cluster running a release build.",
+          "ty": "String",
+          "values": [],
+          "constraint": {
+            "type": "string"
+          },
+          "text_form": "text",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": null,
+          "default_value": null,
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "telemetry.sentry.release",
+          "env": "MP_STATS_TELEMETRY__SENTRY__RELEASE",
+          "env_file": "MP_STATS_TELEMETRY__SENTRY__RELEASE_FILE",
+          "secrets_file": "telemetry__sentry__release",
+          "docs": "Release tag on every event.\n\nDefaults to `mp-stats-legacy-viewer@v<version>`, spelled as the image tag spells it, so a\nregression is attributable to a deploy without an operator having to remember to set it.",
+          "ty": "String",
+          "values": [],
+          "constraint": {
+            "type": "string"
+          },
+          "text_form": "text",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": null,
+          "default_value": null,
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "telemetry.sentry.server_name",
+          "env": "MP_STATS_TELEMETRY__SENTRY__SERVER_NAME",
+          "env_file": "MP_STATS_TELEMETRY__SENTRY__SERVER_NAME_FILE",
+          "secrets_file": "telemetry__sentry__server_name",
+          "docs": "Host tag on every event.\n\nLeft unset, Sentry reports none: the hostname of a replica is infrastructure detail that\n[`Self::send_default_pii`] would otherwise gate, and a `scratch` container's hostname\nnames a pod that no longer exists by the time anyone reads the issue.",
+          "ty": "String",
+          "values": [],
+          "constraint": {
+            "type": "string"
+          },
+          "text_form": "text",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": null,
+          "default_value": null,
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "telemetry.sentry.sample_rate",
+          "env": "MP_STATS_TELEMETRY__SENTRY__SAMPLE_RATE",
+          "env_file": "MP_STATS_TELEMETRY__SENTRY__SAMPLE_RATE_FILE",
+          "secrets_file": "telemetry__sentry__sample_rate",
+          "docs": "Fraction of captured events actually sent, `0.0`–`1.0`.\n\nA blunt volume cap — it drops whole issues, not repetitions of one — so leave it at `1.0`\nunless a quota forces otherwise. A value outside the range fails the boot.",
+          "ty": "f32",
+          "values": [],
+          "constraint": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "type": "number"
+          },
+          "text_form": "unknown",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "1",
+          "default_value": 1.0,
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "telemetry.sentry.traces_sample_rate",
+          "env": "MP_STATS_TELEMETRY__SENTRY__TRACES_SAMPLE_RATE",
+          "env_file": "MP_STATS_TELEMETRY__SENTRY__TRACES_SAMPLE_RATE_FILE",
+          "secrets_file": "telemetry__sentry__traces_sample_rate",
+          "docs": "Fraction of traces this process **starts** that are recorded, `0.0`–`1.0`.\n\n`0.0` (the default) means it starts none of its own, which is the right figure for a\nstatic file server: a trace per asset request is volume without a question it answers.\nIt does **not** mean this process is absent from a trace — a request arriving with a\ntrace already sampled is continued regardless, which is what keeps one reader action\nreadable across whatever sits in front of this server.",
+          "ty": "f32",
+          "values": [],
+          "constraint": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "type": "number"
+          },
+          "text_form": "unknown",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "0",
+          "default_value": 0.0,
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "telemetry.sentry.capture_level",
+          "env": "MP_STATS_TELEMETRY__SENTRY__CAPTURE_LEVEL",
+          "env_file": "MP_STATS_TELEMETRY__SENTRY__CAPTURE_LEVEL_FILE",
+          "secrets_file": "telemetry__sentry__capture_level",
+          "docs": "Least severe `tracing` level reported as a Sentry **issue**.",
+          "ty": "SentryLevel",
+          "values": ["off", "error", "warn", "info", "debug", "trace"],
+          "constraint": {
+            "enum": ["off", "error", "warn", "info", "debug", "trace"],
+            "type": "string"
+          },
+          "text_constraint": {
+            "pattern": "^\\s*(off|error|warn|info|debug|trace)\\s*$",
+            "type": "string"
+          },
+          "text_form": "choice",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "error",
+          "default_value": "error",
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "telemetry.sentry.breadcrumb_level",
+          "env": "MP_STATS_TELEMETRY__SENTRY__BREADCRUMB_LEVEL",
+          "env_file": "MP_STATS_TELEMETRY__SENTRY__BREADCRUMB_LEVEL_FILE",
+          "secrets_file": "telemetry__sentry__breadcrumb_level",
+          "docs": "Least severe `tracing` level kept as a **breadcrumb** — the trail attached to the next\nissue.\n\nRecords at or above [`Self::capture_level`] become issues instead, so this threshold only\never describes the band below it.",
+          "ty": "SentryLevel",
+          "values": ["off", "error", "warn", "info", "debug", "trace"],
+          "constraint": {
+            "enum": ["off", "error", "warn", "info", "debug", "trace"],
+            "type": "string"
+          },
+          "text_constraint": {
+            "pattern": "^\\s*(off|error|warn|info|debug|trace)\\s*$",
+            "type": "string"
+          },
+          "text_form": "choice",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "info",
+          "default_value": "info",
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "telemetry.sentry.max_breadcrumbs",
+          "env": "MP_STATS_TELEMETRY__SENTRY__MAX_BREADCRUMBS",
+          "env_file": "MP_STATS_TELEMETRY__SENTRY__MAX_BREADCRUMBS_FILE",
+          "secrets_file": "telemetry__sentry__max_breadcrumbs",
+          "docs": "How many breadcrumbs one event carries.",
+          "ty": "usize",
+          "values": [],
+          "constraint": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "text_constraint": {
+            "pattern": "^\\s*\\+?[0-9]+\\s*$",
+            "type": "string"
+          },
+          "text_form": "integer",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "100",
+          "default_value": 100,
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "telemetry.sentry.attach_stacktraces",
+          "env": "MP_STATS_TELEMETRY__SENTRY__ATTACH_STACKTRACES",
+          "env_file": "MP_STATS_TELEMETRY__SENTRY__ATTACH_STACKTRACES_FILE",
+          "secrets_file": "telemetry__sentry__attach_stacktraces",
+          "docs": "Attach a stack trace to events that carry none of their own.",
+          "ty": "bool",
+          "values": [],
+          "constraint": {
+            "type": "boolean"
+          },
+          "text_constraint": {
+            "pattern": "^\\s*(true|false)\\s*$",
+            "type": "string"
+          },
+          "text_form": "boolean",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "true",
+          "default_value": true,
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "telemetry.sentry.send_default_pii",
+          "env": "MP_STATS_TELEMETRY__SENTRY__SEND_DEFAULT_PII",
+          "env_file": "MP_STATS_TELEMETRY__SENTRY__SEND_DEFAULT_PII_FILE",
+          "secrets_file": "telemetry__sentry__send_default_pii",
+          "docs": "Send personally identifying data with every event: the client IP, the full request header\nset (`Cookie` included) and the resolved user.\n\n**Off, and worth leaving off.** A reader's IP address is exactly what a crash report does\nnot need in order to be actionable, and Sentry is a third party for the purposes of\nwhatever data policy this deployment publishes. On, it also widens what the HTTP\nmiddleware records, because the Sentry tower layer reads this same flag to decide whether\nto redact sensitive headers.",
+          "ty": "bool",
+          "values": [],
+          "constraint": {
+            "type": "boolean"
+          },
+          "text_constraint": {
+            "pattern": "^\\s*(true|false)\\s*$",
+            "type": "string"
+          },
+          "text_form": "boolean",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "false",
+          "default_value": false,
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "telemetry.sentry.http_transactions",
+          "env": "MP_STATS_TELEMETRY__SENTRY__HTTP_TRANSACTIONS",
+          "env_file": "MP_STATS_TELEMETRY__SENTRY__HTTP_TRANSACTIONS_FILE",
+          "secrets_file": "telemetry__sentry__http_transactions",
+          "docs": "Record request spans: one Sentry transaction per request, named by the *matched route*\nrather than the URI, so a `/data` path does not become its own transaction name.\n\nWhether a started transaction is *kept* is [`Self::traces_sample_rate`]'s decision, and\nthat rate is `0.0` by default — so this key on its own costs one span per request and\nsends nothing. It is the switch for a deployment that should stay out of traces entirely.",
+          "ty": "bool",
+          "values": [],
+          "constraint": {
+            "type": "boolean"
+          },
+          "text_constraint": {
+            "pattern": "^\\s*(true|false)\\s*$",
+            "type": "string"
+          },
+          "text_form": "boolean",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "true",
+          "default_value": true,
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "telemetry.sentry.span_attributes",
+          "env": "MP_STATS_TELEMETRY__SENTRY__SPAN_ATTRIBUTES",
+          "env_file": "MP_STATS_TELEMETRY__SENTRY__SPAN_ATTRIBUTES_FILE",
+          "secrets_file": "telemetry__sentry__span_attributes",
+          "docs": "Copy `tracing` span fields onto the Sentry span as attributes.\n\nOff: a transaction is stored under a longer retention than a log line, and the span\nfields this server records name paths on disk.",
+          "ty": "bool",
+          "values": [],
+          "constraint": {
+            "type": "boolean"
+          },
+          "text_constraint": {
+            "pattern": "^\\s*(true|false)\\s*$",
+            "type": "string"
+          },
+          "text_form": "boolean",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "false",
+          "default_value": false,
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "telemetry.sentry.shutdown_timeout_secs",
+          "env": "MP_STATS_TELEMETRY__SENTRY__SHUTDOWN_TIMEOUT_SECS",
+          "env_file": "MP_STATS_TELEMETRY__SENTRY__SHUTDOWN_TIMEOUT_SECS_FILE",
+          "secrets_file": "telemetry__sentry__shutdown_timeout_secs",
+          "docs": "How long process exit waits for queued events to drain.\n\nSpent only on a graceful shutdown, which this server performs on `SIGTERM`; a `SIGKILL`\ntakes the queue with it whatever this says.",
+          "ty": "u64",
+          "values": [],
+          "constraint": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "text_constraint": {
+            "pattern": "^\\s*\\+?[0-9]+\\s*$",
+            "type": "string"
+          },
+          "text_form": "integer",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "2",
+          "default_value": 2,
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        },
+        {
+          "path": "telemetry.sentry.debug",
+          "env": "MP_STATS_TELEMETRY__SENTRY__DEBUG",
+          "env_file": "MP_STATS_TELEMETRY__SENTRY__DEBUG_FILE",
+          "secrets_file": "telemetry__sentry__debug",
+          "docs": "Print the SDK's own diagnostics to stderr. For proving a DSN works, not for running.",
+          "ty": "bool",
+          "values": [],
+          "constraint": {
+            "type": "boolean"
+          },
+          "text_constraint": {
+            "pattern": "^\\s*(true|false)\\s*$",
+            "type": "string"
+          },
+          "text_form": "boolean",
+          "aliases": [],
+          "env_aliases": [],
+          "env_file_aliases": [],
+          "secrets_file_aliases": [],
+          "default": "false",
+          "default_value": false,
+          "note": null,
+          "required": false,
+          "secret": false,
+          "reserved": false
+        }
+      ]
+    },
+    "json_schema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "server": {
+          "additionalProperties": false,
+          "properties": {
+            "bind_addr": {
+              "default": "0.0.0.0:8080",
+              "description": "Address the HTTP listener binds.\n\nDeserialised as a `SocketAddr`, so an unparseable value fails at boot rather than at\n`bind` time.",
+              "type": "string"
+            },
+            "csp": {
+              "additionalProperties": false,
+              "properties": {
+                "cloudflare": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "script_nonce": {
+                      "default": false,
+                      "description": "Reserve a per-response nonce in `script-src`.\n\nNeeded by every Cloudflare product that injects an inline `<script>` **at the edge** —\nBot Fight Mode, JavaScript Detections, the challenge platform. That script did not exist\nwhen the shell was hashed, so `script-src` refuses it and the detection silently never\nruns: bot management appears enabled and does nothing. Cloudflare's documented answer is\nto read the nonce out of the `Content-Security-Policy` response header and copy it onto\nwhat it injects, which is why nothing has to be stamped into the shell.\n\nTwo obligations come with it, and only the first is met from inside this process:\n\n1. The shell must be served `Cache-Control: no-cache`. The server does that for every\n   document it answers with while this key is `true` — a nonce served from a cache is\n   shared by every reader of that cache entry, which admits exactly the inline script the\n   nonce exists to constrain.\n2. No Cloudflare Cache Rule may cache the shell. A \"Cache Everything\" rule overrides the\n   origin `Cache-Control`, satisfying the first obligation at the origin and violating it\n   at the edge. Nothing here can detect that; it belongs in the deployment checklist.\n\nThe concession is real but narrow: an injected script that can already run could read the\nheader back off a same-origin fetch and admit further inline script. It cannot forge a\nnonce ahead of time — 128 CSPRNG bits, minted per response — and it reaches no off-origin\nhost that the rest of the policy does not already allow.",
+                      "type": "boolean"
+                    },
+                    "turnstile": {
+                      "default": false,
+                      "description": "Admit `https://challenges.cloudflare.com` in `script-src` **and** `frame-src`.\n\nFor a Turnstile widget rendered *in* a page this server serves. One origin, two\ndirectives, because Turnstile loads `api.js` and then frames the widget from the same\nhost; admitting the script without the frame renders an empty box.\n\nA managed-challenge interstitial needs nothing here — that is a Cloudflare-served\ndocument carrying its own policy.",
+                      "type": "boolean"
+                    },
+                    "web_analytics": {
+                      "default": false,
+                      "description": "Admit Cloudflare Web Analytics: the beacon script, and the endpoint it reports to.\n\nFor the manual snippet only. The automatic injection Cloudflare performs at the edge is an\ninline `<script>` this server never saw, so it needs [`script_nonce`](Self::script_nonce)\nrather than these origins.",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                },
+                "enabled": {
+                  "default": true,
+                  "description": "Send the header at all.\n\nOn by default, and the only reason to turn it off is that something in front of this\nserver already sets the header — two `Content-Security-Policy` headers on one response\nare intersected by the browser, so the effective policy becomes the strictest reading of\nboth and the page breaks in a way neither policy explains. Disabling it to make a page\nwork is fixing the symptom: the console names the directive that refused the resource,\nand the fix belongs in the shell or in the keys below.",
+                  "type": "boolean"
+                }
+              },
+              "type": "object"
+            },
+            "data_dir": {
+              "default": "data",
+              "description": "Directory holding the converter's output, mounted at `/data`.",
+              "type": "string"
+            },
+            "dist_dir": {
+              "default": "dist",
+              "description": "Directory holding the built frontend.\n\nIts `index.html` is both the SPA entry point and the fallback for unknown routes; the\nserver refuses to start without it.",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "telemetry": {
+          "additionalProperties": false,
+          "properties": {
+            "json_logs": {
+              "default": false,
+              "description": "Emit one JSON object per record instead of human-readable lines.\n\nOff by default because the default deployment of this repository is `docker run` on a\nterminal. A cluster shipping logs to a collector wants it on.",
+              "type": "boolean"
+            },
+            "log_filter": {
+              "default": "info",
+              "description": "`RUST_LOG`-style filter deciding which records are emitted at all, for example\n`info,mp_stats_server=debug`.\n\n`RUST_LOG` itself outranks this key when it is set, which is the one place in this\nconfiguration where a bare environment variable wins over the layered loader: it is the\nvariable every Rust operator already reaches for while a container is misbehaving, and a\nfilter is not a value a deployment can be wrong about for long.\n\nIt governs the Sentry sink too — see [`SentryConfig`].",
+              "type": "string"
+            },
+            "sentry": {
+              "additionalProperties": false,
+              "properties": {
+                "attach_stacktraces": {
+                  "default": true,
+                  "description": "Attach a stack trace to events that carry none of their own.",
+                  "type": "boolean"
+                },
+                "breadcrumb_level": {
+                  "default": "info",
+                  "description": "Least severe `tracing` level kept as a **breadcrumb** — the trail attached to the next\nissue.\n\nRecords at or above [`Self::capture_level`] become issues instead, so this threshold only\never describes the band below it.",
+                  "enum": ["off", "error", "warn", "info", "debug", "trace"],
+                  "type": "string"
+                },
+                "capture_level": {
+                  "default": "error",
+                  "description": "Least severe `tracing` level reported as a Sentry **issue**.",
+                  "enum": ["off", "error", "warn", "info", "debug", "trace"],
+                  "type": "string"
+                },
+                "debug": {
+                  "default": false,
+                  "description": "Print the SDK's own diagnostics to stderr. For proving a DSN works, not for running.",
+                  "type": "boolean"
+                },
+                "dsn": {
+                  "description": "Ingest URL, `https://<key>@<host>/<project>`.\n\nA [`SecretString`]: the embedded key is a bearer credential for\nthe project's ingest endpoint, and this struct is nested in a block that is logged with\n`?`. Prefer supplying it through the secrets directory or `_FILE` indirection rather than\nthrough the environment.\n\nAbsent while [`Self::enabled`] is set is a boot failure, not a silent no-op.",
+                  "type": "string",
+                  "writeOnly": true
+                },
+                "enabled": {
+                  "default": false,
+                  "description": "Initialise the Sentry client. `false` installs no client, no panic hook, no `tracing`\nlayer and no HTTP middleware, so every other key here is inert and nothing leaves the\nprocess.",
+                  "type": "boolean"
+                },
+                "environment": {
+                  "description": "Environment tag on every event.\n\nLeft unset it is derived from the build rather than guessed: `production` for a release\nbinary — which every published image is — and `development` for a debug one. Set it\nexplicitly for anything in between, such as a staging cluster running a release build.",
+                  "type": "string"
+                },
+                "http_transactions": {
+                  "default": true,
+                  "description": "Record request spans: one Sentry transaction per request, named by the *matched route*\nrather than the URI, so a `/data` path does not become its own transaction name.\n\nWhether a started transaction is *kept* is [`Self::traces_sample_rate`]'s decision, and\nthat rate is `0.0` by default — so this key on its own costs one span per request and\nsends nothing. It is the switch for a deployment that should stay out of traces entirely.",
+                  "type": "boolean"
+                },
+                "max_breadcrumbs": {
+                  "default": 100,
+                  "description": "How many breadcrumbs one event carries.",
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "release": {
+                  "description": "Release tag on every event.\n\nDefaults to `mp-stats-legacy-viewer@v<version>`, spelled as the image tag spells it, so a\nregression is attributable to a deploy without an operator having to remember to set it.",
+                  "type": "string"
+                },
+                "sample_rate": {
+                  "default": 1.0,
+                  "description": "Fraction of captured events actually sent, `0.0`–`1.0`.\n\nA blunt volume cap — it drops whole issues, not repetitions of one — so leave it at `1.0`\nunless a quota forces otherwise. A value outside the range fails the boot.",
+                  "maximum": 1.0,
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                "send_default_pii": {
+                  "default": false,
+                  "description": "Send personally identifying data with every event: the client IP, the full request header\nset (`Cookie` included) and the resolved user.\n\n**Off, and worth leaving off.** A reader's IP address is exactly what a crash report does\nnot need in order to be actionable, and Sentry is a third party for the purposes of\nwhatever data policy this deployment publishes. On, it also widens what the HTTP\nmiddleware records, because the Sentry tower layer reads this same flag to decide whether\nto redact sensitive headers.",
+                  "type": "boolean"
+                },
+                "server_name": {
+                  "description": "Host tag on every event.\n\nLeft unset, Sentry reports none: the hostname of a replica is infrastructure detail that\n[`Self::send_default_pii`] would otherwise gate, and a `scratch` container's hostname\nnames a pod that no longer exists by the time anyone reads the issue.",
+                  "type": "string"
+                },
+                "shutdown_timeout_secs": {
+                  "default": 2,
+                  "description": "How long process exit waits for queued events to drain.\n\nSpent only on a graceful shutdown, which this server performs on `SIGTERM`; a `SIGKILL`\ntakes the queue with it whatever this says.",
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "span_attributes": {
+                  "default": false,
+                  "description": "Copy `tracing` span fields onto the Sentry span as attributes.\n\nOff: a transaction is stored under a longer retention than a log line, and the span\nfields this server records name paths on disk.",
+                  "type": "boolean"
+                },
+                "traces_sample_rate": {
+                  "default": 0.0,
+                  "description": "Fraction of traces this process **starts** that are recorded, `0.0`–`1.0`.\n\n`0.0` (the default) means it starts none of its own, which is the right figure for a\nstatic file server: a trace per asset request is volume without a question it answers.\nIt does **not** mean this process is absent from a trace — a request arriving with a\ntrace already sampled is continued regardless, which is what keeps one reader action\nreadable across whatever sits in front of this server.",
+                  "maximum": 1.0,
+                  "minimum": 0.0,
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "title": "mp-stats-legacy-viewer configuration",
+      "type": "object"
+    },
+    "external": {
+      "env": [
+        {
+          "name": "RUST_LOG",
+          "owner": "tracing-subscriber",
+          "docs": "Overrides `telemetry.log_filter` for this process. Same grammar; set it to debug a running container without editing the configuration the deployment is otherwise described by.",
+          "ty": "String",
+          "values": [],
+          "constraint": {
+            "type": "string"
+          },
+          "text_form": "text",
+          "required": false,
+          "secret": false
+        }
+      ],
+      "ignore": ["KUBERNETES_*", "HOSTNAME"],
+      "unknown": "reject"
+    }
+  }
+}

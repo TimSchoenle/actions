@@ -99,6 +99,9 @@ is not, including older versions of a component whose neighbours have since rele
 
 | Component | Version | Supported |
 | --- | --- | --- |
+| [Terrace Helm Check](./actions/terrace/helm-check) | [actions-terrace-helm-check-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-check-v1.0.0) | :white_check_mark: |
+| [Terrace Helm Diff](./actions/terrace/helm-diff) | [actions-terrace-helm-diff-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-diff-v1.0.0) | :white_check_mark: |
+| [Terrace Helm Sync](./actions/terrace/helm-sync) | [actions-terrace-helm-sync-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-sync-v1.0.0) | :white_check_mark: |
 | [Terrace Setup](./actions/terrace/setup) | [actions-terrace-setup-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-setup-v1.1.0) | :white_check_mark: |
 
 #### Test

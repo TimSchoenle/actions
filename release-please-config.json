@@ -220,6 +220,21 @@
       "release-type": "simple",
       "component": "actions-terrace-setup",
       "include-component-in-tag": true
+    },
+    "actions/terrace/helm-check": {
+      "release-type": "simple",
+      "component": "actions-terrace-helm-check",
+      "include-component-in-tag": true
+    },
+    "actions/terrace/helm-diff": {
+      "release-type": "simple",
+      "component": "actions-terrace-helm-diff",
+      "include-component-in-tag": true
+    },
+    "actions/terrace/helm-sync": {
+      "release-type": "simple",
+      "component": "actions-terrace-helm-sync",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

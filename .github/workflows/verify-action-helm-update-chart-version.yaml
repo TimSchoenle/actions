@@ -6,12 +6,14 @@ on:
       - main
     paths:
       - 'actions/helm/update-chart-version/**'
+      - '.github/testdata/terrace-helm/**'
       - '.github/workflows/verify-action-helm-update-chart-version.yaml'
   pull_request:
     branches:
       - main
     paths:
       - 'actions/helm/update-chart-version/**'
+      - '.github/testdata/terrace-helm/**'
       - '.github/workflows/verify-action-helm-update-chart-version.yaml'
   workflow_dispatch:
 
@@ -1046,6 +1048,148 @@ jobs:
           repository: ${{ env.TEST_REPO }}
           branch_name: test/idem/${{ env.TEST_ID }}/idem-app/1.0.1
 
+  # pull-contracts against a real, signed image: the fixture chart from .github/testdata/terrace-helm,
+  # seeded with a contract that is behind the one its image carries, so the pull has to rewrite it and
+  # the rewrite has to reach the pull request. The image is "updated" to the digest it already pins,
+  # which keeps the expected contract the vendored one and leaves values.yaml as it was.
+  test-pull-contracts:
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: 'Test: pull-contracts commits the contract the new digest carries'
+    runs-on: ubuntu-latest
+    env:
+      FIXTURE: tmp/actions-code/.github/testdata/terrace-helm
+      CHART: charts/mp-stats-legacy-viewer
+      FIXTURE_IMAGE: '{"image.tag": {"tag": "v0.21.5", "digest": "sha256:b219ff217a3ef8453ca059871fe24ab7f3ece8d185c1027d2e9e701d52e90ddc"}}'
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test base Branch
+        id: base-branch
+        uses: TimSchoenle/actions/actions/common/create-branch@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-common-create-branch-v1.6.8
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/test-pull-contracts/base/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      # The contract is made stale by dropping its producer block: still a valid file, but not the bytes
+      # the image publishes, so only a pull that ran restores it.
+      - name: Create Test Chart Files
+        run: |
+          set -euo pipefail
+          mkdir -p charts
+          cp "${FIXTURE}/terrace.yaml" terrace.yaml
+          cp -r "${FIXTURE}/${CHART}" "${CHART}"
+          contract="${CHART}/contracts/viewer.json"
+          jq 'del(.contract.producer)' "$contract" > "${contract}.tmp"
+          mv "${contract}.tmp" "$contract"
+          if jq -e '.contract.producer' "$contract" >/dev/null; then
+            echo "::error::the seeded contract still carries its producer block"
+            exit 1
+          fi
+
+      - name: Commit Initial Chart Files
+        uses: TimSchoenle/actions/actions/common/commit-changes@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-common-commit-changes-v1.5.8
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.base-branch.outputs.branch }}
+          commit_message: 'test: seed a chart with a stale contract for ${{ env.TEST_ID }}'
+          file_pattern: 'terrace.yaml ${{ env.CHART }}'
+
+      - name: Run update-chart-version with pull-contracts
+        id: update
+        uses: ./tmp/actions-code/actions/helm/update-chart-version # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          helm-repo: ${{ env.TEST_REPO }}
+          base_branch: ${{ steps.base-branch.outputs.branch }}
+          chart-path: ${{ env.CHART }}
+          images: ${{ env.FIXTURE_IMAGE }}
+          pull-contracts: 'true'
+          pr-branch-prefix: test/helm-update/${{ env.TEST_ID }}
+
+      - name: Restore Workspace For The Post Action
+        if: always()
+        uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Verify The Pulled Contract Reached The PR
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          PR_NUMBER: ${{ steps.update.outputs.pr_number }}
+          BRANCH: test/helm-update/${{ env.TEST_ID }}/mp-stats-legacy-viewer/${{ steps.update.outputs.chart-version }}
+        run: |
+          set -euo pipefail
+          test -n "$PR_NUMBER" || { echo "::error::no pull request was opened"; exit 1; }
+
+          files="$(gh pr view "$PR_NUMBER" --repo "$TEST_REPO" --json files --jq '.files[].path')"
+          echo "Changed files:"
+          echo "$files"
+          # values.yaml is not among them: the image is moved to the digest it already pins, so the
+          # update writes the same bytes and only the version bump and the pulled contract differ.
+          expected="$(printf '%s\n' "${CHART}/Chart.yaml" "${CHART}/contracts/viewer.json")"
+          if [[ "$(LC_ALL=C sort <<< "$files")" != "$expected" ]]; then
+            echo "::error::the pull request should change exactly Chart.yaml and the contract"
+            exit 1
+          fi
+
+          gh api "/repos/$TEST_REPO/contents/${CHART}/contracts/viewer.json?ref=$BRANCH" --jq '.content' \
+            | base64 -d > pulled.json
+          if ! diff <(jq -S .contract pulled.json) <(jq -S .contract "${FIXTURE}/${CHART}/contracts/viewer.json"); then
+            echo "::error::the committed contract is not the one the image carries"
+            exit 1
+          fi
+
+      - name: Cleanup PR
+        if: always() && steps.update.outputs.pr_number != ''
+        uses: TimSchoenle/actions/actions/common/close-pull-request@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-common-close-pull-request-v1.5.8
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          pull_request_id: ${{ steps.update.outputs.pr_number }}
+
+      - name: Cleanup Base Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-common-delete-branch-v1.5.8
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.base-branch.outputs.branch }}
+
+      - name: Cleanup Branch
+        if: always() && steps.update.outputs.chart-version != ''
+        uses: TimSchoenle/actions/actions/common/delete-branch@eaf935674fec7116856ca5e138e1a2dca3f8146d # tag=actions-common-delete-branch-v1.5.8
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/helm-update/${{ env.TEST_ID }}/mp-stats-legacy-viewer/${{ steps.update.outputs.chart-version }}
+
   # <<< generated: summary (run 'bun run generate-ci-required' to update)
   summary:
     name: 'CI Summary: Helm Update Chart Version'
@@ -1057,6 +1201,7 @@ jobs:
       - test-version-bump
       - test-nested-chart-path
       - test-idempotent-rerun
+      - test-pull-contracts
     runs-on: ubuntu-latest
     permissions: {}
     steps:

@@ -1,0 +1,148 @@
+name: Verify Terrace Helm Sync
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'actions/terrace/helm-sync/**'
+      - '.github/testdata/terrace-helm/**'
+      - '.github/workflows/verify-action-terrace-helm-sync.yaml'
+  pull_request:
+    paths:
+      - 'actions/terrace/helm-sync/**'
+      - '.github/testdata/terrace-helm/**'
+      - '.github/workflows/verify-action-terrace-helm-sync.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+# The fixture is a chart repository of its own inside this one, so the CLI is pointed at its
+# terrace.yaml rather than finding one at the Git root, as it would in an adopting repository.
+env:
+  FIXTURE: .github/testdata/terrace-helm
+  TERRACE_CONFIG: ${{ github.workspace }}/.github/testdata/terrace-helm/terrace.yaml
+
+jobs:
+  sync-offline:
+    name: 'Test: a stale value schema is rewritten from the vendored contract'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code, and to list terrace-contract releases
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            tuf-repo-cdn.sigstore.dev:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # Committed, so that `changed` measures what the sync wrote and not the breakage itself.
+      - name: Commit a stale value schema
+        run: |
+          set -euo pipefail
+          values="${FIXTURE}/charts/mp-stats-legacy-viewer/values.yaml"
+          marker="$(grep -n '@config projection' "$values" | head -n 1 | cut -d: -f1)"
+          test -n "$marker" || { echo "::error::no projected value to break"; exit 1; }
+          line=$((marker + 1))
+          grep -q 'type: string' <(sed -n "${line}p" "$values") || { echo "::error::line ${line} is not its type"; exit 1; }
+          sed -i "${line}s/type: string/type: object/" "$values"
+          git -c user.name=ci -c user.email=ci@example.invalid -c commit.gpgsign=false \
+            commit --quiet --all --message "test: break a value schema"
+
+      - name: Sync without pulling
+        id: sync
+        uses: ./actions/terrace/helm-sync # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          pull: 'false'
+
+      - name: Verify the schema was restored and nothing was committed
+        env:
+          CHANGED: ${{ steps.sync.outputs.changed }}
+          COMMIT: ${{ steps.sync.outputs.commit_hash }}
+        run: |
+          set -euo pipefail
+          test "$CHANGED" = true || { echo "::error::the stale schema was not rewritten"; exit 1; }
+          test -z "$COMMIT" || { echo "::error::a run without a token committed"; exit 1; }
+          git diff --exit-code HEAD~1 -- "$FIXTURE" || { echo "::error::the rewrite is not the original file"; exit 1; }
+
+      # A file an earlier step left in the tree is not the sync's change: a second sync, with nothing
+      # left to rewrite, must report nothing even though the tree is dirty.
+      - name: Leave an unrelated file in the tree
+        run: echo 'not the sync' > "${FIXTURE}/unrelated.txt"
+
+      - name: Sync again over a dirty tree
+        id: again
+        uses: ./actions/terrace/helm-sync # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          pull: 'false'
+
+      - name: Verify the dirty tree was not reported as a change
+        env:
+          CHANGED: ${{ steps.again.outputs.changed }}
+        run: |
+          set -euo pipefail
+          test "$CHANGED" = false || { echo "::error::a file the sync did not write was reported as its change"; exit 1; }
+
+  # The network half: the fixture pins a real, signed image, so a pull verifies its signature and
+  # fetches the contract it carries, which must be the one already vendored. Audit rather than block,
+  # because the registry redirects through hosts that are not stable enough to list.
+  sync-pull:
+    name: 'Test: pulling a current contract from the registry changes nothing'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code, and to list terrace-contract releases
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Sync
+        id: sync
+        uses: ./actions/terrace/helm-sync # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+
+      - name: Verify nothing changed
+        env:
+          CHANGED: ${{ steps.sync.outputs.changed }}
+        run: |
+          set -euo pipefail
+          git status --porcelain
+          test "$CHANGED" = false || { echo "::error::the vendored contract is not the one its image carries"; exit 1; }
+
+  # <<< generated: summary (run 'bun run generate-ci-required' to update)
+  summary:
+    name: 'CI Summary: Terrace Helm Sync'
+    if: ${{ always() }}
+    needs:
+      - sync-offline
+      - sync-pull
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Fail if any verify job did not succeed
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
+  # >>> generated: summary
