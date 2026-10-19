@@ -1,0 +1,84 @@
+name: 'Terrace Helm Check'
+description:
+  'Runs every offline configuration contract gate over the charts a change touched, with terrace-contract sync --check.
+  Findings become annotations and a job summary. Writes nothing and needs no write token.'
+
+inputs:
+  version:
+    description: 'terrace-contract release to install, as for terrace/setup: MAJOR.MINOR.PATCH or MAJOR.MINOR. Empty
+      reads the cli pin from terrace.yaml in working_directory. Needs 0.9 or newer.'
+    required: false
+    default: ''
+  working_directory:
+    description: 'Directory to run in, relative to the workspace: the root of the chart repository, where terrace.yaml
+      is.'
+    required: false
+    default: '.'
+  since:
+    description: 'Revision the change is measured from. Only the charts the commits since its merge base with HEAD
+      touched are checked, and every chart when the change reaches outside them or cannot be read. Needs the history
+      down to that revision, so check out with fetch-depth 0. Empty checks every chart. Ignored when charts is set.'
+    required: false
+    default: ${{ github.event.pull_request.base.sha }}
+  charts:
+    description: 'Chart directory names to check, separated by spaces or newlines, instead of working them out from
+      since. A name that matches no chart fails the step.'
+    required: false
+    default: ''
+  manifests:
+    description: 'Directory, relative to working_directory, that the charts were rendered into. When set, the rendered
+      configuration is also checked against the contracts. Empty skips that gate, which needs a render.'
+    required: false
+    default: ''
+  github_token:
+    description: 'Token terrace/setup lists terrace-contract releases with, needed only when the version is a
+      MAJOR.MINOR line. Defaults to the job token on github.com and to empty elsewhere.'
+    required: false
+    default: ${{ github.server_url == 'https://github.com' && github.token || '' }}
+
+outputs:
+  version:
+    description: 'The terrace-contract version that ran.'
+    value: ${{ steps.setup.outputs.version }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install terrace-contract
+      id: setup
+      uses: TimSchoenle/actions/actions/terrace/setup@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-terrace-setup-v1.1.0
+      with:
+        version: ${{ inputs.version }}
+        working_directory: ${{ inputs.working_directory }}
+        github_token: ${{ inputs.github_token }}
+
+    # Every input reaches the shell through the environment and an array, so no chart name or path is
+    # ever expanded or word-split as code.
+    - name: Check configuration contracts
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      env:
+        SINCE: ${{ inputs.since }}
+        CHARTS: ${{ inputs.charts }}
+        MANIFESTS: ${{ inputs.manifests }}
+      run: |
+        set -euo pipefail
+
+        if ! terrace-contract sync --help >/dev/null 2>&1; then
+          echo "::error::terrace-contract $(terrace-contract --version) has no sync command; pin 0.9 or newer"
+          exit 1
+        fi
+
+        args=(sync --check --format github)
+        if [[ -n "$MANIFESTS" ]]; then
+          args+=(--manifests "$MANIFESTS")
+        fi
+
+        read -ra selected <<< "${CHARTS//$'\n'/ }"
+        if (( ${#selected[@]} > 0 )); then
+          args+=(-- "${selected[@]}")
+        elif [[ -n "$SINCE" ]]; then
+          args+=(--since "$SINCE")
+        fi
+
+        terrace-contract "${args[@]}"

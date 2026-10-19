@@ -57,6 +57,9 @@ on:
       - Verify Rust Coverage-codecov
       - Verify Security Codeql
       - Verify Security Zizmor
+      - Verify Terrace Helm Check
+      - Verify Terrace Helm Diff
+      - Verify Terrace Helm Sync
       - Verify Terrace Setup
       - Verify Test Setup-e2e
     # >>> generated: verify-workflows

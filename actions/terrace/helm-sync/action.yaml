@@ -1,0 +1,135 @@
+name: 'Terrace Helm Sync'
+description:
+  'Brings every file derived from the vendored configuration contracts up to date with terrace-contract sync: pulls
+  each contract from the image its chart pins, then rewrites the value schemas and README credential references.
+  Given a token, commits the result to the branch as a verified commit.'
+
+inputs:
+  version:
+    description: 'terrace-contract release to install, as for terrace/setup: MAJOR.MINOR.PATCH or MAJOR.MINOR. Empty
+      reads the cli pin from terrace.yaml in working_directory. Needs 0.9 or newer.'
+    required: false
+    default: ''
+  working_directory:
+    description: 'Directory to run in, relative to the workspace: the root of the chart repository, where terrace.yaml
+      is.'
+    required: false
+    default: '.'
+  pull:
+    description: 'Refresh the vendored contracts from their images first. Needs registry access and a signer, from
+      helm.signer in terrace.yaml or CONTRACT_SIGNER. When false, only the files derived from the contracts already
+      vendored are rewritten, with no network.'
+    required: false
+    default: 'true'
+  since:
+    description: 'Revision the change is measured from. Only the charts the commits since its merge base with HEAD
+      touched are synced, and every chart when the change reaches outside them or cannot be read. Empty syncs every
+      chart. Ignored when charts is set.'
+    required: false
+    default: ''
+  charts:
+    description: 'Chart directory names to sync, separated by spaces or newlines. A name that matches no chart fails
+      the step.'
+    required: false
+    default: ''
+  token:
+    description: 'Token for common/commit-changes, which commits the result through the GitHub API. It must be a
+      GitHub App installation token for the commit to be verified, and a commit made with the job token starts no
+      workflow run. Empty commits nothing, for a job that commits its own changes later.'
+    required: false
+    default: ''
+  commit_message:
+    description: 'Message of the commit, when token is set.'
+    required: false
+    default: 'chore: sync configuration contracts'
+  branch:
+    description: 'Branch to commit to, when token is set.'
+    required: false
+    default: ${{ github.head_ref || github.ref_name }}
+  file_pattern:
+    description: 'Files to commit, when token is set, as for common/commit-changes. The default commits every change
+      in the working tree, so run this before steps whose changes it must not carry, or narrow it to the chart tree.'
+    required: false
+    default: '.'
+  github_token:
+    description: 'Token terrace/setup lists terrace-contract releases with, needed only when the version is a
+      MAJOR.MINOR line. Defaults to the job token on github.com and to empty elsewhere.'
+    required: false
+    default: ${{ github.server_url == 'https://github.com' && github.token || '' }}
+
+outputs:
+  changed:
+    description: '"true" when the sync changed a file in the working tree, else "false".'
+    value: ${{ steps.sync.outputs.changed }}
+  commit_hash:
+    description: 'SHA of the commit, when token was set and a file changed. Empty otherwise.'
+    value: ${{ steps.commit.outputs.commit_hash }}
+
+runs:
+  using: 'composite'
+  steps:
+    # oras only when pulling: `pull` fetches the contract an image carries with it, and nothing else
+    # does.
+    - name: Install terrace-contract
+      id: setup
+      uses: TimSchoenle/actions/actions/terrace/setup@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-terrace-setup-v1.1.0
+      with:
+        version: ${{ inputs.version }}
+        working_directory: ${{ inputs.working_directory }}
+        oras: ${{ inputs.pull }}
+        github_token: ${{ inputs.github_token }}
+
+    - name: Sync configuration contracts
+      id: sync
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      env:
+        PULL: ${{ inputs.pull }}
+        SINCE: ${{ inputs.since }}
+        CHARTS: ${{ inputs.charts }}
+      run: |
+        set -euo pipefail
+
+        if ! terrace-contract sync --help >/dev/null 2>&1; then
+          echo "::error::terrace-contract $(terrace-contract --version) has no sync command; pin 0.9 or newer"
+          exit 1
+        fi
+
+        args=(sync --format github)
+        case "$PULL" in
+          true) ;;
+          false) args+=(--no-pull) ;;
+          *) echo "::error::pull must be true or false, got '${PULL}'"; exit 1 ;;
+        esac
+
+        read -ra selected <<< "${CHARTS//$'\n'/ }"
+        if (( ${#selected[@]} > 0 )); then
+          args+=(-- "${selected[@]}")
+        elif [[ -n "$SINCE" ]]; then
+          args+=(--since "$SINCE")
+        fi
+
+        # The outcome is recorded before it is acted on, so `changed` is set even for a run where a
+        # step failed after another had already written.
+        status=0
+        terrace-contract "${args[@]}" || status=$?
+
+        if [[ -n "$(git status --porcelain -- .)" ]]; then
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "changed=false" >> "$GITHUB_OUTPUT"
+        fi
+        exit "$status"
+
+    # Also after a failed sync: what the steps before the failure wrote is still correct, and a
+    # branch that keeps it is one fewer run of the network step. The step itself still failed the
+    # action above.
+    - name: Commit the result
+      id: commit
+      if: ${{ !cancelled() && inputs.token != '' && steps.sync.outputs.changed == 'true' }}
+      uses: TimSchoenle/actions/actions/common/commit-changes@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-commit-changes-v1.5.9
+      with:
+        token: ${{ inputs.token }}
+        commit_message: ${{ inputs.commit_message }}
+        branch: ${{ inputs.branch }}
+        file_pattern: ${{ inputs.file_pattern }}

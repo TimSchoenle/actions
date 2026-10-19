@@ -42,5 +42,8 @@
   "actions/security/codeql": "1.1.4",
   "actions/java-gradle/coverage-codecov": "1.1.2",
   "actions/security/zizmor": "1.1.3",
-  "actions/terrace/setup": "1.1.0"
+  "actions/terrace/setup": "1.1.0",
+  "actions/terrace/helm-check": "1.0.0",
+  "actions/terrace/helm-diff": "1.0.0",
+  "actions/terrace/helm-sync": "1.0.0"
 }
