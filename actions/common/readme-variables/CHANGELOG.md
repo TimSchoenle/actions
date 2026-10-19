@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.9](https://github.com/TimSchoenle/actions/compare/actions-common-readme-variables-v1.2.8...actions-common-readme-variables-v1.2.9) (2026-10-19)
+
+
+### Dependencies
+
+* **deps:** update vitest monorepo to v5.0.5 ([#1893](https://github.com/TimSchoenle/actions/issues/1893)) ([4203cad](https://github.com/TimSchoenle/actions/commit/4203cadcad81743fffb9b5577b792d4f7cc6755f))
+
 ## [1.2.8](https://github.com/TimSchoenle/actions/compare/actions-common-readme-variables-v1.2.7...actions-common-readme-variables-v1.2.8) (2026-10-17)
 
 

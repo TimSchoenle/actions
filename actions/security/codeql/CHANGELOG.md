@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.4](https://github.com/TimSchoenle/actions/compare/actions-security-codeql-v1.1.3...actions-security-codeql-v1.1.4) (2026-10-19)
+
+
+### Dependencies
+
+* **deps:** update github/codeql-action action to v4.39.0 ([#1896](https://github.com/TimSchoenle/actions/issues/1896)) ([bb97ac4](https://github.com/TimSchoenle/actions/commit/bb97ac4a238d26229383fa05b399527007c80c03))
+* **deps:** update vitest monorepo to v5.0.5 ([#1893](https://github.com/TimSchoenle/actions/issues/1893)) ([4203cad](https://github.com/TimSchoenle/actions/commit/4203cadcad81743fffb9b5577b792d4f7cc6755f))
+
 ## [1.1.3](https://github.com/TimSchoenle/actions/compare/actions-security-codeql-v1.1.2...actions-security-codeql-v1.1.3) (2026-10-17)
 
 

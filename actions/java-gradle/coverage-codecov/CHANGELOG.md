@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-coverage-codecov-v1.1.1...actions-java-gradle-coverage-codecov-v1.1.2) (2026-10-19)
+
+
+### Dependencies
+
+* **deps:** update actions/setup-java digest to b843ebf ([#1884](https://github.com/TimSchoenle/actions/issues/1884)) ([2164721](https://github.com/TimSchoenle/actions/commit/2164721d2dda7391472f26362ad1de71dfa076c5))
+
 ## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-coverage-codecov-v1.1.0...actions-java-gradle-coverage-codecov-v1.1.1) (2026-10-12)
 
 
