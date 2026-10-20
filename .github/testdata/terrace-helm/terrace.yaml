@@ -4,7 +4,7 @@
 # them carries, and nothing more. Read through TERRACE_CONFIG, because this file is not at the root
 # of the Git repository the way an adopter's is.
 version: 1
-cli: '0.9'
+cli: '0.11'
 helm:
   charts: charts
   firstParty:

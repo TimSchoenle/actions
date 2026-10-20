@@ -62,7 +62,7 @@ jobs:
           VERSION: ${{ steps.check.outputs.version }}
         run: |
           set -euo pipefail
-          case "$VERSION" in 0.9.*) ;; *) echo "::error::$VERSION is not on the fixture's 0.9 line"; exit 1;; esac
+          case "$VERSION" in 0.11.*) ;; *) echo "::error::$VERSION is not on the fixture's 0.11 line"; exit 1;; esac
 
   check-drift:
     name: 'Test: a stale value schema and an unknown chart fail the step'
