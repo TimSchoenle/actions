@@ -60,6 +60,7 @@ on:
       - Verify Terrace Helm Check
       - Verify Terrace Helm Diff
       - Verify Terrace Helm Sync
+      - Verify Terrace Image
       - Verify Terrace Setup
       - Verify Test Setup-e2e
     # >>> generated: verify-workflows
