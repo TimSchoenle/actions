@@ -1,5 +1,12 @@
 # Rust Config Contract
 
+> [!WARNING]
+> Deprecated in favour of [terrace/image](../../terrace/image), which makes the same checks for a service in any
+> language through `terrace-contract` itself: `generate` holds the committed contract to its generator, `dockerfile`
+> holds every marked label region to the document, and `image` reads the built image, labels, embedded file and
+> attached referrer alike, without a Docker daemon. Rust services call `terrace_config::schema::cli::main` as their
+> generator. This action receives fixes only, and is removed once no service uses it.
+
 Holds a [terrace-config](https://github.com/TimSchoenle) contract, the `LABEL` block that makes it discoverable and the
 built image that carries it to the configuration types they all claim to describe.
 

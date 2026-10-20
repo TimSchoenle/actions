@@ -235,6 +235,11 @@
       "release-type": "simple",
       "component": "actions-terrace-helm-sync",
       "include-component-in-tag": true
+    },
+    "actions/terrace/image": {
+      "release-type": "simple",
+      "component": "actions-terrace-image",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
