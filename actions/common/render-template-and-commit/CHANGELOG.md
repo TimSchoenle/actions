@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.18](https://github.com/TimSchoenle/actions/compare/actions-common-render-template-and-commit-v1.1.17...actions-common-render-template-and-commit-v1.1.18) (2026-10-20)
+
+
+### Dependencies
+
+* **deps:** update timschoenle/actions/actions/common/render-template to vactions-common-render-template-v1.2.9 ([#1914](https://github.com/TimSchoenle/actions/issues/1914)) ([062cb34](https://github.com/TimSchoenle/actions/commit/062cb34ee12ff84ff51b18567d5f4a7266000ff0))
+
 ## [1.1.17](https://github.com/TimSchoenle/actions/compare/actions-common-render-template-and-commit-v1.1.16...actions-common-render-template-and-commit-v1.1.17) (2026-10-19)
 
 
