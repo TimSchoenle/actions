@@ -4,8 +4,11 @@ import { parse } from 'yaml';
 // Intentionally free of any filesystem or Bun-specific APIs so the vitest suite
 // (which runs under Node) can exercise the exact logic the generator uses.
 
-/** Matches the per-action verify workflow filenames this repo gates on. */
-export const VERIFY_WORKFLOW_PATTERN = /^verify-action-.+\.ya?ml$/;
+/**
+ * Matches the verify workflow filenames this repo gates on: one per action (`verify-action-*`) and
+ * one per shared config that ships to consumers (`verify-config-*`).
+ */
+export const VERIFY_WORKFLOW_PATTERN = /^verify-(?:action|config)-.+\.ya?ml$/;
 
 /** Prefix every verify workflow's aggregate summary check must use. */
 export const SUMMARY_CHECK_PREFIX = 'CI Summary:';

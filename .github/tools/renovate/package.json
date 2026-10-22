@@ -1,0 +1,11 @@
+{
+  "name": "renovate-ci-tools",
+  "private": true,
+  "description": "The Renovate release the Verify Config Renovate workflow validates and dry-runs the shared presets with. Kept out of the root workspace so every other job does not install it.",
+  "devDependencies": {
+    "renovate": "44.166.0"
+  },
+  "trustedDependencies": [
+    "re2"
+  ]
+}

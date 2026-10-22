@@ -1,0 +1,106 @@
+name: Verify Config Renovate
+
+# The presets in configs/renovate/ run in every repository that extends them, and a broken preset
+# fails there, not here: a rule Renovate cannot parse, or one that parses but resolves a dependency
+# to nothing, surfaces weeks later as a warning on each consumer's Dependency Dashboard. This
+# workflow checks both before a change reaches `main`:
+#
+#   * Validate: Renovate's own validator, strict, over renovate.json and every preset.
+#   * Lookups: real Renovate dry runs against the fixture repositories in
+#     scripts/__fixtures__/renovate/, extending the presets from this checkout, with each fixture's
+#     expected updates asserted (scripts/check-renovate-lookups.ts).
+#
+# The weekly run catches what no pull request here changes: a new Renovate release, and the
+# upstream releases the fixtures look up.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'configs/renovate/**'
+      - 'renovate.json'
+      - 'scripts/__fixtures__/renovate/**'
+      - 'scripts/check-renovate-configs.ts'
+      - 'scripts/check-renovate-lookups.ts'
+      - 'scripts/lib/renovate-lookup.ts'
+      - 'scripts/lib/renovate-tool.ts'
+      - '.github/tools/renovate/**'
+      - '.github/workflows/verify-config-renovate.yaml'
+  pull_request:
+    paths:
+      - 'configs/renovate/**'
+      - 'renovate.json'
+      - 'scripts/__fixtures__/renovate/**'
+      - 'scripts/check-renovate-configs.ts'
+      - 'scripts/check-renovate-lookups.ts'
+      - 'scripts/lib/renovate-lookup.ts'
+      - 'scripts/lib/renovate-tool.ts'
+      - '.github/tools/renovate/**'
+      - '.github/workflows/verify-config-renovate.yaml'
+  schedule:
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  renovate:
+    name: Validate and dry-run Renovate presets
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # Renovate's `engines` field requires Node 24. The runner image's default Node is not pinned.
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+
+      # Installs only the pinned Renovate in .github/tools/renovate, not the root workspace: the
+      # scripts below import nothing outside the Node and Bun standard libraries.
+      - name: Setup Bun and Renovate
+        uses: TimSchoenle/actions/actions/bun/setup-cached@e16a1e466faf8ec751b26289c1898143a253269f # tag=actions-bun-setup-cached-v1.1.11
+        with:
+          bun-version: ''
+          bun-version-file: '.bun-version'
+          working-directory: .github/tools/renovate
+          cache-key-prefix: renovate-
+
+      - name: Validate
+        run: bun scripts/check-renovate-configs.ts
+
+      # Lookups read public GitHub releases and tags; the job token only lifts the anonymous rate limit.
+      - name: Lookups
+        env:
+          GITHUB_COM_TOKEN: ${{ github.token }}
+        run: bun scripts/check-renovate-lookups.ts
+
+  # <<< generated: summary (run 'bun run generate-ci-required' to update)
+  summary:
+    name: 'CI Summary: Config Renovate'
+    if: ${{ always() }}
+    needs:
+      - renovate
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Fail if any verify job did not succeed
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
+  # >>> generated: summary
