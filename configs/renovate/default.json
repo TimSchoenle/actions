@@ -84,6 +84,14 @@
       "separateMinorPatch": false
     },
     {
+      "description": "Cargo git dependencies pinned to a monorepo release tag such as `csp-shell-v0.2.0` (release-please's `<component>-v<version>` form). The cargo manager looks these up as git/GitHub tags but keeps cargo versioning, which cannot parse the component prefix, so the lookup fails with `Can't find version matching`. Regex versioning parses the version behind the prefix and makes the prefix the compatibility, so `csp-shell-v*` only ever moves to another `csp-shell-v*` tag and never to a sibling component's tag from the same repository.",
+      "matchManagers": ["cargo"],
+      "matchDatasources": ["github-tags", "git-tags"],
+      "matchCurrentValue": "/^[a-z0-9][a-z0-9_-]*-v\\d+\\.\\d+\\.\\d+$/i",
+      "versioning": "regex:^(?<compatibility>[A-Za-z0-9][A-Za-z0-9_-]*)-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$",
+      "commitMessageExtra": "to {{{newValue}}}"
+    },
+    {
       "description": "Everything under .github/ is CI and never ships: commit it as ci(deps), a type release-please hides, so a CI update never cuts a release. Matches by file rather than manager, which covers the github-actions manager, the regex manager for TimSchoenle/actions pins and customManagers:githubActionsVersions alike. separateMinorPatch: false lives here because Renovate refuses it next to matchUpdateTypes; it keeps patch and minor updates on one branch instead of a patch- prefixed second one.",
       "matchFileNames": [".github/**"],
       "semanticCommitType": "ci",
