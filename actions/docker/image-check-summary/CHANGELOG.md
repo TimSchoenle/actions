@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.7](https://github.com/TimSchoenle/actions/compare/actions-docker-image-check-summary-v1.1.6...actions-docker-image-check-summary-v1.1.7) (2026-10-22)
+
+
+### Dependencies
+
+* **deps:** update timschoenle/actions/actions/common/upsert-pr-comment to vactions-common-upsert-pr-comment-v1.2.5 ([#1915](https://github.com/TimSchoenle/actions/issues/1915)) ([ee9eb0b](https://github.com/TimSchoenle/actions/commit/ee9eb0b5803fc047e0079fc8ee2a8e7590af2ae4))
+* **deps:** update timschoenle/actions/actions/common/upsert-pr-comment to vactions-common-upsert-pr-comment-v1.3.0 ([#1924](https://github.com/TimSchoenle/actions/issues/1924)) ([534fb02](https://github.com/TimSchoenle/actions/commit/534fb020480c4443094f29dc58a9a8dfef83b82b))
+
 ## [1.1.6](https://github.com/TimSchoenle/actions/compare/actions-docker-image-check-summary-v1.1.5...actions-docker-image-check-summary-v1.1.6) (2026-10-19)
 
 
