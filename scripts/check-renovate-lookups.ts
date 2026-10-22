@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { createServer, type Server } from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -11,12 +12,22 @@ import {
   type RenovateReport,
   rewritePresetReferences,
 } from './lib/renovate-lookup.js';
-import { renovateEntry } from './lib/renovate-tool.js';
+import { type CommandRunner, renovateEntry, runCommand } from './lib/renovate-tool.js';
 import { ROOT_DIR } from './lib/utils.js';
 
-const FIXTURES_DIR = path.join(ROOT_DIR, 'scripts', '__fixtures__', 'renovate');
-const PRESETS_DIR = path.join(ROOT_DIR, 'configs', 'renovate');
+import type { AddressInfo } from 'node:net';
+
 const CASE_FILE = 'case.json';
+
+export interface CheckLookupsOptions {
+  /** Fixture names to run; all when empty. */
+  names?: string[];
+  fixturesDir?: string;
+  presetsDir?: string;
+  env?: NodeJS.ProcessEnv;
+  renovate?: () => string;
+  run?: CommandRunner;
+}
 
 /**
  * Dry-runs Renovate against the fixture repositories in `scripts/__fixtures__/renovate/` and checks
@@ -35,26 +46,33 @@ const CASE_FILE = 'case.json';
  *
  * @returns the process exit code.
  */
-export async function main(argv: string[] = Bun.argv.slice(2)): Promise<number> {
-  const token = process.env.GITHUB_COM_TOKEN ?? process.env.GITHUB_TOKEN;
+export async function main({
+  names = [],
+  fixturesDir = path.join(ROOT_DIR, 'scripts', '__fixtures__', 'renovate'),
+  presetsDir = path.join(ROOT_DIR, 'configs', 'renovate'),
+  env = process.env,
+  renovate = () => renovateEntry('renovate'),
+  run = runCommand,
+}: CheckLookupsOptions = {}): Promise<number> {
+  const token = env.GITHUB_COM_TOKEN ?? env.GITHUB_TOKEN;
   if (!token) {
     console.error('❌ Set GITHUB_COM_TOKEN or GITHUB_TOKEN: Renovate needs a token to look up GitHub releases.');
     return 1;
   }
 
-  const cases = selectCases(loadCases(), argv);
-  const renovate = renovateEntry('renovate');
+  const cases = selectCases(loadCases(fixturesDir), names);
+  const renovateFile = renovate();
   const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'renovate-lookups-'));
-  const presetsDir = path.join(workDir, 'presets');
-  const server = servePresets(presetsDir);
-  const baseUrl = `http://127.0.0.1:${server.port}`;
+  const servedDir = path.join(workDir, 'presets');
+  const server = await servePresets(servedDir);
+  const context: RunContext = { baseUrl: serverUrl(server), fixturesDir, renovate: renovateFile, run, token, workDir };
 
   try {
-    writePresets(presetsDir, baseUrl);
+    writePresets(presetsDir, servedDir, context.baseUrl);
 
     let failed = 0;
     for (const lookupCase of cases) {
-      const failures = await runCase(lookupCase, { baseUrl, renovate, token, workDir });
+      const failures = await runCase(lookupCase, context);
 
       if (failures.length === 0) {
         console.log(`✅ ${lookupCase.name}: ${lookupCase.description}`);
@@ -75,24 +93,24 @@ export async function main(argv: string[] = Bun.argv.slice(2)): Promise<number> 
     console.log(`\n✅ ${cases.length} Renovate lookup fixture(s) passed.`);
     return 0;
   } finally {
-    await server.stop(true);
+    await new Promise((resolve) => server.close(resolve));
     fs.rmSync(workDir, { recursive: true, force: true });
   }
 }
 
-function loadCases(): LookupCase[] {
+export function loadCases(fixturesDir: string): LookupCase[] {
   return fs
-    .readdirSync(FIXTURES_DIR, { withFileTypes: true })
+    .readdirSync(fixturesDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort()
     .map((name) => {
-      const raw: unknown = JSON.parse(fs.readFileSync(path.join(FIXTURES_DIR, name, CASE_FILE), 'utf8'));
+      const raw: unknown = JSON.parse(fs.readFileSync(path.join(fixturesDir, name, CASE_FILE), 'utf8'));
       return parseLookupCase(name, raw);
     });
 }
 
-function selectCases(cases: LookupCase[], names: string[]): LookupCase[] {
+export function selectCases(cases: LookupCase[], names: string[]): LookupCase[] {
   if (names.length === 0) {
     return cases;
   }
@@ -106,62 +124,53 @@ function selectCases(cases: LookupCase[], names: string[]): LookupCase[] {
 }
 
 /** Serves `<dir>/<name>.json` at `/<name>.json` on loopback only; every other path is a 404. */
-function servePresets(dir: string): Bun.Server<undefined> {
-  return Bun.serve({
-    hostname: '127.0.0.1',
-    port: 0,
-    fetch(request) {
-      const match = /^\/([^/]+)\.json$/.exec(new URL(request.url).pathname);
-      const name = match?.[1];
-      if (name === undefined || !PRESET_NAME.test(name)) {
-        return new Response('Not found', { status: 404 });
-      }
+export async function servePresets(dir: string): Promise<Server> {
+  const server = createServer((request, response) => {
+    const match = /^\/([^/]+)\.json$/.exec(new URL(request.url ?? '/', 'http://localhost').pathname);
+    const name = match?.[1];
+    const file = name !== undefined && PRESET_NAME.test(name) ? path.join(dir, `${name}.json`) : undefined;
 
-      const file = path.join(dir, `${name}.json`);
-      if (!fs.existsSync(file)) {
-        return new Response('Not found', { status: 404 });
-      }
+    if (file === undefined || !fs.existsSync(file)) {
+      response.writeHead(404).end('Not found');
+      return;
+    }
 
-      return new Response(Bun.file(file), { headers: { 'content-type': 'application/json' } });
-    },
+    response.writeHead(200, { 'content-type': 'application/json' }).end(fs.readFileSync(file));
   });
+
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+
+  return server;
 }
 
-function writePresets(targetDir: string, baseUrl: string): void {
+export function serverUrl(server: Server): string {
+  return `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+}
+
+function writePresets(sourceDir: string, targetDir: string, baseUrl: string): void {
   fs.mkdirSync(targetDir, { recursive: true });
 
-  for (const file of fs.readdirSync(PRESETS_DIR).filter((name) => name.endsWith('.json'))) {
-    const content = fs.readFileSync(path.join(PRESETS_DIR, file), 'utf8');
+  for (const file of fs.readdirSync(sourceDir).filter((name) => name.endsWith('.json'))) {
+    const content = fs.readFileSync(path.join(sourceDir, file), 'utf8');
     fs.writeFileSync(path.join(targetDir, file), rewritePresetReferences(content, baseUrl));
   }
 }
 
 interface RunContext {
   baseUrl: string;
+  fixturesDir: string;
   renovate: string;
+  run: CommandRunner;
   token: string;
   workDir: string;
 }
 
-async function run(command: string[], cwd: string, env?: Record<string, string>) {
-  const proc = Bun.spawn(command, {
-    cwd,
-    env: { ...process.env, ...env },
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
-  const [stdout, stderr, exitCode] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-    proc.exited,
-  ]);
-
-  return { exitCode, output: `${stdout}${stderr}` };
-}
-
 /** Builds the fixture repository: its files, a renovate.json extending the case's presets, one commit. */
-async function createRepository(lookupCase: LookupCase, repoDir: string, baseUrl: string): Promise<string[]> {
-  const caseDir = path.join(FIXTURES_DIR, lookupCase.name);
+async function createRepository(lookupCase: LookupCase, repoDir: string, context: RunContext): Promise<string[]> {
+  const caseDir = path.join(context.fixturesDir, lookupCase.name);
 
   for (const [destination, source] of Object.entries(lookupCase.files)) {
     const target = path.join(repoDir, destination);
@@ -169,30 +178,34 @@ async function createRepository(lookupCase: LookupCase, repoDir: string, baseUrl
     fs.copyFileSync(path.join(caseDir, source), target);
   }
 
-  const config = { extends: lookupCase.presets.map((preset) => presetUrl(baseUrl, preset)) };
+  const config = { extends: lookupCase.presets.map((preset) => presetUrl(context.baseUrl, preset)) };
   fs.writeFileSync(path.join(repoDir, 'renovate.json'), `${JSON.stringify(config, null, 2)}\n`);
 
   // A throwaway repository in a temporary directory: identity and signing come from flags so the
   // developer's global git configuration can neither block nor sign the commit.
   const git = ['git', '-c', 'core.autocrlf=false', '-c', 'commit.gpgsign=false'];
-  for (const command of [
-    [...git, 'init', '--quiet', '--initial-branch=main'],
-    [...git, 'add', '--all'],
+  const steps: [string, string[]][] = [
+    ['git init', [...git, 'init', '--quiet', '--initial-branch=main']],
+    ['git add', [...git, 'add', '--all']],
     [
-      ...git,
-      '-c',
-      'user.name=fixture',
-      '-c',
-      'user.email=fixture@example.invalid',
-      'commit',
-      '--quiet',
-      '-m',
-      'fixture',
+      'git commit',
+      [
+        ...git,
+        '-c',
+        'user.name=fixture',
+        '-c',
+        'user.email=fixture@example.invalid',
+        'commit',
+        '--quiet',
+        '-m',
+        'fixture',
+      ],
     ],
-  ]) {
-    const result = await run(command, repoDir);
+  ];
+  for (const [label, command] of steps) {
+    const result = await context.run(command, { cwd: repoDir });
     if (result.exitCode !== 0) {
-      return [`'${command.slice(5).join(' ')}' failed: ${result.output.trim()}`];
+      return [`${label} failed: ${result.output.trim()}`];
     }
   }
 
@@ -206,7 +219,7 @@ async function runCase(lookupCase: LookupCase, context: RunContext): Promise<str
   const globalConfigPath = path.join(caseDir, 'global.json');
   fs.mkdirSync(repoDir, { recursive: true });
 
-  const setupFailures = await createRepository(lookupCase, repoDir, context.baseUrl);
+  const setupFailures = await createRepository(lookupCase, repoDir, context);
   if (setupFailures.length > 0) {
     return setupFailures;
   }
@@ -216,7 +229,7 @@ async function runCase(lookupCase: LookupCase, context: RunContext): Promise<str
   const globalConfig = { hostRules: [{ matchHost: `${context.baseUrl}/`, allowInternal: true }] };
   fs.writeFileSync(globalConfigPath, JSON.stringify(globalConfig));
 
-  const result = await run(
+  const result = await context.run(
     [
       'node',
       context.renovate,
@@ -227,12 +240,14 @@ async function runCase(lookupCase: LookupCase, context: RunContext): Promise<str
       '--report-type=file',
       `--report-path=${reportPath}`,
     ],
-    repoDir,
     {
-      GITHUB_COM_TOKEN: context.token,
-      LOG_LEVEL: 'info',
-      RENOVATE_BASE_DIR: path.join(context.workDir, 'renovate'),
-      RENOVATE_CONFIG_FILE: globalConfigPath,
+      cwd: repoDir,
+      env: {
+        GITHUB_COM_TOKEN: context.token,
+        LOG_LEVEL: 'info',
+        RENOVATE_BASE_DIR: path.join(context.workDir, 'renovate'),
+        RENOVATE_CONFIG_FILE: globalConfigPath,
+      },
     },
   );
 
@@ -241,14 +256,9 @@ async function runCase(lookupCase: LookupCase, context: RunContext): Promise<str
   }
 
   const report = JSON.parse(fs.readFileSync(reportPath, 'utf8')) as RenovateReport;
-  const failures = evaluateReport(lookupCase, report);
-  if (failures.length > 0 && process.env.RUNNER_DEBUG === '1') {
-    console.error(result.output);
-  }
-
-  return failures;
+  return evaluateReport(lookupCase, report);
 }
 
 if (import.meta.main) {
-  process.exit(await main());
+  process.exit(await main({ names: process.argv.slice(2) }));
 }

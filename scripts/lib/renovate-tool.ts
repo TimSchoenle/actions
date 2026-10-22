@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -18,12 +19,48 @@ export const RENOVATE_INSTALL_COMMAND = 'bun install --frozen-lockfile --cwd .gi
 export type RenovateEntry = 'config-validator' | 'renovate';
 
 /** Absolute path of a Renovate entry point. Throws with the install command when it is missing. */
-export function renovateEntry(entry: RenovateEntry): string {
-  const file = path.join(RENOVATE_TOOL_DIR, 'node_modules', 'renovate', 'dist', `${entry}.js`);
+export function renovateEntry(entry: RenovateEntry, toolDir: string = RENOVATE_TOOL_DIR): string {
+  const file = path.join(toolDir, 'node_modules', 'renovate', 'dist', `${entry}.js`);
 
   if (!fs.existsSync(file)) {
-    throw new Error(`Renovate is not installed at ${RENOVATE_TOOL_DIR}. Run '${RENOVATE_INSTALL_COMMAND}'.`);
+    throw new Error(`Renovate is not installed at ${toolDir}. Run '${RENOVATE_INSTALL_COMMAND}'.`);
   }
 
   return file;
 }
+
+export interface CommandOptions {
+  cwd: string;
+  /** Added to the inherited environment. */
+  env?: Record<string, string>;
+  /** Stream the output to this process instead of capturing it. */
+  inherit?: boolean;
+}
+
+export interface CommandResult {
+  exitCode: number;
+  /** Captured stdout followed by stderr; empty when the output was inherited. */
+  output: string;
+}
+
+/** Runs a command without a shell, so no argument is ever reinterpreted. */
+export type CommandRunner = (command: readonly string[], options: CommandOptions) => Promise<CommandResult>;
+
+export const runCommand: CommandRunner = (command, { cwd, env, inherit = false }) =>
+  new Promise((resolve, reject) => {
+    const [executable, ...args] = command;
+    const child = spawn(executable, args, {
+      cwd,
+      env: { ...process.env, ...env },
+      stdio: inherit ? 'inherit' : ['ignore', 'pipe', 'pipe'],
+    });
+
+    const stdout: Buffer[] = [];
+    const stderr: Buffer[] = [];
+    child.stdout?.on('data', (chunk: Buffer) => stdout.push(chunk));
+    child.stderr?.on('data', (chunk: Buffer) => stderr.push(chunk));
+    child.on('error', reject);
+    child.on('close', (code) => {
+      resolve({ exitCode: code ?? 1, output: Buffer.concat([...stdout, ...stderr]).toString('utf8') });
+    });
+  });
