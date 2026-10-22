@@ -5,9 +5,11 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Renovate's cargo manager does not extract `rust-version`. Tracked as the `rust` Docker image so it shares docker versioning with the `rust:<version>` base images (a `major.minor` value stays `major.minor`, a `major.minor.patch` value stays `major.minor.patch`) and joins the `rust toolchain` group by depName. Matches literal values in `[package]` and `[workspace.package]`; `rust-version.workspace = true` holds no version and is left alone.",
+      "description": "Renovate's cargo manager does not extract `rust-version`. Tracked as the `rust` Docker image so it shares docker versioning with the `rust:<version>` base images (a `major.minor` value stays `major.minor`, a `major.minor.patch` value stays `major.minor.patch`) and joins the `rust toolchain` group by depName. Matches literal values in `[package]` and `[workspace.package]`; `rust-version.workspace = true` holds no version and is left alone. The key must open its line (after optional spaces or tabs, optionally as the dotted `package.` or `workspace.package.` key), so a commented-out `# rust-version = ...` is never matched. Renovate compiles matchStrings with the `g` flag only, so `^` alone would mean start of file: the line start is spelled `(?:^|\\n)`.",
       "managerFilePatterns": ["/(^|/)Cargo\\.toml$/"],
-      "matchStrings": ["rust-version\\s*=\\s*\"(?<currentValue>\\d+\\.\\d+(?:\\.\\d+)?)\""],
+      "matchStrings": [
+        "(?:^|\\n)[ \\t]*(?:(?:workspace\\.)?package\\.)?rust-version[ \\t]*=[ \\t]*\"(?<currentValue>\\d+\\.\\d+(?:\\.\\d+)?)\""
+      ],
       "depNameTemplate": "rust",
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
