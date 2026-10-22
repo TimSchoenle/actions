@@ -111,7 +111,7 @@ runs:
 
     - name: Comment on PR
       if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request' && inputs.repository == github.repository
-      uses: TimSchoenle/actions/actions/common/upsert-pr-comment@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-upsert-pr-comment-v1.2.5
+      uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
       with:
         token: ${{ steps.generate_token.outputs.token }}
         identifier: 'java-gradle-auto-spotless'
