@@ -86,7 +86,7 @@ runs:
         token: ${{ steps.generate_token.outputs.token }}
 
     - name: Set up JDK
-      uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@7e8fd61045447d321c5139eea8f2e2b766333f8b # tag=actions-java-gradle-setup-base-environment-v1.2.13
+      uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-java-gradle-setup-base-environment-v1.2.14
       with:
         java_version: ${{ inputs.java_version }}
         java_distribution: ${{ inputs.java_distribution }}
