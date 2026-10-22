@@ -44,15 +44,15 @@ is not, including older versions of a component whose neighbours have since rele
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Docker Image Check](./actions/docker/image-check) | [actions-docker-image-check-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-v1.1.7) | :white_check_mark: |
-| [Docker Image Check Summary](./actions/docker/image-check-summary) | [actions-docker-image-check-summary-v1.1.6](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-summary-v1.1.6) | :white_check_mark: |
+| [Docker Image Check](./actions/docker/image-check) | [actions-docker-image-check-v1.1.8](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-v1.1.8) | :white_check_mark: |
+| [Docker Image Check Summary](./actions/docker/image-check-summary) | [actions-docker-image-check-summary-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-summary-v1.1.7) | :white_check_mark: |
 
 #### Helm
 
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Apply Helm Chart Updates](./actions/helm/apply-chart-updates) | [actions-helm-apply-chart-updates-v1.3.9](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-apply-chart-updates-v1.3.9) | :white_check_mark: |
-| [Update Helm Chart Version](./actions/helm/update-chart-version) | [actions-helm-update-chart-version-v1.7.1](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.7.1) | :white_check_mark: |
+| [Update Helm Chart Version](./actions/helm/update-chart-version) | [actions-helm-update-chart-version-v1.7.2](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.7.2) | :white_check_mark: |
 
 #### Helper
 
@@ -66,7 +66,7 @@ is not, including older versions of a component whose neighbours have since rele
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | [actions-java-gradle-auto-spotless-v1.1.32](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v1.1.32) | :white_check_mark: |
+| [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | [actions-java-gradle-auto-spotless-v1.1.33](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v1.1.33) | :white_check_mark: |
 | [Java-Gradle Coverage (Codecov)](./actions/java-gradle/coverage-codecov) | [actions-java-gradle-coverage-codecov-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-coverage-codecov-v1.1.2) | :white_check_mark: |
 | [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | [actions-java-gradle-setup-base-environment-v1.2.14](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.14) | :white_check_mark: |
 
@@ -103,7 +103,7 @@ is not, including older versions of a component whose neighbours have since rele
 | [Terrace Helm Diff](./actions/terrace/helm-diff) | [actions-terrace-helm-diff-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-diff-v1.1.0) | :white_check_mark: |
 | [Terrace Helm Sync](./actions/terrace/helm-sync) | [actions-terrace-helm-sync-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-sync-v1.1.0) | :white_check_mark: |
 | [Terrace Image](./actions/terrace/image) | [actions-terrace-image-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-image-v1.1.0) | :white_check_mark: |
-| [Terrace Setup](./actions/terrace/setup) | [actions-terrace-setup-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-setup-v1.1.0) | :white_check_mark: |
+| [Terrace Setup](./actions/terrace/setup) | [actions-terrace-setup-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-setup-v1.1.1) | :white_check_mark: |
 
 #### Test
 
@@ -118,9 +118,9 @@ is not, including older versions of a component whose neighbours have since rele
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Auto Format](./workflows/maintenance/auto-bun-prettier) | [workflows-maintenance-auto-bun-prettier-v1.1.42](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-bun-prettier-v1.1.42) | :white_check_mark: |
-| [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | [workflows-maintenance-timed-auto-pr-approve-v1.2.44](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-timed-auto-pr-approve-v1.2.44) | :white_check_mark: |
-| [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | [workflows-maintenance-auto-approve-renovate-v1.4.31](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-approve-renovate-v1.4.31) | :white_check_mark: |
+| [Auto Format](./workflows/maintenance/auto-bun-prettier) | [workflows-maintenance-auto-bun-prettier-v1.1.43](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-bun-prettier-v1.1.43) | :white_check_mark: |
+| [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | [workflows-maintenance-timed-auto-pr-approve-v1.2.45](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-timed-auto-pr-approve-v1.2.45) | :white_check_mark: |
+| [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | [workflows-maintenance-auto-approve-renovate-v1.4.32](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-approve-renovate-v1.4.32) | :white_check_mark: |
 | [Maintenance Auto-rebase](./workflows/maintenance/auto-rebase) | [workflows-maintenance-auto-rebase-v1.1.8](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-rebase-v1.1.8) | :white_check_mark: |
 | [Maintenance Wipe-cache](./workflows/maintenance/wipe-cache) | [workflows-maintenance-wipe-cache-v1.1.13](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-wipe-cache-v1.1.13) | :white_check_mark: |
 
