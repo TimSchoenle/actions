@@ -57,6 +57,27 @@ Scripts CI runs those, plus `check-action-sources`, `check-action-dist` and `che
 each of which fails when a committed output no longer matches its source. `zizmor` and `actionlint`
 read the workflow files in the Security workflow; CodeQL analyses the TypeScript in its own.
 
+## Renovate presets
+
+Every repository that extends `configs/renovate/*` runs these presets, so a broken one fails there,
+as a warning on each consumer's Dependency Dashboard. The `Verify Config Renovate` workflow checks a
+change before it lands, with the Renovate release pinned in
+[`.github/tools/renovate`](.github/tools/renovate/package.json):
+
+```bash
+bun install --frozen-lockfile --cwd .github/tools/renovate
+bun run check-renovate-configs                       # renovate-config-validator --strict
+GITHUB_COM_TOKEN=$(gh auth token) bun run check-renovate-lookups   # dry-run the fixtures
+```
+
+`check-renovate-lookups` runs Renovate against each fixture repository in
+[`scripts/__fixtures__/renovate/`](scripts/__fixtures__/renovate), with the presets loaded from the
+working tree rather than from `main`, and asserts the updates listed in the fixture's `case.json`:
+which dependency, how many updates at least, the pattern every new value matches and the branch it
+lands on. Any lookup warning or repository problem fails the fixture. A preset change that fixes or
+adds behaviour comes with a fixture that fails without it. Fixtures pin old releases on purpose, so
+they always have an update to propose; pass fixture names to run only those.
+
 ## Required status checks
 
 The default-branch ruleset marks a handful of contexts required. Two properties decide whether a
@@ -69,7 +90,7 @@ context is safe to require, and neither is visible in the workflow that produces
   it is skipped, so neither name is always there. A plain job is safe — a skipped one still reports,
   and branch protection accepts it.
 - **It must report after the work it gates.** `ci-required` aggregates the path-filtered
-  `verify-action-*` workflows, and it does so from a `workflow_run` trigger, whose check runs land on
+  `verify-action-*` and `verify-config-*` workflows, and it does so from a `workflow_run` trigger, whose check runs land on
   the default branch rather than on the pull request head. Only the commit status it POSTs reaches
   the pull request, so `ci-required` is the context to require — never the `Aggregate verify checks`
   job name, which on a pull request evaluates before any verify workflow has started and passes with

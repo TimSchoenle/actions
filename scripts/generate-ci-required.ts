@@ -10,7 +10,7 @@ const WORKFLOWS_DIR = path.join(ROOT_DIR, '.github', 'workflows');
 const CI_REQUIRED_PATH = path.join(WORKFLOWS_DIR, 'ci-required.yaml');
 
 // Rebuilds the `workflow_run.workflows` watch list in ci-required.yaml from the
-// verify-action-*.yaml workflows on disk so a new verify workflow is picked up
+// verify-action-*.yaml and verify-config-*.yaml workflows on disk so a new verify workflow is picked up
 // without hand-editing the aggregate gate. The ci-required drift test fails CI
 // if this output is ever stale.
 export function collectVerifyWorkflowNames(): string[] {

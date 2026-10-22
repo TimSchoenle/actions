@@ -1,0 +1,16 @@
+{
+  "description": "A digest-pinned TimSchoenle/actions action with a `# tag=` comment moves to a newer tag of the same action, in the ci group.",
+  "presets": ["default"],
+  "files": {
+    ".github/workflows/fixture.yaml": "workflow.yaml"
+  },
+  "dependencies": [
+    {
+      "manager": "regex",
+      "depName": "TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed",
+      "minUpdates": 1,
+      "newValue": "^actions-maintenance-ensure-actions-are-executed-v\\d+\\.\\d+\\.\\d+$",
+      "branchName": "renovate/ci"
+    }
+  ]
+}

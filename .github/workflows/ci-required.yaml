@@ -1,9 +1,10 @@
 name: CI Required
 
-# Single aggregate gate for the path-filtered verify-action-* workflows.
+# Single aggregate gate for the path-filtered verify-action-* and verify-config-*
+# workflows.
 #
-# Each verify-action-* workflow is filtered with `on.pull_request.paths`, so it
-# only runs when its own action changes. That makes the individual verify jobs
+# Each of those workflows is filtered with `on.pull_request.paths`, so it only
+# runs when its own action or config changes. That makes the individual verify jobs
 # unusable as *required* status checks: a PR that does not touch a given action
 # never produces that check, and a required-but-missing check blocks the PR
 # forever ("Expected — waiting for status to be reported").
@@ -41,6 +42,7 @@ on:
       - Verify Common Setup-app-git-identity
       - Verify Common Upsert-issue
       - Verify Common Upsert-pr-comment
+      - Verify Config Renovate
       - Verify Docker Image-check
       - Verify Docker Image-check-summary
       - Verify Helm Apply-chart-updates
