@@ -174,8 +174,10 @@ token.
 
 Teardown removes every branch a suite reserved and closes every pull request it opened, and **throws**
 if anything survives — teardown that fails quietly is indistinguishable from teardown that worked.
-It cannot survive a cancelled run, so `.github/workflows/e2e-janitor.yaml` sweeps `test/**` refs and
-stale pull requests on a schedule as the backstop.
+It cannot survive a cancelled run, so `.github/workflows/e2e-janitor.yaml` sweeps stale `test/**` refs
+and stale pull requests on a schedule as the backstop. A pull request is only swept when the e2e app's
+bot account opened it from a `test/` branch of the scratch repository; anything else there is left
+alone, however old.
 
 Check runs are the one resource that cannot be cleaned up: GitHub offers no delete endpoint. Each CI
 run of `ensure-actions-are-executed` leaves four behind on an orphaned commit.
