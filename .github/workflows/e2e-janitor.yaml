@@ -3,8 +3,10 @@ name: E2E Janitor
 # Per-run teardown in the e2e suites cannot survive a cancelled run: the verify workflows set
 # `cancel-in-progress: true`, so a superseded run is killed before its teardown executes and its
 # `test/**` branches and pull requests are stranded in the scratch repository. This job is the
-# unconditional backstop. It judges purely by age, never by which run created a ref, so it is safe
-# to run at any time and converges on the same state however often it runs.
+# unconditional backstop. Within the e2e namespace it judges purely by age, never by which run
+# created a ref, so it is safe to run at any time and converges on the same state however often it
+# runs. Nothing outside that namespace is ever a candidate: a pull request someone opened against
+# the scratch repository by hand, or one on a branch the harness did not create, is left alone.
 
 on:
   schedule:
@@ -36,7 +38,8 @@ env:
   TEST_REPO_NAME: actions-testing
   TEST_REPO: TimSchoenle/actions-testing
   # Every ref the e2e suites create lives under this prefix; nothing else in the scratch repository
-  # is ever a deletion candidate.
+  # is ever a deletion candidate. Pull requests are matched on the same namespace, as a branch name
+  # (`test/`) rather than a ref path.
   TEST_REF_PREFIX: heads/test/
   # `inputs` is empty on `schedule`, so the dispatch defaults have to be restated as fallbacks here.
   MAX_AGE_HOURS: ${{ inputs.max-age-hours || '2' }}
@@ -94,35 +97,63 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           CUTOFF: ${{ steps.cutoff.outputs.at }}
+          # The e2e suites open every pull request with a token minted for this same app, so its bot
+          # account is the author of all of them.
+          APP_SLUG: ${{ steps.token.outputs.app-slug }}
         run: |
           set -euo pipefail
 
-          # The scratch repository exists solely to host e2e fixtures, so every open pull request in
-          # it is test residue and age is the only predicate needed. Timestamps are compared as
-          # strings: both sides are UTC ISO-8601 in the same fixed-width format, where lexical and
-          # chronological order coincide.
+          # An empty slug would reduce the author predicate to `[bot]`, which matches nothing: the
+          # sweep would report a clean repository while leaving every orphan in place.
+          if [[ -z "$APP_SLUG" ]]; then
+            echo "::error::The token step reported no app slug; cannot identify e2e pull requests."
+            exit 1
+          fi
+          export E2E_AUTHOR="${APP_SLUG}[bot]"
+          export E2E_HEAD_PREFIX="${TEST_REF_PREFIX#heads/}"
+
+          # The scratch repository also receives pull requests that are not e2e fixtures (repository
+          # configuration, for instance), so age alone must never be enough. A pull request is test
+          # residue only when the harness provably opened it: authored by the e2e app's bot account,
+          # from a branch of the scratch repository itself (not a fork), under the test namespace.
+          # Both identity predicates are required, so neither a human pushing a `test/` branch nor the
+          # bot opening anything outside the namespace makes a pull request a candidate. Orphans of
+          # crashed or cancelled runs satisfy all of them, since they come from the same harness.
+          # Timestamps are compared as strings: both sides are UTC ISO-8601 in the same fixed-width
+          # format, where lexical and chronological order coincide.
           # Listed into a variable rather than straight into `mapfile`: a process substitution hides
           # its exit code, so a failing `gh api` would read as "nothing is stale" and pass green.
-          # `$ENV.CUTOFF` is jq syntax, not a shell expansion, so the filter must stay single-quoted.
+          # `$ENV.*` is jq syntax, not a shell expansion, so the filter must stay single-quoted.
           # shellcheck disable=SC2016
           listing="$(
             gh api --paginate "repos/${TEST_REPO}/pulls?state=open&per_page=100" \
-              --jq '.[] | select(.updated_at < $ENV.CUTOFF) | .number'
+              --jq '.[]
+                | select(
+                    .user.type == "Bot"
+                    and .user.login == $ENV.E2E_AUTHOR
+                    and .head.repo.full_name == $ENV.TEST_REPO
+                    and (.head.ref | startswith($ENV.E2E_HEAD_PREFIX))
+                    and .updated_at < $ENV.CUTOFF
+                  )
+                | [.number, .head.ref]
+                | @tsv'
           )"
           mapfile -t stale < <(printf '%s' "$listing")
 
           closed=0
           failed=0
 
-          for number in "${stale[@]}"; do
+          for candidate in "${stale[@]}"; do
+            IFS=$'\t' read -r number head <<< "$candidate"
+
             if [[ "$DRY_RUN" == "true" ]]; then
-              echo "Would close pull request #${number}."
+              echo "Would close pull request #${number} (${head})."
               closed=$((closed + 1))
               continue
             fi
 
             if gh api -X PATCH "repos/${TEST_REPO}/pulls/${number}" -f state=closed --silent; then
-              echo "Closed pull request #${number}."
+              echo "Closed pull request #${number} (${head})."
               closed=$((closed + 1))
               continue
             fi
@@ -255,6 +286,6 @@ jobs:
             echo
             echo '| Resource | Stale | Closed / deleted |'
             echo '| --- | ---: | ---: |'
-            echo "| Open pull requests | ${PULLS_STALE:-0} | ${PULLS_CLOSED:-0} |"
+            echo "| Open e2e pull requests | ${PULLS_STALE:-0} | ${PULLS_CLOSED:-0} |"
             echo "| Refs under \`${TEST_REF_PREFIX}\` | ${BRANCHES_STALE:-0} | ${BRANCHES_DELETED:-0} |"
           } >> "$GITHUB_STEP_SUMMARY"
