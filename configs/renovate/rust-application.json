@@ -1,0 +1,25 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Rust applications: rust-toolchain plus `rust-version` in every Cargo.toml, moved in the same `rust toolchain` pull request. Not for libraries: there `rust-version` is the MSRV, a compatibility promise raised by decision, not a pin to keep current.",
+  "extends": ["github>TimSchoenle/actions//configs/renovate/rust-toolchain"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Renovate's cargo manager does not extract `rust-version`. Tracked as the `rust` Docker image so it shares docker versioning with the `rust:<version>` base images (a `major.minor` value stays `major.minor`, a `major.minor.patch` value stays `major.minor.patch`) and joins the `rust toolchain` group by depName. Matches literal values in `[package]` and `[workspace.package]`; `rust-version.workspace = true` holds no version and is left alone.",
+      "managerFilePatterns": ["/(^|/)Cargo\\.toml$/"],
+      "matchStrings": ["rust-version\\s*=\\s*\"(?<currentValue>\\d+\\.\\d+(?:\\.\\d+)?)\""],
+      "depNameTemplate": "rust",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "`rust-version` is a bare version, not an image reference: there is no digest to pin.",
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["**/Cargo.toml"],
+      "matchDepNames": ["rust"],
+      "pinDigests": false
+    }
+  ]
+}

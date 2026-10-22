@@ -1,0 +1,25 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Rust toolchain for any Rust repository: `channel` in rust-toolchain.toml and every `rust` Docker image tag move in one pull request that cannot ship half-done. Never touches `rust-version` in Cargo.toml; applications that want it moved too extend rust-application instead.",
+  "packageRules": [
+    {
+      "description": "The Rust toolchain moves in one pull request: `channel` in rust-toolchain.toml (depName `rust`, rust-toolchain manager) and the `rust:<version>` Docker images (depName `rust`, docker datasource) name the same release and must not drift apart. Digest updates (same release, rebuilt image) stay ungrouped. Repositories with more members, such as a cargo-chef image tagged with the Rust version, add a rule with the same groupName.",
+      "matchDepNames": ["rust"],
+      "matchUpdateTypes": ["major", "minor", "patch"],
+      "groupName": "rust toolchain"
+    },
+    {
+      "description": "Keeps the `rust toolchain` group whole while a member is inside `minimumReleaseAge`. Under the default `internalChecksFilter: strict`, Renovate drops pending updates from a branch that also holds ready ones, so a toolchain bump can ship without its base image. `none` keeps every update in the branch and reports the pending age as the `renovate/stability-days` status; `platformAutomerge: false` hands the merge to Renovate, which waits for that status, where GitHub's native auto-merge only waits for required checks. Matched without `matchUpdateTypes`: Renovate reads `internalChecksFilter` before an update type exists, so a rule narrowed by update type never applies it.",
+      "matchDepNames": ["rust"],
+      "internalChecksFilter": "none",
+      "platformAutomerge": false
+    },
+    {
+      "description": "Docker Hub stamps a tag with its last push, and the official `rust` images are rebuilt on every base image update, so `rust:<version>` keeps looking days old or less long after the release. The toolchain member (rust-version datasource, real release dates) carries the release age for the whole group; on the image it would only keep the group pending. Digest updates keep the age gate, because there the push is the change.",
+      "matchDatasources": ["docker"],
+      "matchDepNames": ["rust"],
+      "matchUpdateTypes": ["major", "minor", "patch"],
+      "minimumReleaseAge": null
+    }
+  ]
+}
