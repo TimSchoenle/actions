@@ -61,7 +61,27 @@ export interface DependencyExpectation {
   newValue?: string;
   /** Branch every proposed update must land on; this is how a group is asserted. */
   branchName?: string;
+  /**
+   * Update types the expectation is about. When set, `minUpdates`, `newValue` and `branchName` see
+   * only updates of these types, so a fixture can assert the non-major group without breaking the
+   * day its dependency publishes a major, which Renovate deliberately keeps on a branch of its own.
+   */
+  updateTypes?: string[];
 }
+
+/** Renovate's update types, so a typo in a fixture fails parsing instead of matching nothing. */
+const UPDATE_TYPES: ReadonlySet<string> = new Set([
+  'major',
+  'minor',
+  'patch',
+  'pin',
+  'digest',
+  'pinDigest',
+  'lockFileMaintenance',
+  'rollback',
+  'bump',
+  'replacement',
+]);
 
 export interface LookupCase {
   /** Directory name of the fixture. */
@@ -122,6 +142,16 @@ function parseDependency(caseName: string, raw: unknown, index: number): Depende
     }
   }
 
+  const updateTypes = entry.updateTypes;
+  if (
+    updateTypes !== undefined &&
+    (!Array.isArray(updateTypes) ||
+      updateTypes.length === 0 ||
+      !updateTypes.every((type) => typeof type === 'string' && UPDATE_TYPES.has(type)))
+  ) {
+    fail(caseName, `'${field('updateTypes')}' must be a non-empty array of Renovate update types.`);
+  }
+
   return {
     manager: requireString(caseName, entry.manager, field('manager')),
     depName: requireString(caseName, entry.depName, field('depName')),
@@ -129,6 +159,7 @@ function parseDependency(caseName: string, raw: unknown, index: number): Depende
     minUpdates,
     newValue,
     branchName: optionalString(caseName, entry.branchName, field('branchName')),
+    updateTypes: updateTypes as string[] | undefined,
   };
 }
 
@@ -256,7 +287,10 @@ function checkExpectation(expectation: DependencyExpectation, candidates: Locate
     return [`${label(expectation)}: expected exactly one extracted dependency, found ${matches.length}.`];
   }
 
-  const updates = matches[0].dependency.updates ?? [];
+  const { updateTypes } = expectation;
+  const updates = (matches[0].dependency.updates ?? []).filter(
+    (update) => updateTypes === undefined || updateTypes.includes(update.updateType ?? ''),
+  );
   const failures: string[] = [];
 
   if (updates.length < expectation.minUpdates) {

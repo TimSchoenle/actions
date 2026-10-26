@@ -1,5 +1,5 @@
 {
-  "description": "A digest-pinned TimSchoenle/actions action with a `# tag=` comment moves to a newer tag of the same action, in the ci group.",
+  "description": "A digest-pinned TimSchoenle/actions action with a `# tag=` comment moves to a newer tag of the same action, in the ci group. A major stays on a branch of its own by design, so only non-major updates are asserted.",
   "presets": ["default"],
   "files": {
     ".github/workflows/fixture.yaml": "workflow.yaml"
@@ -8,6 +8,7 @@
     {
       "manager": "regex",
       "depName": "TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed",
+      "updateTypes": ["minor", "patch"],
       "minUpdates": 1,
       "newValue": "^actions-maintenance-ensure-actions-are-executed-v\\d+\\.\\d+\\.\\d+$",
       "branchName": "renovate/ci"

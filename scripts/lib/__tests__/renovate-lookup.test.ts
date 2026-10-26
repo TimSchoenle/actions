@@ -93,6 +93,7 @@ describe('parseLookupCase', () => {
           minUpdates: 0,
           newValue: undefined,
           branchName: undefined,
+          updateTypes: undefined,
         },
       ],
     });
@@ -120,6 +121,16 @@ describe('parseLookupCase', () => {
       'an invalid newValue pattern',
       validCase({ dependencies: [{ manager: 'cargo', depName: 'x', newValue: '(' }] }),
       /newValue' is not a valid regular expression/,
+    ],
+    [
+      'an empty updateTypes',
+      validCase({ dependencies: [{ manager: 'cargo', depName: 'x', updateTypes: [] }] }),
+      /updateTypes' must be a non-empty array of Renovate update types/,
+    ],
+    [
+      'an unknown update type',
+      validCase({ dependencies: [{ manager: 'cargo', depName: 'x', updateTypes: ['minor', 'Patch'] }] }),
+      /updateTypes' must be a non-empty array of Renovate update types/,
     ],
     ['a missing description', validCase({ description: '' }), /'description' must be a non-empty string/],
   ])('rejects %s', (_label, raw, message) => {
@@ -215,6 +226,31 @@ describe('evaluateReport', () => {
 
     expect(failures).toEqual([
       "cargo csp-shell: update to 'csp-shell-v0.2.1' is on branch 'renovate/other', expected 'renovate/csp-shell-0.x'.",
+    ]);
+  });
+
+  it('checks only the update types the case names', () => {
+    const nonMajor: LookupCase = {
+      ...CASE,
+      dependencies: [{ ...CASE.dependencies[0], updateTypes: ['minor', 'patch'] }],
+    };
+    const major = { newValue: 'csp-shell-v1.0.0', branchName: 'renovate/csp-shell-1.x', updateType: 'major' };
+
+    expect(evaluateReport(nonMajor, report([{ depName: 'csp-shell', updates: [GOOD_UPDATE, major] }]))).toEqual([]);
+    expect(evaluateReport(CASE, report([{ depName: 'csp-shell', updates: [GOOD_UPDATE, major] }]))).toEqual([
+      "cargo csp-shell: update to 'csp-shell-v1.0.0' is on branch 'renovate/csp-shell-1.x', expected 'renovate/csp-shell-0.x'.",
+    ]);
+  });
+
+  it('counts minUpdates over the named update types only', () => {
+    const nonMajor: LookupCase = {
+      ...CASE,
+      dependencies: [{ ...CASE.dependencies[0], updateTypes: ['minor', 'patch'] }],
+    };
+    const major = { newValue: 'csp-shell-v1.0.0', branchName: 'renovate/csp-shell-1.x', updateType: 'major' };
+
+    expect(evaluateReport(nonMajor, report([{ depName: 'csp-shell', updates: [major] }]))).toEqual([
+      'cargo csp-shell: expected at least 1 update(s), found 0.',
     ]);
   });
 
