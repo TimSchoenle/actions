@@ -45,6 +45,13 @@ jobs:
             source_directory: 'crates/demo'
             crate_path: 'crates/demo'
 
+          # A toolchain file only in the crate, with a profile that leaves rustfmt out. The setup
+          # step never sees it, so the action must add rustfmt to the toolchain cargo fmt selects.
+          - name: subdirectory-toolchain
+            source_directory: 'crates/demo'
+            crate_path: 'crates/demo'
+            toolchain_file: 'true'
+
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
@@ -77,6 +84,7 @@ jobs:
         shell: bash
         env:
           CRATE_PATH: ${{ matrix.crate_path }}
+          TOOLCHAIN_FILE: ${{ matrix.toolchain_file || 'false' }}
         run: |
           set -euo pipefail
 
@@ -98,6 +106,14 @@ jobs:
           cat > outside/untouched.rs << 'EOF'
           fn   untouched( ){}
           EOF
+
+          if [ "$TOOLCHAIN_FILE" = "true" ]; then
+            cat > "$CRATE_PATH/rust-toolchain.toml" << 'EOF'
+          [toolchain]
+          channel = "1.85.0"
+          profile = "minimal"
+          EOF
+          fi
 
       - name: Commit Initial Unformatted Files
         uses: ./tmp/actions-code/actions/common/commit-changes # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.

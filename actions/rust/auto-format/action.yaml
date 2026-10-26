@@ -50,10 +50,16 @@ runs:
       with:
         components: rustfmt
 
+    # setup-rust-toolchain only reads a toolchain file at the repository root, while cargo fmt
+    # resolves one from source_directory upwards. Adding rustfmt here, from the same directory,
+    # installs it for the toolchain cargo fmt is about to use, whichever file selected it.
     - name: Run cargo fmt
       shell: bash
       working-directory: ${{ inputs.source_directory }}
-      run: cargo fmt
+      run: |
+        set -euo pipefail
+        rustup component add rustfmt
+        cargo fmt
 
     - name: Create Patch
       id: patch

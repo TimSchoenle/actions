@@ -123,8 +123,9 @@ The commit job's permissions are listed in [`common/commit-patch`](../../common/
 
 ## Behaviour
 
-- The stable toolchain is installed with `rustfmt` by `actions-rust-lang/setup-rust-toolchain`. A
-  `rust-toolchain.toml` in the repository takes precedence, as it does for `cargo` anywhere.
+- `actions-rust-lang/setup-rust-toolchain` installs the stable toolchain, or the one a `rust-toolchain.toml` at the
+  repository root names. `cargo fmt` then uses whichever toolchain file is nearest to `source_directory`, as `cargo`
+  does anywhere, and `rustfmt` is added to that toolchain first, so a toolchain file with a minimal profile works.
 - `cargo fmt` runs with no arguments from `source_directory`, so it formats what `cargo fmt` itself picks there.
 - Only changes under `source_directory` are part of the patch: a local path dependency outside it that `cargo fmt`
   reformatted is left out.
