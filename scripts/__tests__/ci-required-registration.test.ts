@@ -13,7 +13,7 @@ import {
   type RegistrationApi,
   type RegistrationContext,
   restApi,
-} from '../ci-required-registration.js';
+} from '../lib/ci-required-registration-step.js';
 import { isVerifyWorkflowFile } from '../lib/ci-required.js';
 import {
   type ChangedFile,
@@ -482,6 +482,7 @@ describe('ci-required-registration entry point', () => {
 
   describe('restApi', () => {
     it('sends an authenticated, versioned GET and parses the body', async () => {
+      vi.stubEnv('GITHUB_API_URL', '');
       const fetchMock = vi.fn().mockResolvedValue(new Response('{"ok":true}', { status: 200 }));
       vi.stubGlobal('fetch', fetchMock);
 
@@ -495,6 +496,19 @@ describe('ci-required-registration entry point', () => {
           }),
         }),
       );
+    });
+
+    it.each([
+      ['the runner API URL', 'https://ghe.example.invalid/api/v3', 'https://ghe.example.invalid/api/v3/x'],
+      ['github.com without one', '', 'https://api.github.com/x'],
+    ])('reads from %s', async (_case, apiUrl, expected) => {
+      vi.stubEnv('GITHUB_API_URL', apiUrl);
+      const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      await restApi('token-value').get('/x');
+
+      expect(fetchMock).toHaveBeenCalledWith(expected, expect.anything());
     });
 
     it('fails on an error status', async () => {
