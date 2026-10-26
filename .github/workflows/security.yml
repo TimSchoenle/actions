@@ -72,9 +72,26 @@ jobs:
         with:
           persist-credentials: false
 
+      # A pinned release, checked against a pinned SHA-256 before it is unpacked, instead of piping the
+      # install script from actionlint's main branch into bash: that ran whatever the branch held at
+      # the time, with no version and no integrity check. The version and checksum are updated together
+      # by the github-release-attachments customManager in renovate.json, which reads both lines below.
       - name: Download actionlint
         id: get_actionlint
-        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+        env:
+          # renovate: datasource=github-release-attachments depName=rhysd/actionlint
+          ACTIONLINT_VERSION: 'v1.7.12'
+          ACTIONLINT_SHA256: '8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8'
+        run: |
+          set -euo pipefail
+          archive="actionlint_${ACTIONLINT_VERSION#v}_linux_amd64.tar.gz"
+          install_dir="${RUNNER_TEMP}/actionlint"
+          mkdir -p "$install_dir"
+          curl -fsSL --retry 3 -o "${install_dir}/${archive}" \
+            "https://github.com/rhysd/actionlint/releases/download/${ACTIONLINT_VERSION}/${archive}"
+          echo "${ACTIONLINT_SHA256}  ${install_dir}/${archive}" | sha256sum --check --strict -
+          tar -xzf "${install_dir}/${archive}" -C "$install_dir" actionlint
+          echo "executable=${install_dir}/actionlint" >> "$GITHUB_OUTPUT"
         shell: bash
 
       - name: Check workflow files

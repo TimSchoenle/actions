@@ -256,3 +256,88 @@ describe('Renovate coverage of container images in actions', () => {
     }
   });
 });
+
+/**
+ * Contract between release binaries a workflow downloads and the manager that updates them.
+ *
+ * A workflow that installs a tool from a GitHub release pins the tag and the asset's SHA-256 as a
+ * pair of step environment values. Renovate has to move both in one commit: a bumped version with the
+ * old checksum fails the step's `sha256sum --check`, and a checksum nobody updates freezes the tool at
+ * one release. Only a manager that captures the two together can do that, so every checksum pin in
+ * `.github/workflows/` must be captured, with its version, by exactly one.
+ */
+describe('Renovate coverage of checksum-pinned release downloads in workflows', () => {
+  const WORKFLOWS_DIR = path.join(ROOT_DIR, '.github', 'workflows');
+  /** A `<NAME>_SHA256: '<digest>'` environment value, wherever a workflow spells one. */
+  const CHECKSUM_PIN = /^\s*([A-Z0-9_]+)_SHA256:\s*'?([a-f0-9]{64})'?\s*$/gm;
+
+  interface ChecksumPin {
+    file: string;
+    name: string;
+    digest: string;
+    content: string;
+  }
+
+  function workflowFiles(): string[] {
+    return fs.readdirSync(WORKFLOWS_DIR).filter((entry) => /\.ya?ml$/.test(entry));
+  }
+
+  function managersFor(file: string): CustomManager[] {
+    return customManagers().filter((manager) =>
+      manager.managerFilePatterns.some(
+        (pattern) => pattern.startsWith('/') && pattern.endsWith('/') && new RegExp(pattern.slice(1, -1)).test(file),
+      ),
+    );
+  }
+
+  function checksumPins(): ChecksumPin[] {
+    const pins: ChecksumPin[] = [];
+
+    for (const entry of workflowFiles()) {
+      const content = fs.readFileSync(path.join(WORKFLOWS_DIR, entry), 'utf8');
+
+      for (const match of content.matchAll(CHECKSUM_PIN)) {
+        pins.push({ file: `.github/workflows/${entry}`, name: match[1], digest: match[2], content });
+      }
+    }
+
+    return pins;
+  }
+
+  it('finds the actionlint pin, so the scan below is not vacuous', () => {
+    expect(checksumPins().map(({ file, name }) => `${file}:${name}`)).toContain(
+      '.github/workflows/security.yml:ACTIONLINT',
+    );
+  });
+
+  it('captures every checksum pin, with its version, by exactly one manager that reads its file', () => {
+    for (const { file, name, digest, content } of checksumPins()) {
+      const captures = managersFor(file).flatMap((manager) =>
+        manager.matchStrings.flatMap((matchString) =>
+          [...content.matchAll(new RegExp(matchString, 'g'))]
+            .map((match) => match.groups)
+            .filter((groups) => groups?.['currentDigest'] === digest),
+        ),
+      );
+
+      expect(captures, `${file} pins ${name}_SHA256, which ${captures.length} customManager(s) capture`).toHaveLength(
+        1,
+      );
+      expect(captures[0]?.['datasource']).toBe('github-release-attachments');
+      expect(captures[0]?.['depName']).toMatch(/^[\w.-]+\/[\w.-]+$/);
+      expect(captures[0]?.['currentValue'], `${name}_VERSION must sit directly above ${name}_SHA256`).toMatch(/\S/);
+    }
+  });
+
+  // A checksum pin is only worth something if nothing else in the workflows fetches code and runs it
+  // unverified. Piping a downloaded script into a shell is the shape the actionlint pin replaced.
+  it('lets no workflow pipe a downloaded script into a shell', () => {
+    const PIPED_INSTALL = /(?:curl|wget)[^\n|]*\|\s*(?:ba|z)?sh\b|(?:ba|z)?sh\s+<\(\s*(?:curl|wget)/;
+
+    for (const entry of workflowFiles()) {
+      const content = fs.readFileSync(path.join(WORKFLOWS_DIR, entry), 'utf8');
+
+      expect(PIPED_INSTALL.test(content), `.github/workflows/${entry} pipes a download into a shell`).toBe(false);
+    }
+  });
+});
