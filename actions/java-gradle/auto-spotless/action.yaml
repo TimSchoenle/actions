@@ -1,23 +1,15 @@
 name: 'Java-gradle Auto-spotless'
-description: 'Automatically apply spotless formatting and commit changes.'
+description: 'Runs Gradle spotlessApply and uploads the changes as a patch artifact for common/commit-patch to commit from a separate job. Holds no token.'
+
+# The unprivileged half of a two-job pattern. ./gradlew runs the repository's own wrapper, build
+# scripts and plugins, so on a pull request it runs what that pull request chose. The job running
+# this action must therefore hold no write token and no secret; the commit is made by
+# common/commit-patch in a later job that runs no repository code. See README.md for the full
+# workflow.
 
 inputs:
-  bot_app_id:
-    description: 'Bot App ID to run the workflow. The bot needs permissions to write content and write pull requests.'
-    required: true
-  bot_private_key:
-    description: 'Bot Private Key to run the workflow'
-    required: true
-  repository:
-    description: 'Target repository in the format owner/repo. Defaults to the current repository.'
-    required: false
-    default: ${{ github.repository }}
-  branch:
-    description: 'Target branch to checkout and commit to. Defaults to the current branch.'
-    required: false
-    default: ${{ github.head_ref || github.ref_name }}
   gradle_spotless_command:
-    description: 'Spotless command to run'
+    description: 'Gradle task to run, passed to ./gradlew as a single argument.'
     required: false
     default: 'spotlessApply'
   java_version:
@@ -39,52 +31,31 @@ inputs:
     description: 'Allow Gradle wrapper snapshots'
     required: false
     default: 'false'
-  commit_message:
-    description: 'Commit message to use for the auto-commit.'
+  paths:
+    description: 'Space- or newline-separated paths or globs scoping the patch, as common/create-patch takes them. . is the whole tree.'
     required: false
-    default: 'style: apply spotless formatting'
-  comment_message:
-    description: 'Comment message to use for the auto-commit.'
+    default: '.'
+  artifact_name:
+    description: 'Name of the patch artifact. Pass the same name to common/commit-patch. 1 to 100 characters of letters, digits, ., _ and -.'
     required: false
-    default: 'Applied spotless formatting.'
+    default: 'auto-spotless'
 
 outputs:
   changes_detected:
-    description: 'Whether or not changes were detected.'
-    value: ${{ steps.auto-commit.outputs.changes_detected }}
+    description: 'true when the Spotless task changed a file within paths.'
+    value: ${{ steps.patch.outputs.has_changes }}
+  artifact_name:
+    description: 'Name of the uploaded patch artifact.'
+    value: ${{ steps.patch.outputs.artifact_name }}
+  base_sha:
+    description: 'The commit the patch was computed against: HEAD of the checkout.'
+    value: ${{ steps.patch.outputs.base_sha }}
 
 runs:
   using: 'composite'
   steps:
-    - name: Parse Repository
-      id: parse_repo
-      shell: bash
-      env:
-        REPOSITORY: ${{ inputs.repository }}
-      run: |
-        echo "owner=${REPOSITORY%%/*}" >> $GITHUB_OUTPUT
-        echo "repo_name=${REPOSITORY##*/}" >> $GITHUB_OUTPUT
-
-    - name: Generate Bot Token
-      id: generate_token
-      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-      with:
-        app-id: ${{ inputs.bot_app_id }}
-        private-key: ${{ inputs.bot_private_key }}
-        owner: ${{ steps.parse_repo.outputs.owner }}
-        repositories: ${{ steps.parse_repo.outputs.repo_name }}
-        permission-contents: write
-        permission-pull-requests: write
-
-    - name: Checkout
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      with:
-        repository: ${{ inputs.repository }}
-        persist-credentials: false
-        fetch-depth: 0
-        ref: ${{ inputs.branch }}
-        token: ${{ steps.generate_token.outputs.token }}
-
+    # The caller checks out; this action never does. The patch must be computed against the exact
+    # commit the commit job expects, and only the caller knows which commit that is.
     - name: Set up JDK
       uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-java-gradle-setup-base-environment-v1.2.14
       with:
@@ -100,19 +71,9 @@ runs:
         SPOTLESS_COMMAND: ${{ inputs.gradle_spotless_command }}
       run: ./gradlew "$SPOTLESS_COMMAND"
 
-    - name: Commit and Push if changed
-      id: auto-commit
-      uses: TimSchoenle/actions/actions/common/commit-changes@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-commit-changes-v1.5.9
+    - name: Create Patch
+      id: patch
+      uses: TimSchoenle/actions/actions/common/create-patch@bbc2c5e2a0f9345cb2e84946846736f047a6eae3 # tag=actions-common-create-patch-v1.1.0
       with:
-        commit_message: ${{ inputs.commit_message }}
-        token: ${{ steps.generate_token.outputs.token }}
-        repository: ${{ inputs.repository }}
-        branch: ${{ inputs.branch }}
-
-    - name: Comment on PR
-      if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request' && inputs.repository == github.repository
-      uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
-      with:
-        token: ${{ steps.generate_token.outputs.token }}
-        identifier: 'java-gradle-auto-spotless'
-        body: ${{ inputs.comment_message }}
+        artifact_name: ${{ inputs.artifact_name }}
+        paths: ${{ inputs.paths }}

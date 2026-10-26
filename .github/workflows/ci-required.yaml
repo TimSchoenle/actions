@@ -108,6 +108,7 @@ on:
       - Verify Maintenance Ensure-actions-are-executed
       - Verify Maintenance Timed-auto-merge
       - Verify Maintenance Wipe-cache
+      - Verify Rust Auto-format
       - Verify Rust Config-contract
       - Verify Rust Coverage-codecov
       - Verify Security Codeql

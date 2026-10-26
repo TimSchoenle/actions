@@ -1,72 +1,50 @@
 name: 'Rust Auto-format'
-description: 'Action that runs cargo fmt and commits changes.'
+description: 'Runs cargo fmt and uploads the changes as a patch artifact for common/commit-patch to commit from a separate job. Holds no token.'
+
+# The unprivileged half of a two-job pattern. cargo fmt honours the repository's rust-toolchain.toml
+# and rustfmt.toml, so on a pull request it runs what that pull request chose. The job running this
+# action must therefore hold no write token and no secret; the commit is made by common/commit-patch
+# in a later job that runs no repository code. See README.md for the full workflow.
 
 inputs:
-  bot_app_id:
-    required: true
-    description: 'GitHub App ID for bot authentication'
-  bot_private_key:
-    required: true
-    description: 'GitHub App Private Key'
-  repository:
-    description: 'Target repository in the format owner/repo. Defaults to the current repository.'
-    required: false
-    default: ${{ github.repository }}
-  branch:
-    description: 'Target branch to checkout and commit to. Defaults to the current branch.'
-    required: false
-    default: ${{ github.head_ref || github.ref_name }}
   source_directory:
-    description: 'Directory containing the Rust project'
+    description: 'Directory of the Rust project, relative to the repository root. cargo fmt runs there, and the patch is scoped to it. Must not contain whitespace.'
     required: false
     default: '.'
-  commit_message:
-    description: 'Commit message for auto-formatted changes'
+  artifact_name:
+    description: 'Name of the patch artifact. Pass the same name to common/commit-patch. 1 to 100 characters of letters, digits, ., _ and -.'
     required: false
-    default: 'style: auto-format rust code'
+    default: 'rust-auto-format'
 
 outputs:
-  commit_hash:
-    description: 'The SHA of the created commit'
-    value: ${{ steps.auto-commit.outputs.commit-hash }}
-  commit_url:
-    description: 'The URL of the created commit.'
-    value: ${{ steps.auto-commit.outputs.commit-url }}
   changes_detected:
-    description: 'True if changes were committed'
-    value: ${{ steps.auto-commit.outputs.changes_detected }}
+    description: 'true when cargo fmt changed a file under source_directory.'
+    value: ${{ steps.patch.outputs.has_changes }}
+  artifact_name:
+    description: 'Name of the uploaded patch artifact.'
+    value: ${{ steps.patch.outputs.artifact_name }}
+  base_sha:
+    description: 'The commit the patch was computed against: HEAD of the checkout.'
+    value: ${{ steps.patch.outputs.base_sha }}
 
 runs:
   using: 'composite'
   steps:
-    - name: Parse Repository
-      id: parse_repo
+    # create-patch takes whitespace-separated paths, so a directory with a space in its name would be
+    # read as two paths and the patch scoped to neither. Refused before anything runs.
+    - name: Validate Inputs
       shell: bash
       env:
-        REPOSITORY: ${{ inputs.repository }}
+        SOURCE_DIRECTORY: ${{ inputs.source_directory }}
       run: |
-        echo "owner=${REPOSITORY%%/*}" >> $GITHUB_OUTPUT
-        echo "repo_name=${REPOSITORY##*/}" >> $GITHUB_OUTPUT
+        set -euo pipefail
+        if [[ -z "$SOURCE_DIRECTORY" || "$SOURCE_DIRECTORY" =~ [[:space:]] ]]; then
+          echo "::error::source_directory must be a non-empty path without whitespace."
+          exit 1
+        fi
 
-    - name: Generate Bot Token
-      id: generate_token
-      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-      with:
-        app-id: ${{ inputs.bot_app_id }}
-        private-key: ${{ inputs.bot_private_key }}
-        owner: ${{ steps.parse_repo.outputs.owner }}
-        repositories: ${{ steps.parse_repo.outputs.repo_name }}
-        permission-contents: write
-
-    - name: Checkout
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      with:
-        repository: ${{ inputs.repository }}
-        persist-credentials: false
-        fetch-depth: 0
-        ref: ${{ inputs.branch }}
-        token: ${{ steps.generate_token.outputs.token }}
-
+    # The caller checks out; this action never does. The patch must be computed against the exact
+    # commit the commit job expects, and only the caller knows which commit that is.
     - name: Install stable toolchain
       uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
       with:
@@ -77,11 +55,9 @@ runs:
       working-directory: ${{ inputs.source_directory }}
       run: cargo fmt
 
-    - name: Commit and Push if changed
-      id: auto-commit
-      uses: TimSchoenle/actions/actions/common/commit-changes@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-commit-changes-v1.5.9
+    - name: Create Patch
+      id: patch
+      uses: TimSchoenle/actions/actions/common/create-patch@bbc2c5e2a0f9345cb2e84946846736f047a6eae3 # tag=actions-common-create-patch-v1.1.0
       with:
-        commit_message: ${{ inputs.commit_message }}
-        token: ${{ steps.generate_token.outputs.token }}
-        repository: ${{ inputs.repository }}
-        branch: ${{ inputs.branch }}
+        artifact_name: ${{ inputs.artifact_name }}
+        paths: ${{ inputs.source_directory }}
