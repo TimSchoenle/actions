@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/TimSchoenle/actions/compare/actions-common-upsert-issue-v1.1.8...actions-common-upsert-issue-v2.0.0) (2026-10-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* **Actions:** run every JavaScript action on node24 ([#1948](https://github.com/TimSchoenle/actions/issues/1948))
+
+### Features
+
+* **Actions:** run every JavaScript action on node24 ([#1948](https://github.com/TimSchoenle/actions/issues/1948)) ([344220d](https://github.com/TimSchoenle/actions/commit/344220d124144d170034a5edc83b43ed3a030367))
+
 ## [1.1.8](https://github.com/TimSchoenle/actions/compare/actions-common-upsert-issue-v1.1.7...actions-common-upsert-issue-v1.1.8) (2026-10-19)
 
 
