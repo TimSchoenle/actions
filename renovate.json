@@ -60,11 +60,11 @@
       "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>.*)${{/if}}"
     },
     {
-      "description": "Release binaries the workflows under .github/workflows/ download directly, pinned as a pair of step environment values: <NAME>_VERSION holds the release tag and <NAME>_SHA256 the checksum of the downloaded asset, under a `# renovate:` comment naming the github-release-attachments datasource. That datasource finds the pinned checksum in the release's checksum manifest and reads the matching line for the new release, so version and checksum move in one commit and the step's sha256sum --check keeps passing. A contract test in scripts/__tests__ fails any such pin this manager would not match.",
+      "description": "Release binaries the workflows under .github/workflows/ download directly, pinned as a pair of step environment values: <NAME>_VERSION holds the release tag and <NAME>_SHA256 the checksum of the downloaded asset, each single-quoted, double-quoted or plain, under a `# renovate:` comment naming the github-release-attachments datasource. That datasource finds the pinned checksum in the release's checksum manifest and reads the matching line for the new release, so version and checksum move in one commit and the step's sha256sum --check keeps passing. A contract test in scripts/__tests__ fails any such pin this manager would not match.",
       "customType": "regex",
       "managerFilePatterns": ["/^\\.github/workflows/[^/]+\\.ya?ml$/"],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>github-release-attachments) depName=(?<depName>[\\w.-]+\\/[\\w.-]+)\\s+[A-Z0-9_]+_VERSION: '(?<currentValue>[^']+)'\\s+[A-Z0-9_]+_SHA256: '(?<currentDigest>[a-f0-9]{64})'"
+        "# renovate: datasource=(?<datasource>github-release-attachments) depName=(?<depName>[\\w.-]+\\/[\\w.-]+)\\s+[A-Z0-9_]+_VERSION: [\"']?(?<currentValue>[^\"'\\s]+)[\"']?\\s+[A-Z0-9_]+_SHA256: [\"']?(?<currentDigest>[a-f0-9]{64})[\"']?"
       ]
     }
   ],

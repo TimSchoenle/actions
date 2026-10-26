@@ -152,9 +152,7 @@ describe('strict shell contract rules', () => {
 // no project tooling. Test suites and builds belong in a job without the permission, which hands its
 // output over as an artifact.
 describe('OIDC isolation contract', () => {
-  /** Shell steps that would execute code from the checkout: package scripts, interpreters, local paths. */
-  const RUNS_REPOSITORY_CODE =
-    /(?:^|[\s;&|(])(?:bun|bunx|npm|npx|pnpm|yarn|node|deno|make|gradle|\.\/gradlew|python3?|sh|bash)\b|(?:^|[\s;&|(])\.{1,2}\//m;
+  type Permissions = Record<string, string> | string | undefined;
 
   interface Step {
     name?: string;
@@ -163,15 +161,48 @@ describe('OIDC isolation contract', () => {
   }
 
   interface Job {
-    permissions?: Record<string, string> | string;
+    permissions?: Permissions;
     steps?: Step[];
   }
 
+  /**
+   * Whether a job's token can mint an OIDC token. A job's own `permissions` replace the workflow's
+   * entirely, so the workflow-level block only applies to a job that has none. `write-all` grants
+   * `id-token: write` with everything else; `read-all` and an absent block (the repository default)
+   * never include it.
+   */
+  function grantsIdToken(jobPermissions: Permissions, workflowPermissions: Permissions): boolean {
+    const effective = jobPermissions ?? workflowPermissions;
+    if (typeof effective === 'string') {
+      return effective === 'write-all';
+    }
+    return effective?.['id-token'] === 'write';
+  }
+
+  /**
+   * The only shell lines an OIDC job may run: strict mode, an exit, and an `echo` of literal text with
+   * `${NAME}` expansions. An allow-list rather than a list of forbidden tools, because there is no
+   * complete list of ways to run code from a checkout (`source`, `.`, an interpreter, a script path,
+   * a command substitution inside an otherwise harmless line). Each alternative of the echo pattern
+   * starts on a different character, so it cannot backtrack.
+   */
+  const APPROVED_RUN_LINES = [
+    /^set -euo pipefail$/,
+    /^exit \d+$/,
+    /^echo "(?:[^"$`\\]|\$\{[A-Za-z_][A-Za-z0-9_]*\})*"$/,
+  ];
+
+  function isApprovedRunStep(run: string): boolean {
+    return run
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line !== '' && !line.startsWith('#'))
+      .every((line) => APPROVED_RUN_LINES.some((pattern) => pattern.test(line)));
+  }
+
   function oidcJobs(file: string): [string, Job][] {
-    const doc = parse(readWorkflow(file)) as { permissions?: unknown; jobs?: Record<string, Job> } | null;
-    return Object.entries(doc?.jobs ?? {}).filter(
-      ([, job]) => typeof job.permissions === 'object' && job.permissions['id-token'] === 'write',
-    );
+    const doc = parse(readWorkflow(file)) as { permissions?: Permissions; jobs?: Record<string, Job> } | null;
+    return Object.entries(doc?.jobs ?? {}).filter(([, job]) => grantsIdToken(job.permissions, doc?.permissions));
   }
 
   it('finds the Codecov upload job, so the scan below is not vacuous', () => {
@@ -186,15 +217,47 @@ describe('OIDC isolation contract', () => {
 
           expect(step.uses?.startsWith('./') ?? false, `${where} runs a local action`).toBe(false);
           expect(step.uses ?? '', `${where} installs a toolchain`).not.toMatch(/setup-(?:bun|node|python|java)/);
-          expect(RUNS_REPOSITORY_CODE.test(step.run ?? ''), `${where} runs repository code`).toBe(false);
+          expect(isApprovedRunStep(step.run ?? ''), `${where} runs a shell line outside the allow-list`).toBe(true);
         }
       }
     });
   });
 
-  it('flags a shell step that runs the test suite', () => {
-    expect(RUNS_REPOSITORY_CODE.test('set -euo pipefail\nbun run test')).toBe(true);
-    expect(RUNS_REPOSITORY_CODE.test('./scripts/upload.sh')).toBe(true);
-    expect(RUNS_REPOSITORY_CODE.test('echo "::error::failed"\nexit 1')).toBe(false);
+  describe('effective permissions', () => {
+    it.each([
+      ['a job-level grant', { 'id-token': 'write' }, undefined, true],
+      ['a workflow-level grant the job inherits', undefined, { 'id-token': 'write' }, true],
+      ['write-all on the job', 'write-all', undefined, true],
+      ['write-all on the workflow, inherited', undefined, 'write-all', true],
+      ['a job block that replaces a workflow grant', { contents: 'read' }, { 'id-token': 'write' }, false],
+      ['an empty job block that replaces write-all', {}, 'write-all', false],
+      ['read-all', 'read-all', undefined, false],
+      ['the repository default', undefined, undefined, false],
+    ] as const)('treats %s correctly', (_case, job, workflow, expected) => {
+      expect(grantsIdToken(job, workflow)).toBe(expected);
+    });
+  });
+
+  describe('run step allow-list', () => {
+    it.each([
+      'set -euo pipefail\necho "::error::Coverage Tests finished as \'${TESTS_RESULT}\'."\nexit 1',
+      '# comment only\n\nexit 0',
+    ])('accepts %j', (run) => {
+      expect(isApprovedRunStep(run)).toBe(true);
+    });
+
+    it.each([
+      'set -euo pipefail\nbun run test',
+      './scripts/upload.sh',
+      'source scripts/upload.sh',
+      '. scripts/upload.sh',
+      'bash scripts/upload.sh',
+      'echo "$(./scripts/upload.sh)"',
+      'echo "`./scripts/upload.sh`"',
+      'echo "ok" && ./scripts/upload.sh',
+      'echo "$GITHUB_TOKEN"',
+    ])('rejects %j', (run) => {
+      expect(isApprovedRunStep(run)).toBe(false);
+    });
   });
 });
