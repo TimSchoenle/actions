@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/TimSchoenle/actions/compare/actions-rust-auto-format-v1.1.25...actions-rust-auto-format-v2.0.0) (2026-10-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* **Actions/Formatters:** run rust/auto-format and java-gradle/auto-spotless without a write token ([#1947](https://github.com/TimSchoenle/actions/issues/1947))
+
+### Features
+
+* **Actions/Formatters:** run rust/auto-format and java-gradle/auto-spotless without a write token ([#1947](https://github.com/TimSchoenle/actions/issues/1947)) ([117aac9](https://github.com/TimSchoenle/actions/commit/117aac963e59f08d64890c75ba45f49d52c2294e))
+
 ## [1.1.25](https://github.com/TimSchoenle/actions/compare/actions-rust-auto-format-v1.1.24...actions-rust-auto-format-v1.1.25) (2026-10-19)
 
 

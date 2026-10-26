@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.0.0](https://github.com/TimSchoenle/actions/compare/actions-common-commit-changes-v2.0.0...actions-common-commit-changes-v3.0.0) (2026-10-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* **Actions:** run every JavaScript action on node24 ([#1948](https://github.com/TimSchoenle/actions/issues/1948))
+
+### Features
+
+* **Actions:** run every JavaScript action on node24 ([#1948](https://github.com/TimSchoenle/actions/issues/1948)) ([344220d](https://github.com/TimSchoenle/actions/commit/344220d124144d170034a5edc83b43ed3a030367))
+
 ## [2.0.0](https://github.com/TimSchoenle/actions/compare/actions-common-commit-changes-v1.5.9...actions-common-commit-changes-v2.0.0) (2026-10-26)
 
 
