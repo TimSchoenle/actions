@@ -272,7 +272,7 @@ describe('required status check rules', () => {
 
     it('rejects always() undone by a success check on an unrequired need', () => {
       const body =
-        '    if: ${{ always() && needs.build.result == "success" }}\n    steps:\n      - if: needs.build.result != \'success\'\n        run: exit 1\n';
+        "    if: ${{ always() && needs.build.result == 'success' }}\n    steps:\n      - if: needs.build.result != 'success'\n        run: exit 1\n";
       const problems = problemsFor(downstream(body));
 
       expect(problems).toHaveLength(1);

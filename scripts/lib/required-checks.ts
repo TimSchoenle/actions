@@ -294,6 +294,35 @@ function unguardedNeed(
   return undefined;
 }
 
+/** Why `check`'s workflow would not report the context on every pull request to `defaultBranch`. */
+function triggerProblems(check: RequiredCheck, triggers: ParsedWorkflow['triggers'], defaultBranch: string): string[] {
+  const problems: string[] = [];
+  // A commit status is POSTed to an explicit SHA, so a workflow_run evaluation can report it onto the
+  // pull request head as well as a pull_request run can. That it does so for every pull request is
+  // ci-required's anchor contract, which ci-required.test.ts holds; a job context has no such route.
+  const reachesPullRequest = triggers.onPullRequest || (check.kind === 'status' && triggers.onWorkflowRun);
+  if (!reachesPullRequest) {
+    problems.push(
+      check.kind === 'status'
+        ? `${check.workflow} has neither an 'on.pull_request' nor an 'on.workflow_run' trigger, so the context never reports on a pull request.`
+        : `${check.workflow} has no 'on.pull_request' trigger, so the context never reports on a pull request.`,
+    );
+  }
+  if (triggers.pathFiltered) {
+    problems.push(
+      `${check.workflow} filters 'on.pull_request' by path, so the context is missing on unrelated pull requests.`,
+    );
+  }
+  if (triggers.branchesIgnored) {
+    problems.push(`${check.workflow} uses 'on.pull_request.branches-ignore', which can exclude '${defaultBranch}'.`);
+  }
+  if (!branchesAllow(triggers.branches, defaultBranch)) {
+    problems.push(`${check.workflow} restricts 'on.pull_request.branches' to [${triggers.branches?.join(', ')}].`);
+  }
+
+  return problems;
+}
+
 /**
  * Every way `check` is unsound as a required status check, given the workflow
  * that is meant to produce it. All problems are returned so one run reports the
@@ -321,26 +350,8 @@ export function findRequiredCheckProblems(
     return problems;
   }
 
-  const { triggers } = workflow;
-  // A commit status is POSTed to an explicit SHA, so a workflow_run evaluation can report it onto the
-  // pull request head as well as a pull_request run can. That it does so for every pull request is
-  // ci-required's anchor contract, which ci-required.test.ts holds; a job context has no such route.
-  const reachesPullRequest = triggers.onPullRequest || (check.kind === 'status' && triggers.onWorkflowRun);
-  if (!reachesPullRequest) {
-    fail(
-      check.kind === 'status'
-        ? `${check.workflow} has neither an 'on.pull_request' nor an 'on.workflow_run' trigger, so the context never reports on a pull request.`
-        : `${check.workflow} has no 'on.pull_request' trigger, so the context never reports on a pull request.`,
-    );
-  }
-  if (triggers.pathFiltered) {
-    fail(`${check.workflow} filters 'on.pull_request' by path, so the context is missing on unrelated pull requests.`);
-  }
-  if (triggers.branchesIgnored) {
-    fail(`${check.workflow} uses 'on.pull_request.branches-ignore', which can exclude '${defaultBranch}'.`);
-  }
-  if (!branchesAllow(triggers.branches, defaultBranch)) {
-    fail(`${check.workflow} restricts 'on.pull_request.branches' to [${triggers.branches?.join(', ')}].`);
+  for (const reason of triggerProblems(check, workflow.triggers, defaultBranch)) {
+    fail(reason);
   }
 
   if (check.kind === 'status') {
