@@ -234,6 +234,21 @@ export interface RequiredCheckProblem {
 /** Status functions that let a job run after one of its `needs` failed. */
 const RUNS_AFTER_FAILURE = /\balways\(\)|!\s*cancelled\(\)/;
 
+/** `success()` in a job's `if:` is false once any need failed, so it undoes `always()`. */
+const SUCCESS_FUNCTION = /\bsuccess\(\)/;
+
+/**
+ * `needs.<id>.result == 'success'` in a job's `if:`: the same skip, spelled out for one need.
+ *
+ * This and {@link SUCCESS_FUNCTION} catch the realistic way to undo `always()`. They are not an
+ * expression evaluator: a condition built to hide the dependency still needs a reviewer.
+ */
+function successGate(need: string): RegExp {
+  const id = need.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // eslint-disable-next-line security/detect-non-literal-regexp -- the job id is escaped above
+  return new RegExp(`needs\\.${id}\\.result\\s*==\\s*['"]success['"]`);
+}
+
 /**
  * Why `job` can pass while one of its `needs` failed, or `undefined` when it cannot.
  *
@@ -257,6 +272,16 @@ function unguardedNeed(
   }
   if (!RUNS_AFTER_FAILURE.test(job.condition)) {
     return `job '${job.id}' needs ${unrequired.join(', ')}, which ${unrequired.length === 1 ? 'is' : 'are'} not required, but its 'if:' has neither always() nor !cancelled(): it is skipped, and reports success, when ${unrequired.length === 1 ? 'that job fails' : 'one of them fails'}.`;
+  }
+
+  const gates = [
+    ...(SUCCESS_FUNCTION.test(job.condition) ? ['success()'] : []),
+    ...unrequired
+      .filter((need) => successGate(need).test(job.condition))
+      .map((need) => `needs.${need}.result == 'success'`),
+  ];
+  if (gates.length > 0) {
+    return `job '${job.id}' has ${gates.join(' and ')} in its 'if:', so it is skipped, and reports success, when an unrequired need fails, whatever always() or !cancelled() says.`;
   }
 
   const unread = unrequired.filter(

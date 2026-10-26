@@ -270,6 +270,34 @@ describe('required status check rules', () => {
       expect(problems[0]).toContain('when one of them fails');
     });
 
+    it('rejects always() undone by a success check on an unrequired need', () => {
+      const body =
+        '    if: ${{ always() && needs.build.result == "success" }}\n    steps:\n      - if: needs.build.result != \'success\'\n        run: exit 1\n';
+      const problems = problemsFor(downstream(body));
+
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toContain("has needs.build.result == 'success' in its 'if:'");
+    });
+
+    it('rejects always() undone by success()', () => {
+      const body =
+        "    if: ${{ !cancelled() && success() }}\n    steps:\n      - if: needs.build.result != 'success'\n        run: exit 1\n";
+
+      expect(problemsFor(downstream(body))).toEqual([
+        expect.stringContaining("has success() in its 'if:'") as unknown as string,
+      ]);
+    });
+
+    it('accepts a success check on a need that is itself required', () => {
+      const content = downstream(
+        "    if: ${{ always() && needs.build.result == 'success' }}\n    runs-on: ubuntu-latest\n",
+      );
+
+      expect(
+        findRequiredCheckProblems(check, parseWorkflow(content), content, DEFAULT_BRANCH, ['Gate', 'Build']),
+      ).toEqual([]);
+    });
+
     it('treats a boolean if: as a condition that does not run after a failure', () => {
       const content = downstream('    if: true\n    runs-on: ubuntu-latest\n');
 
