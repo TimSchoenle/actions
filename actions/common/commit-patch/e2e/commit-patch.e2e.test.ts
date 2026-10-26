@@ -244,6 +244,19 @@ describe('commit-patch', () => {
     });
   });
 
+  it('refuses an artifact whose patch exceeds max_patch_bytes, and commits nothing', async () => {
+    await withCheckout(caseSlug('oversized patch'), {}, async (context) => {
+      await context.workspace.write({ 'generated/large.txt': `${'x'.repeat(2048)}\n` });
+      const directory = await createPatch(context.workspace);
+
+      const result = await commit(context.workspace, context, directory, { max_patch_bytes: '1024' }, 'failure');
+
+      expect(result.errors.join('\n')).toMatch(/changes\.patch is \d+ bytes, above max_patch_bytes \(1024\)/);
+      expect(result.outputs).toEqual({});
+      await expect(scratch.headOf(context.branch, context.baseSha)).resolves.toBe(context.baseSha);
+    });
+  });
+
   it('refuses a workflow change unless allow_workflow_changes is true', async () => {
     await withCheckout(caseSlug('workflow change'), {}, async (context) => {
       await context.workspace.write({ '.github/workflows/injected.yml': 'on: push\n' });

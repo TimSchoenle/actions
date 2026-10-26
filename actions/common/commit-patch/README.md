@@ -88,8 +88,9 @@ Downloading an artifact from the same run needs no `actions: read`.
 ## Policy
 
 Every path the applied patch changes is checked, and every violation is listed before the step fails. Nothing is
-committed unless all of them pass. Paths and modes are judged before any content is read, so the content of a refused
-change is never read at all.
+committed unless all of them pass. Paths, modes and binary hunks are judged before any content is read, and a change
+refused by those checks is never read. Only the changes that pass them are read, and a change refused for binary content
+is refused only after its content has been read, since reading it is how that content is found.
 
 - **The path is a plain relative path:** not empty, not absolute, no `..`, `.` or empty segment, no `.git` segment in
   any case, no backslash, control character or bytes that are not valid UTF-8.
