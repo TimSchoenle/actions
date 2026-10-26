@@ -6,6 +6,7 @@ import * as core from '@actions/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { readEventContext, run } from './action.js';
+import { createCacheApi } from './github-api.js';
 
 import type { EventContext } from './action.js';
 import type { CacheApi, CacheEntry } from './github-api.js';
@@ -21,6 +22,12 @@ vi.mock('@actions/core', async (importOriginal) => ({
   setFailed: vi.fn(),
   setOutput: vi.fn(),
   warning: vi.fn(),
+}));
+
+// Only the factory is replaced, so a case can run without an injected API and still reach no network.
+vi.mock('./github-api.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./github-api.js')>()),
+  createCacheApi: vi.fn(),
 }));
 
 type Inputs = Record<string, string>;
@@ -120,6 +127,39 @@ describe('wipe-cache action', () => {
     await run(fakeApi(), deleteBranchEvent);
 
     expect(write).not.toHaveBeenCalled();
+  });
+
+  it('writes no job summary when the runner variable is unset', async () => {
+    vi.stubEnv('GITHUB_STEP_SUMMARY', undefined);
+    const write = vi.spyOn(core.summary, 'write');
+
+    await run(fakeApi(), deleteBranchEvent);
+
+    expect(write).not.toHaveBeenCalled();
+    expect(core.setFailed).not.toHaveBeenCalled();
+  });
+
+  // Covers the production wiring: the event is read from the runner and the API built from the token.
+  it('reads the runner event and builds the API from the token when none is injected', async () => {
+    const directory = mkdtempSync(path.join(tmpdir(), 'wipe-cache-run-'));
+
+    try {
+      const eventPath = path.join(directory, 'event.json');
+      writeFileSync(eventPath, JSON.stringify({ ref: 'feature/gone', ref_type: 'branch' }));
+      vi.stubEnv('GITHUB_EVENT_NAME', 'delete');
+      vi.stubEnv('GITHUB_EVENT_PATH', eventPath);
+      setInputs({ branch: '' });
+      const api = fakeApi([entry(1, 'refs/heads/feature/gone')]);
+      vi.mocked(createCacheApi).mockReturnValue(api);
+
+      await run();
+
+      expect(createCacheApi).toHaveBeenCalledWith('ghs_test_token');
+      expect(api.listCaches).toHaveBeenCalledWith(expect.anything(), 'refs/heads/feature/gone');
+      expect(outputs()).toEqual({ deleted_count: '1', failed_count: '0', matched_count: '1' });
+    } finally {
+      rmSync(directory, { force: true, recursive: true });
+    }
   });
 
   describe('delete events', () => {
@@ -334,6 +374,15 @@ describe('readEventContext', () => {
 
     expect(() => readEventContext({ GITHUB_EVENT_NAME: 'delete', GITHUB_EVENT_PATH: eventPath })).toThrow(
       'Could not read the delete event payload',
+    );
+  });
+
+  // JSON.parse accepts any JSON value; only an object can carry `ref` and `ref_type`.
+  it.each(['null', '[]', '"branch"', '3', 'true'])('fails on a payload that is not a JSON object: %s', (contents) => {
+    const eventPath = payload(contents);
+
+    expect(() => readEventContext({ GITHUB_EVENT_NAME: 'delete', GITHUB_EVENT_PATH: eventPath })).toThrow(
+      /Could not read the delete event payload at .*: the payload is not a JSON object/,
     );
   });
 

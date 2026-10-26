@@ -21,6 +21,11 @@ export interface EventContext {
   ref: string | undefined;
 }
 
+/** True for a plain JSON object: not `null`, not an array, not a scalar. */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 function stringField(value: unknown): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
@@ -43,9 +48,13 @@ export function readEventContext(env: NodeJS.ProcessEnv = process.env): EventCon
   }
 
   try {
-    const payload = JSON.parse(readFileSync(eventPath, 'utf8')) as { ref?: unknown; ref_type?: unknown };
+    const payload: unknown = JSON.parse(readFileSync(eventPath, 'utf8'));
 
-    return { eventName, ref: stringField(payload.ref), refType: stringField(payload.ref_type) };
+    if (!isRecord(payload)) {
+      throw new Error('the payload is not a JSON object');
+    }
+
+    return { eventName, ref: stringField(payload['ref']), refType: stringField(payload['ref_type']) };
   } catch (error) {
     throw new Error(`Could not read the delete event payload at ${quoteForLog(eventPath)}: ${errorMessage(error)}`, {
       cause: error,

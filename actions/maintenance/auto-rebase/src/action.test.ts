@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { run } from './action.js';
+import { createUpdateBranchApi } from './github-api.js';
 
 import type { PullRequestDetail, UpdateBranchApi } from './github-api.js';
 
@@ -17,6 +18,12 @@ vi.mock('@actions/core', async (importOriginal) => ({
   setFailed: vi.fn(),
   setOutput: vi.fn(),
   warning: vi.fn(),
+}));
+
+// Only the factory is replaced, so a case can run without an injected API and still reach no network.
+vi.mock('./github-api.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./github-api.js')>()),
+  createUpdateBranchApi: vi.fn(),
 }));
 
 type Inputs = Record<string, string>;
@@ -196,5 +203,25 @@ describe('auto-rebase action', () => {
     await run(fakeApi());
 
     expect(write).not.toHaveBeenCalled();
+  });
+
+  it('writes no job summary when the runner variable is unset', async () => {
+    vi.stubEnv('GITHUB_STEP_SUMMARY', undefined);
+    const write = vi.spyOn(core.summary, 'write');
+
+    await run(fakeApi());
+
+    expect(write).not.toHaveBeenCalled();
+    expect(core.setFailed).not.toHaveBeenCalled();
+  });
+
+  it('builds the API from the token when none is injected', async () => {
+    const api = fakeApi();
+    vi.mocked(createUpdateBranchApi).mockReturnValue(api);
+
+    await run();
+
+    expect(createUpdateBranchApi).toHaveBeenCalledWith('ghs_test_token');
+    expect(api.listOpenPullRequests).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo' });
   });
 });
