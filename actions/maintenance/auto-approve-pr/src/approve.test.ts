@@ -81,8 +81,9 @@ describe('autoApprove', () => {
     );
   });
 
+  // As the API reports a commit an App made: GitHub as committer, resolving to no account.
   it('approves a commit GitHub signed on behalf of an accepted author', async () => {
-    const gitHubSigned = signedCommit({ committerId: 19864447, signedByGitHub: true, signerId: null });
+    const gitHubSigned = signedCommit({ committerId: null, signedByGitHub: true, signerId: null });
     const api = fakeApi(pullRequest(), commits([gitHubSigned]));
 
     await expect(autoApprove(api, baseRequest)).resolves.toEqual({ approved: true });
@@ -139,7 +140,11 @@ describe('autoApprove', () => {
       { committerId: ATTACKER, signerId: ATTACKER },
     ],
     ['an accepted author and committer on a commit the attacker signed', { signerId: ATTACKER }],
-    ['a committer linked to no account', { committerId: null }],
+    ['a locally signed commit whose committer is linked to no account', { committerId: null }],
+    [
+      'a GitHub-signed commit by an author outside the allowlist',
+      { authorIds: [ATTACKER], committerId: null, signedByGitHub: true, signerId: null },
+    ],
   ])('never approves %s', async (_name, overrides) => {
     const api = fakeApi(pullRequest(), commits([signedCommit(overrides)]));
 

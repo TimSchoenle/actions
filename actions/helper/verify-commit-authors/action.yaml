@@ -10,9 +10,10 @@ inputs:
     description: 'GitHub Token with permission to read PRs.'
     required: true
   user_ids:
-    description: 'Comma-separated list of Database IDs of accepted accounts (e.g. "29139614, 123456"). Every author, the
-      committer and the owner of the signing key must be one of them; a commit GitHub signed itself names GitHub as its
-      committer and is exempt from the committer and signer checks.'
+    description: 'Comma-separated list of Database IDs of accepted accounts (e.g. "29139614, 123456"). Every author must
+      be one of them, and every commit must carry a valid signature. A commit signed with a personal key must also have
+      an accepted committer, linked to its account, and an accepted key owner. A commit GitHub signed itself skips those
+      two checks: GitHub is its committer, and it resolves to no account.'
     required: true
 outputs:
   verified:

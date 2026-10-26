@@ -23,7 +23,7 @@ const commitRecord = (idPool: fc.Arbitrary<number | null>): fc.Arbitrary<CommitR
 function shouldAccept(commit: CommitRecord, accepted: ReadonlySet<number>): boolean {
   const isAccepted = (id: number | null): boolean => id !== null && accepted.has(id);
   const authorsOk = commit.authorIds.length > 0 && commit.authorIds.every(isAccepted);
-  const committerOk = commit.committerId !== null && (commit.signedByGitHub || accepted.has(commit.committerId));
+  const committerOk = commit.signedByGitHub || isAccepted(commit.committerId);
   const signatureOk = commit.signatureValid && (commit.signedByGitHub || isAccepted(commit.signerId));
 
   return authorsOk && committerOk && signatureOk;
@@ -102,11 +102,30 @@ describe('validateCommit fuzzing', () => {
     );
   });
 
-  it('never accepts a commit whose committer is linked to no account', () => {
+  it('never accepts a locally signed commit whose committer is linked to no account', () => {
     fc.assert(
       fc.property(commitRecord(userId), fc.uniqueArray(userId, { minLength: 1 }), (commit, acceptedIds) => {
-        expect(validateCommit({ ...commit, committerId: null }, new Set(acceptedIds))).toBeDefined();
+        const unlinked = { ...commit, committerId: null, signedByGitHub: false };
+
+        expect(validateCommit(unlinked, new Set(acceptedIds))).toBeDefined();
       }),
+    );
+  });
+
+  it('never accepts a GitHub-signed commit whose author is outside the accepted set', () => {
+    fc.assert(
+      fc.property(
+        commitRecord(userId),
+        fc.uniqueArray(userId, { minLength: 1 }),
+        userId,
+        (commit, acceptedIds, intruder) => {
+          fc.pre(!acceptedIds.includes(intruder));
+
+          const gitHubSigned = { ...commit, authorIds: [intruder], committerId: null, signedByGitHub: true };
+
+          expect(validateCommit(gitHubSigned, new Set(acceptedIds))).toBeDefined();
+        },
+      ),
     );
   });
 

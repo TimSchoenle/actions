@@ -16,7 +16,10 @@ export interface CommitRecord {
    * were not fetched".
    */
   authorIds: readonly (number | null)[];
-  /** Database ID of the account the committer email resolves to; `null` when it resolves to none. */
+  /**
+   * Database ID of the account the committer email resolves to; `null` when it resolves to none,
+   * which includes `GitHub <noreply@github.com>`, the committer of every commit GitHub signs itself.
+   */
   committerId: number | null;
   /** True when GitHub reports the commit signature as valid. */
   signatureValid: boolean;
@@ -97,14 +100,21 @@ function authorReasons(commit: CommitRecord, acceptedIds: ReadonlySet<number>): 
 }
 
 /**
- * Reasons the committer fails. A commit GitHub signed names GitHub's own `web-flow` account as its
- * committer, so the accepted set is not required of it there; it must still resolve to an account.
+ * Reasons the committer fails: it must resolve to an accepted account.
+ *
+ * Not applied to a commit GitHub signed. GitHub created that commit itself and wrote itself in as
+ * committer, `GitHub <noreply@github.com>`, which the GraphQL API resolves to no account (`user` is
+ * null), so the committer carries nothing the signature does not already attest. The author check
+ * still applies to it in full.
  */
 function committerReasons(commit: CommitRecord, acceptedIds: ReadonlySet<number>): string[] {
+  if (commit.signedByGitHub) {
+    return [];
+  }
   if (commit.committerId === null) {
     return ['committer is not linked to a GitHub account'];
   }
-  if (!commit.signedByGitHub && !acceptedIds.has(commit.committerId)) {
+  if (!acceptedIds.has(commit.committerId)) {
     return [`committer not accepted: ${commit.committerId}`];
   }
 
