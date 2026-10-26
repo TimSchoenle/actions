@@ -252,6 +252,38 @@ describe('required status check rules', () => {
       expect(problemsFor(downstream(body))).toEqual([]);
     });
 
+    it('names every unrequired need, and a need on a job the workflow does not define', () => {
+      const content = `${header}  gate:\n    name: Gate\n    needs: [build, missing]\n    runs-on: ubuntu-latest\n`;
+      const problems = problemsFor(content);
+
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toContain('needs build, missing, which are not required');
+      expect(problems[0]).toContain('when one of them fails');
+    });
+
+    it('names every need whose result a job that runs regardless never reads', () => {
+      const content = `${header}  gate:\n    name: Gate\n    needs: [build, missing]\n    if: \${{ always() }}\n    runs-on: ubuntu-latest\n`;
+      const problems = problemsFor(content);
+
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toContain('runs after build, missing but never reads needs.<job>.result');
+      expect(problems[0]).toContain('when one of them fails');
+    });
+
+    it('treats a boolean if: as a condition that does not run after a failure', () => {
+      const content = downstream('    if: true\n    runs-on: ubuntu-latest\n');
+
+      expect(parseWorkflow(content).jobs.find((job) => job.id === 'gate')?.condition).toBe('true');
+      expect(problemsFor(content)[0]).toContain('neither always() nor !cancelled()');
+    });
+
+    it('records an empty condition for a job without if:', () => {
+      expect(parseWorkflow(downstream('    runs-on: ubuntu-latest\n')).jobs.map((job) => job.condition)).toEqual([
+        '',
+        '',
+      ]);
+    });
+
     it('accepts a plain dependency on a job that is itself required', () => {
       const merged = { ...check };
       const content = downstream('    runs-on: ubuntu-latest\n');
