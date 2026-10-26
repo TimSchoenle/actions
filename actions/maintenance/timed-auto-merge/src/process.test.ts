@@ -105,6 +105,14 @@ describe('processPullRequests', () => {
     expect(api.approve).not.toHaveBeenCalled();
   });
 
+  it('renders a multi-day minimum in days and a short age in minutes', async () => {
+    const api = fakeApi([pullRequest({ createdAt: new Date(NOW - 90 * 60_000).toISOString() })]);
+
+    const { outcomes } = await processPullRequests(api, request({ minimumOpenMs: 7 * DAY }));
+
+    expect(outcomes).toEqual([expect.objectContaining({ detail: 'open for 90m, needs 7d', reason: 'too-young' })]);
+  });
+
   it('accepts a pull request exactly at the minimum age', async () => {
     const api = fakeApi([pullRequest({ createdAt: new Date(NOW - DAY).toISOString() })]);
 

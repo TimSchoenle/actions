@@ -203,6 +203,7 @@ const TOKEN_PERMISSIONS: Readonly<Record<string, TokenPermissions>> = {
   'actions/maintenance/auto-approve-pr': { contents: 'write', 'pull-requests': 'write' },
   'actions/maintenance/auto-rebase': { contents: 'write', issues: 'write', 'pull-requests': 'write' },
   'actions/maintenance/ensure-actions-are-executed': { contents: 'write', checks: 'write' },
+  'actions/maintenance/timed-auto-merge': { contents: 'write', 'pull-requests': 'write' },
 };
 
 /**

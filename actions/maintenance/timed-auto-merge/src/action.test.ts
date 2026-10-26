@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { run } from './action.js';
+import { createTimedAutoMergeApi } from './github-api.js';
 
 import type { OpenPullRequest, TimedAutoMergeApi } from './github-api.js';
 
@@ -23,6 +24,11 @@ vi.mock('@actions/core', async (importOriginal) => ({
   startGroup: vi.fn(),
   summary: { addRaw: (text: string) => summaryAddRaw(text) },
   warning: vi.fn(),
+}));
+
+vi.mock('./github-api.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./github-api.js')>()),
+  createTimedAutoMergeApi: vi.fn(),
 }));
 
 const NOW = Date.parse('2026-10-26T12:00:00Z');
@@ -210,5 +216,16 @@ describe('timed-auto-merge action', () => {
     await run({ api });
 
     expect(output('skipped')).toBe('[{"number":1,"reason":"too-young"}]');
+  });
+
+  it('binds the GitHub API to the token input when no API is injected', async () => {
+    setInputs();
+    const api = fakeApi([pullRequest(1)]);
+    vi.mocked(createTimedAutoMergeApi).mockReturnValue(api);
+
+    await run({ now: () => NOW });
+
+    expect(createTimedAutoMergeApi).toHaveBeenCalledWith('ghs_test_token');
+    expect(output('approved')).toBe('[1]');
   });
 });

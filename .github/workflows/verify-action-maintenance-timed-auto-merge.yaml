@@ -133,7 +133,8 @@ jobs:
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
           owner: TimSchoenle
           repositories: actions-testing
-          permission-metadata: read
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Run End-to-end Cases
         env:
