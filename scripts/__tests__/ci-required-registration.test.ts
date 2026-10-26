@@ -1,5 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import http from 'node:http';
+import type { AddressInfo } from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -12,6 +14,7 @@ import {
   main,
   type RegistrationApi,
   type RegistrationContext,
+  REQUEST_TIMEOUT_MS,
   restApi,
 } from '../lib/ci-required-registration-step.js';
 import { isVerifyWorkflowFile } from '../lib/ci-required.js';
@@ -509,6 +512,32 @@ describe('ci-required-registration entry point', () => {
       await restApi('token-value').get('/x');
 
       expect(fetchMock).toHaveBeenCalledWith(expected, expect.anything());
+    });
+
+    it('bounds every request with a timeout signal', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      await restApi('token-value').get('/x');
+
+      const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+      expect(init.signal).toBeInstanceOf(AbortSignal);
+      expect(REQUEST_TIMEOUT_MS).toBe(30_000);
+    });
+
+    // A server that accepts the request and never answers: the real fetch has to give up on its own.
+    it('aborts a request that stalls', async () => {
+      const server = http.createServer(() => undefined);
+      await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+      const { port } = server.address() as AddressInfo;
+      vi.stubEnv('GITHUB_API_URL', `http://127.0.0.1:${port}`);
+
+      try {
+        await expect(restApi('token-value', 100).get('/stalled')).rejects.toThrow(/timeout|aborted/i);
+      } finally {
+        server.closeAllConnections();
+        await new Promise((resolve) => server.close(resolve));
+      }
     });
 
     it('fails on an error status', async () => {

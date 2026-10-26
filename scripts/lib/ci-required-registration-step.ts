@@ -26,6 +26,13 @@ const DEFAULT_API_URL = 'https://api.github.com';
 const API_VERSION = '2022-11-28';
 const PAGE_SIZE = 100;
 const WORKFLOWS_DIR = '.github/workflows';
+/**
+ * Upper bound for one REST request, response body included. A stalled connection would otherwise
+ * hold the step until the job timeout, and the commit would get no `ci-required` status for that
+ * evaluation. Failing the step instead leaves the context missing, which still blocks merging, and
+ * a re-run retries it.
+ */
+export const REQUEST_TIMEOUT_MS = 30_000;
 
 interface RawPullRequest {
   number: number;
@@ -56,10 +63,12 @@ function requireEnvironment(name: string): string {
 }
 
 /** A read-only REST client over `fetch`, for the same reason as in scripts/rerun-rate-limited.ts. */
-export function restApi(token: string): RegistrationApi {
+export function restApi(token: string, timeoutMs = REQUEST_TIMEOUT_MS): RegistrationApi {
   return {
     async get<T>(endpoint: string): Promise<T> {
       const response = await fetch(`${process.env.GITHUB_API_URL || DEFAULT_API_URL}${endpoint}`, {
+        // One signal covers the headers and the body read below.
+        signal: AbortSignal.timeout(timeoutMs),
         headers: {
           accept: 'application/vnd.github+json',
           authorization: `Bearer ${token}`,
