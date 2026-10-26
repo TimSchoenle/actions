@@ -78,6 +78,8 @@ jobs:
 
       - name: Setup Bun
         uses: TimSchoenle/actions/actions/bun/setup-cached@e16a1e466faf8ec751b26289c1898143a253269f # tag=actions-bun-setup-cached-v1.1.11
+        with:
+          cache-mode: none
 
       # Every read and the re-run itself go through the ambient GITHUB_TOKEN, whose budget is
       # per-repository and so is not the one under pressure.
