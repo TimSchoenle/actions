@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
 
 import {
   collectRunBlocks,
@@ -142,5 +143,58 @@ describe('strict shell contract rules', () => {
     const workflow = `name: t\njobs:\n  j:\n    defaults:\n      run:\n        shell: python\n    steps:\n      - run: |\n          a\n          b\n`;
 
     expect(collectRunBlocks(workflow)).toEqual([]);
+  });
+});
+
+// A job that can mint an OIDC token can authenticate as this repository to whatever trusts that token
+// (Codecov today). On a pull request, any repository code a job runs is code the pull request wrote,
+// so such a job must only run third-party actions pinned by the workflow and shell steps that invoke
+// no project tooling. Test suites and builds belong in a job without the permission, which hands its
+// output over as an artifact.
+describe('OIDC isolation contract', () => {
+  /** Shell steps that would execute code from the checkout: package scripts, interpreters, local paths. */
+  const RUNS_REPOSITORY_CODE =
+    /(?:^|[\s;&|(])(?:bun|bunx|npm|npx|pnpm|yarn|node|deno|make|gradle|\.\/gradlew|python3?|sh|bash)\b|(?:^|[\s;&|(])\.{1,2}\//m;
+
+  interface Step {
+    name?: string;
+    run?: string;
+    uses?: string;
+  }
+
+  interface Job {
+    permissions?: Record<string, string> | string;
+    steps?: Step[];
+  }
+
+  function oidcJobs(file: string): [string, Job][] {
+    const doc = parse(readWorkflow(file)) as { permissions?: unknown; jobs?: Record<string, Job> } | null;
+    return Object.entries(doc?.jobs ?? {}).filter(
+      ([, job]) => typeof job.permissions === 'object' && job.permissions['id-token'] === 'write',
+    );
+  }
+
+  it('finds the Codecov upload job, so the scan below is not vacuous', () => {
+    expect(oidcJobs('scripts-ci.yml').map(([id]) => id)).toEqual(['coverage']);
+  });
+
+  describe.each(workflowFiles)('%s', (file) => {
+    it('runs no repository code in a job that holds id-token: write', () => {
+      for (const [id, job] of oidcJobs(file)) {
+        for (const [index, step] of (job.steps ?? []).entries()) {
+          const where = `jobs.${id}.steps[${index}] (${step.name ?? 'unnamed step'})`;
+
+          expect(step.uses?.startsWith('./') ?? false, `${where} runs a local action`).toBe(false);
+          expect(step.uses ?? '', `${where} installs a toolchain`).not.toMatch(/setup-(?:bun|node|python|java)/);
+          expect(RUNS_REPOSITORY_CODE.test(step.run ?? ''), `${where} runs repository code`).toBe(false);
+        }
+      }
+    });
+  });
+
+  it('flags a shell step that runs the test suite', () => {
+    expect(RUNS_REPOSITORY_CODE.test('set -euo pipefail\nbun run test')).toBe(true);
+    expect(RUNS_REPOSITORY_CODE.test('./scripts/upload.sh')).toBe(true);
+    expect(RUNS_REPOSITORY_CODE.test('echo "::error::failed"\nexit 1')).toBe(false);
   });
 });
