@@ -39,9 +39,11 @@ export interface AutoApproveOutcome {
  * and fork, then a non-empty diff, then that the commits were read at the head the pull request was
  * read at, then commit authors, committers and signatures. Every check must pass before the approving
  * review is submitted, so a single failing check leaves the pull request untouched. The review is
- * bound to that head, so a push that lands after the commits were verified is never what gets
- * approved. Not approving is a normal outcome reported through {@link AutoApproveOutcome.skipReason},
- * not a failure — only malformed inputs or an API error fail the step.
+ * recorded against the verified head. A push that lands between the head check and the review leaves
+ * the approval on the earlier commit; whether it still counts for the new head is up to branch
+ * protection, which should dismiss stale approvals. Not approving is a normal outcome reported
+ * through {@link AutoApproveOutcome.skipReason}, not a failure — only malformed inputs or an API error
+ * fail the step.
  *
  * @throws if the URL cannot be parsed, if `userIds` is malformed, or if the API rejects a request.
  */

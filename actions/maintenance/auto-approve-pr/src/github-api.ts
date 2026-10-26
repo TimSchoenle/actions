@@ -27,8 +27,8 @@ export interface AutoApproveApi {
   /** Fetches the pull request's commits for author/signature verification. */
   fetchCommits(prUrl: string): Promise<PullRequestCommits>;
   /**
-   * Submits an approving review with the given body, bound to `headSha`. GitHub records the approval
-   * against that commit, so a push that lands after the decision is not the commit that was approved.
+   * Submits an approving review with the given body, recorded against `headSha`. A later push does
+   * not move the review; branch protection decides whether it still counts for the new head.
    */
   approve(coordinates: PullRequestCoordinates, message: string, headSha: string): Promise<void>;
 }
