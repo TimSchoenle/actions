@@ -139,8 +139,17 @@ describe('ci-required trust model', () => {
     expect(scriptOf('pending')).toMatch(/if \[\[ "\$HEAD_REPO" != "\$REPO" \]\]; then[^]*?exit 0/);
   });
 
+  // Line-based rather than one regex across lines: the first statement of the branch, skipping
+  // blank lines and comments, has to be the pending state.
   it('keeps the gate pending while a verify workflow run is unfinished', () => {
-    expect(scriptOf('gate')).toMatch(/if \[\[ "\$unfinished" -gt 0 \]\]; then\s+(?:#.*\s+)*state="pending"/);
+    const lines = scriptOf('gate')
+      .split('\n')
+      .map((line) => line.trim());
+    const branch = lines.indexOf('if [[ "$unfinished" -gt 0 ]]; then');
+    const firstStatement = lines.slice(branch + 1).find((line) => line !== '' && !line.startsWith('#'));
+
+    expect(branch).toBeGreaterThanOrEqual(0);
+    expect(firstStatement).toBe('state="pending"');
   });
 
   // The gate picks the verify workflow runs out of every run for the head commit by file path. The
