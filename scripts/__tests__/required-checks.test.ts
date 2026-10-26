@@ -217,6 +217,111 @@ describe('required status check rules', () => {
     ]);
   });
 
+  describe('a required job downstream of another job', () => {
+    const header = 'on:\n  pull_request:\njobs:\n  build:\n    name: Build\n    runs-on: ubuntu-latest\n';
+
+    function downstream(body: string): string {
+      return `${header}  gate:\n    name: Gate\n    needs: build\n${body}`;
+    }
+
+    it('rejects a job that is skipped, and so passes, when an unrequired need fails', () => {
+      const problems = problemsFor(downstream('    runs-on: ubuntu-latest\n'));
+
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toContain('neither always() nor !cancelled()');
+    });
+
+    it('rejects a job that runs regardless but never reads the need result', () => {
+      const problems = problemsFor(downstream('    if: ${{ !cancelled() }}\n    runs-on: ubuntu-latest\n'));
+
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toContain('never reads needs.<job>.result');
+    });
+
+    it('accepts a job that runs regardless and fails on the need result', () => {
+      const body =
+        "    if: ${{ !cancelled() }}\n    steps:\n      - if: needs.build.result != 'success'\n        run: exit 1\n";
+
+      expect(problemsFor(downstream(body))).toEqual([]);
+    });
+
+    it('accepts a gate that reads every need at once', () => {
+      const body =
+        "    if: ${{ always() }}\n    steps:\n      - if: contains(needs.*.result, 'failure')\n        run: exit 1\n";
+
+      expect(problemsFor(downstream(body))).toEqual([]);
+    });
+
+    it('names every unrequired need, and a need on a job the workflow does not define', () => {
+      const content = `${header}  gate:\n    name: Gate\n    needs: [build, missing]\n    runs-on: ubuntu-latest\n`;
+      const problems = problemsFor(content);
+
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toContain('needs build, missing, which are not required');
+      expect(problems[0]).toContain('when one of them fails');
+    });
+
+    it('names every need whose result a job that runs regardless never reads', () => {
+      const content = `${header}  gate:\n    name: Gate\n    needs: [build, missing]\n    if: \${{ always() }}\n    runs-on: ubuntu-latest\n`;
+      const problems = problemsFor(content);
+
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toContain('runs after build, missing but never reads needs.<job>.result');
+      expect(problems[0]).toContain('when one of them fails');
+    });
+
+    it('rejects always() undone by a success check on an unrequired need', () => {
+      const body =
+        "    if: ${{ always() && needs.build.result == 'success' }}\n    steps:\n      - if: needs.build.result != 'success'\n        run: exit 1\n";
+      const problems = problemsFor(downstream(body));
+
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toContain("has needs.build.result == 'success' in its 'if:'");
+    });
+
+    it('rejects always() undone by success()', () => {
+      const body =
+        "    if: ${{ !cancelled() && success() }}\n    steps:\n      - if: needs.build.result != 'success'\n        run: exit 1\n";
+
+      expect(problemsFor(downstream(body))).toEqual([
+        expect.stringContaining("has success() in its 'if:'") as unknown as string,
+      ]);
+    });
+
+    it('accepts a success check on a need that is itself required', () => {
+      const content = downstream(
+        "    if: ${{ always() && needs.build.result == 'success' }}\n    runs-on: ubuntu-latest\n",
+      );
+
+      expect(
+        findRequiredCheckProblems(check, parseWorkflow(content), content, DEFAULT_BRANCH, ['Gate', 'Build']),
+      ).toEqual([]);
+    });
+
+    it('treats a boolean if: as a condition that does not run after a failure', () => {
+      const content = downstream('    if: true\n    runs-on: ubuntu-latest\n');
+
+      expect(parseWorkflow(content).jobs.find((job) => job.id === 'gate')?.condition).toBe('true');
+      expect(problemsFor(content)[0]).toContain('neither always() nor !cancelled()');
+    });
+
+    it('records an empty condition for a job without if:', () => {
+      expect(parseWorkflow(downstream('    runs-on: ubuntu-latest\n')).jobs.map((job) => job.condition)).toEqual([
+        '',
+        '',
+      ]);
+    });
+
+    it('accepts a plain dependency on a job that is itself required', () => {
+      const merged = { ...check };
+      const content = downstream('    runs-on: ubuntu-latest\n');
+
+      expect(
+        findRequiredCheckProblems(merged, parseWorkflow(content), content, DEFAULT_BRANCH, ['Gate', 'Build']),
+      ).toEqual([]);
+    });
+  });
+
   it('treats an absent branch allow-list as unrestricted', () => {
     expect(branchesAllow(undefined, DEFAULT_BRANCH)).toBe(true);
     expect(branchesAllow(['**'], DEFAULT_BRANCH)).toBe(true);

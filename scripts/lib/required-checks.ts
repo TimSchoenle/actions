@@ -72,20 +72,22 @@ export const REQUIRED_CHECKS: readonly RequiredCheck[] = [
     context: 'Build Actions and Commit',
     workflow: 'update-files.yml',
     kind: 'job',
-    reason: 'Compiled bundles are committed, so a red build must not merge.',
+    reason:
+      'Compiled bundles are committed, so a red build must not merge. The privileged commit job, which runs after the unprivileged "Build Actions" job and fails when it did.',
   },
   {
     context: 'Update README',
     workflow: 'update-files.yml',
     kind: 'job',
-    reason: 'Generated documentation is committed, so a red regeneration must not merge.',
+    reason:
+      'Generated documentation is committed, so a red regeneration must not merge. Also fails when "Regenerate Workflows", which is not required, failed.',
   },
   {
     context: 'Auto Format Gate',
     workflow: 'auto-format.yml',
     kind: 'job',
     reason:
-      'Plain-job stand-in for the "Auto Format / Auto Format" reusable-workflow check, which vanishes whenever the call is skipped.',
+      'Always-running gate over the "Format" and "Commit Format" jobs, both of which are skipped on release-please branches and so cannot be required themselves.',
   },
   {
     context: 'ci-required',
@@ -107,7 +109,7 @@ export const FORBIDDEN_REQUIRED_CHECKS: Readonly<Record<string, string>> = {
   'Aggregate verify checks':
     "The job name behind ci-required. It only runs on workflow_run, on the default branch, so its check runs never reach the pull request head and the context would wait for ever. Require the 'ci-required' commit status instead.",
   'Auto Format / Auto Format':
-    "The nested name of a reusable-workflow call, which disappears whenever the call is skipped. Require 'Auto Format Gate' instead.",
+    "The nested name of the reusable-workflow call auto-format.yml used to make, which disappeared whenever the call was skipped. Require 'Auto Format Gate' instead.",
   'Auto Approve Renovate / Auto-approve PR':
     'Same nested-call shape, and it only runs for one bot author. It can never gate a human pull request.',
 };
@@ -118,6 +120,12 @@ export interface WorkflowJob {
   checkName: string;
   /** True when the job delegates to a reusable workflow via `uses:`. */
   isReusableCall: boolean;
+  /** Ids of the jobs listed in `needs:`. */
+  needs: string[];
+  /** The job's `if:` expression, or an empty string when it has none. */
+  condition: string;
+  /** The job serialised back to text, for checks that look for an expression anywhere in it. */
+  source: string;
 }
 
 export interface WorkflowTriggers {
@@ -190,11 +198,14 @@ export function parseWorkflow(content: string): ParsedWorkflow {
   const rawJobs = doc?.jobs && typeof doc.jobs === 'object' ? doc.jobs : {};
 
   const jobs: WorkflowJob[] = Object.entries(rawJobs).map(([id, value]) => {
-    const job = (value ?? {}) as { name?: unknown; uses?: unknown };
+    const job = (value ?? {}) as { name?: unknown; uses?: unknown; needs?: unknown; if?: unknown };
     return {
       id,
       checkName: typeof job.name === 'string' ? job.name : id,
       isReusableCall: typeof job.uses === 'string',
+      needs: asStringArray(job.needs) ?? [],
+      condition: typeof job.if === 'string' ? job.if : typeof job.if === 'boolean' ? String(job.if) : '',
+      source: JSON.stringify(job),
     };
   });
 
@@ -220,16 +231,114 @@ export interface RequiredCheckProblem {
   reason: string;
 }
 
+/** Status functions that let a job run after one of its `needs` failed. */
+const RUNS_AFTER_FAILURE = /\balways\(\)|!\s*cancelled\(\)/;
+
+/** `success()` in a job's `if:` is false once any need failed, so it undoes `always()`. */
+const SUCCESS_FUNCTION = /\bsuccess\(\)/;
+
+/**
+ * `needs.<id>.result == 'success'` in a job's `if:`: the same skip, spelled out for one need.
+ *
+ * This and {@link SUCCESS_FUNCTION} catch the realistic way to undo `always()`. They are not an
+ * expression evaluator: a condition built to hide the dependency still needs a reviewer.
+ */
+function successGate(need: string): RegExp {
+  const id = need.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // eslint-disable-next-line security/detect-non-literal-regexp -- the job id is escaped above
+  return new RegExp(`needs\\.${id}\\.result\\s*==\\s*['"]success['"]`);
+}
+
+/**
+ * Why `job` can pass while one of its `needs` failed, or `undefined` when it cannot.
+ *
+ * A job is skipped when a job it needs fails, unless its `if:` says otherwise, and a skipped job
+ * reports success to branch protection. So a required job downstream of a job that is *not* itself
+ * required would wave that failure through. It has to run regardless (`always()` or `!cancelled()`)
+ * and then read the result of each such need, so it can fail on it.
+ */
+function unguardedNeed(
+  job: WorkflowJob,
+  workflow: ParsedWorkflow,
+  requiredContexts: readonly string[],
+): string | undefined {
+  const unrequired = job.needs.filter((need) => {
+    const upstream = workflow.jobs.find((candidate) => candidate.id === need);
+    return upstream === undefined || !requiredContexts.includes(upstream.checkName);
+  });
+
+  if (unrequired.length === 0) {
+    return undefined;
+  }
+  if (!RUNS_AFTER_FAILURE.test(job.condition)) {
+    return `job '${job.id}' needs ${unrequired.join(', ')}, which ${unrequired.length === 1 ? 'is' : 'are'} not required, but its 'if:' has neither always() nor !cancelled(): it is skipped, and reports success, when ${unrequired.length === 1 ? 'that job fails' : 'one of them fails'}.`;
+  }
+
+  const gates = [
+    ...(SUCCESS_FUNCTION.test(job.condition) ? ['success()'] : []),
+    ...unrequired
+      .filter((need) => successGate(need).test(job.condition))
+      .map((need) => `needs.${need}.result == 'success'`),
+  ];
+  if (gates.length > 0) {
+    return `job '${job.id}' has ${gates.join(' and ')} in its 'if:', so it is skipped, and reports success, when an unrequired need fails, whatever always() or !cancelled() says.`;
+  }
+
+  const unread = unrequired.filter(
+    (need) => !job.source.includes(`needs.${need}.result`) && !job.source.includes('needs.*.result'),
+  );
+  if (unread.length > 0) {
+    return `job '${job.id}' runs after ${unread.join(', ')} but never reads needs.<job>.result, so it cannot fail when ${unread.length === 1 ? 'that job fails' : 'one of them fails'}.`;
+  }
+
+  return undefined;
+}
+
+/** Why `check`'s workflow would not report the context on every pull request to `defaultBranch`. */
+function triggerProblems(check: RequiredCheck, triggers: ParsedWorkflow['triggers'], defaultBranch: string): string[] {
+  const problems: string[] = [];
+  // A commit status is POSTed to an explicit SHA, so a workflow_run evaluation can report it onto the
+  // pull request head as well as a pull_request run can. That it does so for every pull request is
+  // ci-required's anchor contract, which ci-required.test.ts holds; a job context has no such route.
+  const reachesPullRequest = triggers.onPullRequest || (check.kind === 'status' && triggers.onWorkflowRun);
+  if (!reachesPullRequest) {
+    problems.push(
+      check.kind === 'status'
+        ? `${check.workflow} has neither an 'on.pull_request' nor an 'on.workflow_run' trigger, so the context never reports on a pull request.`
+        : `${check.workflow} has no 'on.pull_request' trigger, so the context never reports on a pull request.`,
+    );
+  }
+  if (triggers.pathFiltered) {
+    problems.push(
+      `${check.workflow} filters 'on.pull_request' by path, so the context is missing on unrelated pull requests.`,
+    );
+  }
+  if (triggers.branchesIgnored) {
+    problems.push(`${check.workflow} uses 'on.pull_request.branches-ignore', which can exclude '${defaultBranch}'.`);
+  }
+  if (!branchesAllow(triggers.branches, defaultBranch)) {
+    problems.push(`${check.workflow} restricts 'on.pull_request.branches' to [${triggers.branches?.join(', ')}].`);
+  }
+
+  return problems;
+}
+
 /**
  * Every way `check` is unsound as a required status check, given the workflow
  * that is meant to produce it. All problems are returned so one run reports the
  * full picture instead of only the first failure.
+ *
+ * @param requiredContexts every context required from the same workflow; a need that reports one of
+ * them gates itself, so a downstream job may be skipped when it fails.
  */
 export function findRequiredCheckProblems(
   check: RequiredCheck,
   workflow: ParsedWorkflow | undefined,
   content: string | undefined,
   defaultBranch: string = DEFAULT_BRANCH,
+  requiredContexts: readonly string[] = REQUIRED_CHECKS.filter((entry) => entry.workflow === check.workflow).map(
+    (entry) => entry.context,
+  ),
 ): RequiredCheckProblem[] {
   const problems: RequiredCheckProblem[] = [];
   const fail = (reason: string): void => {
@@ -241,26 +350,8 @@ export function findRequiredCheckProblems(
     return problems;
   }
 
-  const { triggers } = workflow;
-  // A commit status is POSTed to an explicit SHA, so a workflow_run evaluation can report it onto the
-  // pull request head as well as a pull_request run can. That it does so for every pull request is
-  // ci-required's anchor contract, which ci-required.test.ts holds; a job context has no such route.
-  const reachesPullRequest = triggers.onPullRequest || (check.kind === 'status' && triggers.onWorkflowRun);
-  if (!reachesPullRequest) {
-    fail(
-      check.kind === 'status'
-        ? `${check.workflow} has neither an 'on.pull_request' nor an 'on.workflow_run' trigger, so the context never reports on a pull request.`
-        : `${check.workflow} has no 'on.pull_request' trigger, so the context never reports on a pull request.`,
-    );
-  }
-  if (triggers.pathFiltered) {
-    fail(`${check.workflow} filters 'on.pull_request' by path, so the context is missing on unrelated pull requests.`);
-  }
-  if (triggers.branchesIgnored) {
-    fail(`${check.workflow} uses 'on.pull_request.branches-ignore', which can exclude '${defaultBranch}'.`);
-  }
-  if (!branchesAllow(triggers.branches, defaultBranch)) {
-    fail(`${check.workflow} restricts 'on.pull_request.branches' to [${triggers.branches?.join(', ')}].`);
+  for (const reason of triggerProblems(check, workflow.triggers, defaultBranch)) {
+    fail(reason);
   }
 
   if (check.kind === 'status') {
@@ -279,6 +370,11 @@ export function findRequiredCheckProblems(
       fail(
         `job '${job.id}' in ${check.workflow} is a reusable-workflow call, so it reports as '${check.context} / <called job>' while running and only as '${check.context}' while skipped.`,
       );
+    }
+
+    const unguarded = unguardedNeed(job, workflow, requiredContexts);
+    if (unguarded !== undefined) {
+      fail(unguarded);
     }
   }
 

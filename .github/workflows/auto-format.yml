@@ -10,27 +10,106 @@ concurrency:
 
 permissions: {}
 
+# `bun run format` is the pull request's own script, so it runs in a job that holds nothing, and the
+# result is committed from a second job that runs no repository code. See update-files.yml for the
+# split, which this workflow follows. It replaces the auto-bun-prettier reusable workflow, whose single
+# job ran the formatter beside the App token.
 jobs:
   # Release-please branches carry only generated CHANGELOG.md and manifest edits, both of which
-  # release-please already emits formatted. See the note in update-files.yml.
-  auto-format:
+  # release-please already emits formatted.
+  format:
     if: ${{ !startsWith(github.head_ref, 'release-please--') }}
-    name: Auto Format
-    uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@4355a9eb68760b17af6fa8a3150e36bd6d6a375f # tag=workflows-maintenance-auto-bun-prettier-v1.1.42
-    secrets:
-      APP_ID: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
-      PRIVATE_KEY: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
+    name: Format
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: audit
 
-  # `auto-format` is a reusable-workflow call, so the check it publishes is named after *both* jobs
-  # ("Auto Format / Auto Format") and only exists while the call actually runs. On a release-please
-  # branch the `if:` above skips the caller, GitHub reports the bare caller name instead, and a
-  # branch-protection rule that requires the nested name waits for a status that will never arrive.
-  #
-  # This job is a plain job, so it always reports under exactly this name — it is the one safe thing
-  # for branch protection to require. See scripts/lib/required-checks.ts for the contract.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Bun
+        uses: TimSchoenle/actions/actions/bun/setup-cached@e16a1e466faf8ec751b26289c1898143a253269f # tag=actions-bun-setup-cached-v1.1.11
+
+      - name: Format
+        run: bun run format
+
+      - name: Create Patch
+        uses: TimSchoenle/actions/actions/common/create-patch@bbc2c5e2a0f9345cb2e84946846736f047a6eae3 # tag=actions-common-create-patch-v1.1.0
+        with:
+          artifact_name: auto-format
+
+  # The formatter may rewrite any file a pull request could have changed itself, so the allowlist is
+  # the whole tree. What it never covers is decided by commit-patch defaults: workflow files, since this
+  # token has no workflows: write, binary content, file modes and anything below a symbolic link.
+  commit:
+    name: Commit Format
+    needs: format
+    environment:
+      name: ci
+      deployment: false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch the commit the patch applies to
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+
+      # Only git's objects are needed. Nothing in this checkout is executed.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Generate Bot Token
+        id: generate_token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Commit Patch
+        id: commit
+        uses: TimSchoenle/actions/actions/common/commit-patch@bbc2c5e2a0f9345cb2e84946846736f047a6eae3 # tag=actions-common-commit-patch-v1.1.0
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+          artifact_name: auto-format
+          allowed_paths: '**'
+          commit_message: 'style: auto-format code'
+
+      - name: Comment on PR
+        if: steps.commit.outputs.changes_committed == 'true'
+        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+          identifier: 'auto-bun-prettier'
+          body: 'Code has been auto-formatted to adhere to the style guide.'
+
+  # The one context branch protection requires from this workflow. Both jobs above are skipped on a
+  # release-please branch, and `commit` is skipped whenever `format` fails; a skipped job reports
+  # success to branch protection, so neither can be required on its own. This job always runs, and
+  # fails when either of them failed or was cancelled. See scripts/lib/required-checks.ts.
   gate:
     name: Auto Format Gate
-    needs: auto-format
+    needs: [format, commit]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     permissions: {}
