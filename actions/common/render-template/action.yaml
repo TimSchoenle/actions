@@ -35,5 +35,5 @@ outputs:
   output-path:
     description: 'Path the rendered content was written to, as given'
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'

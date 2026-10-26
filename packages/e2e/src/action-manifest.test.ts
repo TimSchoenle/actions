@@ -22,7 +22,7 @@ outputs:
   sha:
     description: 'SHA'
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
 `),
       DIRECTORY,
@@ -44,7 +44,7 @@ runs:
     description: 'Count'
     default: 0
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
 `),
       DIRECTORY,
@@ -61,7 +61,7 @@ runs:
     description: 'Repository'
     default: \${{ github.repository }}
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
 `),
       DIRECTORY,
@@ -75,6 +75,20 @@ runs:
     });
   });
 
+  it.each(['node20', 'node24'])('drives a %s action', (using) => {
+    const parsed = parseActionManifest(manifest(`runs:\n  using: '${using}'\n  main: 'dist/index.js'\n`), DIRECTORY);
+
+    expect(parsed.using).toBe(using);
+  });
+
+  it('refuses a node16 action, naming the runtime it found', () => {
+    const parse = (): unknown =>
+      parseActionManifest(manifest("runs:\n  using: 'node16'\n  main: 'dist/index.js'\n"), DIRECTORY);
+
+    expect(parse).toThrow(UnsupportedActionError);
+    expect(parse).toThrow(/runs.using is 'node16'/);
+  });
+
   it('refuses a composite action, naming the runtime it found', () => {
     const parse = (): unknown => parseActionManifest(manifest("runs:\n  using: 'composite'\n  steps: []\n"), DIRECTORY);
 
@@ -82,7 +96,14 @@ runs:
     expect(parse).toThrow(/runs.using is 'composite'/);
   });
 
-  it('refuses a node20 action with no entry point', () => {
-    expect(() => parseActionManifest(manifest("runs:\n  using: 'node20'\n"), DIRECTORY)).toThrow(/runs.main/);
+  it('refuses a manifest that declares no runtime, listing the supported ones', () => {
+    const parse = (): unknown => parseActionManifest(manifest("runs:\n  main: 'dist/index.js'\n"), DIRECTORY);
+
+    expect(parse).toThrow(UnsupportedActionError);
+    expect(parse).toThrow(/runs.using is 'undeclared', and only 'node20' and 'node24' actions run/);
+  });
+
+  it('refuses a node24 action with no entry point', () => {
+    expect(() => parseActionManifest(manifest("runs:\n  using: 'node24'\n"), DIRECTORY)).toThrow(/runs.main/);
   });
 });

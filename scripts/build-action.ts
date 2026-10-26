@@ -11,7 +11,7 @@ import { ROOT_DIR, Sys } from './lib/utils.js';
  * the same flags, so they live here rather than in thirteen copies of a package.json string that
  * could drift apart unnoticed.
  *
- * `--target node` matches the `node20` runtime GitHub provides. `--minify` is deterministic within a
+ * `--target node` matches the `node24` runtime GitHub provides. `--minify` is deterministic within a
  * Bun version — which is what the version guard below pins — and shrinks the committed artifact.
  */
 const BUILD_FLAGS = ['--target', 'node', '--minify'] as const;

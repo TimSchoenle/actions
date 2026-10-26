@@ -3,8 +3,13 @@ import path from 'node:path';
 
 import { parse } from 'yaml';
 
-/** The runtime an action declares under `runs.using`; only `node20` can be driven by this harness. */
-export const SUPPORTED_RUNTIME = 'node20';
+/**
+ * The `runs.using` values this harness drives as a node subprocess.
+ *
+ * `node20` stays because the composites' helper manifests still declare it: the composite runs the
+ * helper bundle with the `node` on the runner's PATH, so the declared runtime never reaches GitHub.
+ */
+export const SUPPORTED_RUNTIMES: ReadonlySet<string> = new Set(['node20', 'node24']);
 
 /** One entry of an action's `inputs:` block, reduced to what the harness needs to build the env. */
 export interface ActionInputDeclaration {
@@ -92,7 +97,7 @@ function parseInputs(runs: Record<string, unknown> | undefined): Map<string, Act
 /**
  * Parses an `action.yaml` into the contract the harness drives.
  *
- * Deliberately strict about `runs`: an action whose runtime is not {@link SUPPORTED_RUNTIME} cannot
+ * Deliberately strict about `runs`: an action whose runtime is not one of {@link SUPPORTED_RUNTIMES} cannot
  * be invoked as a subprocess at all, and failing here names the reason instead of surfacing a
  * confusing "cannot find module" from the spawn.
  */
@@ -107,10 +112,10 @@ export function parseActionManifest(source: string, directory: string): ActionMa
   const using = typeof runs?.['using'] === 'string' ? runs['using'] : undefined;
   const main = typeof runs?.['main'] === 'string' ? runs['main'] : undefined;
 
-  if (using !== SUPPORTED_RUNTIME) {
+  if (using === undefined || !SUPPORTED_RUNTIMES.has(using)) {
     throw new UnsupportedActionError(
       directory,
-      `runs.using is '${using ?? 'undeclared'}', and only '${SUPPORTED_RUNTIME}' actions run as a subprocess. ` +
+      `runs.using is '${using ?? 'undeclared'}', and only ${[...SUPPORTED_RUNTIMES].map((runtime) => `'${runtime}'`).join(' and ')} actions run as a subprocess. ` +
         'Composite actions still need a workflow.',
     );
   }

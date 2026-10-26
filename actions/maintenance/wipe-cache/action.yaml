@@ -35,5 +35,5 @@ outputs:
     description: 'How many cache entries could not be deleted.'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'

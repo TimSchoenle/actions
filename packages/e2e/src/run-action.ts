@@ -280,7 +280,7 @@ function spawnAction(
 }
 
 /**
- * Runs a node20 action the way the GitHub runner does, and returns everything it published.
+ * Runs a node24 action the way the GitHub runner does, and returns everything it published.
  *
  * The point of driving the action as a subprocess rather than importing its `run()` is fidelity:
  * this exercises the shipped bundle, the `INPUT_*` decoding, the `action.yaml` defaults and the
@@ -291,7 +291,7 @@ export async function runAction<TInput extends string, TOutput extends string>(
 ): Promise<ActionRunResult<TOutput>> {
   const manifest = await loadActionManifest(options.actionDirectory);
   const { script, runtime } = entryPoint(manifest, options.entry ?? 'dist');
-  const executable = resolveRuntime(runtime);
+  const executable = resolveRuntime(runtime, { declaredRuntime: manifest.using });
 
   const scratch = await mkdtemp(path.join(tmpdir(), 'actions-e2e-'));
   // A caller-supplied workspace is the caller's to dispose of; one created here is not, so the two

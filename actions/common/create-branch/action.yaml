@@ -31,5 +31,5 @@ outputs:
     description: 'True if branch was created or reset, false otherwise'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'

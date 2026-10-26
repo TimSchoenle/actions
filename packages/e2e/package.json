@@ -1,7 +1,7 @@
 {
   "name": "actions-e2e",
   "version": "1.0.0",
-  "description": "Harness for running node20 actions end-to-end against a real repository, without a workflow",
+  "description": "Harness for running node24 actions end-to-end against a real repository, without a workflow",
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",

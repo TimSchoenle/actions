@@ -70,5 +70,5 @@ outputs:
     description: 'Space-separated paths of the files written, for use as a commit file pattern'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'

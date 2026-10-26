@@ -1,10 +1,10 @@
 # actions-e2e
 
-Runs a `node20` action end-to-end against a real repository, without a workflow.
+Runs a `node24` action end-to-end against a real repository, without a workflow.
 
 ## Why
 
-A `node20` action is a bundle the runner executes with `INPUT_*` in the environment and a
+A `node24` action is a bundle the runner executes with `INPUT_*` in the environment and a
 `GITHUB_OUTPUT` file to write to. Nothing about that requires GitHub, so nothing about testing it
 requires a workflow. Driving it directly buys three things the workflow-per-case model cannot:
 
@@ -25,6 +25,8 @@ bun run e2e                                # every action's cases
 bun run e2e actions/common/create-branch   # one action
 bun run e2e create-branch delete-branch    # several, by substring
 ```
+
+A `node24` action needs Node 24 first on `PATH`; see *Fidelity, and its limits*.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
@@ -190,6 +192,13 @@ translated), `action.yaml` defaults, the `GITHUB_OUTPUT` heredoc encoding, `GITH
 `entry: 'dist'` runs the committed bundle under node, which is the artifact GitHub runs;
 `entry: 'source'` runs `src/generated/index.ts` under bun for a faster edit loop, at the cost of
 testing a different runtime.
+
+The node is the first one on `PATH`, and for a `node24` manifest it must be Node 24: the run fails
+naming the version it found rather than testing the bundle under a runtime GitHub never uses. The
+generated workflows run `actions/setup-node` first for this, because the runner image's default node
+is not 24. A `node20` manifest is not checked. Only the composites' helpers still declare it, and a
+composite runs its helper with whatever node is on the runner's `PATH`, so the declaration selects
+nothing.
 
 The environment is an allowlist, not `process.env`. Inheriting the developer's shell would let a run
 pass locally on an ambient `GITHUB_TOKEN` and fail in CI.

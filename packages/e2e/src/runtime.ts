@@ -1,6 +1,10 @@
 import { accessSync, constants } from 'node:fs';
 import path from 'node:path';
 
+import { assertNodeMatchesDeclaredRuntime } from './node-version.js';
+
+import type { NodeMajorReader } from './node-version.js';
+
 /** How the action under test is executed. */
 export type ActionRuntime = 'node' | 'bun';
 
@@ -10,7 +14,7 @@ export class RuntimeNotFoundError extends Error {
     super(
       `Cannot run the action: '${runtime}' was not found on PATH and is not the current interpreter. ` +
         (runtime === 'node'
-          ? 'GitHub executes node20 actions with node, so the harness will not silently substitute another runtime.'
+          ? 'GitHub executes node24 actions with node, so the harness will not silently substitute another runtime.'
           : 'Running an action from TypeScript source requires bun.'),
     );
     this.name = 'RuntimeNotFoundError';
@@ -58,13 +62,35 @@ function isCurrentInterpreter(runtime: ActionRuntime): boolean {
   return runtime === 'bun' ? runningBun : !runningBun;
 }
 
+/** What {@link resolveRuntime} checks the resolved executable against. */
+export interface ResolveRuntimeOptions {
+  /**
+   * The manifest's `runs.using`. For a `node` run, the resolved executable must be the Node major it
+   * declares, where the harness enforces one (see `requiredNodeMajor`).
+   */
+  declaredRuntime?: string;
+  /** Reads an executable's Node major; replaced in tests. */
+  readMajor?: NodeMajorReader;
+}
+
 /**
  * Resolves the executable for a runtime, preferring the interpreter already running this process.
  *
- * The distinction matters: a node20 action is a node bundle, and running it under bun would test a
+ * The distinction matters: a node24 action is a node bundle, and running it under bun would test a
  * runtime GitHub never uses. So the resolution never falls back across runtimes — it fails instead.
+ * For the same reason a `node` run fails when that node is not the major the manifest declares.
  */
-export function resolveRuntime(runtime: ActionRuntime): string {
+export function resolveRuntime(runtime: ActionRuntime, options: ResolveRuntimeOptions = {}): string {
+  const executable = locateRuntime(runtime);
+
+  if (runtime === 'node' && options.declaredRuntime !== undefined) {
+    assertNodeMatchesDeclaredRuntime(executable, options.declaredRuntime, options.readMajor);
+  }
+
+  return executable;
+}
+
+function locateRuntime(runtime: ActionRuntime): string {
   if (isCurrentInterpreter(runtime)) {
     return process.execPath;
   }

@@ -18,5 +18,5 @@ outputs:
     description: "'true' if the branch was deleted, 'false' if it did not exist or could not be deleted"
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'

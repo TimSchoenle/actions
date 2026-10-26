@@ -30,5 +30,5 @@ outputs:
     description: 'True if changes were committed'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'

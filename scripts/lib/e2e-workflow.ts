@@ -42,6 +42,7 @@ export const PINNED = {
   // Used only by the test job, which must not install anything. Kept at the same versions
   // `setup-cached` pins internally, because the two halves have to agree on the cache format.
   setupBunOnly: 'oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0',
+  setupNode: 'actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0',
   cache: 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0',
   cacheRestore: 'actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0',
 } as const;
@@ -449,6 +450,14 @@ ${hardenRunnerStep(E2E_ALLOWED_ENDPOINTS)}
         uses: ${PINNED.setupBunOnly}
         with:
           bun-version-file: '.bun-version'
+
+      # The harness runs a node24 bundle with the first node on PATH and refuses any other major,
+      # and the image's default node is not 24. A major alone resolves from the runner's tool
+      # cache, so this reaches no endpoint the allowlist above does not already carry.
+      - name: Setup Node
+        uses: ${PINNED.setupNode}
+        with:
+          node-version: '24'
 
       # Restored, never installed, and never saved. \`fail-on-cache-miss\` is what keeps that honest:
       # without it a miss would leave the suite to fail later on a missing import, several confusing

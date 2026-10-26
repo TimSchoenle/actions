@@ -7,7 +7,7 @@ import type { ActionManifest } from './action-manifest.js';
 
 function manifestWith(inputs: string): ActionManifest {
   return parseActionManifest(
-    `name: 'Example'\ninputs:\n${inputs}runs:\n  using: 'node20'\n  main: 'dist/index.js'\n`,
+    `name: 'Example'\ninputs:\n${inputs}runs:\n  using: 'node24'\n  main: 'dist/index.js'\n`,
     'actions/common/example',
   );
 }

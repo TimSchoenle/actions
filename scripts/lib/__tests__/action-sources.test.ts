@@ -36,7 +36,7 @@ outputs:
   verified:
     description: 'The verdict'
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
 `;
 
@@ -51,7 +51,7 @@ const VALID_PACKAGE: ActionPackage = {
 };
 
 function definitionWith(overrides: Partial<ActionDefinition> = {}): ActionDefinition {
-  return { inputs: [], outputs: [], using: 'node20', main: BUNDLE_PATH, ...overrides };
+  return { inputs: [], outputs: [], using: 'node24', main: BUNDLE_PATH, ...overrides };
 }
 
 function packageWith(build: string): ActionPackage {
@@ -83,14 +83,14 @@ describe('parseActionDefinition', () => {
     expect(parseActionDefinition(MANIFEST, 'action.yaml')).toEqual({
       inputs: ['branch_pattern', 'reject_forks'],
       outputs: ['verified'],
-      using: 'node20',
+      using: 'node24',
       main: 'dist/index.js',
     });
   });
 
   it('preserves declaration order so regenerating produces a readable diff', () => {
     const reordered = parseActionDefinition(
-      `inputs:\n  b:\n    description: 'b'\n  a:\n    description: 'a'\nruns:\n  using: 'node20'`,
+      `inputs:\n  b:\n    description: 'b'\n  a:\n    description: 'a'\nruns:\n  using: 'node24'`,
       'action.yaml',
     );
 
@@ -111,7 +111,7 @@ describe('parseActionDefinition', () => {
   });
 
   it('rejects a non-string entry point', () => {
-    expect(() => parseActionDefinition(`runs:\n  using: 'node20'\n  main: 42`, 'action.yaml')).toThrow(
+    expect(() => parseActionDefinition(`runs:\n  using: 'node24'\n  main: 42`, 'action.yaml')).toThrow(
       /'runs.main' must be a string/,
     );
   });
@@ -125,7 +125,7 @@ describe('parseActionDefinition', () => {
   });
 
   it('rejects an inputs section that is not a mapping', () => {
-    expect(() => parseActionDefinition(`inputs:\n  - a\nruns:\n  using: 'node20'`, 'action.yaml')).toThrow(
+    expect(() => parseActionDefinition(`inputs:\n  - a\nruns:\n  using: 'node24'`, 'action.yaml')).toThrow(
       /'inputs' must be a mapping/,
     );
   });
@@ -135,7 +135,7 @@ describe('parseActionDefinition', () => {
   it.each(["a' | 'b", 'has space', '1_leading_digit', 'quote"name'])('rejects the unusable name %j', (name) => {
     expect(() =>
       parseActionDefinition(
-        `inputs:\n  ${JSON.stringify(name)}:\n    description: 'x'\nruns:\n  using: 'node20'`,
+        `inputs:\n  ${JSON.stringify(name)}:\n    description: 'x'\nruns:\n  using: 'node24'`,
         'action.yaml',
       ),
     ).toThrow(/is not a usable input name/);
