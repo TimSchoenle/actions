@@ -1,7 +1,7 @@
 /**
  * The one question every action taking a path input has to answer: does it stay in the checkout?
  *
- * A `node20` action runs with the workspace as its working directory and with a token in its
+ * A `node24` action runs with the workspace as its working directory and with a token in its
  * environment, so a path input that escapes is an arbitrary read or write on the runner — `../`
  * reaches the rest of the job's disk, and an absolute path reaches everything the runner user can.
  * Neither has a legitimate use here: every one of these actions operates on the checked-out

@@ -35,5 +35,5 @@ outputs:
     description: 'True if the PR is from the same repository or forks are allowed, false otherwise.'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'

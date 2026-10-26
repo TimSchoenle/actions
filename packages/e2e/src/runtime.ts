@@ -10,7 +10,7 @@ export class RuntimeNotFoundError extends Error {
     super(
       `Cannot run the action: '${runtime}' was not found on PATH and is not the current interpreter. ` +
         (runtime === 'node'
-          ? 'GitHub executes node20 actions with node, so the harness will not silently substitute another runtime.'
+          ? 'GitHub executes node24 actions with node, so the harness will not silently substitute another runtime.'
           : 'Running an action from TypeScript source requires bun.'),
     );
     this.name = 'RuntimeNotFoundError';
@@ -61,7 +61,7 @@ function isCurrentInterpreter(runtime: ActionRuntime): boolean {
 /**
  * Resolves the executable for a runtime, preferring the interpreter already running this process.
  *
- * The distinction matters: a node20 action is a node bundle, and running it under bun would test a
+ * The distinction matters: a node24 action is a node bundle, and running it under bun would test a
  * runtime GitHub never uses. So the resolution never falls back across runtimes — it fails instead.
  */
 export function resolveRuntime(runtime: ActionRuntime): string {

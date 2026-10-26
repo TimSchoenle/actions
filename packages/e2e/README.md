@@ -1,10 +1,10 @@
 # actions-e2e
 
-Runs a `node20` action end-to-end against a real repository, without a workflow.
+Runs a `node24` action end-to-end against a real repository, without a workflow.
 
 ## Why
 
-A `node20` action is a bundle the runner executes with `INPUT_*` in the environment and a
+A `node24` action is a bundle the runner executes with `INPUT_*` in the environment and a
 `GITHUB_OUTPUT` file to write to. Nothing about that requires GitHub, so nothing about testing it
 requires a workflow. Driving it directly buys three things the workflow-per-case model cannot:
 

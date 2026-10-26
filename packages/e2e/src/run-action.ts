@@ -280,7 +280,7 @@ function spawnAction(
 }
 
 /**
- * Runs a node20 action the way the GitHub runner does, and returns everything it published.
+ * Runs a node24 action the way the GitHub runner does, and returns everything it published.
  *
  * The point of driving the action as a subprocess rather than importing its `run()` is fidelity:
  * this exercises the shipped bundle, the `INPUT_*` decoding, the `action.yaml` defaults and the

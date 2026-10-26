@@ -44,7 +44,7 @@ const E2E_EXEMPTIONS: Record<string, string> = {
   'actions/test/setup-e2e': 'composite: the harness for the workflows that still need one',
 };
 
-/** Reads `runs.using` without a YAML parse, which is all the composite/node20 split needs. */
+/** Reads `runs.using` without a YAML parse, which is all the composite/node split needs. */
 function runtimeOf(actionPath: string): string {
   const manifest = fs.readFileSync(path.join(ROOT_DIR, actionPath, 'action.yaml'), 'utf8');
 
@@ -59,13 +59,13 @@ function e2eJobOf(action: Awaited<ReturnType<typeof findE2eActions>>[number]): s
 }
 
 describe('end-to-end contract', () => {
-  it('gives every node20 action end-to-end cases, or a stated exemption', async () => {
+  it('gives every node action end-to-end cases, or a stated exemption', async () => {
     const manifests = await scanSorted('actions/*/*/action.yaml');
     const withCases = new Set((await findE2eActions()).map((action) => action.actionPath));
 
     const missing = manifests
       .map((manifest) => path.posix.dirname(manifest))
-      .filter((actionPath) => runtimeOf(actionPath) === 'node20')
+      .filter((actionPath) => runtimeOf(actionPath).startsWith('node'))
       .filter((actionPath) => !withCases.has(actionPath) && !(actionPath in E2E_EXEMPTIONS));
 
     expect(missing, `add ${E2E_DIRECTORY}/ cases or an entry in E2E_EXEMPTIONS with a reason`).toEqual([]);

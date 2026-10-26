@@ -1,7 +1,7 @@
 /**
- * Harness for driving a `node20` action end-to-end without a workflow.
+ * Harness for driving a `node24` action end-to-end without a workflow.
  *
- * A node20 action is a bundle the runner executes with `INPUT_*` in the environment and a
+ * A node24 action is a bundle the runner executes with `INPUT_*` in the environment and a
  * `GITHUB_OUTPUT` file to write to. Reproducing that contract here buys three things a
  * workflow-per-case cannot: the cases run on a developer's machine, a whole action's suite fits in
  * one job instead of one job per case, and the assertions are typed TypeScript rather than shell.

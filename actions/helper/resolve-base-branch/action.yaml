@@ -26,5 +26,5 @@ outputs:
     description: 'The base branch name, or empty if the branch does not exist and silent_fail is true'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'

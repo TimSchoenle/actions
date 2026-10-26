@@ -49,5 +49,5 @@ outputs:
     description: 'Absolute path of the oras binary on PATH. Empty unless oras was requested.'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'

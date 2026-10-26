@@ -54,5 +54,5 @@ outputs:
     description: 'What the run did: "created", "updated", "unchanged", or "skipped" when nothing was posted: body_lines was set and no line survived, so no API call was made, or create_new was false and no comment it could update carries the identifier.'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'

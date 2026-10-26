@@ -53,5 +53,5 @@ outputs:
     description: 'What the run did: "created", "updated", "reopened" or "unchanged".'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
