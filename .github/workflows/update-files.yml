@@ -82,9 +82,13 @@ jobs:
   # safety net rather than the mechanism: it makes the generator authoritative whenever the two have
   # drifted for any reason, instead of leaving a pull request stuck on a failing drift check.
   #
-  # It is the one job here that pushes to .github/workflows/, which is why its token asks for
+  # It is the one job in this file that pushes to .github/workflows/, which is why its token asks for
   # workflows: write. That is a real privilege — a bot that can rewrite workflow files can rewrite
-  # what CI runs — so it is granted to this job alone and to no other in this repository.
+  # what CI runs. release-please.yml holds it too, for the release pull request; auto-format.yml no
+  # longer does. Every job in this file still runs pull request code (`bun run ...`) beside its token,
+  # and that is the open problem: common/create-patch and common/commit-patch exist to split each job
+  # into an unprivileged build and a commit job that runs no repository code. This file moves to them
+  # once they are released, because a job holding a token must use a pinned release, never `./`.
   update-generated-workflows:
     name: Regenerate Workflows
     environment:

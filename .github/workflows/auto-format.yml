@@ -17,6 +17,14 @@ jobs:
     if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     name: Auto Format
     uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@4355a9eb68760b17af6fa8a3150e36bd6d6a375f # tag=workflows-maintenance-auto-bun-prettier-v1.1.42
+    # The called job runs `bun run format`, which is pull request code, in the same job as the App token
+    # it mints. Until that job is split in two (common/create-patch formats unprivileged, and
+    # common/commit-patch commits from a job that runs no repository code), the token is at least kept
+    # from rewriting workflows: with workflows: write, code that reads it could push a workflow to any
+    # unprotected branch and run it with this repository's secrets. A pull request whose workflow files
+    # need formatting now fails this job; run `bun run format` locally instead.
+    with:
+      workflow_files_permission: false
     secrets:
       APP_ID: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
       PRIVATE_KEY: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
