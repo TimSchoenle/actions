@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.0.0](https://github.com/TimSchoenle/actions/compare/actions-security-zizmor-v1.1.3...actions-security-zizmor-v2.0.0) (2026-10-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* **Actions/Auto-Approve-PR:** verify committer and signer, bind approval to the verified head ([#1935](https://github.com/TimSchoenle/actions/issues/1935))
+
+### Bug Fixes
+
+* **Actions/Auto-Approve-PR:** verify committer and signer, bind approval to the verified head ([#1935](https://github.com/TimSchoenle/actions/issues/1935)) ([124355a](https://github.com/TimSchoenle/actions/commit/124355a793ac1403e3a0aced050cab95d1278516))
+
+
+### Dependencies
+
+* **deps:** update all non-major action updates ([#1932](https://github.com/TimSchoenle/actions/issues/1932)) ([fa348bd](https://github.com/TimSchoenle/actions/commit/fa348bd12be1b57792078a445f050cfc721c69c1))
+
 ## [1.1.3](https://github.com/TimSchoenle/actions/compare/actions-security-zizmor-v1.1.2...actions-security-zizmor-v1.1.3) (2026-10-19)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.4](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v2.0.3...actions-rust-coverage-codecov-v2.0.4) (2026-10-26)
+
+
+### Dependencies
+
+* **deps:** update all non-major action updates ([#1932](https://github.com/TimSchoenle/actions/issues/1932)) ([fa348bd](https://github.com/TimSchoenle/actions/commit/fa348bd12be1b57792078a445f050cfc721c69c1))
+
 ## [2.0.3](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v2.0.2...actions-rust-coverage-codecov-v2.0.3) (2026-10-19)
 
 

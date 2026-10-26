@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/TimSchoenle/actions/compare/actions-bun-setup-cached-v1.1.11...actions-bun-setup-cached-v2.0.0) (2026-10-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* **Actions/Bun-Setup-Cached:** add cache-mode and require a pinned Bun version ([#1940](https://github.com/TimSchoenle/actions/issues/1940))
+
+### Features
+
+* **Actions/Bun-Setup-Cached:** add cache-mode and require a pinned Bun version ([#1940](https://github.com/TimSchoenle/actions/issues/1940)) ([7c7d2e9](https://github.com/TimSchoenle/actions/commit/7c7d2e9a8f32441cb19f041c00526505b96906be))
+
 ## [1.1.11](https://github.com/TimSchoenle/actions/compare/actions-bun-setup-cached-v1.1.10...actions-bun-setup-cached-v1.1.11) (2026-08-30)
 
 
