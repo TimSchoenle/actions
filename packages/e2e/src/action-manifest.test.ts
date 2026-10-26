@@ -96,6 +96,13 @@ runs:
     expect(parse).toThrow(/runs.using is 'composite'/);
   });
 
+  it('refuses a manifest that declares no runtime, listing the supported ones', () => {
+    const parse = (): unknown => parseActionManifest(manifest("runs:\n  main: 'dist/index.js'\n"), DIRECTORY);
+
+    expect(parse).toThrow(UnsupportedActionError);
+    expect(parse).toThrow(/runs.using is 'undeclared', and only 'node20' and 'node24' actions run/);
+  });
+
   it('refuses a node24 action with no entry point', () => {
     expect(() => parseActionManifest(manifest("runs:\n  using: 'node24'\n"), DIRECTORY)).toThrow(/runs.main/);
   });
