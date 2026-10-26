@@ -82,11 +82,11 @@ export async function registerActionInReleasePlease(packageName: string, subActi
   // Update Config
   try {
     const configFile = Sys.file(configPath);
+    // Start empty only when the file is missing. A file that exists but cannot be parsed throws, so
+    // it is reported below and never overwritten with just the new entry.
     let config: { packages: Record<string, unknown> } = { packages: {} };
-    try {
+    if (Sys.exists(configPath)) {
       config = await configFile.json();
-    } catch {
-      // ignore
     }
 
     if (!config.packages) {
@@ -113,10 +113,8 @@ export async function registerActionInReleasePlease(packageName: string, subActi
   try {
     const manifestFile = Sys.file(manifestPath);
     let manifest: Record<string, string> = {};
-    try {
+    if (Sys.exists(manifestPath)) {
       manifest = await manifestFile.json();
-    } catch {
-      // ignore
     }
 
     if (!manifest[key]) {

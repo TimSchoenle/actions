@@ -140,6 +140,7 @@ describe('action-utils', () => {
 
   describe('registerActionInReleasePlease', () => {
     it('should update config and manifest', async () => {
+      vi.mocked(Sys.exists).mockReturnValue(true);
       // Mock config file read
       vi.mocked(Sys.file)
         .mockReturnValueOnce({
@@ -164,18 +165,43 @@ describe('action-utils', () => {
       expect(JSON.parse(manifestWrite[1] as string)['actions/pkg/sub']).toBe('1.0.0');
     });
 
-    it('should handle missing config/manifest gracefully (create new)', async () => {
-      vi.mocked(Sys.file).mockReturnValue({
-        json: vi.fn().mockRejectedValue(new Error('File not found')),
-      } as unknown as ReturnType<typeof Sys.file>);
+    it('should create config and manifest when they are missing', async () => {
+      vi.mocked(Sys.exists).mockReturnValue(false);
+      const json = vi.fn();
+      vi.mocked(Sys.file).mockReturnValue({ json } as unknown as ReturnType<typeof Sys.file>);
 
       await actionUtils.registerActionInReleasePlease('pkg', 'sub');
 
+      expect(json).not.toHaveBeenCalled();
       expect(Sys.write).toHaveBeenCalledTimes(2);
-      // Expect empty objects to be populated
+      expect(JSON.parse(vi.mocked(Sys.write).mock.calls[0][1] as string)).toEqual({
+        packages: {
+          'actions/pkg/sub': {
+            'release-type': 'simple',
+            component: 'actions-pkg-sub',
+            'include-component-in-tag': true,
+          },
+        },
+      });
+      expect(JSON.parse(vi.mocked(Sys.write).mock.calls[1][1] as string)).toEqual({ 'actions/pkg/sub': '1.0.0' });
+    });
+
+    it('should not overwrite an existing config or manifest it cannot parse', async () => {
+      vi.mocked(Sys.exists).mockReturnValue(true);
+      vi.mocked(Sys.file).mockReturnValue({
+        json: vi.fn().mockRejectedValue(new SyntaxError('Unexpected token')),
+      } as unknown as ReturnType<typeof Sys.file>);
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      await actionUtils.registerActionInReleasePlease('pkg', 'sub');
+
+      expect(Sys.write).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledTimes(2);
+      warn.mockRestore();
     });
 
     it('should handle write errors gracefully', async () => {
+      vi.mocked(Sys.exists).mockReturnValue(true);
       vi.mocked(Sys.file).mockReturnValue({
         json: vi.fn().mockResolvedValue({}),
       } as unknown as ReturnType<typeof Sys.file>);
