@@ -1,6 +1,0 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/TimSchoenle/terrace-config/main/spec/helm/v1/repo.schema.json
-#
-# The producer repository the terrace/image action is verified against: a service that ships its
-# configuration contract inside its image. Only the cli pin is read here.
-version: 1
-cli: '0.12'
