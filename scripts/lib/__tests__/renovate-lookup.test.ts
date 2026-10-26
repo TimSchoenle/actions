@@ -128,6 +128,11 @@ describe('parseLookupCase', () => {
       /updateTypes' must be a non-empty array of Renovate update types/,
     ],
     [
+      'an updateTypes that is not an array',
+      validCase({ dependencies: [{ manager: 'cargo', depName: 'x', updateTypes: 'minor' }] }),
+      /updateTypes' must be a non-empty array of Renovate update types/,
+    ],
+    [
       'an unknown update type',
       validCase({ dependencies: [{ manager: 'cargo', depName: 'x', updateTypes: ['minor', 'Patch'] }] }),
       /updateTypes' must be a non-empty array of Renovate update types/,
@@ -240,6 +245,16 @@ describe('evaluateReport', () => {
     expect(evaluateReport(CASE, report([{ depName: 'csp-shell', updates: [GOOD_UPDATE, major] }]))).toEqual([
       "cargo csp-shell: update to 'csp-shell-v1.0.0' is on branch 'renovate/csp-shell-1.x', expected 'renovate/csp-shell-0.x'.",
     ]);
+  });
+
+  it('leaves out an update without an updateType when the case names types', () => {
+    const nonMajor: LookupCase = {
+      ...CASE,
+      dependencies: [{ ...CASE.dependencies[0], updateTypes: ['patch'] }],
+    };
+    const untyped = { newValue: 'csp-shell-v9.9.9', branchName: 'renovate/other' };
+
+    expect(evaluateReport(nonMajor, report([{ depName: 'csp-shell', updates: [GOOD_UPDATE, untyped] }]))).toEqual([]);
   });
 
   it('counts minUpdates over the named update types only', () => {
