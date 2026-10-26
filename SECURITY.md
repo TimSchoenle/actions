@@ -157,3 +157,23 @@ Release tags are immutable and a repository ruleset restricts who may create the
 so a tag cannot be moved to a different commit after a consumer has pinned it. Every action here is
 published with its bundle committed, and CI rebuilds that bundle and compares it byte for byte
 against what the branch carries.
+
+## Accepted Risks
+
+### Commits signed by GitHub
+
+[Verify Commit Authors](./actions/helper/verify-commit-authors) and
+[Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) accept a commit when its author
+is one of the accepted accounts and its signature is valid. For a commit that a person signs with
+their own key, the committer must also be an accepted account. GitHub signs the commits that GitHub
+Apps, Renovate and the web interface create, and leaves the committer of such a commit without a
+linked account. For those commits the actions check only the author and GitHub's signature.
+
+Anyone with write access to a branch in the same repository can create a commit that GitHub signs
+and that names an accepted account, such as Renovate, as its author. The actions then accept that
+commit, and Auto-approve-pr approves the pull request. GitHub has no API that shows who pushed a
+commit, so the actions cannot close this gap.
+
+This risk is accepted. Write access already allows more than this, pull requests from forks are
+rejected by default, and rejecting commits that GitHub signs would stop Renovate and App pull
+requests from being approved automatically. Give write access only to accounts you trust.
