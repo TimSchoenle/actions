@@ -129,37 +129,71 @@ describe('ci-required trust model', () => {
     expect(scriptOf('gate').split('context="ci-required"')).toHaveLength(2);
   });
 
+  interface Step {
+    name?: string;
+    uses?: string;
+    with?: Record<string, unknown>;
+    env?: Record<string, string>;
+    run?: string;
+  }
+  const steps = (jobs['gate']?.steps ?? []) as Step[];
+  const stepNamed = (name: string): Step | undefined => steps.find((step) => step.name === name);
+
   // Line-based rather than one regex across lines: the first statement of the branch, skipping
   // blank lines and comments, has to be the pending state.
-  it('keeps the gate pending while a verify workflow run is unfinished', () => {
+  it.each([
+    ['an applicable verify workflow has no run yet', 'elif [[ "$MISSING" -gt 0 ]]; then'],
+    ['a verify workflow run is unfinished', 'elif [[ "$UNFINISHED" -gt 0 ]]; then'],
+  ])('keeps the gate pending while %s', (_case, condition) => {
     const lines = scriptOf('gate')
       .split('\n')
       .map((line) => line.trim());
-    const branch = lines.indexOf('if [[ "$unfinished" -gt 0 ]]; then');
-    const firstStatement = lines.slice(branch + 1).find((line) => line !== '' && !line.startsWith('#'));
+    const branch = lines.indexOf(condition);
+    const firstStatement = lines
+      .slice(branch + 1)
+      .find((line) => line !== '' && !line.startsWith('#') && !line.startsWith('echo '));
 
     expect(branch).toBeGreaterThanOrEqual(0);
     expect(firstStatement).toBe('state="pending"');
   });
 
-  // The gate picks the verify workflow runs out of every run for the head commit by file path. The
-  // pattern has to cover exactly the files the generator watches, or a watched verify workflow could
-  // still be running when the gate reports a verdict.
-  describe('verify workflow path patterns', () => {
-    const gate = scriptOf('gate');
-    const jqPattern = /test\("([^"]+)"\)/.exec(gate)?.[1]?.replaceAll('\\\\', '\\');
-    const bashPattern = /verify_pattern='([^']+)'/.exec(gate)?.[1];
+  it('decides on registration before it trusts the check counts', () => {
+    const script = scriptOf('gate');
+    const order = [
+      '"$SCOPE" == "unresolved"',
+      '"$MISSING" -gt 0',
+      '"$UNFINISHED" -gt 0',
+      '"$EXPECTED" -gt 0 && "$matched" -eq 0',
+      '"$failed" -gt 0',
+      '"$SCOPE" == "pull-request" && "$APPLICABLE" -eq 0',
+    ].map((condition) => script.indexOf(condition));
 
-    it.each([
-      ['jq', jqPattern],
-      ['bash', bashPattern],
-    ])('the %s pattern matches the verify workflows and nothing else', (_kind, pattern) => {
-      expect(pattern).toBeDefined();
-      const matcher = new RegExp(pattern ?? '^$');
+    expect(order.every((position) => position >= 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    expect(script).toContain('description="No verify workflow applies to this change."');
+  });
 
-      for (const file of fs.readdirSync(WORKFLOWS_DIR)) {
-        expect(matcher.test(`.github/workflows/${file}`), file).toBe(isVerifyWorkflowFile(file));
-      }
+  // The registration script and the filters it reads decide whether the gate may report success, so
+  // both come from the default branch, never from the head commit under evaluation.
+  it('runs the registration barrier from the default branch', () => {
+    const checkout = stepNamed('Checkout default branch');
+    const registration = stepNamed('Check verify workflow registration');
+
+    expect(checkout?.uses).toMatch(/^actions\/checkout@[0-9a-f]{40}$/);
+    expect(checkout?.with).toEqual({
+      ref: '${{ github.event.repository.default_branch }}',
+      'persist-credentials': false,
     });
+    expect(registration?.run).toBe('bun run ci-required-registration');
+    expect(registration?.env?.HEAD_SHA).toBe('${{ steps.target.outputs.sha }}');
+    expect(steps.indexOf(checkout as Step)).toBeLessThan(steps.indexOf(registration as Step));
+  });
+
+  it('reads every registration output it publishes from', () => {
+    const publish = stepNamed('Publish ci-required status');
+
+    for (const output of ['scope', 'applicable', 'missing', 'missing_workflows', 'unfinished', 'expected']) {
+      expect(Object.values(publish?.env ?? {})).toContain(`\${{ steps.registration.outputs.${output} }}`);
+    }
   });
 });

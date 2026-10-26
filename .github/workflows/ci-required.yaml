@@ -33,6 +33,15 @@ name: CI Required
 #   commit has not completed, so an early-finishing workflow can never report
 #   success for a commit whose verify workflows are still running. The run that
 #   finishes last triggers the evaluation that reports the verdict.
+# * Registration barrier: a verify workflow run GitHub has not created yet is
+#   neither unfinished nor failed, so counting runs alone would let an anchor that
+#   completes first report success too early. The evaluation therefore works out
+#   which verify workflows apply to each open pull request whose head is the
+#   commit, from its changed files and the `on.pull_request` filters of the
+#   default-branch copy of each enabled verify workflow, and reports `pending`
+#   until every one of them has a run on the commit. That run's completion
+#   triggers the next evaluation. When none applies, the status says so instead
+#   of reporting a count of passed checks. See scripts/lib/ci-required-registration.ts.
 #
 # Known limits
 # ------------
@@ -44,8 +53,14 @@ name: CI Required
 #   request could rewrite. A fork pull request gets a read-only token and
 #   cannot post statuses at all.
 # * The evaluation trusts the verify workflows that ran on the head commit. A pull
-#   request that narrows a verify workflow's `paths:` or empties its jobs changes
-#   what runs, the same way it could rewrite `Lint & Test`; review covers it.
+#   request that empties a verify workflow's jobs changes what runs, the same way
+#   it could rewrite `Lint & Test`; review covers it. One that narrows a verify
+#   workflow's `paths:` so it no longer runs leaves ci-required pending, since the
+#   barrier reads the default-branch filters; merging it needs a bypass.
+# * GitHub evaluates path filters against the first 300 changed files only, in an
+#   order the REST API does not reveal. For a pull request with more changed files
+#   the barrier cannot predict which verify workflows run and stands down; the
+#   evaluation then gates on the verify workflow runs that exist.
 #
 # The underlying ensure-actions-are-executed action treats a check that never
 # started as "not a failure", so path-filtered-out workflows do not wedge the
@@ -121,9 +136,10 @@ jobs:
     if: ${{ github.event_name == 'workflow_run' }}
     runs-on: ubuntu-latest
     permissions:
-      actions: read # list the workflow runs for the head commit, and the ensure-actions-are-executed fallback
+      actions: read # list the workflows and the workflow runs for the head commit, and the ensure-actions-are-executed fallback
       checks: read # read the verify check run states
-      contents: read # query the repository
+      contents: read # check out the default branch, whose verify workflow filters the barrier reads
+      pull-requests: read # find the pull requests whose head is the commit, and their changed files
       statuses: write # publish the ci-required commit status
     steps:
       - name: Harden Runner
@@ -146,29 +162,30 @@ jobs:
           fi
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
 
+      # The default branch, never the triggering run's head: the registration script
+      # and the verify workflow filters it reads are trusted only from there.
+      - name: Checkout default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: TimSchoenle/actions/actions/bun/setup-cached@e16a1e466faf8ec751b26289c1898143a253269f # tag=actions-bun-setup-cached-v1.1.11
+
       # A verify workflow whose summary job has not started yet has no `CI Summary:`
       # check run, which the aggregation below cannot tell apart from a workflow the
-      # path filters skipped. The workflow runs can: GitHub creates one for every
-      # triggered workflow as soon as the push is processed.
-      - name: Count unfinished verify workflow runs
-        id: unfinished
+      # path filters skipped. Its workflow run can, and a workflow that applies but
+      # has no run at all has not been registered yet.
+      - name: Check verify workflow registration
+        id: registration
         env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          SHA: ${{ steps.target.outputs.sha }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          # Matches the files scripts/lib/ci-required.ts treats as verify workflows.
-          counts="$(gh api --paginate "repos/${REPO}/actions/runs?head_sha=${SHA}&per_page=100" \
-            --jq '[.workflow_runs[]
-                    | select(.path | test("^\\.github/workflows/verify-(action|config)-[^/@]+\\.ya?ml"))
-                    | select(.status != "completed")] | length')"
-          total=0
-          for count in $counts; do
-            total=$((total + count))
-          done
-          echo "count=$total" >> "$GITHUB_OUTPUT"
+          GITHUB_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ steps.target.outputs.sha }}
+          TRIGGER_EVENT: ${{ github.event.workflow_run.event }}
+          HEAD_OWNER: ${{ github.event.workflow_run.head_repository.owner.login }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: bun run ci-required-registration
 
       - name: Aggregate verify checks
         id: verify
@@ -188,8 +205,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           SHA: ${{ steps.target.outputs.sha }}
-          TRIGGER_PATH: ${{ github.event.workflow_run.path }}
-          UNFINISHED: ${{ steps.unfinished.outputs.count }}
+          SCOPE: ${{ steps.registration.outputs.scope }}
+          APPLICABLE: ${{ steps.registration.outputs.applicable }}
+          MISSING: ${{ steps.registration.outputs.missing }}
+          MISSING_WORKFLOWS: ${{ steps.registration.outputs.missing_workflows }}
+          UNFINISHED: ${{ steps.registration.outputs.unfinished }}
+          EXPECTED: ${{ steps.registration.outputs.expected }}
           MATCHED: ${{ steps.verify.outputs.matched_checks_count }}
           FAILED: ${{ steps.verify.outputs.failed_checks_count }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -197,28 +218,43 @@ jobs:
         run: |
           set -euo pipefail
 
-          unfinished="${UNFINISHED:-0}"
+          # The registration step always writes these; an empty one is a broken
+          # step, not a zero, so it must not read as "nothing to wait for".
+          for value in "$SCOPE" "$APPLICABLE" "$MISSING" "$UNFINISHED" "$EXPECTED"; do
+            if [[ -z "$value" ]]; then
+              echo "::error::The registration step did not report its outputs."
+              exit 1
+            fi
+          done
           matched="${MATCHED:-0}"
           failed="${FAILED:-0}"
-          verify_pattern='^\.github/workflows/verify-(action|config)-[^/@]+\.ya?ml'
-          verify_trigger="false"
-          if [[ "$TRIGGER_PATH" =~ $verify_pattern ]]; then
-            verify_trigger="true"
-          fi
 
-          if [[ "$unfinished" -gt 0 ]]; then
+          if [[ "$SCOPE" == "unresolved" ]]; then
+            # A pull_request run whose pull request is not open at this head:
+            # the barrier cannot be evaluated, so fail closed. Re-run to retry.
+            state="failure"
+            description="No open pull request has head ${SHA:0:7}; re-run to retry."
+          elif [[ "$MISSING" -gt 0 ]]; then
+            # Not a verdict: the missing run's completion triggers the next evaluation.
+            echo "::notice::Applicable verify workflows without a run yet: ${MISSING_WORKFLOWS}"
+            state="pending"
+            description="Waiting for ${MISSING} applicable verify workflow(s) to start."
+          elif [[ "$UNFINISHED" -gt 0 ]]; then
             # Not a verdict: the run that finishes last triggers the evaluation that gives one.
             state="pending"
-            description="Waiting for ${unfinished} verify workflow run(s) to finish."
-          elif [[ "$verify_trigger" == "true" && "$matched" -eq 0 ]]; then
-            # A watched verify workflow just finished, so at least one matching
-            # check must exist at $SHA. Zero matches means the ref or the check
-            # patterns are misconfigured: fail loudly instead of silently green.
+            description="Waiting for ${UNFINISHED} verify workflow run(s) to finish."
+          elif [[ "$EXPECTED" -gt 0 && "$matched" -eq 0 ]]; then
+            # A verify workflow ran, so at least one matching check must exist at
+            # $SHA. Zero matches means the ref or the check patterns are
+            # misconfigured: fail loudly instead of silently green.
             state="failure"
             description="No verify checks found at ${SHA:0:7}; check ref/patterns."
           elif [[ "$failed" -gt 0 ]]; then
             state="failure"
             description="${failed} verify check(s) not in the expected state."
+          elif [[ "$SCOPE" == "pull-request" && "$APPLICABLE" -eq 0 && "$matched" -eq 0 ]]; then
+            state="success"
+            description="No verify workflow applies to this change."
           else
             state="success"
             description="All ${matched} verify check(s) passed."

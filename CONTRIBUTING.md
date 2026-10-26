@@ -100,7 +100,10 @@ executes the pull request's own copy of the workflow, so the workflow has no `pu
 the `workflow_run` evaluation, which always runs the copy on `main`, is its only publisher. Because the verify workflows are path-filtered, the watch list also holds
 anchor workflows that run on every pull request (`ANCHOR_WORKFLOW_FILES` in
 [`scripts/lib/ci-required.ts`](scripts/lib/ci-required.ts)), so a pull request that starts no verify
-workflow still gets an evaluation. The header of
+workflow still gets an evaluation. An anchor can finish before GitHub has created a verify run, so
+each evaluation also works out which verify workflows apply to the pull request's changed files and
+stays pending until every one of them has a run
+([`scripts/lib/ci-required-registration.ts`](scripts/lib/ci-required-registration.ts)). The header of
 [`ci-required.yaml`](.github/workflows/ci-required.yaml) states the full trust model and its limits.
 
 [`scripts/lib/required-checks.ts`](scripts/lib/required-checks.ts) lists the required contexts and
