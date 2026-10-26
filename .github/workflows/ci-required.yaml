@@ -57,6 +57,7 @@ on:
       - Verify Java-gradle Setup-base-environment
       - Verify Maintenance Auto-approve-pr
       - Verify Maintenance Ensure-actions-are-executed
+      - Verify Maintenance Wipe-cache
       - Verify Rust Config-contract
       - Verify Rust Coverage-codecov
       - Verify Security Codeql

@@ -138,6 +138,9 @@ component_management:
     - component_id: maintenance-ensure-actions-are-executed
       name: maintenance/ensure-actions-are-executed
       paths: ['actions/maintenance/ensure-actions-are-executed/**']
+    - component_id: maintenance-wipe-cache
+      name: maintenance/wipe-cache
+      paths: ['actions/maintenance/wipe-cache/**']
     - component_id: rust-config-contract
       name: rust/config-contract
       paths: ['actions/rust/config-contract/**']

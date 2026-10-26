@@ -411,6 +411,23 @@
         "vitest": "5.0.5",
       },
     },
+    "actions/maintenance/wipe-cache": {
+      "name": "actions-maintenance-wipe-cache",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "@actions/github": "9.1.1",
+        "actions-util": "workspace:*",
+      },
+      "devDependencies": {
+        "@fast-check/vitest": "0.5.0",
+        "@types/node": "26.6.5",
+        "@typescript/native": "npm:typescript@7.0.2",
+        "actions-e2e": "workspace:*",
+        "fast-check": "4.10.2",
+        "vitest": "5.0.5",
+      },
+    },
     "actions/rust/config-contract": {
       "name": "actions-rust-config-contract",
       "version": "1.0.0",
@@ -850,6 +867,8 @@
     "actions-maintenance-auto-approve-pr": ["actions-maintenance-auto-approve-pr@workspace:actions/maintenance/auto-approve-pr"],
 
     "actions-maintenance-ensure-actions-are-executed": ["actions-maintenance-ensure-actions-are-executed@workspace:actions/maintenance/ensure-actions-are-executed"],
+
+    "actions-maintenance-wipe-cache": ["actions-maintenance-wipe-cache@workspace:actions/maintenance/wipe-cache"],
 
     "actions-rust-config-contract": ["actions-rust-config-contract@workspace:actions/rust/config-contract"],
 
