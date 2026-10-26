@@ -24,7 +24,7 @@ image:
   # -- The container image tag, pinned by digest (`vX.Y.Z@sha256:...`). The digest pins the
   # pull, while the tag stays on as the readable version marker. Defaults to the chart's
   # `appVersion` when empty.
-  tag: v0.21.5@sha256:b219ff217a3ef8453ca059871fe24ab7f3ece8d185c1027d2e9e701d52e90ddc
+  tag: v0.21.7@sha256:de71313c6c244ef16f5927672aa12c4d5534eb61abca213a60618a7384ac3ddc
 
   # @schema
   # enum: ["", Always, IfNotPresent, Never]
