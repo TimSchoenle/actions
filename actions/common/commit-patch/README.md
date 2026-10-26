@@ -32,7 +32,7 @@ jobs:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           permission-contents: write
-      - uses: <owner>/actions/actions/common/commit-patch@<ref>
+      - uses: TimSchoenle/actions/actions/common/commit-patch@<sha> # tag=actions-common-commit-patch-v1.1.0
         with:
           token: ${{ steps.token.outputs.token }}
           artifact_name: format-patch
