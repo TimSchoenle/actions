@@ -10,6 +10,20 @@ import { parse } from 'yaml';
  */
 export const VERIFY_WORKFLOW_PATTERN = /^verify-(?:action|config)-.+\.ya?ml$/;
 
+/**
+ * Workflows ci-required watches in addition to the verify workflows, by file name under
+ * `.github/workflows/`.
+ *
+ * The verify workflows are path-filtered, so a pull request that touches none of their paths starts
+ * none of them, and no `workflow_run` event would ever evaluate its head commit. ci-required only
+ * reports `success` from a `workflow_run` evaluation (the `pull_request` run executes the pull
+ * request's own copy of the workflow and is not trusted to), so such a pull request would wait on the
+ * required context forever. An anchor runs on every pull request without a filter, so its completion
+ * guarantees at least one trusted evaluation per head commit. The contract test holds each anchor to
+ * that: an unconditional `on.pull_request` trigger.
+ */
+export const ANCHOR_WORKFLOW_FILES: readonly string[] = ['scripts-ci.yml'];
+
 /** Prefix every verify workflow's aggregate summary check must use. */
 export const SUMMARY_CHECK_PREFIX = 'CI Summary:';
 

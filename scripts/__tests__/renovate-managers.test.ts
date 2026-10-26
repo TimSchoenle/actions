@@ -256,3 +256,251 @@ describe('Renovate coverage of container images in actions', () => {
     }
   });
 });
+
+/**
+ * Contract between release binaries a workflow downloads and the manager that updates them.
+ *
+ * A workflow that installs a tool from a GitHub release pins the tag and the asset's SHA-256 as a
+ * pair of step environment values. Renovate has to move both in one commit: a bumped version with the
+ * old checksum fails the step's `sha256sum --check`, and a checksum nobody updates freezes the tool at
+ * one release. Only a manager that captures the two together can do that, so every checksum pin in
+ * `.github/workflows/` must be captured, with its version, by exactly one.
+ */
+describe('Renovate coverage of checksum-pinned release downloads in workflows', () => {
+  const WORKFLOWS_DIR = path.join(ROOT_DIR, '.github', 'workflows');
+  /**
+   * A `<NAME>_SHA256: <digest>` environment value in any YAML quoting: single, double or none.
+   * Discovery is deliberately looser than the manager, so a pin written in a style the manager cannot
+   * read is still found and fails the capture assertion instead of being skipped.
+   */
+  const CHECKSUM_PIN = /^[ \t]*([A-Z0-9_]+)_SHA256:[ \t]*["']?([a-f0-9]{64})["']?[ \t]*$/gm;
+
+  interface ChecksumPin {
+    name: string;
+    digest: string;
+    /** Offset in the file of the `<NAME>_SHA256` line, which identifies the pin. */
+    offset: number;
+  }
+
+  interface Capture {
+    datasource?: string;
+    depName?: string;
+    currentValue?: string;
+    currentDigest?: string;
+    /** `<NAME>` of the `<NAME>_VERSION` line inside the match. */
+    versionName?: string;
+    /** `<NAME>` of the `<NAME>_SHA256` line inside the match. */
+    checksumName?: string;
+    /** Range of the match in the file, `[start, end)`. */
+    start: number;
+    end: number;
+  }
+
+  function workflowFiles(): string[] {
+    return fs.readdirSync(WORKFLOWS_DIR).filter((entry) => /\.ya?ml$/.test(entry));
+  }
+
+  function managersFor(file: string): CustomManager[] {
+    return customManagers().filter((manager) =>
+      manager.managerFilePatterns.some(
+        (pattern) => pattern.startsWith('/') && pattern.endsWith('/') && new RegExp(pattern.slice(1, -1)).test(file),
+      ),
+    );
+  }
+
+  function checksumPins(content: string): ChecksumPin[] {
+    return [...content.matchAll(CHECKSUM_PIN)].map((match) => ({
+      name: match[1],
+      digest: match[2],
+      offset: match.index,
+    }));
+  }
+
+  /**
+   * What every manager claiming `file` extracts for this pin.
+   *
+   * A capture belongs to the pin whose checksum line it spans, not to every pin with the same digest:
+   * two jobs that download the same archive pin the same digest, and each must be captured once.
+   */
+  function capturesOf(file: string, content: string, pin: ChecksumPin): Capture[] {
+    return managersFor(file).flatMap((manager) =>
+      manager.matchStrings.flatMap((matchString) =>
+        [...content.matchAll(new RegExp(matchString, 'g'))]
+          .map((match): Capture => ({
+            ...(match.groups as Capture | undefined),
+            versionName: /([A-Z0-9_]+)_VERSION:/.exec(match[0])?.[1],
+            checksumName: /([A-Z0-9_]+)_SHA256:/.exec(match[0])?.[1],
+            start: match.index,
+            end: match.index + match[0].length,
+          }))
+          .filter((capture) => capture.start <= pin.offset && pin.offset < capture.end),
+      ),
+    );
+  }
+
+  /**
+   * Every way a checksum pin in `content` falls short of the contract, as messages.
+   *
+   * The manager's regex cannot require the two names to match: Renovate evaluates it with RE2, which
+   * has no backreferences. So the pairing is checked here. A version line of one tool above the
+   * checksum line of another would otherwise be captured as one dependency, and Renovate would
+   * write the second tool's checksum next to the first tool's version.
+   */
+  function pinProblems(file: string, content: string): string[] {
+    const problems: string[] = [];
+
+    for (const pin of checksumPins(content)) {
+      const { name } = pin;
+      const captures = capturesOf(file, content, pin);
+      if (captures.length !== 1) {
+        problems.push(`${file} pins ${name}_SHA256, which ${captures.length} customManager(s) capture`);
+        continue;
+      }
+
+      const [capture] = captures;
+      if (capture.datasource !== 'github-release-attachments') {
+        problems.push(`${name}: datasource is ${capture.datasource}`);
+      }
+      if (!/^[\w.-]+\/[\w.-]+$/.test(capture.depName ?? '')) {
+        problems.push(`${name}: depName ${capture.depName} is not owner/repo`);
+      }
+      if (!/^[^"'\s]+$/.test(capture.currentValue ?? '')) {
+        problems.push(`${name}: no version captured`);
+      }
+      if (capture.versionName !== name || capture.checksumName !== name) {
+        problems.push(`${name}_SHA256 is paired with ${capture.versionName}_VERSION; both must name the same tool`);
+      }
+    }
+
+    return problems;
+  }
+
+  const DIGEST = 'a'.repeat(64);
+  const fixture = (version: string, digest: string): string =>
+    [
+      '      - name: Download tool',
+      '        env:',
+      '          # renovate: datasource=github-release-attachments depName=example/tool',
+      `          TOOL_VERSION: ${version}`,
+      `          TOOL_SHA256: ${digest}`,
+      '        run: exit 0',
+      '',
+    ].join('\n');
+  const FIXTURE_FILE = '.github/workflows/fixture.yml';
+
+  it('finds the actionlint pin, so the scan below is not vacuous', () => {
+    const content = fs.readFileSync(path.join(WORKFLOWS_DIR, 'security.yml'), 'utf8');
+
+    expect(checksumPins(content).map(({ name }) => name)).toContain('ACTIONLINT');
+  });
+
+  it('captures every checksum pin, with its version, by exactly one manager that reads its file', () => {
+    for (const entry of workflowFiles()) {
+      expect(
+        pinProblems(`.github/workflows/${entry}`, fs.readFileSync(path.join(WORKFLOWS_DIR, entry), 'utf8')),
+      ).toEqual([]);
+    }
+  });
+
+  it.each([
+    ['single-quoted', `'v1.2.3'`, `'${DIGEST}'`],
+    ['double-quoted', `"v1.2.3"`, `"${DIGEST}"`],
+    ['plain', 'v1.2.3', DIGEST],
+  ])('discovers and captures a %s pin with its version', (_style, version, digest) => {
+    const content = fixture(version, digest);
+
+    const pins = checksumPins(content);
+
+    expect(pins).toMatchObject([{ name: 'TOOL', digest: DIGEST }]);
+    expect(pinProblems(FIXTURE_FILE, content)).toEqual([]);
+    expect(capturesOf(FIXTURE_FILE, content, pins[0])[0]?.currentValue).toBe('v1.2.3');
+  });
+
+  it('captures each of two jobs that pin the same archive once', () => {
+    const content = fixture('v1.2.3', DIGEST) + fixture('v1.2.3', DIGEST);
+    const pins = checksumPins(content);
+
+    expect(pins).toHaveLength(2);
+    expect(pins[0].offset).toBeLessThan(pins[1].offset);
+    for (const pin of pins) {
+      expect(capturesOf(FIXTURE_FILE, content, pin)).toHaveLength(1);
+    }
+    expect(pinProblems(FIXTURE_FILE, content)).toEqual([]);
+  });
+
+  it('still rejects a mismatched pair next to a valid pin of the same digest', () => {
+    const content = fixture('v1.2.3', DIGEST) + fixture('v1.2.3', DIGEST).replace('TOOL_SHA256', 'OTHER_SHA256');
+
+    expect(pinProblems(FIXTURE_FILE, content)).toEqual([
+      'OTHER_SHA256 is paired with TOOL_VERSION; both must name the same tool',
+    ]);
+  });
+
+  it('rejects a version and a checksum that name different tools', () => {
+    const content = fixture('v1.2.3', `'${DIGEST}'`).replace('TOOL_SHA256', 'OTHER_SHA256');
+
+    expect(pinProblems(FIXTURE_FILE, content)).toEqual([
+      'OTHER_SHA256 is paired with TOOL_VERSION; both must name the same tool',
+    ]);
+  });
+
+  // The failure mode the loose discovery exists for: a pin the manager does not read must fail here.
+  it('discovers a pin without a version line, which no manager captures', () => {
+    const content = fixture('v1.2.3', `"${DIGEST}"`).replace(/^.*TOOL_VERSION.*\n/m, '');
+
+    const pins = checksumPins(content);
+
+    expect(pins).toHaveLength(1);
+    expect(capturesOf(FIXTURE_FILE, content, pins[0])).toEqual([]);
+    expect(pinProblems(FIXTURE_FILE, content)).toEqual([
+      '.github/workflows/fixture.yml pins TOOL_SHA256, which 0 customManager(s) capture',
+    ]);
+  });
+
+  /**
+   * Whether a workflow fetches a script and runs it unverified. Backslash continuations are joined
+   * first, because `curl … \` on one line and `| bash` on the next is the same pipeline to the shell.
+   * A `sudo` in front of the shell, with or without flags such as `-E`, changes nothing about that.
+   * Each `sudo` flag starts with `-` and the shell name does not, so the optional prefix cannot
+   * backtrack.
+   */
+  function pipesDownloadIntoShell(content: string): boolean {
+    const joined = content.replaceAll(/\\\r?\n[ \t]*/g, ' ');
+    const shell = String.raw`(?:sudo(?:[ \t]+-[A-Za-z]+)*[ \t]+)?(?:ba|z)?sh`;
+    return new RegExp(String.raw`(?:curl|wget)[^\n|]*\|[ \t]*${shell}\b|${shell}[ \t]+<\([ \t]*(?:curl|wget)`).test(
+      joined,
+    );
+  }
+
+  // A checksum pin is only worth something if nothing else in the workflows fetches code and runs it
+  // unverified. Piping a downloaded script into a shell is the shape the actionlint pin replaced.
+  it('lets no workflow pipe a downloaded script into a shell', () => {
+    for (const entry of workflowFiles()) {
+      const content = fs.readFileSync(path.join(WORKFLOWS_DIR, entry), 'utf8');
+
+      expect(pipesDownloadIntoShell(content), `.github/workflows/${entry} pipes a download into a shell`).toBe(false);
+    }
+  });
+
+  it.each([
+    ['a single-line pipe', 'curl -fsSL https://example.invalid/install.sh | bash'],
+    ['process substitution', 'bash <(curl https://example.invalid/install.sh)'],
+    ['a pipe after a line continuation', 'curl -fsSL \\\n  https://example.invalid/install.sh \\\n  | bash'],
+    ['wget into sh', 'wget -qO- https://example.invalid/install.sh | sh'],
+    ['a pipe into sudo bash', 'curl -fsSL https://example.invalid/install.sh | sudo bash'],
+    ['a pipe into sudo -E bash', 'curl -fsSL https://example.invalid/install.sh | sudo -E bash -s -- --yes'],
+    ['process substitution under sudo', 'sudo -E bash <(curl -fsSL https://example.invalid/install.sh)'],
+  ])('flags %s', (_shape, run) => {
+    expect(pipesDownloadIntoShell(run)).toBe(true);
+  });
+
+  it('accepts a download that is checked before it is used', () => {
+    const run = [
+      'curl -fsSL --retry 3 -o "${dir}/${archive}" \\',
+      '  "https://example.invalid/${archive}"',
+      'echo "${SHA256}  ${dir}/${archive}" | sha256sum --check --strict -',
+    ].join('\n');
+
+    expect(pipesDownloadIntoShell(run)).toBe(false);
+  });
+});

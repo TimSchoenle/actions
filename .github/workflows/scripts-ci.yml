@@ -66,17 +66,19 @@ jobs:
       - name: Test
         run: bun run test
 
-  # Kept apart from `lint-and-test`, so a Codecov outage fails this job alone and the required
-  # `Lint & Test` check never holds `id-token: write`. The upload authenticates with this job's OIDC
-  # token, so the job needs no environment and no secret. `.github/codecov.yml` decides what the
+  # Coverage is measured and uploaded in two jobs, so the OIDC token Codecov authenticates with never
+  # shares a job with pull request code. `coverage-tests` runs the suite, which is code the pull request
+  # controls, with nothing more than a read-only token, and hands the two report files over as an
+  # artifact. `coverage` holds `id-token: write`, executes no repository code, and only uploads those
+  # files. Both are kept apart from `lint-and-test`, so a Codecov outage fails the upload alone and the
+  # required `Lint & Test` check never holds `id-token: write`. `.github/codecov.yml` decides what the
   # Codecov statuses check.
-  coverage:
-    name: Coverage
+  coverage-tests:
+    name: Coverage Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read # Required to checkout the code
-      id-token: write # Required to authenticate the Codecov upload with OIDC
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
@@ -95,29 +97,83 @@ jobs:
           bun-version-file: '.bun-version'
           cache-mode: none
 
-      # Writes coverage/lcov.info and coverage/junit.xml, the two files uploaded below.
+      # Writes coverage/lcov.info and coverage/junit.xml, the two files the coverage job uploads.
+      # Vitest writes lcov.info only when the suite passes, junit.xml either way.
       - name: Test
         run: bun run test
 
+      # Runs after a failed test step too: the failing cases are what Test Analytics records.
+      - name: Upload coverage reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-reports
+          path: |
+            coverage/lcov.info
+            coverage/junit.xml
+          if-no-files-found: error
+          retention-days: 1
+
+  coverage:
+    name: Coverage
+    needs: coverage-tests
+    # Runs when the tests failed too, so the failing cases still reach Test Analytics.
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # Required to checkout the code
+      id-token: write # Required to authenticate the Codecov upload with OIDC
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: audit
+
+      # The Codecov CLI lists the repository's files to map report paths onto them, so the tree has
+      # to be present. It is only read: no step below runs anything from it, and the uploads pass
+      # `plugins: noop`, which stops the CLI from running gcov, xcode or coverage.py over it.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Download coverage reports
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: coverage-reports
+          path: coverage
+
       - name: Upload coverage to Codecov
+        if: ${{ needs.coverage-tests.result == 'success' }}
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           files: coverage/lcov.info
           disable_search: true
           disable_telem: true
+          plugins: noop
           flags: typescript
           use_oidc: true
           fail_ci_if_error: true
 
-      # Runs after a failed test step too: the failing cases are what Test Analytics records.
       - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: coverage/junit.xml
           disable_search: true
           disable_telem: true
+          plugins: noop
           flags: typescript
           use_oidc: true
           fail_ci_if_error: true
+
+      # Keeps the Coverage check red whenever the suite failed, as it was when one job did both.
+      - name: Fail if the tests failed
+        if: ${{ needs.coverage-tests.result != 'success' }}
+        env:
+          TESTS_RESULT: ${{ needs.coverage-tests.result }}
+        run: |
+          set -euo pipefail
+          echo "::error::Coverage Tests finished as '${TESTS_RESULT}', so no coverage was uploaded."
+          exit 1

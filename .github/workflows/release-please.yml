@@ -143,7 +143,7 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
     permissions:
-      contents: write # to push release tags and commits
+      contents: read # to fetch code; tags, commits and releases are written with the bot token
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
@@ -163,12 +163,15 @@ jobs:
           permission-workflows: write
           permission-metadata: read
 
+      # The checkout only reads the package tree and its changelog. Every write in this job (blobs,
+      # tree, commit, tags, release) goes through the GitHub API with the bot token passed to that
+      # step explicitly, and nothing here runs `git push`, so the token is neither needed for the
+      # fetch nor left behind in .git/config for later steps to read.
       - name: Checkout Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          token: ${{ steps.generate_token.outputs.token }}
           fetch-depth: 0
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Configure Git Identity
         uses: TimSchoenle/actions/actions/common/setup-app-git-identity@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-setup-app-git-identity-v1.5.9

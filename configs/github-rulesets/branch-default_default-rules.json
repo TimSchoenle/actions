@@ -1,7 +1,7 @@
 {
-  "id": 11916311,
+  "id": 11569096,
   "name": "Default Branch: Default Protection Rules",
-  "description": "Enforces standard protection rules on the default branch: requires PRs with 1 approval (squash only), signed commits, CodeQL scanning, and passing status checks.",
+  "description": "Enforces standard protection rules on the default branch: requires squash-merged PRs with 1 approval that a new push dismisses, plus an extra approval for unattributed changes, signed commits, CodeQL and zizmor code scanning, and the required status checks listed in scripts/lib/required-checks.ts.",
   "target": "branch",
   "source_type": "Repository",
   "source": "TimSchoenle/actions",
@@ -22,7 +22,12 @@
         "code_scanning_tools": [
           {
             "tool": "CodeQL",
-            "security_alerts_threshold": "high_or_higher",
+            "security_alerts_threshold": "medium_or_higher",
+            "alerts_threshold": "errors"
+          },
+          {
+            "tool": "zizmor",
+            "security_alerts_threshold": "all",
             "alerts_threshold": "errors"
           }
         ]
@@ -43,17 +48,8 @@
         "require_code_owner_review": false,
         "require_last_push_approval": false,
         "required_review_thread_resolution": false,
+        "require_extra_approval_for_unattributed_changes": true,
         "allowed_merge_methods": ["squash"]
-      }
-    },
-    {
-      "type": "copilot_code_review_analysis_tools",
-      "parameters": {
-        "tools": [
-          {
-            "name": "CodeQL"
-          }
-        ]
       }
     },
     {
@@ -66,8 +62,28 @@
         "do_not_enforce_on_create": false,
         "required_status_checks": [
           {
-            "context": "zizmor",
-            "integration_id": 57789
+            "context": "Update README",
+            "integration_id": 15368
+          },
+          {
+            "context": "Build Actions and Commit",
+            "integration_id": 15368
+          },
+          {
+            "context": "Action Lint",
+            "integration_id": 15368
+          },
+          {
+            "context": "Lint & Test",
+            "integration_id": 15368
+          },
+          {
+            "context": "Auto Format Gate",
+            "integration_id": 15368
+          },
+          {
+            "context": "ci-required",
+            "integration_id": 15368
           }
         ]
       }

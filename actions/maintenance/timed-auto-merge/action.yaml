@@ -6,7 +6,7 @@ inputs:
     description: 'GitHub token with contents: write and pull-requests: write. Must not belong to the author of the pull requests, since GitHub refuses a review from the author.'
     required: true
   trusted_authors:
-    description: 'Comma-separated list of GitHub user database IDs (e.g. "29139614, 123456"). Every author of every commit must be in this list.'
+    description: 'Comma-separated list of GitHub user database IDs (e.g. "29139614, 123456"). Every author of every commit must be in this list, and every commit must carry a valid signature. A commit signed with a personal key must also have its committer and key owner in this list; a commit GitHub signed itself skips those two checks.'
     required: true
   branch_pattern:
     description: 'Pattern the head branch must match. Read according to pattern_mode.'

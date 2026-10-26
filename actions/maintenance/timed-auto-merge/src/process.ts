@@ -132,15 +132,20 @@ async function processOne(
     return early;
   }
 
-  const { commits } = await api.fetchCommits(pullRequest.url);
-  const lastOid = commits.at(-1)?.oid;
+  const { commits, headOid } = await api.fetchCommits(pullRequest.url);
 
-  if (lastOid !== pullRequest.headSha) {
+  // Listing and fetching the commits are two reads. A push between them would have the checks above
+  // judge one head and the commit check another; the next run decides the new head.
+  if (headOid !== pullRequest.headSha) {
     return skipped(
       pullRequest,
       'head-moved',
-      `commit list ends at ${lastOid ?? 'nothing'}, expected the listed head ${pullRequest.headSha}`,
+      `commits were read at ${headOid}, expected the listed head ${pullRequest.headSha}`,
     );
+  }
+
+  if (commits.length === 0) {
+    return skipped(pullRequest, 'commits-unverified', 'the pull request has no commits');
   }
 
   const verification = verifyCommits(commits, request.trustedAuthorIds);

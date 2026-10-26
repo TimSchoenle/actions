@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
 
 import {
   collectRunBlocks,
@@ -142,5 +143,121 @@ describe('strict shell contract rules', () => {
     const workflow = `name: t\njobs:\n  j:\n    defaults:\n      run:\n        shell: python\n    steps:\n      - run: |\n          a\n          b\n`;
 
     expect(collectRunBlocks(workflow)).toEqual([]);
+  });
+});
+
+// A job that can mint an OIDC token can authenticate as this repository to whatever trusts that token
+// (Codecov today). On a pull request, any repository code a job runs is code the pull request wrote,
+// so such a job must only run third-party actions pinned by the workflow and shell steps that invoke
+// no project tooling. Test suites and builds belong in a job without the permission, which hands its
+// output over as an artifact.
+describe('OIDC isolation contract', () => {
+  type Permissions = Record<string, string> | string | undefined;
+
+  interface Step {
+    name?: string;
+    run?: string;
+    uses?: string;
+  }
+
+  interface Job {
+    permissions?: Permissions;
+    steps?: Step[];
+  }
+
+  /**
+   * Whether a job's token can mint an OIDC token. A job's own `permissions` replace the workflow's
+   * entirely, so the workflow-level block only applies to a job that has none. `write-all` grants
+   * `id-token: write` with everything else; `read-all` and an absent block (the repository default)
+   * never include it.
+   */
+  function grantsIdToken(jobPermissions: Permissions, workflowPermissions: Permissions): boolean {
+    const effective = jobPermissions ?? workflowPermissions;
+    if (typeof effective === 'string') {
+      return effective === 'write-all';
+    }
+    return effective?.['id-token'] === 'write';
+  }
+
+  /**
+   * The only shell lines an OIDC job may run: strict mode, an exit, and an `echo` of literal text with
+   * `${NAME}` expansions. An allow-list rather than a list of forbidden tools, because there is no
+   * complete list of ways to run code from a checkout (`source`, `.`, an interpreter, a script path,
+   * a command substitution inside an otherwise harmless line). Each alternative of the echo pattern
+   * starts on a different character, so it cannot backtrack.
+   */
+  const APPROVED_RUN_LINES = [
+    /^set -euo pipefail$/,
+    /^exit \d+$/,
+    /^echo "(?:[^"$`\\]|\$\{[A-Za-z_][A-Za-z0-9_]*\})*"$/,
+  ];
+
+  function isApprovedRunStep(run: string): boolean {
+    return run
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line !== '' && !line.startsWith('#'))
+      .every((line) => APPROVED_RUN_LINES.some((pattern) => pattern.test(line)));
+  }
+
+  function oidcJobs(file: string): [string, Job][] {
+    const doc = parse(readWorkflow(file)) as { permissions?: Permissions; jobs?: Record<string, Job> } | null;
+    return Object.entries(doc?.jobs ?? {}).filter(([, job]) => grantsIdToken(job.permissions, doc?.permissions));
+  }
+
+  it('finds the Codecov upload job, so the scan below is not vacuous', () => {
+    expect(oidcJobs('scripts-ci.yml').map(([id]) => id)).toEqual(['coverage']);
+  });
+
+  describe.each(workflowFiles)('%s', (file) => {
+    it('runs no repository code in a job that holds id-token: write', () => {
+      for (const [id, job] of oidcJobs(file)) {
+        for (const [index, step] of (job.steps ?? []).entries()) {
+          const where = `jobs.${id}.steps[${index}] (${step.name ?? 'unnamed step'})`;
+
+          expect(step.uses?.startsWith('./') ?? false, `${where} runs a local action`).toBe(false);
+          expect(step.uses ?? '', `${where} installs a toolchain`).not.toMatch(/setup-(?:bun|node|python|java)/);
+          expect(isApprovedRunStep(step.run ?? ''), `${where} runs a shell line outside the allow-list`).toBe(true);
+        }
+      }
+    });
+  });
+
+  describe('effective permissions', () => {
+    it.each([
+      ['a job-level grant', { 'id-token': 'write' }, undefined, true],
+      ['a workflow-level grant the job inherits', undefined, { 'id-token': 'write' }, true],
+      ['write-all on the job', 'write-all', undefined, true],
+      ['write-all on the workflow, inherited', undefined, 'write-all', true],
+      ['a job block that replaces a workflow grant', { contents: 'read' }, { 'id-token': 'write' }, false],
+      ['an empty job block that replaces write-all', {}, 'write-all', false],
+      ['read-all', 'read-all', undefined, false],
+      ['the repository default', undefined, undefined, false],
+    ] as const)('treats %s correctly', (_case, job, workflow, expected) => {
+      expect(grantsIdToken(job, workflow)).toBe(expected);
+    });
+  });
+
+  describe('run step allow-list', () => {
+    it.each([
+      'set -euo pipefail\necho "::error::Coverage Tests finished as \'${TESTS_RESULT}\'."\nexit 1',
+      '# comment only\n\nexit 0',
+    ])('accepts %j', (run) => {
+      expect(isApprovedRunStep(run)).toBe(true);
+    });
+
+    it.each([
+      'set -euo pipefail\nbun run test',
+      './scripts/upload.sh',
+      'source scripts/upload.sh',
+      '. scripts/upload.sh',
+      'bash scripts/upload.sh',
+      'echo "$(./scripts/upload.sh)"',
+      'echo "`./scripts/upload.sh`"',
+      'echo "ok" && ./scripts/upload.sh',
+      'echo "$GITHUB_TOKEN"',
+    ])('rejects %j', (run) => {
+      expect(isApprovedRunStep(run)).toBe(false);
+    });
   });
 });

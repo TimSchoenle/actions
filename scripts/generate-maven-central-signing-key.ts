@@ -7,7 +7,7 @@ import { input, select } from '@inquirer/prompts';
 
 type Algorithm = 'ed25519' | 'rsa4096';
 
-type CliOptions = {
+export type CliOptions = {
   algo: Algorithm;
   email?: string;
   expire: string;
@@ -17,6 +17,7 @@ type CliOptions = {
   nonInteractive: boolean;
   outputDir?: string;
   passphraseBytes: number;
+  printSecrets: boolean;
   publishTimeoutMs: number;
   skipPublish: boolean;
 };
@@ -31,7 +32,7 @@ type PublicationTarget = {
   id: PublicationTargetId;
 };
 
-type PublicationResult = {
+export type PublicationResult = {
   details: string;
   endpoint: string;
   httpStatus?: number;
@@ -41,7 +42,7 @@ type PublicationResult = {
   verificationRequested: boolean;
 };
 
-type SigningKeyMaterial = {
+export type SigningKeyMaterial = {
   createdAt: string;
   email: string;
   fingerprint: string;
@@ -121,9 +122,13 @@ Options:
   --publish-timeout-ms <n>    Upload timeout per keyserver request in ms (default: 15000)
   --skip-publish              Skip publishing to common public keyservers
                               (keys.openpgp.org, pgp.mit.edu, keyserver.ubuntu.com)
-  --output-dir <path>         Write armored keys + metadata to secure files
+  --output-dir <path>         Write armored keys + metadata to secure files. The passphrase,
+                              private key and revocation certificate are then kept out of
+                              stdout unless --print-secrets is also given
+  --print-secrets             Print the secrets to stdout even with --output-dir
   --passphrase-bytes <value>  Random bytes for passphrase entropy (default: 256)
-  --json                      Output JSON instead of human-readable sections
+  --json                      Output JSON instead of human-readable sections, with the same
+                              secret handling as the human-readable output
   --non-interactive           Do not prompt for missing inputs
   -h, --help                  Show this help
 
@@ -157,7 +162,7 @@ function parsePublishTimeout(value: string): number {
   return parsed;
 }
 
-function parseArgs(argv: string[]): CliOptions {
+export function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
     algo: DEFAULTS.algo,
     expire: DEFAULTS.expire,
@@ -165,6 +170,7 @@ function parseArgs(argv: string[]): CliOptions {
     json: false,
     nonInteractive: false,
     passphraseBytes: DEFAULTS.passphraseBytes,
+    printSecrets: false,
     publishTimeoutMs: DEFAULTS.publishTimeoutMs,
     skipPublish: false,
   };
@@ -202,6 +208,9 @@ function parseArgs(argv: string[]): CliOptions {
     },
     '--non-interactive': () => {
       options.nonInteractive = true;
+    },
+    '--print-secrets': () => {
+      options.printSecrets = true;
     },
     '--skip-publish': () => {
       options.skipPublish = true;
@@ -678,7 +687,64 @@ async function publishToCommonKeyservers(
   return await Promise.all(publishOperations);
 }
 
-function renderHumanReadableResult(material: SigningKeyMaterial, outputDir?: string): void {
+/**
+ * Signing key material without the fields that grant use of the key (passphrase, private key) or let
+ * anyone revoke it (revocation certificate), safe to print.
+ */
+export type PublicSigningKeyMaterial = Omit<SigningKeyMaterial, 'passphrase' | 'privateKey' | 'revocationCertificate'>;
+
+/**
+ * Whether the secrets may be written to stdout.
+ *
+ * Without an output directory, stdout is the only copy the caller gets, so the secrets have to be
+ * printed or the key is unusable. With one, they are already on disk in owner-only files, and
+ * printing them as well only adds a copy in the terminal scrollback, a shell log or a CI log that
+ * nobody intended to keep. `--print-secrets` restores the old behaviour explicitly.
+ */
+export function shouldPrintSecrets(options: Pick<CliOptions, 'outputDir' | 'printSecrets'>): boolean {
+  return options.printSecrets || !options.outputDir;
+}
+
+/**
+ * Copies the fields that are safe to show on stdout. Built as an allow-list rather than by deleting
+ * the secrets, so a secret field added to {@link SigningKeyMaterial} later stays redacted by default.
+ */
+export function redactSecrets(material: SigningKeyMaterial): PublicSigningKeyMaterial {
+  return {
+    createdAt: material.createdAt,
+    email: material.email,
+    fingerprint: material.fingerprint,
+    keyId: material.keyId,
+    name: material.name,
+    publicationResults: material.publicationResults,
+    publicKey: material.publicKey,
+    uid: material.uid,
+  };
+}
+
+/** The JSON document `--json` prints: the full material, or the redacted one plus where the secrets went. */
+export function formatJsonResult(
+  material: SigningKeyMaterial,
+  outputDir: string | undefined,
+  printSecrets: boolean,
+): string {
+  if (printSecrets) {
+    return JSON.stringify(material, undefined, 2);
+  }
+
+  return JSON.stringify(
+    { ...redactSecrets(material), secretsRedacted: true, secretsWrittenTo: outputDir ? path.resolve(outputDir) : null },
+    undefined,
+    2,
+  );
+}
+
+/** The human-readable report, with the secrets in it only when `printSecrets` is true. */
+export function formatHumanReadableResult(
+  material: SigningKeyMaterial,
+  outputDir: string | undefined,
+  printSecrets: boolean,
+): string {
   const publicationSummary =
     material.publicationResults.length === 0
       ? ['PUBLICATION:  skipped']
@@ -709,11 +775,22 @@ function renderHumanReadableResult(material: SigningKeyMaterial, outputDir?: str
     outputDir ? `OUTPUT DIR:  ${outputDir}` : 'OUTPUT DIR:  (none)',
     ...publicationSummary,
     SECTION_DIVIDER,
-    'PASSPHRASE:',
-    material.passphrase,
-    SECTION_DIVIDER,
     'PUBLIC KEY (ASCII-ARMORED):',
     material.publicKey.trimEnd(),
+    SECTION_DIVIDER,
+    ...(printSecrets ? secretSections(material) : redactedSecretSections(outputDir)),
+    'Store passphrase and private key in a secret manager immediately.',
+    'Do not commit these values to source control or CI logs.',
+    SECTION_DIVIDER,
+  ];
+
+  return sections.join('\n');
+}
+
+function secretSections(material: SigningKeyMaterial): string[] {
+  return [
+    'PASSPHRASE:',
+    material.passphrase,
     SECTION_DIVIDER,
     'PRIVATE KEY (ASCII-ARMORED):',
     material.privateKey.trimEnd(),
@@ -721,12 +798,16 @@ function renderHumanReadableResult(material: SigningKeyMaterial, outputDir?: str
     ...(material.revocationCertificate
       ? ['REVOCATION CERTIFICATE (ASCII-ARMORED):', material.revocationCertificate.trimEnd(), SECTION_DIVIDER]
       : []),
-    'Store passphrase and private key in a secret manager immediately.',
-    'Do not commit these values to source control or CI logs.',
+  ];
+}
+
+function redactedSecretSections(outputDir: string | undefined): string[] {
+  const location = outputDir ? path.resolve(outputDir) : '(none)';
+  return [
+    `SECRETS:     not printed. The passphrase, private key and revocation certificate are in`,
+    `             ${location} (credentials.json holds all three). Pass --print-secrets to print them.`,
     SECTION_DIVIDER,
   ];
-
-  console.log(sections.join('\n'));
 }
 
 async function saveMaterialToDisk(outputDir: string, material: SigningKeyMaterial): Promise<void> {
@@ -809,10 +890,11 @@ async function generateSigningMaterial(options: CliOptions): Promise<SigningKeyM
   };
 }
 
-async function main() {
+/** Runs the generator for the given arguments, reporting failure through `process.exitCode`. */
+export async function main(argv: string[] = process.argv.slice(2)): Promise<void> {
   let options: CliOptions;
   try {
-    options = parseArgs(process.argv.slice(2));
+    options = parseArgs(argv);
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     printHelp();
@@ -840,12 +922,14 @@ async function main() {
       await saveMaterialToDisk(options.outputDir, generated);
     }
 
+    const printSecrets = shouldPrintSecrets(options);
+
     if (options.json) {
-      console.log(JSON.stringify(generated, undefined, 2));
+      console.log(formatJsonResult(generated, options.outputDir, printSecrets));
       return;
     }
 
-    renderHumanReadableResult(generated, options.outputDir);
+    console.log(formatHumanReadableResult(generated, options.outputDir, printSecrets));
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;

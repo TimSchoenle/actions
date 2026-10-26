@@ -152,6 +152,65 @@ describe('required status check rules', () => {
     expect(problemsFor(content, { kind: 'status' })).toEqual([]);
   });
 
+  // ci-required's shape: the status is POSTed to the pull request head by the default-branch copy.
+  it('accepts a status context posted from a workflow_run trigger alone', () => {
+    const content =
+      'on:\n  workflow_run:\n    workflows: [\'Scripts CI\']\njobs:\n  gate:\n    steps:\n      - run: gh api -f context="Gate"\n';
+
+    expect(problemsFor(content, { kind: 'status' })).toEqual([]);
+  });
+
+  // The scalar and sequence forms of `on:` carry no filters, so the trigger alone decides.
+  it.each([
+    ['the scalar form', 'workflow_run', { onPullRequest: false, onWorkflowRun: true }],
+    ['the sequence form', '[push, workflow_run]', { onPullRequest: false, onWorkflowRun: true }],
+    ['a scalar pull_request', 'pull_request', { onPullRequest: true, onWorkflowRun: false }],
+    ['a sequence with both', '[pull_request, workflow_run]', { onPullRequest: true, onWorkflowRun: true }],
+  ])('reads the triggers from %s of on:', (_form, on, expected) => {
+    const { triggers } = parseWorkflow(`on: ${on}\njobs: {}\n`);
+
+    expect(triggers).toMatchObject({ ...expected, pathFiltered: false, branchesIgnored: false });
+  });
+
+  it('treats a workflow without on: as having no trigger', () => {
+    expect(parseWorkflow('jobs: {}\n').triggers).toMatchObject({ onPullRequest: false, onWorkflowRun: false });
+  });
+
+  it.each(['workflow_run', '[workflow_run]'])('accepts a status context posted from `on: %s`', (on) => {
+    const content = `on: ${on}\njobs:\n  gate:\n    steps:\n      - run: gh api -f context="Gate"\n`;
+
+    expect(problemsFor(content, { kind: 'status' })).toEqual([]);
+  });
+
+  it('rejects a branches-ignore filter, which can exclude the default branch', () => {
+    const problems = problemsFor(
+      "on:\n  pull_request:\n    branches-ignore: ['main']\njobs:\n  gate:\n    name: Gate\n    runs-on: ubuntu-latest\n",
+    );
+
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain('branches-ignore');
+  });
+
+  // A job's check run lands on the commit its own run checked out, the default branch for workflow_run.
+  it('rejects a job context whose workflow only runs on workflow_run', () => {
+    const problems = problemsFor(
+      "on:\n  workflow_run:\n    workflows: ['Scripts CI']\njobs:\n  gate:\n    name: Gate\n    runs-on: ubuntu-latest\n",
+    );
+
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain("no 'on.pull_request' trigger");
+  });
+
+  it('rejects a status context with neither trigger', () => {
+    const problems = problemsFor("on:\n  push:\n    branches: ['main']\njobs:\n  gate:\n    steps:\n      - run: x\n", {
+      kind: 'status',
+    });
+
+    expect(problems).toContain(
+      "w.yml has neither an 'on.pull_request' nor an 'on.workflow_run' trigger, so the context never reports on a pull request.",
+    );
+  });
+
   it('reports a missing workflow without inspecting it further', () => {
     expect(findRequiredCheckProblems(check, undefined, undefined).map((problem) => problem.reason)).toEqual([
       'w.yml does not exist.',
@@ -222,5 +281,38 @@ describe('ruleset reconciliation', () => {
     ];
 
     expect(() => reconcileStatusChecks(current)).toThrow(/more than one integration_id/);
+  });
+});
+
+// configs/github-rulesets/ holds the exported rulesets, and the README documents them as what this
+// repository enforces. The export is a snapshot that nothing refreshes on its own, so it is held to
+// the manifest here: a context added to or dropped from REQUIRED_CHECKS without re-exporting the
+// ruleset (or the reverse) fails instead of leaving the published copy silently stale.
+describe('exported default-branch ruleset', () => {
+  const RULESET_PATH = path.join(REPO_ROOT, 'configs', 'github-rulesets', 'branch-default_default-rules.json');
+  const ruleset = JSON.parse(fs.readFileSync(RULESET_PATH, 'utf8')) as {
+    conditions?: { ref_name?: { include?: string[] } };
+    rules?: {
+      type: string;
+      parameters?: { required_status_checks?: { context: string; integration_id?: number }[] };
+    }[];
+  };
+
+  it('targets the default branch', () => {
+    expect(ruleset.conditions?.ref_name?.include).toContain('~DEFAULT_BRANCH');
+  });
+
+  it('requires exactly the contexts the manifest lists', () => {
+    expect(enforcedContexts([ruleset])).toEqual(REQUIRED_CHECKS.map((check) => check.context).sort());
+  });
+
+  // A required context with no integration_id accepts a status of that name from any source.
+  it('binds every required context to an integration', () => {
+    const checks = (ruleset.rules ?? []).flatMap((rule) => rule.parameters?.required_status_checks ?? []);
+
+    expect(checks.length).toBeGreaterThan(0);
+    for (const check of checks) {
+      expect(check.integration_id, check.context).toBeTypeOf('number');
+    }
   });
 });
