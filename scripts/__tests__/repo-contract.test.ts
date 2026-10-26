@@ -48,7 +48,6 @@ interface StrictShellExemption {
 const STRICT_SHELL_EXEMPTIONS: Readonly<Record<string, StrictShellExemption>> = {
   'release-please.yml': { known: 3, reason: 'Release plumbing; pre-dates the contract.' },
   'security.yml': { known: 1, reason: 'Security scanning; pre-dates the contract.' },
-  'verify-action-bun-setup-cached.yaml': { known: 7, reason: 'Shell assertions awaiting the TypeScript e2e port.' },
   'verify-action-common-create-pull-request.yaml': {
     known: 7,
     reason: 'Shell assertions awaiting the TypeScript e2e port.',

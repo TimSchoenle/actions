@@ -71,7 +71,7 @@ outputs. Where an action needs more than that, a README sits next to it.
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Bun Setup-cached](./actions/bun/setup-cached) | Sets up Bun and manages dependency caching. | [actions-bun-setup-cached-v1.1.11](https://github.com/TimSchoenle/actions/releases/tag/actions-bun-setup-cached-v1.1.11) | `uses: TimSchoenle/actions/actions/bun/setup-cached@e16a1e466faf8ec751b26289c1898143a253269f # tag=actions-bun-setup-cached-v1.1.11` |
+| [Bun Setup-cached](./actions/bun/setup-cached) | Sets up a pinned Bun and installs dependencies from the lockfile, with a node_modules cache that by default only trusted events write to. | [actions-bun-setup-cached-v1.1.11](https://github.com/TimSchoenle/actions/releases/tag/actions-bun-setup-cached-v1.1.11) | `uses: TimSchoenle/actions/actions/bun/setup-cached@e16a1e466faf8ec751b26289c1898143a253269f # tag=actions-bun-setup-cached-v1.1.11` |
 
 #### Common
 

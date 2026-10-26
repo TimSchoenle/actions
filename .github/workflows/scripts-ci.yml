@@ -93,6 +93,7 @@ jobs:
         with:
           bun-version: ''
           bun-version-file: '.bun-version'
+          cache-mode: none
 
       # Writes coverage/lcov.info and coverage/junit.xml, the two files uploaded below.
       - name: Test
