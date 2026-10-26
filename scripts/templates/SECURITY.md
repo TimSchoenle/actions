@@ -41,3 +41,29 @@ Release tags are immutable and a repository ruleset restricts who may create the
 so a tag cannot be moved to a different commit after a consumer has pinned it. Every action here is
 published with its bundle committed, and CI rebuilds that bundle and compares it byte for byte
 against what the branch carries.
+
+## Accepted Risks
+
+### Commits signed by GitHub
+
+[Verify Commit Authors](./actions/helper/verify-commit-authors) and
+[Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) accept a commit when every author
+is one of the accepted accounts and its signature is valid. For a commit that a person signs with
+their own key, the committer and the owner of the signing key must also be accepted accounts. GitHub
+signs the commits that GitHub Apps, Renovate and the web interface create, and leaves the committer
+of such a commit without a linked account. For those commits the actions check only the authors and
+GitHub's signature.
+
+GitHub signs a commit only when its author is the account that made it: the signed-in user in
+the web interface, or the account that owns the token for a commit made through the API. The API
+accepts a custom author only together with a signature the caller supplies, and such a commit has
+to pass the committer and key owner checks. The risk is therefore anyone who can use the credential
+of an accepted account. Write access to the repository is enough to run a workflow from a pushed
+branch, and that workflow can use `GITHUB_TOKEN` and every repository secret, including App keys.
+If `github-actions[bot]` or such an App is an accepted account, a person with write access can
+create a commit that GitHub signs in its name, and the actions accept it. GitHub has no API that
+shows who used a credential, so the actions cannot tell its owner from someone else using it.
+
+This risk is accepted. Write access already allows more than this, pull requests from forks are
+rejected by default, and rejecting commits that GitHub signs would stop Renovate and App pull
+requests from being approved automatically. Give write access only to accounts you trust.

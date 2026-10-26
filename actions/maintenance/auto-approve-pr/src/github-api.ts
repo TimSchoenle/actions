@@ -10,6 +10,8 @@ export interface PullRequestInfo {
   authorId: number;
   /** Head branch name, e.g. `feature/x`. */
   headRef: string;
+  /** SHA of the head commit when the pull request was read; the commit an approval is bound to. */
+  headSha: string;
   /** Full name of the head repository, e.g. `owner/repo`. */
   headRepoFullName: string;
   /** Full name of the base repository, e.g. `owner/repo`. */
@@ -24,16 +26,26 @@ export interface AutoApproveApi {
   getPullRequest(coordinates: PullRequestCoordinates): Promise<PullRequestInfo>;
   /** Fetches the pull request's commits for author/signature verification. */
   fetchCommits(prUrl: string): Promise<PullRequestCommits>;
-  /** Submits an approving review with the given body. */
-  approve(coordinates: PullRequestCoordinates, message: string): Promise<void>;
+  /**
+   * Submits an approving review with the given body, recorded against `headSha`. A later push does
+   * not move the review; branch protection decides whether it still counts for the new head.
+   */
+  approve(coordinates: PullRequestCoordinates, message: string, headSha: string): Promise<void>;
 }
 
 export function createAutoApproveApi(token: string): AutoApproveApi {
   const octokit = createOctokit(token);
 
   return {
-    async approve({ number, owner, repo }: PullRequestCoordinates, message: string): Promise<void> {
-      await octokit.rest.pulls.createReview({ body: message, event: 'APPROVE', owner, pull_number: number, repo });
+    async approve({ number, owner, repo }: PullRequestCoordinates, message: string, headSha: string): Promise<void> {
+      await octokit.rest.pulls.createReview({
+        body: message,
+        commit_id: headSha,
+        event: 'APPROVE',
+        owner,
+        pull_number: number,
+        repo,
+      });
     },
 
     async fetchCommits(prUrl: string): Promise<PullRequestCommits> {
@@ -49,7 +61,7 @@ export function createAutoApproveApi(token: string): AutoApproveApi {
       // Incomplete data must never read as a benign outcome: a missing author or head repository would
       // otherwise let a fork check or author check silently pass. The head repository is absent only
       // when a fork has been deleted, which reject_forks would reject anyway.
-      if (!data.user || !data.head.ref || !headRepoFullName || !baseRepoFullName) {
+      if (!data.user || !data.head.ref || !data.head.sha || !headRepoFullName || !baseRepoFullName) {
         throw new Error(`Incomplete data for pull request #${number}; refusing to evaluate it for auto-approval.`);
       }
 
@@ -59,6 +71,7 @@ export function createAutoApproveApi(token: string): AutoApproveApi {
         changedFiles: data.changed_files,
         headRef: data.head.ref,
         headRepoFullName,
+        headSha: data.head.sha,
       };
     },
   };

@@ -103,13 +103,13 @@ describe('verify-commit-authors', () => {
   it('verifies a pull request whose commits are authored by an accepted user', async () => {
     const result = await run({ pr_url: prUrl, user_ids: authorId });
 
-    expect(result.outputs).toEqual({ verified: 'true', invalid_commits: '' });
+    expect(result.outputs, result.errors.join('\n')).toEqual({ verified: 'true', invalid_commits: '' });
   });
 
   it('accepts the author among several allowed IDs', async () => {
     const result = await run({ pr_url: prUrl, user_ids: `${FOREIGN_USER_ID}, ${authorId}` });
 
-    expect(result.outputs).toEqual({ verified: 'true', invalid_commits: '' });
+    expect(result.outputs, result.errors.join('\n')).toEqual({ verified: 'true', invalid_commits: '' });
   });
 
   it('reports every commit as invalid when the author is not accepted', async () => {

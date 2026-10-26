@@ -72,11 +72,20 @@ describe('auto-approve-pr', () => {
     });
   }
 
+  /**
+   * Asserts the run reported an approval, carrying its log into the failure message: the review
+   * state alone says that nothing was approved, never which check stopped it.
+   */
+  function expectApprovedRun(result: Awaited<ReturnType<typeof approve>>): void {
+    expect(result.stdout, [...result.errors, result.stdout].join('\n')).toContain('Pull request approved');
+  }
+
   it('approves a pull request opened by an allowed author', async () => {
     const number = await openPullRequest(scratch.branch('allowed'), 'allowed author');
 
-    await approve(number, { user_ids: authorId, branch_pattern: '.*' });
+    const result = await approve(number, { user_ids: authorId, branch_pattern: '.*' });
 
+    expectApprovedRun(result);
     await expect(scratch.reviewStates(number)).resolves.toContain('APPROVED');
   });
 
@@ -91,8 +100,9 @@ describe('auto-approve-pr', () => {
   it('approves a branch matching the pattern', async () => {
     const number = await openPullRequest(scratch.branch('release-please--branches--main'), 'branch pattern match');
 
-    await approve(number, { user_ids: authorId, branch_pattern: RELEASE_PATTERN });
+    const result = await approve(number, { user_ids: authorId, branch_pattern: RELEASE_PATTERN });
 
+    expectApprovedRun(result);
     await expect(scratch.reviewStates(number)).resolves.toContain('APPROVED');
   });
 
@@ -109,8 +119,9 @@ describe('auto-approve-pr', () => {
   it('still approves a same-repository pull request when forks are rejected', async () => {
     const number = await openPullRequest(scratch.branch('reject-forks'), 'same-repository with reject_forks');
 
-    await approve(number, { user_ids: authorId, branch_pattern: '.*', reject_forks: 'true' });
+    const result = await approve(number, { user_ids: authorId, branch_pattern: '.*', reject_forks: 'true' });
 
+    expectApprovedRun(result);
     await expect(scratch.reviewStates(number)).resolves.toContain('APPROVED');
   });
 
@@ -118,8 +129,9 @@ describe('auto-approve-pr', () => {
     const number = await openPullRequest(scratch.branch('message'), 'custom approval message');
     const message = 'Auto-approved by the end-to-end suite.';
 
-    await approve(number, { user_ids: authorId, branch_pattern: '.*', auto_approve_message: message });
+    const result = await approve(number, { user_ids: authorId, branch_pattern: '.*', auto_approve_message: message });
 
+    expectApprovedRun(result);
     await expect(scratch.reviewStates(number)).resolves.toContain('APPROVED');
     await expect(scratch.reviewBodies(number)).resolves.toContain(message);
   });

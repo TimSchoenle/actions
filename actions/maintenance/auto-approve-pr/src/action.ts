@@ -12,7 +12,8 @@ import type { AutoApproveApi } from './github-api.js';
 const SKIP_MESSAGES: Record<SkipReason, string> = {
   'author-not-accepted': 'the pull request author is not in the accepted list',
   'branch-unverified': 'the branch pattern or fork check did not pass',
-  'commits-unverified': 'one or more commits failed the author or signature check',
+  'commits-unverified': 'one or more commits failed the author, committer or signature check',
+  'head-moved': 'the pull request head changed while it was being checked',
   'no-changes': 'the pull request changes no files',
 };
 
