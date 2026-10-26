@@ -49,7 +49,14 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            registry.npmjs.org:443
 
       # Read solely to ask `GET /rate_limit` whether the maintenance installation's budget has
       # recovered — that endpoint costs nothing against the very budget it reports, and it is the only
