@@ -31,7 +31,7 @@ function prData(overrides: Record<string, unknown> = {}): unknown {
   return {
     base: { repo: { full_name: 'owner/repo' } },
     changed_files: 4,
-    head: { ref: 'feature/x', repo: { full_name: 'owner/repo' } },
+    head: { ref: 'feature/x', repo: { full_name: 'owner/repo' }, sha: 'abc1234' },
     user: { id: 12345 },
     ...overrides,
   };
@@ -57,13 +57,14 @@ describe('createAutoApproveApi', () => {
         changedFiles: 4,
         headRef: 'feature/x',
         headRepoFullName: 'owner/repo',
+        headSha: 'abc1234',
       });
       expect(octokit.rest.pulls.get).toHaveBeenCalledWith({ owner: 'owner', pull_number: 7, repo: 'repo' });
     });
 
     it('reports the head repository of a fork', async () => {
       octokit.rest.pulls.get.mockResolvedValue({
-        data: prData({ head: { ref: 'feature/x', repo: { full_name: 'forker/repo' } } }),
+        data: prData({ head: { ref: 'feature/x', repo: { full_name: 'forker/repo' }, sha: 'abc1234' } }),
       });
 
       await expect(createAutoApproveApi('token').getPullRequest(coordinates)).resolves.toMatchObject({
@@ -72,7 +73,17 @@ describe('createAutoApproveApi', () => {
     });
 
     it('refuses to evaluate a pull request whose head repository is gone', async () => {
-      octokit.rest.pulls.get.mockResolvedValue({ data: prData({ head: { ref: 'feature/x', repo: null } }) });
+      octokit.rest.pulls.get.mockResolvedValue({
+        data: prData({ head: { ref: 'feature/x', repo: null, sha: 'abc1234' } }),
+      });
+
+      await expect(createAutoApproveApi('token').getPullRequest(coordinates)).rejects.toThrow('Incomplete data');
+    });
+
+    it('refuses to evaluate a pull request without a head commit', async () => {
+      octokit.rest.pulls.get.mockResolvedValue({
+        data: prData({ head: { ref: 'feature/x', repo: { full_name: 'owner/repo' }, sha: '' } }),
+      });
 
       await expect(createAutoApproveApi('token').getPullRequest(coordinates)).rejects.toThrow('Incomplete data');
     });
@@ -85,13 +96,14 @@ describe('createAutoApproveApi', () => {
   });
 
   describe('approve', () => {
-    it('submits an approving review with the message body', async () => {
+    it('submits an approving review with the message body, bound to the verified head', async () => {
       octokit.rest.pulls.createReview.mockResolvedValue({});
 
-      await createAutoApproveApi('token').approve(coordinates, 'Looks good');
+      await createAutoApproveApi('token').approve(coordinates, 'Looks good', 'abc1234');
 
       expect(octokit.rest.pulls.createReview).toHaveBeenCalledWith({
         body: 'Looks good',
+        commit_id: 'abc1234',
         event: 'APPROVE',
         owner: 'owner',
         pull_number: 7,
@@ -102,7 +114,7 @@ describe('createAutoApproveApi', () => {
 
   describe('fetchCommits', () => {
     it('delegates to the shared pull-request commit fetch', async () => {
-      vi.mocked(fetchPullRequestCommits).mockResolvedValue({ commits: [], totalCount: 0 });
+      vi.mocked(fetchPullRequestCommits).mockResolvedValue({ commits: [], headOid: 'abc1234', totalCount: 0 });
 
       await createAutoApproveApi('token').fetchCommits('https://github.com/owner/repo/pull/7');
 

@@ -38,19 +38,23 @@ const validPr: PullRequestInfo = {
   changedFiles: 2,
   headRef: 'release-please--branches--main',
   headRepoFullName: 'owner/repo',
+  headSha: 'abc1234',
 };
 
 const signedCommit: CommitRecord = {
   authorIds: [12345],
+  committerId: 12345,
   oid: 'abc1234',
   signatureState: 'VALID',
   signatureValid: true,
+  signedByGitHub: false,
+  signerId: 12345,
 };
 
 function fakeApi(info: PullRequestInfo = validPr): AutoApproveApi & { approve: ReturnType<typeof vi.fn> } {
   return {
     approve: vi.fn(async () => {}),
-    fetchCommits: vi.fn(async () => ({ commits: [signedCommit], totalCount: 1 })),
+    fetchCommits: vi.fn(async () => ({ commits: [signedCommit], headOid: 'abc1234', totalCount: 1 })),
     getPullRequest: vi.fn(async () => info),
   };
 }
@@ -70,8 +74,23 @@ describe('auto-approve-pr action', () => {
 
     await run(api);
 
-    expect(api.approve).toHaveBeenCalledWith({ number: 1, owner: 'owner', repo: 'repo' }, 'Auto-approved by workflow.');
+    expect(api.approve).toHaveBeenCalledWith(
+      { number: 1, owner: 'owner', repo: 'repo' },
+      'Auto-approved by workflow.',
+      'abc1234',
+    );
     expect(core.setFailed).not.toHaveBeenCalled();
+  });
+
+  it('logs why it did not approve when the head moved during the checks', async () => {
+    const api = fakeApi({ ...validPr, headSha: 'older' });
+
+    await run(api);
+
+    expect(api.approve).not.toHaveBeenCalled();
+    expect(core.info).toHaveBeenCalledWith(
+      'Skipping auto-approval: the pull request head changed while it was being checked.',
+    );
   });
 
   it('does not approve or fail when a check does not pass', async () => {
@@ -104,7 +123,7 @@ describe('auto-approve-pr action', () => {
   it('fails with the API error when a request fails', async () => {
     const api: AutoApproveApi = {
       approve: vi.fn(async () => {}),
-      fetchCommits: vi.fn(async () => ({ commits: [signedCommit], totalCount: 1 })),
+      fetchCommits: vi.fn(async () => ({ commits: [signedCommit], headOid: 'abc1234', totalCount: 1 })),
       getPullRequest: vi.fn(async () => {
         throw new Error('Bad credentials');
       }),

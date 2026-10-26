@@ -7,6 +7,9 @@ import type { AutoApproveApi, PullRequestInfo } from './github-api.js';
 import type { CommitRecord } from 'actions-util';
 import type { PullRequestCommits } from 'actions-util/commits';
 
+const HEAD = 'abc1234';
+const ATTACKER = 99999;
+
 function pullRequest(overrides: Partial<PullRequestInfo> = {}): PullRequestInfo {
   return {
     authorId: 12345,
@@ -14,21 +17,27 @@ function pullRequest(overrides: Partial<PullRequestInfo> = {}): PullRequestInfo 
     changedFiles: 3,
     headRef: 'release-please--branches--main',
     headRepoFullName: 'owner/repo',
+    headSha: HEAD,
     ...overrides,
   };
 }
 
-function signedCommit(authorId = 12345): CommitRecord {
+/** A commit made and signed locally by an accepted account. */
+function signedCommit(overrides: Partial<CommitRecord> = {}): CommitRecord {
   return {
-    authorIds: [authorId],
-    oid: 'abc1234',
+    authorIds: [12345],
+    committerId: 12345,
+    oid: HEAD,
     signatureState: 'VALID',
     signatureValid: true,
+    signedByGitHub: false,
+    signerId: 12345,
+    ...overrides,
   };
 }
 
-function commits(records: CommitRecord[] = [signedCommit()]): PullRequestCommits {
-  return { commits: records, totalCount: records.length };
+function commits(records: CommitRecord[] = [signedCommit()], headOid = HEAD): PullRequestCommits {
+  return { commits: records, headOid, totalCount: records.length };
 }
 
 interface FakeApi extends AutoApproveApi {
@@ -68,7 +77,15 @@ describe('autoApprove', () => {
     expect(api.approveMock).toHaveBeenCalledWith(
       { number: 1, owner: 'owner', repo: 'repo' },
       'Auto-approved by workflow.',
+      HEAD,
     );
+  });
+
+  it('approves a commit GitHub signed on behalf of an accepted author', async () => {
+    const gitHubSigned = signedCommit({ committerId: 19864447, signedByGitHub: true, signerId: null });
+    const api = fakeApi(pullRequest(), commits([gitHubSigned]));
+
+    await expect(autoApprove(api, baseRequest)).resolves.toEqual({ approved: true });
   });
 
   it('skips and never fetches commits when the author is not accepted', async () => {
@@ -110,9 +127,31 @@ describe('autoApprove', () => {
   });
 
   it('skips when a commit fails author or signature verification', async () => {
-    const api = fakeApi(pullRequest(), commits([{ ...signedCommit(), signatureValid: false }]));
+    const api = fakeApi(pullRequest(), commits([signedCommit({ signatureValid: false })]));
 
     await expect(autoApprove(api, baseRequest)).resolves.toEqual({ approved: false, skipReason: 'commits-unverified' });
+    expect(api.approveMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'an accepted author forged onto a commit the attacker committed and signed',
+      { committerId: ATTACKER, signerId: ATTACKER },
+    ],
+    ['an accepted author and committer on a commit the attacker signed', { signerId: ATTACKER }],
+    ['a committer linked to no account', { committerId: null }],
+  ])('never approves %s', async (_name, overrides) => {
+    const api = fakeApi(pullRequest(), commits([signedCommit(overrides)]));
+
+    await expect(autoApprove(api, baseRequest)).resolves.toEqual({ approved: false, skipReason: 'commits-unverified' });
+    expect(api.approveMock).not.toHaveBeenCalled();
+  });
+
+  it('skips when the head moved between reading the pull request and reading its commits', async () => {
+    const pushed = signedCommit({ oid: 'pushed' });
+    const api = fakeApi(pullRequest({ headSha: HEAD }), commits([signedCommit(), pushed], 'pushed'));
+
+    await expect(autoApprove(api, baseRequest)).resolves.toEqual({ approved: false, skipReason: 'head-moved' });
     expect(api.approveMock).not.toHaveBeenCalled();
   });
 

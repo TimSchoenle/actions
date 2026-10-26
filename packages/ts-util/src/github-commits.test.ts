@@ -37,18 +37,28 @@ function authors({
   };
 }
 
+interface SignatureFixture {
+  isValid: boolean;
+  state: string;
+  wasSignedByGitHub?: boolean | null;
+  signer?: { databaseId: number | null } | null;
+}
+
 interface CommitFixture {
   oid?: string;
   authorsConnection?: unknown;
-  signature?: { isValid: boolean; state: string } | null;
+  committer?: unknown;
+  signature?: SignatureFixture | null;
 }
 
+/** A commit node; by default made and signed locally by account 12345. */
 function commitNode({
   oid = 'abc1234',
   authorsConnection = authors(),
-  signature = { isValid: true, state: 'VALID' },
+  committer = { user: { databaseId: 12345 } },
+  signature = { isValid: true, signer: { databaseId: 12345 }, state: 'VALID', wasSignedByGitHub: false },
 }: CommitFixture = {}): unknown {
-  return { commit: { authors: authorsConnection, oid, signature } };
+  return { commit: { authors: authorsConnection, committer, oid, signature } };
 }
 
 interface CommitsPageFixture {
@@ -57,6 +67,7 @@ interface CommitsPageFixture {
   hasNextPage?: boolean;
   endCursor?: string | null;
   nameWithOwner?: string;
+  headRefOid?: string | null;
 }
 
 /** A page of the `PullRequestCommits` query response. */
@@ -66,6 +77,7 @@ function commitsPage({
   hasNextPage = false,
   endCursor = null,
   nameWithOwner = 'owner/repo',
+  headRefOid = 'abc1234',
 }: CommitsPageFixture): unknown {
   return {
     resource: {
@@ -75,6 +87,7 @@ function commitsPage({
         pageInfo: { endCursor, hasNextPage },
         totalCount: totalCount ?? nodes?.length ?? 0,
       },
+      headRefOid,
       repository: { nameWithOwner },
     },
   };
@@ -123,18 +136,25 @@ describe('fetchPullRequestCommits', () => {
 
   it('maps a single-page pull request onto the domain model', async () => {
     mockGraphql([
-      commitsPage({ nodes: [commitNode({ authorsConnection: authors({ ids: [12345, 67890] }), oid: 'sha1' })] }),
+      commitsPage({
+        headRefOid: 'sha1',
+        nodes: [commitNode({ authorsConnection: authors({ ids: [12345, 67890] }), oid: 'sha1' })],
+      }),
     ]);
 
     await expect(fetchPullRequestCommits('token', PR_URL)).resolves.toEqual({
       commits: [
         {
           authorIds: [12345, 67890],
+          committerId: 12345,
           oid: 'sha1',
           signatureState: 'VALID',
           signatureValid: true,
+          signedByGitHub: false,
+          signerId: 12345,
         },
       ],
+      headOid: 'sha1',
       totalCount: 1,
     });
   });
@@ -158,6 +178,61 @@ describe('fetchPullRequestCommits', () => {
     expect(graphqlMock.mock.calls[0][0]).toContain('authors(first: 100)');
   });
 
+  it('selects the head, the committer and the signer alongside each commit', async () => {
+    mockGraphql([commitsPage({ nodes: [commitNode()] })]);
+
+    await fetchPullRequestCommits('token', PR_URL);
+
+    const query = graphqlMock.mock.calls[0][0] as string;
+    expect(query).toContain('headRefOid');
+    expect(query).toMatch(/committer \{\s*user \{\s*databaseId/);
+    expect(query).toMatch(/wasSignedByGitHub\s*signer \{\s*databaseId/);
+  });
+
+  it('maps a commit GitHub signed itself', async () => {
+    mockGraphql([
+      commitsPage({
+        nodes: [
+          commitNode({
+            committer: { user: { databaseId: 19864447 } },
+            signature: { isValid: true, signer: null, state: 'VALID', wasSignedByGitHub: true },
+          }),
+        ],
+      }),
+    ]);
+
+    const { commits } = await fetchPullRequestCommits('token', PR_URL);
+
+    expect(commits[0]).toMatchObject({ committerId: 19864447, signedByGitHub: true, signerId: null });
+  });
+
+  it.each([
+    ['a committer without a linked account', { user: null }],
+    ['a committer whose account has no database ID', { user: { databaseId: null } }],
+    ['no committer at all', null],
+  ])('maps %s to a null committer', async (_name, committer) => {
+    mockGraphql([commitsPage({ nodes: [commitNode({ committer })] })]);
+
+    const { commits } = await fetchPullRequestCommits('token', PR_URL);
+
+    expect(commits[0].committerId).toBeNull();
+  });
+
+  it.each([
+    ['a missing', undefined],
+    ['a null', null],
+  ])('reads %s wasSignedByGitHub as not signed by GitHub', async (_name, wasSignedByGitHub) => {
+    mockGraphql([
+      commitsPage({
+        nodes: [commitNode({ signature: { isValid: true, signer: null, state: 'VALID', wasSignedByGitHub } })],
+      }),
+    ]);
+
+    const { commits } = await fetchPullRequestCommits('token', PR_URL);
+
+    expect(commits[0]).toMatchObject({ signedByGitHub: false, signerId: null });
+  });
+
   it('maps an author without a linked GitHub account to null', async () => {
     mockGraphql([commitsPage({ nodes: [commitNode({ authorsConnection: authors({ ids: [null] }) })] })]);
 
@@ -171,18 +246,30 @@ describe('fetchPullRequestCommits', () => {
 
     const { commits } = await fetchPullRequestCommits('token', PR_URL);
 
-    expect(commits[0]).toMatchObject({ signatureState: null, signatureValid: false });
+    expect(commits[0]).toMatchObject({
+      signatureState: null,
+      signatureValid: false,
+      signedByGitHub: false,
+      signerId: null,
+    });
   });
 
   it('walks every page of commits, forwarding the end cursor', async () => {
     mockGraphql([
-      commitsPage({ endCursor: 'cursor-1', hasNextPage: true, nodes: [commitNode({ oid: 'sha1' })], totalCount: 2 }),
-      commitsPage({ nodes: [commitNode({ oid: 'sha2' })], totalCount: 2 }),
+      commitsPage({
+        endCursor: 'cursor-1',
+        hasNextPage: true,
+        headRefOid: 'sha2',
+        nodes: [commitNode({ oid: 'sha1' })],
+        totalCount: 2,
+      }),
+      commitsPage({ headRefOid: 'sha2', nodes: [commitNode({ oid: 'sha2' })], totalCount: 2 }),
     ]);
 
-    const { commits, totalCount } = await fetchPullRequestCommits('token', PR_URL);
+    const { commits, headOid, totalCount } = await fetchPullRequestCommits('token', PR_URL);
 
     expect(commits.map((commit) => commit.oid)).toEqual(['sha1', 'sha2']);
+    expect(headOid).toBe('sha2');
     expect(totalCount).toBe(2);
     expect(graphqlMock).toHaveBeenNthCalledWith(2, expect.any(String), expect.objectContaining({ cursor: 'cursor-1' }));
   });
@@ -191,6 +278,7 @@ describe('fetchPullRequestCommits', () => {
     mockGraphql(
       [
         commitsPage({
+          headRefOid: 'sha1',
           nodes: [
             commitNode({
               authorsConnection: authors({ endCursor: 'a1', hasNextPage: true, ids: [12345], totalCount: 3 }),
@@ -220,6 +308,43 @@ describe('fetchPullRequestCommits', () => {
     mockGraphql([response]);
 
     await expect(fetchPullRequestCommits('token', PR_URL)).rejects.toThrow('Could not find Pull Request data from URL');
+  });
+
+  it.each([
+    ['missing', undefined],
+    ['null', null],
+    ['empty', ''],
+  ])('throws when the head commit is %s', async (_name, headRefOid) => {
+    const page = commitsPage({ nodes: [commitNode()] }) as { resource: Record<string, unknown> };
+    page.resource.headRefOid = headRefOid;
+    mockGraphql([page]);
+
+    await expect(fetchPullRequestCommits('token', PR_URL)).rejects.toThrow('returned no head commit');
+  });
+
+  it('throws when the head moves between pages, instead of mixing two commit lists', async () => {
+    mockGraphql([
+      commitsPage({
+        endCursor: 'cursor-1',
+        hasNextPage: true,
+        headRefOid: 'sha2',
+        nodes: [commitNode({ oid: 'sha1' })],
+        totalCount: 2,
+      }),
+      commitsPage({ headRefOid: 'sha3', nodes: [commitNode({ oid: 'sha2' })], totalCount: 2 }),
+    ]);
+
+    await expect(fetchPullRequestCommits('token', PR_URL)).rejects.toThrow(
+      'Pull request head moved from sha2 to sha3 while its commits were read',
+    );
+  });
+
+  it('throws when the head is not among the commits read', async () => {
+    mockGraphql([commitsPage({ headRefOid: 'elsewhere', nodes: [commitNode({ oid: 'sha1' })] })]);
+
+    await expect(fetchPullRequestCommits('token', PR_URL)).rejects.toThrow(
+      'Pull request head elsewhere is not among its commits',
+    );
   });
 
   it('throws when the commit nodes are missing entirely', async () => {

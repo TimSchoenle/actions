@@ -8,13 +8,26 @@ import type { CommitRecord } from './commit-verification.js';
 const userId = fc.integer({ max: 100_000_000, min: 1 });
 const oid = fc.stringMatching(/^[\da-f]{7,40}$/);
 
-const commitRecord = (authorIdPool: fc.Arbitrary<number | null>): fc.Arbitrary<CommitRecord> =>
+const commitRecord = (idPool: fc.Arbitrary<number | null>): fc.Arbitrary<CommitRecord> =>
   fc.record({
-    authorIds: fc.array(authorIdPool, { maxLength: 5, minLength: 0 }),
+    authorIds: fc.array(idPool, { maxLength: 5, minLength: 0 }),
+    committerId: idPool,
     oid,
     signatureState: fc.oneof(fc.constant(null), fc.constantFrom('VALID', 'INVALID', 'UNSIGNED')),
     signatureValid: fc.boolean(),
+    signedByGitHub: fc.boolean(),
+    signerId: idPool,
   });
+
+/** The acceptance rule, restated independently of the implementation. */
+function shouldAccept(commit: CommitRecord, accepted: ReadonlySet<number>): boolean {
+  const isAccepted = (id: number | null): boolean => id !== null && accepted.has(id);
+  const authorsOk = commit.authorIds.length > 0 && commit.authorIds.every(isAccepted);
+  const committerOk = commit.committerId !== null && (commit.signedByGitHub || accepted.has(commit.committerId));
+  const signatureOk = commit.signatureValid && (commit.signedByGitHub || isAccepted(commit.signerId));
+
+  return authorsOk && committerOk && signatureOk;
+}
 
 describe('parseUserIds fuzzing', () => {
   it('round-trips any list of positive integers', () => {
@@ -58,21 +71,42 @@ describe('parseUserIds fuzzing', () => {
 });
 
 describe('validateCommit fuzzing', () => {
-  it('accepts a commit exactly when it is signed and every author is accepted', () => {
+  it('accepts a commit exactly when its authors, committer and signer satisfy the rule', () => {
     fc.assert(
       fc.property(
         commitRecord(fc.oneof(userId, fc.constant(null))),
         fc.uniqueArray(userId, { maxLength: 5, minLength: 1 }),
         (commit, acceptedIds) => {
           const accepted = new Set(acceptedIds);
-          const authorsOk =
-            commit.authorIds.length > 0 && commit.authorIds.every((id) => id !== null && accepted.has(id));
 
-          const failure = validateCommit(commit, accepted);
-
-          expect(failure === undefined).toBe(authorsOk && commit.signatureValid);
+          expect(validateCommit(commit, accepted) === undefined).toBe(shouldAccept(commit, accepted));
         },
       ),
+    );
+  });
+
+  it('never accepts a locally signed commit whose signer is outside the accepted set', () => {
+    fc.assert(
+      fc.property(
+        commitRecord(userId),
+        fc.uniqueArray(userId, { minLength: 1 }),
+        userId,
+        (commit, acceptedIds, intruder) => {
+          fc.pre(!acceptedIds.includes(intruder));
+
+          const foreignSigner = { ...commit, signedByGitHub: false, signerId: intruder };
+
+          expect(validateCommit(foreignSigner, new Set(acceptedIds))).toBeDefined();
+        },
+      ),
+    );
+  });
+
+  it('never accepts a commit whose committer is linked to no account', () => {
+    fc.assert(
+      fc.property(commitRecord(userId), fc.uniqueArray(userId, { minLength: 1 }), (commit, acceptedIds) => {
+        expect(validateCommit({ ...commit, committerId: null }, new Set(acceptedIds))).toBeDefined();
+      }),
     );
   });
 

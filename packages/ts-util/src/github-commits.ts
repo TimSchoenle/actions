@@ -34,6 +34,7 @@ const PULL_REQUEST_COMMITS_QUERY = `query PullRequestCommits($prUrl: URI!, $curs
   resource(url: $prUrl) {
     __typename
     ... on PullRequest {
+      headRefOid
       repository {
         nameWithOwner
       }
@@ -58,9 +59,18 @@ const PULL_REQUEST_COMMITS_QUERY = `query PullRequestCommits($prUrl: URI!, $curs
                 }
               }
             }
+            committer {
+              user {
+                databaseId
+              }
+            }
             signature {
               isValid
               state
+              wasSignedByGitHub
+              signer {
+                databaseId
+              }
             }
           }
         }
@@ -114,11 +124,20 @@ interface AuthorConnection {
   nodes: (AuthorNode | null)[] | null;
 }
 
+/** A commit's signature, as the query returns it. */
+interface SignatureFields {
+  isValid: boolean;
+  state: string | null;
+  wasSignedByGitHub: boolean | null;
+  signer: { databaseId: number | null } | null;
+}
+
 /** The commit fields the query selects. */
 interface CommitFields {
   oid: string;
   authors: AuthorConnection;
-  signature: { isValid: boolean; state: string | null } | null;
+  committer: { user: { databaseId: number | null } | null } | null;
+  signature: SignatureFields | null;
 }
 
 interface CommitNode {
@@ -136,6 +155,7 @@ interface CommitConnection {
 interface PullRequestCommitsResponse {
   resource: {
     __typename: string;
+    headRefOid?: string | null;
     repository?: { nameWithOwner: string };
     commits?: CommitConnection;
   } | null;
@@ -150,6 +170,11 @@ interface CommitAuthorsResponse {
 
 /** The commits of a pull request. */
 export interface PullRequestCommits {
+  /**
+   * SHA of the pull request head the commits were read at. Every page was read at this head and it is
+   * one of {@link commits}, so a caller that acts on the pull request can bind the action to it.
+   */
+  headOid: string;
   /** Number of commits the pull request has. Equal to the length of {@link commits}. */
   totalCount: number;
   /** Every commit of the pull request. */
@@ -237,23 +262,55 @@ async function toCommitRecord(
     throw new Error(`Incomplete commit data returned for commit #${index + 1}. Refusing to verify.`);
   }
 
+  const { committer, signature } = commit;
+
   return {
     authorIds: await collectAuthorIds(graphql, nameWithOwner, commit),
+    committerId: committer?.user?.databaseId ?? null,
     oid: commit.oid,
-    signatureState: commit.signature?.state ?? null,
-    signatureValid: commit.signature?.isValid === true,
+    signatureState: signature?.state ?? null,
+    signatureValid: signature?.isValid === true,
+    signedByGitHub: signature?.wasSignedByGitHub === true,
+    signerId: signature?.signer?.databaseId ?? null,
   };
+}
+
+/**
+ * Reads the head a page of commits was served at, requiring it to be the head every earlier page was
+ * served at.
+ *
+ * @param reported the `headRefOid` of the current page.
+ * @param previous the head of the earlier pages; `undefined` on the first page.
+ * @throws if the page reports no head, or a head other than `previous`.
+ */
+function readHeadOid(reported: string | null | undefined, previous: string | undefined): string {
+  if (!reported) {
+    throw new Error('Pull request returned no head commit. Refusing to verify.');
+  }
+  if (previous !== undefined && previous !== reported) {
+    throw new Error(
+      `Pull request head moved from ${previous} to ${reported} while its commits were read. Refusing to verify.`,
+    );
+  }
+
+  return reported;
 }
 
 /**
  * Walks every page of a pull request's commits.
  *
- * @throws if the URL does not resolve to a pull request, or if fewer commits are collected than the
- * pull request reports — both leave the caller unable to make a trustworthy statement.
+ * The head is read with every page. A push that lands while the pages are read moves it, and the pages
+ * would then describe two different commit lists; the head is also required to be among the commits,
+ * so the list read is the one ending at the head reported.
+ *
+ * @throws if the URL does not resolve to a pull request, if the head is missing, moves between pages or
+ * is not among the commits, or if fewer commits are collected than the pull request reports — each
+ * leaves the caller unable to make a trustworthy statement.
  */
 async function collectPullRequestCommits(graphql: GraphqlClient, prUrl: string): Promise<PullRequestCommits> {
   const commits: CommitRecord[] = [];
   let cursor: string | null = null;
+  let headOid: string | undefined;
   let totalCount: number;
 
   for (;;) {
@@ -263,6 +320,8 @@ async function collectPullRequestCommits(graphql: GraphqlClient, prUrl: string):
     if (resource?.__typename !== 'PullRequest' || !resource.commits || !resource.repository) {
       throw new Error('Could not find Pull Request data from URL');
     }
+
+    headOid = readHeadOid(resource.headRefOid, headOid);
 
     const { nameWithOwner } = resource.repository;
     const { nodes, pageInfo } = resource.commits;
@@ -288,14 +347,20 @@ async function collectPullRequestCommits(graphql: GraphqlClient, prUrl: string):
     );
   }
 
-  return { commits, totalCount };
+  if (commits.length > 0 && !commits.some((commit) => commit.oid === headOid)) {
+    throw new Error(`Pull request head ${headOid} is not among its commits. Refusing to verify.`);
+  }
+
+  return { commits, headOid, totalCount };
 }
 
 /**
- * Fetches every commit of a pull request, with the full author list of each, via the GraphQL API.
+ * Fetches every commit of a pull request, with the full author list, the committer and the signer of
+ * each, via the GraphQL API.
  *
- * @throws if the URL does not resolve to a pull request, or if the returned commit or author data is
- * incomplete — every such case leaves the caller unable to make a trustworthy statement.
+ * @throws if the URL does not resolve to a pull request, if the returned commit or author data is
+ * incomplete, or if the head moves while the commits are read — every such case leaves the caller
+ * unable to make a trustworthy statement.
  */
 export async function fetchPullRequestCommits(token: string, prUrl: string): Promise<PullRequestCommits> {
   const octokit = createOctokit(token);
