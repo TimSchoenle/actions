@@ -27,7 +27,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - run: bun install --frozen-lockfile && bun run format
       - id: patch
-        uses: <owner>/actions/actions/common/create-patch@<ref>
+        uses: TimSchoenle/actions/actions/common/create-patch@<sha> # tag=actions-common-create-patch-v1.1.0
         with:
           artifact_name: format-patch
 
