@@ -14,7 +14,7 @@
       "automerge": true
     },
     {
-      "description": "Internal pinned actions/workflows via regex manager: safe to auto-merge",
+      "description": "Internal pinned actions via regex manager: safe to auto-merge",
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["TimSchoenle/actions"],
       "matchUpdateTypes": ["minor", "patch", "digest", "pin"],

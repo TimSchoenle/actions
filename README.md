@@ -220,7 +220,6 @@ build tool's config directory at your copy of the ruleset directory.
 | [default](./configs/renovate/default.json) | Default configuration for Renovate | `"extends": ["github>TimSchoenle/actions//configs/renovate/default"]` |
 | [rust-application](./configs/renovate/rust-application.json) | Rust applications: rust-toolchain plus `rust-version` in every Cargo.toml, moved in the same `rust toolchain` pull request. Not for libraries: there `rust-version` is the MSRV, a compatibility promise raised by decision, not a pin to keep current. | `"extends": ["github>TimSchoenle/actions//configs/renovate/rust-application"]` |
 | [rust-toolchain](./configs/renovate/rust-toolchain.json) | Rust toolchain for any Rust repository: `channel` in rust-toolchain.toml and every `rust` Docker image tag move in one pull request that cannot ship half-done. Never touches `rust-version` in Cargo.toml; applications that want it moved too extend rust-application instead. | `"extends": ["github>TimSchoenle/actions//configs/renovate/rust-toolchain"]` |
-| [workflows](./configs/renovate/workflows.json) | Versioning rules for all custom Reusable Workflows defined in this repository | `"extends": ["github>TimSchoenle/actions//configs/renovate/workflows"]` |
 
 
 #### Checkstyle

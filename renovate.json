@@ -1,25 +1,17 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["github>TimSchoenle/actions//configs/renovate/default"],
-  "github-actions": {
-    "managerFilePatterns": [
-      "/(^|/)(workflow-templates|\\.(?:github|gitea|forgejo)/(?:workflows|actions))/.+\\.ya?ml$/",
-      "/(^|/)action\\.ya?ml$/",
-      "/(^|/)workflow\\.ya?ml$/",
-      "/(^|/)workflows/(.*/)?workflow\\.ya?ml$/"
-    ]
-  },
   "customManagers": [
     {
       "description": "Internal action refs pinned inside the end-to-end workflow generator. scripts/lib/e2e-workflow.ts is the source of truth for every generated verify-action-*.yaml, and is matched by no built-in manager because it is TypeScript rather than YAML. Without this, Renovate bumps only the generated copies and the drift check fails; with it, one branch carries both, because Renovate updates every occurrence of the same dependency at the same version together. A contract test in scripts/__tests__ fails any pin these managers would not match.",
       "customType": "regex",
       "managerFilePatterns": ["/^scripts/lib/e2e-workflow\\.ts$/"],
       "matchStrings": [
-        "'(?<depName>TimSchoenle\\/actions(?:\\/[^@'\\s#]+)?)@(?<currentDigest>[a-fA-F0-9]{40}) # tag=(?<currentValue>(?:actions|workflows)-[^'\\s#]+)'"
+        "'(?<depName>TimSchoenle\\/actions(?:\\/[^@'\\s#]+)?)@(?<currentDigest>[a-fA-F0-9]{40}) # tag=(?<currentValue>actions-[^'\\s#]+)'"
       ],
       "packageNameTemplate": "TimSchoenle/actions",
       "datasourceTemplate": "github-tags",
-      "versioningTemplate": "regex:^(?<compatibility>(?:actions|workflows)-.*)[-/]v?(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)?$",
+      "versioningTemplate": "regex:^(?<compatibility>actions-.*)[-/]v?(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)?$",
       "autoReplaceStringTemplate": "'{{{depName}}}@{{#if newDigest}}{{{newDigest}}}{{/if}}{{#unless newDigest}}{{{newValue}}}{{/unless}} # tag={{{newValue}}}'"
     },
     {
