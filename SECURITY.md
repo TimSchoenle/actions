@@ -117,19 +117,6 @@ is not, including older versions of a component whose neighbours have since rele
 | [Setup E2E Test](./actions/test/setup-e2e) | [actions-test-setup-e2e-v1.2.4](https://github.com/TimSchoenle/actions/releases/tag/actions-test-setup-e2e-v1.2.4) | :white_check_mark: |
 
 
-### Workflows
-
-#### Maintenance
-
-| Component | Version | Supported |
-| --- | --- | --- |
-| [Auto Format](./workflows/maintenance/auto-bun-prettier) | [workflows-maintenance-auto-bun-prettier-v1.1.43](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-bun-prettier-v1.1.43) | :white_check_mark: |
-| [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | [workflows-maintenance-timed-auto-pr-approve-v1.2.45](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-timed-auto-pr-approve-v1.2.45) | :white_check_mark: |
-| [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | [workflows-maintenance-auto-approve-renovate-v1.4.32](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-approve-renovate-v1.4.32) | :white_check_mark: |
-| [Maintenance Auto-rebase](./workflows/maintenance/auto-rebase) | [workflows-maintenance-auto-rebase-v1.1.8](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-rebase-v1.1.8) | :white_check_mark: |
-| [Maintenance Wipe-cache](./workflows/maintenance/wipe-cache) | [workflows-maintenance-wipe-cache-v1.1.14](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-wipe-cache-v1.1.14) | :white_check_mark: |
-
-
 
 ## Reporting a Vulnerability
 

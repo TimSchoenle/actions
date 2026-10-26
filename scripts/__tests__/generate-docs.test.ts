@@ -4,7 +4,6 @@ import type { DocumentationItem } from '../lib/readme/types.js';
 // Setup mocks using vi.hoisted to ensure they're available in module scope
 const mocks = vi.hoisted(() => ({
   actionParse: vi.fn(),
-  workflowParse: vi.fn(),
   renovateParse: vi.fn(),
   checkstyleParse: vi.fn(),
   generateSection: vi.fn(),
@@ -30,14 +29,6 @@ vi.mock('../lib/readme/parsers/action-parser.js', () => ({
   ActionParser: class {
     async parse() {
       return mocks.actionParse();
-    }
-  },
-}));
-
-vi.mock('../lib/readme/parsers/workflow-parser.js', () => ({
-  WorkflowParser: class {
-    async parse() {
-      return mocks.workflowParse();
     }
   },
 }));
@@ -71,7 +62,7 @@ vi.mock('../lib/readme/git-utils.js', () => ({
 }));
 
 // Both generated files put a category heading one level under the kind heading above it, so all
-// five calls below pass the same depth.
+// three calls below pass the same depth.
 const CATEGORY_HEADING_LEVEL = 4;
 
 describe('Generate Readme Script', () => {
@@ -80,7 +71,6 @@ describe('Generate Readme Script', () => {
 
     // Setup default mock behaviors
     mocks.actionParse.mockResolvedValue([]);
-    mocks.workflowParse.mockResolvedValue([]);
     mocks.renovateParse.mockResolvedValue([]);
     mocks.checkstyleParse.mockResolvedValue([]);
     mocks.generateSection.mockResolvedValue('');
@@ -104,17 +94,6 @@ describe('Generate Readme Script', () => {
         usage: 'uses: owner/repo/test@test-v1.0.0',
         category: 'Test',
         path: 'actions/test',
-      },
-    ];
-
-    const mockWorkflows: DocumentationItem[] = [
-      {
-        name: 'Test Workflow',
-        description: 'Test Workflow Desc',
-        version: 'workflow-v1.0.0',
-        usage: 'uses: owner/repo/workflow@workflow-v1.0.0',
-        category: 'Workflow',
-        path: 'workflows/test',
       },
     ];
 
@@ -142,18 +121,17 @@ describe('Generate Readme Script', () => {
     ];
 
     mocks.actionParse.mockResolvedValue(mockActions);
-    mocks.workflowParse.mockResolvedValue(mockWorkflows);
     mocks.renovateParse.mockResolvedValue(mockConfigs);
     mocks.checkstyleParse.mockResolvedValue(mockCheckstyleConfigs);
     mocks.generateSection
       .mockResolvedValueOnce('### Test Action Table')
-      .mockResolvedValueOnce('### Test Workflow Table')
-      .mockResolvedValueOnce('### Test Config Table');
+      .mockResolvedValueOnce('### Test Config Table')
+      .mockResolvedValueOnce('### Test Supported Versions Table');
 
     mocks.sysFile.mockReturnValue({
       exists: async () => true,
       text: async () =>
-        'Template\n{{REPO}}\n<!-- ACTIONS_TABLE -->\n<!-- WORKFLOWS_TABLE -->\n<!-- CONFIGS_TABLE -->\nEnd',
+        'Template\n{{REPO}}\n<!-- ACTIONS_TABLE -->\n<!-- CONFIGS_TABLE -->\n<!-- SUPPORTED_VERSIONS_TABLE -->\nEnd',
     });
 
     const { main } = await import('../generate-docs.js');
@@ -161,12 +139,11 @@ describe('Generate Readme Script', () => {
 
     // Verify parsers were called
     expect(mocks.actionParse).toHaveBeenCalledTimes(1);
-    expect(mocks.workflowParse).toHaveBeenCalledTimes(1);
     expect(mocks.renovateParse).toHaveBeenCalledTimes(1);
     expect(mocks.checkstyleParse).toHaveBeenCalledTimes(1);
 
     // Verify generateSection was called with correct arguments
-    expect(mocks.generateSection).toHaveBeenCalledTimes(5);
+    expect(mocks.generateSection).toHaveBeenCalledTimes(3);
 
     // Actions (README)
     expect(mocks.generateSection).toHaveBeenNthCalledWith(
@@ -177,18 +154,9 @@ describe('Generate Readme Script', () => {
       CATEGORY_HEADING_LEVEL,
     );
 
-    // Workflows (README)
-    expect(mocks.generateSection).toHaveBeenNthCalledWith(
-      2,
-      mockWorkflows,
-      ['Workflow', 'Description', 'Version', 'Usage'],
-      expect.any(Function),
-      CATEGORY_HEADING_LEVEL,
-    );
-
     // Configs (README)
     expect(mocks.generateSection).toHaveBeenNthCalledWith(
-      3,
+      2,
       mockConfigs,
       ['Config', 'Description', 'Usage'],
       expect.any(Function),
@@ -201,17 +169,8 @@ describe('Generate Readme Script', () => {
 
     // Actions (SECURITY)
     expect(mocks.generateSection).toHaveBeenNthCalledWith(
-      4,
+      3,
       mockActions,
-      ['Component', 'Version', 'Supported'],
-      expect.any(Function),
-      CATEGORY_HEADING_LEVEL,
-    );
-
-    // Workflows (SECURITY)
-    expect(mocks.generateSection).toHaveBeenNthCalledWith(
-      5,
-      mockWorkflows,
       ['Component', 'Version', 'Supported'],
       expect.any(Function),
       CATEGORY_HEADING_LEVEL,
@@ -229,7 +188,6 @@ describe('Generate Readme Script', () => {
     expect(writtenContent).toContain('owner/repo'); // {{REPO}} replaced
     expect(writtenContent).not.toContain('{{REPO}}');
     expect(writtenContent).toContain('Test Action Table');
-    expect(writtenContent).toContain('Test Workflow Table');
     expect(writtenContent).toContain('Test Config Table');
 
     // Checkstyle table (real generateMarkdownTable output)
@@ -241,6 +199,11 @@ describe('Generate Readme Script', () => {
     expect(writtenContent).toContain('##### Default');
     expect(writtenContent).toContain('```kotlin');
     expect(writtenContent).toContain('checkstyle("de.timscho:checkstyle-default:configs-checkstyle-default-v1.0.0")');
+
+    // SECURITY.md lists the versioned actions, and nothing else, under one kind heading.
+    const securityContent = mocks.sysWrite.mock.calls[1][1] as string;
+    expect(securityContent).toContain('### Actions\n\n### Test Supported Versions Table');
+    expect(securityContent).not.toContain('<!-- SUPPORTED_VERSIONS_TABLE -->');
   });
 
   it('should handle template not found', async () => {
@@ -284,7 +247,7 @@ describe('Generate Readme Script', () => {
 
     mocks.sysFile.mockReturnValue({
       exists: async () => true,
-      text: async () => '<!-- ACTIONS_TABLE -->\n<!-- WORKFLOWS_TABLE -->\n<!-- CONFIGS_TABLE -->',
+      text: async () => '<!-- ACTIONS_TABLE -->\n<!-- CONFIGS_TABLE -->',
     });
 
     const { main } = await import('../generate-docs.js');
@@ -293,7 +256,6 @@ describe('Generate Readme Script', () => {
     expect(mocks.sysWrite).toHaveBeenCalledTimes(2);
     const writtenContent = mocks.sysWrite.mock.calls[0][1] as string;
     expect(writtenContent).not.toContain('<!-- ACTIONS_TABLE -->');
-    expect(writtenContent).not.toContain('<!-- WORKFLOWS_TABLE -->');
     expect(writtenContent).not.toContain('<!-- CONFIGS_TABLE -->');
   });
 });

@@ -2,10 +2,10 @@
 Generated from scripts/templates/README.md by `bun run generate-docs`. Edit the template, not this
 file.
 
-Every row below is read out of the repository itself. Each `action.yaml`, `workflow.yaml` and
-`configs/*.json` supplies its own name and description, `.release-please-manifest.json` supplies the
-released version, and every tag is resolved to the commit it points at, so the `uses:` lines are SHA
-pins rather than moving references.
+Every row below is read out of the repository itself. Each `action.yaml` and `configs/*.json`
+supplies its own name and description, `.release-please-manifest.json` supplies the released
+version, and every tag is resolved to the commit it points at, so the `uses:` lines are SHA pins
+rather than moving references.
 
 The update-readme job in .github/workflows/update-files.yml runs the same command on every pull
 request and commits the result back to the branch. An edit made here is overwritten, not merged.
@@ -13,8 +13,7 @@ request and commits the result back to the branch. An edit made here is overwrit
 
 # Actions
 
-Composite and Node GitHub Actions, reusable workflows and shared Renovate presets, each released
-under its own tag.
+Composite and Node GitHub Actions and shared Renovate presets, each released under its own tag.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/TimSchoenle/actions/scripts-ci.yml?branch=main&label=ci)](https://github.com/TimSchoenle/actions/actions/workflows/scripts-ci.yml)
 [![License](https://img.shields.io/github/license/TimSchoenle/actions)](LICENSE)
@@ -22,12 +21,11 @@ under its own tag.
 ## What this is
 
 One repository holding the CI parts the other repositories in this account call: the actions under
-`actions/`, the callable workflows under `workflows/`, and the Renovate presets and branch rulesets
-under `configs/`.
+`actions/`, and the Renovate presets and branch rulesets under `configs/`.
 
 Each directory is its own release-please component, so `actions/rust/clippy` and
 `actions/bun/setup-cached` are versioned and tagged apart from each other. A tag names the component
-it belongs to, as `actions-<path>-vX.Y.Z` or `workflows-<path>-vX.Y.Z`. The tables below carry the
+it belongs to, as `actions-<path>-vX.Y.Z` or `configs-<path>-vX.Y.Z`. The tables below carry the
 current tag of every component and the `uses:` line that pins it.
 
 ## Quick start
@@ -53,7 +51,6 @@ an upgrade to `actions-bun-setup-cached`.
 
 - [Usage](#usage)
   - [Actions](#actions)
-  - [Reusable workflows](#reusable-workflows)
   - [Shared configurations](#shared-configurations)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
@@ -77,22 +74,22 @@ outputs. Where an action needs more than that, a README sits next to it.
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Close Pull Request](./actions/common/close-pull-request) | Closes a pull request | [actions-common-close-pull-request-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-close-pull-request-v2.0.0) | `uses: TimSchoenle/actions/actions/common/close-pull-request@actions-common-close-pull-request-v2.0.0 # tag=actions-common-close-pull-request-v2.0.0` |
-| [Commit Changes](./actions/common/commit-changes) | Commits changes using the GitHub API to ensure verified bot commits. | [actions-common-commit-changes-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v3.0.0) | `uses: TimSchoenle/actions/actions/common/commit-changes@actions-common-commit-changes-v3.0.0 # tag=actions-common-commit-changes-v3.0.0` |
+| [Close Pull Request](./actions/common/close-pull-request) | Closes a pull request | [actions-common-close-pull-request-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-close-pull-request-v2.0.0) | `uses: TimSchoenle/actions/actions/common/close-pull-request@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-common-close-pull-request-v2.0.0` |
+| [Commit Changes](./actions/common/commit-changes) | Commits changes using the GitHub API to ensure verified bot commits. | [actions-common-commit-changes-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v3.0.0) | `uses: TimSchoenle/actions/actions/common/commit-changes@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-common-commit-changes-v3.0.0` |
 | [Common Commit Patch](./actions/common/commit-patch) | Commits a common/create-patch artifact from the same run as a verified commit, refusing any path outside allowed_paths, under .github/workflows/ or below a symbolic link. | [actions-common-commit-patch-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-patch-v1.1.0) | `uses: TimSchoenle/actions/actions/common/commit-patch@bbc2c5e2a0f9345cb2e84946846736f047a6eae3 # tag=actions-common-commit-patch-v1.1.0` |
 | [Common Create Patch](./actions/common/create-patch) | Uploads the working-tree changes as a binary git patch against HEAD, for common/commit-patch to commit from a job that runs no repository code. | [actions-common-create-patch-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-patch-v1.1.0) | `uses: TimSchoenle/actions/actions/common/create-patch@bbc2c5e2a0f9345cb2e84946846736f047a6eae3 # tag=actions-common-create-patch-v1.1.0` |
-| [Common Modify YAML](./actions/common/modify-yaml) | A action to modify a value in a YAML file while strictly preserving comments and structure | [actions-common-modify-yaml-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-modify-yaml-v2.0.0) | `uses: TimSchoenle/actions/actions/common/modify-yaml@actions-common-modify-yaml-v2.0.0 # tag=actions-common-modify-yaml-v2.0.0` |
-| [Common Read YAML](./actions/common/read-yaml) | A action to read a value from a YAML file using dot notation | [actions-common-read-yaml-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-read-yaml-v2.0.0) | `uses: TimSchoenle/actions/actions/common/read-yaml@actions-common-read-yaml-v2.0.0 # tag=actions-common-read-yaml-v2.0.0` |
-| [Common Readme Variables](./actions/common/readme-variables) | Collect the standard README render payload — repository facts, release, toolchain and a docs index — as strict JSON for render-template | [actions-common-readme-variables-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-readme-variables-v2.0.0) | `uses: TimSchoenle/actions/actions/common/readme-variables@actions-common-readme-variables-v2.0.0 # tag=actions-common-readme-variables-v2.0.0` |
-| [Create Branch](./actions/common/create-branch) | Creates or resets a git branch using GitHub API. | [actions-common-create-branch-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-branch-v2.0.0) | `uses: TimSchoenle/actions/actions/common/create-branch@actions-common-create-branch-v2.0.0 # tag=actions-common-create-branch-v2.0.0` |
+| [Common Modify YAML](./actions/common/modify-yaml) | A action to modify a value in a YAML file while strictly preserving comments and structure | [actions-common-modify-yaml-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-modify-yaml-v2.0.0) | `uses: TimSchoenle/actions/actions/common/modify-yaml@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-common-modify-yaml-v2.0.0` |
+| [Common Read YAML](./actions/common/read-yaml) | A action to read a value from a YAML file using dot notation | [actions-common-read-yaml-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-read-yaml-v2.0.0) | `uses: TimSchoenle/actions/actions/common/read-yaml@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-common-read-yaml-v2.0.0` |
+| [Common Readme Variables](./actions/common/readme-variables) | Collect the standard README render payload — repository facts, release, toolchain and a docs index — as strict JSON for render-template | [actions-common-readme-variables-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-readme-variables-v2.0.0) | `uses: TimSchoenle/actions/actions/common/readme-variables@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-common-readme-variables-v2.0.0` |
+| [Create Branch](./actions/common/create-branch) | Creates or resets a git branch using GitHub API. | [actions-common-create-branch-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-branch-v2.0.0) | `uses: TimSchoenle/actions/actions/common/create-branch@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-common-create-branch-v2.0.0` |
 | [Create Pull Request](./actions/common/create-pull-request) | Creates or updates a pull request using GitHub App authentication with optional branch reset. | [actions-common-create-pull-request-v1.0.28](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-pull-request-v1.0.28) | `uses: TimSchoenle/actions/actions/common/create-pull-request@81e4009704e0963651bbd8275e31244c1d1e220d # tag=actions-common-create-pull-request-v1.0.28` |
-| [Delete-Branch](./actions/common/delete-branch) | Deletes a branch from a repository. Fails gracefully if the branch does not exist. | [actions-common-delete-branch-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-delete-branch-v2.0.0) | `uses: TimSchoenle/actions/actions/common/delete-branch@actions-common-delete-branch-v2.0.0 # tag=actions-common-delete-branch-v2.0.0` |
-| [Get App Git Identity](./actions/common/get-app-git-identity) | Resolves the git identity (username, email, user ID) for a GitHub App bot. | [actions-common-get-app-git-identity-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-get-app-git-identity-v2.0.0) | `uses: TimSchoenle/actions/actions/common/get-app-git-identity@actions-common-get-app-git-identity-v2.0.0 # tag=actions-common-get-app-git-identity-v2.0.0` |
-| [Render Template](./actions/common/render-template) | A action to render a Handlebars template file to an output file from a JSON map of variables, deterministically | [actions-common-render-template-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-v3.0.0) | `uses: TimSchoenle/actions/actions/common/render-template@actions-common-render-template-v3.0.0 # tag=actions-common-render-template-v3.0.0` |
+| [Delete-Branch](./actions/common/delete-branch) | Deletes a branch from a repository. Fails gracefully if the branch does not exist. | [actions-common-delete-branch-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-delete-branch-v2.0.0) | `uses: TimSchoenle/actions/actions/common/delete-branch@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-common-delete-branch-v2.0.0` |
+| [Get App Git Identity](./actions/common/get-app-git-identity) | Resolves the git identity (username, email, user ID) for a GitHub App bot. | [actions-common-get-app-git-identity-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-get-app-git-identity-v2.0.0) | `uses: TimSchoenle/actions/actions/common/get-app-git-identity@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-common-get-app-git-identity-v2.0.0` |
+| [Render Template](./actions/common/render-template) | A action to render a Handlebars template file to an output file from a JSON map of variables, deterministically | [actions-common-render-template-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-v3.0.0) | `uses: TimSchoenle/actions/actions/common/render-template@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-common-render-template-v3.0.0` |
 | [Render Template And Commit](./actions/common/render-template-and-commit) | Renders a Handlebars template to a file and commits the result as a verified bot commit, skipping the commit when the render changed nothing. | [actions-common-render-template-and-commit-v1.1.18](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-and-commit-v1.1.18) | `uses: TimSchoenle/actions/actions/common/render-template-and-commit@ea4465fbe2bec98efad19b63849f8d1ac67b5c88 # tag=actions-common-render-template-and-commit-v1.1.18` |
-| [Setup App Git Identity](./actions/common/setup-app-git-identity) | Configures git with the identity of a GitHub App bot and outputs the bot details. | [actions-common-setup-app-git-identity-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-setup-app-git-identity-v2.0.0) | `uses: TimSchoenle/actions/actions/common/setup-app-git-identity@actions-common-setup-app-git-identity-v2.0.0 # tag=actions-common-setup-app-git-identity-v2.0.0` |
-| [Upsert Issue](./actions/common/upsert-issue) | Opens or updates a repository issue, updating the previous issue carrying the same identifier. | [actions-common-upsert-issue-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-upsert-issue-v2.0.0) | `uses: TimSchoenle/actions/actions/common/upsert-issue@actions-common-upsert-issue-v2.0.0 # tag=actions-common-upsert-issue-v2.0.0` |
-| [Upsert PR Comment](./actions/common/upsert-pr-comment) | Posts a comment on a pull request, updating the previous comment carrying the same identifier. | [actions-common-upsert-pr-comment-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-upsert-pr-comment-v2.0.0) | `uses: TimSchoenle/actions/actions/common/upsert-pr-comment@actions-common-upsert-pr-comment-v2.0.0 # tag=actions-common-upsert-pr-comment-v2.0.0` |
+| [Setup App Git Identity](./actions/common/setup-app-git-identity) | Configures git with the identity of a GitHub App bot and outputs the bot details. | [actions-common-setup-app-git-identity-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-setup-app-git-identity-v2.0.0) | `uses: TimSchoenle/actions/actions/common/setup-app-git-identity@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-common-setup-app-git-identity-v2.0.0` |
+| [Upsert Issue](./actions/common/upsert-issue) | Opens or updates a repository issue, updating the previous issue carrying the same identifier. | [actions-common-upsert-issue-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-upsert-issue-v2.0.0) | `uses: TimSchoenle/actions/actions/common/upsert-issue@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-common-upsert-issue-v2.0.0` |
+| [Upsert PR Comment](./actions/common/upsert-pr-comment) | Posts a comment on a pull request, updating the previous comment carrying the same identifier. | [actions-common-upsert-pr-comment-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-upsert-pr-comment-v2.0.0) | `uses: TimSchoenle/actions/actions/common/upsert-pr-comment@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-common-upsert-pr-comment-v2.0.0` |
 
 #### Docker
 
@@ -105,22 +102,22 @@ outputs. Where an action needs more than that, a README sits next to it.
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Apply Helm Chart Updates](./actions/helm/apply-chart-updates) | Applies a set of templated image updates to a Helm chart's values.yaml and bumps Chart.yaml, preserving comments and structure. Every image carries its own version and digest. | [actions-helm-apply-chart-updates-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-apply-chart-updates-v2.0.0) | `uses: TimSchoenle/actions/actions/helm/apply-chart-updates@actions-helm-apply-chart-updates-v2.0.0 # tag=actions-helm-apply-chart-updates-v2.0.0` |
+| [Apply Helm Chart Updates](./actions/helm/apply-chart-updates) | Applies a set of templated image updates to a Helm chart's values.yaml and bumps Chart.yaml, preserving comments and structure. Every image carries its own version and digest. | [actions-helm-apply-chart-updates-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-apply-chart-updates-v2.0.0) | `uses: TimSchoenle/actions/actions/helm/apply-chart-updates@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-helm-apply-chart-updates-v2.0.0` |
 | [Update Helm Chart Version](./actions/helm/update-chart-version) | Updates a Helm chart's image tags, version and appVersion, then opens a Pull Request. Every image carries its own version and digest, so one call can move a chart with many services. This action requires a bot account with access to the charts repo. | [actions-helm-update-chart-version-v1.7.2](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.7.2) | `uses: TimSchoenle/actions/actions/helm/update-chart-version@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-helm-update-chart-version-v1.7.2` |
 
 #### Helper
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Helper Verify-branch-name](./actions/helper/verify-branch-name) | Verify the head branch of a pull request matches a pattern and check whether it comes from a fork | [actions-helper-verify-branch-name-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-branch-name-v2.0.0) | `uses: TimSchoenle/actions/actions/helper/verify-branch-name@actions-helper-verify-branch-name-v2.0.0 # tag=actions-helper-verify-branch-name-v2.0.0` |
-| [Resolve Branch](./actions/helper/resolve-base-branch) | Resolve the given base branch or return default branch. With optional existence check. | [actions-helper-resolve-base-branch-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-resolve-base-branch-v2.0.0) | `uses: TimSchoenle/actions/actions/helper/resolve-base-branch@actions-helper-resolve-base-branch-v2.0.0 # tag=actions-helper-resolve-base-branch-v2.0.0` |
-| [Verify Commit Authors](./actions/helper/verify-commit-authors) | Verifies that every commit in a PR is authored by a specific set of users and is either signed by GitHub or committed and signed by one of those users. | [actions-helper-verify-commit-authors-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v3.0.0) | `uses: TimSchoenle/actions/actions/helper/verify-commit-authors@actions-helper-verify-commit-authors-v3.0.0 # tag=actions-helper-verify-commit-authors-v3.0.0` |
+| [Helper Verify-branch-name](./actions/helper/verify-branch-name) | Verify the head branch of a pull request matches a pattern and check whether it comes from a fork | [actions-helper-verify-branch-name-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-branch-name-v2.0.0) | `uses: TimSchoenle/actions/actions/helper/verify-branch-name@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-helper-verify-branch-name-v2.0.0` |
+| [Resolve Branch](./actions/helper/resolve-base-branch) | Resolve the given base branch or return default branch. With optional existence check. | [actions-helper-resolve-base-branch-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-resolve-base-branch-v2.0.0) | `uses: TimSchoenle/actions/actions/helper/resolve-base-branch@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-helper-resolve-base-branch-v2.0.0` |
+| [Verify Commit Authors](./actions/helper/verify-commit-authors) | Verifies that every commit in a PR is authored by a specific set of users and is either signed by GitHub or committed and signed by one of those users. | [actions-helper-verify-commit-authors-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v3.0.0) | `uses: TimSchoenle/actions/actions/helper/verify-commit-authors@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-helper-verify-commit-authors-v3.0.0` |
 
 #### Java-gradle
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | Runs Gradle spotlessApply and uploads the changes as a patch artifact for common/commit-patch to commit from a separate job. Holds no token. | [actions-java-gradle-auto-spotless-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v2.0.0) | `uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@actions-java-gradle-auto-spotless-v2.0.0 # tag=actions-java-gradle-auto-spotless-v2.0.0` |
+| [Java-gradle Auto-spotless](./actions/java-gradle/auto-spotless) | Runs Gradle spotlessApply and uploads the changes as a patch artifact for common/commit-patch to commit from a separate job. Holds no token. | [actions-java-gradle-auto-spotless-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v2.0.0) | `uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-java-gradle-auto-spotless-v2.0.0` |
 | [Java-Gradle Coverage (Codecov)](./actions/java-gradle/coverage-codecov) | Action that measures Java and Kotlin test coverage with JaCoCo through Gradle, and uploads the coverage reports and the JUnit test results to Codecov. | [actions-java-gradle-coverage-codecov-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-coverage-codecov-v1.1.2) | `uses: TimSchoenle/actions/actions/java-gradle/coverage-codecov@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-java-gradle-coverage-codecov-v1.1.2` |
 | [Java-Gradle default setup](./actions/java-gradle/setup-base-environment) | Setup Java and Gradle environment for building, with opinionated default settings | [actions-java-gradle-setup-base-environment-v1.2.14](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.14) | `uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-java-gradle-setup-base-environment-v1.2.14` |
 
@@ -128,20 +125,20 @@ outputs. Where an action needs more than that, a README sits next to it.
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | Auto approve Pull Requests with the given user ids and branches. | [actions-maintenance-auto-approve-pr-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v3.0.0) | `uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@actions-maintenance-auto-approve-pr-v3.0.0 # tag=actions-maintenance-auto-approve-pr-v3.0.0` |
-| [Maintenance Auto-rebase](./actions/maintenance/auto-rebase) | Updates every open pull request carrying a label with the latest commits of its base branch, through the update-branch API, which merges the base into the head. | [actions-maintenance-auto-rebase-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-rebase-v3.0.0) | `uses: TimSchoenle/actions/actions/maintenance/auto-rebase@actions-maintenance-auto-rebase-v3.0.0 # tag=actions-maintenance-auto-rebase-v3.0.0` |
-| [Maintenance Ensure-actions-are-executed](./actions/maintenance/ensure-actions-are-executed) | Ensures selected checks completed successfully when they were started. | [actions-maintenance-ensure-actions-are-executed-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v2.0.0) | `uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@actions-maintenance-ensure-actions-are-executed-v2.0.0 # tag=actions-maintenance-ensure-actions-are-executed-v2.0.0` |
-| [Maintenance Timed-auto-merge](./actions/maintenance/timed-auto-merge) | Approve and enable auto-merge on aged pull requests whose head branch matches a pattern and whose commits are all signed by trusted authors. | [actions-maintenance-timed-auto-merge-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-timed-auto-merge-v2.0.0) | `uses: TimSchoenle/actions/actions/maintenance/timed-auto-merge@actions-maintenance-timed-auto-merge-v2.0.0 # tag=actions-maintenance-timed-auto-merge-v2.0.0` |
-| [Maintenance Wipe-cache](./actions/maintenance/wipe-cache) | Deletes every GitHub Actions cache entry recorded for one branch. Refuses the default branch unless allow_default_branch is true. | [actions-maintenance-wipe-cache-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-wipe-cache-v3.0.0) | `uses: TimSchoenle/actions/actions/maintenance/wipe-cache@actions-maintenance-wipe-cache-v3.0.0 # tag=actions-maintenance-wipe-cache-v3.0.0` |
+| [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | Auto approve Pull Requests with the given user ids and branches. | [actions-maintenance-auto-approve-pr-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v3.0.0) | `uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-maintenance-auto-approve-pr-v3.0.0` |
+| [Maintenance Auto-rebase](./actions/maintenance/auto-rebase) | Updates every open pull request carrying a label with the latest commits of its base branch, through the update-branch API, which merges the base into the head. | [actions-maintenance-auto-rebase-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-rebase-v3.0.0) | `uses: TimSchoenle/actions/actions/maintenance/auto-rebase@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-maintenance-auto-rebase-v3.0.0` |
+| [Maintenance Ensure-actions-are-executed](./actions/maintenance/ensure-actions-are-executed) | Ensures selected checks completed successfully when they were started. | [actions-maintenance-ensure-actions-are-executed-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v2.0.0) | `uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-maintenance-ensure-actions-are-executed-v2.0.0` |
+| [Maintenance Timed-auto-merge](./actions/maintenance/timed-auto-merge) | Approve and enable auto-merge on aged pull requests whose head branch matches a pattern and whose commits are all signed by trusted authors. | [actions-maintenance-timed-auto-merge-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-timed-auto-merge-v2.0.0) | `uses: TimSchoenle/actions/actions/maintenance/timed-auto-merge@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-maintenance-timed-auto-merge-v2.0.0` |
+| [Maintenance Wipe-cache](./actions/maintenance/wipe-cache) | Deletes every GitHub Actions cache entry recorded for one branch. Refuses the default branch unless allow_default_branch is true. | [actions-maintenance-wipe-cache-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-wipe-cache-v3.0.0) | `uses: TimSchoenle/actions/actions/maintenance/wipe-cache@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-maintenance-wipe-cache-v3.0.0` |
 
 #### Rust
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Rust Auto-format](./actions/rust/auto-format) | Runs cargo fmt and uploads the changes as a patch artifact for common/commit-patch to commit from a separate job. Holds no token. | [actions-rust-auto-format-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v2.0.0) | `uses: TimSchoenle/actions/actions/rust/auto-format@actions-rust-auto-format-v2.0.0 # tag=actions-rust-auto-format-v2.0.0` |
+| [Rust Auto-format](./actions/rust/auto-format) | Runs cargo fmt and uploads the changes as a patch artifact for common/commit-patch to commit from a separate job. Holds no token. | [actions-rust-auto-format-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v2.0.0) | `uses: TimSchoenle/actions/actions/rust/auto-format@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-rust-auto-format-v2.0.0` |
 | [Rust Cargo-check](./actions/rust/cargo-check) | Action that runs cargo check to verify Rust code compiles without errors. | [actions-rust-cargo-check-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.1.7) | `uses: TimSchoenle/actions/actions/rust/cargo-check@88e964d440835fd99f7e9d17b4ba1b48544303ba # tag=actions-rust-cargo-check-v1.1.7` |
 | [Rust Clippy](./actions/rust/clippy) | Action that runs clippy to catch common mistakes and improve your Rust code. | [actions-rust-clippy-v1.1.13](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-clippy-v1.1.13) | `uses: TimSchoenle/actions/actions/rust/clippy@ea4465fbe2bec98efad19b63849f8d1ac67b5c88 # tag=actions-rust-clippy-v1.1.13` |
-| [Rust Config Contract](./actions/rust/config-contract) | Action that checks a terrace-config contract, its Dockerfile LABEL block and a built image against the configuration types they claim to describe. | [actions-rust-config-contract-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-config-contract-v2.0.0) | `uses: TimSchoenle/actions/actions/rust/config-contract@actions-rust-config-contract-v2.0.0 # tag=actions-rust-config-contract-v2.0.0` |
+| [Rust Config Contract](./actions/rust/config-contract) | Action that checks a terrace-config contract, its Dockerfile LABEL block and a built image against the configuration types they claim to describe. | [actions-rust-config-contract-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-config-contract-v2.0.0) | `uses: TimSchoenle/actions/actions/rust/config-contract@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-rust-config-contract-v2.0.0` |
 | [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | Action that measures Rust test coverage with cargo llvm-cov and nextest, and uploads the coverage report and the JUnit test results to Codecov. | [actions-rust-coverage-codecov-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v2.0.4) | `uses: TimSchoenle/actions/actions/rust/coverage-codecov@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-rust-coverage-codecov-v2.0.4` |
 | [Rust Test](./actions/rust/test) | Action that runs cargo nextest to verify Rust code passes tests. | [actions-rust-test-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.2) | `uses: TimSchoenle/actions/actions/rust/test@e16a1e466faf8ec751b26289c1898143a253269f # tag=actions-rust-test-v1.1.2` |
 
@@ -160,30 +157,13 @@ outputs. Where an action needs more than that, a README sits next to it.
 | [Terrace Helm Diff](./actions/terrace/helm-diff) | Reports how the vendored configuration contracts changed against a base revision and what each change costs the charts, with terrace-contract diff. The report goes to the job summary and, given a token, into one pull request comment that later runs update. Never fails on differences. | [actions-terrace-helm-diff-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-diff-v1.1.0) | `uses: TimSchoenle/actions/actions/terrace/helm-diff@81e4009704e0963651bbd8275e31244c1d1e220d # tag=actions-terrace-helm-diff-v1.1.0` |
 | [Terrace Helm Sync](./actions/terrace/helm-sync) | Brings every file derived from the vendored configuration contracts up to date with terrace-contract sync: pulls each contract from the image its chart pins, then rewrites the value schemas and README credential references. Given a token, commits the result to the branch as a verified commit. | [actions-terrace-helm-sync-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-sync-v1.1.0) | `uses: TimSchoenle/actions/actions/terrace/helm-sync@81e4009704e0963651bbd8275e31244c1d1e220d # tag=actions-terrace-helm-sync-v1.1.0` |
 | [Terrace Image](./actions/terrace/image) | Holds a service image to the configuration contract its build produced, in any language: the document against the specification, the committed document against its generator, the Dockerfile label block against the document, and the built image itself, read through oras. Optionally attaches the document to the image digest and signs it. | [actions-terrace-image-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-image-v1.1.0) | `uses: TimSchoenle/actions/actions/terrace/image@ea4465fbe2bec98efad19b63849f8d1ac67b5c88 # tag=actions-terrace-image-v1.1.0` |
-| [Terrace Setup](./actions/terrace/setup) | Installs a signature-verified terrace-contract release on PATH, together with cosign and, when asked, oras. The version comes from the version input or from the cli pin in terrace.yaml. | [actions-terrace-setup-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-setup-v3.0.0) | `uses: TimSchoenle/actions/actions/terrace/setup@actions-terrace-setup-v3.0.0 # tag=actions-terrace-setup-v3.0.0` |
+| [Terrace Setup](./actions/terrace/setup) | Installs a signature-verified terrace-contract release on PATH, together with cosign and, when asked, oras. The version comes from the version input or from the cli pin in terrace.yaml. | [actions-terrace-setup-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-setup-v3.0.0) | `uses: TimSchoenle/actions/actions/terrace/setup@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-terrace-setup-v3.0.0` |
 
 #### Test
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
 | [Setup E2E Test](./actions/test/setup-e2e) | Sets up the environment for E2E testing: generates token, checks out test repo, and checks out actions code. | [actions-test-setup-e2e-v1.2.4](https://github.com/TimSchoenle/actions/releases/tag/actions-test-setup-e2e-v1.2.4) | `uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4` |
-
-
-
-### Reusable workflows
-
-Releasing one of these publishes it onto its tag at `.github/workflows/<category>-<name>.yaml`,
-which is the path the `uses:` line resolves. Read and change the source under `workflows/`.
-
-#### Maintenance
-
-| Workflow | Description | Version | Usage |
-| --- | --- | --- | --- |
-| [Auto Format](./workflows/maintenance/auto-bun-prettier) | Reusable workflow to auto-format code by running a "bun run" script and commit changes. | [workflows-maintenance-auto-bun-prettier-v1.1.43](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-bun-prettier-v1.1.43) | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@2500adaa53c588c7dff4dfb89d2831367b416c34 # tag=workflows-maintenance-auto-bun-prettier-v1.1.43` |
-| [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | Reusable workflow that automatically verifies, approves, and merges Pull Requests that match a specific branch pattern and have been open for a configurable duration. It ensures all commits are signed and authored by trusted users. | [workflows-maintenance-timed-auto-pr-approve-v1.2.45](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-timed-auto-pr-approve-v1.2.45) | `uses: TimSchoenle/actions/.github/workflows/maintenance-timed-auto-pr-approve.yaml@87a8aa7d345eb8215f655b5e47b029f3bf8e46f1 # tag=workflows-maintenance-timed-auto-pr-approve-v1.2.45` |
-| [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | Reusable workflow to auto approve Renovate PRs, this is useful to auto merge Renovate PRs which have auto-merge enabled. | [workflows-maintenance-auto-approve-renovate-v1.4.32](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-approve-renovate-v1.4.32) | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-approve-renovate.yaml@27e020480d2c7c41694065b53a6565817e67680a # tag=workflows-maintenance-auto-approve-renovate-v1.4.32` |
-| [Maintenance Auto-rebase](./workflows/maintenance/auto-rebase) | Automatically rebases open PRs with a given label. | [workflows-maintenance-auto-rebase-v1.1.8](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-rebase-v1.1.8) | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-rebase.yaml@7cf01346e7636298556c46cd8fc1a96b50006d59 # tag=workflows-maintenance-auto-rebase-v1.1.8` |
-| [Maintenance Wipe-cache](./workflows/maintenance/wipe-cache) | Workflow to wipe all cache entries for the given branch. | [workflows-maintenance-wipe-cache-v1.1.14](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-wipe-cache-v1.1.14) | `uses: TimSchoenle/actions/.github/workflows/maintenance-wipe-cache.yaml@d10d04659020a6fbb4e4f7ecaa6b829e51a0bb97 # tag=workflows-maintenance-wipe-cache-v1.1.14` |
 
 
 
@@ -220,7 +200,6 @@ build tool's config directory at your copy of the ruleset directory.
 | [default](./configs/renovate/default.json) | Default configuration for Renovate | `"extends": ["github>TimSchoenle/actions//configs/renovate/default"]` |
 | [rust-application](./configs/renovate/rust-application.json) | Rust applications: rust-toolchain plus `rust-version` in every Cargo.toml, moved in the same `rust toolchain` pull request. Not for libraries: there `rust-version` is the MSRV, a compatibility promise raised by decision, not a pin to keep current. | `"extends": ["github>TimSchoenle/actions//configs/renovate/rust-application"]` |
 | [rust-toolchain](./configs/renovate/rust-toolchain.json) | Rust toolchain for any Rust repository: `channel` in rust-toolchain.toml and every `rust` Docker image tag move in one pull request that cannot ship half-done. Never touches `rust-version` in Cargo.toml; applications that want it moved too extend rust-application instead. | `"extends": ["github>TimSchoenle/actions//configs/renovate/rust-toolchain"]` |
-| [workflows](./configs/renovate/workflows.json) | Versioning rules for all custom Reusable Workflows defined in this repository | `"extends": ["github>TimSchoenle/actions//configs/renovate/workflows"]` |
 
 
 #### Checkstyle
@@ -355,9 +334,9 @@ repositories link them from their own `CONTRIBUTING.md` instead of keeping a cop
 ## Contributing
 
 Issues and pull requests are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers the commit
-convention release-please reads, the interactive generators that scaffold a new action or workflow,
-and the checks CI runs. This file and SECURITY.md are generated. An edit to either is reverted on
-the next pull request.
+convention release-please reads, the interactive generators that scaffold a new action, and the
+checks CI runs. This file and SECURITY.md are generated. An edit to either is reverted on the next
+pull request.
 
 ## Security
 
@@ -366,4 +345,4 @@ route and the list of supported versions.
 
 ## License
 
-Every action, workflow and config here is published under the terms in [LICENSE](LICENSE).
+Every action and config here is published under the terms in [LICENSE](LICENSE).

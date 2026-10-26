@@ -7,7 +7,6 @@ import { ActionParser } from './lib/readme/parsers/action-parser.js';
 import { CheckstyleParser } from './lib/readme/parsers/checkstyle-parser.js';
 import { GithubConfigParser } from './lib/readme/parsers/github-config-parser.js';
 import { RenovateParser } from './lib/readme/parsers/renovate-parser.js';
-import { WorkflowParser } from './lib/readme/parsers/workflow-parser.js';
 import { Sys } from './lib/utils.js';
 
 import type { DocumentationItem } from './lib/readme/types.js';
@@ -42,21 +41,7 @@ export async function main() {
     CATEGORY_HEADING_LEVEL,
   );
 
-  // 2. Workflows
-  const workflowParser = new WorkflowParser();
-  const workflows = await workflowParser.parse();
-  const workflowsOutput = await generateSection(
-    workflows,
-    ['Workflow', 'Description', 'Version', 'Usage'],
-    (item) => {
-      const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;
-      const desc = item.description.replaceAll('\n', ' ').trim();
-      return [link, desc, item.version ?? 'N/A', item.usage || ''];
-    },
-    CATEGORY_HEADING_LEVEL,
-  );
-
-  // 3. Configs
+  // 2. Configs
   let configsOutput = '';
 
   const githubConfigParser = new GithubConfigParser();
@@ -114,14 +99,14 @@ export async function main() {
     }
   }
 
-  // 4. Update README
-  await updateReadme(actionsOutput, workflowsOutput, configsOutput);
+  // 3. Update README
+  await updateReadme(actionsOutput, configsOutput);
 
-  // 5. Update SECURITY.md
-  await updateSecurity(actions, workflows);
+  // 4. Update SECURITY.md
+  await updateSecurity(actions);
 }
 
-async function updateReadme(actionsOutput: string, workflowsOutput: string, configsOutput: string) {
+async function updateReadme(actionsOutput: string, configsOutput: string) {
   const templateFile = Sys.file(README_TEMPLATE_PATH);
   if (!(await templateFile.exists())) {
     console.error(`❌ Template not found at ${README_TEMPLATE_PATH}`);
@@ -134,14 +119,13 @@ async function updateReadme(actionsOutput: string, workflowsOutput: string, conf
   readmeContent = readmeContent.replaceAll('{{REPO}}', repoId);
 
   readmeContent = readmeContent.replace('<!-- ACTIONS_TABLE -->', actionsOutput);
-  readmeContent = readmeContent.replace('<!-- WORKFLOWS_TABLE -->', workflowsOutput);
   readmeContent = readmeContent.replace('<!-- CONFIGS_TABLE -->', configsOutput);
 
   await Sys.write(README_PATH, readmeContent);
   console.log(`🎉 Generated README.md at ${README_PATH}`);
 }
 
-async function updateSecurity(actions: DocumentationItem[], workflows: DocumentationItem[]) {
+async function updateSecurity(actions: DocumentationItem[]) {
   const templateFile = Sys.file(SECURITY_TEMPLATE_PATH);
   if (!(await templateFile.exists())) {
     console.error(`❌ Template not found at ${SECURITY_TEMPLATE_PATH}`);
@@ -151,7 +135,6 @@ async function updateSecurity(actions: DocumentationItem[], workflows: Documenta
 
   // Filter items that have versions
   const versionedActions = actions.filter((item) => item.version && item.version !== 'N/A');
-  const versionedWorkflows = workflows.filter((item) => item.version && item.version !== 'N/A');
 
   let supportedVersionsOutput = '';
 
@@ -159,23 +142,6 @@ async function updateSecurity(actions: DocumentationItem[], workflows: Documenta
     supportedVersionsOutput += '### Actions\n\n';
     supportedVersionsOutput += await generateSection(
       versionedActions,
-      ['Component', 'Version', 'Supported'],
-      (item) => {
-        const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;
-        return [link, item.version!, ':white_check_mark:'];
-      },
-      CATEGORY_HEADING_LEVEL,
-    );
-  }
-
-  if (versionedWorkflows.length > 0) {
-    // spacing
-    if (supportedVersionsOutput) {
-      supportedVersionsOutput += '\n';
-    }
-    supportedVersionsOutput += '### Workflows\n\n';
-    supportedVersionsOutput += await generateSection(
-      versionedWorkflows,
       ['Component', 'Version', 'Supported'],
       (item) => {
         const link = `[${item.name}](./${item.path.replaceAll('\\', '/')})`;

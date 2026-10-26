@@ -13,7 +13,7 @@ bun install --frozen-lockfile
 
 ## Adding and removing components
 
-Four interactive generators own the scaffolding. `create-action` writes the directory and its
+Two interactive generators own the scaffolding. `create-action` writes the directory and its
 `action.yaml`, the `verify-action-*` workflow, the `ci-required` entry that watches it, the
 release-please package and manifest entries, and then regenerates the docs. It does all of that in
 one run because those five have to agree.
@@ -21,8 +21,6 @@ one run because those five have to agree.
 ```bash
 bun run create-action     # actions/<category>/<name>/, action.yaml, verify workflow
 bun run remove-action     # the same set, deleted together
-bun run create-workflow   # workflows/<category>/<name>/, workflow.yaml, README, configs
-bun run remove-workflow
 ```
 
 Adding a directory by hand leaves it out of `.release-please-manifest.json`, and an unversioned
@@ -33,13 +31,13 @@ component is skipped by the docs generator and never released.
 Several files in this repository are outputs. Editing one is reverted on the next pull request,
 because CI regenerates it and commits the result back to the branch.
 
-| Output                                   | Generated from                                                                       | Command                           |
-| ---------------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------- |
-| `README.md`, `SECURITY.md`               | `scripts/templates/`, plus every `action.yaml`, `workflow.yaml` and `configs/*.json` | `bun run generate-docs`           |
-| `actions/*/*/dist/`                      | each action's `src/`                                                                 | `bun run build:workspaces`        |
-| `actions/*/*/src/generated/action-io.ts` | that action's `action.yaml`                                                          | `bun run generate-action-sources` |
-| `.github/workflows/verify-action-*.yaml` | `scripts/lib/e2e-workflow.ts`                                                        | `bun run generate-e2e-workflows`  |
-| `.github/workflows/ci-required.yaml`     | the workflow files themselves                                                        | `bun run generate-ci-required`    |
+| Output                                   | Generated from                                                      | Command                           |
+| ---------------------------------------- | ------------------------------------------------------------------- | --------------------------------- |
+| `README.md`, `SECURITY.md`               | `scripts/templates/`, plus every `action.yaml` and `configs/*.json` | `bun run generate-docs`           |
+| `actions/*/*/dist/`                      | each action's `src/`                                                | `bun run build:workspaces`        |
+| `actions/*/*/src/generated/action-io.ts` | that action's `action.yaml`                                         | `bun run generate-action-sources` |
+| `.github/workflows/verify-action-*.yaml` | `scripts/lib/e2e-workflow.ts`                                       | `bun run generate-e2e-workflows`  |
+| `.github/workflows/ci-required.yaml`     | the workflow files themselves                                       | `bun run generate-ci-required`    |
 
 The pre-commit hook regenerates `action-io.ts` and checks the bundles for the staged files only. The
 rest are checked in CI and committed back to the branch when they drift.

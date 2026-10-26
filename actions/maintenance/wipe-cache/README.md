@@ -7,9 +7,6 @@ GitHub keeps a deleted branch's caches until they go seven days without access, 
 repository's cache storage limit the whole time. Wiping them when the branch is deleted frees that space for the branches
 still in use.
 
-It replaces the reusable workflow `workflows/maintenance/wipe-cache`, which shelled out to the `gh-actions-cache`
-extension. That extension is archived and was installed unpinned on every run.
-
 ## Usage
 
 ```yaml

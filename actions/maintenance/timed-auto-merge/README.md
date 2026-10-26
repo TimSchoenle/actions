@@ -5,9 +5,6 @@ at least `time_elapsed`, and whose every commit is signed and authored only by `
 scheduled job that lets release-please or Renovate pull requests merge themselves after a waiting period in which a
 human can still intervene.
 
-It replaces the reusable workflow `workflows/maintenance/timed-auto-pr-approve`. See
-[Migrating from the reusable workflow](#migrating-from-the-reusable-workflow).
-
 ## Usage
 
 ```yaml
@@ -134,10 +131,11 @@ until the next run has verified the new head and approved it again.
 
 ## Branch pattern
 
-In `legacy` mode, the default, the pattern is the syntax of the reusable workflow: every `%` stands for any run of
-characters, and the pattern is anchored at the start of the branch name. `release-please--branches--%` matches
-`release-please--branches--main` but not `feature/release-please--branches--main`. The rest of the pattern is a POSIX
-extended regular expression, so this pattern from a Renovate setup keeps working:
+In `legacy` mode, the default, every `%` in the pattern stands for any run of characters, and the pattern is anchored
+at the start of the branch name. `release-please--branches--%` matches `release-please--branches--main` but not
+`feature/release-please--branches--main`. The anchor applies to every alternative of a top-level `|`, so
+`release/%|hotfix/%` matches `hotfix/x` but not `evil/hotfix/x`. The rest of the pattern is a POSIX extended regular
+expression, as in this pattern from a Renovate setup:
 
 ```text
 (chore/helm/auto-update/|renovate/([^m]|m[^a]|ma[^j]|maj[^o]|majo[^r]))%
@@ -173,23 +171,3 @@ Every page of the commit list is read at one head SHA, and that head must be amo
 commits were read at a different head than the listing reported is skipped as `head-moved`. A commit list whose head
 changes between pages, that does not contain its head, or whose length disagrees with the commit count GitHub reports
 is reported under `failed`.
-
-## Migrating from the reusable workflow
-
-| Reusable workflow                   | This action                                                       |
-| ----------------------------------- | ----------------------------------------------------------------- |
-| `secrets.app_id`, `secrets.private_key` | Mint the token in the calling job and pass it as `token`.      |
-| `trusted_authors`                   | Unchanged.                                                        |
-| `branch_pattern`                    | Unchanged in the default `pattern_mode: legacy`.                  |
-| `time_elapsed`                      | Unchanged for `24h`, `1d`, `7d` and similar. Must be at least `minimum_age`. |
-| `merge_method`                      | Unchanged. Anything but `merge`, `squash` or `rebase` now fails the step. |
-
-Behaviour that changed:
-
-- Every open pull request is considered. `gh pr list` stopped at the 30 most recent.
-- Pull requests from forks and drafts are skipped.
-- In `legacy` mode a pattern with a top-level `|` is anchored on every alternative. The workflow anchored only the
-  first, so `release/%|hotfix/%` used to match `evil/hotfix/x`.
-- The review and the auto-merge request are pinned to the head SHA that was verified.
-- A failure to enable auto-merge is reported under `failed` and fails the step. The workflow printed it and passed.
-- One job processes every pull request in sequence, instead of one matrix job per pull request.

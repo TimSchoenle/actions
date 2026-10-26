@@ -11,10 +11,10 @@ type DurationUnit = keyof typeof UNIT_MS;
 /**
  * One whole number without leading zeros, then exactly one unit.
  *
- * The workflow this action replaces rewrote the value with `sed` and handed the result to GNU
- * `date -d "... ago"`, which reads far more than durations: `1d` became `1 days ago`, but `tomorrow`,
- * `-1d` or `1d 1d` were all accepted and moved the cutoff in directions nobody intended. Six digits
- * bounds the largest value to 999999 days, which stays an exact integer in milliseconds.
+ * Deliberately narrower than a general date parser such as GNU `date -d "... ago"`, which reads far
+ * more than durations: there `tomorrow`, `-1d` or `1d 1d` are all accepted and move the cutoff in
+ * directions nobody intended. Six digits bounds the largest value to 999999 days, which stays an
+ * exact integer in milliseconds.
  */
 const DURATION_PATTERN = /^(0|[1-9]\d{0,5})([smhd])$/;
 

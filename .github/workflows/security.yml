@@ -39,24 +39,8 @@ jobs:
         with:
           persist-credentials: false
 
-      # zizmor collects workflows only from `.github/workflows`, so each reusable workflow under
-      # `workflows/` has to be named on a line of its own.
-      - name: Find Reusable Workflows
-        id: find-workflows
-        run: |
-          set -euo pipefail
-          {
-            echo 'workflow_files<<EOF'
-            find workflows -type f \( -name '*.yaml' -o -name '*.yml' \) | LC_ALL=C sort
-            echo 'EOF'
-          } >> "$GITHUB_OUTPUT"
-
       - name: Run Zizmor
         uses: TimSchoenle/actions/actions/security/zizmor@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-security-zizmor-v1.1.3
-        with:
-          inputs: |
-            .
-            ${{ steps.find-workflows.outputs.workflow_files }}
 
   action-lint:
     name: Action Lint
@@ -94,13 +78,10 @@ jobs:
           echo "executable=${install_dir}/actionlint" >> "$GITHUB_OUTPUT"
         shell: bash
 
+      # Given no paths, actionlint finds the repository root and checks every workflow file under
+      # .github/workflows.
       - name: Check workflow files
         env:
           EXECUTABLE: ${{ steps.get_actionlint.outputs.executable }}
-        run: |
-          shopt -s globstar nullglob
-          $EXECUTABLE -color -verbose \
-            -config-file .github/actionlint.yaml \
-            .github/workflows/*.{yml,yaml} \
-            workflows/**/*.{yml,yaml}
+        run: '"$EXECUTABLE" -color -verbose'
         shell: bash

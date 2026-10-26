@@ -5,9 +5,7 @@
     "build:workspaces": "bun run generate-action-sources && bun run --filter '*' build",
     "create-action": "bun scripts/create-action.ts",
     "remove-action": "bun scripts/remove-action.ts",
-    "create-workflow": "bun scripts/create-workflow.ts",
     "generate-maven-central-signing-key": "bun scripts/generate-maven-central-signing-key.ts",
-    "remove-workflow": "bun scripts/remove-workflow.ts",
     "generate-docs": "bun scripts/generate-docs.ts",
     "generate-ci-required": "bun scripts/generate-ci-required.ts",
     "ci-required-registration": "bun scripts/ci-required-registration.ts",
@@ -73,7 +71,6 @@
   },
   "workspaces": [
     "actions/**/*",
-    "workflows/**/*",
     "packages/*"
   ]
 }

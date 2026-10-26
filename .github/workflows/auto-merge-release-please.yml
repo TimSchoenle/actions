@@ -12,9 +12,10 @@ on:
         required: true
         default: '1d'
 
-# Carried over from the reusable workflow this replaces.
+# A newer run for the same ref supersedes the one in progress. Every run judges every open pull
+# request afresh, so the cancelled run leaves nothing behind.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-timed-auto-pr-approve
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions: {}

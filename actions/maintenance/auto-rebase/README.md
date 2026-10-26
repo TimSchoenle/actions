@@ -3,8 +3,7 @@
 Keeps labelled pull requests current with their base branch. For every open pull request carrying `label`, it calls
 `PUT /repos/{owner}/{repo}/pulls/{pull_number}/update-branch`, the API behind the "Update branch" button.
 
-Despite the name, that API merges the base branch into the head branch; it does not rebase. The name is kept from the
-reusable workflow `workflows/maintenance/auto-rebase` this action replaces, which called the same API.
+Despite the name, that API merges the base branch into the head branch; it does not rebase.
 
 ## Usage
 

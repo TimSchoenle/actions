@@ -76,7 +76,7 @@ jobs:
         uses: TimSchoenle/actions/actions/common/create-patch@bbc2c5e2a0f9345cb2e84946846736f047a6eae3 # tag=actions-common-create-patch-v1.1.0
         with:
           artifact_name: update-files-builds
-          paths: 'actions/**/dist/**/* actions/**/src/generated/**/* workflows/**/dist/**/* workflows/**/src/generated/**/*'
+          paths: 'actions/**/dist/**/* actions/**/src/generated/**/*'
 
   update-builds:
     name: Build Actions and Commit
@@ -134,7 +134,7 @@ jobs:
         with:
           token: ${{ steps.generate_token.outputs.token }}
           artifact_name: update-files-builds
-          allowed_paths: 'actions/**/dist/** actions/**/src/generated/** workflows/**/dist/** workflows/**/src/generated/**'
+          allowed_paths: 'actions/**/dist/** actions/**/src/generated/**'
           commit_message: 'build: auto-update compiled artifacts'
 
       - name: Comment on PR
@@ -193,10 +193,10 @@ jobs:
           artifact_name: update-files-workflows
           paths: '.github/workflows/verify-action-*.yaml .github/workflows/ci-required.yaml .github/codecov.yml'
 
-  # The one job in this file whose token carries workflows: write, because these files live under
-  # .github/workflows/. allow_workflow_changes is what lets commit-patch accept them at all, and
+  # The one job in this repository whose token carries workflows: write, because these files live
+  # under .github/workflows/. allow_workflow_changes is what lets commit-patch accept them at all, and
   # allowed_paths narrows that to the generated files: a patch touching any other workflow fails here
-  # rather than being committed with the privilege. release-please.yml is the only other holder.
+  # rather than being committed with the privilege.
   update-generated-workflows:
     name: Regenerate Workflows
     needs: [update-builds, generate-workflows]
