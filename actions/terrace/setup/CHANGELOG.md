@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.0.0](https://github.com/TimSchoenle/actions/compare/actions-terrace-setup-v1.1.0...actions-terrace-setup-v2.0.0) (2026-10-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* **Actions/Auto-Approve-PR:** verify committer and signer, bind approval to the verified head ([#1935](https://github.com/TimSchoenle/actions/issues/1935))
+
+### Bug Fixes
+
+* **Actions/Auto-Approve-PR:** verify committer and signer, bind approval to the verified head ([#1935](https://github.com/TimSchoenle/actions/issues/1935)) ([124355a](https://github.com/TimSchoenle/actions/commit/124355a793ac1403e3a0aced050cab95d1278516))
+
+
+### Dependencies
+
+* **deps:** update dependency oras-project/oras to v1.3.5 ([#1921](https://github.com/TimSchoenle/actions/issues/1921)) ([3593fdf](https://github.com/TimSchoenle/actions/commit/3593fdf5a5b9f165556932a9afd511abf992f31c))
+
 ## [1.1.0](https://github.com/TimSchoenle/actions/compare/actions-terrace-setup-v1.0.0...actions-terrace-setup-v1.1.0) (2026-10-19)
 
 
