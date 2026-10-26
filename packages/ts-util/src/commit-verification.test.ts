@@ -6,8 +6,6 @@ import type { CommitRecord } from './commit-verification.js';
 
 const ACCEPTED = [12345, 67890];
 
-/** The account GitHub names as committer of every commit it creates and signs itself. */
-const WEB_FLOW = 19864447;
 /** An account outside the accepted set, standing in for an attacker. */
 const ATTACKER = 99999;
 
@@ -25,9 +23,13 @@ function commit(overrides: Partial<CommitRecord> = {}): CommitRecord {
   };
 }
 
-/** A commit GitHub created and signed on behalf of an accepted account, as Renovate's are. */
+/**
+ * A commit GitHub created and signed on behalf of an accepted account, as Renovate's and every App's
+ * API-made commits are. Its committer is `GitHub <noreply@github.com>`, which the GraphQL API resolves
+ * to no account, so `committerId` is null exactly as the API reports it.
+ */
 function gitHubSignedCommit(overrides: Partial<CommitRecord> = {}): CommitRecord {
-  return commit({ committerId: WEB_FLOW, signedByGitHub: true, signerId: null, ...overrides });
+  return commit({ committerId: null, signedByGitHub: true, signerId: null, ...overrides });
 }
 
 describe('parseUserIds', () => {
@@ -132,10 +134,12 @@ describe('validateCommit', () => {
       ]);
     });
 
-    it('rejects a GitHub-signed commit whose committer has no linked GitHub account', () => {
-      expect(validateCommit(gitHubSignedCommit({ committerId: null }), accepted)?.reasons).toEqual([
-        'committer is not linked to a GitHub account',
-      ]);
+    it('does not require GitHub, as committer of a commit it signed, to resolve to an account', () => {
+      expect(validateCommit(gitHubSignedCommit({ committerId: null }), accepted)).toBeUndefined();
+    });
+
+    it('does not require the committer of a GitHub-signed commit to be accepted', () => {
+      expect(validateCommit(gitHubSignedCommit({ committerId: ATTACKER }), accepted)).toBeUndefined();
     });
   });
 

@@ -1,6 +1,7 @@
 import * as github from '@actions/github';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { verifyCommits } from './commit-verification.js';
 import { fetchPullRequestCommits } from './github-commits.js';
 
 vi.mock('@actions/github');
@@ -189,12 +190,16 @@ describe('fetchPullRequestCommits', () => {
     expect(query).toMatch(/wasSignedByGitHub\s*signer \{\s*databaseId/);
   });
 
-  it('maps a commit GitHub signed itself', async () => {
+  // The shape the API returns for a commit an App made through the contents API or
+  // `createCommitOnBranch`: the bot as author, `GitHub <noreply@github.com>` as committer with no
+  // account behind it, and GitHub's own signature.
+  it('maps a commit an App made through the API, which GitHub signed itself', async () => {
     mockGraphql([
       commitsPage({
         nodes: [
           commitNode({
-            committer: { user: { databaseId: 19864447 } },
+            authorsConnection: authors({ ids: [253958393] }),
+            committer: { user: null },
             signature: { isValid: true, signer: null, state: 'VALID', wasSignedByGitHub: true },
           }),
         ],
@@ -203,7 +208,15 @@ describe('fetchPullRequestCommits', () => {
 
     const { commits } = await fetchPullRequestCommits('token', PR_URL);
 
-    expect(commits[0]).toMatchObject({ committerId: 19864447, signedByGitHub: true, signerId: null });
+    expect(commits[0]).toMatchObject({
+      authorIds: [253958393],
+      committerId: null,
+      signatureValid: true,
+      signedByGitHub: true,
+      signerId: null,
+    });
+    expect(verifyCommits(commits, [253958393]).verified).toBe(true);
+    expect(verifyCommits(commits, [12345]).verified).toBe(false);
   });
 
   it.each([
