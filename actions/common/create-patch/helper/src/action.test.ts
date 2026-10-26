@@ -94,3 +94,35 @@ describe('run', () => {
     );
   });
 });
+
+describe('run without an explicit context', () => {
+  it('reads the workspace and the temp directory from the runner environment', async () => {
+    vi.stubEnv('GITHUB_WORKSPACE', repo);
+    vi.stubEnv('RUNNER_TEMP', temp);
+    await writeFile(path.join(repo, 'new.txt'), 'n\n');
+
+    await run();
+
+    expect(core.setFailed).not.toHaveBeenCalled();
+    expect(outputs()).toMatchObject({ base_sha: base, has_changes: 'true' });
+    expect(path.dirname(String(outputs()['directory']))).toBe(temp);
+  });
+
+  it('falls back to the working directory and the system temp directory outside a runner', async () => {
+    vi.stubEnv('GITHUB_WORKSPACE', '');
+    vi.stubEnv('RUNNER_TEMP', '');
+    const cwd = vi.spyOn(process, 'cwd').mockReturnValue(repo);
+
+    try {
+      await run();
+    } finally {
+      cwd.mockRestore();
+    }
+
+    expect(core.setFailed).not.toHaveBeenCalled();
+    const directory = String(outputs()['directory']);
+    expect(outputs()).toMatchObject({ base_sha: base, has_changes: 'false' });
+    expect(path.dirname(directory)).toBe(tmpdir());
+    await rm(directory, { force: true, recursive: true });
+  });
+});

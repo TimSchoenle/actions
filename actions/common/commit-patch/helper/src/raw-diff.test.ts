@@ -41,6 +41,12 @@ describe('parseRawDiff', () => {
     expect(parseRawDiff(`:000000 100644 ${'0'.repeat(64)} ${long} A\0x\0`)[0]?.dstSha).toBe(long);
   });
 
+  it('accepts output whose last record has no trailing NUL', () => {
+    expect(parseRawDiff(`:000000 100644 ${ZERO} ${A} A\0last.txt`)).toEqual([
+      { dstMode: '100644', dstSha: A, path: 'last.txt', srcMode: '000000', srcSha: ZERO, status: 'A' },
+    ]);
+  });
+
   it('reads both paths of a rename and keeps the destination, so the fields stay aligned', () => {
     const output = [`:100644 100644 ${A} ${A} R100`, 'old', 'new', `:000000 100644 ${ZERO} ${B} A`, 'next', ''].join(
       '\0',

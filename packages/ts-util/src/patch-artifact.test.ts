@@ -135,6 +135,10 @@ describe('parseMetadata', () => {
     expect(() => parseMetadata(JSON.stringify(document({ paths: ['x'] })))).toThrow(/exactly the keys/);
   });
 
+  it('names the keys it expected when the object is empty', () => {
+    expect(() => parseMetadata('{}')).toThrow(/; got none\.$/);
+  });
+
   it('refuses a missing key', () => {
     const { patch_sha256: _dropped, ...rest } = document();
 

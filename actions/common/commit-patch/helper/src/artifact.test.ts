@@ -5,7 +5,7 @@ import path from 'node:path';
 import { describePatch, serializeMetadata } from 'actions-util/patch';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { ArtifactContentError, readPatchArtifact } from './artifact.js';
+import { ArtifactContentError, readPatchArtifact, readRegularFile } from './artifact.js';
 
 const SHA = 'a'.repeat(40);
 const PATCH = Buffer.from('diff --git a/x b/x\n');
@@ -51,6 +51,16 @@ describe('readPatchArtifact', () => {
 
   it('fails when nothing was downloaded', async () => {
     await expect(readPatchArtifact(path.join(root, 'missing'), 1024)).rejects.toThrow(/nothing was downloaded/);
+  });
+
+  it('passes on a failure to list the directory other than its absence', async () => {
+    const file = path.join(root, 'not-a-directory');
+    await writeFile(file, '');
+
+    const failure = readPatchArtifact(file, 1024);
+
+    await expect(failure).rejects.toMatchObject({ code: 'ENOTDIR' });
+    await expect(failure).rejects.not.toBeInstanceOf(ArtifactContentError);
   });
 
   it.each([
@@ -114,5 +124,14 @@ describe('readPatchArtifact', () => {
 
   it('uses ArtifactContentError for its own findings', async () => {
     await expect(readPatchArtifact(directory, 1024)).rejects.toBeInstanceOf(ArtifactContentError);
+  });
+});
+
+describe('readRegularFile', () => {
+  it('passes on an open failure that is not a symbolic link', async () => {
+    const failure = readRegularFile(path.join(directory, 'vanished.json'), 1024, 'the limit');
+
+    await expect(failure).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(failure).rejects.not.toBeInstanceOf(ArtifactContentError);
   });
 });

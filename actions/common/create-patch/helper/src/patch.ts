@@ -5,7 +5,6 @@ import {
   buildPathspecs,
   describePatch,
   GitCommandError,
-  isCommitSha,
   METADATA_FILE_NAME,
   PATCH_FILE_NAME,
   runGit,
@@ -88,10 +87,9 @@ const DIFF_FLAGS = [
 export async function createPatch(request: CreatePatchRequest): Promise<PatchMetadata> {
   const { maxPatchBytes, outputDirectory, scratchRoot, workspace } = request;
 
+  // `--verify` prints the full object name or fails, so its output needs no shape check here; and
+  // commit-patch revalidates base_sha when it parses the metadata, whatever this job wrote.
   const baseSha = await runGitText(['rev-parse', '--verify', '--end-of-options', 'HEAD^{commit}'], { cwd: workspace });
-  if (!isCommitSha(baseSha)) {
-    throw new Error(`HEAD resolved to ${JSON.stringify(baseSha)}, which is not a full commit SHA.`);
-  }
 
   const scratch = await mkdtemp(path.join(scratchRoot, 'create-patch-'));
   const env = { GIT_INDEX_FILE: path.join(scratch, 'index') };

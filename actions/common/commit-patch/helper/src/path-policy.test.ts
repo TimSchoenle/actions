@@ -167,6 +167,10 @@ describe('findViolations', () => {
       expect(check([modified('tool.sh', '100644', '100755')])['tool.sh']?.[0]).toMatch(/alters the file mode/);
     });
 
+    it('refuses to delete an entry of any other mode, such as a tree git never writes to a diff', () => {
+      expect(check([deleted('odd', '040000')])['odd']).toEqual(['cannot delete an entry of mode 040000']);
+    });
+
     it('refuses a content change to an existing executable', () => {
       expect(check([modified('gradlew', '100755')])['gradlew']?.[0]).toMatch(/executable bit/);
     });

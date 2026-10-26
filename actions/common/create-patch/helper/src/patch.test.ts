@@ -2,7 +2,15 @@ import { chmod, mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { METADATA_FILE_NAME, parseMetadata, PATCH_FILE_NAME, runGit, runGitText, sha256Hex } from 'actions-util/patch';
+import {
+  GitCommandError,
+  METADATA_FILE_NAME,
+  parseMetadata,
+  PATCH_FILE_NAME,
+  runGit,
+  runGitText,
+  sha256Hex,
+} from 'actions-util/patch';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createPatch, PatchTooLargeError } from './patch.js';
@@ -26,8 +34,8 @@ async function write(files: Record<string, string | Buffer>): Promise<void> {
 }
 
 /** Initialises a repository holding `files` in a single commit, and returns that commit. */
-async function seed(files: Record<string, string | Buffer>): Promise<string> {
-  await runGit(['init', '--quiet', '--initial-branch=main'], { cwd: repo });
+async function seed(files: Record<string, string | Buffer>, ...initArgs: string[]): Promise<string> {
+  await runGit(['init', '--quiet', '--initial-branch=main', ...initArgs], { cwd: repo });
   await git('config', 'user.email', 'test@example.com');
   await git('config', 'user.name', 'Test');
   await git('config', 'commit.gpgsign', 'false');
@@ -205,6 +213,29 @@ describe('createPatch', () => {
     await runGit(['init', '--quiet'], { cwd: repo });
 
     await expect(createPatch(request())).rejects.toThrow(/git rev-parse failed/);
+  });
+
+  it('records the 64-digit base of a SHA-256 repository', async () => {
+    const base = await seed({ 'a.txt': 'a\n' }, '--object-format=sha256');
+    await write({ 'a.txt': 'b\n' });
+
+    const metadata = await createPatch(request());
+
+    expect(base).toMatch(/^[0-9a-f]{64}$/);
+    expect(metadata).toMatchObject({ baseSha: base, hasChanges: true });
+    expect(await patchText()).toContain('+b');
+  });
+
+  it('surfaces a git failure other than the size limit as it is, and still removes its index', async () => {
+    await seed({ 'a.txt': 'a\n' });
+    await write({ 'a.txt': 'b\n' });
+
+    const failure = createPatch(request({ paths: ':(no-such-magic)a.txt' }));
+
+    await expect(failure).rejects.toBeInstanceOf(GitCommandError);
+    await expect(failure).rejects.not.toBeInstanceOf(PatchTooLargeError);
+    expect((await readdir(root)).sort()).toEqual(['out', 'repo']);
+    expect(await readdir(output)).toEqual([]);
   });
 
   it('removes its throwaway index', async () => {

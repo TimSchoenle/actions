@@ -62,12 +62,14 @@ export function parseRawDiff(output: string): RawChange[] {
     const [, srcMode, dstMode, srcSha, dstSha, status] = match;
     const pathCount = status === 'R' || status === 'C' ? 2 : 1;
     const paths = fields.slice(index + 1, index + 1 + pathCount);
+    // For a rename or copy the destination is the second path; otherwise it is the only one.
+    const destination = paths.at(-1);
 
-    if (paths.length !== pathCount || paths.includes('')) {
+    if (paths.length !== pathCount || destination === undefined || paths.includes('')) {
       throw new RawDiffFormatError(`record ${JSON.stringify(header)} is missing its path`);
     }
 
-    changes.push({ dstMode, dstSha, path: paths.at(-1) ?? '', srcMode, srcSha, status });
+    changes.push({ dstMode, dstSha, path: destination, srcMode, srcSha, status });
     index += 1 + pathCount;
   }
 

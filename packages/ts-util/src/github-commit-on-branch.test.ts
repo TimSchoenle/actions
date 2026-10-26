@@ -58,6 +58,10 @@ describe('toCommitMessage', () => {
   it('keeps a body that directly follows the headline', () => {
     expect(toCommitMessage('line1\nline2')).toEqual({ body: 'line2', headline: 'line1' });
   });
+
+  it('sends no body when only blank lines follow the headline', () => {
+    expect(toCommitMessage('fix: thing\n\n')).toEqual({ headline: 'fix: thing' });
+  });
 });
 
 describe('createCommitApi', () => {

@@ -68,3 +68,26 @@ describe('runGit', () => {
     await expect(runGitText(['status', '--porcelain'], { cwd: directory })).resolves.toBe('');
   });
 });
+
+describe('GitCommandError', () => {
+  it('names the subcommand and quotes what git wrote to standard error', () => {
+    const error = new GitCommandError(['apply', '--check'], 'error: patch failed', false);
+
+    expect(error.message).toBe('git apply failed: error: patch failed');
+    expect(error).toMatchObject({ args: ['apply', '--check'], name: 'GitCommandError', outputLimitExceeded: false });
+  });
+
+  it('says git exited non-zero when it wrote nothing to standard error', () => {
+    expect(new GitCommandError(['status'], '', false).message).toBe('git status failed: it exited non-zero');
+  });
+
+  it('reports the output limit ahead of whatever was written to standard error', () => {
+    expect(new GitCommandError(['diff'], 'noise', true).message).toBe(
+      'git diff failed: its output exceeded the size limit',
+    );
+  });
+
+  it('still produces a message for an empty argument list', () => {
+    expect(new GitCommandError([], '', false).message).toBe('git  failed: it exited non-zero');
+  });
+});

@@ -31,8 +31,11 @@ const EXPECTED_ENTRIES = [METADATA_FILE_NAME, PATCH_FILE_NAME].sort();
  * Opened with `O_NOFOLLOW` and checked through the open handle: a symbolic link in the artifact would
  * otherwise make this read a file of the attacker's choosing elsewhere on the runner, and checking the
  * handle rather than the path leaves no window for the entry to be swapped between check and read.
+ *
+ * Exported for its tests only: an open failure other than `ELOOP` cannot be provoked through
+ * {@link readPatchArtifact}, which lists the directory first.
  */
-async function readRegularFile(filePath: string, limit: number, limitName: string): Promise<Buffer> {
+export async function readRegularFile(filePath: string, limit: number, limitName: string): Promise<Buffer> {
   const name = path.basename(filePath);
   let handle: FileHandle;
 
