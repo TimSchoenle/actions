@@ -5,7 +5,7 @@ import { commitChanges } from './commit.js';
 import type { WorkspaceReader } from './changes.js';
 import type { CommitChangesDeps, CommitChangesRequest } from './commit.js';
 import type { Git } from './git.js';
-import type { CommitApi, CreateCommitRequest } from './github-api.js';
+import type { CommitApi, CreateCommitRequest } from 'actions-util/commit-on-branch';
 
 function fakeGit(status = ''): Git & { statusArgs: (readonly string[] | undefined)[] } {
   const statusArgs: (readonly string[] | undefined)[] = [];

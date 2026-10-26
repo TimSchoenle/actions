@@ -46,5 +46,7 @@
   "actions/terrace/helm-check": "1.1.0",
   "actions/terrace/helm-diff": "1.1.0",
   "actions/terrace/helm-sync": "1.1.0",
-  "actions/terrace/image": "1.1.0"
+  "actions/terrace/image": "1.1.0",
+  "actions/common/create-patch": "1.0.0",
+  "actions/common/commit-patch": "1.0.0"
 }

@@ -1,22 +1,4 @@
-/** A single file added or updated by the commit, with its working-tree content. */
-export interface FileAddition {
-  /** Repository-relative path, as git reports it. */
-  path: string;
-  /** Base64-encoded working-tree content, as the GraphQL commit API requires. */
-  contents: string;
-}
-
-/** A single file removed by the commit. */
-export interface FileDeletion {
-  /** Repository-relative path, as git reports it. */
-  path: string;
-}
-
-/** The additions and deletions of one commit, in the shape `createCommitOnBranch` expects. */
-export interface FileChanges {
-  additions: FileAddition[];
-  deletions: FileDeletion[];
-}
+import type { FileAddition, FileChanges, FileDeletion } from 'actions-util/commit-on-branch';
 
 /**
  * Reads the working-tree files a commit needs, kept minimal so the classification is testable without

@@ -240,6 +240,16 @@
       "release-type": "simple",
       "component": "actions-terrace-image",
       "include-component-in-tag": true
+    },
+    "actions/common/create-patch": {
+      "release-type": "simple",
+      "component": "actions-common-create-patch",
+      "include-component-in-tag": true
+    },
+    "actions/common/commit-patch": {
+      "release-type": "simple",
+      "component": "actions-common-commit-patch",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

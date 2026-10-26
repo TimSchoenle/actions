@@ -1,11 +1,11 @@
 import { parseRepository } from 'actions-util';
+import { buildPathspecs } from 'actions-util/patch';
 
 import { classifyChanges, parseChangedPaths } from './changes.js';
-import { buildPathspecs } from './pathspec.js';
 
 import type { WorkspaceReader } from './changes.js';
 import type { Git } from './git.js';
-import type { CommitApi } from './github-api.js';
+import type { CommitApi } from 'actions-util/commit-on-branch';
 
 /** The collaborators {@link commitChanges} drives, each faked independently in tests. */
 export interface CommitChangesDeps {

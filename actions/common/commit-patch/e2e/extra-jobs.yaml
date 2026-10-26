@@ -1,0 +1,103 @@
+# Jobs appended verbatim to the generated workflow for this action.
+#
+# The end-to-end cases drive both helper bundles directly. This job runs what only the runner can: the
+# two composites, with upload-artifact and download-artifact between them, over this repository's own
+# checkout. It holds no credential. Every commit-patch run here stops before its first API call: an
+# empty patch ends as no_changes, and a refused one fails on the policy, so the token it is handed is a
+# placeholder that is never sent anywhere.
+#
+# `uses: pinned:<key>` names an entry of PINNED in scripts/lib/e2e-workflow.ts and is substituted on
+# the way in. Writing a ref out in full here would be a second pin no Renovate manager reads.
+
+verify-composite:
+  name: Round Trip Through The Runner
+  runs-on: ubuntu-latest
+  permissions:
+    contents: read # to fetch code
+  steps:
+    - name: Harden Runner
+      uses: pinned:hardenRunner
+      with:
+        egress-policy: block
+        allowed-endpoints: >
+          github.com:443
+          *.actions.githubusercontent.com:443
+          *.blob.core.windows.net:443
+
+    - name: Checkout
+      uses: pinned:checkout
+      with:
+        persist-credentials: false
+
+    - name: Create Empty Patch
+      id: empty
+      uses: ./actions/common/create-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+      with:
+        artifact_name: commit-patch-e2e-empty-${{ github.run_attempt }}
+        paths: README.md
+
+    - name: Change The Tree
+      run: |
+        set -euo pipefail
+        printf '\nappended by the round trip\n' >> README.md
+        printf 'untracked\n' > round-trip.txt
+
+    - name: Create Patch
+      id: changed
+      uses: ./actions/common/create-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+      with:
+        artifact_name: commit-patch-e2e-changed-${{ github.run_attempt }}
+
+    - name: Assert Create Patch Outputs
+      env:
+        EMPTY_HAS_CHANGES: ${{ steps.empty.outputs.has_changes }}
+        EMPTY_BASE: ${{ steps.empty.outputs.base_sha }}
+        CHANGED_HAS_CHANGES: ${{ steps.changed.outputs.has_changes }}
+        CHANGED_BASE: ${{ steps.changed.outputs.base_sha }}
+      run: |
+        set -euo pipefail
+        head="$(git rev-parse HEAD)"
+
+        [ "$EMPTY_HAS_CHANGES" = "false" ] || { echo "::error::has_changes '$EMPTY_HAS_CHANGES' for an unchanged path"; exit 1; }
+        [ "$CHANGED_HAS_CHANGES" = "true" ] || { echo "::error::has_changes '$CHANGED_HAS_CHANGES' after a change"; exit 1; }
+        [ "$EMPTY_BASE" = "$head" ] || { echo "::error::base_sha '$EMPTY_BASE' is not HEAD '$head'"; exit 1; }
+        [ "$CHANGED_BASE" = "$head" ] || { echo "::error::base_sha '$CHANGED_BASE' is not HEAD '$head'"; exit 1; }
+
+        echo "Both patches were computed against HEAD, and only the second has changes"
+
+    - name: Commit Empty Patch
+      id: commit-empty
+      uses: ./actions/common/commit-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+      with:
+        token: placeholder-never-sent
+        artifact_name: ${{ steps.empty.outputs.artifact_name }}
+        allowed_paths: README.md
+        commit_message: 'test: never committed'
+        branch: round-trip-never-written
+        expected_head_sha: ${{ steps.empty.outputs.base_sha }}
+
+    - name: Commit Refused Patch
+      id: commit-refused
+      continue-on-error: true
+      uses: ./actions/common/commit-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+      with:
+        token: placeholder-never-sent
+        artifact_name: ${{ steps.changed.outputs.artifact_name }}
+        allowed_paths: README.md
+        commit_message: 'test: never committed'
+        branch: round-trip-never-written
+        expected_head_sha: ${{ steps.changed.outputs.base_sha }}
+
+    - name: Assert Commit Patch Outcomes
+      env:
+        EMPTY_OUTCOME: ${{ steps.commit-empty.outputs.outcome }}
+        EMPTY_COMMITTED: ${{ steps.commit-empty.outputs.changes_committed }}
+        REFUSED_OUTCOME: ${{ steps.commit-refused.outcome }}
+      run: |
+        set -euo pipefail
+
+        [ "$EMPTY_OUTCOME" = "no_changes" ] || { echo "::error::outcome '$EMPTY_OUTCOME' for an empty patch"; exit 1; }
+        [ "$EMPTY_COMMITTED" = "false" ] || { echo "::error::changes_committed '$EMPTY_COMMITTED' for an empty patch"; exit 1; }
+        [ "$REFUSED_OUTCOME" = "failure" ] || { echo "::error::a patch adding round-trip.txt outside allowed_paths was not refused ($REFUSED_OUTCOME)"; exit 1; }
+
+        echo "The empty patch ended as no_changes and the out-of-policy one failed, both before any API call"

@@ -1,9 +1,9 @@
 import * as github from '@actions/github';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createCommitApi, toCommitMessage } from './github-api.js';
+import { createCommitApi, toCommitMessage } from './github-commit-on-branch.js';
 
-import type { CreateCommitRequest } from './github-api.js';
+import type { CreateCommitRequest } from './github-commit-on-branch.js';
 
 vi.mock('@actions/github');
 vi.mock('@actions/core');
@@ -57,6 +57,10 @@ describe('toCommitMessage', () => {
 
   it('keeps a body that directly follows the headline', () => {
     expect(toCommitMessage('line1\nline2')).toEqual({ body: 'line2', headline: 'line1' });
+  });
+
+  it('sends no body when only blank lines follow the headline', () => {
+    expect(toCommitMessage('fix: thing\n\n')).toEqual({ headline: 'fix: thing' });
   });
 });
 

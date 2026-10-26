@@ -1,10 +1,10 @@
 import * as core from '@actions/core';
 import { runAction } from 'actions-util';
+import { createCommitApi } from 'actions-util/commit-on-branch';
 
 import { commitChanges } from './commit.js';
 import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';
 import { createGit } from './git.js';
-import { createCommitApi } from './github-api.js';
 import { createWorkspace } from './workspace.js';
 
 import type { CommitChangesDeps, CommitChangesResult } from './commit.js';

@@ -1,0 +1,61 @@
+name: 'Common Commit Patch Helper'
+description: 'Internal to actions/common/commit-patch, which runs this bundle with node once before and once after downloading the artifact. Not a public action: its inputs and outputs change without notice.'
+
+inputs:
+  mode:
+    description: 'prepare validates the inputs and creates the empty download directory; commit validates the artifact and commits it.'
+    required: true
+  artifact_name:
+    description: 'Name of the artifact create-patch uploaded.'
+    required: true
+  directory:
+    description: 'Directory the artifact was downloaded to. Read in commit mode.'
+    required: false
+    default: ''
+  token:
+    description: 'Token for the commit, in commit mode.'
+    required: false
+    default: ''
+  allowed_paths:
+    description: 'Whitespace-separated globs every changed path must match.'
+    required: true
+  allow_workflow_changes:
+    description: 'Whether paths under .github/workflows/ may change.'
+    required: false
+    default: 'false'
+  allow_binary:
+    description: 'Whether binary changes are accepted.'
+    required: false
+    default: 'false'
+  commit_message:
+    description: 'The commit message.'
+    required: true
+  repository:
+    description: 'owner/repo to commit to.'
+    required: true
+  branch:
+    description: 'Branch to commit to.'
+    required: true
+  expected_head_sha:
+    description: 'The commit the branch is expected to point at.'
+    required: true
+  max_patch_bytes:
+    description: 'Largest patch accepted, in bytes.'
+    required: false
+    default: '10485760'
+
+outputs:
+  directory:
+    description: 'The empty directory to download the artifact to. Set in prepare mode.'
+  outcome:
+    description: 'committed, no_changes or branch_moved. Set in commit mode.'
+  changes_committed:
+    description: 'true when a commit was created.'
+  commit_sha:
+    description: 'SHA of the created commit, when one was created.'
+  commit_url:
+    description: 'URL of the created commit, when one was created.'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

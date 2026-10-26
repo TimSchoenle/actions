@@ -78,9 +78,15 @@ component_management:
     - component_id: common-commit-changes
       name: common/commit-changes
       paths: ['actions/common/commit-changes/**']
+    - component_id: common-commit-patch
+      name: common/commit-patch
+      paths: ['actions/common/commit-patch/**']
     - component_id: common-create-branch
       name: common/create-branch
       paths: ['actions/common/create-branch/**']
+    - component_id: common-create-patch
+      name: common/create-patch
+      paths: ['actions/common/create-patch/**']
     - component_id: common-delete-branch
       name: common/delete-branch
       paths: ['actions/common/delete-branch/**']

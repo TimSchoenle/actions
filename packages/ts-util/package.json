@@ -27,6 +27,14 @@
       "types": "./dist/github-client.d.ts",
       "import": "./dist/github-client.js"
     },
+    "./commit-on-branch": {
+      "types": "./dist/github-commit-on-branch.d.ts",
+      "import": "./dist/github-commit-on-branch.js"
+    },
+    "./patch": {
+      "types": "./dist/patch.d.ts",
+      "import": "./dist/patch.js"
+    },
     "./read-after-write": {
       "types": "./dist/read-after-write.d.ts",
       "import": "./dist/read-after-write.js"

@@ -32,6 +32,14 @@ export const workspaceAliases: Alias[] = [
     replacement: fileURLToPath(new URL('./packages/ts-util/src/github-client.ts', import.meta.url)),
   },
   {
+    find: 'actions-util/commit-on-branch',
+    replacement: fileURLToPath(new URL('./packages/ts-util/src/github-commit-on-branch.ts', import.meta.url)),
+  },
+  {
+    find: 'actions-util/patch',
+    replacement: fileURLToPath(new URL('./packages/ts-util/src/patch.ts', import.meta.url)),
+  },
+  {
     find: 'actions-util/read-after-write',
     replacement: fileURLToPath(new URL('./packages/ts-util/src/read-after-write.ts', import.meta.url)),
   },
