@@ -1,7 +1,7 @@
 {
   "id": 11916613,
-  "name": "Release Please Branches: Trusted Bots Only",
-  "description": "Restricts access to release-please branches, allowing only trusted bots to create, update, or delete them, while enforcing code quality and signature requirements.",
+  "name": "Release Please Branches: Trusted Bots & Admins Only",
+  "description": "Restricts access to release-please branches, allowing only trusted bots and admins to create, update, or delete them, while enforcing code quality, code scanning and signature requirements.",
   "target": "branch",
   "source_type": "Repository",
   "source": "TimSchoenle/actions",
@@ -45,19 +45,14 @@
     },
     {
       "type": "required_signatures"
-    },
-    {
-      "type": "copilot_code_review_analysis_tools",
-      "parameters": {
-        "tools": [
-          {
-            "name": "CodeQL"
-          }
-        ]
-      }
     }
   ],
   "bypass_actors": [
+    {
+      "actor_id": 5,
+      "actor_type": "RepositoryRole",
+      "bypass_mode": "always"
+    },
     {
       "actor_id": 2427303,
       "actor_type": "Integration",
