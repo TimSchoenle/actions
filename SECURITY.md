@@ -170,10 +170,15 @@ signs the commits that GitHub Apps, Renovate and the web interface create, and l
 of such a commit without a linked account. For those commits the actions check only the authors and
 GitHub's signature.
 
-Anyone with write access to a branch in the same repository can create a commit that GitHub signs
-and that names an accepted account, such as Renovate, as its author. The actions then accept that
-commit, and Auto-approve-pr approves the pull request. GitHub has no API that shows who pushed a
-commit, so the actions cannot close this gap.
+GitHub signs a commit only when its author is the account that made it: the signed-in user in
+the web interface, or the account that owns the token for a commit made through the API. The API
+accepts a custom author only together with a signature the caller supplies, and such a commit has
+to pass the committer and key owner checks. The risk is therefore anyone who can use the credential
+of an accepted account. Write access to the repository is enough to run a workflow from a pushed
+branch, and that workflow can use `GITHUB_TOKEN` and every repository secret, including App keys.
+If `github-actions[bot]` or such an App is an accepted account, a person with write access can
+create a commit that GitHub signs in its name, and the actions accept it. GitHub has no API that
+shows who used a credential, so the actions cannot tell its owner from someone else using it.
 
 This risk is accepted. Write access already allows more than this, pull requests from forks are
 rejected by default, and rejecting commits that GitHub signs would stop Renovate and App pull
