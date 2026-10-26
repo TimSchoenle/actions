@@ -56,6 +56,7 @@ jobs:
         with:
           bun-version: ''
           bun-version-file: '.bun-version'
+          cache-mode: none
 
       - name: Build All Workspaces
         run: bun run build:workspaces
@@ -133,6 +134,7 @@ jobs:
         with:
           bun-version: ''
           bun-version-file: '.bun-version'
+          cache-mode: none
 
       # ci-required watches the generated workflows by name, so a regenerated workflow that added or
       # renamed a job leaves the required-check list stale unless both run together. The Codecov
@@ -197,6 +199,8 @@ jobs:
 
       - name: Setup Bun
         uses: TimSchoenle/actions/actions/bun/setup-cached@e16a1e466faf8ec751b26289c1898143a253269f # tag=actions-bun-setup-cached-v1.1.11
+        with:
+          cache-mode: none
 
       - name: Refresh Tags
         run: git fetch --force --tags origin
