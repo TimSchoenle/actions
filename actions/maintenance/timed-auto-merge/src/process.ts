@@ -173,10 +173,9 @@ async function processOne(
  * Lists the open pull requests, keeps those whose head branch matches, and processes them one after
  * another.
  *
- * Sequential on purpose: the workflow this action replaces ran one matrix job per pull request, and
- * every job drew on the same installation rate limit at the same moment. A failure on one pull
- * request is recorded and the rest are still processed; deciding whether that fails the step is the
- * caller's.
+ * Sequential on purpose: processing the pull requests in parallel, such as one matrix job each, would
+ * draw on the same installation rate limit at the same moment. A failure on one pull request is
+ * recorded and the rest are still processed; deciding whether that fails the step is the caller's.
  *
  * @throws if the listing fails or the branch pattern exhausts its time budget, since then no pull
  * request can be judged.

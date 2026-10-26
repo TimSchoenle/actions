@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createBranchMatcher, parsePatternMode, toBranchRegex } from './branch-pattern.js';
 
-/** The pattern helm-charts passes to the reusable workflow this action replaces. */
+/** The pattern helm-charts selects its chart-update and non-major Renovate branches with. */
 const HELM_CHARTS_PATTERN = '(chore/helm/auto-update/|renovate/([^m]|m[^a]|ma[^j]|maj[^o]|majo[^r]))%';
 
 function matches(pattern: string, mode: 'legacy' | 'regex', branches: string[]): boolean[] {
@@ -68,7 +68,7 @@ describe('createBranchMatcher', () => {
   });
 
   it('anchors every alternative in legacy mode, not only the first', () => {
-    // The workflow built `^a|b`, which let `b` match anywhere in the name.
+    // `^a|b` would anchor only `a` and let `b` match anywhere in the name.
     expect(matches('release/%|hotfix/%', 'legacy', ['hotfix/1', 'evil/hotfix/1'])).toEqual([true, false]);
   });
 

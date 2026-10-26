@@ -17,10 +17,9 @@ export function parsePatternMode(value: string): PatternMode {
 /**
  * Turns `branch_pattern` into the POSIX extended regular expression that is actually matched.
  *
- * `legacy` keeps the syntax of the reusable workflow this action replaces, which built
- * `^${pattern//%/.*}` and passed it to jq's `test`. Every `%` becomes `.*`, so a literal `%` cannot
- * be written in this mode. The pattern is wrapped in a group before it is anchored: the workflow
- * anchored only the first alternative of `a|b`, which let `b` match anywhere in the branch name.
+ * `legacy` turns every `%` into `.*`, so a literal `%` cannot be written in this mode, and anchors the
+ * result at the start of the branch name. The pattern is wrapped in a group before it is anchored:
+ * `^a|b` would anchor only the first alternative and let `b` match anywhere in the branch name.
  *
  * The wrapper only anchors every alternative if the pattern cannot close it early, so the translated
  * pattern must first compile on its own. `x)|(y` would otherwise become `^(?:x)|(y)`, leaving `y`

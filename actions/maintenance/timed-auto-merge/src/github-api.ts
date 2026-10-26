@@ -86,8 +86,8 @@ function toOpenPullRequest(item: PullRequestListItem): OpenPullRequest {
  * Binds {@link TimedAutoMergeApi} to the GitHub REST and GraphQL APIs.
  *
  * The client comes from `createOctokit`, which retries requests GitHub refuses for rate limiting on
- * both transports. The listing is paginated to completion; the workflow this action replaces used
- * `gh pr list`, which stops at 30 pull requests and silently ignored the rest.
+ * both transports. The listing is paginated to completion, so no open pull request is left out
+ * however many there are; `gh pr list`, by comparison, stops at 30 by default.
  */
 export function createTimedAutoMergeApi(token: string): TimedAutoMergeApi {
   const octokit = createOctokit(token);

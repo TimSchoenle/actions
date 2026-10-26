@@ -6,9 +6,9 @@ const MERGE_METHODS: readonly MergeMethod[] = ['merge', 'rebase', 'squash'];
 /**
  * Validates `merge_method`.
  *
- * The workflow this action replaces interpolated the value into `gh pr merge --"$MERGE_METHOD"`, so a
- * value such as `admin` became the `--admin` flag and bypassed branch protection. Only the three
- * methods themselves are accepted here, lower-case, as they are documented.
+ * Only the three methods themselves are accepted, lower-case, as they are documented. A value such
+ * as `admin` fails here rather than travelling on: interpolated into `gh pr merge --"$MERGE_METHOD"`,
+ * it would become the `--admin` flag and bypass branch protection.
  *
  * @throws if the value is not one of `merge`, `rebase` or `squash`.
  */
