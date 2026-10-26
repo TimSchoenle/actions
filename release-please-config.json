@@ -260,6 +260,11 @@
       "release-type": "simple",
       "component": "actions-maintenance-auto-rebase",
       "include-component-in-tag": true
+    },
+    "actions/maintenance/timed-auto-merge": {
+      "release-type": "simple",
+      "component": "actions-maintenance-timed-auto-merge",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
