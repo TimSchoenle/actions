@@ -1,9 +1,9 @@
 import * as github from '@actions/github';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createCommitApi, toCommitMessage } from './github-api.js';
+import { createCommitApi, toCommitMessage } from './github-commit-on-branch.js';
 
-import type { CreateCommitRequest } from './github-api.js';
+import type { CreateCommitRequest } from './github-commit-on-branch.js';
 
 vi.mock('@actions/github');
 vi.mock('@actions/core');

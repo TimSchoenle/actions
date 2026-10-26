@@ -15,7 +15,8 @@ function isMagicPathspec(spec: string): boolean {
 }
 
 /**
- * Translates the space-separated `file_pattern` input into git pathspecs.
+ * Translates a space-separated pattern list, such as an action's `file_pattern` input, into git
+ * pathspecs.
  *
  * A wildcard pattern is wrapped in `:(glob)` so that `*` matches across the whole path the way a
  * caller writing `src/**` expects, rather than git's default pathspec semantics where `*` does not

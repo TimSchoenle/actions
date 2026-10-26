@@ -1,8 +1,34 @@
-import { createOctokit } from 'actions-util/client';
-import { readAfterWrite } from 'actions-util/read-after-write';
+/**
+ * Verified commits through the GraphQL `createCommitOnBranch` mutation, shared by every action that
+ * writes to a branch on a bot's behalf.
+ *
+ * Kept behind its own entry point, `actions-util/commit-on-branch`, for the reason given in
+ * `index.ts`: it imports Octokit, which an action that never talks to GitHub must not bundle.
+ */
+import { createOctokit } from './github-client.js';
+import { readAfterWrite } from './read-after-write.js';
 
-import type { FileChanges } from './changes.js';
-import type { RepositoryCoordinates } from 'actions-util';
+import type { RepositoryCoordinates } from './github.js';
+
+/** A single file added or updated by a commit, with its full new content. */
+export interface FileAddition {
+  /** Repository-relative path, with `/` separators. */
+  path: string;
+  /** Base64-encoded content, as the GraphQL commit API requires. */
+  contents: string;
+}
+
+/** A single file removed by a commit. */
+export interface FileDeletion {
+  /** Repository-relative path, with `/` separators. */
+  path: string;
+}
+
+/** The additions and deletions of one commit, in the shape `createCommitOnBranch` expects. */
+export interface FileChanges {
+  additions: FileAddition[];
+  deletions: FileDeletion[];
+}
 
 /** A commit created by the GraphQL API. */
 export interface CreatedCommit {
@@ -23,7 +49,7 @@ export interface CreateCommitRequest {
   fileChanges: FileChanges;
 }
 
-/** The GitHub operations this action needs, kept minimal so it can be faked in tests. */
+/** The GitHub operations a branch commit needs, kept minimal so callers can fake them in tests. */
 export interface CommitApi {
   /** Resolves the commit the branch currently points at. Throws when the branch does not exist. */
   getHeadOid(coordinates: RepositoryCoordinates, branch: string): Promise<string>;
@@ -36,8 +62,7 @@ export interface CommitApi {
  *
  * This mutation — not the git push a runner would otherwise do — is what makes the commit verified:
  * GitHub signs commits it authors on the caller's behalf, so a bot's commits show as verified without
- * the workflow ever holding a signing key. It replaces the third-party `ghcommit-action` the composite
- * version depended on.
+ * the workflow ever holding a signing key.
  */
 const CREATE_COMMIT_MUTATION = `mutation CreateCommit($input: CreateCommitOnBranchInput!) {
   createCommitOnBranch(input: $input) {
@@ -48,7 +73,7 @@ const CREATE_COMMIT_MUTATION = `mutation CreateCommit($input: CreateCommitOnBran
   }
 }`;
 
-/** Shape of the `createCommitOnBranch` response, narrowed to the fields this action reads. */
+/** Shape of the `createCommitOnBranch` response, narrowed to the fields read here. */
 interface CreateCommitResponse {
   createCommitOnBranch: {
     commit: CreatedCommit | null;
@@ -97,6 +122,7 @@ function buildCommitInput(request: CreateCommitRequest): Record<string, unknown>
   };
 }
 
+/** Binds {@link CommitApi} to the GitHub API, authenticated with `token`. */
 export function createCommitApi(token: string): CommitApi {
   const octokit = createOctokit(token);
 
