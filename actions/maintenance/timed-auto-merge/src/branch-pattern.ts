@@ -22,11 +22,35 @@ export function parsePatternMode(value: string): PatternMode {
  * be written in this mode. The pattern is wrapped in a group before it is anchored: the workflow
  * anchored only the first alternative of `a|b`, which let `b` match anywhere in the branch name.
  *
+ * The wrapper only anchors every alternative if the pattern cannot close it early, so the translated
+ * pattern must first compile on its own. `x)|(y` would otherwise become `^(?:x)|(y)`, leaving `y`
+ * unanchored. A pattern that compiles on its own has balanced groups (a lone `(` or `)` is a syntax
+ * error, while `\)` and `[)]` are literals and stay literals inside the wrapper), so the wrapper's `)`
+ * closes the wrapper and `^` applies to every top-level alternative.
+ *
  * `regex` passes the pattern through unchanged, unanchored, the way `auto-approve-pr` and
  * `verify-branch-name` read theirs.
+ *
+ * @throws in `legacy` mode if the translated pattern is not a valid regular expression on its own.
  */
 export function toBranchRegex(pattern: string, mode: PatternMode): string {
-  return mode === 'legacy' ? `^(?:${pattern.replaceAll('%', '.*')})` : pattern;
+  if (mode === 'regex') {
+    return pattern;
+  }
+
+  const translated = pattern.replaceAll('%', '.*');
+
+  try {
+    compileBranchPattern(translated);
+  } catch (error) {
+    throw new Error(
+      `Invalid 'branch_pattern' ${JSON.stringify(pattern)}: in legacy mode it must be a valid regular expression ` +
+        `on its own, with balanced parentheses, before it is anchored. ${errorMessage(error)}`,
+      { cause: error },
+    );
+  }
+
+  return `^(?:${translated})`;
 }
 
 /** A compiled branch matcher that evaluates many branch names under one time budget. */

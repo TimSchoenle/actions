@@ -143,7 +143,9 @@ extended regular expression, so this pattern from a Renovate setup keeps working
 (chore/helm/auto-update/|renovate/([^m]|m[^a]|ma[^j]|maj[^o]|majo[^r]))%
 ```
 
-A literal `%` cannot be written in `legacy` mode.
+A literal `%` cannot be written in `legacy` mode. The pattern must also be a valid regular expression on its own,
+with balanced parentheses, before it is anchored: `x)|(y` is rejected, because it would close the anchoring group early
+and leave `y` free to match anywhere. Escaped or bracketed parentheses such as `\)` and `[)]` are fine.
 
 In `regex` mode the pattern is a POSIX extended regular expression used as is, unanchored, the same as the
 `branch_pattern` of `auto-approve-pr`. Write `^` and `$` to anchor it.

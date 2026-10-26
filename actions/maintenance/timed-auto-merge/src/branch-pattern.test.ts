@@ -25,6 +25,18 @@ describe('toBranchRegex', () => {
     expect(toBranchRegex('a%b%', 'legacy')).toBe('^(?:a.*b.*)');
   });
 
+  it('rejects a legacy pattern that would close the anchoring group early', () => {
+    // Wrapped as is, this would become `^(?:x)|(y)`, leaving `y` free to match anywhere.
+    expect(() => toBranchRegex('x)|(y', 'legacy')).toThrow(/Invalid 'branch_pattern' "x\)\|\(y"/);
+    expect(() => toBranchRegex('x)|(y', 'legacy')).toThrow(/balanced parentheses/);
+    expect(() => createBranchMatcher('release/%)|(hotfix/%', 'legacy')).toThrow(/Invalid 'branch_pattern'/);
+  });
+
+  it('keeps escaped and bracketed parentheses in a legacy pattern', () => {
+    expect(toBranchRegex(String.raw`a\)%`, 'legacy')).toBe(String.raw`^(?:a\).*)`);
+    expect(toBranchRegex('a[)]%', 'legacy')).toBe('^(?:a[)].*)');
+  });
+
   it('passes the pattern through unchanged in regex mode', () => {
     expect(toBranchRegex('^release-%$', 'regex')).toBe('^release-%$');
   });
@@ -60,6 +72,22 @@ describe('createBranchMatcher', () => {
     expect(matches('release/%|hotfix/%', 'legacy', ['hotfix/1', 'evil/hotfix/1'])).toEqual([true, false]);
   });
 
+  it('anchors both alternatives of a renovate or dependabot pattern', () => {
+    expect(
+      matches('renovate/%|dependabot/%', 'legacy', [
+        'renovate/x',
+        'dependabot/npm/x',
+        'feature/renovate/x',
+        'feature/dependabot/x',
+      ]),
+    ).toEqual([true, true, false, false]);
+  });
+
+  it('matches escaped and bracketed parentheses literally in legacy mode', () => {
+    expect(matches(String.raw`fix\(%\)`, 'legacy', ['fix(a)', 'x/fix(a)', 'fixa'])).toEqual([true, false, false]);
+    expect(matches('fix[()]%', 'legacy', ['fix(a', 'fix)a', 'x/fix)a'])).toEqual([true, true, false]);
+  });
+
   it('is case-sensitive', () => {
     expect(matches('release-%', 'legacy', ['Release-1'])).toEqual([false]);
   });
@@ -82,7 +110,8 @@ describe('createBranchMatcher', () => {
   });
 
   it('refuses a pattern that does not compile', () => {
-    expect(() => createBranchMatcher('release-(%', 'legacy')).toThrow(/Invalid branch pattern/);
+    expect(() => createBranchMatcher('release-(%', 'legacy')).toThrow(/Invalid 'branch_pattern'/);
+    expect(() => createBranchMatcher('release-(', 'regex')).toThrow(/Invalid branch pattern/);
   });
 
   it('fails within the time budget on a pattern that backtracks catastrophically', () => {
