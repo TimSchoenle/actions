@@ -92,7 +92,7 @@ export const REQUIRED_CHECKS: readonly RequiredCheck[] = [
     workflow: 'ci-required.yaml',
     kind: 'status',
     reason:
-      'Aggregate of the path-filtered verify workflows. The "Aggregate verify checks" job name must NOT be required in its place: on a pull_request it evaluates before any verify workflow has started and passes with zero matches, and the authoritative workflow_run re-evaluations run on the default branch, so their check runs never land on the pull request head.',
+      'Aggregate of the path-filtered verify workflows, posted only by the workflow_run evaluation, which runs the default-branch copy of ci-required.yaml; the pull_request run, which runs the copy on the pull request branch, may only mark it pending. The "Aggregate verify checks" job name must NOT be required in its place: it is skipped on a pull_request, and its workflow_run check runs land on the default branch, never on the pull request head.',
   },
 ];
 
@@ -105,7 +105,7 @@ export const REQUIRED_CHECKS: readonly RequiredCheck[] = [
  */
 export const FORBIDDEN_REQUIRED_CHECKS: Readonly<Record<string, string>> = {
   'Aggregate verify checks':
-    "The job name behind ci-required. On a pull_request it evaluates before any verify workflow has started and passes with zero matches; the authoritative workflow_run re-evaluations run on the default branch, so their check runs never reach the pull request head. Require the 'ci-required' commit status instead.",
+    "The job name behind ci-required. It is skipped on a pull_request, which branch protection accepts as passing, and its workflow_run evaluations run on the default branch, so their check runs never reach the pull request head. Require the 'ci-required' commit status instead.",
   'Auto Format / Auto Format':
     "The nested name of a reusable-workflow call, which disappears whenever the call is skipped. Require 'Auto Format Gate' instead.",
   'Auto Approve Renovate / Auto-approve PR':

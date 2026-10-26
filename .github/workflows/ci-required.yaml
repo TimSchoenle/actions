@@ -11,9 +11,44 @@ name: CI Required
 #
 # This workflow publishes one `ci-required` commit status that summarizes every
 # verify check that actually ran on the PR head. Only `ci-required` needs to be
-# marked required in branch protection. It evaluates:
-#   * once per PR (baseline, so PRs that trigger no verify workflow still report), and
-#   * again each time a watched verify workflow completes (authoritative result).
+# marked required in branch protection.
+#
+# Trust model
+# -----------
+# * `workflow_run` is the only trigger whose result counts. GitHub runs the copy
+#   of this file on the default branch for it, never the pull request's copy, and
+#   gives it a read/write token even for a pull request from a fork. The `gate`
+#   job runs only there, and is the only job that ever posts `success` or
+#   `failure`. It evaluates each time a watched workflow completes, and the last
+#   evaluation for a head commit is the one that stands.
+# * `pull_request` runs the pull request's own copy of this file, so nothing it
+#   posts can be trusted: a same-repository pull request may have rewritten it.
+#   The `pending` job therefore only marks the context `pending` (and only when
+#   nothing has reported it yet, so a late run never overwrites a verdict), which
+#   makes the pull request show the gate as waiting rather than missing. For a
+#   pull request from a fork it posts nothing: the token is read-only there, and
+#   the `workflow_run` evaluation reports the status instead.
+# * Every pull request reaches a `workflow_run` evaluation, including one that
+#   triggers no verify workflow: the watch list also holds the anchor workflows
+#   named in ANCHOR_WORKFLOW_FILES (scripts/lib/ci-required.ts), which run on every
+#   pull request without a path filter.
+# * The evaluation reports `pending` while any verify workflow run for the head
+#   commit has not completed, so an early-finishing workflow can never report
+#   success for a commit whose verify workflows are still running. The run that
+#   finishes last triggers the evaluation that reports the verdict.
+#
+# Known limits
+# ------------
+# * Any workflow the pull request adds or edits can post a `ci-required` status
+#   with the job token, and that status is attributed to the same GitHub Actions
+#   app the ruleset binds the context to. This file cannot prevent that. The
+#   ruleset's required approval, which a new push dismisses, is the control that
+#   covers it, as it is for every other required check a same-repository pull
+#   request could rewrite. A fork pull request gets a read-only token and
+#   cannot post statuses at all.
+# * The evaluation trusts the verify workflows that ran on the head commit. A pull
+#   request that narrows a verify workflow's `paths:` or empties its jobs changes
+#   what runs, the same way it could rewrite `Lint & Test`; review covers it.
 #
 # The underlying ensure-actions-are-executed action treats a check that never
 # started as "not a failure", so path-filtered-out workflows do not wedge the
@@ -21,12 +56,14 @@ name: CI Required
 
 on:
   pull_request:
-  workflow_run: # zizmor: ignore[dangerous-triggers] -- This workflow only reads completed verify workflow results and publishes an aggregate commit status for the same head SHA.
+  workflow_run: # zizmor: ignore[dangerous-triggers] -- Runs the default-branch copy, checks out nothing and executes no code from the triggering run; it only reads check and workflow-run states and publishes an aggregate commit status for the same head SHA.
     # GENERATED — do not edit by hand. Run `bun run generate-ci-required` to
-    # rebuild this list from the verify-action-*.yaml workflows on disk. The
-    # ci-required drift test fails CI if it is out of sync.
+    # rebuild this list from the verify-action-*.yaml and verify-config-*.yaml
+    # workflows on disk plus the anchor workflows. The ci-required drift test
+    # fails CI if it is out of sync.
     # <<< generated: verify-workflows
     workflows:
+      - Scripts CI
       - Verify Action Common Render Template And Commit
       - Verify Bun Setup Cached
       - Verify Common Close-pull-request
@@ -75,19 +112,69 @@ on:
       - completed
 
 concurrency:
-  # Collapse the pull_request baseline and every workflow_run firing for the same
-  # head commit so only the most recent evaluation posts the final status.
-  group: ci-required-${{ github.event.workflow_run.head_sha || github.event.pull_request.head.sha }}
+  # Collapse every evaluation for the same head commit so only the most recent one
+  # posts the final status. The event name keeps the untrusted `pull_request` run
+  # in a group of its own, so it can never cancel a `workflow_run` evaluation.
+  group: ci-required-${{ github.event_name }}-${{ github.event.workflow_run.head_sha || github.event.pull_request.head.sha }}
   cancel-in-progress: true
 
 permissions: {}
 
 jobs:
-  gate:
-    name: Aggregate verify checks
+  pending:
+    name: Mark ci-required pending
+    if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     permissions:
-      actions: read # ensure-actions-are-executed workflow-jobs fallback
+      statuses: write # publish the pending ci-required commit status
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: audit
+
+      # Best effort throughout: this status is cosmetic, the workflow_run evaluation
+      # reports the verdict either way, so nothing here may fail the job.
+      - name: Publish pending ci-required status
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "$HEAD_REPO" != "$REPO" ]]; then
+            echo "::notice::Pull request from ${HEAD_REPO}: the token is read-only, so the workflow_run evaluation reports ci-required."
+            exit 0
+          fi
+
+          if ! existing="$(gh api "repos/${REPO}/commits/${SHA}/status" \
+            --jq '[.statuses[] | select(.context == "ci-required") | .state] | first // ""')"; then
+            echo "::warning::Could not read the statuses of ${SHA}; not marking ci-required pending."
+            exit 0
+          fi
+
+          if [[ -n "$existing" ]]; then
+            echo "::notice::ci-required is already '${existing}' for ${SHA}; leaving it."
+            exit 0
+          fi
+
+          gh api -X POST "repos/${REPO}/statuses/${SHA}" \
+            -f state="pending" \
+            -f context="ci-required" \
+            -f description="Waiting for verify workflows" \
+            -f target_url="${RUN_URL}" >/dev/null ||
+            echo "::warning::Could not mark ci-required pending for ${SHA}."
+
+  gate:
+    name: Aggregate verify checks
+    if: ${{ github.event_name == 'workflow_run' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read # list the workflow runs for the head commit, and the ensure-actions-are-executed fallback
       checks: read # read the verify check run states
       contents: read # query the repository
       statuses: write # publish the ci-required commit status
@@ -102,17 +189,39 @@ jobs:
       - name: Resolve target commit
         id: target
         env:
-          WORKFLOW_RUN_SHA: ${{ github.event.workflow_run.head_sha }}
-          PR_SHA: ${{ github.event.pull_request.head.sha }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
         shell: bash
         run: |
           set -euo pipefail
-          sha="${WORKFLOW_RUN_SHA:-$PR_SHA}"
-          if [[ -z "$sha" ]]; then
-            echo "::error::Could not resolve a target commit SHA."
+          if [[ ! "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Could not resolve the head commit of the triggering workflow run."
             exit 1
           fi
-          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      # A verify workflow whose summary job has not started yet has no `CI Summary:`
+      # check run, which the aggregation below cannot tell apart from a workflow the
+      # path filters skipped. The workflow runs can: GitHub creates one for every
+      # triggered workflow as soon as the push is processed.
+      - name: Count unfinished verify workflow runs
+        id: unfinished
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ steps.target.outputs.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Matches the files scripts/lib/ci-required.ts treats as verify workflows.
+          counts="$(gh api --paginate "repos/${REPO}/actions/runs?head_sha=${SHA}&per_page=100" \
+            --jq '[.workflow_runs[]
+                    | select(.path | test("^\\.github/workflows/verify-(action|config)-[^/@]+\\.ya?ml"))
+                    | select(.status != "completed")] | length')"
+          total=0
+          for count in $counts; do
+            total=$((total + count))
+          done
+          echo "count=$total" >> "$GITHUB_OUTPUT"
 
       - name: Aggregate verify checks
         id: verify
@@ -132,7 +241,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           SHA: ${{ steps.target.outputs.sha }}
-          EVENT: ${{ github.event_name }}
+          TRIGGER_PATH: ${{ github.event.workflow_run.path }}
+          UNFINISHED: ${{ steps.unfinished.outputs.count }}
           MATCHED: ${{ steps.verify.outputs.matched_checks_count }}
           FAILED: ${{ steps.verify.outputs.failed_checks_count }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -140,10 +250,20 @@ jobs:
         run: |
           set -euo pipefail
 
+          unfinished="${UNFINISHED:-0}"
           matched="${MATCHED:-0}"
           failed="${FAILED:-0}"
+          verify_pattern='^\.github/workflows/verify-(action|config)-[^/@]+\.ya?ml'
+          verify_trigger="false"
+          if [[ "$TRIGGER_PATH" =~ $verify_pattern ]]; then
+            verify_trigger="true"
+          fi
 
-          if [[ "$EVENT" == "workflow_run" && "$matched" -eq 0 ]]; then
+          if [[ "$unfinished" -gt 0 ]]; then
+            # Not a verdict: the run that finishes last triggers the evaluation that gives one.
+            state="pending"
+            description="Waiting for ${unfinished} verify workflow run(s) to finish."
+          elif [[ "$verify_trigger" == "true" && "$matched" -eq 0 ]]; then
             # A watched verify workflow just finished, so at least one matching
             # check must exist at $SHA. Zero matches means the ref or the check
             # patterns are misconfigured: fail loudly instead of silently green.
@@ -165,6 +285,6 @@ jobs:
             -f description="${description}" \
             -f target_url="${RUN_URL}" >/dev/null
 
-          if [[ "$state" != "success" ]]; then
+          if [[ "$state" == "failure" ]]; then
             exit 1
           fi
