@@ -113,6 +113,10 @@ jobs:
           # Create settings.gradle
           echo 'rootProject.name = "spotless-test"' > settings.gradle
 
+          # Gradle's own output must stay out of the patch: create-patch includes untracked files
+          # that are not ignored, and commit-patch would refuse them.
+          printf '.gradle/\nbuild/\n' > .gitignore
+
           # Create badly formatted Java file
           cat > src/main/java/com/example/TestClass.java << 'EOF'
           package com.example;
@@ -165,19 +169,42 @@ jobs:
         env:
           BRANCH_NAME: ${{ steps.branch.outputs.branch }}
         run: |
+          set -euo pipefail
           git fetch --prune origin "+refs/heads/$BRANCH_NAME:refs/remotes/origin/$BRANCH_NAME"
           git reset --hard "origin/$BRANCH_NAME"
 
+      # The action is the unprivileged half: it formats this checkout and uploads a patch. In a real
+      # workflow commit-patch runs in a second job that holds the token and runs no repository code;
+      # here the Gradle project is the fixture this job wrote, so both halves share one job.
       - name: Run Auto-Spotless Action
         id: auto_spotless
         uses: ./tmp/actions-code/actions/java-gradle/auto-spotless # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
-          bot_app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          bot_private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
           java_version: ${{ matrix.java_version }}
           java_distribution: ${{ matrix.java_distribution }}
+          artifact_name: auto-spotless-${{ matrix.name }}-${{ github.run_attempt }}
+
+      - name: Commit Patch
+        id: commit_patch
+        uses: ./tmp/actions-code/actions/common/commit-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          artifact_name: ${{ steps.auto_spotless.outputs.artifact_name }}
+          allowed_paths: '**/*.java **/*.kt **/*.kts **/*.gradle'
+          commit_message: 'style: apply spotless formatting'
           repository: ${{ env.TEST_REPO }}
           branch: ${{ steps.branch.outputs.branch }}
+          expected_head_sha: ${{ steps.auto_spotless.outputs.base_sha }}
+
+      - name: Verify Action Outputs
+        env:
+          CHANGES_DETECTED: ${{ steps.auto_spotless.outputs.changes_detected }}
+          OUTCOME: ${{ steps.commit_patch.outputs.outcome }}
+        run: |
+          set -euo pipefail
+          [ "$CHANGES_DETECTED" = "true" ] || { echo "::error::changes_detected is '$CHANGES_DETECTED' for an unformatted file"; exit 1; }
+          [ "$OUTCOME" = "committed" ] || { echo "::error::commit-patch outcome is '$OUTCOME', expected committed"; exit 1; }
+          echo "The patch was detected and committed"
 
       - name: Verify Formatting Changes Were Committed
         shell: bash
@@ -203,6 +230,11 @@ jobs:
           FILES=$(gh api "/repos/$TEST_REPO/commits/$LATEST_COMMIT" --jq '.files[].filename')
           if ! echo "$FILES" | grep -q "TestClass.java"; then
             echo "::error::TestClass.java should have been modified"
+            echo "Modified files: $FILES"
+            exit 1
+          fi
+          if [ "$FILES" != "src/main/java/com/example/TestClass.java" ]; then
+            echo "::error::The commit should change TestClass.java and nothing else"
             echo "Modified files: $FILES"
             exit 1
           fi
