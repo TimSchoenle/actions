@@ -164,6 +164,36 @@ describe('commit-patch', () => {
     });
   });
 
+  it('commits a unicode path and a hostile multi-line message exactly as given', async () => {
+    // Shell metacharacters in both, and a path git quotes in the patch: none may be interpreted,
+    // re-encoded or dropped on the way through create-patch, the policy and createCommitOnBranch.
+    const filePath = 'generated/ünïcödé 文件 $(id) `uname`;.txt';
+    const message = [
+      'test: commit $(id) `uname` ${HOME} "quoted" \'single\'',
+      '',
+      'line one; rm -rf / && echo pwned | tee /tmp/x',
+      'line two <!-- --> \\n %0A ::error::not a workflow command',
+    ].join('\n');
+
+    await withCheckout(caseSlug('hostile input'), {}, async (context) => {
+      await context.workspace.write({ [filePath]: 'ünïcödé\n' });
+
+      const result = await commit(context.workspace, context, await createPatch(context.workspace), {
+        commit_message: message,
+      });
+      const sha = result.outputs.commit_sha ?? '';
+
+      expect(result.outputs.outcome).toBe('committed');
+      await expect(scratch.headOf(context.branch, sha)).resolves.toBe(sha);
+
+      const { data } = await api.rest.repos.getCommit({ owner: scratch.owner, ref: sha, repo: scratch.repo });
+      expect(data.commit.message).toBe(message);
+      expect(data.commit.verification?.verified).toBe(true);
+      expect((data.files ?? []).map((file) => `${file.status} ${file.filename}`)).toEqual([`added ${filePath}`]);
+      await expect(remoteFile(filePath, sha)).resolves.toBe('ünïcödé\n');
+    });
+  });
+
   it('reports no_changes for an empty patch and leaves the branch alone', async () => {
     await withCheckout(caseSlug('no changes'), {}, async (context) => {
       const result = await commit(context.workspace, context, await createPatch(context.workspace));

@@ -157,10 +157,16 @@ export async function commitPatch(deps: CommitPatchDeps, request: CommitPatchReq
   }
 
   const links = await deps.git.linksInTree(expectedHeadSha);
-  const { binary: binaryContent, fileChanges } = await buildFileChanges(deps.git, changes);
-  const binaryPaths = new Set([...binaryHunks, ...binaryContent]);
 
-  const violations = findViolations(changes, policy, links, binaryPaths);
+  // Judge paths and modes before reading any content: a refused change is never read, so a
+  // submodule's commit ID is never handed to `cat-file blob` and nothing refused is held in memory.
+  // Only the changes that pass are read, which is what finds binary content the patch presented as
+  // text, and every violation of both passes is reported together.
+  const refused = new Set(findViolations(changes, policy, links, binaryHunks).map(({ path }) => path));
+  const readable = changes.filter((change) => !refused.has(change.path));
+  const { binary: binaryContent, fileChanges } = await buildFileChanges(deps.git, readable);
+
+  const violations = findViolations(changes, policy, links, new Set([...binaryHunks, ...binaryContent]));
   if (violations.length > 0) {
     throw new PatchPolicyError(violations);
   }

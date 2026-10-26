@@ -185,6 +185,19 @@ describe('commitPatch', () => {
       });
     });
 
+    it('keeps a unicode path with spaces and shell metacharacters intact, though git quotes it in the patch', async () => {
+      const file = 'dist/ünïcödé 文件 $(id) `uname`;.txt';
+      await seed({});
+      await write(producer, { [file]: 'ünïcödé\n' });
+      const patch = await producedPatch();
+      expect(patch.toString('utf8')).toContain('"b/dist/\\303\\274n');
+      await artifact(patch);
+
+      await commitPatch(deps(), request({ allowed: 'dist/**' }));
+
+      expect(committed()).toEqual({ additions: { [file]: 'ünïcödé\n' }, deletions: [] });
+    });
+
     it('never writes to the checkout', async () => {
       await seed({ 'a.txt': 'a\n' });
       await write(producer, { 'a.txt': 'b\n' });
@@ -300,6 +313,38 @@ describe('commitPatch', () => {
           { path: 'src/a.ts', reason: 'the path matches no allowed_paths pattern' },
         ],
       });
+    });
+
+    it('lists a submodule addition with every other violation, without reading any refused change', async () => {
+      await seed({ 'dist/a.js': '1\n' });
+      await write(producer, { 'dist/a.js': '2\n', 'package.json': '{}\n' });
+      const gitlink = 'f'.repeat(40);
+      const submodule = [
+        'diff --git a/dist/vendor b/dist/vendor',
+        'new file mode 160000',
+        `index ${'0'.repeat(40)}..${gitlink}`,
+        '--- /dev/null',
+        '+++ b/dist/vendor',
+        '@@ -0,0 +1 @@',
+        `+Subproject commit ${gitlink}`,
+        '',
+      ].join('\n');
+      await artifact(Buffer.concat([await producedPatch(), Buffer.from(submodule)]));
+      const patchGit = createPatchGit(repo, root);
+      const readBlob = vi.spyOn(patchGit, 'readBlob');
+
+      const run = commitPatch(deps({ git: patchGit }), request({ allowed: 'dist/**' }));
+
+      await expectRefused(run, PatchPolicyError);
+      await expect(run).rejects.toMatchObject({
+        violations: [
+          { path: 'dist/vendor', reason: 'the change touches a submodule' },
+          { path: 'package.json', reason: 'the path matches no allowed_paths pattern' },
+        ],
+      });
+      const read = await Promise.all(readBlob.mock.calls.map(([sha]) => git(repo, 'cat-file', '-t', sha)));
+      expect(read).toEqual(['blob']);
+      expect(readBlob).not.toHaveBeenCalledWith(gitlink);
     });
 
     it('refuses a rename whose destination is outside the allowlist', async () => {
