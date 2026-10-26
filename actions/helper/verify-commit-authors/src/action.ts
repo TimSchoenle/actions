@@ -46,7 +46,7 @@ export function run(fetchCommits: CommitFetcher = fetchPullRequestCommits): Prom
       core.warning(
         commits.length === 0
           ? 'Pull request reports no commits. Reporting as unverified.'
-          : `Found ${result.invalidCommits.length} invalid commit(s) (author check or signature check failed).`,
+          : `Found ${result.invalidCommits.length} invalid commit(s) (author, committer or signature check failed).`,
       );
     }
 

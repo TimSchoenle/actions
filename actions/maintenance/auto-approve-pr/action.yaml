@@ -6,7 +6,10 @@ inputs:
     description: 'GitHub Token with pull-request: write access.'
     required: true
   user_ids:
-    description: 'Comma-separated list of Database IDs of accepted authors (e.g. "29139614, 123456").'
+    description: 'Comma-separated list of Database IDs of accepted accounts (e.g. "29139614, 123456"). The pull request
+      author, every commit author, each commit committer and the owner of each signing key must be one of them; a commit
+      GitHub signed itself names GitHub as its committer and is exempt from the committer and signer checks. The approval
+      is bound to the head commit that was verified.'
     required: true
   ignore_empty_prs:
     description: 'Ignore PRs with 0 changes. Renovate seems to sometimes create multiple lock-files PR without changing anything.'

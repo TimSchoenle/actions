@@ -6,14 +6,28 @@ import type { CommitRecord } from './commit-verification.js';
 
 const ACCEPTED = [12345, 67890];
 
+/** The account GitHub names as committer of every commit it creates and signs itself. */
+const WEB_FLOW = 19864447;
+/** An account outside the accepted set, standing in for an attacker. */
+const ATTACKER = 99999;
+
+/** A commit made and signed locally by an accepted account. */
 function commit(overrides: Partial<CommitRecord> = {}): CommitRecord {
   return {
     authorIds: [12345],
+    committerId: 12345,
     oid: 'abc1234',
     signatureState: 'VALID',
     signatureValid: true,
+    signedByGitHub: false,
+    signerId: 12345,
     ...overrides,
   };
+}
+
+/** A commit GitHub created and signed on behalf of an accepted account, as Renovate's are. */
+function gitHubSignedCommit(overrides: Partial<CommitRecord> = {}): CommitRecord {
+  return commit({ committerId: WEB_FLOW, signedByGitHub: true, signerId: null, ...overrides });
 }
 
 describe('parseUserIds', () => {
@@ -103,6 +117,92 @@ describe('validateCommit', () => {
     const failure = validateCommit(commit({ authorIds: [99999], signatureValid: false }), accepted);
 
     expect(failure?.reasons).toHaveLength(2);
+  });
+
+  describe('committer', () => {
+    it('rejects a commit whose committer has no linked GitHub account', () => {
+      expect(validateCommit(commit({ committerId: null }), accepted)?.reasons).toEqual([
+        'committer is not linked to a GitHub account',
+      ]);
+    });
+
+    it('rejects a locally signed commit whose committer is not accepted', () => {
+      expect(validateCommit(commit({ committerId: ATTACKER }), accepted)?.reasons).toEqual([
+        `committer not accepted: ${ATTACKER}`,
+      ]);
+    });
+
+    it('rejects a GitHub-signed commit whose committer has no linked GitHub account', () => {
+      expect(validateCommit(gitHubSignedCommit({ committerId: null }), accepted)?.reasons).toEqual([
+        'committer is not linked to a GitHub account',
+      ]);
+    });
+  });
+
+  describe('signer', () => {
+    it('accepts a commit GitHub signed on behalf of an accepted author', () => {
+      expect(validateCommit(gitHubSignedCommit(), accepted)).toBeUndefined();
+    });
+
+    it('accepts a commit signed by a different accepted account than its author', () => {
+      expect(validateCommit(commit({ committerId: 67890, signerId: 67890 }), accepted)).toBeUndefined();
+    });
+
+    it('rejects a valid signature whose key belongs to an account outside the accepted set', () => {
+      expect(validateCommit(commit({ signerId: ATTACKER }), accepted)?.reasons).toEqual([
+        `signer not accepted: ${ATTACKER}`,
+      ]);
+    });
+
+    it('rejects a valid signature whose key is linked to no GitHub account', () => {
+      expect(validateCommit(commit({ signerId: null }), accepted)?.reasons).toEqual([
+        'signing key is not linked to a GitHub account',
+      ]);
+    });
+
+    it('does not let a GitHub signature stand in for a valid one', () => {
+      const failure = validateCommit(
+        gitHubSignedCommit({ signatureState: 'INVALID', signatureValid: false }),
+        accepted,
+      );
+
+      expect(failure?.reasons).toEqual(['signature is not valid (state: INVALID)']);
+    });
+
+    it('reports only the invalid signature, not its missing signer, for an unsigned commit', () => {
+      const failure = validateCommit(
+        commit({ signatureState: 'UNSIGNED', signatureValid: false, signerId: null }),
+        accepted,
+      );
+
+      expect(failure?.reasons).toEqual(['signature is not valid (state: UNSIGNED)']);
+    });
+  });
+
+  describe('forged identities', () => {
+    // GitHub links an author to an account by the email written into the commit, and reports a
+    // signature as VALID when the key matches the committer email. Neither proves the commit came
+    // from the account the author email names.
+    it('rejects an accepted author forged onto a commit the attacker committed and signed', () => {
+      const forged = commit({ authorIds: [12345], committerId: ATTACKER, signerId: ATTACKER });
+
+      expect(validateCommit(forged, accepted)?.reasons).toEqual([
+        `committer not accepted: ${ATTACKER}`,
+        `signer not accepted: ${ATTACKER}`,
+      ]);
+    });
+
+    it('rejects a forged accepted author and committer when the attacker signed the commit', () => {
+      const forged = commit({ authorIds: [12345], committerId: 12345, signerId: ATTACKER });
+
+      expect(validateCommit(forged, accepted)?.reasons).toEqual([`signer not accepted: ${ATTACKER}`]);
+    });
+
+    it('rejects a commit GitHub signed on behalf of an account outside the accepted set', () => {
+      expect(validateCommit(gitHubSignedCommit({ authorIds: [ATTACKER] }), accepted)?.reasons).toEqual([
+        `author(s) not accepted: ${ATTACKER}`,
+      ]);
+    });
   });
 });
 

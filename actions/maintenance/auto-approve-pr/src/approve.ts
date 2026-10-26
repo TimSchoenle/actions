@@ -19,7 +19,12 @@ export interface AutoApproveRequest {
 }
 
 /** Why a pull request was not approved. Each maps to a check that did not pass. */
-export type SkipReason = 'author-not-accepted' | 'branch-unverified' | 'no-changes' | 'commits-unverified';
+export type SkipReason =
+  | 'author-not-accepted'
+  | 'branch-unverified'
+  | 'no-changes'
+  | 'head-moved'
+  | 'commits-unverified';
 
 /** The decision: whether the pull request was approved, and if not, which check stopped it. */
 export interface AutoApproveOutcome {
@@ -31,9 +36,11 @@ export interface AutoApproveOutcome {
  * Decides whether a pull request may be auto-approved and, if so, approves it.
  *
  * The checks run in the same order as the composite version and short-circuit: author, then branch
- * and fork, then a non-empty diff, then commit authorship and signatures. Every check must pass
- * before the approving review is submitted, so a single failing check leaves the pull request
- * untouched. Not approving is a normal outcome reported through {@link AutoApproveOutcome.skipReason},
+ * and fork, then a non-empty diff, then that the commits were read at the head the pull request was
+ * read at, then commit authors, committers and signatures. Every check must pass before the approving
+ * review is submitted, so a single failing check leaves the pull request untouched. The review is
+ * bound to that head, so a push that lands after the commits were verified is never what gets
+ * approved. Not approving is a normal outcome reported through {@link AutoApproveOutcome.skipReason},
  * not a failure — only malformed inputs or an API error fail the step.
  *
  * @throws if the URL cannot be parsed, if `userIds` is malformed, or if the API rejects a request.
@@ -64,13 +71,19 @@ export async function autoApprove(api: AutoApproveApi, request: AutoApproveReque
     return { approved: false, skipReason: 'no-changes' };
   }
 
-  const { commits } = await api.fetchCommits(request.prUrl);
+  const { commits, headOid } = await api.fetchCommits(request.prUrl);
+
+  // The pull request and its commits are two reads. A push between them would have the checks above
+  // judge one head and the commit check another; the run that push triggers decides the new head.
+  if (headOid !== pullRequest.headSha) {
+    return { approved: false, skipReason: 'head-moved' };
+  }
 
   if (!verifyCommits(commits, acceptedIds).verified) {
     return { approved: false, skipReason: 'commits-unverified' };
   }
 
-  await api.approve(coordinates, request.approveMessage);
+  await api.approve(coordinates, request.approveMessage, pullRequest.headSha);
 
   return { approved: true };
 }
