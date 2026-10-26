@@ -81,6 +81,23 @@
         "vitest": "5.0.5",
       },
     },
+    "actions/common/commit-patch/helper": {
+      "name": "actions-common-commit-patch-helper",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "@actions/github": "9.1.1",
+        "actions-util": "workspace:*",
+      },
+      "devDependencies": {
+        "@fast-check/vitest": "0.5.0",
+        "@types/node": "26.6.5",
+        "@typescript/native": "npm:typescript@7.0.2",
+        "actions-e2e": "workspace:*",
+        "fast-check": "4.10.2",
+        "vitest": "5.0.5",
+      },
+    },
     "actions/common/create-branch": {
       "name": "actions-common-create-branch",
       "version": "1.0.0",
@@ -95,6 +112,20 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
+        "vitest": "5.0.5",
+      },
+    },
+    "actions/common/create-patch/helper": {
+      "name": "actions-common-create-patch-helper",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "actions-util": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "26.6.5",
+        "@typescript/native": "npm:typescript@7.0.2",
+        "actions-e2e": "workspace:*",
         "vitest": "5.0.5",
       },
     },
@@ -778,7 +809,11 @@
 
     "actions-common-commit-changes": ["actions-common-commit-changes@workspace:actions/common/commit-changes"],
 
+    "actions-common-commit-patch-helper": ["actions-common-commit-patch-helper@workspace:actions/common/commit-patch/helper"],
+
     "actions-common-create-branch": ["actions-common-create-branch@workspace:actions/common/create-branch"],
+
+    "actions-common-create-patch-helper": ["actions-common-create-patch-helper@workspace:actions/common/create-patch/helper"],
 
     "actions-common-delete-branch": ["actions-common-delete-branch@workspace:actions/common/delete-branch"],
 

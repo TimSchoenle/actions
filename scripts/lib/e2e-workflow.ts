@@ -190,6 +190,8 @@ export type TokenPermissions = Readonly<Record<string, 'read' | 'write'>>;
 const TOKEN_PERMISSIONS: Readonly<Record<string, TokenPermissions>> = {
   'actions/common/close-pull-request': { contents: 'write', 'pull-requests': 'write' },
   'actions/common/commit-changes': { contents: 'write' },
+  // The refused-workflow case never writes, so the token needs no workflows scope.
+  'actions/common/commit-patch': { contents: 'write' },
   'actions/common/create-branch': { contents: 'write' },
   'actions/common/delete-branch': { contents: 'write' },
   'actions/common/get-app-git-identity': { metadata: 'read' },
