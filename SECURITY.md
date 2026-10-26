@@ -77,6 +77,7 @@ is not, including older versions of a component whose neighbours have since rele
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | [actions-maintenance-auto-approve-pr-v1.5.9](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.5.9) | :white_check_mark: |
+| [Maintenance Auto-rebase](./actions/maintenance/auto-rebase) | [actions-maintenance-auto-rebase-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-rebase-v1.0.0) | :white_check_mark: |
 | [Maintenance Ensure-actions-are-executed](./actions/maintenance/ensure-actions-are-executed) | [actions-maintenance-ensure-actions-are-executed-v1.5.9](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v1.5.9) | :white_check_mark: |
 | [Maintenance Wipe-cache](./actions/maintenance/wipe-cache) | [actions-maintenance-wipe-cache-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-wipe-cache-v1.0.0) | :white_check_mark: |
 
@@ -124,6 +125,7 @@ is not, including older versions of a component whose neighbours have since rele
 | [Auto Format](./workflows/maintenance/auto-bun-prettier) | [workflows-maintenance-auto-bun-prettier-v1.1.42](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-bun-prettier-v1.1.42) | :white_check_mark: |
 | [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | [workflows-maintenance-timed-auto-pr-approve-v1.2.44](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-timed-auto-pr-approve-v1.2.44) | :white_check_mark: |
 | [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | [workflows-maintenance-auto-approve-renovate-v1.4.31](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-approve-renovate-v1.4.31) | :white_check_mark: |
+| [Maintenance Auto-rebase](./workflows/maintenance/auto-rebase) | [workflows-maintenance-auto-rebase-v1.1.8](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-rebase-v1.1.8) | :white_check_mark: |
 | [Maintenance Wipe-cache](./workflows/maintenance/wipe-cache) | [workflows-maintenance-wipe-cache-v1.1.13](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-wipe-cache-v1.1.13) | :white_check_mark: |
 
 

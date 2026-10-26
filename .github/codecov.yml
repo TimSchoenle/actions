@@ -135,6 +135,9 @@ component_management:
     - component_id: maintenance-auto-approve-pr
       name: maintenance/auto-approve-pr
       paths: ['actions/maintenance/auto-approve-pr/**']
+    - component_id: maintenance-auto-rebase
+      name: maintenance/auto-rebase
+      paths: ['actions/maintenance/auto-rebase/**']
     - component_id: maintenance-ensure-actions-are-executed
       name: maintenance/ensure-actions-are-executed
       paths: ['actions/maintenance/ensure-actions-are-executed/**']
