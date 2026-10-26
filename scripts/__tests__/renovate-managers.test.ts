@@ -278,6 +278,8 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows', 
   interface ChecksumPin {
     name: string;
     digest: string;
+    /** Offset in the file of the `<NAME>_SHA256` line, which identifies the pin. */
+    offset: number;
   }
 
   interface Capture {
@@ -289,6 +291,9 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows', 
     versionName?: string;
     /** `<NAME>` of the `<NAME>_SHA256` line inside the match. */
     checksumName?: string;
+    /** Range of the match in the file, `[start, end)`. */
+    start: number;
+    end: number;
   }
 
   function workflowFiles(): string[] {
@@ -304,11 +309,20 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows', 
   }
 
   function checksumPins(content: string): ChecksumPin[] {
-    return [...content.matchAll(CHECKSUM_PIN)].map((match) => ({ name: match[1], digest: match[2] }));
+    return [...content.matchAll(CHECKSUM_PIN)].map((match) => ({
+      name: match[1],
+      digest: match[2],
+      offset: match.index,
+    }));
   }
 
-  /** What every manager claiming `file` extracts for the pin with this digest. */
-  function capturesOf(file: string, content: string, digest: string): Capture[] {
+  /**
+   * What every manager claiming `file` extracts for this pin.
+   *
+   * A capture belongs to the pin whose checksum line it spans, not to every pin with the same digest:
+   * two jobs that download the same archive pin the same digest, and each must be captured once.
+   */
+  function capturesOf(file: string, content: string, pin: ChecksumPin): Capture[] {
     return managersFor(file).flatMap((manager) =>
       manager.matchStrings.flatMap((matchString) =>
         [...content.matchAll(new RegExp(matchString, 'g'))]
@@ -316,8 +330,10 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows', 
             ...(match.groups as Capture | undefined),
             versionName: /([A-Z0-9_]+)_VERSION:/.exec(match[0])?.[1],
             checksumName: /([A-Z0-9_]+)_SHA256:/.exec(match[0])?.[1],
+            start: match.index,
+            end: match.index + match[0].length,
           }))
-          .filter((capture) => capture.currentDigest === digest),
+          .filter((capture) => capture.start <= pin.offset && pin.offset < capture.end),
       ),
     );
   }
@@ -333,8 +349,9 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows', 
   function pinProblems(file: string, content: string): string[] {
     const problems: string[] = [];
 
-    for (const { name, digest } of checksumPins(content)) {
-      const captures = capturesOf(file, content, digest);
+    for (const pin of checksumPins(content)) {
+      const { name } = pin;
+      const captures = capturesOf(file, content, pin);
       if (captures.length !== 1) {
         problems.push(`${file} pins ${name}_SHA256, which ${captures.length} customManager(s) capture`);
         continue;
@@ -392,9 +409,31 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows', 
   ])('discovers and captures a %s pin with its version', (_style, version, digest) => {
     const content = fixture(version, digest);
 
-    expect(checksumPins(content)).toEqual([{ name: 'TOOL', digest: DIGEST }]);
+    const pins = checksumPins(content);
+
+    expect(pins).toMatchObject([{ name: 'TOOL', digest: DIGEST }]);
     expect(pinProblems(FIXTURE_FILE, content)).toEqual([]);
-    expect(capturesOf(FIXTURE_FILE, content, DIGEST)[0]?.currentValue).toBe('v1.2.3');
+    expect(capturesOf(FIXTURE_FILE, content, pins[0])[0]?.currentValue).toBe('v1.2.3');
+  });
+
+  it('captures each of two jobs that pin the same archive once', () => {
+    const content = fixture('v1.2.3', DIGEST) + fixture('v1.2.3', DIGEST);
+    const pins = checksumPins(content);
+
+    expect(pins).toHaveLength(2);
+    expect(pins[0].offset).toBeLessThan(pins[1].offset);
+    for (const pin of pins) {
+      expect(capturesOf(FIXTURE_FILE, content, pin)).toHaveLength(1);
+    }
+    expect(pinProblems(FIXTURE_FILE, content)).toEqual([]);
+  });
+
+  it('still rejects a mismatched pair next to a valid pin of the same digest', () => {
+    const content = fixture('v1.2.3', DIGEST) + fixture('v1.2.3', DIGEST).replace('TOOL_SHA256', 'OTHER_SHA256');
+
+    expect(pinProblems(FIXTURE_FILE, content)).toEqual([
+      'OTHER_SHA256 is paired with TOOL_VERSION; both must name the same tool',
+    ]);
   });
 
   it('rejects a version and a checksum that name different tools', () => {
@@ -409,8 +448,10 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows', 
   it('discovers a pin without a version line, which no manager captures', () => {
     const content = fixture('v1.2.3', `"${DIGEST}"`).replace(/^.*TOOL_VERSION.*\n/m, '');
 
-    expect(checksumPins(content)).toHaveLength(1);
-    expect(capturesOf(FIXTURE_FILE, content, DIGEST)).toEqual([]);
+    const pins = checksumPins(content);
+
+    expect(pins).toHaveLength(1);
+    expect(capturesOf(FIXTURE_FILE, content, pins[0])).toEqual([]);
     expect(pinProblems(FIXTURE_FILE, content)).toEqual([
       '.github/workflows/fixture.yml pins TOOL_SHA256, which 0 customManager(s) capture',
     ]);
