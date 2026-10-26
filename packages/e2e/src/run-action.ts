@@ -291,7 +291,7 @@ export async function runAction<TInput extends string, TOutput extends string>(
 ): Promise<ActionRunResult<TOutput>> {
   const manifest = await loadActionManifest(options.actionDirectory);
   const { script, runtime } = entryPoint(manifest, options.entry ?? 'dist');
-  const executable = resolveRuntime(runtime);
+  const executable = resolveRuntime(runtime, { declaredRuntime: manifest.using });
 
   const scratch = await mkdtemp(path.join(tmpdir(), 'actions-e2e-'));
   // A caller-supplied workspace is the caller's to dispose of; one created here is not, so the two

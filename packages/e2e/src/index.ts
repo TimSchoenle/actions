@@ -13,6 +13,7 @@ export * from './action-inputs.js';
 export * from './adversarial.js';
 export * from './action-manifest.js';
 export * from './github-file-commands.js';
+export * from './node-version.js';
 export * from './run-action.js';
 export * from './runtime.js';
 export * from './scratch-repo.js';
