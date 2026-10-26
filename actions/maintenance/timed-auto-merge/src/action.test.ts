@@ -73,7 +73,18 @@ function fakeApi(pullRequests: OpenPullRequest[]): TimedAutoMergeApi {
     approve: vi.fn(async () => {}),
     enableAutoMerge: vi.fn(async () => {}),
     fetchCommits: vi.fn(async () => ({
-      commits: [{ authorIds: [1001], oid: HEAD, signatureState: 'VALID', signatureValid: true }],
+      commits: [
+        {
+          authorIds: [1001],
+          committerId: 1001,
+          oid: HEAD,
+          signatureState: 'VALID',
+          signatureValid: true,
+          signedByGitHub: false,
+          signerId: 1001,
+        },
+      ],
+      headOid: HEAD,
       totalCount: 1,
     })),
     listOpenPullRequests: vi.fn(async () => pullRequests),
