@@ -25,8 +25,8 @@ import type { ActionRunResult, ExpectedOutcome, ProvidedInputs } from 'actions-e
  * A case that lists or deletes needs `actions: write` granted to the test app first, and the scratch
  * repository has no workflow that saves caches for one to find.
  *
- * `repository` and `branch` default to `${{ }}` expressions only the runner resolves, so every case
- * passes both.
+ * `repository` defaults to a `${{ }}` expression only the runner resolves, so every case passes it.
+ * `branch` defaults to empty, which the action fills from a `delete` event payload and nothing else.
  */
 
 const ACTION_DIRECTORY = fileURLToPath(new URL('..', import.meta.url));
@@ -77,8 +77,12 @@ describe('wipe-cache', () => {
     }
   });
 
-  it('refuses an empty branch, which a trigger other than delete leaves behind', async () => {
-    const result = await run({ branch: '' }, 'failure', { GITHUB_EVENT_NAME: 'push' });
+  // A push payload carries the pushed ref; taking it would wipe the caches of a live branch.
+  it('refuses to take the branch from any event but delete', async () => {
+    const pushPath = path.join(eventDirectory, 'push.json');
+    writeFileSync(pushPath, JSON.stringify({ ref: 'refs/heads/feature/live' }));
+
+    const result = await run({}, 'failure', { GITHUB_EVENT_NAME: 'push', GITHUB_EVENT_PATH: pushPath });
 
     expectCleanRejection(result, /No branch to wipe/);
     expect(result.outputs).toEqual({});
@@ -98,10 +102,11 @@ describe('wipe-cache', () => {
     expect(result.outputs).toEqual({ matched_count: '0', deleted_count: '0', failed_count: '0' });
   });
 
-  it('still refuses the default branch when a delete event names it', async () => {
+  // Proves the bundle reads the branch from the delete payload when `branch` is left empty.
+  it('takes the branch from a delete event, and still refuses the default branch there', async () => {
     const defaultBranch = await scratch.defaultBranch();
 
-    const result = await run({ branch: defaultBranch }, 'failure', deleteEvent('branch', defaultBranch));
+    const result = await run({}, 'failure', deleteEvent('branch', defaultBranch));
 
     expectCleanRejection(result, /Refusing to wipe/);
   });

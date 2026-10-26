@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -34,7 +34,7 @@ const defaultInputs: Inputs = {
   token: 'ghs_test_token',
 };
 
-const deleteBranchEvent: EventContext = { eventName: 'delete', refType: 'branch' };
+const deleteBranchEvent: EventContext = { eventName: 'delete', ref: 'feature/x', refType: 'branch' };
 
 function setInputs(overrides: Inputs = {}): void {
   for (const [name, value] of Object.entries({ ...defaultInputs, ...overrides })) {
@@ -68,17 +68,17 @@ function outputs(): Record<string, string> {
 }
 
 describe('wipe-cache action', () => {
-  let summaryDirectory: string;
-
   beforeEach(() => {
     vi.clearAllMocks();
     setInputs();
-    summaryDirectory = mkdtempSync(path.join(tmpdir(), 'wipe-cache-'));
+    // Keeps every case off the runner's own job summary unless it opts in.
+    vi.stubEnv('GITHUB_STEP_SUMMARY', '');
   });
 
   afterEach(() => {
     vi.unstubAllEnvs();
-    rmSync(summaryDirectory, { force: true, recursive: true });
+    vi.restoreAllMocks();
+    core.summary.emptyBuffer();
   });
 
   it('wipes the branch and publishes the counts', async () => {
@@ -100,22 +100,63 @@ describe('wipe-cache action', () => {
     expect(api.listCaches).toHaveBeenCalledWith(expect.anything(), 'refs/heads/feature/x');
   });
 
+  // `core.summary` is a module singleton that caches the first GITHUB_STEP_SUMMARY it reads, and on a
+  // runner that variable is already set for the whole test process. The write is therefore stubbed
+  // and the rendered markdown read from the call, rather than from whichever file the cache points at.
   it('writes the job summary when the runner provides one', async () => {
-    const summaryFile = path.join(summaryDirectory, 'summary.md');
-    writeFileSync(summaryFile, '');
-    vi.stubEnv('GITHUB_STEP_SUMMARY', summaryFile);
+    vi.stubEnv('GITHUB_STEP_SUMMARY', '/runner/step-summary.md');
+    const addRaw = vi.spyOn(core.summary, 'addRaw');
+    const write = vi.spyOn(core.summary, 'write').mockResolvedValue(core.summary);
 
     await run(fakeApi(), deleteBranchEvent);
 
-    expect(readFileSync(summaryFile, 'utf8')).toContain('| 2 | 2 | 0 | 0 | 20 B |');
+    expect(write).toHaveBeenCalledTimes(1);
+    expect(addRaw).toHaveBeenCalledWith(expect.stringContaining('| 2 | 2 | 0 | 0 | 20 B |'));
+  });
+
+  it('writes no job summary outside a runner', async () => {
+    const write = vi.spyOn(core.summary, 'write');
+
+    await run(fakeApi(), deleteBranchEvent);
+
+    expect(write).not.toHaveBeenCalled();
   });
 
   describe('delete events', () => {
+    it('takes the deleted branch from the event when branch is empty', async () => {
+      setInputs({ branch: '' });
+      const api = fakeApi();
+
+      await run(api, deleteBranchEvent);
+
+      expect(api.listCaches).toHaveBeenCalledWith(expect.anything(), 'refs/heads/feature/x');
+      expect(api.deleteCache).toHaveBeenCalledTimes(2);
+    });
+
+    it('prefers an explicit branch over the deleted one', async () => {
+      setInputs({ branch: 'other' });
+      const api = fakeApi([]);
+
+      await run(api, deleteBranchEvent);
+
+      expect(api.listCaches).toHaveBeenCalledWith(expect.anything(), 'refs/heads/other');
+    });
+
+    it('fails on a branch delete event whose payload names no ref', async () => {
+      setInputs({ branch: '' });
+      const api = fakeApi();
+
+      await run(api, { eventName: 'delete', ref: undefined, refType: 'branch' });
+
+      expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('No branch to wipe'));
+      expect(api.listCaches).not.toHaveBeenCalled();
+    });
+
     // The event fires for tags too, and its ref would otherwise be read as a branch of that name.
     it('skips a deleted tag without calling the API', async () => {
       const api = fakeApi();
 
-      await run(api, { eventName: 'delete', refType: 'tag' });
+      await run(api, { eventName: 'delete', ref: 'v1.0.0', refType: 'tag' });
 
       expect(api.getDefaultBranch).not.toHaveBeenCalled();
       expect(api.listCaches).not.toHaveBeenCalled();
@@ -127,7 +168,7 @@ describe('wipe-cache action', () => {
     it('skips a delete event whose ref type it cannot read', async () => {
       const api = fakeApi();
 
-      await run(api, { eventName: 'delete', refType: undefined });
+      await run(api, { eventName: 'delete', ref: undefined, refType: undefined });
 
       expect(api.listCaches).not.toHaveBeenCalled();
       expect(core.notice).toHaveBeenCalledWith(expect.stringContaining('ref of unknown type'));
@@ -136,18 +177,19 @@ describe('wipe-cache action', () => {
     it('runs on any other event', async () => {
       const api = fakeApi();
 
-      await run(api, { eventName: 'workflow_dispatch', refType: undefined });
+      await run(api, { eventName: 'workflow_dispatch', ref: undefined, refType: undefined });
 
       expect(api.deleteCache).toHaveBeenCalledTimes(2);
     });
   });
 
   describe('refusals', () => {
-    it('fails on an empty branch, which a non-delete trigger leaves behind', async () => {
+    // A push payload carries a ref too, the branch that was pushed; taking it would wipe a live branch.
+    it('fails on an empty branch outside a delete event, rather than taking the event ref', async () => {
       setInputs({ branch: '' });
       const api = fakeApi();
 
-      await run(api, { eventName: 'push', refType: undefined });
+      await run(api, { eventName: 'push', ref: undefined, refType: undefined });
 
       expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('No branch to wipe'));
       expect(api.listCaches).not.toHaveBeenCalled();
@@ -263,6 +305,7 @@ describe('readEventContext', () => {
 
     expect(readEventContext({ GITHUB_EVENT_NAME: 'delete', GITHUB_EVENT_PATH: eventPath })).toEqual({
       eventName: 'delete',
+      ref: 'feature/x',
       refType: 'branch',
     });
   });
@@ -270,15 +313,20 @@ describe('readEventContext', () => {
   it('does not read the payload of any other event', () => {
     expect(readEventContext({ GITHUB_EVENT_NAME: 'push', GITHUB_EVENT_PATH: '/nonexistent' })).toEqual({
       eventName: 'push',
+      ref: undefined,
       refType: undefined,
     });
   });
 
   it('reports no ref type when the delete payload is absent or carries none', () => {
-    expect(readEventContext({ GITHUB_EVENT_NAME: 'delete' })).toEqual({ eventName: 'delete', refType: undefined });
+    expect(readEventContext({ GITHUB_EVENT_NAME: 'delete' })).toEqual({
+      eventName: 'delete',
+      ref: undefined,
+      refType: undefined,
+    });
     expect(
       readEventContext({ GITHUB_EVENT_NAME: 'delete', GITHUB_EVENT_PATH: payload(JSON.stringify({ ref_type: 3 })) }),
-    ).toEqual({ eventName: 'delete', refType: undefined });
+    ).toEqual({ eventName: 'delete', ref: undefined, refType: undefined });
   });
 
   it('fails on a payload it cannot parse', () => {
@@ -290,6 +338,6 @@ describe('readEventContext', () => {
   });
 
   it('reads nothing outside a workflow', () => {
-    expect(readEventContext({})).toEqual({ eventName: undefined, refType: undefined });
+    expect(readEventContext({})).toEqual({ eventName: undefined, ref: undefined, refType: undefined });
   });
 });

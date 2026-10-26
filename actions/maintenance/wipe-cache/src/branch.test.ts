@@ -22,7 +22,7 @@ describe('resolveBranch', () => {
   });
 
   it.each(['', ' ', '\n'])('refuses the empty branch %j and names the fix', (input) => {
-    expect(() => resolveBranch(input)).toThrow(/No branch to wipe.*pass 'branch' explicitly/s);
+    expect(() => resolveBranch(input)).toThrow(/No branch to wipe.*Pass 'branch' explicitly/s);
   });
 
   it('refuses a full ref that names no branch', () => {

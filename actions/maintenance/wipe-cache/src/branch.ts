@@ -39,8 +39,8 @@ function invalid(input: string, reason: string): Error {
 export function resolveBranch(input: string): BranchTarget {
   if (input.trim() === '') {
     throw new Error(
-      "No branch to wipe. 'branch' is empty, which happens when the workflow was not triggered by a " +
-        "branch delete event; pass 'branch' explicitly.",
+      "No branch to wipe: 'branch' is empty and the workflow was not triggered by a branch delete " +
+        "event. Pass 'branch' explicitly.",
     );
   }
 

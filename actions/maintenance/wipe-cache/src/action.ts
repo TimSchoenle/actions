@@ -15,12 +15,21 @@ import type { CacheApi } from './github-api.js';
 export interface EventContext {
   /** `GITHUB_EVENT_NAME`, e.g. `delete`. */
   eventName: string | undefined;
-  /** `ref_type` of a `create` or `delete` payload: `branch` or `tag`. */
+  /** `ref_type` of a `delete` payload: `branch` or `tag`. */
   refType: string | undefined;
+  /** `ref` of a `delete` payload: the deleted ref's short name. */
+  ref: string | undefined;
+}
+
+function stringField(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
 }
 
 /**
- * Reads the event name and, for a `delete` event, the deleted ref's type.
+ * Reads the event name and, for a `delete` event, the deleted ref and its type.
+ *
+ * Only a `delete` payload is read. `push` and `create` payloads carry a `ref` too, but taking the
+ * branch from them would wipe the caches of a branch that is still in use.
  *
  * Read from the runner's environment rather than `@actions/github`'s context, which parses the
  * payload once at import time and so cannot be pointed at a test fixture afterwards.
@@ -30,13 +39,13 @@ export function readEventContext(env: NodeJS.ProcessEnv = process.env): EventCon
   const eventPath = env['GITHUB_EVENT_PATH'];
 
   if (eventName !== 'delete' || eventPath === undefined || eventPath === '') {
-    return { eventName, refType: undefined };
+    return { eventName, ref: undefined, refType: undefined };
   }
 
   try {
-    const payload = JSON.parse(readFileSync(eventPath, 'utf8')) as { ref_type?: unknown };
+    const payload = JSON.parse(readFileSync(eventPath, 'utf8')) as { ref?: unknown; ref_type?: unknown };
 
-    return { eventName, refType: typeof payload.ref_type === 'string' ? payload.ref_type : undefined };
+    return { eventName, ref: stringField(payload.ref), refType: stringField(payload.ref_type) };
   } catch (error) {
     throw new Error(`Could not read the delete event payload at ${quoteForLog(eventPath)}: ${errorMessage(error)}`, {
       cause: error,
@@ -65,13 +74,16 @@ function publishCounts(matched: number, deleted: number, failed: number): void {
  * A `delete` event for a tag is skipped with a notice before any input is validated: the event
  * fires for tags too, and its `ref` would otherwise be read as a branch of the same name.
  *
+ * The branch is the `branch` input when one is given, and otherwise the deleted branch of a
+ * `delete` event. Any other trigger without `branch` fails the step rather than guessing.
+ *
  * @param api injection seam for tests; defaults to the GitHub REST API bound to the `token` input.
  * @param event injection seam for tests; defaults to the runner's event.
  */
 export function run(api?: CacheApi, event?: EventContext): Promise<void> {
   return runAction(async () => {
     const token = getInput(ActionInput.token, { required: true });
-    const { eventName, refType } = event ?? readEventContext();
+    const { eventName, ref, refType } = event ?? readEventContext();
 
     if (eventName === 'delete' && refType !== 'branch') {
       core.notice(`Skipping: the delete event removed a ${refType ?? 'ref of unknown type'}, not a branch.`);
@@ -81,7 +93,8 @@ export function run(api?: CacheApi, event?: EventContext): Promise<void> {
 
     const repositoryInput = getInput(ActionInput.repository, { required: true });
     const repository = parseRepository(repositoryInput);
-    const target = resolveBranch(getInput(ActionInput.branch));
+    const branchInput = getInput(ActionInput.branch);
+    const target = resolveBranch(branchInput === '' && eventName === 'delete' ? (ref ?? '') : branchInput);
     const allowDefaultBranch = getBooleanInput(ActionInput.allow_default_branch);
     const dryRun = getBooleanInput(ActionInput.dry_run);
     const failOnError = getBooleanInput(ActionInput.fail_on_error);

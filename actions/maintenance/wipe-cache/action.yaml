@@ -10,9 +10,9 @@ inputs:
     required: false
     default: ${{ github.repository }}
   branch:
-    description: 'Branch whose caches are deleted, as a name (feature/x) or a full ref (refs/heads/feature/x). Defaults to the ref of a delete event.'
+    description: 'Branch whose caches are deleted, as a name (feature/x) or a full ref (refs/heads/feature/x). Empty takes the deleted branch of a delete event; any other trigger must set it.'
     required: false
-    default: ${{ github.event.ref }}
+    default: ''
   allow_default_branch:
     description: 'Allow wiping the caches of the repository default branch. Off by default, because every other branch restores from those entries.'
     required: false
