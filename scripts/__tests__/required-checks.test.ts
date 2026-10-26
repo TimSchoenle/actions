@@ -217,6 +217,51 @@ describe('required status check rules', () => {
     ]);
   });
 
+  describe('a required job downstream of another job', () => {
+    const header = 'on:\n  pull_request:\njobs:\n  build:\n    name: Build\n    runs-on: ubuntu-latest\n';
+
+    function downstream(body: string): string {
+      return `${header}  gate:\n    name: Gate\n    needs: build\n${body}`;
+    }
+
+    it('rejects a job that is skipped, and so passes, when an unrequired need fails', () => {
+      const problems = problemsFor(downstream('    runs-on: ubuntu-latest\n'));
+
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toContain('neither always() nor !cancelled()');
+    });
+
+    it('rejects a job that runs regardless but never reads the need result', () => {
+      const problems = problemsFor(downstream('    if: ${{ !cancelled() }}\n    runs-on: ubuntu-latest\n'));
+
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toContain('never reads needs.<job>.result');
+    });
+
+    it('accepts a job that runs regardless and fails on the need result', () => {
+      const body =
+        "    if: ${{ !cancelled() }}\n    steps:\n      - if: needs.build.result != 'success'\n        run: exit 1\n";
+
+      expect(problemsFor(downstream(body))).toEqual([]);
+    });
+
+    it('accepts a gate that reads every need at once', () => {
+      const body =
+        "    if: ${{ always() }}\n    steps:\n      - if: contains(needs.*.result, 'failure')\n        run: exit 1\n";
+
+      expect(problemsFor(downstream(body))).toEqual([]);
+    });
+
+    it('accepts a plain dependency on a job that is itself required', () => {
+      const merged = { ...check };
+      const content = downstream('    runs-on: ubuntu-latest\n');
+
+      expect(
+        findRequiredCheckProblems(merged, parseWorkflow(content), content, DEFAULT_BRANCH, ['Gate', 'Build']),
+      ).toEqual([]);
+    });
+  });
+
   it('treats an absent branch allow-list as unrestricted', () => {
     expect(branchesAllow(undefined, DEFAULT_BRANCH)).toBe(true);
     expect(branchesAllow(['**'], DEFAULT_BRANCH)).toBe(true);

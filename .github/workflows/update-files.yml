@@ -10,18 +10,30 @@ concurrency:
 
 permissions: {}
 
+# Every generated file is rebuilt by running this repository's own scripts, which on a pull request
+# are the pull request's scripts. Code running in a job can read every credential that job holds,
+# including by rewriting an action's dist/index.js under _actions/ before that action's step starts,
+# so each stage is split in two:
+#
+# - an unprivileged job (contents: read, no secrets, no environment) runs the generator and uploads
+#   the result with common/create-patch;
+# - a privileged job, in the ci environment, mints the App token and commits that patch with
+#   common/commit-patch. It never installs dependencies or runs a repository script: it checks out
+#   the head for git's objects only, and commit-patch refuses any path outside its allowed_paths.
+#
+# The required checks are the privileged jobs' names, "Build Actions and Commit" and "Update README"
+# (scripts/lib/required-checks.ts). Each runs with !cancelled() and fails first thing when its build
+# job did not succeed: a required job that is merely skipped after a failed build reports skipped,
+# and branch protection accepts skipped.
+#
+# The stages run in order, each only when the one before committed nothing: a commit starts a new run
+# on the new head, which redoes the later stages against it.
 jobs:
-  update-builds:
-    name: Build Actions and Commit
-    environment:
-      name: ci
-      deployment: false
+  build:
+    name: Build Actions
     runs-on: ubuntu-latest
-    outputs:
-      changes_detected: ${{ steps.auto-commit.outputs.changes_detected }}
     permissions:
-      contents: write # to push build artifacts
-      pull-requests: write # to comment on PRs
+      contents: read # to fetch code
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
@@ -35,23 +47,15 @@ jobs:
             *.actions.githubusercontent.com:443
             registry.npmjs.org:443
 
-      - name: Generate Bot Token
-        id: generate_token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          app-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
-          permission-contents: write
-          permission-pull-requests: write
-
+      # The pull request head, not the default merge commit: the patch is committed to the branch, so
+      # it has to be computed against the commit the branch points at.
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           fetch-depth: 0
           fetch-tags: true
-          ref: ${{ github.head_ref }}
-          token: ${{ steps.generate_token.outputs.token }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       # This job writes the bundles `check-action-dist` rebuilds and compares byte-for-byte, so the
       # Bun here must be the pinned one. Bun's minifier renames identifiers between releases, and an
@@ -68,49 +72,34 @@ jobs:
       - name: Build All Workspaces
         run: bun run build:workspaces
 
-      - name: Commit and Push if changed
-        id: auto-commit
-        uses: TimSchoenle/actions/actions/common/commit-changes@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-commit-changes-v1.5.9
+      - name: Create Patch
+        uses: TimSchoenle/actions/actions/common/create-patch@bbc2c5e2a0f9345cb2e84946846736f047a6eae3 # tag=actions-common-create-patch-v1.1.0
         with:
-          commit_message: 'build: auto-update compiled artifacts'
-          file_pattern: 'actions/**/dist/**/* actions/**/src/generated/**/* workflows/**/dist/**/* workflows/**/src/generated/**/*'
-          token: ${{ steps.generate_token.outputs.token }}
+          artifact_name: update-files-builds
+          paths: 'actions/**/dist/**/* actions/**/src/generated/**/* workflows/**/dist/**/* workflows/**/src/generated/**/*'
 
-      - name: Comment on PR
-        if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request'
-        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
-        with:
-          token: ${{ steps.generate_token.outputs.token }}
-          identifier: 'update-builds'
-          body: 'Build artifacts (`dist/` and `src/generated/`) have been auto-updated.'
-
-  # The verify-action-* workflows for actions with e2e cases are generated from
-  # scripts/lib/e2e-workflow.ts, which holds their pinned action refs. Renovate updates that file and
-  # the generated copies in one branch (see the customManagers in renovate.json), so this job is the
-  # safety net rather than the mechanism: it makes the generator authoritative whenever the two have
-  # drifted for any reason, instead of leaving a pull request stuck on a failing drift check.
-  #
-  # It is the one job in this file that pushes to .github/workflows/, which is why its token asks for
-  # workflows: write. That is a real privilege — a bot that can rewrite workflow files can rewrite
-  # what CI runs. release-please.yml holds it too, for the release pull request; auto-format.yml no
-  # longer does. Every job in this file still runs pull request code (`bun run ...`) beside its token,
-  # and that is the open problem: common/create-patch and common/commit-patch exist to split each job
-  # into an unprivileged build and a commit job that runs no repository code. This file moves to them
-  # once they are released, because a job holding a token must use a pinned release, never `./`.
-  update-generated-workflows:
-    name: Regenerate Workflows
+  update-builds:
+    name: Build Actions and Commit
+    needs: build
+    if: ${{ !cancelled() }}
     environment:
       name: ci
       deployment: false
     runs-on: ubuntu-latest
-    needs: update-builds
-    if: needs.update-builds.outputs.changes_detected == 'false'
     outputs:
-      changes_detected: ${{ steps.auto-commit.outputs.changes_detected }}
+      outcome: ${{ steps.commit.outputs.outcome }}
     permissions:
-      contents: write # to push regenerated workflows
-      pull-requests: write # to comment on PRs
+      contents: read # to fetch the commit the patch applies to
     steps:
+      - name: Fail If The Build Failed
+        if: needs.build.result != 'success'
+        env:
+          RESULT: ${{ needs.build.result }}
+        run: |
+          set -euo pipefail
+          echo "::error::Build Actions finished as '$RESULT'; nothing to commit."
+          exit 1
+
       - name: Harden Runner
         uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
         with:
@@ -123,6 +112,13 @@ jobs:
             *.actions.githubusercontent.com:443
             registry.npmjs.org:443
 
+      # Only git's objects are needed. Nothing in this checkout is executed.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
       - name: Generate Bot Token
         id: generate_token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
@@ -131,17 +127,48 @@ jobs:
           private-key: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
-          # GitHub rejects a push that touches .github/workflows/ without this, with a message about
-          # the `workflow` scope rather than about permissions.
-          permission-workflows: write
+
+      - name: Commit Patch
+        id: commit
+        uses: TimSchoenle/actions/actions/common/commit-patch@bbc2c5e2a0f9345cb2e84946846736f047a6eae3 # tag=actions-common-commit-patch-v1.1.0
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+          artifact_name: update-files-builds
+          allowed_paths: 'actions/**/dist/** actions/**/src/generated/** workflows/**/dist/** workflows/**/src/generated/**'
+          commit_message: 'build: auto-update compiled artifacts'
+
+      - name: Comment on PR
+        if: steps.commit.outputs.changes_committed == 'true' && github.event_name == 'pull_request'
+        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+          identifier: 'update-builds'
+          body: 'Build artifacts (`dist/` and `src/generated/`) have been auto-updated.'
+
+  # The verify-action-* workflows for actions with e2e cases are generated from
+  # scripts/lib/e2e-workflow.ts, which holds their pinned action refs. Renovate updates that file and
+  # the generated copies in one branch (see the customManagers in renovate.json), so this stage is the
+  # safety net rather than the mechanism: it makes the generator authoritative whenever the two have
+  # drifted for any reason, instead of leaving a pull request stuck on a failing drift check.
+  generate-workflows:
+    name: Generate Workflows
+    needs: update-builds
+    if: needs.update-builds.outputs.outcome == 'no_changes'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: audit
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           fetch-depth: 0
-          ref: ${{ github.head_ref }}
-          token: ${{ steps.generate_token.outputs.token }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Bun
         uses: TimSchoenle/actions/actions/bun/setup-cached@e16a1e466faf8ec751b26289c1898143a253269f # tag=actions-bun-setup-cached-v1.1.11
@@ -160,34 +187,38 @@ jobs:
           bun run generate-ci-required
           bun run generate-codecov-components
 
-      - name: Commit and Push if changed
-        id: auto-commit
-        uses: TimSchoenle/actions/actions/common/commit-changes@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-commit-changes-v1.5.9
+      - name: Create Patch
+        uses: TimSchoenle/actions/actions/common/create-patch@bbc2c5e2a0f9345cb2e84946846736f047a6eae3 # tag=actions-common-create-patch-v1.1.0
         with:
-          commit_message: 'ci: auto-update generated workflows'
-          file_pattern: '.github/workflows/verify-action-*.yaml .github/workflows/ci-required.yaml .github/codecov.yml'
-          token: ${{ steps.generate_token.outputs.token }}
+          artifact_name: update-files-workflows
+          paths: '.github/workflows/verify-action-*.yaml .github/workflows/ci-required.yaml .github/codecov.yml'
 
-      - name: Comment on PR
-        if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request'
-        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
-        with:
-          token: ${{ steps.generate_token.outputs.token }}
-          identifier: 'update-generated-workflows'
-          body: 'Generated `verify-action-*` workflows, `ci-required.yaml` and the Codecov components in `.github/codecov.yml` have been rebuilt.'
-
-  update-readme:
-    name: Update README
+  # The one job in this file whose token carries workflows: write, because these files live under
+  # .github/workflows/. allow_workflow_changes is what lets commit-patch accept them at all, and
+  # allowed_paths narrows that to the generated files: a patch touching any other workflow fails here
+  # rather than being committed with the privilege. release-please.yml is the only other holder.
+  update-generated-workflows:
+    name: Regenerate Workflows
+    needs: [update-builds, generate-workflows]
+    if: ${{ !cancelled() && needs.update-builds.outputs.outcome == 'no_changes' }}
     environment:
       name: ci
       deployment: false
     runs-on: ubuntu-latest
-    needs: [update-builds, update-generated-workflows]
-    if: needs.update-builds.outputs.changes_detected == 'false' && needs.update-generated-workflows.outputs.changes_detected == 'false'
+    outputs:
+      outcome: ${{ steps.commit.outputs.outcome }}
     permissions:
-      contents: write # to push readme changes
-      pull-requests: write # to comment on PRs
+      contents: read # to fetch the commit the patch applies to
     steps:
+      - name: Fail If The Generation Failed
+        if: needs.generate-workflows.result != 'success'
+        env:
+          RESULT: ${{ needs.generate-workflows.result }}
+        run: |
+          set -euo pipefail
+          echo "::error::Generate Workflows finished as '$RESULT'; nothing to commit."
+          exit 1
+
       - name: Harden Runner
         uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
         with:
@@ -200,6 +231,12 @@ jobs:
             *.actions.githubusercontent.com:443
             registry.npmjs.org:443
 
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
       - name: Generate Bot Token
         id: generate_token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
@@ -208,6 +245,40 @@ jobs:
           private-key: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
+          # GitHub rejects a commit that touches .github/workflows/ without this, with a message about
+          # the `workflow` scope rather than about permissions.
+          permission-workflows: write
+
+      - name: Commit Patch
+        id: commit
+        uses: TimSchoenle/actions/actions/common/commit-patch@bbc2c5e2a0f9345cb2e84946846736f047a6eae3 # tag=actions-common-commit-patch-v1.1.0
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+          artifact_name: update-files-workflows
+          allowed_paths: '.github/workflows/verify-action-*.yaml .github/workflows/ci-required.yaml .github/codecov.yml'
+          allow_workflow_changes: 'true'
+          commit_message: 'ci: auto-update generated workflows'
+
+      - name: Comment on PR
+        if: steps.commit.outputs.changes_committed == 'true' && github.event_name == 'pull_request'
+        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+          identifier: 'update-generated-workflows'
+          body: 'Generated `verify-action-*` workflows, `ci-required.yaml` and the Codecov components in `.github/codecov.yml` have been rebuilt.'
+
+  generate-docs:
+    name: Generate Docs
+    needs: [update-builds, update-generated-workflows]
+    if: needs.update-builds.outputs.outcome == 'no_changes' && needs.update-generated-workflows.outputs.outcome == 'no_changes'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code and tags
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: audit
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -215,8 +286,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
           fetch-tags: true
-          ref: ${{ github.head_ref }}
-          token: ${{ steps.generate_token.outputs.token }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Bun
         uses: TimSchoenle/actions/actions/bun/setup-cached@e16a1e466faf8ec751b26289c1898143a253269f # tag=actions-bun-setup-cached-v1.1.11
@@ -229,16 +299,68 @@ jobs:
       - name: Generate Docs
         run: bun run generate-docs
 
-      - name: Commit and Push if changed
-        id: auto-commit
-        uses: TimSchoenle/actions/actions/common/commit-changes@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-commit-changes-v1.5.9
+      - name: Create Patch
+        uses: TimSchoenle/actions/actions/common/create-patch@bbc2c5e2a0f9345cb2e84946846736f047a6eae3 # tag=actions-common-create-patch-v1.1.0
         with:
-          commit_message: 'docs: auto-update documentation'
-          file_pattern: 'README.md SECURITY.md'
+          artifact_name: update-files-docs
+          paths: 'README.md SECURITY.md'
+
+  # Regenerate Workflows is not a required check, so this job also reports its failure: it runs when
+  # that job failed, and fails in turn, rather than being skipped and reading as a pass.
+  update-readme:
+    name: Update README
+    needs: [update-builds, update-generated-workflows, generate-docs]
+    if: >-
+      ${{ !cancelled() && needs.update-builds.outputs.outcome == 'no_changes' &&
+      (needs.update-generated-workflows.result != 'success' || needs.update-generated-workflows.outputs.outcome == 'no_changes') }}
+    environment:
+      name: ci
+      deployment: false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch the commit the patch applies to
+    steps:
+      - name: Fail If An Earlier Stage Failed
+        if: needs.update-generated-workflows.result != 'success' || needs.generate-docs.result != 'success'
+        env:
+          WORKFLOWS_RESULT: ${{ needs.update-generated-workflows.result }}
+          DOCS_RESULT: ${{ needs.generate-docs.result }}
+        run: |
+          set -euo pipefail
+          echo "::error::Regenerate Workflows finished as '$WORKFLOWS_RESULT' and Generate Docs as '$DOCS_RESULT'; nothing to commit."
+          exit 1
+
+      - name: Harden Runner
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Generate Bot Token
+        id: generate_token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Commit Patch
+        id: commit
+        uses: TimSchoenle/actions/actions/common/commit-patch@bbc2c5e2a0f9345cb2e84946846736f047a6eae3 # tag=actions-common-commit-patch-v1.1.0
+        with:
           token: ${{ steps.generate_token.outputs.token }}
+          artifact_name: update-files-docs
+          allowed_paths: 'README.md SECURITY.md'
+          commit_message: 'docs: auto-update documentation'
 
       - name: Comment on PR
-        if: steps.auto-commit.outputs.changes_detected == 'true' && github.event_name == 'pull_request'
+        if: steps.commit.outputs.changes_committed == 'true' && github.event_name == 'pull_request'
         uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
         with:
           token: ${{ steps.generate_token.outputs.token }}
