@@ -109,8 +109,8 @@ are not mentioned anywhere. Each one that matches is processed in turn:
 | The head branch is in the repository itself, not a fork         | skipped, `fork`              |
 | The pull request is not a draft                                 | skipped, `draft`             |
 | It was opened at least `time_elapsed` ago                       | skipped, `too-young`         |
-| The last commit in its commit list is the head SHA from the listing | skipped, `head-moved`    |
-| Every commit passes verification                                | skipped, `commits-unverified` |
+| Its commits were read at the head SHA from the listing          | skipped, `head-moved`        |
+| It has commits, and every commit passes verification            | skipped, `commits-unverified` |
 
 When every check passes, the pull request is approved with the review attached to that head SHA (`commit_id`), and
 auto-merge is enabled through the GraphQL `enablePullRequestAutoMerge` mutation with the same SHA as
@@ -160,14 +160,19 @@ An empty pattern is rejected: it would match every open pull request.
 
 The commits are fetched with `fetchPullRequestCommits` and checked with `verifyCommits` from `packages/ts-util`, the
 same code `verify-commit-authors` and `auto-approve-pr` use. Every author of every commit, co-authors included, must be
-one of `trusted_authors`, and every commit must carry a signature GitHub reports as valid. A commit with an author
-that is not linked to a GitHub account fails.
+one of `trusted_authors`, and every commit must carry a signature GitHub reports as valid. A commit signed with a
+personal key must also have a committer and a key owner in `trusted_authors`. A commit GitHub signed itself skips
+those two checks, because GitHub is its committer and resolves to no account. A commit with an author that is not
+linked to a GitHub account fails. See [Accepted Risks](../../../SECURITY.md#accepted-risks) for what that exception
+allows.
 
 `trusted_authors` takes database IDs rather than logins, because a login can be renamed and then registered by someone
 else. Look one up with `gh api users/<login> --jq .id`; for an App's bot account, `gh api 'users/<slug>[bot]' --jq .id`.
 
-A commit list that does not end at the listed head SHA is skipped as `head-moved`. One whose length disagrees with
-the commit count GitHub reports for the pull request is reported under `failed`.
+Every page of the commit list is read at one head SHA, and that head must be among the commits. A pull request whose
+commits were read at a different head than the listing reported is skipped as `head-moved`. A commit list whose head
+changes between pages, that does not contain its head, or whose length disagrees with the commit count GitHub reports
+is reported under `failed`.
 
 ## Migrating from the reusable workflow
 

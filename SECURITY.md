@@ -162,8 +162,9 @@ against what the branch carries.
 
 ### Commits signed by GitHub
 
-[Verify Commit Authors](./actions/helper/verify-commit-authors) and
-[Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) accept a commit when every author
+[Verify Commit Authors](./actions/helper/verify-commit-authors),
+[Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) and
+[Maintenance Timed-auto-merge](./actions/maintenance/timed-auto-merge) accept a commit when every author
 is one of the accepted accounts and its signature is valid. For a commit that a person signs with
 their own key, the committer and the owner of the signing key must also be accepted accounts. GitHub
 signs the commits that GitHub Apps, Renovate and the web interface create, and leaves the committer

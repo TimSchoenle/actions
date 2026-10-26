@@ -32,7 +32,16 @@ function pullRequest(overrides: Partial<OpenPullRequest> = {}): OpenPullRequest 
 }
 
 function commit(oid: string, overrides: Partial<CommitRecord> = {}): CommitRecord {
-  return { authorIds: [TRUSTED], oid, signatureState: 'VALID', signatureValid: true, ...overrides };
+  return {
+    authorIds: [TRUSTED],
+    committerId: TRUSTED,
+    oid,
+    signatureState: 'VALID',
+    signatureValid: true,
+    signedByGitHub: false,
+    signerId: TRUSTED,
+    ...overrides,
+  };
 }
 
 interface FakeApi extends TimedAutoMergeApi {
@@ -42,15 +51,22 @@ interface FakeApi extends TimedAutoMergeApi {
   enableAutoMerge: ReturnType<typeof vi.fn<TimedAutoMergeApi['enableAutoMerge']>>;
 }
 
-/** A fake whose commits default to two trusted, signed commits ending at {@link HEAD}. */
-function fakeApi(pullRequests: OpenPullRequest[], commitsByUrl: Record<string, CommitRecord[]> = {}): FakeApi {
+/**
+ * A fake whose commits default to two trusted, signed commits read at {@link HEAD}. `headOidByUrl`
+ * overrides the head the commits were read at.
+ */
+function fakeApi(
+  pullRequests: OpenPullRequest[],
+  commitsByUrl: Record<string, CommitRecord[]> = {},
+  headOidByUrl: Record<string, string> = {},
+): FakeApi {
   return {
     approve: vi.fn<TimedAutoMergeApi['approve']>(async () => {}),
     enableAutoMerge: vi.fn<TimedAutoMergeApi['enableAutoMerge']>(async () => {}),
     fetchCommits: vi.fn<TimedAutoMergeApi['fetchCommits']>(async (url) => {
       const commits = commitsByUrl[url] ?? [commit(OLDER), commit(HEAD)];
 
-      return { commits, totalCount: commits.length };
+      return { commits, headOid: headOidByUrl[url] ?? HEAD, totalCount: commits.length };
     }),
     listOpenPullRequests: vi.fn<TimedAutoMergeApi['listOpenPullRequests']>(async () => pullRequests),
   };
@@ -160,15 +176,18 @@ describe('processPullRequests', () => {
 
   it('skips when the branch moved between listing and fetching commits', async () => {
     const pushed = 'c'.repeat(40);
-    const api = fakeApi([pullRequest()], {
-      'https://github.com/owner/repo/pull/7': [commit(OLDER), commit(HEAD), commit(pushed, { authorIds: [STRANGER] })],
-    });
+    const url = 'https://github.com/owner/repo/pull/7';
+    const api = fakeApi(
+      [pullRequest()],
+      { [url]: [commit(OLDER), commit(HEAD), commit(pushed, { authorIds: [STRANGER] })] },
+      { [url]: pushed },
+    );
 
     const { outcomes } = await processPullRequests(api, request());
 
     expect(outcomes).toEqual([
       expect.objectContaining({
-        detail: `commit list ends at ${pushed}, expected the listed head ${HEAD}`,
+        detail: `commits were read at ${pushed}, expected the listed head ${HEAD}`,
         reason: 'head-moved',
       }),
     ]);
@@ -181,18 +200,21 @@ describe('processPullRequests', () => {
 
     const { outcomes } = await processPullRequests(api, request());
 
-    expect(outcomes).toEqual([expect.objectContaining({ detail: expect.stringContaining('ends at nothing') })]);
+    expect(outcomes).toEqual([
+      expect.objectContaining({ detail: 'the pull request has no commits', reason: 'commits-unverified' }),
+    ]);
+    expect(api.approve).not.toHaveBeenCalled();
   });
 
-  it('skips when the head commit is not the last one in the list', async () => {
-    // The head appears, but an unverified commit sorts after it.
+  it('verifies every commit regardless of the order they are listed in', async () => {
     const api = fakeApi([pullRequest()], {
-      'https://github.com/owner/repo/pull/7': [commit(HEAD), commit(OLDER)],
+      'https://github.com/owner/repo/pull/7': [commit(HEAD), commit(OLDER, { authorIds: [STRANGER] })],
     });
 
     const { outcomes } = await processPullRequests(api, request());
 
-    expect(outcomes[0]).toEqual(expect.objectContaining({ reason: 'head-moved' }));
+    expect(outcomes[0]).toEqual(expect.objectContaining({ reason: 'commits-unverified' }));
+    expect(api.approve).not.toHaveBeenCalled();
   });
 
   it.each([
