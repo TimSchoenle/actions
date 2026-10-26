@@ -285,6 +285,10 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows', 
     depName?: string;
     currentValue?: string;
     currentDigest?: string;
+    /** `<NAME>` of the `<NAME>_VERSION` line inside the match. */
+    versionName?: string;
+    /** `<NAME>` of the `<NAME>_SHA256` line inside the match. */
+    checksumName?: string;
   }
 
   function workflowFiles(): string[] {
@@ -308,23 +312,50 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows', 
     return managersFor(file).flatMap((manager) =>
       manager.matchStrings.flatMap((matchString) =>
         [...content.matchAll(new RegExp(matchString, 'g'))]
-          .map((match) => match.groups as Capture | undefined)
-          .filter((groups): groups is Capture => groups?.currentDigest === digest),
+          .map((match): Capture => ({
+            ...(match.groups as Capture | undefined),
+            versionName: /([A-Z0-9_]+)_VERSION:/.exec(match[0])?.[1],
+            checksumName: /([A-Z0-9_]+)_SHA256:/.exec(match[0])?.[1],
+          }))
+          .filter((capture) => capture.currentDigest === digest),
       ),
     );
   }
 
-  function expectCapturedOnce(file: string, content: string): void {
+  /**
+   * Every way a checksum pin in `content` falls short of the contract, as messages.
+   *
+   * The manager's regex cannot require the two names to match: Renovate evaluates it with RE2, which
+   * has no backreferences. So the pairing is checked here. A version line of one tool above the
+   * checksum line of another would otherwise be captured as one dependency, and Renovate would
+   * write the second tool's checksum next to the first tool's version.
+   */
+  function pinProblems(file: string, content: string): string[] {
+    const problems: string[] = [];
+
     for (const { name, digest } of checksumPins(content)) {
       const captures = capturesOf(file, content, digest);
+      if (captures.length !== 1) {
+        problems.push(`${file} pins ${name}_SHA256, which ${captures.length} customManager(s) capture`);
+        continue;
+      }
 
-      expect(captures, `${file} pins ${name}_SHA256, which ${captures.length} customManager(s) capture`).toHaveLength(
-        1,
-      );
-      expect(captures[0]?.datasource).toBe('github-release-attachments');
-      expect(captures[0]?.depName).toMatch(/^[\w.-]+\/[\w.-]+$/);
-      expect(captures[0]?.currentValue, `${name}_VERSION must sit directly above ${name}_SHA256`).toMatch(/^[^"'\s]+$/);
+      const [capture] = captures;
+      if (capture.datasource !== 'github-release-attachments') {
+        problems.push(`${name}: datasource is ${capture.datasource}`);
+      }
+      if (!/^[\w.-]+\/[\w.-]+$/.test(capture.depName ?? '')) {
+        problems.push(`${name}: depName ${capture.depName} is not owner/repo`);
+      }
+      if (!/^[^"'\s]+$/.test(capture.currentValue ?? '')) {
+        problems.push(`${name}: no version captured`);
+      }
+      if (capture.versionName !== name || capture.checksumName !== name) {
+        problems.push(`${name}_SHA256 is paired with ${capture.versionName}_VERSION; both must name the same tool`);
+      }
     }
+
+    return problems;
   }
 
   const DIGEST = 'a'.repeat(64);
@@ -348,7 +379,9 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows', 
 
   it('captures every checksum pin, with its version, by exactly one manager that reads its file', () => {
     for (const entry of workflowFiles()) {
-      expectCapturedOnce(`.github/workflows/${entry}`, fs.readFileSync(path.join(WORKFLOWS_DIR, entry), 'utf8'));
+      expect(
+        pinProblems(`.github/workflows/${entry}`, fs.readFileSync(path.join(WORKFLOWS_DIR, entry), 'utf8')),
+      ).toEqual([]);
     }
   });
 
@@ -360,8 +393,16 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows', 
     const content = fixture(version, digest);
 
     expect(checksumPins(content)).toEqual([{ name: 'TOOL', digest: DIGEST }]);
-    expectCapturedOnce(FIXTURE_FILE, content);
+    expect(pinProblems(FIXTURE_FILE, content)).toEqual([]);
     expect(capturesOf(FIXTURE_FILE, content, DIGEST)[0]?.currentValue).toBe('v1.2.3');
+  });
+
+  it('rejects a version and a checksum that name different tools', () => {
+    const content = fixture('v1.2.3', `'${DIGEST}'`).replace('TOOL_SHA256', 'OTHER_SHA256');
+
+    expect(pinProblems(FIXTURE_FILE, content)).toEqual([
+      'OTHER_SHA256 is paired with TOOL_VERSION; both must name the same tool',
+    ]);
   });
 
   // The failure mode the loose discovery exists for: a pin the manager does not read must fail here.
@@ -370,15 +411,24 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows', 
 
     expect(checksumPins(content)).toHaveLength(1);
     expect(capturesOf(FIXTURE_FILE, content, DIGEST)).toEqual([]);
+    expect(pinProblems(FIXTURE_FILE, content)).toEqual([
+      '.github/workflows/fixture.yml pins TOOL_SHA256, which 0 customManager(s) capture',
+    ]);
   });
 
   /**
    * Whether a workflow fetches a script and runs it unverified. Backslash continuations are joined
    * first, because `curl … \` on one line and `| bash` on the next is the same pipeline to the shell.
+   * A `sudo` in front of the shell, with or without flags such as `-E`, changes nothing about that.
+   * Each `sudo` flag starts with `-` and the shell name does not, so the optional prefix cannot
+   * backtrack.
    */
   function pipesDownloadIntoShell(content: string): boolean {
     const joined = content.replaceAll(/\\\r?\n[ \t]*/g, ' ');
-    return /(?:curl|wget)[^\n|]*\|\s*(?:ba|z)?sh\b|(?:ba|z)?sh\s+<\(\s*(?:curl|wget)/.test(joined);
+    const shell = String.raw`(?:sudo(?:[ \t]+-[A-Za-z]+)*[ \t]+)?(?:ba|z)?sh`;
+    return new RegExp(String.raw`(?:curl|wget)[^\n|]*\|[ \t]*${shell}\b|${shell}[ \t]+<\([ \t]*(?:curl|wget)`).test(
+      joined,
+    );
   }
 
   // A checksum pin is only worth something if nothing else in the workflows fetches code and runs it
@@ -396,6 +446,9 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows', 
     ['process substitution', 'bash <(curl https://example.invalid/install.sh)'],
     ['a pipe after a line continuation', 'curl -fsSL \\\n  https://example.invalid/install.sh \\\n  | bash'],
     ['wget into sh', 'wget -qO- https://example.invalid/install.sh | sh'],
+    ['a pipe into sudo bash', 'curl -fsSL https://example.invalid/install.sh | sudo bash'],
+    ['a pipe into sudo -E bash', 'curl -fsSL https://example.invalid/install.sh | sudo -E bash -s -- --yes'],
+    ['process substitution under sudo', 'sudo -E bash <(curl -fsSL https://example.invalid/install.sh)'],
   ])('flags %s', (_shape, run) => {
     expect(pipesDownloadIntoShell(run)).toBe(true);
   });
