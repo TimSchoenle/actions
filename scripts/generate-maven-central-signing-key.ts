@@ -890,10 +890,11 @@ async function generateSigningMaterial(options: CliOptions): Promise<SigningKeyM
   };
 }
 
-async function main() {
+/** Runs the generator for the given arguments, reporting failure through `process.exitCode`. */
+export async function main(argv: string[] = process.argv.slice(2)): Promise<void> {
   let options: CliOptions;
   try {
-    options = parseArgs(process.argv.slice(2));
+    options = parseArgs(argv);
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     printHelp();

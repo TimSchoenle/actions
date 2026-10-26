@@ -1,10 +1,13 @@
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   formatHumanReadableResult,
   formatJsonResult,
+  main,
   parseArgs,
   redactSecrets,
   shouldPrintSecrets,
@@ -130,5 +133,75 @@ describe('formatJsonResult', () => {
     expect(parsed['publicKey']).toBe(PUBLIC_KEY);
     expect(parsed['secretsRedacted']).toBe(true);
     expect(parsed['secretsWrittenTo']).toBe(path.resolve('out'));
+  });
+
+  // Not reachable through the CLI, which only redacts with an output directory, but the function
+  // must still not invent a path.
+  it('reports no location when redacting without an output directory', () => {
+    const parsed = JSON.parse(formatJsonResult(material, undefined, false)) as Record<string, unknown>;
+
+    expect(parsed['secretsWrittenTo']).toBeNull();
+    expect(formatHumanReadableResult(material, undefined, false)).toContain('(none)');
+  });
+});
+
+// End to end through main(), with a real Ed25519 key and no keyserver traffic: what reaches stdout
+// is compared against the secrets the run wrote to disk.
+describe('main', () => {
+  const BASE_ARGS = ['--non-interactive', '--skip-publish', '--algo', 'ed25519', '--passphrase-bytes', '16'];
+  let outputDir: string;
+  let stdout: string[];
+
+  beforeEach(async () => {
+    outputDir = await mkdtemp(path.join(os.tmpdir(), 'signing-key-'));
+    stdout = [];
+    vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
+      stdout.push(args.map(String).join(' '));
+    });
+  });
+
+  afterEach(async () => {
+    vi.restoreAllMocks();
+    process.exitCode = undefined;
+    await rm(outputDir, { force: true, recursive: true });
+  });
+
+  async function writtenSecrets(): Promise<string[]> {
+    const credentials = JSON.parse(await readFile(path.join(outputDir, 'credentials.json'), 'utf8')) as {
+      passphrase: string;
+      privateKey: string;
+    };
+    return [credentials.passphrase, credentials.privateKey.trim()];
+  }
+
+  it.each([
+    ['human-readable', []],
+    ['--json', ['--json']],
+  ])('keeps the secrets off stdout with --output-dir (%s)', async (_format, extra) => {
+    await main([...BASE_ARGS, '--output-dir', outputDir, ...extra]);
+
+    expect(process.exitCode).toBeUndefined();
+    const output = stdout.join('\n');
+    for (const secret of await writtenSecrets()) {
+      expect(output).not.toContain(secret);
+    }
+    expect(output).toContain(path.resolve(outputDir));
+  });
+
+  it('prints the secrets with --output-dir when --print-secrets is given', async () => {
+    await main([...BASE_ARGS, '--output-dir', outputDir, '--json', '--print-secrets']);
+
+    expect(process.exitCode).toBeUndefined();
+    const printed = JSON.parse(stdout.join('\n')) as { passphrase: string; privateKey: string };
+    expect([printed.passphrase, printed.privateKey.trim()]).toEqual(await writtenSecrets());
+  });
+
+  it('prints the secrets without an output directory, where stdout is the only copy', async () => {
+    await main([...BASE_ARGS, '--json']);
+
+    expect(process.exitCode).toBeUndefined();
+    const printed = JSON.parse(stdout.join('\n')) as { passphrase?: string; privateKey?: string };
+    expect(printed.passphrase).toMatch(/\S/);
+    expect(printed.privateKey).toContain('PRIVATE KEY BLOCK');
   });
 });
