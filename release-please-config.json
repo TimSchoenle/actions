@@ -36,29 +36,14 @@
       "component": "actions-bun-setup-cached",
       "include-component-in-tag": true
     },
-    "workflows/maintenance/auto-bun-prettier": {
-      "release-type": "simple",
-      "component": "workflows-maintenance-auto-bun-prettier-meta",
-      "include-component-in-tag": true
-    },
     "actions/common/commit-changes": {
       "release-type": "simple",
       "component": "actions-common-commit-changes",
       "include-component-in-tag": true
     },
-    "workflows/maintenance/auto-approve-renovate": {
-      "release-type": "simple",
-      "component": "workflows-maintenance-auto-approve-renovate-meta",
-      "include-component-in-tag": true
-    },
     "actions/helper/verify-commit-authors": {
       "release-type": "simple",
       "component": "actions-helper-verify-commit-authors",
-      "include-component-in-tag": true
-    },
-    "workflows/maintenance/timed-auto-pr-approve": {
-      "release-type": "simple",
-      "component": "workflows-maintenance-timed-auto-pr-approve-meta",
       "include-component-in-tag": true
     },
     "actions/common/create-pull-request": {
@@ -99,16 +84,6 @@
     "actions/java-gradle/setup-base-environment": {
       "release-type": "simple",
       "component": "actions-java-gradle-setup-base-environment",
-      "include-component-in-tag": true
-    },
-    "workflows/maintenance/wipe-cache": {
-      "release-type": "simple",
-      "component": "workflows-maintenance-wipe-cache-meta",
-      "include-component-in-tag": true
-    },
-    "workflows/maintenance/auto-rebase": {
-      "release-type": "simple",
-      "component": "workflows-maintenance-auto-rebase-meta",
       "include-component-in-tag": true
     },
     "actions/java-gradle/auto-spotless": {

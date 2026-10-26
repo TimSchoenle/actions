@@ -242,12 +242,12 @@ nothing checks, which needs a reason on the line above it.
 In four of these repositories the documentation a user actually reads is not in a comment at all, and
 a rewrite that adds doc comments to those items would be writing the second copy.
 
-| Repository      | Where the user-facing text lives                         | Rendered into                        |
-| --------------- | -------------------------------------------------------- | ------------------------------------ |
-| actions         | `description:` in each `action.yaml` and `workflow.yaml` | the root `README.md` tables          |
-| helm-charts     | `# --` comments in `values.yaml`                         | each chart's `README.md`             |
-| rewrite-recipes | `getDisplayName()` and `getDescription()`                | the OpenRewrite catalog              |
-| Portfolio       | `///` on config fields                                   | `config.example.toml`, README tables |
+| Repository      | Where the user-facing text lives          | Rendered into                        |
+| --------------- | ----------------------------------------- | ------------------------------------ |
+| actions         | `description:` in each `action.yaml`      | the root `README.md` tables          |
+| helm-charts     | `# --` comments in `values.yaml`          | each chart's `README.md`             |
+| rewrite-recipes | `getDisplayName()` and `getDescription()` | the OpenRewrite catalog              |
+| Portfolio       | `///` on config fields                    | `config.example.toml`, README tables |
 
 Those strings are prose under [PROSE.md](../readme/PROSE.md) and belong to the README standard. The
 comment on the surrounding class or struct is tier two or three and says something different: why the

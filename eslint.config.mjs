@@ -100,7 +100,7 @@ export default tseslint.config(
   // that every name is checked against the action.yaml that declares it. Calling @actions/core
   // directly would bypass that check and reintroduce unverifiable string literals.
   {
-    files: ['actions/**/src/**/*.ts', 'workflows/**/src/**/*.ts'],
+    files: ['actions/**/src/**/*.ts'],
     rules: {
       'no-restricted-syntax': [
         'error',

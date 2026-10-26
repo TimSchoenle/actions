@@ -2,10 +2,10 @@
 Generated from scripts/templates/README.md by `bun run generate-docs`. Edit the template, not this
 file.
 
-Every row below is read out of the repository itself. Each `action.yaml`, `workflow.yaml` and
-`configs/*.json` supplies its own name and description, `.release-please-manifest.json` supplies the
-released version, and every tag is resolved to the commit it points at, so the `uses:` lines are SHA
-pins rather than moving references.
+Every row below is read out of the repository itself. Each `action.yaml` and `configs/*.json`
+supplies its own name and description, `.release-please-manifest.json` supplies the released
+version, and every tag is resolved to the commit it points at, so the `uses:` lines are SHA pins
+rather than moving references.
 
 The update-readme job in .github/workflows/update-files.yml runs the same command on every pull
 request and commits the result back to the branch. An edit made here is overwritten, not merged.
@@ -13,8 +13,7 @@ request and commits the result back to the branch. An edit made here is overwrit
 
 # Actions
 
-Composite and Node GitHub Actions, reusable workflows and shared Renovate presets, each released
-under its own tag.
+Composite and Node GitHub Actions and shared Renovate presets, each released under its own tag.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/TimSchoenle/actions/scripts-ci.yml?branch=main&label=ci)](https://github.com/TimSchoenle/actions/actions/workflows/scripts-ci.yml)
 [![License](https://img.shields.io/github/license/TimSchoenle/actions)](LICENSE)
@@ -22,12 +21,11 @@ under its own tag.
 ## What this is
 
 One repository holding the CI parts the other repositories in this account call: the actions under
-`actions/`, the callable workflows under `workflows/`, and the Renovate presets and branch rulesets
-under `configs/`.
+`actions/`, and the Renovate presets and branch rulesets under `configs/`.
 
 Each directory is its own release-please component, so `actions/rust/clippy` and
 `actions/bun/setup-cached` are versioned and tagged apart from each other. A tag names the component
-it belongs to, as `actions-<path>-vX.Y.Z` or `workflows-<path>-vX.Y.Z`. The tables below carry the
+it belongs to, as `actions-<path>-vX.Y.Z` or `configs-<path>-vX.Y.Z`. The tables below carry the
 current tag of every component and the `uses:` line that pins it.
 
 ## Quick start
@@ -53,7 +51,6 @@ an upgrade to `actions-bun-setup-cached`.
 
 - [Usage](#usage)
   - [Actions](#actions)
-  - [Reusable workflows](#reusable-workflows)
   - [Shared configurations](#shared-configurations)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
@@ -167,23 +164,6 @@ outputs. Where an action needs more than that, a README sits next to it.
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
 | [Setup E2E Test](./actions/test/setup-e2e) | Sets up the environment for E2E testing: generates token, checks out test repo, and checks out actions code. | [actions-test-setup-e2e-v1.2.4](https://github.com/TimSchoenle/actions/releases/tag/actions-test-setup-e2e-v1.2.4) | `uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4` |
-
-
-
-### Reusable workflows
-
-Releasing one of these publishes it onto its tag at `.github/workflows/<category>-<name>.yaml`,
-which is the path the `uses:` line resolves. Read and change the source under `workflows/`.
-
-#### Maintenance
-
-| Workflow | Description | Version | Usage |
-| --- | --- | --- | --- |
-| [Auto Format](./workflows/maintenance/auto-bun-prettier) | Reusable workflow to auto-format code by running a "bun run" script and commit changes. | [workflows-maintenance-auto-bun-prettier-v1.1.43](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-bun-prettier-v1.1.43) | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-bun-prettier.yaml@2500adaa53c588c7dff4dfb89d2831367b416c34 # tag=workflows-maintenance-auto-bun-prettier-v1.1.43` |
-| [Auto-Approve & Merge Timed PRs](./workflows/maintenance/timed-auto-pr-approve) | Reusable workflow that automatically verifies, approves, and merges Pull Requests that match a specific branch pattern and have been open for a configurable duration. It ensures all commits are signed and authored by trusted users. | [workflows-maintenance-timed-auto-pr-approve-v1.2.45](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-timed-auto-pr-approve-v1.2.45) | `uses: TimSchoenle/actions/.github/workflows/maintenance-timed-auto-pr-approve.yaml@87a8aa7d345eb8215f655b5e47b029f3bf8e46f1 # tag=workflows-maintenance-timed-auto-pr-approve-v1.2.45` |
-| [Maintenance Auto-approve-renovate](./workflows/maintenance/auto-approve-renovate) | Reusable workflow to auto approve Renovate PRs, this is useful to auto merge Renovate PRs which have auto-merge enabled. | [workflows-maintenance-auto-approve-renovate-v1.4.32](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-approve-renovate-v1.4.32) | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-approve-renovate.yaml@27e020480d2c7c41694065b53a6565817e67680a # tag=workflows-maintenance-auto-approve-renovate-v1.4.32` |
-| [Maintenance Auto-rebase](./workflows/maintenance/auto-rebase) | Automatically rebases open PRs with a given label. | [workflows-maintenance-auto-rebase-v1.1.8](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-auto-rebase-v1.1.8) | `uses: TimSchoenle/actions/.github/workflows/maintenance-auto-rebase.yaml@7cf01346e7636298556c46cd8fc1a96b50006d59 # tag=workflows-maintenance-auto-rebase-v1.1.8` |
-| [Maintenance Wipe-cache](./workflows/maintenance/wipe-cache) | Workflow to wipe all cache entries for the given branch. | [workflows-maintenance-wipe-cache-v1.1.14](https://github.com/TimSchoenle/actions/releases/tag/workflows-maintenance-wipe-cache-v1.1.14) | `uses: TimSchoenle/actions/.github/workflows/maintenance-wipe-cache.yaml@d10d04659020a6fbb4e4f7ecaa6b829e51a0bb97 # tag=workflows-maintenance-wipe-cache-v1.1.14` |
 
 
 
@@ -354,9 +334,9 @@ repositories link them from their own `CONTRIBUTING.md` instead of keeping a cop
 ## Contributing
 
 Issues and pull requests are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers the commit
-convention release-please reads, the interactive generators that scaffold a new action or workflow,
-and the checks CI runs. This file and SECURITY.md are generated. An edit to either is reverted on
-the next pull request.
+convention release-please reads, the interactive generators that scaffold a new action, and the
+checks CI runs. This file and SECURITY.md are generated. An edit to either is reverted on the next
+pull request.
 
 ## Security
 
@@ -365,4 +345,4 @@ route and the list of supported versions.
 
 ## License
 
-Every action, workflow and config here is published under the terms in [LICENSE](LICENSE).
+Every action and config here is published under the terms in [LICENSE](LICENSE).

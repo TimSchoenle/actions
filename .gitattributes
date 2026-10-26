@@ -58,7 +58,6 @@ configs/github-rulesets/*.json text eol=lf linguist-language=JSON
 # GitHub Actions & Workflows
 .github/workflows/*.yaml text eol=lf linguist-language=GitHub-Actions
 .github/workflows/*.yml text eol=lf linguist-language=GitHub-Actions
-workflows/**/workflow.yaml text eol=lf linguist-language=GitHub-Actions
 actions/**/action.yaml text eol=lf linguist-language=YAML
 actions/**/action.yml text eol=lf linguist-language=YAML
 
@@ -81,8 +80,6 @@ docs/readme/TEMPLATE.md.hbs text eol=lf linguist-language=Handlebars linguist-do
 scripts/templates/** linguist-documentation
 scripts/templates/action/action.yaml text eol=lf linguist-language=YAML
 scripts/templates/action/verify-workflow.yaml text eol=lf linguist-language=GitHub-Actions
-scripts/templates/workflow/workflow.yaml text eol=lf linguist-language=GitHub-Actions
-scripts/templates/workflow/verify-workflow.yaml text eol=lf linguist-language=GitHub-Actions
 
 # Generated files & Bundles
 *.map -diff linguist-generated

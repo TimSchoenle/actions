@@ -4,10 +4,9 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
 
-# Carried over from the reusable workflow this replaces: a newer push to the same pull request
-# supersedes the run judging the previous head.
+# A newer push to the same pull request supersedes the run judging the previous head.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-auto-approve-renovate
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions: {}

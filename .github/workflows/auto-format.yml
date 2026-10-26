@@ -11,9 +11,8 @@ concurrency:
 permissions: {}
 
 # `bun run format` is the pull request's own script, so it runs in a job that holds nothing, and the
-# result is committed from a second job that runs no repository code. See update-files.yml for the
-# split, which this workflow follows. It replaces the auto-bun-prettier reusable workflow, whose single
-# job ran the formatter beside the App token.
+# result is committed from a second job that runs no repository code, so the formatter never runs
+# beside the App token. See update-files.yml for the split, which this workflow follows.
 jobs:
   # Release-please branches carry only generated CHANGELOG.md and manifest edits, both of which
   # release-please already emits formatted.
@@ -100,7 +99,7 @@ jobs:
         uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
         with:
           token: ${{ steps.generate_token.outputs.token }}
-          identifier: 'auto-bun-prettier'
+          identifier: 'auto-format'
           body: 'Code has been auto-formatted to adhere to the style guide.'
 
   # The one context branch protection requires from this workflow. Both jobs above are skipped on a

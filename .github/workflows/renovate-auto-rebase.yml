@@ -5,10 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Carried over from the reusable workflow this replaces: a newer push to main supersedes the sweep
-# for the previous one.
+# A newer push to main supersedes the sweep for the previous one.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-auto-rebase
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions: {}

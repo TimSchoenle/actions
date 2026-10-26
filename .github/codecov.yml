@@ -56,7 +56,6 @@ ignore:
   - '**/*.test.ts'
   - 'scripts/templates/**'
   - 'configs/**'
-  - 'workflows/**'
 
 # One component per action that has TypeScript sources, plus the repository scripts and the shared
 # packages, so a pull request's comment shows which action its coverage moved in. Composite-only

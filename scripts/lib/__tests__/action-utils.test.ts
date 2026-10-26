@@ -108,6 +108,23 @@ describe('action-utils', () => {
       expect(pkg).toBe('new-pkg');
     });
 
+    it('should offer the matching packages, plus a create entry only when creation is allowed', async () => {
+      vi.mocked(Sys.exists).mockReturnValue(true);
+      vi.mocked(Sys.readdir).mockReturnValue(['rust', 'bun']);
+      vi.mocked(Sys.stat).mockReturnValue({ isDirectory: () => true } as unknown as ReturnType<typeof Sys.stat>);
+      vi.mocked(search).mockResolvedValue('rust');
+
+      await actionUtils.selectPackage(false);
+      await actionUtils.selectPackage(true);
+
+      type Source = (term: string | undefined) => Promise<{ name: string; value: string }[]>;
+      const [withoutCreate, withCreate] = vi.mocked(search).mock.calls.map(([config]) => config.source as Source);
+
+      expect(await withoutCreate('ru')).toEqual([{ name: 'rust', value: 'rust' }]);
+      expect(await withoutCreate(undefined)).toHaveLength(2);
+      expect((await withCreate('ru')).map(({ value }) => value)).toEqual(['rust', '__NEW__']);
+    });
+
     it('should throw if no packages found and creation not allowed', async () => {
       vi.mocked(Sys.exists).mockReturnValue(false);
       await expect(actionUtils.selectPackage(false)).rejects.toThrow('No packages found');
@@ -139,8 +156,12 @@ describe('action-utils', () => {
       const configWrite = vi.mocked(Sys.write).mock.calls[0];
       const manifestWrite = vi.mocked(Sys.write).mock.calls[1];
 
-      expect(JSON.parse(configWrite[1] as string).packages['actions/pkg/sub']).toBeDefined();
-      expect(JSON.parse(manifestWrite[1] as string)['actions/pkg/sub']).toBeDefined();
+      expect(JSON.parse(configWrite[1] as string).packages['actions/pkg/sub']).toEqual({
+        'release-type': 'simple',
+        component: 'actions-pkg-sub',
+        'include-component-in-tag': true,
+      });
+      expect(JSON.parse(manifestWrite[1] as string)['actions/pkg/sub']).toBe('1.0.0');
     });
 
     it('should handle missing config/manifest gracefully (create new)', async () => {
