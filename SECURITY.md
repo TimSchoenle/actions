@@ -162,11 +162,12 @@ against what the branch carries.
 ### Commits signed by GitHub
 
 [Verify Commit Authors](./actions/helper/verify-commit-authors) and
-[Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) accept a commit when its author
+[Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) accept a commit when every author
 is one of the accepted accounts and its signature is valid. For a commit that a person signs with
-their own key, the committer must also be an accepted account. GitHub signs the commits that GitHub
-Apps, Renovate and the web interface create, and leaves the committer of such a commit without a
-linked account. For those commits the actions check only the author and GitHub's signature.
+their own key, the committer and the owner of the signing key must also be accepted accounts. GitHub
+signs the commits that GitHub Apps, Renovate and the web interface create, and leaves the committer
+of such a commit without a linked account. For those commits the actions check only the authors and
+GitHub's signature.
 
 Anyone with write access to a branch in the same repository can create a commit that GitHub signs
 and that names an accepted account, such as Renovate, as its author. The actions then accept that
