@@ -93,12 +93,11 @@ context is safe to require, and neither is visible in the workflow that produces
   `verify-action-*` and `verify-config-*` workflows, and it does so from a `workflow_run` trigger, whose check runs land on
   the default branch rather than on the pull request head. Only the commit status it POSTs reaches
   the pull request, so `ci-required` is the context to require — never the `Aggregate verify checks`
-  job name, which is skipped on a pull request and so always looks green there.
+  job name, whose check runs never reach the pull request at all.
 
 `ci-required` also has to be posted by code the pull request cannot rewrite. A `pull_request` run
-executes the pull request's own copy of the workflow, so only the `workflow_run` evaluation, which
-always runs the copy on `main`, reports `success` or `failure`; the `pull_request` run may only mark
-the context `pending`. Because the verify workflows are path-filtered, the watch list also holds
+executes the pull request's own copy of the workflow, so the workflow has no `pull_request` trigger:
+the `workflow_run` evaluation, which always runs the copy on `main`, is its only publisher. Because the verify workflows are path-filtered, the watch list also holds
 anchor workflows that run on every pull request (`ANCHOR_WORKFLOW_FILES` in
 [`scripts/lib/ci-required.ts`](scripts/lib/ci-required.ts)), so a pull request that starts no verify
 workflow still gets an evaluation. The header of

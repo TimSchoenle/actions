@@ -152,6 +152,34 @@ describe('required status check rules', () => {
     expect(problemsFor(content, { kind: 'status' })).toEqual([]);
   });
 
+  // ci-required's shape: the status is POSTed to the pull request head by the default-branch copy.
+  it('accepts a status context posted from a workflow_run trigger alone', () => {
+    const content =
+      'on:\n  workflow_run:\n    workflows: [\'Scripts CI\']\njobs:\n  gate:\n    steps:\n      - run: gh api -f context="Gate"\n';
+
+    expect(problemsFor(content, { kind: 'status' })).toEqual([]);
+  });
+
+  // A job's check run lands on the commit its own run checked out, the default branch for workflow_run.
+  it('rejects a job context whose workflow only runs on workflow_run', () => {
+    const problems = problemsFor(
+      "on:\n  workflow_run:\n    workflows: ['Scripts CI']\njobs:\n  gate:\n    name: Gate\n    runs-on: ubuntu-latest\n",
+    );
+
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain("no 'on.pull_request' trigger");
+  });
+
+  it('rejects a status context with neither trigger', () => {
+    const problems = problemsFor("on:\n  push:\n    branches: ['main']\njobs:\n  gate:\n    steps:\n      - run: x\n", {
+      kind: 'status',
+    });
+
+    expect(problems).toContain(
+      "w.yml has neither an 'on.pull_request' nor an 'on.workflow_run' trigger, so the context never reports on a pull request.",
+    );
+  });
+
   it('reports a missing workflow without inspecting it further', () => {
     expect(findRequiredCheckProblems(check, undefined, undefined).map((problem) => problem.reason)).toEqual([
       'w.yml does not exist.',

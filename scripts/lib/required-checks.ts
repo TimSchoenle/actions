@@ -92,7 +92,7 @@ export const REQUIRED_CHECKS: readonly RequiredCheck[] = [
     workflow: 'ci-required.yaml',
     kind: 'status',
     reason:
-      'Aggregate of the path-filtered verify workflows, posted only by the workflow_run evaluation, which runs the default-branch copy of ci-required.yaml; the pull_request run, which runs the copy on the pull request branch, may only mark it pending. The "Aggregate verify checks" job name must NOT be required in its place: it is skipped on a pull_request, and its workflow_run check runs land on the default branch, never on the pull request head.',
+      'Aggregate of the path-filtered verify workflows, posted only by the workflow_run evaluation, which runs the default-branch copy of ci-required.yaml; the workflow has no pull_request trigger, so no copy a pull request controls ever publishes it. The "Aggregate verify checks" job name must NOT be required in its place: its workflow_run check runs land on the default branch, never on the pull request head.',
   },
 ];
 
@@ -105,7 +105,7 @@ export const REQUIRED_CHECKS: readonly RequiredCheck[] = [
  */
 export const FORBIDDEN_REQUIRED_CHECKS: Readonly<Record<string, string>> = {
   'Aggregate verify checks':
-    "The job name behind ci-required. It is skipped on a pull_request, which branch protection accepts as passing, and its workflow_run evaluations run on the default branch, so their check runs never reach the pull request head. Require the 'ci-required' commit status instead.",
+    "The job name behind ci-required. It only runs on workflow_run, on the default branch, so its check runs never reach the pull request head and the context would wait for ever. Require the 'ci-required' commit status instead.",
   'Auto Format / Auto Format':
     "The nested name of a reusable-workflow call, which disappears whenever the call is skipped. Require 'Auto Format Gate' instead.",
   'Auto Approve Renovate / Auto-approve PR':
@@ -123,6 +123,8 @@ export interface WorkflowJob {
 export interface WorkflowTriggers {
   /** True when the workflow declares an `on.pull_request` trigger at all. */
   onPullRequest: boolean;
+  /** True when the workflow declares an `on.workflow_run` trigger. */
+  onWorkflowRun: boolean;
   /** `paths` / `paths-ignore` filters, which make the trigger conditional. */
   pathFiltered: boolean;
   /** Explicit `branches` allow-list, when present. */
@@ -148,28 +150,35 @@ function asStringArray(value: unknown): string[] | undefined {
 }
 
 function readTriggers(on: unknown): WorkflowTriggers {
-  const absent: WorkflowTriggers = { onPullRequest: false, pathFiltered: false, branchesIgnored: false };
+  const absent: WorkflowTriggers = {
+    onPullRequest: false,
+    onWorkflowRun: false,
+    pathFiltered: false,
+    branchesIgnored: false,
+  };
 
   // `on: pull_request` and `on: [pull_request]` carry no filters at all; only the mapping form can.
   if (typeof on === 'string') {
-    return { ...absent, onPullRequest: on === 'pull_request' };
+    return { ...absent, onPullRequest: on === 'pull_request', onWorkflowRun: on === 'workflow_run' };
   }
   if (Array.isArray(on)) {
-    return { ...absent, onPullRequest: on.includes('pull_request') };
+    return { ...absent, onPullRequest: on.includes('pull_request'), onWorkflowRun: on.includes('workflow_run') };
   }
   if (on === null || typeof on !== 'object') {
     return absent;
   }
 
   const events = on as Record<string, unknown>;
+  const onWorkflowRun = Object.hasOwn(events, 'workflow_run');
   if (!Object.hasOwn(events, 'pull_request')) {
-    return absent;
+    return { ...absent, onWorkflowRun };
   }
 
   // `pull_request:` with no filters parses as null, which is the unconditional case.
   const filters = (events.pull_request ?? {}) as Record<string, unknown>;
   return {
     onPullRequest: true,
+    onWorkflowRun,
     pathFiltered: Object.hasOwn(filters, 'paths') || Object.hasOwn(filters, 'paths-ignore'),
     branches: asStringArray(filters.branches),
     branchesIgnored: Object.hasOwn(filters, 'branches-ignore'),
@@ -233,8 +242,16 @@ export function findRequiredCheckProblems(
   }
 
   const { triggers } = workflow;
-  if (!triggers.onPullRequest) {
-    fail(`${check.workflow} has no 'on.pull_request' trigger, so the context never reports on a pull request.`);
+  // A commit status is POSTed to an explicit SHA, so a workflow_run evaluation can report it onto the
+  // pull request head as well as a pull_request run can. That it does so for every pull request is
+  // ci-required's anchor contract, which ci-required.test.ts holds; a job context has no such route.
+  const reachesPullRequest = triggers.onPullRequest || (check.kind === 'status' && triggers.onWorkflowRun);
+  if (!reachesPullRequest) {
+    fail(
+      check.kind === 'status'
+        ? `${check.workflow} has neither an 'on.pull_request' nor an 'on.workflow_run' trigger, so the context never reports on a pull request.`
+        : `${check.workflow} has no 'on.pull_request' trigger, so the context never reports on a pull request.`,
+    );
   }
   if (triggers.pathFiltered) {
     fail(`${check.workflow} filters 'on.pull_request' by path, so the context is missing on unrelated pull requests.`);

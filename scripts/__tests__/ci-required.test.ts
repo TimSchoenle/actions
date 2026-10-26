@@ -105,38 +105,28 @@ describe.each(ANCHOR_WORKFLOW_FILES)('ci-required anchor %s', (file) => {
   });
 });
 
-// The pull_request run executes the pull request's own copy of ci-required.yaml, so the copy on the
-// default branch must never let that run report a verdict: only the workflow_run evaluation, which
-// always runs the default-branch copy, may post success or failure.
+// A pull_request run executes the pull request's own copy of ci-required.yaml, so nothing it posted
+// could be trusted, and a second publisher can land after the verdict and leave the context stuck.
+// The workflow therefore runs on workflow_run alone, which always executes the default-branch copy,
+// and has a single job that publishes the context.
 describe('ci-required trust model', () => {
   interface Job {
     if?: string;
     steps?: { run?: string }[];
   }
 
-  const jobs = (parse(ciRequired) as { jobs: Record<string, Job> }).jobs;
+  const workflow = parse(ciRequired) as { on: Record<string, unknown>; jobs: Record<string, Job> };
+  const { jobs } = workflow;
   const scriptOf = (id: string): string => (jobs[id]?.steps ?? []).map((step) => step.run ?? '').join('\n');
-  const postedStates = (id: string): string[] =>
-    [...scriptOf(id).matchAll(/-f state="([^"]*)"/g)].map((match) => match[1]);
 
-  it('has exactly the pending and gate jobs', () => {
-    expect(Object.keys(jobs).sort()).toEqual(['gate', 'pending']);
+  it('triggers on workflow_run and nothing else', () => {
+    expect(Object.keys(workflow.on)).toEqual(['workflow_run']);
   });
 
-  it('runs the pending job on pull_request only', () => {
-    expect(jobs['pending']?.if).toBe("${{ github.event_name == 'pull_request' }}");
-  });
-
-  it('runs the gate on workflow_run only', () => {
+  it('publishes the context from the gate job alone', () => {
+    expect(Object.keys(jobs)).toEqual(['gate']);
     expect(jobs['gate']?.if).toBe("${{ github.event_name == 'workflow_run' }}");
-  });
-
-  it('lets the pull_request run post nothing but pending', () => {
-    expect(postedStates('pending')).toEqual(['pending']);
-  });
-
-  it('posts nothing for a pull request from a fork, whose token is read-only', () => {
-    expect(scriptOf('pending')).toMatch(/if \[\[ "\$HEAD_REPO" != "\$REPO" \]\]; then[^]*?exit 0/);
+    expect(scriptOf('gate').split('context="ci-required"')).toHaveLength(2);
   });
 
   // Line-based rather than one regex across lines: the first statement of the branch, skipping
