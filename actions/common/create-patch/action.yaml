@@ -1,0 +1,54 @@
+name: 'Common Create Patch'
+description: 'Uploads the working-tree changes as a binary git patch against HEAD, for common/commit-patch to commit from a job that runs no repository code.'
+
+inputs:
+  artifact_name:
+    description: 'Name of the uploaded artifact, which commit-patch downloads by the same name. 1 to 100 characters of letters, digits, ., _ and -.'
+    required: true
+  paths:
+    description: 'Space- or newline-separated paths or globs scoping the patch, as commit-changes file_pattern takes them. A glob is matched across directories. Empty or . takes the whole tree.'
+    required: false
+    default: '.'
+  max_patch_bytes:
+    description: 'Largest patch, in bytes. A larger one fails the step. Keep it equal to max_patch_bytes on commit-patch.'
+    required: false
+    default: '10485760'
+
+outputs:
+  has_changes:
+    description: 'true when the patch is non-empty, false when the scoped tree matches HEAD.'
+    value: ${{ steps.patch.outputs.has_changes }}
+  artifact_name:
+    description: 'Name of the uploaded artifact.'
+    value: ${{ steps.patch.outputs.artifact_name }}
+  base_sha:
+    description: 'The commit the patch was computed against: HEAD of the checkout.'
+    value: ${{ steps.patch.outputs.base_sha }}
+
+runs:
+  using: 'composite'
+  steps:
+    # Stages the tree into a throwaway index and diffs it against HEAD. The checkout's own index and
+    # files are left as the caller's build left them.
+    - name: Create Patch
+      id: patch
+      shell: bash
+      env:
+        INPUT_ARTIFACT_NAME: ${{ inputs.artifact_name }}
+        INPUT_PATHS: ${{ inputs.paths }}
+        INPUT_MAX_PATCH_BYTES: ${{ inputs.max_patch_bytes }}
+      run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"
+
+    # Uploaded even when empty: commit-patch then reads "no changes" from the artifact itself rather
+    # than from a job output, so a missing artifact is always an error and never a silent no-op.
+    # overwrite: a re-run attempt of the same job uploads under the same name, which upload-artifact
+    # otherwise refuses.
+    - name: Upload Patch
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: ${{ steps.patch.outputs.artifact_name }}
+        path: ${{ steps.patch.outputs.directory }}
+        if-no-files-found: error
+        retention-days: 1
+        overwrite: true
+        include-hidden-files: false

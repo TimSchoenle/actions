@@ -5,4 +5,6 @@
  * the root entry, and growing it renumbers the modules the minifier sees, so each unrelated bundle
  * would change bytes — and need a release — for code it never calls.
  */
+export * from './git-command.js';
+export * from './patch-artifact.js';
 export * from './pathspec.js';
