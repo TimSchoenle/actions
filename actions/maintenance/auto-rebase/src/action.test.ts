@@ -1,7 +1,3 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
-
 import * as core from '@actions/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -82,10 +78,14 @@ describe('auto-rebase action', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setInputs();
+    // Keeps every case off the runner's own job summary unless it opts in.
+    vi.stubEnv('GITHUB_STEP_SUMMARY', '');
   });
 
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+    core.summary.emptyBuffer();
   });
 
   it('publishes the updated, skipped and failed pull requests as JSON arrays', async () => {
@@ -176,18 +176,25 @@ describe('auto-rebase action', () => {
     expect(api.listOpenPullRequests).not.toHaveBeenCalled();
   });
 
+  // `core.summary` is a module singleton that caches the first GITHUB_STEP_SUMMARY it reads, and on a
+  // runner that variable is already set for the whole test process. The write is therefore stubbed
+  // and the rendered markdown read from the call, rather than from whichever file the cache points at.
   it('writes the job summary when the runner provides one', async () => {
-    const directory = mkdtempSync(path.join(tmpdir(), 'auto-rebase-'));
-    const summaryFile = path.join(directory, 'summary.md');
-    writeFileSync(summaryFile, '');
-    vi.stubEnv('GITHUB_STEP_SUMMARY', summaryFile);
+    vi.stubEnv('GITHUB_STEP_SUMMARY', '/runner/step-summary.md');
+    const addRaw = vi.spyOn(core.summary, 'addRaw');
+    const write = vi.spyOn(core.summary, 'write').mockResolvedValue(core.summary);
 
-    try {
-      await run(fakeApi());
+    await run(fakeApi());
 
-      expect(readFileSync(summaryFile, 'utf8')).toContain('| #2 | skipped | already contains its base |');
-    } finally {
-      rmSync(directory, { force: true, recursive: true });
-    }
+    expect(write).toHaveBeenCalledTimes(1);
+    expect(addRaw).toHaveBeenCalledWith(expect.stringContaining('| #2 | skipped | already contains its base |'));
+  });
+
+  it('writes no job summary outside a runner', async () => {
+    const write = vi.spyOn(core.summary, 'write');
+
+    await run(fakeApi());
+
+    expect(write).not.toHaveBeenCalled();
   });
 });

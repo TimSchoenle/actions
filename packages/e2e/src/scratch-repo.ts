@@ -360,8 +360,32 @@ export class ScratchRepo {
     }
   }
 
-  /** Writes a file on a branch, producing a commit, and returns its SHA. */
+  /** The blob SHA of a file on a branch, or `undefined` when the branch has no such file. */
+  private async blobSha(branch: string, filePath: string): Promise<string | undefined> {
+    const response = await resolveOptional(
+      this.octokit.rest.repos.getContent({ owner: this.owner, repo: this.repo, path: filePath, ref: branch }),
+    );
+    const data = response?.data;
+
+    if (data === undefined) {
+      return undefined;
+    }
+
+    if (Array.isArray(data) || data.type !== 'file') {
+      throw new E2eConfigurationError(`${filePath} on ${branch} is not a file, so it cannot be committed over.`);
+    }
+
+    return data.sha;
+  }
+
+  /**
+   * Writes a file on a branch, producing a commit, and returns its SHA.
+   *
+   * Creates the file or replaces it. The contents API rejects an update with 422 unless it names the
+   * blob being replaced, so the file is looked up on the branch first and its blob SHA passed along.
+   */
   async commitFile(branch: string, filePath: string, contents: string, message: string): Promise<string> {
+    const existing = await this.blobSha(branch, filePath);
     const { data } = await this.octokit.rest.repos.createOrUpdateFileContents({
       owner: this.owner,
       repo: this.repo,
@@ -369,6 +393,7 @@ export class ScratchRepo {
       branch,
       message,
       content: Buffer.from(contents, 'utf8').toString('base64'),
+      ...(existing === undefined ? {} : { sha: existing }),
     });
 
     const sha = data.commit.sha;

@@ -11,6 +11,10 @@ interface OctokitMock {
       deleteRef: ReturnType<typeof vi.fn>;
       getRef: ReturnType<typeof vi.fn>;
     };
+    repos: {
+      createOrUpdateFileContents: ReturnType<typeof vi.fn>;
+      getContent: ReturnType<typeof vi.fn>;
+    };
   };
 }
 
@@ -20,7 +24,12 @@ function httpError(status: number, message: string): Error & { status: number } 
 }
 
 function mockOctokit(): OctokitMock {
-  const octokit: OctokitMock = { rest: { git: { deleteRef: vi.fn(), getRef: vi.fn() } } };
+  const octokit: OctokitMock = {
+    rest: {
+      git: { deleteRef: vi.fn(), getRef: vi.fn() },
+      repos: { createOrUpdateFileContents: vi.fn(), getContent: vi.fn() },
+    },
+  };
 
   vi.mocked(createOctokit).mockReturnValue(octokit as unknown as ReturnType<typeof createOctokit>);
 
@@ -88,5 +97,62 @@ describe('ScratchRepo.removeBranch', () => {
     await expect(scratch.removeBranch(branch)).rejects.toThrow(
       `Failed to delete branch ${branch}: Resource not accessible by integration`,
     );
+  });
+});
+
+describe('ScratchRepo.commitFile', () => {
+  let octokit: OctokitMock;
+  let scratch: ScratchRepo;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubEnv('E2E_GITHUB_TOKEN', 'ghs_test_token');
+    vi.stubEnv('E2E_TEST_REPOSITORY', 'owner/repo');
+    octokit = mockOctokit();
+    scratch = ScratchRepo.fromEnvironment('unit');
+    octokit.rest.repos.createOrUpdateFileContents.mockResolvedValue({ data: { commit: { sha: 'commit-sha' } } });
+    octokit.rest.git.getRef.mockResolvedValue({ data: { object: { sha: 'commit-sha' } } });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('creates a file the branch does not have, naming no blob', async () => {
+    octokit.rest.repos.getContent.mockRejectedValue(httpError(404, 'Not Found'));
+
+    await expect(scratch.commitFile('b', 'f.txt', 'x', 'm')).resolves.toBe('commit-sha');
+
+    expect(octokit.rest.repos.getContent).toHaveBeenCalledWith({
+      owner: 'owner',
+      path: 'f.txt',
+      ref: 'b',
+      repo: 'repo',
+    });
+    expect(octokit.rest.repos.createOrUpdateFileContents.mock.calls[0][0]).not.toHaveProperty('sha');
+  });
+
+  // Without the blob SHA, GitHub answers 422 to any update of a file that already exists.
+  it('replaces an existing file by naming the blob it replaces', async () => {
+    octokit.rest.repos.getContent.mockResolvedValue({ data: { sha: 'blob-sha', type: 'file' } });
+
+    await scratch.commitFile('b', 'f.txt', 'x', 'm');
+
+    expect(octokit.rest.repos.createOrUpdateFileContents).toHaveBeenCalledWith(
+      expect.objectContaining({ branch: 'b', path: 'f.txt', sha: 'blob-sha' }),
+    );
+  });
+
+  it('refuses to commit over a directory', async () => {
+    octokit.rest.repos.getContent.mockResolvedValue({ data: [] });
+
+    await expect(scratch.commitFile('b', 'dir', 'x', 'm')).rejects.toThrow('is not a file');
+    expect(octokit.rest.repos.createOrUpdateFileContents).not.toHaveBeenCalled();
+  });
+
+  it('propagates a lookup failure other than not found', async () => {
+    octokit.rest.repos.getContent.mockRejectedValue(httpError(403, 'Forbidden'));
+
+    await expect(scratch.commitFile('b', 'f.txt', 'x', 'm')).rejects.toThrow('Forbidden');
   });
 });

@@ -32,6 +32,8 @@ describe('auto-rebase', () => {
   const scratch = ScratchRepo.fromEnvironment('auto-rebase');
   const octokit = createOctokit(scratch.token);
   const label = scratch.identifier('label');
+  // A second label, so the up-to-date case has a pull request of its own and runs in any order.
+  const currentLabel = scratch.identifier('current-label');
   const conflictPath = `e2e/auto-rebase/${scratch.identifier('conflict')}.txt`;
 
   let base: string;
@@ -44,6 +46,7 @@ describe('auto-rebase', () => {
   let unlabelled: string;
   let unlabelledHead: string;
   let baseHead: string;
+  let currentNumber: number;
 
   function run(inputs: ProvidedInputs<ActionInput> = {}): Promise<ActionRunResult<ActionOutput>> {
     return runAction<ActionInput, ActionOutput>({
@@ -53,10 +56,10 @@ describe('auto-rebase', () => {
     });
   }
 
-  async function addLabel(number: number): Promise<void> {
+  async function addLabel(number: number, name: string = label): Promise<void> {
     await octokit.rest.issues.addLabels({
       issue_number: number,
-      labels: [label],
+      labels: [name],
       owner: scratch.owner,
       repo: scratch.repo,
     });
@@ -117,15 +120,34 @@ describe('auto-rebase', () => {
     await scratch.createPullRequest(unlabelled, base, 'auto-rebase e2e: unlabelled');
 
     baseHead = await scratch.commitFile(base, conflictPath, 'base moved on\n', 'test: move the base');
+
+    // Branched from the moved base, so it already contains every base commit.
+    const current = scratch.branch('current');
+    await scratch.createBranch(current, baseHead);
+    await scratch.commitFile(
+      current,
+      `e2e/auto-rebase/${scratch.identifier('current')}.txt`,
+      'head\n',
+      'test: change on an up-to-date head',
+    );
+    currentNumber = await scratch.createPullRequest(current, base, 'auto-rebase e2e: up to date');
+    await addLabel(currentNumber, currentLabel);
   });
 
-  afterAll(async () => {
+  async function deleteLabel(name: string): Promise<void> {
     try {
-      await octokit.rest.issues.deleteLabel({ name: label, owner: scratch.owner, repo: scratch.repo });
+      await octokit.rest.issues.deleteLabel({ name, owner: scratch.owner, repo: scratch.repo });
     } catch (error) {
       if (!hasStatus(error, 404)) {
         throw error;
       }
+    }
+  }
+
+  afterAll(async () => {
+    try {
+      await deleteLabel(label);
+      await deleteLabel(currentLabel);
     } finally {
       await scratch.teardown();
     }
@@ -154,14 +176,10 @@ describe('auto-rebase', () => {
     await expect(scratch.refSha(unlabelled)).resolves.toBe(unlabelledHead);
   });
 
-  // Runs after the merge above, so the labelled pull request now contains its base.
   it('skips a pull request that is already up to date, matching the label case-insensitively', async () => {
-    await movedHead(behind, behindHead);
+    const result = await run({ label: currentLabel.toUpperCase() });
 
-    const result = await run({ label: label.toUpperCase() });
-
-    expect(result.outputs.skipped).toBe(JSON.stringify([behindNumber]));
-    expect(result.outputs.updated).toBe('[]');
+    expect(result.outputs).toEqual({ updated: '[]', skipped: JSON.stringify([currentNumber]), failed: '[]' });
     expectNoInjection(result);
     expectSecretNotLeaked(result, scratch.token);
   });
