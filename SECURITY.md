@@ -77,7 +77,9 @@ is not, including older versions of a component whose neighbours have since rele
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | [actions-maintenance-auto-approve-pr-v1.5.9](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v1.5.9) | :white_check_mark: |
+| [Maintenance Auto-rebase](./actions/maintenance/auto-rebase) | [actions-maintenance-auto-rebase-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-rebase-v1.0.0) | :white_check_mark: |
 | [Maintenance Ensure-actions-are-executed](./actions/maintenance/ensure-actions-are-executed) | [actions-maintenance-ensure-actions-are-executed-v1.5.9](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v1.5.9) | :white_check_mark: |
+| [Maintenance Wipe-cache](./actions/maintenance/wipe-cache) | [actions-maintenance-wipe-cache-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-wipe-cache-v1.0.0) | :white_check_mark: |
 
 #### Rust
 

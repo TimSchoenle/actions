@@ -48,5 +48,7 @@
   "actions/terrace/helm-sync": "1.1.0",
   "actions/terrace/image": "1.1.0",
   "actions/common/create-patch": "1.0.0",
-  "actions/common/commit-patch": "1.0.0"
+  "actions/common/commit-patch": "1.0.0",
+  "actions/maintenance/wipe-cache": "1.0.0",
+  "actions/maintenance/auto-rebase": "1.0.0"
 }

@@ -250,6 +250,16 @@
       "release-type": "simple",
       "component": "actions-common-commit-patch",
       "include-component-in-tag": true
+    },
+    "actions/maintenance/wipe-cache": {
+      "release-type": "simple",
+      "component": "actions-maintenance-wipe-cache",
+      "include-component-in-tag": true
+    },
+    "actions/maintenance/auto-rebase": {
+      "release-type": "simple",
+      "component": "actions-maintenance-auto-rebase",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
