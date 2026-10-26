@@ -1,0 +1,54 @@
+name: 'Maintenance Timed-auto-merge'
+description: 'Approve and enable auto-merge on aged pull requests whose head branch matches a pattern and whose commits are all signed by trusted authors.'
+
+inputs:
+  token:
+    description: 'GitHub token with contents: write and pull-requests: write. Must not belong to the author of the pull requests, since GitHub refuses a review from the author.'
+    required: true
+  trusted_authors:
+    description: 'Comma-separated list of GitHub user database IDs (e.g. "29139614, 123456"). Every author of every commit must be in this list.'
+    required: true
+  branch_pattern:
+    description: 'Pattern the head branch must match. Read according to pattern_mode.'
+    required: false
+    default: 'release-please--branches--%'
+  pattern_mode:
+    description: 'How branch_pattern is read. "legacy": every "%" becomes ".*" and the pattern is anchored at the start of the branch name. "regex": a POSIX extended regular expression, unanchored.'
+    required: false
+    default: 'legacy'
+  time_elapsed:
+    description: 'How long a pull request must have been open, as a whole number followed by s, m, h or d (e.g. "24h", "7d").'
+    required: false
+    default: '1d'
+  minimum_age:
+    description: 'Lower bound for time_elapsed, same format. A time_elapsed below it fails the step, so a dispatch input cannot shorten the wait.'
+    required: false
+    default: '1h'
+  merge_method:
+    description: 'Merge method for auto-merge: merge, squash or rebase.'
+    required: false
+    default: 'squash'
+  repository:
+    description: 'Repository to process, in owner/repo format.'
+    required: false
+    default: ${{ github.repository }}
+  approve_message:
+    description: 'Body of the approving review.'
+    required: false
+    default: 'Auto-approved: every commit is signed by a trusted author and the pull request has been open long enough.'
+  fail_on_error:
+    description: 'Fail the step when an API call for any pull request failed. The remaining pull requests are processed either way.'
+    required: false
+    default: 'true'
+
+outputs:
+  approved:
+    description: 'JSON array of the pull request numbers that were approved and had auto-merge enabled.'
+  skipped:
+    description: 'JSON array of {"number", "reason"} for matching pull requests that were left alone.'
+  failed:
+    description: 'JSON array of {"number", "message"} for pull requests where an API call failed.'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

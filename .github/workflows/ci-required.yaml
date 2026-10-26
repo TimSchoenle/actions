@@ -58,6 +58,7 @@ on:
       - Verify Maintenance Auto-approve-pr
       - Verify Maintenance Auto-rebase
       - Verify Maintenance Ensure-actions-are-executed
+      - Verify Maintenance Timed-auto-merge
       - Verify Maintenance Wipe-cache
       - Verify Rust Config-contract
       - Verify Rust Coverage-codecov
