@@ -77,6 +77,17 @@ export function readBasicString(rhs: string): string | undefined {
   return undefined;
 }
 
+/**
+ * Reads a dotted key in its normal form, with the whitespace TOML allows around each `.` removed:
+ * `workspace . package` reads as `workspace.package`.
+ */
+function normaliseKey(key: string): string {
+  return key
+    .split('.')
+    .map((part) => part.trim())
+    .join('.');
+}
+
 /** Reads a table header, e.g. `[package]` or `[dependencies.serde]`, from a trimmed line. */
 function readTableHeader(line: string): string | undefined {
   if (!line.startsWith('[')) {
@@ -85,7 +96,34 @@ function readTableHeader(line: string): string | undefined {
 
   const close = line.indexOf(']');
 
-  return close === -1 ? undefined : line.slice(1, close).trim();
+  return close === -1 ? undefined : normaliseKey(line.slice(1, close));
+}
+
+/**
+ * Whether `rhs` marks a field as inherited. Cargo accepts the dotted form, `version.workspace =
+ * true`, whose value is `true`, and the inline-table form, `version = { workspace = true }`.
+ */
+function isInlineWorkspaceTable(rhs: string): boolean {
+  if (!rhs.startsWith('{')) {
+    return false;
+  }
+
+  const close = rhs.indexOf('}');
+
+  if (close === -1) {
+    return false;
+  }
+
+  return rhs
+    .slice(1, close)
+    .split(',')
+    .some((entry) => {
+      const assignment = splitAssignment(entry.trim());
+
+      return (
+        assignment !== undefined && normaliseKey(assignment.lhs) === 'workspace' && assignment.rhs.trimEnd() === 'true'
+      );
+    });
 }
 
 /** The two tables a manifest can state its facts in. */
@@ -110,10 +148,16 @@ function readPackageField(line: string, table: PackageTable): void {
     return;
   }
 
-  const { lhs, rhs } = assignment;
+  const lhs = normaliseKey(assignment.lhs);
+  const { rhs } = assignment;
 
   if (lhs.endsWith(WORKSPACE_SUFFIX) && rhs.startsWith('true')) {
     table.inherited.add(lhs.slice(0, -WORKSPACE_SUFFIX.length));
+    return;
+  }
+
+  if (isInlineWorkspaceTable(rhs)) {
+    table.inherited.add(lhs);
     return;
   }
 

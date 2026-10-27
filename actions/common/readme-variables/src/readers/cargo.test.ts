@@ -170,6 +170,39 @@ edition = "2024"
     expect(facts.toolchain).toEqual({ msrv: '1.94', edition: '2024' });
   });
 
+  it('resolves the inline-table form of an inherited field', () => {
+    const facts = readCargoManifest(
+      `[workspace.package]
+version = "4.0.0"
+edition = "2024"
+
+[package]
+name = "root"
+version = { workspace = true }
+edition = {workspace=true}
+`,
+      'Cargo.toml',
+    );
+
+    expect(facts.version).toBe('4.0.0');
+    expect(facts.toolchain).toEqual({ edition: '2024' });
+  });
+
+  it('reads table headers and dotted keys with whitespace around the dot', () => {
+    const facts = readCargoManifest(
+      `[ workspace . package ]
+version = "1.2.3"
+
+[package]
+name = "root"
+version . workspace = true
+`,
+      'Cargo.toml',
+    );
+
+    expect(facts.version).toBe('1.2.3');
+  });
+
   it('never reports a name from [workspace.package], which cannot carry one', () => {
     expect(
       readCargoManifest(`[workspace.package]\nname = "x"\nversion = "1.0.0"\n`, 'Cargo.toml').name,

@@ -66,6 +66,22 @@ describe('summarise', () => {
     expect(summarise('# T\n\nRun ``a ` b`` now.\n', 'x').summary).toBe('Run a ` b now.');
   });
 
+  it('keeps a run of underscores inside a word', () => {
+    expect(summarise('# T\n\nThe snake__case and __bold__ forms.\n', 'x').summary).toBe(
+      'The snake__case and bold forms.',
+    );
+  });
+
+  it('treats an escaped backtick as a literal one that opens no code span', () => {
+    expect(summarise('# T\n\nA \\` tick, then `TANKOVAULT_*` keys.\n', 'x').summary).toBe(
+      'A ` tick, then TANKOVAULT_* keys.',
+    );
+  });
+
+  it('strips the padding that lets a code span hold a backtick', () => {
+    expect(summarise('# T\n\nUse `` `cmd` ``.\n', 'x').summary).toBe('Use `cmd`.');
+  });
+
   it('does not let text resembling a span marker reach the output', () => {
     expect(summarise('# T\n\nA \u{E000}0\u{E001} b.\n', 'x').summary).toBe('A 0 b.');
   });

@@ -68,8 +68,11 @@ const BLOCK_HTML_TAGS = new Set(
 /** A link or image, reduced to its text. */
 const LINK = /!?\[([^\]]*)\]\([^)]*\)/g;
 
-/** Emphasis delimiters. An underscore between two letters or digits is part of a word, not one. */
-const EMPHASIS = /\*|(?<![\p{L}\p{N}])_+|_+(?![\p{L}\p{N}])/gu;
+/** Candidate emphasis delimiters, judged whole by `stripEmphasis`. */
+const EMPHASIS = /\*+|_+/gu;
+
+/** A letter or digit, the characters that make an underscore run part of a word. */
+const WORD_CHARACTER = /[\p{L}\p{N}]/u;
 
 /** Private-use characters marking where a code span was taken out, so no rule below touches it. */
 const SPAN_OPEN = '\u{E000}';
@@ -95,6 +98,13 @@ function extractCodeSpans(markdown: string): { text: string; spans: string[] } {
       break;
     }
 
+    if (isEscaped(markdown, open)) {
+      // An escaped backtick is a literal one and opens nothing. The backslash goes with it.
+      text += `${markdown.slice(index, open - 1)}\``;
+      index = open + 1;
+      continue;
+    }
+
     text += markdown.slice(index, open);
     let run = 1;
 
@@ -109,12 +119,47 @@ function extractCodeSpans(markdown: string): { text: string; spans: string[] } {
       continue;
     }
 
-    spans.push(markdown.slice(open + run, close));
+    spans.push(unpadded(markdown.slice(open + run, close)));
     text += `${SPAN_OPEN}${spans.length - 1}${SPAN_CLOSE}`;
     index = close + run;
   }
 
   return { text, spans };
+}
+
+/** Whether the character at `index` follows an odd number of backslashes, which escape it. */
+function isEscaped(markdown: string, index: number): boolean {
+  let backslashes = 0;
+
+  while (markdown[index - 1 - backslashes] === '\\') {
+    backslashes++;
+  }
+
+  return backslashes % 2 === 1;
+}
+
+/**
+ * A code span's content without the one space of padding on each side that lets a span start or
+ * end with a backtick. Content that is only spaces keeps them.
+ */
+function unpadded(content: string): string {
+  return content.length >= 2 && content.startsWith(' ') && content.endsWith(' ') && content.trim() !== ''
+    ? content.slice(1, -1)
+    : content;
+}
+
+/**
+ * Removes emphasis delimiters. Each run of underscores is judged whole: one with a letter or digit
+ * on both sides is part of a word, as in `snake__case`, and stays.
+ */
+function stripEmphasis(text: string): string {
+  return text.replaceAll(EMPHASIS, (run: string, offset: number) =>
+    run.startsWith('_') &&
+    WORD_CHARACTER.test(text[offset - 1] ?? '') &&
+    WORD_CHARACTER.test(text[offset + run.length] ?? '')
+      ? run
+      : '',
+  );
 }
 
 /** The index of the next backtick run of exactly `length` from `from`, or -1. */
@@ -142,9 +187,7 @@ function findClosingRun(markdown: string, from: number, length: number): number 
 function plainText(markdown: string): string {
   const { text, spans } = extractCodeSpans(markdown.replaceAll(MARKER_CHARACTERS, ''));
 
-  return text
-    .replaceAll(LINK, '$1')
-    .replaceAll(EMPHASIS, '')
+  return stripEmphasis(text.replaceAll(LINK, '$1'))
     .replaceAll(SPAN_MARKER, (_marker, index: string) => spans[Number(index)] ?? '')
     .replaceAll(/\s+/g, ' ')
     .trim();

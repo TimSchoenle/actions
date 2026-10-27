@@ -44,15 +44,15 @@ docs[]     path, title, summary
 It reads `Cargo.toml`, `package.json`, `Chart.yaml` or `gradle.properties`, detected in that order or
 named through the `manifest` input:
 
-| Manifest            | `repo.ecosystem` | `release.version`          | `toolchain`                                                                             |
-| ------------------- | ---------------- | -------------------------- | --------------------------------------------------------------------------------------- |
-| `Cargo.toml`        | `cargo`          | `[package] version`        | `msrv` from `rust-version`, `edition`                                                   |
-| `package.json`      | `npm`            | `version`                  | `node` from `engines.node`                                                              |
-| `Chart.yaml`        | `chart`          | `version`, the chart's own | `appVersion`, `kubeVersion`                                                             |
-| `gradle.properties` | `gradle`         | `version`                  | `jdk` from `javaVersion`, `java.version` or `jdkVersion`; `gradle` from `gradleVersion` |
+| Manifest            | `repo.ecosystem` | `release.version`                                     | `toolchain`                                                                             |
+| ------------------- | ---------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `Cargo.toml`        | `cargo`          | `[package] version`, or `[workspace.package] version` | `msrv` from `rust-version`, `edition`                                                   |
+| `package.json`      | `npm`            | `version`                                             | `node` from `engines.node`                                                              |
+| `Chart.yaml`        | `chart`          | `version`, the chart's own                            | `appVersion`, `kubeVersion`                                                             |
+| `gradle.properties` | `gradle`         | `version`                                             | `jdk` from `javaVersion`, `java.version` or `jdkVersion`; `gradle` from `gradleVersion` |
 
 A Cargo workspace root with no `[package]` is read from `[workspace.package]`, and a root `[package]` that inherits
-a field with `field.workspace = true` resolves it from the same file. A virtual workspace has no package name, so
+a field with `field.workspace = true` or `field = { workspace = true }` resolves it from the same file. A virtual workspace has no package name, so
 `repo.package` is omitted.
 
 `release.tag` is `release.version` with the `tag-prefix` input joined in front. The default is `v`.
