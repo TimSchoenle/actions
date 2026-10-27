@@ -117,11 +117,11 @@ function tableCells(line: string): string[] {
 /**
  * Whether `line` is a table header: GFM needs it followed by a delimiter row such as
  * `| --- | :-: |` with the same number of cells. Neither row needs outer pipes, so a one-column
- * header may have none at all; the delimiter row needs at least one, or `---` would be a setext
- * underline. A delimiter row indented by four columns or more is indented code, not a table.
+ * header may have none at all. The delimiter row needs a pipe or an alignment colon, since a bare
+ * `---` is a setext underline. A delimiter row indented by four columns or more is indented code.
  */
 function isTableHeader(line: string, next: string | undefined): boolean {
-  if (next === undefined || !next.includes('|') || !TABLE_ROW_INDENT.test(next)) {
+  if (next === undefined || !/[|:]/.test(next) || !TABLE_ROW_INDENT.test(next)) {
     return false;
   }
 
