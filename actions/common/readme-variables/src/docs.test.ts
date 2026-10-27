@@ -50,6 +50,26 @@ describe('summarise', () => {
     ).toBe('See the chart and just verify and emphasis.');
   });
 
+  it('keeps the characters of a code span and of a word, stripping only the delimiters', () => {
+    expect(
+      summarise('# T\n\nEvery `TANKOVAULT_*` key, migration `0055_chapter_storage` and snake_case.\n', 'x').summary,
+    ).toBe('Every TANKOVAULT_* key, migration 0055_chapter_storage and snake_case.');
+  });
+
+  it('strips underscore emphasis and a backtick run that opens no code span', () => {
+    expect(summarise('# T\n\nAn _emphasised_ word and a stray ` tick.\n', 'x').summary).toBe(
+      'An emphasised word and a stray tick.',
+    );
+  });
+
+  it('matches a code span by the length of its backtick run', () => {
+    expect(summarise('# T\n\nRun ``a ` b`` now.\n', 'x').summary).toBe('Run a ` b now.');
+  });
+
+  it('does not let text resembling a span marker reach the output', () => {
+    expect(summarise('# T\n\nA \u{E000}0\u{E001} b.\n', 'x').summary).toBe('A 0 b.');
+  });
+
   it('closes an ATX heading that carries trailing hashes', () => {
     expect(summarise('## Title ##\n', 'x').title).toBe('Title');
   });

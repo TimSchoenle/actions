@@ -124,6 +124,10 @@ Markdown is indexed by its own first heading and first paragraph. Front matter, 
 banner that opens every generated file are all skipped. Anything else is indexed by path with no summary, because
 `docs/config.contract.json` is a document a reader follows a link to and leaving it out would make the table lie.
 
+Both are reduced to plain text for a table cell: a link keeps its text, and emphasis and code-span delimiters are
+dropped. The characters inside a code span are kept, and so is an underscore inside a word, so `TANKOVAULT_*` and
+`snake_case` read the same in the cell as in the source.
+
 A `docs-dir` that does not exist yields an empty index. That is not an error: most repositories have no `docs/` yet, and
 failing on its absence would make adopting the standard a two-step migration for no gain.
 

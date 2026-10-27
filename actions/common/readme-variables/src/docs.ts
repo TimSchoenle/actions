@@ -65,12 +65,89 @@ const BLOCK_HTML_TAGS = new Set(
   ).split(' '),
 );
 
-/** Markdown inline syntax that carries no meaning once the text is inside a table cell. */
-const INLINE_MARKUP = /!?\[([^\]]*)\]\([^)]*\)|[*_`]/g;
+/** A link or image, reduced to its text. */
+const LINK = /!?\[([^\]]*)\]\([^)]*\)/g;
 
-/** Strips links, emphasis and code spans down to their text. */
+/** Emphasis delimiters. An underscore between two letters or digits is part of a word, not one. */
+const EMPHASIS = /\*|(?<![\p{L}\p{N}])_+|_+(?![\p{L}\p{N}])/gu;
+
+/** Private-use characters marking where a code span was taken out, so no rule below touches it. */
+const SPAN_OPEN = '\u{E000}';
+const SPAN_CLOSE = '\u{E001}';
+const SPAN_MARKER = /\u{E000}(\d+)\u{E001}/gu;
+const MARKER_CHARACTERS = /[\u{E000}\u{E001}]/gu;
+
+/**
+ * Replaces each code span with a marker and returns its content, so that an identifier such as
+ * `snake_case` or `PREFIX_*` survives the emphasis rule. A backtick run with no closing run of
+ * the same length is not a code span, and is dropped.
+ */
+function extractCodeSpans(markdown: string): { text: string; spans: string[] } {
+  const spans: string[] = [];
+  let text = '';
+  let index = 0;
+
+  while (index < markdown.length) {
+    const open = markdown.indexOf('`', index);
+
+    if (open === -1) {
+      text += markdown.slice(index);
+      break;
+    }
+
+    text += markdown.slice(index, open);
+    let run = 1;
+
+    while (markdown[open + run] === '`') {
+      run++;
+    }
+
+    const close = findClosingRun(markdown, open + run, run);
+
+    if (close === -1) {
+      index = open + run;
+      continue;
+    }
+
+    spans.push(markdown.slice(open + run, close));
+    text += `${SPAN_OPEN}${spans.length - 1}${SPAN_CLOSE}`;
+    index = close + run;
+  }
+
+  return { text, spans };
+}
+
+/** The index of the next backtick run of exactly `length` from `from`, or -1. */
+function findClosingRun(markdown: string, from: number, length: number): number {
+  let index = markdown.indexOf('`', from);
+
+  while (index !== -1) {
+    let run = 1;
+
+    while (markdown[index + run] === '`') {
+      run++;
+    }
+
+    if (run === length) {
+      return index;
+    }
+
+    index = markdown.indexOf('`', index + run);
+  }
+
+  return -1;
+}
+
+/** Strips links, emphasis and code-span delimiters down to their text. */
 function plainText(markdown: string): string {
-  return markdown.replaceAll(INLINE_MARKUP, '$1').replaceAll(/\s+/g, ' ').trim();
+  const { text, spans } = extractCodeSpans(markdown.replaceAll(MARKER_CHARACTERS, ''));
+
+  return text
+    .replaceAll(LINK, '$1')
+    .replaceAll(EMPHASIS, '')
+    .replaceAll(SPAN_MARKER, (_marker, index: string) => spans[Number(index)] ?? '')
+    .replaceAll(/\s+/g, ' ')
+    .trim();
 }
 
 function truncate(text: string): string {
