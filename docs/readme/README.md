@@ -23,7 +23,7 @@ job re-renders and compares on every push.
 
 1. Copy [TEMPLATE.md.hbs](./TEMPLATE.md.hbs) to `.github/templates/README.md.hbs`.
 2. Wire the workflow from [GUIDE.md](./GUIDE.md#the-workflow). On a pull request, one job renders
-   with no credentials and a second commits the result; a third renders with `check: 'true'` and
+   with no secret and no write access, and a second commits the result; a third renders with `check: 'true'` and
    fails when the committed file is stale.
 3. Write the prose against [PROSE.md](./PROSE.md).
 4. Make the drift job a required check. Without that, the template is a suggestion.

@@ -55,9 +55,11 @@ named through the `manifest` input:
 A repository whose tags are not `v1.2.3` sets the prefix, or sets it to `''` for a bare version.
 
 `docs` lists every file under `docs-dir`, sorted, with `path` relative to the repository root. A
-Markdown file contributes its first heading as `title`, or its path when it has none, and its first
-paragraph as `summary`, truncated at a word boundary when it runs past 200 characters. Front
-matter, fenced blocks and HTML comments are skipped on the way. Any other file is listed by path,
+Markdown file contributes its first heading as `title`, or its path when it has none, and the first
+line of its first paragraph as `summary`, truncated at a word boundary when it runs past 200
+characters. Only the first line is read, so a document whose opening paragraph is hard-wrapped
+gets a summary that stops mid-sentence. Front matter, fenced blocks and HTML comments are skipped
+on the way. Any other file is listed by path,
 with `summary` set to `''`. A missing `docs-dir` yields `[]` and is not an error.
 
 Nothing reaches the payload from the network, the clock or the environment. That is what lets
@@ -167,8 +169,8 @@ concurrency:
 permissions: {}
 
 jobs:
-  # Runs the pull request's own code, so it holds no secret and no write permission. It renders
-  # README.md in place and uploads the difference against the head commit as a patch.
+  # Runs the pull request's own code, so it holds no secret and only a read-only GITHUB_TOKEN.
+  # It renders README.md in place and uploads the difference against the head commit as a patch.
   render:
     name: render
     if: github.event_name == 'pull_request'
@@ -305,8 +307,8 @@ jobs:
 
 The render and the commit are separate jobs because the generator is the pull request's code. Code
 running in a job can read every credential that job holds, so a generator sharing a job with the
-App token could push anything the token allows. The split gives the generator no credential, and
-gives the job that has one nothing to execute. This repository's own `update-files.yml` has the
+App token could push anything the token allows. The split leaves the generator a read-only
+`GITHUB_TOKEN` and no secret, and gives the job that holds the App token nothing to execute. This repository's own `update-files.yml` has the
 same shape for the same reason.
 
 [render-template-and-commit](../../actions/common/render-template-and-commit) does both in one job.
@@ -398,7 +400,8 @@ the template is a newline in the rendered table:
 1. `README.md` renders from the template, banner included.
 2. A `verify` job renders with `check: 'true'` and fails on any difference, and it is a required
    check.
-3. No job that holds a token runs the repository's generator or any other repository code.
+3. No job that holds a secret or a write-capable token runs the repository's generator or any
+   other repository code.
 4. Section order holds; only inapplicable sections are missing.
 5. No manifest-derived string is typed into the template.
 6. One `H1`, no skipped levels, no emoji in headings, under 400 lines.

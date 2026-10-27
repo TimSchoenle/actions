@@ -279,8 +279,9 @@ rg -n '^\s*(///|\*|//!)\s*(This (function|method|struct|class|enum|trait|module|
   --glob '!target' --glob '!dist' --glob '!node_modules' .
 ```
 
-The trailing `.` is required. Without a path, `rg` searches standard input whenever it is not a
-terminal, which in CI means it waits for input and never reads the tree.
+The trailing `.` is required. Without a path, `rg` searches standard input instead of the tree
+whenever standard input is not a terminal. In CI that either blocks or reads an empty stream and
+reports no matches, which looks exactly like a pass.
 
 Length distribution, no threshold to pass. It counts runs of `///` in Rust sources; for Java and
 TypeScript, count the lines of each `/** */` block instead:
