@@ -203,6 +203,108 @@ version . workspace = true
     expect(facts.version).toBe('1.2.3');
   });
 
+  it('reads quoted keys and quoted header parts as their bare equivalents', () => {
+    const facts = readCargoManifest(
+      `["workspace".'package']
+"version" = "5.0.0"
+'edition' = "2024"
+
+[package]
+name = "root"
+version = { "workspace" = true }
+edition."workspace" = true
+`,
+      'Cargo.toml',
+    );
+
+    expect(facts.version).toBe('5.0.0');
+    expect(facts.toolchain).toEqual({ edition: '2024' });
+  });
+
+  it('does not split a quoted key part at the dot it contains', () => {
+    expect(() => readCargoManifest(`["workspace.package"]\nversion = "1.0.0"\n`, 'Cargo.toml')).toThrow(
+      ManifestParseError,
+    );
+  });
+
+  it('reads a literal-string value, which has no escapes', () => {
+    expect(
+      readCargoManifest(`[package]\nversion = "1.0.0"\ndescription = 'C:\\path'\n`, 'Cargo.toml').description,
+    ).toBe('C:\\path');
+  });
+
+  it('never reads an assignment out of a multiline string', () => {
+    const facts = readCargoManifest(
+      `[workspace.package]
+description = """
+version = "9.9.9"
+[package]
+"""
+notes = '''
+version = "8.8.8"
+'''
+license = "MIT" # a """ inside a comment opens nothing
+version = "1.2.3"
+`,
+      'Cargo.toml',
+    );
+
+    expect(facts.version).toBe('1.2.3');
+    expect(facts.name).toBeUndefined();
+    expect(facts.description).toBeUndefined();
+    expect(facts.license).toBe('MIT');
+  });
+
+  it('closes a multiline basic string only on an unescaped delimiter, with up to two extra quotes', () => {
+    const facts = readCargoManifest(
+      `[package]
+description = """
+an escaped \\""" stays open
+version = "9.9.9"
+ends here"""""
+version = "1.2.3"
+homepage = "https://example.com/\\"\\"\\"" # a single-line string with quotes opens nothing
+name = "after"
+`,
+      'Cargo.toml',
+    );
+
+    expect(facts.version).toBe('1.2.3');
+    expect(facts.name).toBe('after');
+  });
+
+  it('skips lines it cannot read rather than guessing at them', () => {
+    const facts = readCargoManifest(
+      `[workspace.package]
+edition = "2024"
+
+[package]
+name = "kept"
+version = "1.0.0"
+a-bare-word
+bad key = "x"
+a..b = "x"
+a.b.c = "x"
+repository = 'unterminated
+description = "ends in a backslash \\
+license = { workspace = true
+homepage = 'https://example.com'
+[unclosed
+keywords = """one line""" # opens and closes on this line
+edition = "2021"
+edition.workspace = true
+`,
+      'Cargo.toml',
+    );
+
+    expect(facts.name).toBe('kept');
+    expect(facts.version).toBe('1.0.0');
+    expect(facts.description).toBeUndefined();
+    expect(facts.license).toBeUndefined();
+    expect(facts.homepage).toBe('https://example.com');
+    expect(facts.toolchain).toEqual({ edition: '2021' });
+  });
+
   it('never reports a name from [workspace.package], which cannot carry one', () => {
     expect(
       readCargoManifest(`[workspace.package]\nname = "x"\nversion = "1.0.0"\n`, 'Cargo.toml').name,

@@ -107,7 +107,9 @@ description is set to match it.
 
 `Cargo.toml` is read without a TOML parser. What a README quotes is a handful of top-level string fields in the
 `[package]` and `[workspace.package]` tables, and the parse is anchored to the line start. A dependency's version sits
-inside an inline table and never starts a line, so `version` cannot come from one.
+inside an inline table and never starts a line, so `version` cannot come from one. Keys may be bare or quoted, and lines
+inside a multiline string are skipped, so an assignment written into a long `description` is never read as a field. A
+field whose own value is a multiline string is left absent.
 
 A manifest with `[package]` is read from it, and a field written `field.workspace = true` or `field = { workspace = true }` takes its value from
 `[workspace.package]` in the same file. A virtual workspace has no `[package]` and is read from `[workspace.package]`
