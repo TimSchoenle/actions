@@ -8,6 +8,7 @@ from the payload; none is typed. 249 lines, one H1, and both PROSE.md checks ins
 Read GUIDE.md for the rules this satisfies and PROSE.md for how its sentences are written.
 Everything below this comment is a rendered snapshot. Portfolio's own README has changed since it
 was taken, and this copy is not kept in step with it: it is the reference shape, not a mirror.
+Its relative links resolve in Portfolio, not in this repository.
 -->
 
 <!--

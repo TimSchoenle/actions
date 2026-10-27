@@ -275,14 +275,19 @@ One is mechanical. The other is informational, in the same sense as PROSE.md's s
 Openers, budget **zero**:
 
 ```bash
-rg -n --pcre2 '^\s*(///|\*|//!)\s*(This (function|method|struct|class|enum|trait|module|field)|Used to |Helper (for|that)|Responsible for|A utility|Note that|In other words|Under the hood|Simply |Basically )' \
-  --glob '!target' --glob '!dist' --glob '!node_modules'
+rg -n '^\s*(///|\*|//!)\s*(This (function|method|struct|class|enum|trait|module|field)|Used to |Helper (for|that)|Responsible for|A utility|Note that|In other words|Under the hood|Simply |Basically )' \
+  --glob '!target' --glob '!dist' --glob '!node_modules' .
 ```
 
-Length distribution, no threshold to pass:
+The trailing `.` is required. Without a path, `rg` searches standard input instead of the tree
+whenever standard input is not a terminal. In CI that either blocks or reads an empty stream and
+reports no matches, which looks exactly like a pass.
+
+Length distribution, no threshold to pass. It counts runs of `///` in Rust sources; for Java and
+TypeScript, count the lines of each `/** */` block instead:
 
 ```bash
-python - <<'PY'
+python3 - <<'PY'
 import re, sys, glob, statistics
 lens, run = [], 0
 for fn in glob.glob('**/src/**/*.rs', recursive=True):

@@ -34,6 +34,18 @@
       "datasourceTemplate": "github-tags"
     },
     {
+      "description": "Internal action refs in the writing standards under docs/. The README guide's workflow and the Rust annex's clippy step are copied into other repositories, and no built-in manager reads Markdown, so without this the pins on those pages go stale while every workflow moves. Third-party pins on those pages are written as <sha> placeholders and are not matched. A contract test in scripts/__tests__ fails any internal pin under docs/ these managers would not match.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^docs/.+\\.md$/"],
+      "matchStrings": [
+        "(?<depName>TimSchoenle\\/actions(?:\\/[^@\\s#]+)?)@(?<currentDigest>[a-fA-F0-9]{40}) # tag=(?<currentValue>actions-[^\\s#]+)"
+      ],
+      "packageNameTemplate": "TimSchoenle/actions",
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "regex:^(?<compatibility>actions-.*)[-/]v?(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)?$",
+      "autoReplaceStringTemplate": "{{{depName}}}@{{#if newDigest}}{{{newDigest}}}{{/if}}{{#unless newDigest}}{{{newValue}}}{{/unless}} # tag={{{newValue}}}"
+    },
+    {
       "description": "The zizmor container image that actions/security/zizmor runs. It is pinned in the composite's action.yaml as an environment value of a run step, which neither the github-actions nor the dockerfile manager reads, so without this Renovate would never update it. Tag and digest move together, and the bump ships as a release of the action. A contract test in scripts/__tests__ fails any digest-pinned image in an action.yaml that no manager matches.",
       "customType": "regex",
       "managerFilePatterns": ["/^actions/security/zizmor/action\\.yaml$/"],
@@ -105,6 +117,19 @@
       "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
       "groupName": "ci dependencies",
       "groupSlug": "ci"
+    },
+    {
+      "description": "Pins under docs/ are documentation and ship in no release, so they are committed as docs(deps), a type release-please hides. separateMinorPatch: false keeps patch and minor updates on one branch, as the .github/ rule in the shared preset does.",
+      "matchFileNames": ["docs/**"],
+      "semanticCommitType": "docs",
+      "separateMinorPatch": false
+    },
+    {
+      "description": "The group half of the rule above. Majors stay outside the group so they arrive alone and are not auto-merged.",
+      "matchFileNames": ["docs/**"],
+      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "groupName": "documentation pins",
+      "groupSlug": "docs-pins"
     },
     {
       "description": "ghcr.io reports no release timestamps, and Renovate's default minimumReleaseAgeBehaviour=timestamp-required holds an update without one as pending for as long as the shared preset sets a minimumReleaseAge. Without this, every zizmor image bump waits on the Dependency Dashboard and never opens a pull request on its own.",

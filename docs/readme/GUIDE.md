@@ -54,9 +54,13 @@ named through the `manifest` input:
 `release.tag` is `release.version` with the `tag-prefix` input joined in front. The default is `v`.
 A repository whose tags are not `v1.2.3` sets the prefix, or sets it to `''` for a bare version.
 
-`docs` lists every file under `docs-dir`, sorted. A Markdown file contributes its first heading as
-`title` and its first paragraph as `summary`. Any other file is listed by path, with `summary` set
-to `''`. A missing `docs-dir` yields `[]` and is not an error.
+`docs` lists every file under `docs-dir`, sorted, with `path` relative to the repository root. A
+Markdown file contributes its first heading as `title`, or its path when it has none, and its first
+paragraph as `summary`, truncated at a word boundary when it runs past 200 characters. Releases up
+to and including `actions-common-readme-variables-v2.0.0` read only the paragraph's first line, so
+under those a hard-wrapped opening paragraph gives a summary that stops mid-sentence. Front matter,
+fenced blocks and HTML comments are skipped on the way. Any other file is listed by path,
+with `summary` set to `''`. A missing `docs-dir` yields `[]` and is not an error.
 
 Nothing reaches the payload from the network, the clock or the environment. That is what lets
 `check: 'true'` be a merge gate rather than a suggestion.
@@ -147,8 +151,8 @@ write a `cargo add` line for a crate with `publish = false`.
 
 ## The workflow
 
-Two jobs. Copy every third-party pin from a neighbouring workflow in the same repository rather than
-inventing one.
+Three jobs. Copy every third-party pin from a neighbouring workflow in the same repository rather
+than inventing one.
 
 ```yaml
 name: docs
@@ -165,35 +169,27 @@ concurrency:
 permissions: {}
 
 jobs:
-  # Renders and commits back to the pull request. An unchanged render produces no commit.
+  # Runs the pull request's own code, so it holds no secret and only a read-only GITHUB_TOKEN.
+  # It renders README.md in place and uploads the difference against the head commit as a patch.
   render:
     name: render
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
-      contents: read # the commit is made through the App token below
+      contents: read
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@<sha> # v2.22.0
+        uses: step-security/harden-runner@<sha> # v2.22.2
         with:
           egress-policy: audit
 
-      - name: Generate Bot Token
-        id: generate_token
-        uses: actions/create-github-app-token@<sha> # v3.2.0
-        with:
-          app-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
-          # Scope it. An unscoped App token inherits every permission the installation holds,
-          # which zizmor's `github-app` rule reports as an error.
-          permission-contents: write
-
+      # The head, not the merge commit: the patch is committed to the branch, so it has to be
+      # computed against the commit the branch points at.
       - name: Checkout
         uses: actions/checkout@<sha> # v7.0.1
         with:
-          ref: ${{ github.head_ref }}
           persist-credentials: false
-          token: ${{ steps.generate_token.outputs.token }}
+          ref: ${{ github.event.pull_request.head.sha }}
 
       # Only where the repository has its own generator. See "Traps" before writing this.
       - name: Generate the configuration payload
@@ -205,18 +201,68 @@ jobs:
 
       - name: Collect the README payload
         id: variables
-        uses: TimSchoenle/actions/actions/common/readme-variables@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-readme-variables-v1.2.6
+        uses: TimSchoenle/actions/actions/common/readme-variables@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-common-readme-variables-v2.0.0
         with:
           branch: ${{ github.event.repository.default_branch }}
           extra: ${{ steps.config.outputs.json }}
 
-      - name: Render and commit the README
-        uses: TimSchoenle/actions/actions/common/render-template-and-commit@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-common-render-template-and-commit-v1.1.14
+      - name: Render README.md
+        uses: TimSchoenle/actions/actions/common/render-template@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-common-render-template-v3.0.0
         with:
           template: .github/templates/README.md.hbs
           output: README.md
           variables: ${{ steps.variables.outputs.variables }}
+
+      - name: Create Patch
+        uses: TimSchoenle/actions/actions/common/create-patch@bbc2c5e2a0f9345cb2e84946846736f047a6eae3 # tag=actions-common-create-patch-v1.1.0
+        with:
+          artifact_name: readme
+          paths: README.md
+
+  # Commits the patch. Nothing from the checkout is executed here; it exists for git's objects, and
+  # commit-patch refuses any path outside allowed_paths. A pull request from a fork receives no
+  # secrets, so the job is skipped for it and the verify job reports the stale file instead.
+  commit:
+    name: commit
+    needs: render
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # the commit is made through the App token below
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@<sha> # v2.22.2
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+
+      - name: Checkout
+        uses: actions/checkout@<sha> # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Generate Bot Token
+        id: generate_token
+        uses: actions/create-github-app-token@<sha> # v3.3.0
+        with:
+          app-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
+          # Scope it. An unscoped App token inherits every permission the installation holds,
+          # which zizmor's `github-app` rule reports as an error.
+          permission-contents: write
+
+      - name: Commit README.md
+        uses: TimSchoenle/actions/actions/common/commit-patch@bbc2c5e2a0f9345cb2e84946846736f047a6eae3 # tag=actions-common-commit-patch-v1.1.0
+        with:
           token: ${{ steps.generate_token.outputs.token }}
+          artifact_name: readme
+          allowed_paths: README.md
           commit_message: 'docs: render README from its template'
 
   # The drift gate. Make this a required check.
@@ -227,7 +273,7 @@ jobs:
       contents: read
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@<sha> # v2.22.0
+        uses: step-security/harden-runner@<sha> # v2.22.2
         with:
           egress-policy: audit
 
@@ -245,13 +291,13 @@ jobs:
 
       - name: Collect the README payload
         id: variables
-        uses: TimSchoenle/actions/actions/common/readme-variables@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-readme-variables-v1.2.6
+        uses: TimSchoenle/actions/actions/common/readme-variables@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-common-readme-variables-v2.0.0
         with:
           branch: ${{ github.event.repository.default_branch }}
           extra: ${{ steps.config.outputs.json }}
 
       - name: Verify README.md is current
-        uses: TimSchoenle/actions/actions/common/render-template@1e89d598e447ab05d36edc9e9d18e8771adf6426 # tag=actions-common-render-template-v1.2.6
+        uses: TimSchoenle/actions/actions/common/render-template@495fd50fd4a5ae3d9fb1496c96eada74c6f2529a # tag=actions-common-render-template-v3.0.0
         with:
           template: .github/templates/README.md.hbs
           output: README.md
@@ -259,15 +305,27 @@ jobs:
           check: 'true'
 ```
 
-The `# tag=` comment is not decoration. Renovate matches it to keep the pin current, and a pin without
-one goes stale silently.
+The render and the commit are separate jobs because the generator is the pull request's code. Code
+running in a job can read every credential that job holds, so a generator sharing a job with the
+App token could push anything the token allows. The split leaves the generator a read-only
+`GITHUB_TOKEN` and no secret, and gives the job that holds the App token nothing to execute. This repository's own `update-files.yml` has the
+same shape for the same reason.
 
-Renovate does not read this page, so the pins above are only as current as its last edit. Before
-copying one, check the action's `CHANGELOG.md` for a newer release; the commit that a tag such as
-`actions-common-readme-variables-v1.2.6` points at is the SHA to pin.
+[render-template-and-commit](../../actions/common/render-template-and-commit) does both in one job.
+It is safe only when no step before it executes repository code, which in practice means the
+repository has no generator. Once one is added, move to the split above.
 
-Adapting an existing docs workflow is preferred over replacing it, and the repository's own payload
-generator is never deleted — that generator is where the configuration tables come from.
+The commit is made with an App token, not `GITHUB_TOKEN`, because a push made with `GITHUB_TOKEN`
+starts no workflow run. With it, the rendered commit would never reach the verify job, and branch
+protection would wait on a check that never reports.
+
+The `# tag=` comment is not decoration. Renovate matches it to keep the pin current, and a pin
+without one goes stale silently. A `customManager` in this repository's `renovate.json` reads the
+`TimSchoenle/actions` pins on this page as well, so they move with each release. The `<sha>`
+placeholders are third-party pins, left for you to copy from a workflow Renovate already maintains.
+
+Adapting an existing docs workflow is preferred over replacing it. The repository's own payload
+generator is never deleted, because it is where the configuration tables come from.
 
 ## Traps
 
@@ -340,12 +398,15 @@ the template is a newline in the rendered table:
 ## Before you open the pull request
 
 1. `README.md` renders from the template, banner included.
-2. A `verify` job renders with `check: 'true'` and fails on any difference.
-3. Section order holds; only inapplicable sections are missing.
-4. No manifest-derived string is typed into the template.
-5. One `H1`, no skipped levels, no emoji in headings, under 400 lines.
-6. Both [PROSE.md](./PROSE.md) checks are within budget.
-7. Every fence is language-tagged; every in-repo link resolves.
-8. The quick start has been run from a clean checkout.
-9. The GitHub repository description matches `repo.description`. The payload reads it from the
-   manifest, never from the API, so the web UI is the copy that has to follow.
+2. A `verify` job renders with `check: 'true'` and fails on any difference, and it is a required
+   check.
+3. No job that holds a secret or a write-capable token runs the repository's generator or any
+   other repository code.
+4. Section order holds; only inapplicable sections are missing.
+5. No manifest-derived string is typed into the template.
+6. One `H1`, no skipped levels, no emoji in headings, under 400 lines.
+7. Both [PROSE.md](./PROSE.md) checks are within budget.
+8. Every fence is language-tagged; every in-repo link resolves.
+9. The quick start has been run from a clean checkout.
+10. The GitHub repository description matches `repo.description`. The payload reads it from the
+    manifest, never from the API, so the web UI is the copy that has to follow.

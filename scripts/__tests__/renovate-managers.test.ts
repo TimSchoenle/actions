@@ -504,3 +504,73 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows', 
     expect(pipesDownloadIntoShell(run)).toBe(false);
   });
 });
+
+/**
+ * Contract between the internal pins in the writing standards under `docs/` and the manager that
+ * updates them.
+ *
+ * Those pages hold workflow snippets other repositories copy. No built-in manager reads Markdown, so a
+ * pin written there that the docs manager does not match is copied into new repositories at whatever
+ * version it was typed at, which is how the README guide came to recommend a render-template two
+ * major versions old.
+ */
+describe('Renovate coverage of the documentation pins', () => {
+  const DOCS_DIR = path.join(ROOT_DIR, 'docs');
+
+  /** Every Markdown file under `docs/`, as repository-relative POSIX paths. */
+  function docsFiles(): string[] {
+    return (fs.readdirSync(DOCS_DIR, { recursive: true }) as string[])
+      .filter((file) => file.endsWith('.md'))
+      .map((file) => `docs/${file.replaceAll('\\', '/')}`)
+      .sort();
+  }
+
+  /** Every `TimSchoenle/actions...@ref` occurrence in a file, with its line for the failure message. */
+  function internalRefs(file: string): { line: number; text: string }[] {
+    const refs: { line: number; text: string }[] = [];
+
+    fs.readFileSync(path.join(ROOT_DIR, file), 'utf8')
+      .split(/\r?\n/)
+      .forEach((line, index) => {
+        for (const match of line.matchAll(/TimSchoenle\/actions(?:\/[^@\s#'"]+)?@\S+(?: # \S+)?/g)) {
+          refs.push({ line: index + 1, text: match[0] });
+        }
+      });
+
+    return refs;
+  }
+
+  /** The `matchStrings` of every manager whose `managerFilePatterns` claims `file`. */
+  function matchStringsFor(file: string): string[] {
+    return customManagers()
+      .filter((manager) =>
+        manager.managerFilePatterns.some((pattern) => {
+          const expression = pattern.startsWith('/') && pattern.endsWith('/') ? pattern.slice(1, -1) : undefined;
+
+          return expression !== undefined && new RegExp(expression).test(file);
+        }),
+      )
+      .flatMap((manager) => manager.matchStrings);
+  }
+
+  it('finds internal pins in the documentation at all', () => {
+    // A scan that silently matched nothing would make the assertion below vacuously true.
+    expect(docsFiles().flatMap((file) => internalRefs(file))).not.toEqual([]);
+  });
+
+  it('matches every internal pin under docs/ with exactly one manager', () => {
+    for (const file of docsFiles()) {
+      const matchStrings = matchStringsFor(file);
+
+      for (const { line, text } of internalRefs(file)) {
+        const matches = matchStrings.filter((matchString) => new RegExp(matchString).test(text)).length;
+
+        expect(
+          matches,
+          `${file}:${line} '${text}' is matched by ${matches} managers. Write it as ` +
+            "'TimSchoenle/actions/<path>@<40-char digest> # tag=actions-<component>-v<version>'.",
+        ).toBe(1);
+      }
+    }
+  });
+});

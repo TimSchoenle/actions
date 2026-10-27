@@ -277,18 +277,21 @@ dash carrying the actual point)
 
 ## Checks
 
-Two of these rules are mechanical enough to measure. Run them against a rendered README before committing prose.
+Two of these rules are mechanical enough to measure. Run them against a rendered README before
+committing prose.
 
 Em dashes outside tables and definition lists, budget **five per document**:
 
 ````bash
-awk '/^```/{f=!f; next} f{next} /<!--/{c=1} c{if (/-->/) c=0; next} 1' README.md   | sed -e '/^|/d' -e '/^>/d' -e '/^[0-9]\+\. /d' -e 's/`[^`]*`//g'   | grep -o '—' | wc -l
+awk '/^```/{f=!f; next} f{next} /<!--/{c=1} c{if (/-->/) c=0; next} 1' README.md \
+  | sed -e '/^|/d' -e '/^>/d' -e '/^[0-9]\+\. /d' -e 's/`[^`]*`//g' \
+  | grep -o '—' | wc -l
 ````
 
 That strips fenced blocks, HTML comments (the provenance banner among them), table rows,
 blockquotes, numbered definition lists and inline code before counting. A blockquote is someone
-else's sentence, such as a quoted before-and-after example, and is not the document's own budget. A check that miscounts is a check people learn
-to ignore.
+else's sentence, such as a quoted before-and-after example, and is not the document's own budget.
+A check that miscounts is a check people learn to ignore.
 
 Consecutive bullets sharing the `**Bold** —` frame, budget **three**. This prints the longest run:
 
@@ -299,7 +302,7 @@ awk '/^- \*\*.*\*\* —/{r++; if (r>m) m=r; next} {r=0} END{print m+0}' README.m
 Sentence length distribution. There is no threshold to pass; this is for information only:
 
 ````bash
-python - <<'PY'
+python3 - <<'PY'
 import re, statistics
 t = re.sub(r'```.*?```|<!--.*?-->', '', open('README.md', encoding='utf-8').read(), flags=re.S)
 p = ' '.join(l for l in t.split('\n') if not l.startswith(('|', '#', '- ', '[!')))
