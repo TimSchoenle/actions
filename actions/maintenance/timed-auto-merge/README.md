@@ -1,7 +1,8 @@
 # Timed Auto-merge
 
 Approves and enables auto-merge on open pull requests whose head branch matches a pattern, that have been open for
-at least `time_elapsed`, and whose every commit is signed and authored only by `trusted_authors`. A pull request that is
+at least `time_elapsed`, whose current head was pushed at least `time_elapsed` ago, and whose every commit is signed
+and authored only by `trusted_authors`. A pull request that is
 already mergeable, so GitHub refuses auto-merge for it, is merged directly instead. It is meant for a
 scheduled job that lets release-please or Renovate pull requests merge themselves after a waiting period in which a
 human can still intervene.
@@ -74,7 +75,7 @@ takes a commit to the workflow file.
 | `trusted_authors` | yes      |                               | Comma-separated GitHub user database IDs. See [Commit verification](#commit-verification). |
 | `branch_pattern`  | no       | `release-please--branches--%` | Pattern the head branch must match. See [Branch pattern](#branch-pattern).           |
 | `pattern_mode`    | no       | `legacy`                      | `legacy` or `regex`.                                                                |
-| `time_elapsed`    | no       | `1d`                          | How long a pull request must have been open.                                        |
+| `time_elapsed`    | no       | `1d`                          | How long a pull request must have been open, and its head unchanged.                |
 | `minimum_age`     | no       | `1h`                          | Floor for `time_elapsed`. A lower `time_elapsed` fails the step.                    |
 | `merge_method`    | no       | `squash`                      | `merge`, `squash` or `rebase`.                                                      |
 | `repository`      | no       | `${{ github.repository }}`    | Repository to process, as `owner/repo`.                                             |
@@ -109,6 +110,15 @@ are not mentioned anywhere. Each one that matches is processed in turn:
 | It was opened at least `time_elapsed` ago                       | skipped, `too-young`         |
 | Its commits were read at the head SHA from the listing          | skipped, `head-moved`        |
 | It has commits, and every commit passes verification            | skipped, `commits-unverified` |
+| The latest push GitHub recorded for the branch is that head SHA | skipped, `head-age-unknown`  |
+| That push happened at least `time_elapsed` ago                  | skipped, `head-too-young`    |
+
+The push time comes from the repository activity log (`GET /repos/{owner}/{repo}/activity`), which GitHub writes
+itself, so a commit's author and committer dates, which whoever creates the commit chooses, play no part. A commit
+pushed to a pull request that has been open for weeks therefore waits the full `time_elapsed` again before this action
+approves it. Every push counts, including release-please updating its own pull request after a merge to the base
+branch, so on a busy base branch the release pull request merges only once the base branch has been quiet for
+`time_elapsed`. The activity log needs `contents: read`, which the `contents: write` the token already has covers.
 
 When every check passes, the pull request is approved with the review attached to that head SHA (`commit_id`), and
 auto-merge is enabled through the GraphQL `enablePullRequestAutoMerge` mutation with the same SHA as

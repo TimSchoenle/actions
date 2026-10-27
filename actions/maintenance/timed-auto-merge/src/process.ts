@@ -9,7 +9,10 @@ import type { RepositoryCoordinates } from 'actions-util';
 export interface TimedAutoMergeRequest {
   repository: RepositoryCoordinates;
   matcher: BranchMatcher;
-  /** How long a pull request must have been open, in milliseconds. */
+  /**
+   * How long a pull request must have been open, and how long ago its head must have been pushed,
+   * in milliseconds.
+   */
   minimumOpenMs: number;
   trustedAuthorIds: readonly number[];
   mergeMethod: MergeMethod;
@@ -22,7 +25,14 @@ export interface TimedAutoMergeRequest {
  * Why a matching pull request was left alone. None of these is an error: each is a check that did
  * not pass, and the next scheduled run looks at the pull request again.
  */
-export type SkipReason = 'commits-unverified' | 'draft' | 'fork' | 'head-moved' | 'too-young';
+export type SkipReason =
+  | 'commits-unverified'
+  | 'draft'
+  | 'fork'
+  | 'head-age-unknown'
+  | 'head-moved'
+  | 'head-too-young'
+  | 'too-young';
 
 interface OutcomeBase {
   number: number;
@@ -117,6 +127,51 @@ function precheck(pullRequest: OpenPullRequest, request: TimedAutoMergeRequest):
 }
 
 /**
+ * Checks that the current head has itself been in place for `minimumOpenMs`, not only the pull
+ * request.
+ *
+ * Measuring from the opening alone would let a commit pushed to an old pull request merge on the next
+ * run, with no time for anyone to notice it. The push time comes from the repository activity log,
+ * which GitHub records itself; a commit's own dates are chosen by whoever creates it. When the latest
+ * recorded update of the branch is not the verified head, its age is unknown and the pull request
+ * waits.
+ *
+ * @throws if the activity log cannot be read or its timestamp is not one, which the caller records as
+ * a failure.
+ */
+async function checkHeadAge(
+  api: TimedAutoMergeApi,
+  pullRequest: OpenPullRequest,
+  request: TimedAutoMergeRequest,
+): Promise<SkippedOutcome | undefined> {
+  const update = await api.latestBranchUpdate(request.repository, pullRequest.headRef);
+
+  if (update?.sha !== pullRequest.headSha) {
+    const latest = update ? `the latest recorded push is ${update.sha}` : 'no push is recorded';
+
+    return skipped(pullRequest, 'head-age-unknown', `${latest}, expected the verified head ${pullRequest.headSha}`);
+  }
+
+  const pushedMs = Date.parse(update.timestamp);
+
+  if (Number.isNaN(pushedMs)) {
+    throw new TypeError(`GitHub returned an unreadable push time ${JSON.stringify(update.timestamp)}.`);
+  }
+
+  const ageMs = request.nowMs - pushedMs;
+
+  if (ageMs < request.minimumOpenMs) {
+    return skipped(
+      pullRequest,
+      'head-too-young',
+      `head pushed ${formatAge(Math.max(ageMs, 0))} ago, needs ${formatAge(request.minimumOpenMs)}`,
+    );
+  }
+
+  return undefined;
+}
+
+/**
  * Verifies, approves and enables auto-merge on one pull request, or merges it when it is already
  * mergeable, every step pinned to the head SHA seen in the listing.
  *
@@ -158,6 +213,12 @@ async function processOne(
     const reasons = verification.failures.map((failure) => `${failure.oid}: ${failure.reasons.join('; ')}`);
 
     return skipped(pullRequest, 'commits-unverified', reasons.join(' | '));
+  }
+
+  const headTooYoung = await checkHeadAge(api, pullRequest, request);
+
+  if (headTooYoung) {
+    return headTooYoung;
   }
 
   await api.approve(request.repository, pullRequest.number, pullRequest.headSha, request.approveMessage);

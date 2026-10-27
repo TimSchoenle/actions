@@ -23,12 +23,25 @@ export interface OpenPullRequest {
   draft: boolean;
 }
 
+/** The most recent update GitHub recorded for a branch: the commit it moved to and when. */
+export interface BranchUpdate {
+  /** The commit the branch pointed at after the update. */
+  sha: string;
+  /** ISO 8601 time GitHub recorded the update, set by GitHub rather than by whoever pushed. */
+  timestamp: string;
+}
+
 /** The GitHub operations this action performs, kept minimal so they can be faked in tests. */
 export interface TimedAutoMergeApi {
   /** Lists every open pull request of the repository, across all pages. */
   listOpenPullRequests(repository: RepositoryCoordinates): Promise<OpenPullRequest[]>;
   /** Fetches every commit of a pull request, with all authors and the signature state of each. */
   fetchCommits(pullRequestUrl: string): Promise<PullRequestCommits>;
+  /**
+   * Reads the most recent update of `branch` from the repository activity log, or `undefined` when
+   * GitHub has none recorded.
+   */
+  latestBranchUpdate(repository: RepositoryCoordinates, branch: string): Promise<BranchUpdate | undefined>;
   /** Submits an approving review attached to `headSha`. */
   approve(repository: RepositoryCoordinates, number: number, headSha: string, body: string): Promise<void>;
   /** Enables auto-merge, which GitHub refuses if the head is no longer `expectedHeadOid`. */
@@ -152,6 +165,19 @@ export function createTimedAutoMergeApi(token: string): TimedAutoMergeApi {
 
     fetchCommits(pullRequestUrl) {
       return fetchPullRequestCommits(token, pullRequestUrl);
+    },
+
+    async latestBranchUpdate({ owner, repo }, branch) {
+      // Newest first by default, so the first entry is the update that set the current head.
+      const { data } = await octokit.rest.repos.listActivities({
+        owner,
+        per_page: 1,
+        ref: `refs/heads/${branch}`,
+        repo,
+      });
+      const latest = data[0];
+
+      return latest ? { sha: latest.after, timestamp: latest.timestamp } : undefined;
     },
 
     async listOpenPullRequests({ owner, repo }) {

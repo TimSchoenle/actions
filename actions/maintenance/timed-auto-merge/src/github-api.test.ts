@@ -12,6 +12,7 @@ interface OctokitMock {
   paginate: ReturnType<typeof vi.fn>;
   rest: {
     pulls: { createReview: ReturnType<typeof vi.fn>; list: ReturnType<typeof vi.fn>; merge: ReturnType<typeof vi.fn> };
+    repos: { listActivities: ReturnType<typeof vi.fn> };
   };
 }
 
@@ -19,7 +20,7 @@ function mockOctokit(): OctokitMock {
   const octokit: OctokitMock = {
     graphql: vi.fn(),
     paginate: vi.fn(),
-    rest: { pulls: { createReview: vi.fn(), list: vi.fn(), merge: vi.fn() } },
+    rest: { pulls: { createReview: vi.fn(), list: vi.fn(), merge: vi.fn() }, repos: { listActivities: vi.fn() } },
   };
 
   vi.mocked(github.getOctokit).mockReturnValue(octokit as unknown as ReturnType<typeof github.getOctokit>);
@@ -49,6 +50,39 @@ describe('createTimedAutoMergeApi', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     octokit = mockOctokit();
+  });
+
+  describe('latestBranchUpdate', () => {
+    it('reads only the newest activity of the fully qualified branch ref', async () => {
+      octokit.rest.repos.listActivities.mockResolvedValue({ data: [] });
+
+      await createTimedAutoMergeApi('token').latestBranchUpdate(repository, 'release-please--branches--main');
+
+      expect(octokit.rest.repos.listActivities).toHaveBeenCalledWith({
+        owner: 'owner',
+        per_page: 1,
+        ref: 'refs/heads/release-please--branches--main',
+        repo: 'repo',
+      });
+    });
+
+    it('returns the commit the branch moved to and when GitHub recorded it', async () => {
+      octokit.rest.repos.listActivities.mockResolvedValue({
+        data: [{ activity_type: 'force_push', after: HEAD, before: 'b'.repeat(40), timestamp: '2026-10-26T21:27:04Z' }],
+      });
+
+      await expect(
+        createTimedAutoMergeApi('token').latestBranchUpdate(repository, 'release-please--branches--main'),
+      ).resolves.toEqual({ sha: HEAD, timestamp: '2026-10-26T21:27:04Z' });
+    });
+
+    it('returns undefined when no activity is recorded', async () => {
+      octokit.rest.repos.listActivities.mockResolvedValue({ data: [] });
+
+      await expect(
+        createTimedAutoMergeApi('token').latestBranchUpdate(repository, 'release-please--branches--main'),
+      ).resolves.toBeUndefined();
+    });
   });
 
   describe('listOpenPullRequests', () => {

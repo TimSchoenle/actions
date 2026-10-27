@@ -89,6 +89,7 @@ function fakeApi(pullRequests: OpenPullRequest[]): TimedAutoMergeApi {
       headOid: HEAD,
       totalCount: 1,
     })),
+    latestBranchUpdate: vi.fn(async () => ({ sha: HEAD, timestamp: '2026-01-01T00:00:00Z' })),
     listOpenPullRequests: vi.fn(async () => pullRequests),
   };
 }

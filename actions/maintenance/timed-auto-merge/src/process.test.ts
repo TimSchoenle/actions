@@ -51,11 +51,13 @@ interface FakeApi extends TimedAutoMergeApi {
   enableAutoMerge: ReturnType<typeof vi.fn<TimedAutoMergeApi['enableAutoMerge']>>;
   getMergeState: ReturnType<typeof vi.fn<TimedAutoMergeApi['getMergeState']>>;
   merge: ReturnType<typeof vi.fn<TimedAutoMergeApi['merge']>>;
+  latestBranchUpdate: ReturnType<typeof vi.fn<TimedAutoMergeApi['latestBranchUpdate']>>;
 }
 
 /**
- * A fake whose commits default to two trusted, signed commits read at {@link HEAD}. `headOidByUrl`
- * overrides the head the commits were read at.
+ * A fake whose commits default to two trusted, signed commits read at {@link HEAD}, and whose branches
+ * were last pushed to {@link HEAD} two days before {@link NOW}. `headOidByUrl` overrides the head the
+ * commits were read at.
  */
 function fakeApi(
   pullRequests: OpenPullRequest[],
@@ -72,6 +74,10 @@ function fakeApi(
 
       return { commits, headOid: headOidByUrl[url] ?? HEAD, totalCount: commits.length };
     }),
+    latestBranchUpdate: vi.fn<TimedAutoMergeApi['latestBranchUpdate']>(async () => ({
+      sha: HEAD,
+      timestamp: new Date(NOW - 2 * DAY).toISOString(),
+    })),
     listOpenPullRequests: vi.fn<TimedAutoMergeApi['listOpenPullRequests']>(async () => pullRequests),
   };
 }
@@ -205,6 +211,103 @@ describe('processPullRequests', () => {
     ]);
     expect(api.approve).not.toHaveBeenCalled();
     expect(api.enableAutoMerge).not.toHaveBeenCalled();
+  });
+
+  it('reads the push time of the pull request head branch', async () => {
+    const api = fakeApi([pullRequest()]);
+
+    await processPullRequests(api, request());
+
+    expect(api.latestBranchUpdate).toHaveBeenCalledWith(
+      { owner: 'owner', repo: 'repo' },
+      'release-please--branches--main',
+    );
+  });
+
+  it('skips an old pull request whose head was pushed too recently', async () => {
+    const api = fakeApi([pullRequest({ createdAt: new Date(NOW - 7 * DAY).toISOString() })]);
+    api.latestBranchUpdate.mockResolvedValue({ sha: HEAD, timestamp: new Date(NOW - 3 * 3_600_000).toISOString() });
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({ detail: 'head pushed 3h ago, needs 24h', reason: 'head-too-young', status: 'skipped' }),
+    ]);
+    expect(api.approve).not.toHaveBeenCalled();
+    expect(api.enableAutoMerge).not.toHaveBeenCalled();
+  });
+
+  it('accepts a head pushed exactly the minimum time ago', async () => {
+    const api = fakeApi([pullRequest()]);
+    api.latestBranchUpdate.mockResolvedValue({ sha: HEAD, timestamp: new Date(NOW - DAY).toISOString() });
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes[0].status).toBe('approved');
+  });
+
+  it('reports a push time in the future as zero age', async () => {
+    const api = fakeApi([pullRequest()]);
+    api.latestBranchUpdate.mockResolvedValue({ sha: HEAD, timestamp: new Date(NOW + DAY).toISOString() });
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({ detail: 'head pushed 0m ago, needs 24h', reason: 'head-too-young' }),
+    ]);
+  });
+
+  it('skips when the latest recorded push is not the verified head', async () => {
+    const other = 'c'.repeat(40);
+    const api = fakeApi([pullRequest()]);
+    api.latestBranchUpdate.mockResolvedValue({ sha: other, timestamp: new Date(NOW - 2 * DAY).toISOString() });
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({
+        detail: `the latest recorded push is ${other}, expected the verified head ${HEAD}`,
+        reason: 'head-age-unknown',
+      }),
+    ]);
+    expect(api.approve).not.toHaveBeenCalled();
+  });
+
+  it('skips when no push is recorded for the branch', async () => {
+    const api = fakeApi([pullRequest()]);
+    api.latestBranchUpdate.mockResolvedValue(undefined);
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({
+        detail: `no push is recorded, expected the verified head ${HEAD}`,
+        reason: 'head-age-unknown',
+      }),
+    ]);
+    expect(api.approve).not.toHaveBeenCalled();
+  });
+
+  it('records an unreadable push time as a failure', async () => {
+    const api = fakeApi([pullRequest()]);
+    api.latestBranchUpdate.mockResolvedValue({ sha: HEAD, timestamp: 'yesterday' });
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({ message: 'GitHub returned an unreadable push time "yesterday".', status: 'failed' }),
+    ]);
+    expect(api.approve).not.toHaveBeenCalled();
+  });
+
+  it('does not read the push time of a pull request whose commits fail verification', async () => {
+    const api = fakeApi([pullRequest()], {
+      'https://github.com/owner/repo/pull/7': [commit(OLDER, { authorIds: [STRANGER] }), commit(HEAD)],
+    });
+
+    await processPullRequests(api, request());
+
+    expect(api.latestBranchUpdate).not.toHaveBeenCalled();
   });
 
   it('skips when the commit list is empty', async () => {
