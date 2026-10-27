@@ -30,14 +30,37 @@ const ATX_HEADING = /^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$/;
 const FENCE = /^\s{0,3}(?:```|~~~)/;
 
 /**
- * A line that opens a block of its own and so ends a paragraph: a table row, a list item, or a
- * blockquote. A list marker needs whitespace after it, so a wrapped line that opens with
- * `*emphasis*` or `-flag` is still prose.
+ * A list item or blockquote that may interrupt a paragraph. CommonMark lets a list do so only when
+ * its first item has content and, for an ordered list, only when it starts at 1, so a wrapped line
+ * that opens with `*emphasis*`, `-flag` or `14.` is still prose.
  */
-const BLOCK_START = /^\s{0,3}(?:\||>|[-*+](?:\s|$)|\d{1,9}[.)](?:\s|$))/;
+const BLOCK_START = /^\s{0,3}(?:>|[-*+]\s+\S|1[.)]\s+\S)/;
 
 /** A thematic break once its spaces are removed, e.g. `***` or `- - -`. */
 const THEMATIC_BREAK = /^(?:-{3,}|\*{3,}|_{3,})$/;
+
+/** One cell of a table's delimiter row, e.g. `---`, `:--` or `:-:`. */
+const DELIMITER_CELL = /^\s*:?-+:?\s*$/;
+
+/**
+ * The start of an HTML block that may interrupt a paragraph: a comment, processing instruction,
+ * declaration or CDATA section, or a tag whose name the caller checks against the lists below.
+ * Inline tags such as `<kbd>` cannot interrupt one, so a wrapped line that opens with them is prose.
+ */
+const HTML_BLOCK_START = /^\s{0,3}<(?:!--|\?|![A-Za-z]|!\[CDATA\[|(\/?)([A-Za-z][A-Za-z0-9]*)(?=[\s>]|\/>|$))/;
+
+/** CommonMark HTML block type 1, which only an opening tag starts. */
+const RAW_HTML_TAGS = new Set(['pre', 'script', 'style', 'textarea']);
+
+/** CommonMark HTML block type 6, which an opening or a closing tag starts. */
+const BLOCK_HTML_TAGS = new Set(
+  (
+    'address article aside base basefont blockquote body caption center col colgroup dd details ' +
+    'dialog dir div dl dt fieldset figcaption figure footer form frame frameset h1 h2 h3 h4 h5 h6 ' +
+    'head header hr html iframe legend li link main menu menuitem nav noframes ol optgroup option ' +
+    'p param search section summary table tbody td tfoot th thead title tr track ul'
+  ).split(' '),
+);
 
 /** Markdown inline syntax that carries no meaning once the text is inside a table cell. */
 const INLINE_MARKUP = /!?\[([^\]]*)\]\([^)]*\)|[*_`]/g;
@@ -60,15 +83,45 @@ function truncate(text: string): string {
   return `${(boundary > SUMMARY_LIMIT / 2 ? cut.slice(0, boundary) : cut).trimEnd()}…`;
 }
 
-/** Whether a line ends the paragraph above it rather than continuing it. */
-function endsParagraph(line: string): boolean {
+/** Whether a line opens an HTML block, which CommonMark lets interrupt a paragraph. */
+function isHtmlBlockStart(line: string): boolean {
+  const match = HTML_BLOCK_START.exec(line);
+
+  if (match === null) {
+    return false;
+  }
+
+  const [, closing, name] = match;
+
+  if (name === undefined) {
+    return true;
+  }
+
+  const tag = name.toLowerCase();
+
+  return BLOCK_HTML_TAGS.has(tag) || (closing === '' && RAW_HTML_TAGS.has(tag));
+}
+
+/** A delimiter row such as `| --- | :-: |`, which is what makes the line above it a table header. */
+function isDelimiterRow(line: string): boolean {
+  const cells = line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|');
+
+  return line.includes('|') && cells.every((cell) => DELIMITER_CELL.test(cell));
+}
+
+/**
+ * Whether `line` ends the paragraph above it rather than continuing it. A leading pipe alone does
+ * not: `next` must be a delimiter row for `line` to be a table header.
+ */
+function endsParagraph(line: string, next: string | undefined): boolean {
   return (
     line.trim() === '' ||
     FENCE.test(line) ||
     ATX_HEADING.test(line) ||
     BLOCK_START.test(line) ||
     THEMATIC_BREAK.test(line.replaceAll(/\s/g, '')) ||
-    line.trimStart().startsWith('<!--')
+    isHtmlBlockStart(line) ||
+    (line.trimStart().startsWith('|') && next !== undefined && isDelimiterRow(next))
   );
 }
 
@@ -80,7 +133,7 @@ function endsParagraph(line: string): boolean {
 function readParagraph(lines: readonly string[], start: number): string {
   let end = start + 1;
 
-  while (end < lines.length && !endsParagraph(lines[end])) {
+  while (end < lines.length && !endsParagraph(lines[end], lines[end + 1])) {
     end++;
   }
 

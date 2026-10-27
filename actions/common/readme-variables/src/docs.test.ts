@@ -72,15 +72,24 @@ describe('summarise', () => {
     ['a bulleted list', 'First line\nsecond line.\n- item\n'],
     ['a starred list', 'First line\nsecond line.\n* item\n'],
     ['an ordered list', 'First line\nsecond line.\n1. item\n'],
-    ['a table', 'First line\nsecond line.\n| a | b |\n'],
+    ['a closing ordered list', 'First line\nsecond line.\n1) item\n'],
+    ['a table', 'First line\nsecond line.\n| a | b |\n| --- | :-: |\n'],
     ['a blockquote', 'First line\nsecond line.\n> quoted\n'],
     ['a thematic break', 'First line\nsecond line.\n***\n'],
+    ['a block HTML tag', 'First line\nsecond line.\n<div>\nOther content\n</div>\n'],
+    ['a closing block HTML tag', 'First line\nsecond line.\n</details>\n'],
+    ['a raw HTML tag', 'First line\nsecond line.\n<pre>\ncode\n</pre>\n'],
   ])('ends a paragraph at %s that follows it directly', (_label, body) => {
     expect(summarise(`# T\n\n${body}`, 'x').summary).toBe('First line second line.');
   });
 
-  it('keeps a wrapped line that opens with emphasis as part of the paragraph', () => {
-    expect(summarise('# T\n\nThe action is\n*not* a linter.\n', 'x').summary).toBe('The action is not a linter.');
+  it.each([
+    ['emphasis', 'The action is\n*not* a linter.\n', 'The action is not a linter.'],
+    ['a number other than 1', 'There are\n14. The next count is 6.\n', 'There are 14. The next count is 6.'],
+    ['a pipe with no delimiter row', 'The regex uses\n| for alternation.\n', 'The regex uses | for alternation.'],
+    ['an inline HTML tag', 'Press\n<kbd>Enter</kbd> to go.\n', 'Press <kbd>Enter</kbd> to go.'],
+  ])('keeps a wrapped line that opens with %s as part of the paragraph', (_label, body, summary) => {
+    expect(summarise(`# T\n\n${body}`, 'x').summary).toBe(summary);
   });
 
   it('handles CRLF line endings', () => {
