@@ -114,10 +114,11 @@ auto-merge is enabled through the GraphQL `enablePullRequestAutoMerge` mutation 
 `expectedHeadOid`. If someone pushes to the branch after the commits were verified, GitHub refuses the auto-merge
 request, and the pull request is reported under `failed`. The next run verifies the new head.
 
-GitHub also refuses auto-merge when nothing is left to wait for, because the pull request is already mergeable. The
-action then reads the merge state, and if it is `CLEAN`, `HAS_HOOKS` or `UNSTABLE` at the verified head, it merges the
-pull request directly with the same SHA as `sha`, as `gh pr merge --auto` does. The base branch's rules still apply to
-that merge. Any other refusal is reported under `failed`.
+GitHub also refuses auto-merge when nothing is left to wait for, because the pull request is already mergeable. So
+whenever enabling auto-merge fails, the action reads the merge state. If it is `CLEAN`, `HAS_HOOKS` or `UNSTABLE` at
+the verified head, the pull request is merged directly with the same SHA as `sha`, as `gh pr merge --auto` does. The
+base branch's rules still apply to that merge. In any other state, or when the state cannot be read, the original
+error is reported under `failed`.
 
 A skip is not an error. The step fails only when an API call failed, after every matching pull request has been
 processed, and only while `fail_on_error` is `true`. Listing the pull requests failing, or the branch pattern
