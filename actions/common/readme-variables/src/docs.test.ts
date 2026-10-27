@@ -72,6 +72,10 @@ describe('summarise', () => {
     );
   });
 
+  it('strips emphasis that opens or closes the paragraph', () => {
+    expect(summarise('# T\n\n_Every_ form, _emphasised_\n', 'x').summary).toBe('Every form, emphasised');
+  });
+
   it('treats an escaped backtick as a literal one that opens no code span', () => {
     expect(summarise('# T\n\nA \\` tick, then `TANKOVAULT_*` keys.\n', 'x').summary).toBe(
       'A ` tick, then TANKOVAULT_* keys.',

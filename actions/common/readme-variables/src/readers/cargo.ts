@@ -49,10 +49,10 @@ function splitAssignment(line: string): { lhs: string; rhs: string } | undefined
  * Stops at the closing quote, so a trailing comment after the value is discarded with no second
  * pass. An unterminated string yields nothing rather than the rest of the line: a manifest that
  * cannot be read should leave the field absent, and the caller reports that with a path attached.
- * A multiline string (`"""`) is not a basic string and yields nothing.
+ * A multiline string, basic (`"""`) or literal (`'''`), yields nothing.
  */
 export function readBasicString(rhs: string): string | undefined {
-  return rhs.startsWith(MULTILINE_BASIC) ? undefined : readQuoted(rhs, 0)?.value;
+  return multilineOpeningAt(rhs, 0) === undefined ? readQuoted(rhs, 0)?.value : undefined;
 }
 
 /**

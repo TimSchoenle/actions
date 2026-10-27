@@ -233,6 +233,19 @@ edition."workspace" = true
     ).toBe('C:\\path');
   });
 
+  it('leaves a field absent when its value is a multiline string of either kind', () => {
+    const facts = readCargoManifest(
+      `[package]\nversion = "1.0.0"\ndescription = '''\ntext\n'''\nlicense = """MIT"""\n`,
+      'Cargo.toml',
+    );
+
+    expect(facts.description).toBeUndefined();
+    expect(facts.license).toBeUndefined();
+    expect(() => readCargoManifest(`[package]\nversion = '''1.0.0'''\n`, 'Cargo.toml')).toThrow(
+      ManifestFieldMissingError,
+    );
+  });
+
   it('never reads an assignment out of a multiline string', () => {
     const facts = readCargoManifest(
       `[workspace.package]
