@@ -44,20 +44,13 @@ function splitAssignment(line: string): { lhs: string; rhs: string } | undefined
 }
 
 /**
- * Reads a TOML basic string from the start of `rhs`, returning nothing if it is not one.
- *
- * Stops at the closing quote, so a trailing comment after the value is discarded with no second
- * pass. An unterminated string yields nothing rather than the rest of the line: a manifest that
- * cannot be read should leave the field absent, and the caller reports that with a path attached.
- * A multiline string, basic (`"""`) or literal (`'''`), yields nothing.
- */
-export function readBasicString(rhs: string): string | undefined {
-  return multilineOpeningAt(rhs, 0) === undefined ? readQuoted(rhs, 0)?.value : undefined;
-}
-
-/**
  * Reads the basic (`"`) or literal (`'`) string that opens at `start`, with the index just past its
- * closing quote. A literal string has no escapes. An unterminated string yields nothing.
+ * closing quote. A literal string has no escapes.
+ *
+ * Stops at the closing quote, so a trailing comment after a value is discarded with no second pass.
+ * An unterminated string yields nothing rather than the rest of the line: a manifest that cannot be
+ * read should leave the field absent, and the caller reports that with a path attached. A multiline
+ * delimiter is not recognised here; callers check for one first.
  */
 function readQuoted(text: string, start: number): { value: string; end: number } | undefined {
   const quote = text[start];
@@ -273,11 +266,13 @@ function multilineOpenAfter(line: string, open: Multiline | undefined): Multilin
 interface PackageTable {
   fields: Map<string, string>;
   inherited: Set<string>;
+  /** Fields whose value is a multiline string, which this reader leaves unread. */
+  multiline: Set<string>;
   seen: boolean;
 }
 
 function emptyTable(): PackageTable {
-  return { fields: new Map(), inherited: new Set(), seen: false };
+  return { fields: new Map(), inherited: new Set(), multiline: new Set(), seen: false };
 }
 
 /** Records one assignment inside a package table, ignoring a line that carries no readable field. */
@@ -307,7 +302,12 @@ function readPackageField(line: string, table: PackageTable): void {
     return;
   }
 
-  const value = readBasicString(rhs);
+  if (multilineOpeningAt(rhs, 0) !== undefined) {
+    table.multiline.add(field);
+    return;
+  }
+
+  const value = readQuoted(rhs, 0)?.value;
 
   // First writer wins: a duplicate key is invalid TOML, and keeping the first keeps the parse
   // deterministic rather than quietly preferring whichever came last.
@@ -362,27 +362,60 @@ function collectPackageTables(source: string): { member: PackageTable; workspace
  *
  * `[package]` wins when present, with each `field.workspace = true` taken from `[workspace.package]`
  * in the same file. A virtual workspace has no `[package]`, so its `[workspace.package]` is the
- * whole answer. An inherited field the file cannot resolve stays in `inherited`, for the error.
+ * whole answer. An inherited field the file cannot resolve is left out.
  */
-function resolveFields(member: PackageTable, workspace: PackageTable): PackageTable {
+function resolveFields(member: PackageTable, workspace: PackageTable): ReadonlyMap<string, string> {
   if (!member.seen) {
-    return workspace;
+    return workspace.fields;
   }
 
   const fields = new Map(member.fields);
-  const inherited = new Set<string>();
 
   for (const field of member.inherited) {
     const value = workspace.fields.get(field);
 
-    if (value === undefined) {
-      inherited.add(field);
-    } else if (!fields.has(field)) {
+    if (value !== undefined && !fields.has(field)) {
       fields.set(field, value);
     }
   }
 
-  return { fields, inherited, seen: true };
+  return fields;
+}
+
+/**
+ * The error for a manifest whose version cannot be read, naming the table it should be in and,
+ * where the file shows why it is absent, what to change.
+ */
+function missingVersion(
+  member: PackageTable,
+  workspace: PackageTable,
+  manifestPath: string,
+): ManifestFieldMissingError {
+  const singleLine = 'It is a multiline string, which is not read; write it as a single-line string.';
+
+  if (!member.seen) {
+    return new ManifestFieldMissingError(
+      manifestPath,
+      'workspace.package.version',
+      workspace.multiline.has('version') ? singleLine : undefined,
+    );
+  }
+
+  if (member.inherited.has('version')) {
+    return workspace.multiline.has('version')
+      ? new ManifestFieldMissingError(manifestPath, 'workspace.package.version', singleLine)
+      : new ManifestFieldMissingError(
+          manifestPath,
+          'package.version',
+          'It is inherited with `version.workspace = true`; point `manifest` at the workspace root instead.',
+        );
+  }
+
+  return new ManifestFieldMissingError(
+    manifestPath,
+    'package.version',
+    member.multiline.has('version') ? singleLine : undefined,
+  );
 }
 
 /**
@@ -406,17 +439,11 @@ export function readCargoManifest(source: string, manifestPath: string): Manifes
     );
   }
 
-  const { fields, inherited } = resolveFields(member, workspace);
+  const fields = resolveFields(member, workspace);
   const version = fields.get('version');
 
   if (version === undefined) {
-    throw new ManifestFieldMissingError(
-      manifestPath,
-      member.seen ? 'package.version' : 'workspace.package.version',
-      inherited.has('version')
-        ? 'It is inherited with `version.workspace = true`; point `manifest` at the workspace root instead.'
-        : undefined,
-    );
+    throw missingVersion(member, workspace, manifestPath);
   }
 
   const toolchain: Record<string, string> = {};

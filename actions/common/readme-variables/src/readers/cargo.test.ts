@@ -331,6 +331,20 @@ edition.workspace = true
     expect(read).toThrow(/version\.workspace = true/);
   });
 
+  it('names a multiline version as the reason it is absent, in its own table or inherited from one', () => {
+    const own = () => readCargoManifest(`[package]\nversion = '''1.0.0'''\n`, 'Cargo.toml');
+    const virtual = () => readCargoManifest(`[workspace.package]\nversion = """1.0.0"""\n`, 'Cargo.toml');
+    const inherited = () =>
+      readCargoManifest(
+        `[workspace.package]\nversion = '''1.0.0'''\n\n[package]\nname = "root"\nversion.workspace = true\n`,
+        'Cargo.toml',
+      );
+
+    expect(own).toThrow(/^Cargo\.toml: no 'package\.version'\. It is a multiline string/);
+    expect(virtual).toThrow(/^Cargo\.toml: no 'workspace\.package\.version'\. It is a multiline string/);
+    expect(inherited).toThrow(/^Cargo\.toml: no 'workspace\.package\.version'\. It is a multiline string/);
+  });
+
   it('reports a missing version with the path in the message', () => {
     expect(() => readCargoManifest(`[package]\nname = "web"\n`, 'apps/web/Cargo.toml')).toThrow(
       /^apps\/web\/Cargo\.toml: no 'package\.version'\.$/,

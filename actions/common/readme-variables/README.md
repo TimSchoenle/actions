@@ -109,7 +109,7 @@ description is set to match it.
 `[package]` and `[workspace.package]` tables, and the parse is anchored to the line start. A dependency's version sits
 inside an inline table and never starts a line, so `version` cannot come from one. Keys may be bare or quoted, and lines
 inside a multiline string are skipped, so an assignment written into a long `description` is never read as a field. A
-field whose own value is a multiline string is left absent.
+field whose own value is a multiline string is left absent, and a version written that way fails with a message saying so.
 
 A manifest with `[package]` is read from it, and a field written `field.workspace = true` or `field = { workspace = true }` takes its value from
 `[workspace.package]` in the same file. A virtual workspace has no `[package]` and is read from `[workspace.package]`
