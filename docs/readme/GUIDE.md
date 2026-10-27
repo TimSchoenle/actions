@@ -55,11 +55,11 @@ named through the `manifest` input:
 A repository whose tags are not `v1.2.3` sets the prefix, or sets it to `''` for a bare version.
 
 `docs` lists every file under `docs-dir`, sorted, with `path` relative to the repository root. A
-Markdown file contributes its first heading as `title`, or its path when it has none, and the first
-line of its first paragraph as `summary`, truncated at a word boundary when it runs past 200
-characters. Only the first line is read, so a document whose opening paragraph is hard-wrapped
-gets a summary that stops mid-sentence. Front matter, fenced blocks and HTML comments are skipped
-on the way. Any other file is listed by path,
+Markdown file contributes its first heading as `title`, or its path when it has none, and its first
+paragraph as `summary`, truncated at a word boundary when it runs past 200 characters. Releases up
+to and including `actions-common-readme-variables-v2.0.0` read only the paragraph's first line, so
+under those a hard-wrapped opening paragraph gives a summary that stops mid-sentence. Front matter,
+fenced blocks and HTML comments are skipped on the way. Any other file is listed by path,
 with `summary` set to `''`. A missing `docs-dir` yields `[]` and is not an error.
 
 Nothing reaches the payload from the network, the clock or the environment. That is what lets
