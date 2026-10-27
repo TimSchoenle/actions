@@ -46,5 +46,5 @@
   "actions/common/commit-patch": "1.1.0",
   "actions/maintenance/wipe-cache": "3.0.0",
   "actions/maintenance/auto-rebase": "3.0.0",
-  "actions/maintenance/timed-auto-merge": "2.0.0"
+  "actions/maintenance/timed-auto-merge": "2.0.1"
 }

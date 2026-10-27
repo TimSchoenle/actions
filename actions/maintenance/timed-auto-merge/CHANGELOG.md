@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/TimSchoenle/actions/compare/actions-maintenance-timed-auto-merge-v2.0.0...actions-maintenance-timed-auto-merge-v2.0.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* **Actions/Timed-Auto-Merge:** merge a pull request directly when it is already mergeable ([#1951](https://github.com/TimSchoenle/actions/issues/1951)) ([ed72a76](https://github.com/TimSchoenle/actions/commit/ed72a767e4ef53907e7de4d8758d002b1e186505))
+
 ## [2.0.0](https://github.com/TimSchoenle/actions/compare/actions-maintenance-timed-auto-merge-v1.1.0...actions-maintenance-timed-auto-merge-v2.0.0) (2026-10-26)
 
 
