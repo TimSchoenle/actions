@@ -187,7 +187,7 @@ nothing unless the clippy run denies warnings, and the shared
 `clippy_arguments` input is `--all-features --all-targets`. Pass the deny flag through it:
 
 ```yaml
-- uses: TimSchoenle/actions/actions/rust/clippy@<sha> # tag=actions-rust-clippy-v<version>
+- uses: TimSchoenle/actions/actions/rust/clippy@ea4465fbe2bec98efad19b63849f8d1ac67b5c88 # tag=actions-rust-clippy-v1.1.13
   with:
     clippy_arguments: '--all-features --all-targets -- -D warnings'
 ```
