@@ -97,6 +97,11 @@ describe('summarise', () => {
       'First\nName | Value\n    --- | ---\nMore\n',
       'First Name | Value --- | --- More',
     ],
+    [
+      'a pipe and is itself indented four columns',
+      'First\n    Name | Value\n--- | ---\nA | B\n',
+      'First Name | Value --- | --- A | B',
+    ],
     ['an inline HTML tag', 'Press\n<kbd>Enter</kbd> to go.\n', 'Press <kbd>Enter</kbd> to go.'],
   ])('keeps a wrapped line that opens with %s as part of the paragraph', (_label, body, summary) => {
     expect(summarise(`# T\n\n${body}`, 'x').summary).toBe(summary);
