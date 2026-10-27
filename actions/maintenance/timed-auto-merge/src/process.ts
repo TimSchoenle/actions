@@ -29,10 +29,14 @@ interface OutcomeBase {
   headRef: string;
 }
 
-/** Approved at `headSha` and auto-merge enabled with `headSha` as the expected head. */
+/**
+ * Approved at `headSha`, then either auto-merge enabled with `headSha` as the expected head, or, when
+ * the pull request was already mergeable, merged at `headSha`.
+ */
 export interface ApprovedOutcome extends OutcomeBase {
   status: 'approved';
   headSha: string;
+  merge: 'auto-merge-enabled' | 'merged';
 }
 
 export interface SkippedOutcome extends OutcomeBase {
@@ -113,8 +117,8 @@ function precheck(pullRequest: OpenPullRequest, request: TimedAutoMergeRequest):
 }
 
 /**
- * Verifies, approves and enables auto-merge on one pull request, every step pinned to the head SHA
- * seen in the listing.
+ * Verifies, approves and enables auto-merge on one pull request, or merges it when it is already
+ * mergeable, every step pinned to the head SHA seen in the listing.
  *
  * The commit list must end at that SHA. Otherwise the branch moved after the listing, and the
  * commits that were verified are not the ones that would merge. The review is then attached to the
@@ -157,16 +161,64 @@ async function processOne(
   }
 
   await api.approve(request.repository, pullRequest.number, pullRequest.headSha, request.approveMessage);
+
+  const merge = await enableAutoMergeOrMerge(api, pullRequest, request);
+
+  return {
+    headRef: pullRequest.headRef,
+    headSha: pullRequest.headSha,
+    merge,
+    number: pullRequest.number,
+    status: 'approved',
+  };
+}
+
+/**
+ * The merge states in which GitHub refuses to enable auto-merge because nothing is left to wait for,
+ * so the pull request has to be merged directly. `gh pr merge --auto`, which the reusable workflow
+ * used, merges in the same three states. The ruleset still applies to the direct merge.
+ */
+const IMMEDIATELY_MERGEABLE: ReadonlySet<string> = new Set(['CLEAN', 'HAS_HOOKS', 'UNSTABLE']);
+
+/**
+ * Enables auto-merge, or merges directly when GitHub refused auto-merge because the pull request is
+ * already mergeable.
+ *
+ * The refusal is recognised from the merge state read afterwards, not from the error text, which
+ * GitHub does not document. The direct merge passes `sha`, so it is pinned to the verified head just
+ * as `expectedHeadOid` pins auto-merge.
+ */
+async function enableAutoMergeOrMerge(
+  api: TimedAutoMergeApi,
+  pullRequest: OpenPullRequest,
+  request: TimedAutoMergeRequest,
+): Promise<ApprovedOutcome['merge']> {
   try {
     await api.enableAutoMerge(pullRequest.nodeId, request.mergeMethod, pullRequest.headSha);
-  } catch (error) {
-    // The approval already stands, which an operator reading only "failed" would not guess.
-    throw new Error(`Approved at ${pullRequest.headSha}, but enabling auto-merge failed: ${errorMessage(error)}`, {
-      cause: error,
-    });
-  }
 
-  return { headRef: pullRequest.headRef, headSha: pullRequest.headSha, number: pullRequest.number, status: 'approved' };
+    return 'auto-merge-enabled';
+  } catch (enableError) {
+    // The approval already stands, which an operator reading only "failed" would not guess.
+    const failed = (message: string, cause: unknown): Error =>
+      new Error(`Approved at ${pullRequest.headSha}, but ${message}`, { cause });
+    // An unreadable merge state leaves the refusal unexplained, so the original error is reported.
+    const state = await api.getMergeState(pullRequest.nodeId).catch(() => undefined);
+
+    if (!state || state.headOid !== pullRequest.headSha || !IMMEDIATELY_MERGEABLE.has(state.status)) {
+      throw failed(`enabling auto-merge failed: ${errorMessage(enableError)}`, enableError);
+    }
+
+    try {
+      await api.merge(request.repository, pullRequest.number, request.mergeMethod, pullRequest.headSha);
+    } catch (mergeError) {
+      throw failed(
+        `auto-merge was refused (merge state ${state.status}) and merging directly failed: ${errorMessage(mergeError)}`,
+        mergeError,
+      );
+    }
+
+    return 'merged';
+  }
 }
 
 /**

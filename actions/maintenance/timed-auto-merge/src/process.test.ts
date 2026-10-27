@@ -49,6 +49,8 @@ interface FakeApi extends TimedAutoMergeApi {
   fetchCommits: ReturnType<typeof vi.fn<TimedAutoMergeApi['fetchCommits']>>;
   approve: ReturnType<typeof vi.fn<TimedAutoMergeApi['approve']>>;
   enableAutoMerge: ReturnType<typeof vi.fn<TimedAutoMergeApi['enableAutoMerge']>>;
+  getMergeState: ReturnType<typeof vi.fn<TimedAutoMergeApi['getMergeState']>>;
+  merge: ReturnType<typeof vi.fn<TimedAutoMergeApi['merge']>>;
 }
 
 /**
@@ -63,6 +65,8 @@ function fakeApi(
   return {
     approve: vi.fn<TimedAutoMergeApi['approve']>(async () => {}),
     enableAutoMerge: vi.fn<TimedAutoMergeApi['enableAutoMerge']>(async () => {}),
+    getMergeState: vi.fn<TimedAutoMergeApi['getMergeState']>(async () => ({ headOid: HEAD, status: 'BLOCKED' })),
+    merge: vi.fn<TimedAutoMergeApi['merge']>(async () => {}),
     fetchCommits: vi.fn<TimedAutoMergeApi['fetchCommits']>(async (url) => {
       const commits = commitsByUrl[url] ?? [commit(OLDER), commit(HEAD)];
 
@@ -93,7 +97,15 @@ describe('processPullRequests', () => {
 
     expect(report).toEqual({
       openCount: 1,
-      outcomes: [{ headRef: 'release-please--branches--main', headSha: HEAD, number: 7, status: 'approved' }],
+      outcomes: [
+        {
+          headRef: 'release-please--branches--main',
+          headSha: HEAD,
+          merge: 'auto-merge-enabled',
+          number: 7,
+          status: 'approved',
+        },
+      ],
     });
     expect(api.fetchCommits).toHaveBeenCalledWith('https://github.com/owner/repo/pull/7');
     expect(api.approve).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo' }, 7, HEAD, 'ok');
@@ -270,6 +282,74 @@ describe('processPullRequests', () => {
     expect(outcomes).toEqual([
       expect.objectContaining({
         message: `Approved at ${HEAD}, but enabling auto-merge failed: Head sha did not match expected head oid`,
+        status: 'failed',
+      }),
+    ]);
+  });
+
+  /**
+   * helm-charts, 2026-10-27: GitHub refused auto-merge on a pull request that was already mergeable
+   * ("Pull request is in clean status"), and the run failed instead of merging it, as the reusable
+   * workflow's `gh pr merge --auto` would have.
+   */
+  it.each(['CLEAN', 'HAS_HOOKS', 'UNSTABLE'])(
+    'merges directly at the verified head when auto-merge is refused in merge state %s',
+    async (status) => {
+      const api = fakeApi([pullRequest()]);
+      api.enableAutoMerge.mockRejectedValueOnce(new Error('Pull request Pull request is in clean status'));
+      api.getMergeState.mockResolvedValueOnce({ headOid: HEAD, status });
+
+      const { outcomes } = await processPullRequests(api, request({ mergeMethod: 'rebase' }));
+
+      expect(outcomes).toEqual([expect.objectContaining({ merge: 'merged', status: 'approved' })]);
+      expect(api.getMergeState).toHaveBeenCalledWith('PR_node_7');
+      expect(api.merge).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo' }, 7, 'rebase', HEAD);
+    },
+  );
+
+  it('does not merge directly when the head moved after verification', async () => {
+    const api = fakeApi([pullRequest()]);
+    api.enableAutoMerge.mockRejectedValueOnce(new Error('Pull request Pull request is in clean status'));
+    api.getMergeState.mockResolvedValueOnce({ headOid: OLDER, status: 'CLEAN' });
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({
+        message: `Approved at ${HEAD}, but enabling auto-merge failed: Pull request Pull request is in clean status`,
+        status: 'failed',
+      }),
+    ]);
+    expect(api.merge).not.toHaveBeenCalled();
+  });
+
+  it('keeps the auto-merge error when the merge state cannot be read', async () => {
+    const api = fakeApi([pullRequest()]);
+    api.enableAutoMerge.mockRejectedValueOnce(new Error('Auto merge is not allowed for this repository'));
+    api.getMergeState.mockRejectedValueOnce(new Error('Bad gateway'));
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({
+        message: `Approved at ${HEAD}, but enabling auto-merge failed: Auto merge is not allowed for this repository`,
+        status: 'failed',
+      }),
+    ]);
+    expect(api.merge).not.toHaveBeenCalled();
+  });
+
+  it('records a direct merge that GitHub refused', async () => {
+    const api = fakeApi([pullRequest()]);
+    api.enableAutoMerge.mockRejectedValueOnce(new Error('Pull request Pull request is in clean status'));
+    api.getMergeState.mockResolvedValueOnce({ headOid: HEAD, status: 'CLEAN' });
+    api.merge.mockRejectedValueOnce(new Error('Head branch was modified. Review and try the merge again.'));
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({
+        message: `Approved at ${HEAD}, but auto-merge was refused (merge state CLEAN) and merging directly failed: Head branch was modified. Review and try the merge again.`,
         status: 'failed',
       }),
     ]);

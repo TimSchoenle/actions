@@ -72,6 +72,8 @@ function fakeApi(pullRequests: OpenPullRequest[]): TimedAutoMergeApi {
   return {
     approve: vi.fn(async () => {}),
     enableAutoMerge: vi.fn(async () => {}),
+    getMergeState: vi.fn(async () => ({ headOid: HEAD, status: 'BLOCKED' })),
+    merge: vi.fn(async () => {}),
     fetchCommits: vi.fn(async () => ({
       commits: [
         {
@@ -129,6 +131,22 @@ describe('timed-auto-merge action', () => {
     expect(api.enableAutoMerge).toHaveBeenCalledWith('PR_1', 'squash', HEAD);
     expect(summaryAddRaw).toHaveBeenCalledWith(expect.stringContaining('2 of 3 open pull request(s) matched'));
     expect(summaryWrite).toHaveBeenCalledTimes(1);
+  });
+
+  it('merges a pull request directly when it is already mergeable and logs that it did', async () => {
+    setInputs();
+    const api = fakeApi([pullRequest(1)]);
+    vi.mocked(api.enableAutoMerge).mockRejectedValueOnce(new Error('Pull request Pull request is in clean status'));
+    vi.mocked(api.getMergeState).mockResolvedValueOnce({ headOid: HEAD, status: 'CLEAN' });
+
+    await run({ api, now: () => NOW });
+
+    expect(failure()).toBeUndefined();
+    expect(output('approved')).toBe('[1]');
+    expect(api.merge).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo' }, 1, 'squash', HEAD);
+    expect(core.info).toHaveBeenCalledWith(
+      `#1 "release-please--branches--main": approved at ${HEAD} and merged, since it was already mergeable.`,
+    );
   });
 
   it('fails the step after processing everything when an API call failed', async () => {

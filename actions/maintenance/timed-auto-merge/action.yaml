@@ -43,7 +43,7 @@ inputs:
 
 outputs:
   approved:
-    description: 'JSON array of the pull request numbers that were approved and had auto-merge enabled.'
+    description: 'JSON array of the pull request numbers that were approved and either had auto-merge enabled or, when already mergeable, were merged.'
   skipped:
     description: 'JSON array of {"number", "reason"} for matching pull requests that were left alone.'
   failed:
