@@ -540,6 +540,7 @@ describe('Renovate coverage of the documentation pins', () => {
     return refs;
   }
 
+  /** The `matchStrings` of every manager whose `managerFilePatterns` claims `file`. */
   function matchStringsFor(file: string): string[] {
     return customManagers()
       .filter((manager) =>
