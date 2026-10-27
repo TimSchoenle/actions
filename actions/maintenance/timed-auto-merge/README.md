@@ -1,7 +1,8 @@
 # Timed Auto-merge
 
 Approves and enables auto-merge on open pull requests whose head branch matches a pattern, that have been open for
-at least `time_elapsed`, and whose every commit is signed and authored only by `trusted_authors`. It is meant for a
+at least `time_elapsed`, and whose every commit is signed and authored only by `trusted_authors`. A pull request that is
+already mergeable, so GitHub refuses auto-merge for it, is merged directly instead. It is meant for a
 scheduled job that lets release-please or Renovate pull requests merge themselves after a waiting period in which a
 human can still intervene.
 
