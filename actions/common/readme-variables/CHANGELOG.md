@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/TimSchoenle/actions/compare/actions-common-readme-variables-v2.0.0...actions-common-readme-variables-v2.0.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* **Actions/Readme-Variables:** summarise a document by its whole first paragraph ([#1954](https://github.com/TimSchoenle/actions/issues/1954)) ([4d8bda4](https://github.com/TimSchoenle/actions/commit/4d8bda4dbe56e44df126de4dcfdb7f4785cdc165))
+
 ## [2.0.0](https://github.com/TimSchoenle/actions/compare/actions-common-readme-variables-v1.2.9...actions-common-readme-variables-v2.0.0) (2026-10-26)
 
 
