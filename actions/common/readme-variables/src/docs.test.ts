@@ -54,12 +54,82 @@ describe('summarise', () => {
     expect(summarise('## Title ##\n', 'x').title).toBe('Title');
   });
 
+  it('joins a paragraph hard-wrapped across lines', () => {
+    expect(
+      summarise(
+        '# T\n\nWhat a README contains, in what order, and how CI keeps it true. Prose style is\ncovered elsewhere,\n  and so is layout.\n\nNot this.\n',
+        'x',
+      ).summary,
+    ).toBe(
+      'What a README contains, in what order, and how CI keeps it true. Prose style is covered elsewhere, and so is layout.',
+    );
+  });
+
+  it.each([
+    ['a heading', 'First line\nsecond line.\n## Section\n'],
+    ['a fence', 'First line\nsecond line.\n```\ncode\n```\n'],
+    ['an HTML comment', 'First line\nsecond line.\n<!-- note -->\n'],
+    ['a bulleted list', 'First line\nsecond line.\n- item\n'],
+    ['a starred list', 'First line\nsecond line.\n* item\n'],
+    ['an ordered list', 'First line\nsecond line.\n1. item\n'],
+    ['a closing ordered list', 'First line\nsecond line.\n1) item\n'],
+    ['a table', 'First line\nsecond line.\n| a | b |\n| --- | :-: |\n'],
+    ['a table without outer pipes', 'First line\nsecond line.\nName | Value\n--- | ---\nA | B\n'],
+    ['a one-column table with only an aligned delimiter', 'First line\nsecond line.\nHeader\n:---\nValue\n'],
+    ['a one-column table', 'First line\nsecond line.\nHeader\n| --- |\nValue\n'],
+    ['a table with an escaped pipe', 'First line\nsecond line.\n| a \\| b | c |\n| --- | --- |\n'],
+    ['a blockquote', 'First line\nsecond line.\n> quoted\n'],
+    ['a thematic break', 'First line\nsecond line.\n***\n'],
+    ['a block HTML tag', 'First line\nsecond line.\n<div>\nOther content\n</div>\n'],
+    ['a closing block HTML tag', 'First line\nsecond line.\n</details>\n'],
+    ['a raw HTML tag', 'First line\nsecond line.\n<pre>\ncode\n</pre>\n'],
+  ])('ends a paragraph at %s that follows it directly', (_label, body) => {
+    expect(summarise(`# T\n\n${body}`, 'x').summary).toBe('First line second line.');
+  });
+
+  it.each([
+    ['emphasis', 'The action is\n*not* a linter.\n', 'The action is not a linter.'],
+    ['a number other than 1', 'There are\n14. The next count is 6.\n', 'There are 14. The next count is 6.'],
+    ['a pipe with no delimiter row', 'The regex uses\n| for alternation.\n', 'The regex uses | for alternation.'],
+    ['a pipe whose delimiter row has another cell count', 'One\n| a | b |\n| --- |\n', 'One | a | b | | --- |'],
+    [
+      'a pipe whose delimiter row is indented code',
+      'First\nName | Value\n    --- | ---\nMore\n',
+      'First Name | Value --- | --- More',
+    ],
+    [
+      'a pipe and is itself indented four columns',
+      'First\n    Name | Value\n--- | ---\nA | B\n',
+      'First Name | Value --- | --- A | B',
+    ],
+    ['an inline HTML tag', 'Press\n<kbd>Enter</kbd> to go.\n', 'Press <kbd>Enter</kbd> to go.'],
+  ])('keeps a wrapped line that opens with %s as part of the paragraph', (_label, body, summary) => {
+    expect(summarise(`# T\n\n${body}`, 'x').summary).toBe(summary);
+  });
+
+  it('handles CRLF line endings', () => {
+    expect(summarise('# T\r\n\r\nFirst line\r\nsecond line.\r\n\r\nNot this.\r\n', 'x').summary).toBe(
+      'First line second line.',
+    );
+  });
+
   it('truncates a long paragraph at a word boundary', () => {
     const summary = summarise(`# T\n\n${'word '.repeat(120)}\n`, 'x').summary;
 
     expect(summary.length).toBeLessThanOrEqual(201);
     expect(summary.endsWith('…')).toBe(true);
     expect(summary).not.toMatch(/wor…$/);
+  });
+
+  it('truncates a paragraph whose length comes from several wrapped lines', () => {
+    const line = 'word '.repeat(19).trim();
+    const summary = summarise(`# T\n\n${[line, line, line].join('\n')}\n\nNext.\n`, 'x').summary;
+
+    // Each line is 94 characters, so the limit is crossed only on the third line.
+    expect(summary.length).toBeLessThanOrEqual(201);
+    expect(summary.endsWith('…')).toBe(true);
+    expect(summary).toMatch(/^word(?: word)*…$/);
+    expect(summary.length).toBeGreaterThan(2 * line.length);
   });
 
   it('reports an empty summary for a document with no prose', () => {

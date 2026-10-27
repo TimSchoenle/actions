@@ -29,6 +29,42 @@ const ATX_HEADING = /^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$/;
 /** Fenced code, which may contain anything at all and must not be read as prose. */
 const FENCE = /^\s{0,3}(?:```|~~~)/;
 
+/**
+ * A list item or blockquote that may interrupt a paragraph. CommonMark lets a list do so only when
+ * its first item has content and, for an ordered list, only when it starts at 1, so a wrapped line
+ * that opens with `*emphasis*`, `-flag` or `14.` is still prose.
+ */
+const BLOCK_START = /^\s{0,3}(?:>|[-*+]\s+\S|1[.)]\s+\S)/;
+
+/** A thematic break once its spaces are removed, e.g. `***` or `- - -`. */
+const THEMATIC_BREAK = /^(?:-{3,}|\*{3,}|_{3,})$/;
+
+/** At most three columns of indentation; a tab counts as four, so it is excluded. */
+const TABLE_ROW_INDENT = /^ {0,3}\S/;
+
+/** One cell of a table's delimiter row, e.g. `---`, `:--` or `:-:`. */
+const DELIMITER_CELL = /^\s*:?-+:?\s*$/;
+
+/**
+ * The start of an HTML block that may interrupt a paragraph: a comment, processing instruction,
+ * declaration or CDATA section, or a tag whose name the caller checks against the lists below.
+ * Inline tags such as `<kbd>` cannot interrupt one, so a wrapped line that opens with them is prose.
+ */
+const HTML_BLOCK_START = /^\s{0,3}<(?:!--|\?|![A-Za-z]|!\[CDATA\[|(\/?)([A-Za-z][A-Za-z0-9]*)(?=[\s>]|\/>|$))/;
+
+/** CommonMark HTML block type 1, which only an opening tag starts. */
+const RAW_HTML_TAGS = new Set(['pre', 'script', 'style', 'textarea']);
+
+/** CommonMark HTML block type 6, which an opening or a closing tag starts. */
+const BLOCK_HTML_TAGS = new Set(
+  (
+    'address article aside base basefont blockquote body caption center col colgroup dd details ' +
+    'dialog dir div dl dt fieldset figcaption figure footer form frame frameset h1 h2 h3 h4 h5 h6 ' +
+    'head header hr html iframe legend li link main menu menuitem nav noframes ol optgroup option ' +
+    'p param search section summary table tbody td tfoot th thead title tr track ul'
+  ).split(' '),
+);
+
 /** Markdown inline syntax that carries no meaning once the text is inside a table cell. */
 const INLINE_MARKUP = /!?\[([^\]]*)\]\([^)]*\)|[*_`]/g;
 
@@ -48,6 +84,81 @@ function truncate(text: string): string {
   const boundary = cut.lastIndexOf(' ');
 
   return `${(boundary > SUMMARY_LIMIT / 2 ? cut.slice(0, boundary) : cut).trimEnd()}…`;
+}
+
+/** Whether a line opens an HTML block, which CommonMark lets interrupt a paragraph. */
+function isHtmlBlockStart(line: string): boolean {
+  const match = HTML_BLOCK_START.exec(line);
+
+  if (match === null) {
+    return false;
+  }
+
+  const [, closing, name] = match;
+
+  if (name === undefined) {
+    return true;
+  }
+
+  const tag = name.toLowerCase();
+
+  return BLOCK_HTML_TAGS.has(tag) || (closing === '' && RAW_HTML_TAGS.has(tag));
+}
+
+/** A table row's cells, without its optional outer pipes. An escaped pipe stays inside its cell. */
+function tableCells(line: string): string[] {
+  return line
+    .trim()
+    .replace(/^\|/, '')
+    .replace(/(?<!\\)\|$/, '')
+    .split(/(?<!\\)\|/);
+}
+
+/**
+ * Whether `line` is a table header: GFM needs it followed by a delimiter row such as
+ * `| --- | :-: |` with the same number of cells. Neither row needs outer pipes, so a one-column
+ * header may have none at all. The delimiter row needs a pipe or an alignment colon, since a bare
+ * `---` is a setext underline. Neither row may be indented by four columns or more.
+ */
+function isTableHeader(line: string, next: string | undefined): boolean {
+  if (next === undefined || !/[|:]/.test(next) || !TABLE_ROW_INDENT.test(line) || !TABLE_ROW_INDENT.test(next)) {
+    return false;
+  }
+
+  const delimiters = tableCells(next);
+
+  return delimiters.every((cell) => DELIMITER_CELL.test(cell)) && delimiters.length === tableCells(line).length;
+}
+
+/**
+ * Whether `line` ends the paragraph above it rather than continuing it. A pipe alone does not:
+ * `line` ends it as a table only when `next` makes it a header.
+ */
+function endsParagraph(line: string, next: string | undefined): boolean {
+  return (
+    line.trim() === '' ||
+    FENCE.test(line) ||
+    ATX_HEADING.test(line) ||
+    BLOCK_START.test(line) ||
+    THEMATIC_BREAK.test(line.replaceAll(/\s/g, '')) ||
+    isHtmlBlockStart(line) ||
+    isTableHeader(line, next)
+  );
+}
+
+/**
+ * The paragraph that opens at `start`, joined into one line. Documents in the estate are
+ * hard-wrapped, so a paragraph spans lines and runs until a blank line or the start of any other
+ * block.
+ */
+function readParagraph(lines: readonly string[], start: number): string {
+  let end = start + 1;
+
+  while (end < lines.length && !endsParagraph(lines[end], lines[end + 1])) {
+    end++;
+  }
+
+  return lines.slice(start, end).join(' ');
 }
 
 /**
@@ -99,7 +210,7 @@ export function summarise(source: string, fallbackTitle: string): { title: strin
       continue;
     }
 
-    summary = truncate(plainText(line));
+    summary = truncate(plainText(readParagraph(lines, index)));
     break;
   }
 
