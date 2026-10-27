@@ -102,16 +102,32 @@ function isHtmlBlockStart(line: string): boolean {
   return BLOCK_HTML_TAGS.has(tag) || (closing === '' && RAW_HTML_TAGS.has(tag));
 }
 
-/** A delimiter row such as `| --- | :-: |`, which is what makes the line above it a table header. */
-function isDelimiterRow(line: string): boolean {
-  const cells = line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|');
-
-  return line.includes('|') && cells.every((cell) => DELIMITER_CELL.test(cell));
+/** A table row's cells, without its optional outer pipes. An escaped pipe stays inside its cell. */
+function tableCells(line: string): string[] {
+  return line
+    .trim()
+    .replace(/^\|/, '')
+    .replace(/(?<!\\)\|$/, '')
+    .split(/(?<!\\)\|/);
 }
 
 /**
- * Whether `line` ends the paragraph above it rather than continuing it. A leading pipe alone does
- * not: `next` must be a delimiter row for `line` to be a table header.
+ * Whether `line` is a table header: GFM needs it followed by a delimiter row such as
+ * `| --- | :-: |` with the same number of cells. Neither row needs outer pipes.
+ */
+function isTableHeader(line: string, next: string | undefined): boolean {
+  if (next === undefined || !line.includes('|') || !next.includes('|')) {
+    return false;
+  }
+
+  const delimiters = tableCells(next);
+
+  return delimiters.every((cell) => DELIMITER_CELL.test(cell)) && delimiters.length === tableCells(line).length;
+}
+
+/**
+ * Whether `line` ends the paragraph above it rather than continuing it. A pipe alone does not:
+ * `line` ends it as a table only when `next` makes it a header.
  */
 function endsParagraph(line: string, next: string | undefined): boolean {
   return (
@@ -121,7 +137,7 @@ function endsParagraph(line: string, next: string | undefined): boolean {
     BLOCK_START.test(line) ||
     THEMATIC_BREAK.test(line.replaceAll(/\s/g, '')) ||
     isHtmlBlockStart(line) ||
-    (line.trimStart().startsWith('|') && next !== undefined && isDelimiterRow(next))
+    isTableHeader(line, next)
   );
 }
 
