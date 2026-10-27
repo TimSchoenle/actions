@@ -105,9 +105,75 @@ license = "Apache-2.0"
     expect(readCargoManifest(`[package]\nversion = "1.0.0"\nversion = "2.0.0"\n`, 'Cargo.toml').version).toBe('1.0.0');
   });
 
-  it('refuses a virtual workspace manifest, naming what to do instead', () => {
+  it('refuses a manifest with neither package table, naming what to do instead', () => {
     expect(() => readCargoManifest(`[workspace]\nmembers = ["crates/*"]\n`, 'Cargo.toml')).toThrow(ManifestParseError);
-    expect(() => readCargoManifest(`[workspace]\n`, 'Cargo.toml')).toThrow(/point `manifest` at a member/);
+    expect(() => readCargoManifest(`[workspace]\n`, 'Cargo.toml')).toThrow(
+      /no \[package\] or \[workspace\.package\] table/,
+    );
+  });
+
+  it('reads a virtual workspace manifest from [workspace.package]', () => {
+    const facts = readCargoManifest(
+      `[workspace]
+members = ["crates/*", "services/*"]
+
+[workspace.package]
+version = "11.1.1"
+edition = "2024"
+description = "Multi-service aggregator."
+license = "PolyForm-Noncommercial-1.0.0"
+rust-version = "1.94"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+`,
+      'Cargo.toml',
+    );
+
+    expect(facts).toEqual({
+      kind: 'cargo',
+      name: undefined,
+      version: '11.1.1',
+      description: 'Multi-service aggregator.',
+      license: 'PolyForm-Noncommercial-1.0.0',
+      homepage: undefined,
+      toolchain: { msrv: '1.94', edition: '2024' },
+    });
+  });
+
+  it('reports a virtual workspace without a version under its own table name', () => {
+    expect(() => readCargoManifest(`[workspace.package]\nedition = "2024"\n`, 'Cargo.toml')).toThrow(
+      /^Cargo\.toml: no 'workspace\.package\.version'\.$/,
+    );
+  });
+
+  it('resolves an inherited field from [workspace.package] in the same file', () => {
+    const facts = readCargoManifest(
+      `[workspace.package]
+version = "4.0.0"
+license = "MIT"
+rust-version = "1.94"
+
+[package]
+name = "root"
+version.workspace = true
+license.workspace = true
+rust-version.workspace = true
+edition = "2024"
+`,
+      'Cargo.toml',
+    );
+
+    expect(facts.name).toBe('root');
+    expect(facts.version).toBe('4.0.0');
+    expect(facts.license).toBe('MIT');
+    expect(facts.toolchain).toEqual({ msrv: '1.94', edition: '2024' });
+  });
+
+  it('never reports a name from [workspace.package], which cannot carry one', () => {
+    expect(
+      readCargoManifest(`[workspace.package]\nname = "x"\nversion = "1.0.0"\n`, 'Cargo.toml').name,
+    ).toBeUndefined();
   });
 
   it('explains an inherited version rather than reporting a bare absence', () => {

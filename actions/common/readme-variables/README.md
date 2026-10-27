@@ -100,17 +100,19 @@ description is set to match it.
 
 | File | `release.version` | `toolchain` |
 | --- | --- | --- |
-| `Cargo.toml` | `[package] version` | `msrv` from `rust-version`, `edition` |
+| `Cargo.toml` | `[package] version`, or `[workspace.package] version` in a virtual workspace | `msrv` from `rust-version`, `edition` |
 | `package.json` | `version` | `node` from `engines.node` |
 | `Chart.yaml` | `version` — the chart's own | `appVersion`, `kubeVersion` |
 | `gradle.properties` | `version` | `jdk`, `gradle` |
 
 `Cargo.toml` is read without a TOML parser. What a README quotes is a handful of top-level string fields in the
-`[package]` table, and the parse is anchored to the line start. A dependency's version sits inside an inline table and
-never starts a line, so `version` cannot come from one.
+`[package]` and `[workspace.package]` tables, and the parse is anchored to the line start. A dependency's version sits
+inside an inline table and never starts a line, so `version` cannot come from one.
 
-A member manifest carrying `version.workspace = true` fails with a message naming the workspace root, rather than
-reporting a bare absence.
+A manifest with `[package]` is read from it, and a field written `field.workspace = true` takes its value from
+`[workspace.package]` in the same file. A virtual workspace has no `[package]` and is read from `[workspace.package]`
+alone, so `repo.package` is omitted. A member manifest whose version is inherited from a workspace it does not define
+fails with a message naming the workspace root, rather than reporting a bare absence.
 
 Gradle reads `gradle.properties` and not `build.gradle`, because the build script is a program and the version in it can
 be computed. A project that computes its version writes it to the properties file for this action to read.

@@ -51,6 +51,10 @@ named through the `manifest` input:
 | `Chart.yaml`        | `chart`          | `version`, the chart's own | `appVersion`, `kubeVersion`                                                             |
 | `gradle.properties` | `gradle`         | `version`                  | `jdk` from `javaVersion`, `java.version` or `jdkVersion`; `gradle` from `gradleVersion` |
 
+A Cargo workspace root with no `[package]` is read from `[workspace.package]`, and a root `[package]` that inherits
+a field with `field.workspace = true` resolves it from the same file. A virtual workspace has no package name, so
+`repo.package` is omitted.
+
 `release.tag` is `release.version` with the `tag-prefix` input joined in front. The default is `v`.
 A repository whose tags are not `v1.2.3` sets the prefix, or sets it to `''` for a bare version.
 
