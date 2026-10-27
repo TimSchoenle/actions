@@ -54,12 +54,58 @@ describe('summarise', () => {
     expect(summarise('## Title ##\n', 'x').title).toBe('Title');
   });
 
+  it('joins a paragraph hard-wrapped across lines', () => {
+    expect(
+      summarise(
+        '# T\n\nWhat a README contains, in what order, and how CI keeps it true. Prose style is\ncovered elsewhere,\n  and so is layout.\n\nNot this.\n',
+        'x',
+      ).summary,
+    ).toBe(
+      'What a README contains, in what order, and how CI keeps it true. Prose style is covered elsewhere, and so is layout.',
+    );
+  });
+
+  it.each([
+    ['a heading', 'First line\nsecond line.\n## Section\n'],
+    ['a fence', 'First line\nsecond line.\n```\ncode\n```\n'],
+    ['an HTML comment', 'First line\nsecond line.\n<!-- note -->\n'],
+    ['a bulleted list', 'First line\nsecond line.\n- item\n'],
+    ['a starred list', 'First line\nsecond line.\n* item\n'],
+    ['an ordered list', 'First line\nsecond line.\n1. item\n'],
+    ['a table', 'First line\nsecond line.\n| a | b |\n'],
+    ['a blockquote', 'First line\nsecond line.\n> quoted\n'],
+    ['a thematic break', 'First line\nsecond line.\n***\n'],
+  ])('ends a paragraph at %s that follows it directly', (_label, body) => {
+    expect(summarise(`# T\n\n${body}`, 'x').summary).toBe('First line second line.');
+  });
+
+  it('keeps a wrapped line that opens with emphasis as part of the paragraph', () => {
+    expect(summarise('# T\n\nThe action is\n*not* a linter.\n', 'x').summary).toBe('The action is not a linter.');
+  });
+
+  it('handles CRLF line endings', () => {
+    expect(summarise('# T\r\n\r\nFirst line\r\nsecond line.\r\n\r\nNot this.\r\n', 'x').summary).toBe(
+      'First line second line.',
+    );
+  });
+
   it('truncates a long paragraph at a word boundary', () => {
     const summary = summarise(`# T\n\n${'word '.repeat(120)}\n`, 'x').summary;
 
     expect(summary.length).toBeLessThanOrEqual(201);
     expect(summary.endsWith('…')).toBe(true);
     expect(summary).not.toMatch(/wor…$/);
+  });
+
+  it('truncates a paragraph whose length comes from several wrapped lines', () => {
+    const line = 'word '.repeat(19).trim();
+    const summary = summarise(`# T\n\n${[line, line, line].join('\n')}\n\nNext.\n`, 'x').summary;
+
+    // Each line is 94 characters, so the limit is crossed only on the third line.
+    expect(summary.length).toBeLessThanOrEqual(201);
+    expect(summary.endsWith('…')).toBe(true);
+    expect(summary).toMatch(/^word(?: word)*…$/);
+    expect(summary.length).toBeGreaterThan(2 * line.length);
   });
 
   it('reports an empty summary for a document with no prose', () => {

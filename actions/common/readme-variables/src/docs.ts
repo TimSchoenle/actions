@@ -29,6 +29,16 @@ const ATX_HEADING = /^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$/;
 /** Fenced code, which may contain anything at all and must not be read as prose. */
 const FENCE = /^\s{0,3}(?:```|~~~)/;
 
+/**
+ * A line that opens a block of its own and so ends a paragraph: a table row, a list item, or a
+ * blockquote. A list marker needs whitespace after it, so a wrapped line that opens with
+ * `*emphasis*` or `-flag` is still prose.
+ */
+const BLOCK_START = /^\s{0,3}(?:\||>|[-*+](?:\s|$)|\d{1,9}[.)](?:\s|$))/;
+
+/** A thematic break once its spaces are removed, e.g. `***` or `- - -`. */
+const THEMATIC_BREAK = /^(?:-{3,}|\*{3,}|_{3,})$/;
+
 /** Markdown inline syntax that carries no meaning once the text is inside a table cell. */
 const INLINE_MARKUP = /!?\[([^\]]*)\]\([^)]*\)|[*_`]/g;
 
@@ -48,6 +58,33 @@ function truncate(text: string): string {
   const boundary = cut.lastIndexOf(' ');
 
   return `${(boundary > SUMMARY_LIMIT / 2 ? cut.slice(0, boundary) : cut).trimEnd()}…`;
+}
+
+/** Whether a line ends the paragraph above it rather than continuing it. */
+function endsParagraph(line: string): boolean {
+  return (
+    line.trim() === '' ||
+    FENCE.test(line) ||
+    ATX_HEADING.test(line) ||
+    BLOCK_START.test(line) ||
+    THEMATIC_BREAK.test(line.replaceAll(/\s/g, '')) ||
+    line.trimStart().startsWith('<!--')
+  );
+}
+
+/**
+ * The paragraph that opens at `start`, joined into one line. Documents in the estate are
+ * hard-wrapped, so a paragraph spans lines and runs until a blank line or the start of any other
+ * block.
+ */
+function readParagraph(lines: readonly string[], start: number): string {
+  let end = start + 1;
+
+  while (end < lines.length && !endsParagraph(lines[end])) {
+    end++;
+  }
+
+  return lines.slice(start, end).join(' ');
 }
 
 /**
@@ -99,7 +136,7 @@ export function summarise(source: string, fallbackTitle: string): { title: strin
       continue;
     }
 
-    summary = truncate(plainText(line));
+    summary = truncate(plainText(readParagraph(lines, index)));
     break;
   }
 
