@@ -75,6 +75,7 @@ describe('summarise', () => {
     ['a closing ordered list', 'First line\nsecond line.\n1) item\n'],
     ['a table', 'First line\nsecond line.\n| a | b |\n| --- | :-: |\n'],
     ['a table without outer pipes', 'First line\nsecond line.\nName | Value\n--- | ---\nA | B\n'],
+    ['a one-column table', 'First line\nsecond line.\nHeader\n| --- |\nValue\n'],
     ['a table with an escaped pipe', 'First line\nsecond line.\n| a \\| b | c |\n| --- | --- |\n'],
     ['a blockquote', 'First line\nsecond line.\n> quoted\n'],
     ['a thematic break', 'First line\nsecond line.\n***\n'],
@@ -90,6 +91,11 @@ describe('summarise', () => {
     ['a number other than 1', 'There are\n14. The next count is 6.\n', 'There are 14. The next count is 6.'],
     ['a pipe with no delimiter row', 'The regex uses\n| for alternation.\n', 'The regex uses | for alternation.'],
     ['a pipe whose delimiter row has another cell count', 'One\n| a | b |\n| --- |\n', 'One | a | b | | --- |'],
+    [
+      'a pipe whose delimiter row is indented code',
+      'First\nName | Value\n    --- | ---\nMore\n',
+      'First Name | Value --- | --- More',
+    ],
     ['an inline HTML tag', 'Press\n<kbd>Enter</kbd> to go.\n', 'Press <kbd>Enter</kbd> to go.'],
   ])('keeps a wrapped line that opens with %s as part of the paragraph', (_label, body, summary) => {
     expect(summarise(`# T\n\n${body}`, 'x').summary).toBe(summary);

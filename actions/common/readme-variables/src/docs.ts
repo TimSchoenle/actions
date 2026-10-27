@@ -39,6 +39,9 @@ const BLOCK_START = /^\s{0,3}(?:>|[-*+]\s+\S|1[.)]\s+\S)/;
 /** A thematic break once its spaces are removed, e.g. `***` or `- - -`. */
 const THEMATIC_BREAK = /^(?:-{3,}|\*{3,}|_{3,})$/;
 
+/** At most three columns of indentation; a tab counts as four, so it is excluded. */
+const TABLE_ROW_INDENT = /^ {0,3}\S/;
+
 /** One cell of a table's delimiter row, e.g. `---`, `:--` or `:-:`. */
 const DELIMITER_CELL = /^\s*:?-+:?\s*$/;
 
@@ -113,10 +116,12 @@ function tableCells(line: string): string[] {
 
 /**
  * Whether `line` is a table header: GFM needs it followed by a delimiter row such as
- * `| --- | :-: |` with the same number of cells. Neither row needs outer pipes.
+ * `| --- | :-: |` with the same number of cells. Neither row needs outer pipes, so a one-column
+ * header may have none at all; the delimiter row needs at least one, or `---` would be a setext
+ * underline. A delimiter row indented by four columns or more is indented code, not a table.
  */
 function isTableHeader(line: string, next: string | undefined): boolean {
-  if (next === undefined || !line.includes('|') || !next.includes('|')) {
+  if (next === undefined || !next.includes('|') || !TABLE_ROW_INDENT.test(next)) {
     return false;
   }
 
