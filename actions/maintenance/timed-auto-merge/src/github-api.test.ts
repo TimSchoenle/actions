@@ -10,14 +10,16 @@ vi.mock('actions-util/commits', () => ({ fetchPullRequestCommits: vi.fn() }));
 interface OctokitMock {
   graphql: ReturnType<typeof vi.fn>;
   paginate: ReturnType<typeof vi.fn>;
-  rest: { pulls: { createReview: ReturnType<typeof vi.fn>; list: ReturnType<typeof vi.fn> } };
+  rest: {
+    pulls: { createReview: ReturnType<typeof vi.fn>; list: ReturnType<typeof vi.fn>; merge: ReturnType<typeof vi.fn> };
+  };
 }
 
 function mockOctokit(): OctokitMock {
   const octokit: OctokitMock = {
     graphql: vi.fn(),
     paginate: vi.fn(),
-    rest: { pulls: { createReview: vi.fn(), list: vi.fn() } },
+    rest: { pulls: { createReview: vi.fn(), list: vi.fn(), merge: vi.fn() } },
   };
 
   vi.mocked(github.getOctokit).mockReturnValue(octokit as unknown as ReturnType<typeof github.getOctokit>);
@@ -126,6 +128,36 @@ describe('createTimedAutoMergeApi', () => {
     await expect(createTimedAutoMergeApi('token').enableAutoMerge('PR_kwDO', 'squash', HEAD)).rejects.toThrow(
       'expected head oid',
     );
+  });
+
+  it('reads the head and merge state of the pull request', async () => {
+    octokit.graphql.mockResolvedValue({ node: { headRefOid: HEAD, mergeStateStatus: 'CLEAN' } });
+
+    await expect(createTimedAutoMergeApi('token').getMergeState('PR_kwDO')).resolves.toEqual({
+      headOid: HEAD,
+      status: 'CLEAN',
+    });
+    expect(octokit.graphql).toHaveBeenCalledWith(expect.stringContaining('mergeStateStatus'), {
+      pullRequestId: 'PR_kwDO',
+    });
+  });
+
+  it('rejects a merge state response without a pull request', async () => {
+    octokit.graphql.mockResolvedValue({ node: null });
+
+    await expect(createTimedAutoMergeApi('token').getMergeState('PR_kwDO')).rejects.toThrow('no head or merge state');
+  });
+
+  it('merges with sha pinned to the verified head', async () => {
+    await createTimedAutoMergeApi('token').merge(repository, 7, 'squash', HEAD);
+
+    expect(octokit.rest.pulls.merge).toHaveBeenCalledWith({
+      merge_method: 'squash',
+      owner: 'owner',
+      pull_number: 7,
+      repo: 'repo',
+      sha: HEAD,
+    });
   });
 
   it('fetches commits through the shared paginated query', async () => {

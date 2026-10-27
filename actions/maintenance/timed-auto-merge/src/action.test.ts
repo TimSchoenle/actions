@@ -72,6 +72,8 @@ function fakeApi(pullRequests: OpenPullRequest[]): TimedAutoMergeApi {
   return {
     approve: vi.fn(async () => {}),
     enableAutoMerge: vi.fn(async () => {}),
+    getMergeState: vi.fn(async () => ({ headOid: HEAD, status: 'BLOCKED' })),
+    merge: vi.fn(async () => {}),
     fetchCommits: vi.fn(async () => ({
       commits: [
         {

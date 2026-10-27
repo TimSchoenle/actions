@@ -61,7 +61,9 @@ export function escapeCell(text: string): string {
 function describe(outcome: PullRequestOutcome): { result: string; detail: string } {
   switch (outcome.status) {
     case 'approved': {
-      return { detail: `approved at ${outcome.headSha}, auto-merge enabled`, result: 'approved' };
+      const merge = outcome.merge === 'merged' ? 'already mergeable, merged' : 'auto-merge enabled';
+
+      return { detail: `approved at ${outcome.headSha}, ${merge}`, result: 'approved' };
     }
     case 'skipped': {
       return { detail: outcome.detail, result: `skipped (${outcome.reason})` };

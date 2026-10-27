@@ -8,7 +8,13 @@ import type { PullRequestOutcome } from './process.js';
 const HEAD = 'a'.repeat(40);
 
 const OUTCOMES: PullRequestOutcome[] = [
-  { headRef: 'release-please--branches--main', headSha: HEAD, number: 1, status: 'approved' },
+  {
+    headRef: 'release-please--branches--main',
+    headSha: HEAD,
+    merge: 'auto-merge-enabled',
+    number: 1,
+    status: 'approved',
+  },
   {
     detail: 'open for 3h, needs 24h',
     headRef: 'release-please--branches--next',
@@ -17,7 +23,7 @@ const OUTCOMES: PullRequestOutcome[] = [
     status: 'skipped',
   },
   { headRef: 'release-please--branches--x', message: 'Bad credentials', number: 3, status: 'failed' },
-  { headRef: 'release-please--branches--y', headSha: HEAD, number: 4, status: 'approved' },
+  { headRef: 'release-please--branches--y', headSha: HEAD, merge: 'merged', number: 4, status: 'approved' },
 ];
 
 describe('toOutputs', () => {
@@ -66,7 +72,7 @@ describe('renderSummary', () => {
         `| #1 | release-please--branches--main | approved | approved at ${HEAD}, auto-merge enabled |`,
         '| #2 | release-please--branches--next | skipped (too-young) | open for 3h, needs 24h |',
         '| #3 | release-please--branches--x | failed | Bad credentials |',
-        `| #4 | release-please--branches--y | approved | approved at ${HEAD}, auto-merge enabled |`,
+        `| #4 | release-please--branches--y | approved | approved at ${HEAD}, already mergeable, merged |`,
         '',
       ].join('\n'),
     );

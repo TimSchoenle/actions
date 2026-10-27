@@ -33,6 +33,17 @@ export interface TimedAutoMergeApi {
   approve(repository: RepositoryCoordinates, number: number, headSha: string, body: string): Promise<void>;
   /** Enables auto-merge, which GitHub refuses if the head is no longer `expectedHeadOid`. */
   enableAutoMerge(nodeId: string, mergeMethod: MergeMethod, expectedHeadOid: string): Promise<void>;
+  /** Reads the pull request's current head and GitHub's `mergeStateStatus` for it. */
+  getMergeState(nodeId: string): Promise<MergeState>;
+  /** Merges now, which GitHub refuses if the head is no longer `sha`. */
+  merge(repository: RepositoryCoordinates, number: number, mergeMethod: MergeMethod, sha: string): Promise<void>;
+}
+
+/** A pull request's head and merge state, as the GraphQL `PullRequest` reports them. */
+export interface MergeState {
+  headOid: string;
+  /** GitHub's `MergeStateStatus`, such as `CLEAN`, `BLOCKED` or `UNSTABLE`. */
+  status: string;
 }
 
 /** GitHub's enum value for each merge method. */
@@ -53,6 +64,19 @@ const ENABLE_AUTO_MERGE_MUTATION = `mutation EnableAutoMerge($pullRequestId: ID!
     }
   }
 }`;
+
+const MERGE_STATE_QUERY = `query MergeState($pullRequestId: ID!) {
+  node(id: $pullRequestId) {
+    ... on PullRequest {
+      headRefOid
+      mergeStateStatus
+    }
+  }
+}`;
+
+interface MergeStateResponse {
+  node: { headRefOid?: string; mergeStateStatus?: string } | null;
+}
 
 /** Page size for the pull request listing; the maximum GitHub accepts. */
 const PAGE_SIZE = 100;
@@ -110,6 +134,20 @@ export function createTimedAutoMergeApi(token: string): TimedAutoMergeApi {
         mergeMethod: GRAPHQL_MERGE_METHOD[mergeMethod],
         pullRequestId: nodeId,
       });
+    },
+
+    async getMergeState(nodeId) {
+      const { node } = await octokit.graphql<MergeStateResponse>(MERGE_STATE_QUERY, { pullRequestId: nodeId });
+
+      if (!node?.headRefOid || !node.mergeStateStatus) {
+        throw new Error(`Pull request ${nodeId} has no head or merge state.`);
+      }
+
+      return { headOid: node.headRefOid, status: node.mergeStateStatus };
+    },
+
+    async merge({ owner, repo }, number, mergeMethod, sha) {
+      await octokit.rest.pulls.merge({ merge_method: mergeMethod, owner, pull_number: number, repo, sha });
     },
 
     fetchCommits(pullRequestUrl) {
