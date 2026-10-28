@@ -29,7 +29,7 @@ inputs:
     description: 'oras release to install when oras is true, as MAJOR.MINOR.PATCH without a leading v.'
     required: false
     # renovate: datasource=github-releases depName=oras-project/oras extractVersion=^v(?<version>.*)$
-    default: '1.3.5'
+    default: '1.3.6'
   github_token:
     description: 'Token for listing terrace-contract releases on api.github.com, needed only when the version is a
       MAJOR.MINOR line. Defaults to the job token on github.com and to empty elsewhere, because a GitHub Enterprise
