@@ -10,9 +10,12 @@ import type { ManifestFacts } from '../manifest.js';
  * nothing for them while adding a bundled dependency to every action that reads a manifest.
  *
  * The parse is deliberately shallow, and its limits are the reason it is safe: it tracks the current
- * table header and reads `key = "value"` only while that header is `[package]`. A dependency's
- * version sits inside an inline table (`figment = { version = "0.10" }`) and never starts a line, so
- * anchoring to the line start is enough to keep `version` meaning the package's own.
+ * table header and reads `key = "value"` only while that header is `[package]` or
+ * `[workspace.package]`. A dependency's version sits inside an inline table
+ * (`figment = { version = "0.10" }`) and never starts a line, so anchoring to the line start is
+ * enough to keep `version` meaning the package's own. Lines inside a multiline string are skipped,
+ * so text that looks like an assignment inside a long `description` is never read as one. A field
+ * whose value is itself a multiline string is left absent rather than read.
  *
  * Scanned character by character rather than matched with a pattern. The obvious regex for a quoted
  * value nests a quantifier inside another one, which is the shape that backtracks quadratically on a
@@ -20,13 +23,16 @@ import type { ManifestFacts } from '../manifest.js';
  */
 
 /** A bare TOML key. No quantifier nests inside another, so this cannot backtrack. */
-const BARE_KEY = /^[A-Za-z][\w-]*$/;
+const BARE_KEY = /^[A-Za-z0-9_-]+$/;
 
 /** The escapes a basic string can carry that mean something other than the character itself. */
 const ESCAPES: Readonly<Record<string, string>> = { n: '\n', r: '\r', t: '\t' };
 
-/** The suffix marking a field inherited from the workspace, e.g. `version.workspace = true`. */
-const WORKSPACE_SUFFIX = '.workspace';
+/** The delimiters of the two multiline string forms. */
+const MULTILINE_BASIC = '"""';
+const MULTILINE_LITERAL = "'''";
+
+type Multiline = typeof MULTILINE_BASIC | typeof MULTILINE_LITERAL;
 
 /** Splits `lhs = rhs` at the first `=`. Everything else on the line is left to the caller. */
 function splitAssignment(line: string): { lhs: string; rhs: string } | undefined {
@@ -38,32 +44,36 @@ function splitAssignment(line: string): { lhs: string; rhs: string } | undefined
 }
 
 /**
- * Reads a TOML basic string from the start of `rhs`, returning nothing if it is not one.
+ * Reads the basic (`"`) or literal (`'`) string that opens at `start`, with the index just past its
+ * closing quote. A literal string has no escapes.
  *
- * Stops at the closing quote, so a trailing comment after the value is discarded with no second
- * pass. An unterminated string yields nothing rather than the rest of the line: a manifest that
- * cannot be read should leave the field absent, and the caller reports that with a path attached.
+ * Stops at the closing quote, so a trailing comment after a value is discarded with no second pass.
+ * An unterminated string yields nothing rather than the rest of the line: a manifest that cannot be
+ * read should leave the field absent, and the caller reports that with a path attached. A multiline
+ * delimiter is not recognised here; callers check for one first.
  */
-export function readBasicString(rhs: string): string | undefined {
-  if (!rhs.startsWith('"')) {
+function readQuoted(text: string, start: number): { value: string; end: number } | undefined {
+  const quote = text[start];
+
+  if (quote !== '"' && quote !== "'") {
     return undefined;
   }
 
   let value = '';
 
-  for (let index = 1; index < rhs.length; index++) {
-    const character = rhs[index];
+  for (let index = start + 1; index < text.length; index++) {
+    const character = text[index];
 
-    if (character === '"') {
-      return value;
+    if (character === quote) {
+      return { value, end: index + 1 };
     }
 
-    if (character !== '\\') {
+    if (quote === "'" || character !== '\\') {
       value += character;
       continue;
     }
 
-    const escaped = rhs[index + 1];
+    const escaped = text[index + 1];
 
     if (escaped === undefined) {
       return undefined;
@@ -76,98 +86,364 @@ export function readBasicString(rhs: string): string | undefined {
   return undefined;
 }
 
-/** Reads a table header, e.g. `[package]` or `[dependencies.serde]`, from a trimmed line. */
-function readTableHeader(line: string): string | undefined {
+/** The index of the first character at or after `index` that is not a space or a tab. */
+function skipBlanks(text: string, index: number): number {
+  let next = index;
+
+  while (text[next] === ' ' || text[next] === '\t') {
+    next++;
+  }
+
+  return next;
+}
+
+/** Reads one bare or quoted key part at `index`, with the index just past it. */
+function readKeyPart(text: string, index: number): { value: string; end: number } | undefined {
+  const quoted = readQuoted(text, index);
+
+  if (quoted !== undefined) {
+    return quoted;
+  }
+
+  const length = text.slice(index).search(/[\s.]/u);
+  const value = length === -1 ? text.slice(index) : text.slice(index, index + length);
+
+  return BARE_KEY.test(value) ? { value, end: index + value.length } : undefined;
+}
+
+/**
+ * Reads a TOML key into its parts, or nothing if `text` is not a valid key.
+ *
+ * Each part is a bare key or a quoted one, and TOML allows whitespace around each `.`, so
+ * `workspace . "package"` reads as `['workspace', 'package']`. A quoted part may contain a dot,
+ * which is why the parts are kept apart rather than joined.
+ */
+function readKey(text: string): readonly string[] | undefined {
+  const parts: string[] = [];
+  let index = 0;
+
+  for (;;) {
+    const part = readKeyPart(text, skipBlanks(text, index));
+
+    if (part === undefined) {
+      return undefined;
+    }
+
+    parts.push(part.value);
+    index = skipBlanks(text, part.end);
+
+    if (index === text.length) {
+      return parts;
+    }
+
+    if (text[index] !== '.') {
+      return undefined;
+    }
+
+    index++;
+  }
+}
+
+/** Whether `key` is exactly `expected`, part for part. */
+function keyIs(key: readonly string[] | undefined, ...expected: string[]): boolean {
+  return key !== undefined && key.length === expected.length && key.every((part, index) => part === expected[index]);
+}
+
+/**
+ * Reads a table header, e.g. `[package]` or `[dependencies.serde]`, from a trimmed line.
+ *
+ * Returns nothing when the line is not a header. A header whose key cannot be read, such as an
+ * array of tables (`[[bin]]`), is still a header, and comes back with no key.
+ */
+function readTableHeader(line: string): { key: readonly string[] | undefined } | undefined {
   if (!line.startsWith('[')) {
     return undefined;
   }
 
   const close = line.indexOf(']');
 
-  return close === -1 ? undefined : line.slice(1, close).trim();
+  return close === -1 ? undefined : { key: readKey(line.slice(1, close)) };
+}
+
+/**
+ * Whether `rhs` marks a field as inherited. Cargo accepts the dotted form, `version.workspace =
+ * true`, whose value is `true`, and the inline-table form, `version = { workspace = true }`.
+ */
+function isInlineWorkspaceTable(rhs: string): boolean {
+  if (!rhs.startsWith('{')) {
+    return false;
+  }
+
+  const close = rhs.indexOf('}');
+
+  if (close === -1) {
+    return false;
+  }
+
+  return rhs
+    .slice(1, close)
+    .split(',')
+    .some((entry) => {
+      const assignment = splitAssignment(entry.trim());
+
+      return (
+        assignment !== undefined && keyIs(readKey(assignment.lhs), 'workspace') && assignment.rhs.trimEnd() === 'true'
+      );
+    });
+}
+
+/**
+ * The index just past the `delimiter` that closes a multiline string, scanning from `index`, or
+ * nothing when the string is still open at the end of `line`.
+ *
+ * A basic string's backslash escapes the next character, so `\"""` closes nothing. TOML lets up to
+ * two more quotes sit against the closing delimiter as content.
+ */
+function endOfMultiline(line: string, index: number, delimiter: Multiline): number | undefined {
+  for (let next = index; next < line.length; next++) {
+    if (delimiter === MULTILINE_BASIC && line[next] === '\\') {
+      next++;
+    } else if (line.startsWith(delimiter, next)) {
+      let run = delimiter.length;
+
+      while (run < delimiter.length + 2 && line[next + run] === delimiter[0]) {
+        run++;
+      }
+
+      return next + run;
+    }
+  }
+
+  return undefined;
+}
+
+/** The multiline string delimiter that opens at `index`, if one does. */
+function multilineOpeningAt(line: string, index: number): Multiline | undefined {
+  const delimiters: readonly Multiline[] = [MULTILINE_BASIC, MULTILINE_LITERAL];
+
+  return delimiters.find((delimiter) => line.startsWith(delimiter, index));
+}
+
+/**
+ * The multiline string still open at the end of `line`, given the one open at its start.
+ *
+ * Single-line strings are stepped over whole, so a quote inside one opens nothing, and a `#`
+ * outside any string ends the scan as a comment.
+ */
+function multilineOpenAfter(line: string, open: Multiline | undefined): Multiline | undefined {
+  let index = 0;
+
+  if (open !== undefined) {
+    const end = endOfMultiline(line, 0, open);
+
+    if (end === undefined) {
+      return open;
+    }
+
+    index = end;
+  }
+
+  while (index < line.length && line[index] !== '#') {
+    const opening = multilineOpeningAt(line, index);
+
+    if (opening === undefined) {
+      index = readQuoted(line, index)?.end ?? index + 1;
+      continue;
+    }
+
+    const end = endOfMultiline(line, index + opening.length, opening);
+
+    if (end === undefined) {
+      return opening;
+    }
+
+    index = end;
+  }
+
+  return undefined;
 }
 
 interface PackageTable {
   fields: Map<string, string>;
   inherited: Set<string>;
+  /** Fields whose value is a multiline string, which this reader leaves unread. */
+  multiline: Set<string>;
   seen: boolean;
 }
 
-/** Records one assignment inside `[package]`, ignoring a line that carries no readable field. */
+function emptyTable(): PackageTable {
+  return { fields: new Map(), inherited: new Set(), multiline: new Set(), seen: false };
+}
+
+/** Records one assignment inside a package table, ignoring a line that carries no readable field. */
 function readPackageField(line: string, table: PackageTable): void {
   const assignment = splitAssignment(line);
+  const key = assignment === undefined ? undefined : readKey(assignment.lhs);
 
-  if (assignment === undefined) {
+  if (assignment === undefined || key === undefined) {
     return;
   }
 
-  const { lhs, rhs } = assignment;
+  const { rhs } = assignment;
 
-  if (lhs.endsWith(WORKSPACE_SUFFIX) && rhs.startsWith('true')) {
-    table.inherited.add(lhs.slice(0, -WORKSPACE_SUFFIX.length));
+  if (key.length === 2 && key[1] === 'workspace' && rhs.startsWith('true')) {
+    table.inherited.add(key[0]);
     return;
   }
 
-  const value = BARE_KEY.test(lhs) ? readBasicString(rhs) : undefined;
+  if (key.length !== 1) {
+    return;
+  }
+
+  const [field] = key;
+
+  if (isInlineWorkspaceTable(rhs)) {
+    table.inherited.add(field);
+    return;
+  }
+
+  if (multilineOpeningAt(rhs, 0) !== undefined) {
+    table.multiline.add(field);
+    return;
+  }
+
+  const value = readQuoted(rhs, 0)?.value;
 
   // First writer wins: a duplicate key is invalid TOML, and keeping the first keeps the parse
   // deterministic rather than quietly preferring whichever came last.
-  if (value !== undefined && !table.fields.has(lhs)) {
-    table.fields.set(lhs, value);
+  if (value !== undefined && !table.fields.has(field)) {
+    table.fields.set(field, value);
   }
 }
 
-/** Collects the `[package]` table, and which of its fields defer to the workspace. */
-function collectPackageTable(source: string): PackageTable {
-  const table: PackageTable = { fields: new Map(), inherited: new Set(), seen: false };
-  let inPackage = false;
+/** Collects the `[package]` and `[workspace.package]` tables of one manifest. */
+function collectPackageTables(source: string): { member: PackageTable; workspace: PackageTable } {
+  const tables = { member: emptyTable(), workspace: emptyTable() };
+  let current: PackageTable | undefined;
+  let multiline: Multiline | undefined;
 
   for (const raw of source.split('\n')) {
+    const insideString = multiline !== undefined;
+    multiline = multilineOpenAfter(raw, multiline);
+
     const line = raw.trim();
 
-    if (line === '' || line.startsWith('#')) {
+    if (insideString || line === '' || line.startsWith('#')) {
       continue;
     }
 
     const header = readTableHeader(line);
 
-    if (header !== undefined) {
-      inPackage = header === 'package';
-      table.seen ||= inPackage;
-    } else if (inPackage) {
-      readPackageField(line, table);
+    if (header === undefined) {
+      if (current !== undefined) {
+        readPackageField(line, current);
+      }
+      continue;
+    }
+
+    if (keyIs(header.key, 'package')) {
+      current = tables.member;
+    } else if (keyIs(header.key, 'workspace', 'package')) {
+      current = tables.workspace;
+    } else {
+      current = undefined;
+    }
+
+    if (current !== undefined) {
+      current.seen = true;
     }
   }
 
-  return table;
+  return tables;
+}
+
+/**
+ * Resolves the fields a manifest states for itself.
+ *
+ * `[package]` wins when present, with each `field.workspace = true` taken from `[workspace.package]`
+ * in the same file. A virtual workspace has no `[package]`, so its `[workspace.package]` is the
+ * whole answer. An inherited field the file cannot resolve is left out.
+ */
+function resolveFields(member: PackageTable, workspace: PackageTable): ReadonlyMap<string, string> {
+  if (!member.seen) {
+    return workspace.fields;
+  }
+
+  const fields = new Map(member.fields);
+
+  for (const field of member.inherited) {
+    const value = workspace.fields.get(field);
+
+    if (value !== undefined && !fields.has(field)) {
+      fields.set(field, value);
+    }
+  }
+
+  return fields;
+}
+
+/**
+ * The error for a manifest whose version cannot be read, naming the table it should be in and,
+ * where the file shows why it is absent, what to change.
+ */
+function missingVersion(
+  member: PackageTable,
+  workspace: PackageTable,
+  manifestPath: string,
+): ManifestFieldMissingError {
+  const singleLine = 'It is a multiline string, which is not read; write it as a single-line string.';
+
+  if (!member.seen) {
+    return new ManifestFieldMissingError(
+      manifestPath,
+      'workspace.package.version',
+      workspace.multiline.has('version') ? singleLine : undefined,
+    );
+  }
+
+  if (member.inherited.has('version')) {
+    return workspace.multiline.has('version')
+      ? new ManifestFieldMissingError(manifestPath, 'workspace.package.version', singleLine)
+      : new ManifestFieldMissingError(
+          manifestPath,
+          'package.version',
+          'It is inherited with `version.workspace = true`; point `manifest` at the workspace root instead.',
+        );
+  }
+
+  return new ManifestFieldMissingError(
+    manifestPath,
+    'package.version',
+    member.multiline.has('version') ? singleLine : undefined,
+  );
 }
 
 /**
  * Reads the facts a README quotes out of a `Cargo.toml`.
  *
- * @throws {ManifestParseError} if the file has no `[package]` table.
- * @throws {ManifestFieldMissingError} if `version` is absent or inherited from the workspace.
+ * A package manifest is read from `[package]`, resolving inherited fields against a
+ * `[workspace.package]` in the same file. A virtual workspace manifest is read from
+ * `[workspace.package]`, and has no `name` to report.
+ *
+ * @throws {ManifestParseError} if the file has neither table.
+ * @throws {ManifestFieldMissingError} if `version` is absent, or inherited from a workspace this
+ * file does not define.
  */
 export function readCargoManifest(source: string, manifestPath: string): ManifestFacts {
-  const { fields, inherited, seen } = collectPackageTable(source);
+  const { member, workspace } = collectPackageTables(source);
 
-  if (!seen) {
+  if (!member.seen && !workspace.seen) {
     throw new ManifestParseError(
       manifestPath,
-      'no [package] table. A virtual workspace manifest describes no package; point `manifest` at a member.',
+      'no [package] or [workspace.package] table. Add one, or point `manifest` at a manifest that has one.',
     );
   }
 
+  const fields = resolveFields(member, workspace);
   const version = fields.get('version');
 
   if (version === undefined) {
-    throw new ManifestFieldMissingError(
-      manifestPath,
-      'package.version',
-      inherited.has('version')
-        ? 'It is inherited with `version.workspace = true`; point `manifest` at the workspace root instead.'
-        : undefined,
-    );
+    throw missingVersion(member, workspace, manifestPath);
   }
 
   const toolchain: Record<string, string> = {};
@@ -185,7 +461,7 @@ export function readCargoManifest(source: string, manifestPath: string): Manifes
 
   return {
     kind: 'cargo',
-    name: fields.get('name'),
+    name: member.seen ? fields.get('name') : undefined,
     version,
     description: fields.get('description'),
     license: fields.get('license'),

@@ -100,17 +100,21 @@ description is set to match it.
 
 | File | `release.version` | `toolchain` |
 | --- | --- | --- |
-| `Cargo.toml` | `[package] version` | `msrv` from `rust-version`, `edition` |
+| `Cargo.toml` | `[package] version`, inherited from `[workspace.package]` in the same file when marked `workspace = true`, or `[workspace.package] version` in a virtual workspace | `msrv` from `rust-version`, `edition` |
 | `package.json` | `version` | `node` from `engines.node` |
 | `Chart.yaml` | `version` — the chart's own | `appVersion`, `kubeVersion` |
 | `gradle.properties` | `version` | `jdk`, `gradle` |
 
 `Cargo.toml` is read without a TOML parser. What a README quotes is a handful of top-level string fields in the
-`[package]` table, and the parse is anchored to the line start. A dependency's version sits inside an inline table and
-never starts a line, so `version` cannot come from one.
+`[package]` and `[workspace.package]` tables, and the parse is anchored to the line start. A dependency's version sits
+inside an inline table and never starts a line, so `version` cannot come from one. Keys may be bare or quoted, and lines
+inside a multiline string are skipped, so an assignment written into a long `description` is never read as a field. A
+field whose own value is a multiline string is left absent, and a version written that way fails with a message saying so.
 
-A member manifest carrying `version.workspace = true` fails with a message naming the workspace root, rather than
-reporting a bare absence.
+A manifest with `[package]` is read from it, and a field written `field.workspace = true` or `field = { workspace = true }` takes its value from
+`[workspace.package]` in the same file. A virtual workspace has no `[package]` and is read from `[workspace.package]`
+alone, so `repo.package` is omitted. A member manifest whose version is inherited from a workspace it does not define
+fails with a message naming the workspace root, rather than reporting a bare absence.
 
 Gradle reads `gradle.properties` and not `build.gradle`, because the build script is a program and the version in it can
 be computed. A project that computes its version writes it to the properties file for this action to read.
@@ -121,6 +125,10 @@ Every file under `docs-dir`, depth-first and sorted, so the rendered table canno
 Markdown is indexed by its own first heading and first paragraph. Front matter, fenced blocks and the HTML comment
 banner that opens every generated file are all skipped. Anything else is indexed by path with no summary, because
 `docs/config.contract.json` is a document a reader follows a link to and leaving it out would make the table lie.
+
+Both are reduced to plain text for a table cell: a link keeps its text, and emphasis and code-span delimiters are
+dropped. The characters inside a code span are kept, and so is an underscore inside a word, so `TANKOVAULT_*` and
+`snake_case` read the same in the cell as in the source.
 
 A `docs-dir` that does not exist yields an empty index. That is not an error: most repositories have no `docs/` yet, and
 failing on its absence would make adopting the standard a two-step migration for no gain.

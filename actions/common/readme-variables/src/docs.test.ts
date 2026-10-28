@@ -50,6 +50,46 @@ describe('summarise', () => {
     ).toBe('See the chart and just verify and emphasis.');
   });
 
+  it('keeps the characters of a code span and of a word, stripping only the delimiters', () => {
+    expect(
+      summarise('# T\n\nEvery `TANKOVAULT_*` key, migration `0055_chapter_storage` and snake_case.\n', 'x').summary,
+    ).toBe('Every TANKOVAULT_* key, migration 0055_chapter_storage and snake_case.');
+  });
+
+  it('strips underscore emphasis and a backtick run that opens no code span', () => {
+    expect(summarise('# T\n\nAn _emphasised_ word and a stray ` tick.\n', 'x').summary).toBe(
+      'An emphasised word and a stray tick.',
+    );
+  });
+
+  it('matches a code span by the length of its backtick run', () => {
+    expect(summarise('# T\n\nRun ``a ` b`` now.\n', 'x').summary).toBe('Run a ` b now.');
+  });
+
+  it('keeps a run of underscores inside a word', () => {
+    expect(summarise('# T\n\nThe snake__case and __bold__ forms.\n', 'x').summary).toBe(
+      'The snake__case and bold forms.',
+    );
+  });
+
+  it('strips emphasis that opens or closes the paragraph', () => {
+    expect(summarise('# T\n\n_Every_ form, _emphasised_\n', 'x').summary).toBe('Every form, emphasised');
+  });
+
+  it('treats an escaped backtick as a literal one that opens no code span', () => {
+    expect(summarise('# T\n\nA \\` tick, then `TANKOVAULT_*` keys.\n', 'x').summary).toBe(
+      'A ` tick, then TANKOVAULT_* keys.',
+    );
+  });
+
+  it('strips the padding that lets a code span hold a backtick', () => {
+    expect(summarise('# T\n\nUse `` `cmd` ``.\n', 'x').summary).toBe('Use `cmd`.');
+  });
+
+  it('does not let text resembling a span marker reach the output', () => {
+    expect(summarise('# T\n\nA \u{E000}0\u{E001} b.\n', 'x').summary).toBe('A 0 b.');
+  });
+
   it('closes an ATX heading that carries trailing hashes', () => {
     expect(summarise('## Title ##\n', 'x').title).toBe('Title');
   });
