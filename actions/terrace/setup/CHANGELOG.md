@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.1](https://github.com/TimSchoenle/actions/compare/actions-terrace-setup-v3.0.0...actions-terrace-setup-v3.0.1) (2026-10-28)
+
+
+### Dependencies
+
+* **deps:** update dependency oras-project/oras to v1.3.6 ([#1960](https://github.com/TimSchoenle/actions/issues/1960)) ([240fa63](https://github.com/TimSchoenle/actions/commit/240fa6343290553560970d379a2243865b79d9e3))
+
 ## [3.0.0](https://github.com/TimSchoenle/actions/compare/actions-terrace-setup-v2.0.0...actions-terrace-setup-v3.0.0) (2026-10-26)
 
 
