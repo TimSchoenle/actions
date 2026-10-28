@@ -108,7 +108,7 @@ is not, including older versions of a component whose neighbours have since rele
 | [Terrace Helm Diff](./actions/terrace/helm-diff) | [actions-terrace-helm-diff-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-diff-v1.1.0) | :white_check_mark: |
 | [Terrace Helm Sync](./actions/terrace/helm-sync) | [actions-terrace-helm-sync-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-sync-v1.1.0) | :white_check_mark: |
 | [Terrace Image](./actions/terrace/image) | [actions-terrace-image-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-image-v1.1.0) | :white_check_mark: |
-| [Terrace Setup](./actions/terrace/setup) | [actions-terrace-setup-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-setup-v3.0.0) | :white_check_mark: |
+| [Terrace Setup](./actions/terrace/setup) | [actions-terrace-setup-v3.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-setup-v3.0.1) | :white_check_mark: |
 
 #### Test
 
