@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/TimSchoenle/actions/compare/actions-common-readme-variables-v2.0.1...actions-common-readme-variables-v2.1.0) (2026-10-28)
+
+
+### Features
+
+* **Actions/Readme-Variables:** read a virtual Cargo workspace from [workspace.package] ([#1957](https://github.com/TimSchoenle/actions/issues/1957)) ([6713764](https://github.com/TimSchoenle/actions/commit/671376466943ca386327806c7b2cbdebb6be417d))
+
 ## [2.0.1](https://github.com/TimSchoenle/actions/compare/actions-common-readme-variables-v2.0.0...actions-common-readme-variables-v2.0.1) (2026-10-27)
 
 
