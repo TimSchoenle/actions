@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/TimSchoenle/actions/compare/actions-common-read-yaml-v2.0.0...actions-common-read-yaml-v2.0.1) (2026-11-01)
+
+
+### Dependencies
+
+* **deps:** update dependency @types/node to v26.6.6 ([#1965](https://github.com/TimSchoenle/actions/issues/1965)) ([91142e4](https://github.com/TimSchoenle/actions/commit/91142e46ab7ae90184a53f659a536462361d21d3))
+
 ## [2.0.0](https://github.com/TimSchoenle/actions/compare/actions-common-read-yaml-v1.3.9...actions-common-read-yaml-v2.0.0) (2026-10-26)
 
 

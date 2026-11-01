@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.6](https://github.com/TimSchoenle/actions/compare/actions-security-codeql-v1.1.5...actions-security-codeql-v1.1.6) (2026-11-01)
+
+
+### Dependencies
+
+* **deps:** update dependency @types/node to v26.6.6 ([#1965](https://github.com/TimSchoenle/actions/issues/1965)) ([91142e4](https://github.com/TimSchoenle/actions/commit/91142e46ab7ae90184a53f659a536462361d21d3))
+
 ## [1.1.5](https://github.com/TimSchoenle/actions/compare/actions-security-codeql-v1.1.4...actions-security-codeql-v1.1.5) (2026-10-26)
 
 
