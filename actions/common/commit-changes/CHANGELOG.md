@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.1](https://github.com/TimSchoenle/actions/compare/actions-common-commit-changes-v3.0.0...actions-common-commit-changes-v3.0.1) (2026-11-01)
+
+
+### Dependencies
+
+* **deps:** update dependency @types/node to v26.6.6 ([#1965](https://github.com/TimSchoenle/actions/issues/1965)) ([91142e4](https://github.com/TimSchoenle/actions/commit/91142e46ab7ae90184a53f659a536462361d21d3))
+
 ## [3.0.0](https://github.com/TimSchoenle/actions/compare/actions-common-commit-changes-v2.0.0...actions-common-commit-changes-v3.0.0) (2026-10-26)
 
 
