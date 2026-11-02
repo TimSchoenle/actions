@@ -80,6 +80,7 @@ is not, including older versions of a component whose neighbours have since rele
 | [Maintenance Auto-rebase](./actions/maintenance/auto-rebase) | [actions-maintenance-auto-rebase-v3.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-rebase-v3.0.1) | :white_check_mark: |
 | [Maintenance Ensure-actions-are-executed](./actions/maintenance/ensure-actions-are-executed) | [actions-maintenance-ensure-actions-are-executed-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v2.0.1) | :white_check_mark: |
 | [Maintenance Timed-auto-merge](./actions/maintenance/timed-auto-merge) | [actions-maintenance-timed-auto-merge-v2.0.2](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-timed-auto-merge-v2.0.2) | :white_check_mark: |
+| [Maintenance Trigger-coderabbit-review](./actions/maintenance/trigger-coderabbit-review) | [actions-maintenance-trigger-coderabbit-review-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-trigger-coderabbit-review-v1.0.0) | :white_check_mark: |
 | [Maintenance Wipe-cache](./actions/maintenance/wipe-cache) | [actions-maintenance-wipe-cache-v3.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-wipe-cache-v3.0.1) | :white_check_mark: |
 
 #### Rust

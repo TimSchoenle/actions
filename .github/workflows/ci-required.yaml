@@ -107,6 +107,7 @@ on:
       - Verify Maintenance Auto-rebase
       - Verify Maintenance Ensure-actions-are-executed
       - Verify Maintenance Timed-auto-merge
+      - Verify Maintenance Trigger-coderabbit-review
       - Verify Maintenance Wipe-cache
       - Verify Rust Auto-format
       - Verify Rust Config-contract
