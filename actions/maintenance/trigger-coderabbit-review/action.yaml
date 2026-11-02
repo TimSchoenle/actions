@@ -1,0 +1,43 @@
+name: 'Maintenance Trigger-coderabbit-review'
+description: 'Posts a CodeRabbit review command on a pull request as a user account, for repositories CodeRabbit no longer reviews automatically. Skips drafts, closed pull requests, forks and bot authors, and refuses a token that is not a user token.'
+
+inputs:
+  token:
+    description: 'Personal access token of a user account, with Pull requests: write on the repository. CodeRabbit ignores commands posted by a GitHub App, so github.token and app installation tokens are refused before anything is posted.'
+    required: true
+  pr_url:
+    description: 'URL of the pull request (e.g. "https://github.com/owner/repo/pull/123").'
+    required: false
+    default: ${{ github.event.pull_request.html_url }}
+  command:
+    description: 'CodeRabbit command to post: "review" for an incremental review of the commits it has not reviewed yet, or "full review" to review every file again.'
+    required: false
+    default: 'review'
+  skip_drafts:
+    description: 'Skip a draft pull request. Mark it ready for review to have the next run trigger one.'
+    required: false
+    default: 'true'
+  skip_bots:
+    description: 'Skip a pull request opened by a bot account (Renovate, a release app). Matches on the account type GitHub reports, not on the login.'
+    required: false
+    default: 'true'
+  skip_authors:
+    description: 'Logins whose pull requests are skipped, separated by commas or newlines, compared case-insensitively. A bot is listed by its full login, e.g. "renovate[bot]".'
+    required: false
+    default: ''
+  reject_forks:
+    description: 'Skip a pull request whose head branch lives in another repository, so a fork cannot spend the review allowance of the token owner.'
+    required: false
+    default: 'true'
+
+outputs:
+  triggered:
+    description: '"true" when the command was posted, "false" when the pull request was skipped.'
+  skip_reason:
+    description: 'Why the pull request was skipped: closed, draft, fork, bot-author or skipped-author. Empty when the command was posted.'
+  comment_url:
+    description: 'URL of the posted comment. Empty when the pull request was skipped.'
+
+runs:
+  using: 'node24'
+  main: 'dist/index.js'

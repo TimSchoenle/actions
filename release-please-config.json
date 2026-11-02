@@ -240,6 +240,11 @@
       "release-type": "simple",
       "component": "actions-maintenance-timed-auto-merge",
       "include-component-in-tag": true
+    },
+    "actions/maintenance/trigger-coderabbit-review": {
+      "release-type": "simple",
+      "component": "actions-maintenance-trigger-coderabbit-review",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

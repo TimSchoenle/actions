@@ -205,6 +205,8 @@ const TOKEN_PERMISSIONS: Readonly<Record<string, TokenPermissions>> = {
   'actions/maintenance/auto-rebase': { contents: 'write', issues: 'write', 'pull-requests': 'write' },
   'actions/maintenance/ensure-actions-are-executed': { contents: 'write', checks: 'write' },
   'actions/maintenance/timed-auto-merge': { contents: 'write', 'pull-requests': 'write' },
+  // The fixture opens a pull request; the action itself is refused before it writes anything.
+  'actions/maintenance/trigger-coderabbit-review': { contents: 'write', 'pull-requests': 'write' },
 };
 
 /**
