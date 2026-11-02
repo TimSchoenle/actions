@@ -58,7 +58,8 @@ started some other way.
 
 Before reading the pull request, the action calls `GET /user` with the token and fails unless the token authenticates
 as an account of type `User`. `github.token` and app installation tokens cannot call that endpoint, so passing one
-fails the step on every run instead of posting comments that CodeRabbit ignores.
+fails the step on every run instead of posting comments that CodeRabbit ignores. A token GitHub rejects with 401, which is what an expired fine-grained token gets, fails
+with its own message, since it needs replacing rather than a different kind of token.
 
 ## Inputs
 

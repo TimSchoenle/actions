@@ -34,8 +34,10 @@ export interface PostedComment {
 /** The GitHub operations this action needs, kept minimal so it can be faked in tests. */
 export interface TriggerApi {
   /**
-   * The account the token belongs to, or `undefined` when the token cannot read `GET /user`, which
-   * is the case for `github.token` and every GitHub App installation token.
+   * The account the token belongs to, or `undefined` when `GET /user` answers 403, which is what
+   * `github.token` and every GitHub App installation token get.
+   *
+   * @throws if GitHub rejects the token outright (401): it is expired, revoked or malformed.
    */
   getTokenIdentity(): Promise<TokenIdentity | undefined>;
   getPullRequest(coordinates: PullRequestCoordinates): Promise<PullRequestInfo>;
@@ -78,10 +80,18 @@ export function createTriggerApi(token: string): TriggerApi {
 
         return { login: data.login, type: data.type };
       } catch (error) {
-        // An installation token gets 403 "Resource not accessible by integration". 401 is a revoked
-        // or malformed token, which is equally unable to post as a user.
-        if (hasStatus(error, FORBIDDEN) || hasStatus(error, UNAUTHORIZED)) {
+        // An installation token gets 403 "Resource not accessible by integration".
+        if (hasStatus(error, FORBIDDEN)) {
           return undefined;
+        }
+        // A fine-grained token expires, so this is the failure a working setup eventually hits. It
+        // needs a new token, not a different kind of token, so it gets its own message.
+        if (hasStatus(error, UNAUTHORIZED)) {
+          throw new Error(
+            'GitHub rejected the token (401 Bad credentials): it is expired, revoked or malformed. ' +
+              'Create a new personal access token and update the secret.',
+            { cause: error },
+          );
         }
         throw error;
       }

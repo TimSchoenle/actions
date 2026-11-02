@@ -135,7 +135,7 @@ describe('triggerReview', () => {
   it('refuses an app or GITHUB_TOKEN before reading the pull request', async () => {
     const api = fakeApi(openPullRequest, null);
 
-    await expect(triggerReview(api, options)).rejects.toThrow('a GitHub App or GITHUB_TOKEN');
+    await expect(triggerReview(api, options)).rejects.toThrow('a GitHub App or GITHUB_TOKEN (GET /user answered 403)');
     expect(api.getPullRequest).not.toHaveBeenCalled();
     expect(api.postComment).not.toHaveBeenCalled();
   });

@@ -59,10 +59,23 @@ describe('createTriggerApi', () => {
       await expect(createTriggerApi('token').getTokenIdentity()).resolves.toEqual({ login: 'alice', type: 'User' });
     });
 
-    it.each([401, 403])('returns undefined when GET /user answers %i', async (status) => {
-      octokit.rest.users.getAuthenticated.mockRejectedValue(httpError(status));
+    it('returns undefined when GET /user answers 403', async () => {
+      octokit.rest.users.getAuthenticated.mockRejectedValue(httpError(403));
 
       await expect(createTriggerApi('token').getTokenIdentity()).resolves.toBeUndefined();
+    });
+
+    it('reports a rejected token as expired, revoked or malformed rather than as an app token', async () => {
+      const rejection = httpError(401);
+      octokit.rest.users.getAuthenticated.mockRejectedValue(rejection);
+
+      const error: unknown = await createTriggerApi('token')
+        .getTokenIdentity()
+        .catch((caught: unknown) => caught);
+
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toContain('expired, revoked or malformed');
+      expect((error as Error).cause).toBe(rejection);
     });
 
     it('propagates any other failure', async () => {

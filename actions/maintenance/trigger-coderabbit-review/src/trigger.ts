@@ -96,7 +96,7 @@ export async function triggerReview(api: TriggerApi, options: TriggerOptions): P
   if (identity?.type !== 'User') {
     const actor =
       identity === undefined
-        ? 'a GitHub App or GITHUB_TOKEN'
+        ? 'a GitHub App or GITHUB_TOKEN (GET /user answered 403)'
         : `the ${identity.type} account ${quoteForLog(identity.login)}`;
 
     throw new Error(
