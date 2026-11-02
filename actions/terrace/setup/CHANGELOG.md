@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.2](https://github.com/TimSchoenle/actions/compare/actions-terrace-setup-v3.0.1...actions-terrace-setup-v3.0.2) (2026-11-02)
+
+
+### Dependencies
+
+* **deps:** update dependency sigstore/cosign to v3.1.4 ([#1967](https://github.com/TimSchoenle/actions/issues/1967)) ([846aba8](https://github.com/TimSchoenle/actions/commit/846aba8c92d2112a76078733c193baa877eab073))
+
 ## [3.0.1](https://github.com/TimSchoenle/actions/compare/actions-terrace-setup-v3.0.0...actions-terrace-setup-v3.0.1) (2026-11-01)
 
 
