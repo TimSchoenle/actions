@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.4](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-coverage-codecov-v1.1.3...actions-java-gradle-coverage-codecov-v1.1.4) (2026-11-02)
+
+
+### Dependencies
+
+* **deps:** update gradle to v9.8.2 ([#1970](https://github.com/TimSchoenle/actions/issues/1970)) ([048433e](https://github.com/TimSchoenle/actions/commit/048433e578b9a23aa15815e2fc3729f70ae8c448))
+
 ## [1.1.3](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-coverage-codecov-v1.1.2...actions-java-gradle-coverage-codecov-v1.1.3) (2026-11-01)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v2.0.0...actions-java-gradle-auto-spotless-v2.0.1) (2026-11-02)
+
+
+### Dependencies
+
+* **deps:** update timschoenle/actions/actions/common/create-patch to vactions-common-create-patch-v1.1.1 ([#1972](https://github.com/TimSchoenle/actions/issues/1972)) ([bddad98](https://github.com/TimSchoenle/actions/commit/bddad98d6d0c09a39786f471e27f302eaf5bb1be))
+
 ## [2.0.0](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-auto-spotless-v1.1.33...actions-java-gradle-auto-spotless-v2.0.0) (2026-10-26)
 
 
