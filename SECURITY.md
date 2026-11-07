@@ -99,6 +99,7 @@ is not, including older versions of a component whose neighbours have since rele
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Security CodeQL](./actions/security/codeql) | [actions-security-codeql-v1.1.6](https://github.com/TimSchoenle/actions/releases/tag/actions-security-codeql-v1.1.6) | :white_check_mark: |
+| [Security Jactionlint](./actions/security/jactionlint) | [actions-security-jactionlint-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-security-jactionlint-v1.0.0) | :white_check_mark: |
 | [Security Zizmor](./actions/security/zizmor) | [actions-security-zizmor-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-security-zizmor-v2.0.1) | :white_check_mark: |
 
 #### Terrace
