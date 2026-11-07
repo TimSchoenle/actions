@@ -99,7 +99,7 @@ an image reference beginning with `-` fails the step in a second, not after the 
 
 | Output         | Description                                                                         |
 | -------------- | ----------------------------------------------------------------------------------- |
-| `size-bytes`   | `.Size` from `docker image inspect`: bytes of unpacked layers.                      |
+| `size-bytes`   | Bytes of unpacked layers. See "Sizes are uncompressed" below.                       |
 | `size-mib`     | `size-bytes` / 1048576, to one decimal place.                                       |
 | `over-warning` | `true` when above `size-warning-mib`.                                               |
 | `findings`     | Number of results in the SARIF file.                                                |
@@ -123,8 +123,8 @@ The action asks for no permission itself. Set the job's `permissions` block from
 The action publishes its evidence first and enforces its gates last, so a red build always carries its reason on the
 pull request and in code scanning:
 
-1. **Measure.** Validates every input, then reads `.Size` with `docker image inspect`. An image that is not loaded
-   fails here, naming the reference, before Trivy can fail on it with a less useful message.
+1. **Measure.** Validates every input, then reads the size with `docker image inspect` and `docker history`. An image
+   that is not loaded fails here, naming the reference, before Trivy can fail on it with a less useful message.
 2. **Scan.** Trivy writes SARIF under `RUNNER_TEMP`, never the workspace, so a later `git add` or `commit-changes`
    cannot pick it up; its database cache sits there too. Trivy itself never fails the step.
 3. **Upload.** `upload-sarif`, when enabled.
@@ -136,9 +136,20 @@ pull request and in code scanning:
 `trivy-severity` is passed with `limit-severities-for-sarif: true`. Without that flag trivy-action drops the severity
 filter for SARIF output, and every LOW and MEDIUM finding reaches code scanning whatever the input says.
 
-**Sizes are uncompressed.** Both thresholds compare `.Size` in MiB — the unpacked layers, not the pull size. A
-compressed size would need the image pushed to a registry, and nothing here pushes on a pull request. A size exactly at
-a threshold passes it.
+**Sizes are uncompressed.** Both thresholds compare the unpacked layers in MiB, not the pull size. A compressed size
+would need the image pushed to a registry, and nothing here pushes on a pull request. A size exactly at a threshold
+passes it.
+
+Docker reports the unpacked size differently on its two image stores, so the action reads both of its measures and
+takes the larger:
+
+| Image store                                                 | `docker image inspect` `.Size`                 | `docker history` sizes, summed                   |
+| ----------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------ |
+| classic (graph driver)                                      | unpacked layers                                | unpacked layers, when history covers every layer |
+| containerd (default from Docker 29, `ubuntu-26.04` runners) | stored content: compressed layers and metadata | unpacked layers                                  |
+
+The containerd store measures each layer as its unpacked snapshot on disk, so the same image can read slightly
+differently on the two stores.
 
 **Pull requests from a fork.** `GITHUB_TOKEN` is read-only there, so the SARIF upload and the comment would both fail.
 When the pull request's head repository is not this repository, steps 3 and 4 skip with a notice, and the step summary

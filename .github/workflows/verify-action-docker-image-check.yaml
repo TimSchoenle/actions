@@ -182,7 +182,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # Built from a copy under RUNNER_TEMP with 2 MiB of zeros added: .Size counts unpacked bytes, so
+      # Built from a copy under RUNNER_TEMP with 2 MiB of zeros added: the action counts unpacked bytes, so
       # the image lands at a known size between the 1 MiB limit below and the default warning, and the
       # workspace stays clean for the assertion that the action itself writes nothing there.
       - name: Build Fixture Image
@@ -213,8 +213,11 @@ jobs:
         run: |
           set -euo pipefail
 
-          EXPECTED_SIZE=$(docker image inspect --format '{{.Size}}' -- image-check-e2e:test)
-          [ "$SIZE_BYTES" = "$EXPECTED_SIZE" ] || { echo "::error::size-bytes '$SIZE_BYTES', expected '$EXPECTED_SIZE'"; exit 1; }
+          # The payload alone is 2 MiB unpacked and compresses to a few KiB, so this lower bound is what
+          # tells the unpacked size from the stored content size the containerd image store reports as .Size.
+          PAYLOAD_BYTES=2097152
+          [[ "$SIZE_BYTES" =~ ^[0-9]+$ ]] || { echo "::error::size-bytes '$SIZE_BYTES' is not a byte count"; exit 1; }
+          [ "$SIZE_BYTES" -ge "$PAYLOAD_BYTES" ] || { echo "::error::size-bytes '$SIZE_BYTES' is below the ${PAYLOAD_BYTES}-byte payload: not the unpacked size"; exit 1; }
           [ "$SIZE_MIB" = "2.0" ] || { echo "::error::size-mib '$SIZE_MIB', expected '2.0'"; exit 1; }
           [ "$OVER_WARNING" = "false" ] || { echo "::error::over-warning '$OVER_WARNING', expected 'false'"; exit 1; }
           [[ "$FINDINGS" =~ ^[0-9]+$ ]] || { echo "::error::findings '$FINDINGS' is not a count"; exit 1; }
@@ -298,7 +301,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # Built from a copy under RUNNER_TEMP with 2 MiB of zeros added: .Size counts unpacked bytes, so
+      # Built from a copy under RUNNER_TEMP with 2 MiB of zeros added: the action counts unpacked bytes, so
       # the image lands at a known size between the 1 MiB limit below and the default warning, and the
       # workspace stays clean for the assertion that the action itself writes nothing there.
       - name: Build Fixture Image

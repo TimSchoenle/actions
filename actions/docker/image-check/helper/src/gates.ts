@@ -6,7 +6,7 @@
  * of `0` is disabled, not "anything above zero".
  */
 
-/** Bytes in one MiB. Sizes are reported in MiB because `.Size` is bytes of unpacked layers. */
+/** Bytes in one MiB, the unit every threshold and rendering uses. */
 export const BYTES_PER_MIB = 1_048_576;
 
 /** What the gates are evaluated against. */

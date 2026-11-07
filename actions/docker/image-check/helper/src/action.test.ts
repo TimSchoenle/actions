@@ -155,7 +155,10 @@ describe('measure', () => {
     await run(deps);
 
     expect(core.setFailed).not.toHaveBeenCalled();
-    expect(deps.commands).toEqual([['docker', 'image', 'inspect', '--format', '{{.Size}}', '--', 'app:test']]);
+    expect(deps.commands).toEqual([
+      ['docker', 'image', 'inspect', '--format', '{{.Size}}', '--', 'app:test'],
+      ['docker', 'history', '--human=false', '--format', '{{.Size}}', '--', 'app:test'],
+    ]);
     expect(outputs()).toMatchObject({
       image: 'app:test',
       size_bytes: String(87 * BYTES_PER_MIB),

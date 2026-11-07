@@ -56,7 +56,7 @@ inputs:
 
 outputs:
   size-bytes:
-    description: 'Size of the image from docker image inspect (.Size): bytes of unpacked layers, not the compressed pull size.'
+    description: 'Uncompressed size of the image in bytes: the larger of the docker history layer sizes summed and docker image inspect .Size. Not the compressed pull size.'
     value: ${{ steps.measure.outputs.size_bytes }}
   size-mib:
     description: 'size-bytes / 1048576, to one decimal place.'
