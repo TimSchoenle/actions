@@ -50,8 +50,11 @@ jobs:
 
       # The patch is committed by auto-format-commit.yml after this run has finished. While it is
       # non-empty this head is not the one to merge: the run on the bot commit decides.
+      # Nothing commits to a fork's branch; `bun run format:check` in Scripts CI reports it there.
       - name: Fail while the patch is uncommitted
-        if: steps.patch.outputs.has_changes == 'true'
+        if: >-
+          steps.patch.outputs.has_changes == 'true' &&
+          github.event.pull_request.head.repo.full_name == github.repository
         run: |
           echo "::error::bun run format changed files; auto-format-commit.yml commits them and the run on that commit decides. If no bot commit appears, run bun run format locally and push."
           exit 1
