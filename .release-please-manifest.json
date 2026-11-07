@@ -30,7 +30,7 @@
   "actions/common/readme-variables": "2.1.1",
   "actions/common/upsert-pr-comment": "2.0.1",
   "actions/common/upsert-issue": "2.0.1",
-  "actions/docker/image-check": "1.1.9",
+  "actions/docker/image-check": "1.1.10",
   "actions/docker/image-check-summary": "2.0.1",
   "configs/checkstyle/application": "1.0.2",
   "configs/checkstyle/library": "1.0.2",
@@ -48,5 +48,5 @@
   "actions/maintenance/auto-rebase": "3.0.1",
   "actions/maintenance/timed-auto-merge": "2.0.2",
   "actions/maintenance/trigger-coderabbit-review": "1.1.0",
-  "actions/security/jactionlint": "1.0.0"
+  "actions/security/jactionlint": "1.1.0"
 }
