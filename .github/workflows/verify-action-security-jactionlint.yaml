@@ -18,9 +18,12 @@ concurrency:
 
 permissions: {}
 
-# Every case sets upload: false. The fixtures plant findings, and this repository's code scanning is
-# for its own code. A case that must fail sets continue-on-error, and the step after it asserts the
-# outcome. harden-runner enforces the egress allowlist on the Linux runners only.
+# Every case sets upload: false: the fixtures plant findings, and this repository's code scanning is
+# for its own code. Every case that runs jactionlint passes a config-file, so the
+# .github/jactionlint.yaml of the repository the workflow runs in cannot change a result. A case that
+# must fail sets continue-on-error, and the step after it asserts the outcome. harden-runner enforces
+# the egress allowlist on the Linux runners only.
+
 jobs:
   install:
     name: 'Install and check a clean file (${{ matrix.os }})'
@@ -51,6 +54,7 @@ jobs:
         id: clean
         uses: ./actions/security/jactionlint # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
+          config-file: actions/security/jactionlint/test/empty.yaml
           files: actions/security/jactionlint/test/clean.yml
           upload: 'false'
 
@@ -106,6 +110,7 @@ jobs:
         continue-on-error: true
         uses: ./actions/security/jactionlint # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
+          config-file: actions/security/jactionlint/test/empty.yaml
           files: actions/security/jactionlint/test/finding.yml
           upload: 'false'
 
@@ -113,6 +118,7 @@ jobs:
         id: report
         uses: ./actions/security/jactionlint # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
+          config-file: actions/security/jactionlint/test/empty.yaml
           files: |
             # Comments and blank lines are skipped.
 
@@ -163,6 +169,7 @@ jobs:
         id: pedantic
         uses: ./actions/security/jactionlint # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
+          config-file: actions/security/jactionlint/test/empty.yaml
           files: actions/security/jactionlint/test/pedantic.yml
           fail-on-findings: 'false'
           upload: 'false'
@@ -171,6 +178,7 @@ jobs:
         id: profile-default
         uses: ./actions/security/jactionlint # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
+          config-file: actions/security/jactionlint/test/empty.yaml
           files: actions/security/jactionlint/test/pedantic.yml
           profile: default
           upload: 'false'
