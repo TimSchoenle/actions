@@ -1050,8 +1050,10 @@ jobs:
 
   # pull-contracts against a real, signed image: the fixture chart from .github/testdata/terrace-helm,
   # seeded with a contract that is behind the one its image carries, so the pull has to rewrite it and
-  # the rewrite has to reach the pull request. The image is "updated" to the digest it already pins,
-  # which keeps the expected contract the vendored one and leaves values.yaml as it was.
+  # the rewrite has to reach the pull request. The seeded values.yaml pins FIXTURE_IMAGE, the image the
+  # vendored contract was pulled from, whatever digest Renovate has since moved the fixture to; the
+  # image is then "updated" to that same digest, which keeps the expected contract the vendored one
+  # and leaves values.yaml as it was.
   test-pull-contracts:
     environment:
       name: ci-e2e
@@ -1088,14 +1090,26 @@ jobs:
           branch_name: test/test-pull-contracts/base/${{ env.TEST_ID }}
           reset_branch: 'true'
 
-      # The contract is made stale by dropping its producer block: still a valid file, but not the bytes
-      # the image publishes, so only a pull that ran restores it.
+      # The image tag is rewritten to FIXTURE_IMAGE in place, one line, so the rest of values.yaml keeps
+      # its bytes. The contract is made stale by dropping its producer block: still a valid file, but not
+      # the bytes the image publishes, so only a pull that ran restores it.
       - name: Create Test Chart Files
         run: |
           set -euo pipefail
           mkdir -p charts
           cp "${FIXTURE}/terrace.yaml" terrace.yaml
           cp -r "${FIXTURE}/${CHART}" "${CHART}"
+
+          values="${CHART}/values.yaml"
+          pinned="$(jq -er '."image.tag" | "\(.tag)@\(.digest)"' <<< "$FIXTURE_IMAGE")"
+          image_tag_line='^  tag: [^@[:space:]]+@sha256:[0-9a-f]{64}$'
+          if [[ "$(grep -cE "$image_tag_line" "$values")" != "1" ]]; then
+            echo "::error::${values} does not have exactly one digest-pinned image tag line to seed"
+            exit 1
+          fi
+          sed -E -i "s|${image_tag_line}|  tag: ${pinned}|" "$values"
+          grep -qxF "  tag: ${pinned}" "$values" || { echo "::error::${values} was not seeded with ${pinned}"; exit 1; }
+
           contract="${CHART}/contracts/viewer.json"
           jq 'del(.contract.producer)' "$contract" > "${contract}.tmp"
           mv "${contract}.tmp" "$contract"

@@ -70,7 +70,9 @@ describe('image-check', () => {
   async function jobEnvironment(scene: Scene): Promise<Record<string, string>> {
     stubs = await StubCommands.create({
       docker: [
-        { when: ['inspect', IMAGE], stdout: `${scene.sizeBytes ?? 87 * MIB}\n` },
+        // The containerd image store's answers: .Size is the stored content, history the unpacked layers.
+        { when: ['inspect', IMAGE], stdout: '3988\n' },
+        { when: ['history', IMAGE], stdout: `0\n${scene.sizeBytes ?? 87 * MIB}\n` },
         { when: ['inspect'], exitCode: 1, stderr: 'Error response from daemon: No such image: missing:test\n' },
       ],
     });
@@ -150,10 +152,13 @@ describe('image-check', () => {
       expect(enforce.warnings).toEqual([]);
     });
 
-    it('asks docker for the size alone, with the reference after the end of options', async () => {
+    it('asks docker for the sizes alone, with the reference after the end of options', async () => {
       await check({});
 
-      expect(await stubs.argumentsOf('docker')).toEqual([['image', 'inspect', '--format', '{{.Size}}', '--', IMAGE]]);
+      expect(await stubs.argumentsOf('docker')).toEqual([
+        ['image', 'inspect', '--format', '{{.Size}}', '--', IMAGE],
+        ['history', '--human=false', '--format', '{{.Size}}', '--', IMAGE],
+      ]);
     });
 
     it('keeps the default SARIF category and identifier without a platform', async () => {

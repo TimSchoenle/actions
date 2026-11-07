@@ -43,10 +43,21 @@ jobs:
         with:
           persist-credentials: false
 
+      # Gradle runs on the JDK it finds, and the runner image's default moves with the image
+      # (ubuntu-26.04 ships 25, which Gradle 8.14.3 cannot run on). JDK 21 runs every Gradle version
+      # in the matrix, whatever Java version the leg then tests; the action sets up its own.
+      - name: Set Up JDK For The Gradle Wrapper
+        id: wrapper-jdk
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
       - name: Generate Gradle wrapper
         shell: bash
         env:
           GRADLE_VERSION: ${{ matrix.gradle-setup-version }}
+          JAVA_HOME: ${{ steps.wrapper-jdk.outputs.path }}
         run: |
           # Install Gradle temporarily to generate the wrapper files
           sdk_install_dir="${RUNNER_TEMP}/gradle-install"

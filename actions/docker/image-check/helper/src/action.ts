@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import * as core from '@actions/core';
 import { quoteForLog, resolveWithinWorkspace, runAction, workspaceRoot } from 'actions-util';
 
-import { createCommandRunner, inspectImageSize } from './docker.js';
+import { createCommandRunner, measureImageSize } from './docker.js';
 import { GateError, InvalidInputError, PlanError } from './errors.js';
 import { evaluateGates, formatMib } from './gates.js';
 import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';
@@ -160,7 +160,7 @@ async function measure(dependencies: ActionDependencies): Promise<void> {
 
   await assertIgnoreFileExists(options, context.workspace);
 
-  const sizeBytes = await inspectImageSize(dependencies.runCommand, options.image);
+  const sizeBytes = await measureImageSize(dependencies.runCommand, options.image);
   const pullRequest = await readPullRequest(context);
   const publish = publication(options, pullRequest, context);
   const location = await createPlanLocation(context.runnerTemp, options.slug);
