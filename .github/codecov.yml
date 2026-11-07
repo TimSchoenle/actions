@@ -89,6 +89,9 @@ component_management:
     - component_id: common-delete-branch
       name: common/delete-branch
       paths: ['actions/common/delete-branch/**']
+    - component_id: common-find-patch
+      name: common/find-patch
+      paths: ['actions/common/find-patch/**']
     - component_id: common-get-app-git-identity
       name: common/get-app-git-identity
       paths: ['actions/common/get-app-git-identity/**']
