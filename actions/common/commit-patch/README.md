@@ -1,8 +1,8 @@
 # Commit Patch
 
-Downloads the patch [`common/create-patch`](../create-patch) uploaded in an earlier job of the same run, refuses it
-unless every path it changes passes the policy below, and commits it to the branch as a verified commit through the
-GraphQL `createCommitOnBranch` mutation that `common/commit-changes` uses.
+Downloads the patch [`common/create-patch`](../create-patch) uploaded in an earlier job of the same run, or in the
+run `run_id` names, refuses it unless every path it changes passes the policy below, and commits it to the branch as a
+verified commit through the GraphQL `createCommitOnBranch` mutation that `common/commit-changes` uses.
 
 This is the half that holds the write token, and the job it runs in must not execute repository code: no
 `bun install`, no repository scripts, no `./` action reference. The patch is applied to a throwaway index with `git`
@@ -43,6 +43,73 @@ jobs:
 The checkout is there for git's objects: the patch is applied on top of `expected_head_sha` and needs that commit's
 tree. Nothing in it is executed, and `persist-credentials: false` keeps the job token out of `.git/config`.
 
+### Committing from a `workflow_run`
+
+A `pull_request` run executes the pull request's own copy of the workflow, so a job there that reads the App's
+private key hands it to anyone who can push a branch: they edit the workflow and print it. Splitting the work across
+two workflows keeps the key out of every run a pull request can change. The `pull_request` workflow runs the formatter
+and `create-patch` with no secrets. A second workflow, triggered by `workflow_run` when the first completes, always
+runs the copy on the default branch, and commits the patch with `run_id`:
+
+```yaml
+name: Auto Format Commit
+
+on:
+  workflow_run:
+    workflows: ['Auto Format'] # the name: of the pull_request workflow
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  commit:
+    # Only a successful pull_request run from a branch of this repository, never the default branch.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.head_branch != github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    environment: ci
+    permissions:
+      actions: read # to download the artifact from the pull_request run
+      contents: read # to fetch code
+    steps:
+      - uses: actions/checkout@<sha>
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - id: token
+        uses: actions/create-github-app-token@<sha>
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          permission-contents: write
+      - uses: TimSchoenle/actions/actions/common/commit-patch@<sha> # tag=actions-common-commit-patch-v1.2.0
+        with:
+          token: ${{ steps.token.outputs.token }}
+          run_id: ${{ github.event.workflow_run.id }}
+          artifact_name: format-patch
+          allowed_paths: 'src/** README.md'
+          commit_message: 'style: auto-format code'
+          branch: ${{ github.event.workflow_run.head_branch }}
+          expected_head_sha: ${{ github.event.workflow_run.head_sha }}
+```
+
+`branch` and `expected_head_sha` have to be set: their defaults read the `pull_request` and `push` payloads, which a
+`workflow_run` event does not carry. The `pull_request` workflow has to check out `github.event.pull_request.head.sha` before
+running `create-patch`, not the merge commit it checks out by default, or every patch is skipped as `branch_moved`.
+`workflows:` matches by name, so a pull request that adds another workflow with that name triggers the job too, and a
+`success` conclusion says nothing about what was uploaded. The artifact is still untrusted, since the pull request decided what the first
+workflow uploaded; the policy below and `expected_head_sha` are what bound it, so keep `allowed_paths` as narrow as the
+generated files. A pull request from a fork has a `head_repository` of its own and is skipped by the `if:`. A pull request can name any branch of this repository as
+its head, including a protected one other than the default branch, and the `pull_request` run then executes the base
+branch's copy of the workflow, which the author may have written. The App must therefore not be able to bypass
+protection on any branch, or the `if:` has to exclude every protected branch, for example
+`!startsWith(github.event.workflow_run.head_branch, 'release/')`. Keep the
+App's secrets in an environment whose deployment branches allow only the default branch, so a `pull_request` job that
+names the environment gets nothing either.
+
 ## Inputs
 
 | Input                    | Required | Default                                                   | Description                                                          |
@@ -57,6 +124,7 @@ tree. Nothing in it is executed, and `persist-credentials: false` keeps the job 
 | `branch`                 | no       | `${{ github.head_ref \|\| github.ref_name }}`             | Branch to commit to.                                                 |
 | `expected_head_sha`      | no       | `${{ github.event.pull_request.head.sha \|\| github.sha }}` | Commit the branch and the checkout must be at.                     |
 | `max_patch_bytes`        | no       | `10485760`                                                | Largest patch accepted. Keep it equal on both actions.               |
+| `run_id`                 | no       |                                                           | Run of this repository to download from. Empty means this run.       |
 
 `allowed_paths` is a small glob dialect on purpose: `*` and `?` stay within one path segment and match a leading `.`;
 `**` is a whole segment and spans any number of them. Character classes, braces, `!` and `\` fail the step rather than
@@ -82,8 +150,10 @@ files and no other workflow.
 | `contents: read` (job)      | always, for the checkout                 |
 | `contents: write` (token)   | always                                   |
 | `workflows: write` (token)  | `allow_workflow_changes` is `true`       |
+| `actions: read` (job)       | `run_id` is set                          |
 
-Downloading an artifact from the same run needs no `actions: read`.
+Downloading an artifact from the same run needs no `actions: read`. With `run_id` the download goes through the REST
+API with the job token, which needs it.
 
 ## Policy
 

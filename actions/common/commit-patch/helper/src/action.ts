@@ -29,8 +29,21 @@ function readRunnerContext(): RunnerContext {
   };
 }
 
+/**
+ * Checks `run_id`: empty, or a positive decimal run ID. The composite picks its download step from
+ * whether the raw input is empty, so the value is read untrimmed and anything else fails here, before
+ * either step runs.
+ */
+function validateRunId(value: string): void {
+  if (value !== '' && !/^[1-9][0-9]{0,19}$/.test(value)) {
+    throw new Error(`run_id must be empty or a workflow run ID; got ${JSON.stringify(value)}.`);
+  }
+}
+
 /** The inputs both modes validate, so a misconfiguration fails before anything is downloaded. */
 function readRequest(directory: string): CommitPatchRequest {
+  validateRunId(getInput(ActionInput.run_id, { trimWhitespace: false }));
+
   const expectedHeadSha = getInput(ActionInput.expected_head_sha, { required: true });
   if (!isCommitSha(expectedHeadSha)) {
     throw new Error(`expected_head_sha must be a full lowercase commit SHA; got ${JSON.stringify(expectedHeadSha)}.`);

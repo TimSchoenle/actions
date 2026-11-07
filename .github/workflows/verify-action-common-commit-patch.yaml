@@ -159,6 +159,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
+      actions: read # to download the patch by run ID through the REST API
       contents: read # to fetch code
     steps:
       - name: Harden Runner
@@ -167,6 +168,7 @@ jobs:
           egress-policy: block
           allowed-endpoints: >
             github.com:443
+            api.github.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
 
@@ -222,6 +224,37 @@ jobs:
           branch: round-trip-never-written
           expected_head_sha: ${{ steps.empty.outputs.base_sha }}
 
+      # The same empty patch again, through the run_id download step. This run's own ID stands in for the
+      # pull_request run a workflow_run job names; the step lists the run's artifacts over the REST API
+      # either way.
+      - name: Commit Empty Patch By Run ID
+        id: commit-empty-by-run
+        uses: ./actions/common/commit-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          token: placeholder-never-sent
+          run_id: ${{ github.run_id }}
+          artifact_name: ${{ steps.empty.outputs.artifact_name }}
+          allowed_paths: README.md
+          commit_message: 'test: never committed'
+          branch: round-trip-never-written
+          expected_head_sha: ${{ steps.empty.outputs.base_sha }}
+
+      # The same artifact name under a run that does not hold it. Were run_id ignored, the download would
+      # fall back to this run, find the artifact and succeed; failing here shows the run ID is what selects
+      # the run.
+      - name: Commit Empty Patch From Another Run
+        id: commit-other-run
+        continue-on-error: true
+        uses: ./actions/common/commit-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          token: placeholder-never-sent
+          run_id: '1'
+          artifact_name: ${{ steps.empty.outputs.artifact_name }}
+          allowed_paths: README.md
+          commit_message: 'test: never committed'
+          branch: round-trip-never-written
+          expected_head_sha: ${{ steps.empty.outputs.base_sha }}
+
       - name: Commit Refused Patch
         id: commit-refused
         continue-on-error: true
@@ -238,15 +271,19 @@ jobs:
         env:
           EMPTY_OUTCOME: ${{ steps.commit-empty.outputs.outcome }}
           EMPTY_COMMITTED: ${{ steps.commit-empty.outputs.changes_committed }}
+          BY_RUN_OUTCOME: ${{ steps.commit-empty-by-run.outputs.outcome }}
+          OTHER_RUN_OUTCOME: ${{ steps.commit-other-run.outcome }}
           REFUSED_OUTCOME: ${{ steps.commit-refused.outcome }}
         run: |
           set -euo pipefail
 
           [ "$EMPTY_OUTCOME" = "no_changes" ] || { echo "::error::outcome '$EMPTY_OUTCOME' for an empty patch"; exit 1; }
           [ "$EMPTY_COMMITTED" = "false" ] || { echo "::error::changes_committed '$EMPTY_COMMITTED' for an empty patch"; exit 1; }
+          [ "$BY_RUN_OUTCOME" = "no_changes" ] || { echo "::error::outcome '$BY_RUN_OUTCOME' for the empty patch downloaded by run ID"; exit 1; }
+          [ "$OTHER_RUN_OUTCOME" = "failure" ] || { echo "::error::a download from a run without the artifact did not fail ($OTHER_RUN_OUTCOME), so run_id did not select the run"; exit 1; }
           [ "$REFUSED_OUTCOME" = "failure" ] || { echo "::error::a patch adding round-trip.txt outside allowed_paths was not refused ($REFUSED_OUTCOME)"; exit 1; }
 
-          echo "The empty patch ended as no_changes and the out-of-policy one failed, both before any API call"
+          echo "The empty patch ended as no_changes from both download steps, run_id selected the run, and the out-of-policy patch failed, all before any commit API call"
 
   # <<< generated: summary (run 'bun run generate-ci-required' to update)
   summary:
