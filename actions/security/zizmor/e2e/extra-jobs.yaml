@@ -17,6 +17,7 @@
 verify-composite:
   name: Test Composite Against The Real Image
   runs-on: ubuntu-latest
+  timeout-minutes: 15
   permissions:
     contents: read # to fetch code, and for zizmor's online audits
   steps:

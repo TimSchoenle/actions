@@ -31,6 +31,7 @@ jobs:
   check-clean:
     name: 'Test: a current tree passes every gate'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read # to fetch code, and to list terrace-contract releases
     steps:
@@ -67,6 +68,7 @@ jobs:
   check-drift:
     name: 'Test: a stale value schema and an unknown chart fail the step'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read # to fetch code, and to list terrace-contract releases
     steps:
@@ -133,6 +135,7 @@ jobs:
       - check-clean
       - check-drift
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions: {}
     steps:
       - name: Fail if any verify job did not succeed

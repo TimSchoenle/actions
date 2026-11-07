@@ -132,10 +132,12 @@ The advisory stays private until a fix is released.
 
 ## Security Measures
 
-CodeQL analyses every push to `main`, every pull request, and runs again every Monday. `zizmor` lints
-the workflow files under its pedantic persona and `actionlint` checks their syntax, both on the same
-triggers. Renovate opens the dependency updates and auto-merges the non-major ones once they have
-aged.
+CodeQL analyses every push to `main`, every pull request, and runs again every Monday. `jactionlint`
+checks the workflow files and composite actions on the same triggers, with every check of `actionlint`
+and every offline `zizmor` audit at its pedantic persona, and uploads its findings to code scanning.
+The audits that ask GitHub about the actions in use, such as archived, vulnerable or impostor
+references, run every Monday and on demand instead. Renovate opens the dependency updates and
+auto-merges the non-major ones once they have aged.
 
 `main` is protected: a change reaches it through a pull request with an approval, signed commits, and
 the required checks green.

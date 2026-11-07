@@ -31,6 +31,7 @@ jobs:
       deployment: false
     name: Verify Setup-e2e
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read # to fetch code
     steps:
@@ -118,6 +119,7 @@ jobs:
     needs:
       - verify
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions: {}
     steps:
       - name: Fail if any verify job did not succeed

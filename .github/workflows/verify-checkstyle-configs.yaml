@@ -29,6 +29,7 @@ jobs:
   verify:
     name: Verify Checkstyle Configs
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read # to fetch code
     steps:

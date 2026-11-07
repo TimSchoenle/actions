@@ -31,6 +31,7 @@ jobs:
   sync-offline:
     name: 'Test: a stale value schema is rewritten from the vendored contract'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read # to fetch code, and to list terrace-contract releases
     steps:
@@ -105,6 +106,7 @@ jobs:
   sync-pull:
     name: 'Test: pulling a current contract from the registry changes nothing'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read # to fetch code, and to list terrace-contract releases
     steps:
@@ -140,6 +142,7 @@ jobs:
       - sync-offline
       - sync-pull
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions: {}
     steps:
       - name: Fail if any verify job did not succeed

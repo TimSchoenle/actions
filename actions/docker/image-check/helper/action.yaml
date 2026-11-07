@@ -97,5 +97,5 @@ outputs:
     description: 'Markdown body of the per-image comment.'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'

@@ -26,6 +26,8 @@ jobs:
   warm-build:
     name: Warm JitPack Build
     runs-on: ubuntu-latest
+    # Two requests of up to 15 minutes each (curl --max-time 900), plus setup.
+    timeout-minutes: 35
     permissions: {}
     steps:
       - name: Harden Runner

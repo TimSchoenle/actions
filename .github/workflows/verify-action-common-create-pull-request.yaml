@@ -35,6 +35,7 @@ jobs:
       deployment: false
     name: Test PR Creation with Changes
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -176,6 +177,7 @@ jobs:
       deployment: false
     name: Test PR Skip with Identical Branches
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -247,6 +249,7 @@ jobs:
       deployment: false
     name: Test Commit Skip with No Changes
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -320,6 +323,7 @@ jobs:
       deployment: false
     name: Test Branch Reset Behavior
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -478,6 +482,7 @@ jobs:
       - test-commit-skip
       - test-branch-reset
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions: {}
     steps:
       - name: Fail if any verify job did not succeed

@@ -20,6 +20,7 @@ jobs:
     if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     name: Format
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read # to fetch code
     steps:
@@ -55,6 +56,7 @@ jobs:
       name: ci
       deployment: false
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read # to fetch the commit the patch applies to
     steps:
@@ -80,7 +82,7 @@ jobs:
         id: generate_token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
+          client-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
           private-key: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
@@ -111,6 +113,7 @@ jobs:
     needs: [format, commit]
     if: ${{ always() }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions: {}
     steps:
       - name: Fail if auto-format did not succeed

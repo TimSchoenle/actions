@@ -13,6 +13,7 @@ verify-payload-fallback:
   name: Test Pull Request Payload Fallback
   if: ${{ github.event_name == 'pull_request' }}
   runs-on: ubuntu-latest
+  timeout-minutes: 15
   permissions:
     contents: read
   steps:

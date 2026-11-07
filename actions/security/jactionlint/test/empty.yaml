@@ -1,0 +1,3 @@
+# Fixture for the verify workflow: a configuration that changes nothing. The cases pass it so that
+# the configuration of the repository they run in, .github/jactionlint.yaml, cannot change the result.
+rules: {}

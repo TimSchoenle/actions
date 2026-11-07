@@ -139,6 +139,7 @@ function installJob(): string {
   return `  install:
     name: Install Dependencies
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read # to fetch code
     outputs:
@@ -282,7 +283,7 @@ function secondaryTokenStep(): string {
         id: secondary-token
         uses: ${PINNED.createAppToken}
         with:
-          app-id: \${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
+          client-id: \${{ secrets.ACTIONS_TEST_BOT2_APP_ID }}
           private-key: \${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
           owner: ${TEST_OWNER}
           repositories: ${TEST_REPO_NAME}
@@ -436,6 +437,7 @@ ${installJob()}
       deployment: false
     name: End-to-end
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read # to fetch code
     steps:
@@ -476,7 +478,7 @@ ${cachePathsInput()}
         id: token
         uses: ${PINNED.createAppToken}
         with:
-          app-id: \${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          client-id: \${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: \${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
           owner: ${TEST_OWNER}
           repositories: ${TEST_REPO_NAME}
@@ -503,6 +505,7 @@ ${resolvedExtraJobs === '' ? '' : `\n${indentJobs(resolvedExtraJobs).trimEnd()}\
     needs:
 ${needs}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions: {}
     steps:
       - name: Fail if any verify job did not succeed

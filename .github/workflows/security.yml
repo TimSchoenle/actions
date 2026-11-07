@@ -5,17 +5,31 @@ on:
     branches: ['main']
   pull_request:
     branches: ['**']
+  schedule:
+    # Weekly, for the online checks. Off the hour, where GitHub's scheduling backlog is deepest.
+    - cron: '23 4 * * 1'
+  workflow_dispatch:
 
+# The event is part of the group, so a push to main does not cancel the scheduled online run.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions: {}
 
 jobs:
-  zizmor:
-    name: Zizmor
+  # jactionlint replaces both zizmor and actionlint: it keeps every check of actionlint and has a rule
+  # for every zizmor audit. The shared action installs a checksum-verified release, annotates the
+  # findings, writes a summary, uploads the SARIF to code scanning under the category jactionlint and
+  # fails on findings. It runs the pedantic profile, the counterpart of the zizmor pedantic persona;
+  # .github/jactionlint.yaml turns off the rules this repository does not want and lists the accepted
+  # findings. It stays offline, so the result depends on the change alone. The job keeps the name
+  # "Action Lint" because the branch ruleset requires that context (see scripts/lib/required-checks.ts).
+  action-lint:
+    name: Action Lint
+    if: ${{ github.event_name != 'schedule' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read # to fetch code
       security-events: write # to upload SARIF results
@@ -27,61 +41,52 @@ jobs:
           allowed-endpoints: >
             github.com:443
             api.github.com:443
-            codeload.github.com:443
-            ghcr.io:443
-            pkg-containers.githubusercontent.com:443
             objects.githubusercontent.com:443
             release-assets.githubusercontent.com:443
-            *.actions.githubusercontent.com:443
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
-      - name: Run Zizmor
-        uses: TimSchoenle/actions/actions/security/zizmor@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-security-zizmor-v1.1.3
+      - name: Run jactionlint
+        uses: TimSchoenle/actions/actions/security/jactionlint@e2799424abd778c41e7f6d1547fd402386ef398e # tag=actions-security-jactionlint-v1.1.0
 
-  action-lint:
-    name: Action Lint
+  # The checks that ask GitHub, Docker Hub and ghcr.io about the actions and images in use: impostor
+  # commits, vulnerable action versions, moved tags, archived or hijackable repositories. Their result
+  # depends on the world rather than on a change, so they run on a schedule and on demand instead of
+  # gating pull requests. strict turns a lookup GitHub did not answer into a failure, so a green run
+  # proves the checks ran. The SARIF is not uploaded: the offline job owns the jactionlint category in
+  # code scanning, and an online upload would be replaced by the next offline one. A failed run is the
+  # signal.
+  action-lint-online:
+    name: Action Lint (online)
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # to fetch code
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            ghcr.io:443
+            auth.docker.io:443
+            registry-1.docker.io:443
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
-      # A pinned release, checked against a pinned SHA-256 before it is unpacked, instead of piping the
-      # install script from actionlint's main branch into bash: that ran whatever the branch held at
-      # the time, with no version and no integrity check. The version and checksum are updated together
-      # by the github-release-attachments customManager in renovate.json, which reads both lines below.
-      - name: Download actionlint
-        id: get_actionlint
-        env:
-          # renovate: datasource=github-release-attachments depName=rhysd/actionlint
-          ACTIONLINT_VERSION: 'v1.7.12'
-          ACTIONLINT_SHA256: '8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8'
-        run: |
-          set -euo pipefail
-          archive="actionlint_${ACTIONLINT_VERSION#v}_linux_amd64.tar.gz"
-          install_dir="${RUNNER_TEMP}/actionlint"
-          mkdir -p "$install_dir"
-          curl -fsSL --retry 3 -o "${install_dir}/${archive}" \
-            "https://github.com/rhysd/actionlint/releases/download/${ACTIONLINT_VERSION}/${archive}"
-          echo "${ACTIONLINT_SHA256}  ${install_dir}/${archive}" | sha256sum --check --strict -
-          tar -xzf "${install_dir}/${archive}" -C "$install_dir" actionlint
-          echo "executable=${install_dir}/actionlint" >> "$GITHUB_OUTPUT"
-        shell: bash
-
-      # Given no paths, actionlint finds the repository root and checks every workflow file under
-      # .github/workflows.
-      - name: Check workflow files
-        env:
-          EXECUTABLE: ${{ steps.get_actionlint.outputs.executable }}
-        run: '"$EXECUTABLE" -color -verbose'
-        shell: bash
+      - name: Run jactionlint (online)
+        uses: TimSchoenle/actions/actions/security/jactionlint@e2799424abd778c41e7f6d1547fd402386ef398e # tag=actions-security-jactionlint-v1.1.0
+        with:
+          online: 'strict'
+          upload: 'false'

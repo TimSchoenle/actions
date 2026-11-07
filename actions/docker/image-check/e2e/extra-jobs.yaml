@@ -21,6 +21,7 @@
 verify-composite:
   name: Test Composite Against A Built Image
   runs-on: ubuntu-latest
+  timeout-minutes: 15
   permissions:
     contents: read # to fetch code
     security-events: write # to upload the SARIF
@@ -138,6 +139,7 @@ verify-composite:
 verify-summary-legs:
   name: Test Summary Leg (${{ matrix.platform }})
   runs-on: ubuntu-latest
+  timeout-minutes: 15
   permissions:
     contents: read # to fetch code
   strategy:
@@ -190,6 +192,7 @@ verify-summary:
   name: Test Summary Comment
   needs: verify-summary-legs
   runs-on: ubuntu-latest
+  timeout-minutes: 15
   permissions:
     contents: read # to fetch code
     pull-requests: write # to upsert the summary comment

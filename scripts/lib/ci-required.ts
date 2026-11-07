@@ -167,6 +167,7 @@ export function renderSummaryBlock(workflowName: string, gatedIds: readonly stri
     '    needs:',
     needsLines,
     '    runs-on: ubuntu-latest',
+    '    timeout-minutes: 5',
     '    permissions: {}',
     '    steps:',
     '      - name: Fail if any verify job did not succeed',
