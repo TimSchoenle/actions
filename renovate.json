@@ -136,6 +136,11 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/zizmorcore/zizmor"],
       "minimumReleaseAge": null
+    },
+    {
+      "description": "The terrace/helm-* fixture vendors the configuration contract of the exact image its values.yaml pins, and the sync-pull job asserts that pulling from that image changes nothing. The helm-values manager would bump the pin alone, leaving the vendored contract behind and the job red, so the fixture is never updated by Renovate. Move the pin and contracts/ together by hand, as the fixture's README describes. A contract test in scripts/__tests__ fails a pin that no longer matches its vendored contract.",
+      "matchFileNames": [".github/testdata/terrace-helm/**"],
+      "enabled": false
     }
   ]
 }
