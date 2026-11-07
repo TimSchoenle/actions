@@ -1,0 +1,51 @@
+name: 'Common Find Patch Helper'
+description: 'Internal to actions/common/find-patch, which runs this bundle with node once before and once after downloading the artifact. Not a public action: its inputs and outputs change without notice.'
+
+inputs:
+  mode:
+    description: "lookup validates the inputs and lists the run's artifacts; inspect validates the downloaded artifact and reports what it holds."
+    required: true
+  artifact_name:
+    description: 'Name of the artifact create-patch uploaded.'
+    required: true
+  run_id:
+    description: 'ID of the workflow run to look in; empty for this run. Read in lookup mode.'
+    required: false
+    default: ''
+  repository:
+    description: 'owner/repo the run belongs to.'
+    required: true
+  token:
+    description: "Token that may read the run's artifacts, in lookup mode."
+    required: false
+    default: ''
+  directory:
+    description: 'Directory the artifact was downloaded to. Read in inspect mode.'
+    required: false
+    default: ''
+  expected_head_sha:
+    description: 'The commit the patch must have been made from; empty accepts any.'
+    required: false
+    default: ''
+  max_patch_bytes:
+    description: 'Largest patch accepted, in bytes.'
+    required: false
+    default: '10485760'
+
+outputs:
+  found:
+    description: 'true when the run holds an unexpired artifact of that name. Set in lookup mode.'
+  run_id:
+    description: 'The run looked in. Set in lookup mode.'
+  directory:
+    description: 'Lookup mode, when found: the empty directory to download the artifact to. Inspect mode: the directory that passed validation.'
+  has_changes:
+    description: 'true when the patch is non-empty and made from expected_head_sha.'
+  outcome:
+    description: 'missing in lookup mode; no_changes, branch_moved or changes in inspect mode.'
+  base_sha:
+    description: 'The commit the patch was made from. Set in inspect mode.'
+
+runs:
+  using: 'node24'
+  main: 'dist/index.js'

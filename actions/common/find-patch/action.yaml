@@ -1,0 +1,85 @@
+name: 'Common Find Patch'
+description: 'Reports whether a run uploaded a non-empty common/create-patch artifact, without any secret, so a workflow_run job can skip minting a write token when there is nothing to commit.'
+
+inputs:
+  artifact_name:
+    description: 'Name of the artifact create-patch uploaded.'
+    required: true
+  run_id:
+    description: 'ID of the workflow run to look in, such as github.event.workflow_run.id. Empty looks in this run.'
+    required: false
+    default: ''
+  expected_head_sha:
+    description: 'The commit the patch must have been made from, such as github.event.workflow_run.head_sha. A patch made from any other commit reports branch_moved and has_changes false, the outcome commit-patch would end with. Empty accepts any.'
+    required: false
+    default: ''
+  max_patch_bytes:
+    description: 'Largest patch accepted, in bytes. Keep it equal to max_patch_bytes on create-patch and commit-patch.'
+    required: false
+    default: '10485760'
+  token:
+    description: "Token that may read the run's artifacts. The default job token needs actions: read."
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  has_changes:
+    description: 'true when the run holds a non-empty patch made from expected_head_sha; false otherwise.'
+    value: ${{ steps.inspect.outputs.has_changes || steps.lookup.outputs.has_changes }}
+  outcome:
+    description: 'changes; branch_moved when the patch was made from another commit; no_changes when it is empty; missing when the run holds no unexpired artifact of that name.'
+    value: ${{ steps.inspect.outputs.outcome || steps.lookup.outputs.outcome }}
+  found:
+    description: 'true when the run holds an unexpired artifact of that name.'
+    value: ${{ steps.lookup.outputs.found }}
+  base_sha:
+    description: 'The commit the patch was made from, when the artifact was found.'
+    value: ${{ steps.inspect.outputs.base_sha }}
+  directory:
+    description: 'Directory holding the validated changes.patch and metadata.json, set once validation passed. For reading which paths the patch touches; never execute anything from it.'
+    value: ${{ steps.inspect.outputs.directory }}
+
+runs:
+  using: 'composite'
+  steps:
+    # Validates every input, then lists the run's artifacts by name over the REST API. An artifact
+    # that is missing or expired ends the action here with outcome missing: the job that makes it was
+    # skipped, or the run is older than the artifact's retention, and either way there is nothing to
+    # commit. Found, it creates a fresh directory under RUNNER_TEMP for the download.
+    - name: Look Up Patch
+      id: lookup
+      shell: bash
+      env:
+        INPUT_MODE: lookup
+        INPUT_ARTIFACT_NAME: ${{ inputs.artifact_name }}
+        INPUT_RUN_ID: ${{ inputs.run_id }}
+        INPUT_REPOSITORY: ${{ github.repository }}
+        INPUT_TOKEN: ${{ inputs.token }}
+        INPUT_EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+        INPUT_MAX_PATCH_BYTES: ${{ inputs.max_patch_bytes }}
+      run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"
+
+    # Always by run ID through the REST API, this run's own included, so one step serves both.
+    - name: Download Patch
+      if: steps.lookup.outputs.found == 'true'
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: ${{ inputs.artifact_name }}
+        path: ${{ steps.lookup.outputs.directory }}
+        github-token: ${{ inputs.token }}
+        repository: ${{ github.repository }}
+        run-id: ${{ steps.lookup.outputs.run_id }}
+
+    # Validates the artifact as commit-patch does, and reads nothing else: no file in it is executed.
+    - name: Inspect Patch
+      id: inspect
+      if: steps.lookup.outputs.found == 'true'
+      shell: bash
+      env:
+        INPUT_MODE: inspect
+        INPUT_ARTIFACT_NAME: ${{ inputs.artifact_name }}
+        INPUT_REPOSITORY: ${{ github.repository }}
+        INPUT_DIRECTORY: ${{ steps.lookup.outputs.directory }}
+        INPUT_EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+        INPUT_MAX_PATCH_BYTES: ${{ inputs.max_patch_bytes }}
+      run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"

@@ -35,6 +35,10 @@
       "types": "./dist/patch.d.ts",
       "import": "./dist/patch.js"
     },
+    "./patch-reader": {
+      "types": "./dist/patch-reader.d.ts",
+      "import": "./dist/patch-reader.js"
+    },
     "./read-after-write": {
       "types": "./dist/read-after-write.d.ts",
       "import": "./dist/read-after-write.js"

@@ -250,6 +250,11 @@
       "release-type": "simple",
       "component": "actions-security-jactionlint",
       "include-component-in-tag": true
+    },
+    "actions/common/find-patch": {
+      "release-type": "simple",
+      "component": "actions-common-find-patch",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

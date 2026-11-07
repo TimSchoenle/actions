@@ -48,5 +48,6 @@
   "actions/maintenance/auto-rebase": "3.0.1",
   "actions/maintenance/timed-auto-merge": "2.0.2",
   "actions/maintenance/trigger-coderabbit-review": "1.1.0",
-  "actions/security/jactionlint": "1.1.0"
+  "actions/security/jactionlint": "1.1.0",
+  "actions/common/find-patch": "1.0.0"
 }
