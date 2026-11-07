@@ -3,6 +3,43 @@ import path from 'node:path';
 import { BUNDLE_PATH, ENTRY_MODULE_PATH } from './lib/action-sources.js';
 import { ROOT_DIR, Sys } from './lib/utils.js';
 
+/** How one CommonJS module-path variable is bound to the bundle's own location at runtime. */
+interface ModulePathBinding {
+  /** The CommonJS free variable a dependency reads. */
+  readonly variable: '__dirname' | '__filename';
+  /** The free identifier the bundler substitutes for it. */
+  readonly identifier: string;
+  /** Matches a reference to `identifier` as a whole word. */
+  readonly reference: RegExp;
+  /** The ES module expression the identifier is bound to. */
+  readonly expression: string;
+}
+
+/**
+ * Runtime bindings for the CommonJS `__dirname` / `__filename` free variables.
+ *
+ * Bundled to an ES module, a CommonJS dependency that reads `__dirname` (as `@actions/tool-cache` does)
+ * gets the absolute path of its build-time source directory inlined as a string. That path differs per
+ * checkout, which breaks the byte-for-byte freshness check, and it is wrong at runtime, where the code
+ * runs from `dist/`. Defining each variable as a plain identifier and binding that identifier from
+ * `import.meta` resolves it to the bundle's own location instead. The variables cannot be defined as
+ * `import.meta.*` directly: Bun inlines a define value that is not an identifier as a string literal.
+ */
+const MODULE_PATH_BINDINGS: readonly ModulePathBinding[] = [
+  {
+    variable: '__dirname',
+    identifier: '__bundleDirname',
+    reference: /\b__bundleDirname\b/,
+    expression: 'import.meta.dirname',
+  },
+  {
+    variable: '__filename',
+    identifier: '__bundleFilename',
+    reference: /\b__bundleFilename\b/,
+    expression: 'import.meta.filename',
+  },
+];
+
 /**
  * The bundler flags every Node action is built with, defined in exactly one place.
  *
@@ -13,8 +50,29 @@ import { ROOT_DIR, Sys } from './lib/utils.js';
  *
  * `--target node` matches the `node24` runtime GitHub provides. `--minify` is deterministic within a
  * Bun version — which is what the version guard below pins — and shrinks the committed artifact.
+ * The `--define`s keep the bundle independent of where it was built; see {@link MODULE_PATH_BINDINGS}.
  */
-const BUILD_FLAGS = ['--target', 'node', '--minify'] as const;
+const BUILD_FLAGS: readonly string[] = [
+  '--target',
+  'node',
+  '--minify',
+  ...MODULE_PATH_BINDINGS.flatMap(({ variable, identifier }) => ['--define', `${variable}=${identifier}`]),
+];
+
+/**
+ * Prepends a declaration for each {@link MODULE_PATH_BINDINGS} identifier the bundle references.
+ *
+ * Only referenced bindings are declared, so a bundle whose dependencies never read `__dirname` or
+ * `__filename` (or whose reads were tree-shaken) keeps its exact bytes. Minified identifiers are
+ * short, so the `__bundle*` names cannot collide with a declaration of the bundle's own.
+ */
+export function bindModulePaths(bundle: string): string {
+  const declarations = MODULE_PATH_BINDINGS.filter(({ reference }) => reference.test(bundle)).map(
+    ({ identifier, expression }) => `${identifier}=${expression}`,
+  );
+
+  return declarations.length === 0 ? bundle : `const ${declarations.join(',')};\n${bundle}`;
+}
 
 /** File pinning the Bun version, relative to the repository root. Read by CI's Bun setup too. */
 const BUN_VERSION_FILE = '.bun-version';
@@ -57,6 +115,7 @@ export function warnOnBunVersionDrift(running: string, pinned: string | undefine
  * The entry point and outfile are the repository-wide constants every generated source and freshness
  * check already assumes, so an action cannot bundle from or to a non-standard path. Output is
  * inherited rather than captured so `bun run build:workspaces` still reports each action's build.
+ * The written bundle then gets its module-path bindings ({@link bindModulePaths}).
  */
 export async function buildAction(actionDir: string): Promise<void> {
   const command = ['bun', 'build', `./${ENTRY_MODULE_PATH}`, '--outfile', `./${BUNDLE_PATH}`, ...BUILD_FLAGS];
@@ -65,6 +124,13 @@ export async function buildAction(actionDir: string): Promise<void> {
   const exitCode = await proc.exited;
   if (exitCode !== 0) {
     throw new Error(`${actionDir}: 'bun build' failed with exit code ${exitCode}.`);
+  }
+
+  const bundlePath = path.join(actionDir, BUNDLE_PATH);
+  const bundle = await Sys.file(bundlePath).text();
+  const bound = bindModulePaths(bundle);
+  if (bound !== bundle) {
+    await Sys.write(bundlePath, bound);
   }
 }
 
