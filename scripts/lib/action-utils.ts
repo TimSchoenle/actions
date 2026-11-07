@@ -3,6 +3,7 @@ import path from 'node:path';
 import { input, search } from '@inquirer/prompts';
 import chalk from 'chalk';
 
+import { PINNED } from './e2e-workflow.js';
 import { ACTIONS_DIR, capitalize, createFromTemplate, ROOT_DIR, START_VERSION, Sys } from './utils.js';
 
 // Naming Conventions Helpers
@@ -174,16 +175,43 @@ function verifyWorkflowName(packageName: string, subAction: string): string {
   return `verify-action-${packageName}-${subAction}.yaml`;
 }
 
-export async function createVerifyWorkflow(packageName: string, subAction: string) {
-  const workflowName = verifyWorkflowName(packageName, subAction);
-  const workflowPath = path.join(ROOT_DIR, '.github', 'workflows', workflowName);
+/** Template the verify workflow is rendered from, relative to `scripts/templates`. */
+export const VERIFY_WORKFLOW_TEMPLATE = 'action/verify-workflow.yaml';
 
-  await createFromTemplate('action/verify-workflow.yaml', workflowPath, {
+/**
+ * The part of a `PINNED` entry after `@`: the digest and its ` # vX.Y.Z` comment.
+ *
+ * The template writes the action name itself and takes only this part as a placeholder, because a
+ * bare `{{placeholder}}` as a YAML value is a flow mapping and the formatter rewrites it. The
+ * parameter type rejects, at compile time, a `PINNED` entry without an `@`.
+ */
+function pinnedRef(pin: `${string}@${string}`): string {
+  return pin.slice(pin.indexOf('@') + 1);
+}
+
+/**
+ * Values substituted into the verify workflow template.
+ *
+ * The action refs come from `PINNED` rather than being written into the template: no Renovate
+ * manager reads `scripts/templates`, so a ref hard-coded there never moves, while `PINNED` is kept
+ * current by the custom managers in `renovate.json`.
+ */
+export function verifyWorkflowReplacements(packageName: string, subAction: string): Record<string, string> {
+  return {
     packageName,
     subAction,
     capitalizedPackageName: capitalize(packageName),
     capitalizedSubAction: capitalize(subAction),
-  });
+    hardenRunnerRef: pinnedRef(PINNED.hardenRunner),
+    checkoutRef: pinnedRef(PINNED.checkout),
+  };
+}
+
+export async function createVerifyWorkflow(packageName: string, subAction: string) {
+  const workflowName = verifyWorkflowName(packageName, subAction);
+  const workflowPath = path.join(ROOT_DIR, '.github', 'workflows', workflowName);
+
+  await createFromTemplate(VERIFY_WORKFLOW_TEMPLATE, workflowPath, verifyWorkflowReplacements(packageName, subAction));
   console.log(chalk.green(`Created verify workflow: .github/workflows/${workflowName}`));
 }
 

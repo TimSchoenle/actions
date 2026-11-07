@@ -28,6 +28,7 @@ vi.mock('@inquirer/prompts', () => ({
 
 import { search, input } from '@inquirer/prompts';
 import { createFromTemplate } from '../utils';
+import { PINNED } from '../e2e-workflow';
 
 describe('action-utils', () => {
   beforeEach(() => {
@@ -250,6 +251,18 @@ describe('action-utils', () => {
         'action/verify-workflow.yaml',
         expect.stringContaining('verify-action-pkg-sub.yaml'),
         expect.objectContaining({ packageName: 'pkg', subAction: 'sub' }),
+      );
+    });
+
+    it('should pass the pinned action refs from PINNED', async () => {
+      await actionUtils.createVerifyWorkflow('pkg', 'sub');
+      expect(createFromTemplate).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+        expect.objectContaining({
+          hardenRunnerRef: PINNED.hardenRunner.split('@')[1],
+          checkoutRef: PINNED.checkout.split('@')[1],
+        }),
       );
     });
   });
