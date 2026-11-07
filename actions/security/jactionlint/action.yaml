@@ -1,0 +1,251 @@
+name: 'Security Jactionlint'
+description: 'Installs a checksum-verified jactionlint release, checks the workflows, composite actions and Dependabot config, annotates the findings, uploads the SARIF to code scanning under the category jactionlint, and fails the job when a finding counts.'
+
+inputs:
+  files:
+    description: 'Files to check, one per line, relative to the working directory. Empty checks the repository: its workflows, its composite actions and its Dependabot config. Blank lines and lines starting with # are skipped; a line starting with - is refused.'
+    required: false
+    default: ''
+  config-file:
+    description: 'jactionlint configuration file, relative to the working directory. Empty lets jactionlint read .github/jactionlint.yaml when it exists.'
+    required: false
+    default: ''
+  profile:
+    description: 'Rule profile: correctness, default or pedantic. Empty takes the profile of the configuration file, or default.'
+    required: false
+    default: ''
+  online:
+    description: 'Run the checks that query the GitHub API: false, true, cache or strict. false keeps the run offline and never hands over the token.'
+    required: false
+    default: 'false'
+  token:
+    description: 'Token jactionlint uses for the online checks. Read only when online is not false.'
+    required: false
+    default: ${{ github.token }}
+  strict-exit:
+    description: 'Also fail on findings of level warn and info, not only on error.'
+    required: false
+    default: 'false'
+  fail-on-findings:
+    description: 'Fail the job when jactionlint exits with status 1. false reports the findings as annotations, in the summary and in code scanning without failing.'
+    required: false
+    default: 'true'
+  upload:
+    description: 'Upload the SARIF to code scanning under the category jactionlint. Needs security-events: write. Skipped on a pull request from a fork, whose token cannot upload.'
+    required: false
+    default: 'true'
+  working-directory:
+    description: 'Directory to run jactionlint in, relative to the workspace. jactionlint finds the repository from there.'
+    required: false
+    default: '.'
+
+outputs:
+  version:
+    description: 'The jactionlint release installed, as vMAJOR.MINOR.PATCH.'
+    value: ${{ steps.install.outputs.version }}
+  executable:
+    description: 'Absolute path of the installed jactionlint binary.'
+    value: ${{ steps.install.outputs.executable }}
+  exit-code:
+    description: 'Exit status of jactionlint: 0 for no finding that counts, 1 for at least one. Empty when the check did not complete.'
+    value: ${{ steps.run.outputs.exit-code }}
+  findings:
+    description: 'Number of results in the SARIF, at every level. Findings ignored by a comment, the configuration or a baseline are not in it.'
+    value: ${{ steps.run.outputs.findings }}
+  sarif-file:
+    description: 'Absolute path of the SARIF under RUNNER_TEMP. Empty when the check did not complete.'
+    value: ${{ steps.run.outputs.sarif-file }}
+  sarif-id:
+    description: 'ID of the uploaded analysis, when the SARIF was uploaded.'
+    value: ${{ steps.upload.outputs.sarif-id }}
+
+runs:
+  using: 'composite'
+  steps:
+    # jactionlint's own action downloads the release archive without checking it. Here the release is
+    # pinned by version and by the SHA-256 of its checksums file, which lists the SHA-256 of every
+    # archive: the checksums file is verified against the pin, and the archive against the checksums
+    # file. One pin covers every platform. Renovate's github-release-attachments manager bumps the
+    # version and the checksum together; keep the comment directly above the two lines.
+    - name: Install jactionlint
+      id: install
+      shell: bash
+      env:
+        # renovate: datasource=github-release-attachments depName=jdx/jactionlint
+        JACTIONLINT_VERSION: 'v2.5.0'
+        JACTIONLINT_SHA256: '5cbf573f7d3828a6e679c35520f1bd00c512ec7bde31a281e40808ba68c8225c'
+      run: |
+        set -euo pipefail
+
+        sha256() {
+          if command -v sha256sum > /dev/null; then
+            sha256sum "$1" | cut -d ' ' -f 1
+          else
+            shasum -a 256 "$1" | cut -d ' ' -f 1
+          fi
+        }
+
+        case "$RUNNER_OS" in
+          Linux) os=linux ;;
+          macOS) os=darwin ;;
+          *) echo "::error::this action supports Linux and macOS runners, not '${RUNNER_OS}'"; exit 1 ;;
+        esac
+        case "$RUNNER_ARCH" in
+          X64) arch=amd64 ;;
+          ARM64) arch=arm64 ;;
+          *) echo "::error::this action supports X64 and ARM64 runners, not '${RUNNER_ARCH}'"; exit 1 ;;
+        esac
+
+        version="${JACTIONLINT_VERSION#v}"
+        archive="jactionlint_${version}_${os}_${arch}.tar.gz"
+        sums="jactionlint_${version}_checksums.txt"
+        base="https://github.com/jdx/jactionlint/releases/download/${JACTIONLINT_VERSION}"
+        install_dir="${RUNNER_TEMP}/jactionlint-${version}"
+        download_dir="$(mktemp -d "${RUNNER_TEMP}/jactionlint-download.XXXXXX")"
+        trap 'rm -rf "$download_dir"' EXIT
+
+        curl -fsSL --retry 3 -o "${download_dir}/${sums}" "${base}/${sums}"
+        actual="$(sha256 "${download_dir}/${sums}")"
+        if [[ "$actual" != "$JACTIONLINT_SHA256" ]]; then
+          echo "::error::${sums} has SHA-256 ${actual}, expected ${JACTIONLINT_SHA256}"
+          exit 1
+        fi
+
+        # Exactly one line of the verified checksums file names the archive.
+        expected="$(awk -v name="$archive" '$2 == name { print $1 }' "${download_dir}/${sums}")"
+        if ! [[ "$expected" =~ ^[0-9a-f]{64}$ ]]; then
+          echo "::error::${sums} has no single SHA-256 for ${archive}"
+          exit 1
+        fi
+
+        curl -fsSL --retry 3 -o "${download_dir}/${archive}" "${base}/${archive}"
+        actual="$(sha256 "${download_dir}/${archive}")"
+        if [[ "$actual" != "$expected" ]]; then
+          echo "::error::${archive} has SHA-256 ${actual}, expected ${expected}"
+          exit 1
+        fi
+
+        mkdir -p "$install_dir"
+        tar -xzf "${download_dir}/${archive}" -C "$install_dir" jactionlint
+
+        installed="$("${install_dir}/jactionlint" --version)"
+        echo "Installed ${installed%%$'\n'*} from ${archive}"
+        {
+          echo "version=${JACTIONLINT_VERSION}"
+          echo "executable=${install_dir}/jactionlint"
+        } >> "$GITHUB_OUTPUT"
+
+    # Exit status 1 means findings. Anything higher means the check did not complete, and then no SARIF
+    # is uploaded, because an empty analysis would close every open alert. The findings are emitted as
+    # annotations and counted per rule and per file in the job summary.
+    - name: Run jactionlint
+      id: run
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        EXECUTABLE: ${{ steps.install.outputs.executable }}
+        INPUT_FILES: ${{ inputs.files }}
+        INPUT_CONFIG_FILE: ${{ inputs.config-file }}
+        INPUT_PROFILE: ${{ inputs.profile }}
+        INPUT_ONLINE: ${{ inputs.online }}
+        INPUT_TOKEN: ${{ inputs.token }}
+        INPUT_STRICT_EXIT: ${{ inputs.strict-exit }}
+        INPUT_UPLOAD: ${{ inputs.upload }}
+        INPUT_FAIL_ON_FINDINGS: ${{ inputs.fail-on-findings }}
+        EVENT_NAME: ${{ github.event_name }}
+        HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        REPOSITORY: ${{ github.repository }}
+      run: |
+        set -euo pipefail
+
+        fail() {
+          echo "::error::$1"
+          exit 1
+        }
+        is_bool() { [[ "$1" == true || "$1" == false ]]; }
+
+        args=(--no-color)
+        case "$INPUT_PROFILE" in
+          '') ;;
+          correctness | default | pedantic) args+=("--profile=${INPUT_PROFILE}") ;;
+          *) fail "profile must be correctness, default or pedantic, got '${INPUT_PROFILE}'" ;;
+        esac
+        case "$INPUT_ONLINE" in
+          false) args+=(--no-online) ;;
+          true) args+=(--online) ;;
+          cache | strict) args+=("--online=${INPUT_ONLINE}") ;;
+          *) fail "online must be false, true, cache or strict, got '${INPUT_ONLINE}'" ;;
+        esac
+        is_bool "$INPUT_STRICT_EXIT" || fail "strict-exit must be true or false, got '${INPUT_STRICT_EXIT}'"
+        is_bool "$INPUT_FAIL_ON_FINDINGS" || fail "fail-on-findings must be true or false, got '${INPUT_FAIL_ON_FINDINGS}'"
+        is_bool "$INPUT_UPLOAD" || fail "upload must be true or false, got '${INPUT_UPLOAD}'"
+        [[ "$INPUT_STRICT_EXIT" == true ]] && args+=(--strict-exit)
+        if [[ -n "$INPUT_CONFIG_FILE" ]]; then
+          [[ -f "$INPUT_CONFIG_FILE" ]] || fail "config-file '${INPUT_CONFIG_FILE}' is not a file"
+          args+=("--config-file=${INPUT_CONFIG_FILE}")
+        fi
+
+        files=()
+        while IFS= read -r line || [[ -n "$line" ]]; do
+          line="${line#"${line%%[![:space:]]*}"}"
+          line="${line%"${line##*[![:space:]]}"}"
+          [[ -z "$line" || "$line" == \#* ]] && continue
+          [[ "$line" == -* ]] && fail "files line '${line}' starts with -; write ./${line} for a file of that name"
+          [[ -f "$line" ]] || fail "files line '${line}' is not a file"
+          files+=("$line")
+        done <<< "$INPUT_FILES"
+
+        # The token reaches jactionlint only for the online checks.
+        if [[ "$INPUT_ONLINE" != false ]]; then
+          export GITHUB_TOKEN="$INPUT_TOKEN"
+        fi
+
+        status=0
+        "$EXECUTABLE" "${args[@]}" --format github -- ${files[@]+"${files[@]}"} || status=$?
+        if (( status > 1 )); then
+          fail "jactionlint did not complete (exit status ${status})"
+        fi
+
+        sarif="$(mktemp -d "${RUNNER_TEMP}/jactionlint-sarif.XXXXXX")/jactionlint.sarif"
+        "$EXECUTABLE" "${args[@]}" --format sarif -- ${files[@]+"${files[@]}"} > "$sarif" || (( $? == 1 ))
+        "$EXECUTABLE" "${args[@]}" --format summary -- ${files[@]+"${files[@]}"} >> "$GITHUB_STEP_SUMMARY" || (( $? == 1 ))
+
+        findings=''
+        if command -v jq > /dev/null; then
+          findings="$(jq '[.runs[].results[]] | length' "$sarif")"
+        else
+          echo "::warning::jq is not on PATH, so the findings output is empty"
+        fi
+
+        upload="$INPUT_UPLOAD"
+        if [[ "$upload" == true && "$EVENT_NAME" == pull_request* && "$HEAD_REPOSITORY" != "$REPOSITORY" ]]; then
+          echo "::notice::The SARIF is not uploaded: a pull request from a fork has no security-events: write."
+          upload=false
+        fi
+
+        {
+          echo "exit-code=${status}"
+          echo "findings=${findings}"
+          echo "sarif-file=${sarif}"
+          echo "upload=${upload}"
+          echo "fail=${INPUT_FAIL_ON_FINDINGS}"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Upload SARIF
+      id: upload
+      if: ${{ steps.run.outputs.upload == 'true' }}
+      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+      with:
+        sarif_file: ${{ steps.run.outputs.sarif-file }}
+        category: jactionlint
+
+    # After the upload, so findings reach code scanning whether or not they fail the job.
+    - name: Fail on findings
+      if: ${{ steps.run.outputs.exit-code != '0' && steps.run.outputs.fail == 'true' }}
+      shell: bash
+      env:
+        EXIT_CODE: ${{ steps.run.outputs.exit-code }}
+      run: |
+        set -euo pipefail
+        echo "::error::jactionlint reported findings (exit status ${EXIT_CODE}); see the annotations and the job summary."
+        exit 1

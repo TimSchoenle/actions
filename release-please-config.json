@@ -245,6 +245,11 @@
       "release-type": "simple",
       "component": "actions-maintenance-trigger-coderabbit-review",
       "include-component-in-tag": true
+    },
+    "actions/security/jactionlint": {
+      "release-type": "simple",
+      "component": "actions-security-jactionlint",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

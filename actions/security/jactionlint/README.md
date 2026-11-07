@@ -1,0 +1,111 @@
+# Security Jactionlint
+
+Runs [jactionlint](https://github.com/jdx/jactionlint) over a repository's workflows, composite actions and Dependabot
+config, annotates the findings on the pull request, writes a per-rule and per-file summary, uploads the SARIF to code
+scanning under the category `jactionlint`, and fails the job when a finding counts.
+
+jactionlint is a fork of actionlint that keeps every actionlint check and has a rule for every zizmor audit, so one job
+replaces both.
+
+`jdx/jactionlint`'s own action downloads the release archive and runs it without checking it. Pinning that action by
+commit does not pin the binary: a release asset can be replaced after it is published. This action pins the release by
+version and by the SHA-256 of its checksums file, verifies the checksums file against the pin and the archive against
+the checksums file, and refuses to run anything that does not match.
+
+## Usage
+
+```yaml
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions: {}
+
+jobs:
+  jactionlint:
+    name: Action Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@<ref>
+        with:
+          persist-credentials: false
+
+      - uses: <owner>/actions/actions/security/jactionlint@<ref>
+```
+
+Settings such as the profile, rule levels and accepted findings belong in `.github/jactionlint.yaml`, which jactionlint
+reads by itself. See [the configuration reference](https://jactionlint.jdx.dev/config).
+
+## Inputs
+
+| Input               | Default        | Description                                                                                                                  |
+| ------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `files`             |                | Files to check, one per line, relative to `working-directory`. Empty checks the repository. See [Files](#files).            |
+| `config-file`       |                | Configuration file, relative to `working-directory`. Empty lets jactionlint read `.github/jactionlint.yaml` when it exists. |
+| `profile`           |                | `correctness`, `default` or `pedantic`. Empty takes the profile of the configuration file, or `default`.                    |
+| `online`            | `false`        | Run the checks that query the GitHub API: `false`, `true`, `cache` or `strict`.                                              |
+| `token`             | `github.token` | Token for the online checks. Handed to jactionlint only when `online` is not `false`.                                        |
+| `strict-exit`       | `false`        | Also fail on findings of level `warn` and `info`, not only on `error`.                                                       |
+| `fail-on-findings`  | `true`         | `false` reports the findings as annotations, in the summary and in code scanning without failing the job.                    |
+| `upload`            | `true`         | Upload the SARIF to code scanning. Needs `security-events: write`. Skipped on a pull request from a fork.                    |
+| `working-directory` | `.`            | Directory to run jactionlint in, relative to the workspace.                                                                  |
+
+## Outputs
+
+| Output       | Description                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------------ |
+| `version`    | The jactionlint release installed, as `vMAJOR.MINOR.PATCH`.                                                  |
+| `executable` | Absolute path of the installed binary.                                                                       |
+| `exit-code`  | `0` for no finding that counts, `1` for at least one. Empty when the check did not complete.                 |
+| `findings`   | Number of results in the SARIF, at every level. A finding ignored by a comment, the configuration or a baseline is not one. |
+| `sarif-file` | Absolute path of the SARIF under `RUNNER_TEMP`. Empty when the check did not complete.                       |
+| `sarif-id`   | ID of the uploaded analysis, when the SARIF was uploaded.                                                    |
+
+## Permissions
+
+| Permission               | Needed when                                                         |
+| ------------------------ | ------------------------------------------------------------------- |
+| `contents: read`         | always                                                              |
+| `security-events: write` | `upload` is true                                                    |
+| `actions: read`          | `upload` is true and the repository is private, or `online` is on in a private repository |
+
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint                                   | For                         |
+| ------------------------------------------ | --------------------------- |
+| `github.com:443`                           | the release download        |
+| `objects.githubusercontent.com:443`        | the release download        |
+| `release-assets.githubusercontent.com:443` | the release download        |
+| `api.github.com:443`                       | the SARIF upload and the online checks |
+
+## Files
+
+Each line of `files` must name a file. jactionlint does not take a directory: leave `files` empty to check the whole
+repository, which covers the workflows under `.github/workflows`, every `action.yml` and `action.yaml` outside
+`node_modules`, `testdata` and similar directories, and `.github/dependabot.yml`. A line starting with `-` is refused,
+because jactionlint would read it as an option; write `./-name` for a file that really starts with a dash.
+
+## Behaviour
+
+- **The release is verified before it runs.** `action.yaml` pins `JACTIONLINT_VERSION` and `JACTIONLINT_SHA256`, the
+  SHA-256 of `jactionlint_<version>_checksums.txt`. The checksums file is checked against that pin, and the archive for
+  the runner's platform against the line of the checksums file that names it. One pin covers every platform.
+  Renovate's `github-release-attachments` manager in this repository bumps the version and the checksum together.
+- **Every input is validated before jactionlint runs.** A typo in `profile` or `online` fails in a second, without a
+  partial result.
+- **The upload runs only when jactionlint completed.** Exit status 2 or higher means the check did not run to the end,
+  for example on an invalid configuration file. Then no SARIF is uploaded, so nothing replaces the last good analysis
+  in code scanning, and the job fails.
+- **The job fails after the upload**, so findings reach code scanning whether or not they fail the job.
+- **The token stays out of offline runs.** It is exported to jactionlint as `GITHUB_TOKEN` only when `online` is on.
+- Linux and macOS runners, on X64 or ARM64. `jq` must be on `PATH` for the `findings` output; it is on every
+  GitHub-hosted runner.

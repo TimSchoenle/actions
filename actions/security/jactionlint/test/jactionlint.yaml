@@ -1,0 +1,3 @@
+# Fixture for the verify workflow: turns off the one rule finding.yml breaks, so it checks clean.
+rules:
+  missing-timeout: off

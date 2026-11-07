@@ -1,0 +1,16 @@
+# It is a loose file on purpose; a copy under .github/workflows would run as a real workflow.
+name: Finding
+
+on: push
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hello:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo hello
