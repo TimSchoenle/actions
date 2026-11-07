@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.3](https://github.com/TimSchoenle/actions/compare/actions-terrace-setup-v3.0.2...actions-terrace-setup-v3.0.3) (2026-11-07)
+
+
+### Bug Fixes
+
+* **scripts:** resolve bundled __dirname and __filename at runtime ([#1978](https://github.com/TimSchoenle/actions/issues/1978)) ([338c898](https://github.com/TimSchoenle/actions/commit/338c8988f33c1b2a065af602cc0a89cea66a04bd))
+
 ## [3.0.2](https://github.com/TimSchoenle/actions/compare/actions-terrace-setup-v3.0.1...actions-terrace-setup-v3.0.2) (2026-11-02)
 
 
