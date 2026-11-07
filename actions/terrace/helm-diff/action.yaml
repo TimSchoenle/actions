@@ -108,6 +108,8 @@ runs:
         head_sha="$(git rev-parse --short HEAD)"
         base_sha="$(git rev-parse --short "$SINCE")"
 
+        # The backticks in these printf formats are Markdown code spans, not command substitutions.
+        # shellcheck disable=SC2016
         if [[ "$changed" == true ]]; then
           summary="$(printf '### Configuration contract changes\n\nAgainst `%s`, at `%s`.\n\n<pre>\n%s\n</pre>\n' \
             "$base_sha" "$head_sha" "$escaped")"

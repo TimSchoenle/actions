@@ -73,7 +73,7 @@ runs:
       id: generate_token
       uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
       with:
-        app-id: ${{ inputs.app-id }}
+        client-id: ${{ inputs.app-id }}
         private-key: ${{ inputs.private-key }}
         owner: ${{ steps.parse.outputs.owner }}
         repositories: ${{ steps.parse.outputs.repo }}
@@ -116,14 +116,16 @@ runs:
         HEAD_BRANCH: ${{ inputs.branch_name }}
         BASE_BRANCH: ${{ steps.branch.outputs.base_branch }}
       run: |
+        set -euo pipefail
+
         # Compare the two branches
         COMPARISON=$(gh api "/repos/$REPO/compare/$BASE_BRANCH...$HEAD_BRANCH" --jq '.status')
 
         if [ "$COMPARISON" = "identical" ]; then
-          echo "has_differences=false" >> $GITHUB_OUTPUT
+          echo "has_differences=false" >> "$GITHUB_OUTPUT"
           echo "Branches are identical, no differences to create PR for"
         else
-          echo "has_differences=true" >> $GITHUB_OUTPUT
+          echo "has_differences=true" >> "$GITHUB_OUTPUT"
           echo "Branches have differences: $COMPARISON"
         fi
 
