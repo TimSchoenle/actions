@@ -6,11 +6,12 @@ on:
   pull_request:
     branches: ['**']
   schedule:
-    # Weekly, for the online checks. Off the hour, where GitHub's scheduling backlog is deepest.
+    # Weekly, for advisories published since the last change. Off the hour, where GitHub's scheduling
+    # backlog is deepest.
     - cron: '23 4 * * 1'
   workflow_dispatch:
 
-# The event is part of the group, so a push to main does not cancel the scheduled online run.
+# The event is part of the group, so a push to main does not cancel the scheduled run.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
@@ -23,49 +24,19 @@ jobs:
   # findings, writes a summary, uploads the SARIF to code scanning under the category jactionlint and
   # fails on findings. It runs the pedantic profile, the counterpart of the zizmor pedantic persona;
   # .github/jactionlint.yaml turns off the rules this repository does not want and lists the accepted
-  # findings. It stays offline, so the result depends on the change alone. The job keeps the name
+  # findings. It runs online, so the checks that ask GitHub, Docker Hub and ghcr.io about the actions
+  # and images in use (impostor commits, vulnerable action versions, moved tags, archived repositories)
+  # gate every pull request; the weekly run catches advisories published since the last change. online
+  # is `true` rather than `strict`, so a GitHub lookup that does not answer does not block a pull
+  # request. strict-exit makes warning and info findings fail the job too. The job keeps the name
   # "Action Lint" because the branch ruleset requires that context (see scripts/lib/required-checks.ts).
   action-lint:
     name: Action Lint
-    if: ${{ github.event_name != 'schedule' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read # to fetch code
-      security-events: write # to upload SARIF results
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
-        with:
-          egress-policy: block
-          allowed-endpoints: >
-            github.com:443
-            api.github.com:443
-            objects.githubusercontent.com:443
-            release-assets.githubusercontent.com:443
-
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - name: Run jactionlint
-        uses: TimSchoenle/actions/actions/security/jactionlint@e2799424abd778c41e7f6d1547fd402386ef398e # tag=actions-security-jactionlint-v1.1.0
-
-  # The checks that ask GitHub, Docker Hub and ghcr.io about the actions and images in use: impostor
-  # commits, vulnerable action versions, moved tags, archived or hijackable repositories. Their result
-  # depends on the world rather than on a change, so they run on a schedule and on demand instead of
-  # gating pull requests. strict turns a lookup GitHub did not answer into a failure, so a green run
-  # proves the checks ran. The SARIF is not uploaded: the offline job owns the jactionlint category in
-  # code scanning, and an online upload would be replaced by the next offline one. A failed run is the
-  # signal.
-  action-lint-online:
-    name: Action Lint (online)
-    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read # to fetch code
+      security-events: write # to upload SARIF results
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -85,8 +56,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Run jactionlint (online)
+      - name: Run jactionlint
         uses: TimSchoenle/actions/actions/security/jactionlint@e2799424abd778c41e7f6d1547fd402386ef398e # tag=actions-security-jactionlint-v1.1.0
         with:
-          online: 'strict'
-          upload: 'false'
+          online: 'true'
+          strict-exit: 'true'

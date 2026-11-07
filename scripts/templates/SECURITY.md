@@ -29,10 +29,11 @@ The advisory stays private until a fix is released.
 
 CodeQL analyses every push to `main`, every pull request, and runs again every Monday. `jactionlint`
 checks the workflow files and composite actions on the same triggers, with every check of `actionlint`
-and every offline `zizmor` audit at its pedantic persona, and uploads its findings to code scanning.
-The audits that ask GitHub about the actions in use, such as archived, vulnerable or impostor
-references, run every Monday and on demand instead. Renovate opens the dependency updates and
-auto-merges the non-major ones once they have aged.
+and every `zizmor` audit at its pedantic persona, and uploads its findings to code scanning. That
+includes the audits that ask GitHub about the actions in use, such as archived, vulnerable or impostor
+references, so they gate every pull request; the Monday run catches advisories published since the
+last change. Renovate opens the dependency updates and auto-merges the non-major ones once they have
+aged.
 
 `main` is protected: a change reaches it through a pull request with an approval, signed commits, and
 the required checks green.
