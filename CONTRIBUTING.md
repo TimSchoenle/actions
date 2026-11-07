@@ -52,8 +52,9 @@ bun run test
 ```
 
 Scripts CI runs those, plus `check-action-sources`, `check-action-dist` and `check-e2e-workflows`,
-each of which fails when a committed output no longer matches its source. `zizmor` and `actionlint`
-read the workflow files in the Security workflow; CodeQL analyses the TypeScript in its own.
+each of which fails when a committed output no longer matches its source. `jactionlint` checks the
+workflow files and composite actions in the Security workflow, with the settings in
+`.github/jactionlint.yaml`; CodeQL analyses the TypeScript in its own.
 
 ## Renovate presets
 

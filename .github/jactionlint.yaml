@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/jdx/jactionlint/v2.5.0/schema/jactionlint-config.json
+#
+# Read by the "Action Lint" jobs in .github/workflows/security.yml, which run the shared
+# actions/security/jactionlint action, and by a local `jactionlint` run. The action passes
+# --profile=pedantic itself; the key below gives a local run the same profile.
+#
+# The pedantic profile is the counterpart of the zizmor pedantic persona this repository ran before,
+# so no zizmor audit is lost. The rules turned off below are style and policy rules of jactionlint
+# that zizmor never had.
+profile: pedantic
+
+rules:
+  # Every step inherits bash from the runner's default; naming it on each of ~200 steps adds noise
+  # without changing what runs.
+  require-shell: off
+  # `if: steps.x.outputs.y == 'true'` is valid syntax, and the repository writes conditions both ways.
+  require-expression-wrapping: off
+  # The workflows deliberately track ubuntu-latest, so image moves arrive without a commit per job.
+  mutable-runner-label: off
+  # zizmor no longer runs, so a `# zizmor: ignore[...]` comment that suppresses nothing is stale.
+  unused-ignore:
+    zizmor: true
+
+ignores:
+  # These jobs run the copy of this repository that the remote test/setup-e2e action checks out into
+  # tmp/actions-code. jactionlint cannot see a checkout inside a remote composite action.
+  - rule: local-action-checkout
+    uses: ./tmp/actions-code/*
+    reason: checked out by TimSchoenle/actions/actions/test/setup-e2e
+  # The fixture project has no lockfile until this step creates one; that is what the test needs.
+  - rule: unlocked-install
+    file: .github/workflows/verify-action-bun-setup-cached.yaml
+    step: Install Dependencies (Generate Lockfile)
+    reason: generates the fixture's lockfile on purpose
+  - rule: unlocked-install
+    file: .github/workflows/verify-action-bun-setup-cached.yaml
+    step: Generate Lockfile & Clean
+    reason: generates the fixture's lockfile on purpose

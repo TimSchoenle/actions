@@ -66,7 +66,7 @@ export const REQUIRED_CHECKS: readonly RequiredCheck[] = [
     context: 'Action Lint',
     workflow: 'security.yml',
     kind: 'job',
-    reason: 'actionlint over every workflow in the repository.',
+    reason: 'jactionlint over every workflow and composite action: the checks of actionlint and the audits of zizmor.',
   },
   {
     context: 'Build Actions and Commit',

@@ -402,13 +402,9 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows an
     ].join('\n');
   const FIXTURE_FILE = '.github/workflows/fixture.yml';
 
-  it('finds the actionlint pin, so the scan below is not vacuous', () => {
-    const content = fs.readFileSync(path.join(WORKFLOWS_DIR, 'security.yml'), 'utf8');
-
-    expect(checksumPins(content).map(({ name }) => name)).toContain('ACTIONLINT');
-  });
-
-  it('finds the jactionlint pin in its action, so the scan of actions is not vacuous', async () => {
+  // No workflow downloads a pinned release since the Security workflow uses the shared action, so the
+  // action's pin is what keeps the scan below from passing on nothing.
+  it('finds the jactionlint pin in its action, so the scan below is not vacuous', async () => {
     const file = 'actions/security/jactionlint/action.yaml';
 
     expect(await pinnableFiles()).toContain(file);
