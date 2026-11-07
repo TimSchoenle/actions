@@ -1,0 +1,21 @@
+# Fixture for the verify workflow: jactionlint reports nothing here under the pedantic profile.
+# It is a loose file on purpose; a copy under .github/workflows would run as a real workflow.
+name: Clean
+
+on: push
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hello:
+    name: Hello
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Greet
+        shell: bash
+        run: echo hello

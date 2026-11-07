@@ -113,6 +113,7 @@ on:
       - Verify Rust Config-contract
       - Verify Rust Coverage-codecov
       - Verify Security Codeql
+      - Verify Security Jactionlint
       - Verify Security Zizmor
       - Verify Terrace Helm Check
       - Verify Terrace Helm Diff
