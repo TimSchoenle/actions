@@ -17,22 +17,26 @@ permissions: {}
 #
 # - an unprivileged job (contents: read, no secrets, no environment) runs the generator and uploads
 #   the result with common/create-patch;
-# - a privileged job, in the ci environment, mints the App token and commits that patch with
-#   common/commit-patch. It never installs dependencies or runs a repository script: it checks out
-#   the head for git's objects only, and commit-patch refuses any path outside its allowed_paths.
+# - update-files-commit.yml, a workflow_run workflow, mints the App token and commits that patch with
+#   common/commit-patch. It runs the default branch's copy of itself, so a pull request cannot edit
+#   it, never installs dependencies or runs a repository script, and commit-patch refuses any path
+#   outside its allowed_paths.
 #
-# The required checks are the privileged jobs' names, "Build Actions and Commit" and "Update README"
-# (scripts/lib/required-checks.ts). Each runs with !cancelled() and fails first thing when its build
-# job did not succeed: a required job that is merely skipped after a failed build reports skipped,
-# and branch protection accepts skipped.
+# The required checks keep the names of the jobs that used to commit here, "Build Actions and
+# Commit" and "Update README" (scripts/lib/required-checks.ts). Each runs with !cancelled() and fails
+# when its stage did not succeed, since a required job that is merely skipped reports skipped and
+# branch protection accepts skipped. Each also fails while its stage left a patch to commit: the head
+# this run checked is not the one to merge, and the run on the commit decides.
 #
-# The stages run in order, each only when the one before committed nothing: a commit starts a new run
+# The stages run in order, each only when the one before changed nothing: a commit starts a new run
 # on the new head, which redoes the later stages against it.
 jobs:
   build:
     name: Build Actions
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      has_changes: ${{ steps.patch.outputs.has_changes }}
     permissions:
       contents: read # to fetch code
     steps:
@@ -74,78 +78,11 @@ jobs:
         run: bun run build:workspaces
 
       - name: Create Patch
+        id: patch
         uses: TimSchoenle/actions/actions/common/create-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-patch-v1.1.1
         with:
           artifact_name: update-files-builds
           paths: 'actions/**/dist/**/* actions/**/src/generated/**/*'
-
-  update-builds:
-    name: Build Actions and Commit
-    needs: build
-    if: ${{ !cancelled() }}
-    environment:
-      name: ci
-      deployment: false
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    outputs:
-      outcome: ${{ steps.commit.outputs.outcome }}
-    permissions:
-      contents: read # to fetch the commit the patch applies to
-    steps:
-      - name: Fail If The Build Failed
-        if: needs.build.result != 'success'
-        env:
-          RESULT: ${{ needs.build.result }}
-        run: |
-          set -euo pipefail
-          echo "::error::Build Actions finished as '$RESULT'; nothing to commit."
-          exit 1
-
-      - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
-        with:
-          egress-policy: block
-          allowed-endpoints: >
-            github.com:443
-            api.github.com:443
-            objects.githubusercontent.com:443
-            release-assets.githubusercontent.com:443
-            *.actions.githubusercontent.com:443
-            registry.npmjs.org:443
-
-      # Only git's objects are needed. Nothing in this checkout is executed.
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - name: Generate Bot Token
-        id: generate_token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
-          permission-contents: write
-          permission-pull-requests: write
-
-      - name: Commit Patch
-        id: commit
-        uses: TimSchoenle/actions/actions/common/commit-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-commit-patch-v1.1.1
-        with:
-          token: ${{ steps.generate_token.outputs.token }}
-          artifact_name: update-files-builds
-          allowed_paths: 'actions/**/dist/** actions/**/src/generated/**'
-          commit_message: 'build: auto-update compiled artifacts'
-
-      - name: Comment on PR
-        if: steps.commit.outputs.changes_committed == 'true' && github.event_name == 'pull_request'
-        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
-        with:
-          token: ${{ steps.generate_token.outputs.token }}
-          identifier: 'update-builds'
-          body: 'Build artifacts (`dist/` and `src/generated/`) have been auto-updated.'
 
   # The verify-action-* workflows for actions with e2e cases are generated from
   # scripts/lib/e2e-workflow.ts, which holds their pinned action refs. Renovate updates that file and
@@ -154,10 +91,12 @@ jobs:
   # drifted for any reason, instead of leaving a pull request stuck on a failing drift check.
   generate-workflows:
     name: Generate Workflows
-    needs: update-builds
-    if: needs.update-builds.outputs.outcome == 'no_changes'
+    needs: build
+    if: needs.build.outputs.has_changes == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      has_changes: ${{ steps.patch.outputs.has_changes }}
     permissions:
       contents: read # to fetch code
     steps:
@@ -191,92 +130,20 @@ jobs:
           bun run generate-codecov-components
 
       - name: Create Patch
+        id: patch
         uses: TimSchoenle/actions/actions/common/create-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-patch-v1.1.1
         with:
           artifact_name: update-files-workflows
           paths: '.github/workflows/verify-action-*.yaml .github/workflows/ci-required.yaml .github/codecov.yml'
 
-  # The one job in this repository whose token carries workflows: write, because these files live
-  # under .github/workflows/. allow_workflow_changes is what lets commit-patch accept them at all, and
-  # allowed_paths narrows that to the generated files: a patch touching any other workflow fails here
-  # rather than being committed with the privilege.
-  update-generated-workflows:
-    name: Regenerate Workflows
-    needs: [update-builds, generate-workflows]
-    if: ${{ !cancelled() && needs.update-builds.outputs.outcome == 'no_changes' }}
-    environment:
-      name: ci
-      deployment: false
+  generate-docs:
+    name: Generate Docs
+    needs: [build, generate-workflows]
+    if: needs.build.outputs.has_changes == 'false' && needs.generate-workflows.outputs.has_changes == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
-      outcome: ${{ steps.commit.outputs.outcome }}
-    permissions:
-      contents: read # to fetch the commit the patch applies to
-    steps:
-      - name: Fail If The Generation Failed
-        if: needs.generate-workflows.result != 'success'
-        env:
-          RESULT: ${{ needs.generate-workflows.result }}
-        run: |
-          set -euo pipefail
-          echo "::error::Generate Workflows finished as '$RESULT'; nothing to commit."
-          exit 1
-
-      - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
-        with:
-          egress-policy: block
-          allowed-endpoints: >
-            github.com:443
-            api.github.com:443
-            objects.githubusercontent.com:443
-            release-assets.githubusercontent.com:443
-            *.actions.githubusercontent.com:443
-            registry.npmjs.org:443
-
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - name: Generate Bot Token
-        id: generate_token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
-          permission-contents: write
-          permission-pull-requests: write
-          # GitHub rejects a commit that touches .github/workflows/ without this, with a message about
-          # the `workflow` scope rather than about permissions.
-          permission-workflows: write
-
-      - name: Commit Patch
-        id: commit
-        uses: TimSchoenle/actions/actions/common/commit-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-commit-patch-v1.1.1
-        with:
-          token: ${{ steps.generate_token.outputs.token }}
-          artifact_name: update-files-workflows
-          allowed_paths: '.github/workflows/verify-action-*.yaml .github/workflows/ci-required.yaml .github/codecov.yml'
-          allow_workflow_changes: 'true'
-          commit_message: 'ci: auto-update generated workflows'
-
-      - name: Comment on PR
-        if: steps.commit.outputs.changes_committed == 'true' && github.event_name == 'pull_request'
-        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
-        with:
-          token: ${{ steps.generate_token.outputs.token }}
-          identifier: 'update-generated-workflows'
-          body: 'Generated `verify-action-*` workflows, `ci-required.yaml` and the Codecov components in `.github/codecov.yml` have been rebuilt.'
-
-  generate-docs:
-    name: Generate Docs
-    needs: [update-builds, update-generated-workflows]
-    if: needs.update-builds.outputs.outcome == 'no_changes' && needs.update-generated-workflows.outputs.outcome == 'no_changes'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+      has_changes: ${{ steps.patch.outputs.has_changes }}
     permissions:
       contents: read # to fetch code and tags
     steps:
@@ -305,76 +172,77 @@ jobs:
         run: bun run generate-docs
 
       - name: Create Patch
+        id: patch
         uses: TimSchoenle/actions/actions/common/create-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-patch-v1.1.1
         with:
           artifact_name: update-files-docs
           paths: 'README.md SECURITY.md'
 
-  # Regenerate Workflows is not a required check, so this job also reports its failure: it runs when
-  # that job failed, and fails in turn, rather than being skipped and reading as a pass.
-  update-readme:
-    name: Update README
-    needs: [update-builds, update-generated-workflows, generate-docs]
-    if: >-
-      ${{ !cancelled() && needs.update-builds.outputs.outcome == 'no_changes' &&
-      (needs.update-generated-workflows.result != 'success' || needs.update-generated-workflows.outputs.outcome == 'no_changes') }}
-    environment:
-      name: ci
-      deployment: false
+  update-builds:
+    name: Build Actions and Commit
+    needs: build
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read # to fetch the commit the patch applies to
+    timeout-minutes: 5
+    permissions: {}
     steps:
-      - name: Fail If An Earlier Stage Failed
-        if: needs.update-generated-workflows.result != 'success' || needs.generate-docs.result != 'success'
+      - name: Fail Unless The Build Left Nothing To Commit
         env:
-          WORKFLOWS_RESULT: ${{ needs.update-generated-workflows.result }}
-          DOCS_RESULT: ${{ needs.generate-docs.result }}
+          RESULT: ${{ needs.build.result }}
+          HAS_CHANGES: ${{ needs.build.outputs.has_changes }}
         run: |
           set -euo pipefail
-          echo "::error::Regenerate Workflows finished as '$WORKFLOWS_RESULT' and Generate Docs as '$DOCS_RESULT'; nothing to commit."
-          exit 1
+          if [ "$RESULT" != "success" ]; then
+            echo "::error::Build Actions finished as '$RESULT'; nothing to commit."
+            exit 1
+          fi
+          if [ "$HAS_CHANGES" = "true" ]; then
+            echo "::error::The build changed dist/ or src/generated/; update-files-commit.yml commits it, and the run on that commit decides."
+            exit 1
+          fi
 
-      - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
-        with:
-          egress-policy: block
-          allowed-endpoints: >
-            github.com:443
-            api.github.com:443
-            objects.githubusercontent.com:443
-            release-assets.githubusercontent.com:443
-            *.actions.githubusercontent.com:443
-
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - name: Generate Bot Token
-        id: generate_token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
-          permission-contents: write
-          permission-pull-requests: write
-
-      - name: Commit Patch
-        id: commit
-        uses: TimSchoenle/actions/actions/common/commit-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-commit-patch-v1.1.1
-        with:
-          token: ${{ steps.generate_token.outputs.token }}
-          artifact_name: update-files-docs
-          allowed_paths: 'README.md SECURITY.md'
-          commit_message: 'docs: auto-update documentation'
-
-      - name: Comment on PR
-        if: steps.commit.outputs.changes_committed == 'true' && github.event_name == 'pull_request'
-        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
-        with:
-          token: ${{ steps.generate_token.outputs.token }}
-          identifier: 'update-readme'
-          body: '`README.md` and `SECURITY.md` have been auto-updated with the latest details.'
+  # Generate Workflows is not a required check of its own, so its failure and its pending patch are
+  # reported here. While the build has something to commit the later stages do not run, and this
+  # job leaves the verdict to Build Actions and Commit and to the run on that commit.
+  update-readme:
+    name: Update README
+    needs: [build, generate-workflows, generate-docs]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Fail Unless The Later Stages Left Nothing To Commit
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+          BUILD_CHANGES: ${{ needs.build.outputs.has_changes }}
+          WORKFLOWS_RESULT: ${{ needs.generate-workflows.result }}
+          WORKFLOWS_CHANGES: ${{ needs.generate-workflows.outputs.has_changes }}
+          DOCS_RESULT: ${{ needs.generate-docs.result }}
+          DOCS_CHANGES: ${{ needs.generate-docs.outputs.has_changes }}
+        run: |
+          set -euo pipefail
+          if [ "$BUILD_RESULT" != "success" ]; then
+            echo "::error::Build Actions finished as '$BUILD_RESULT'; the later stages did not run."
+            exit 1
+          fi
+          if [ "$BUILD_CHANGES" = "true" ]; then
+            echo "The build left a patch to commit; the run on that commit regenerates the rest."
+            exit 0
+          fi
+          if [ "$WORKFLOWS_RESULT" != "success" ]; then
+            echo "::error::Generate Workflows finished as '$WORKFLOWS_RESULT'."
+            exit 1
+          fi
+          if [ "$WORKFLOWS_CHANGES" = "true" ]; then
+            echo "::error::The generated workflows are stale; update-files-commit.yml commits them, and the run on that commit decides."
+            exit 1
+          fi
+          if [ "$DOCS_RESULT" != "success" ]; then
+            echo "::error::Generate Docs finished as '$DOCS_RESULT'."
+            exit 1
+          fi
+          if [ "$DOCS_CHANGES" = "true" ]; then
+            echo "::error::README.md or SECURITY.md is stale; update-files-commit.yml commits it, and the run on that commit decides."
+            exit 1
+          fi
