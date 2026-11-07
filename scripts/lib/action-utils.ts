@@ -182,14 +182,11 @@ export const VERIFY_WORKFLOW_TEMPLATE = 'action/verify-workflow.yaml';
  * The part of a `PINNED` entry after `@`: the digest and its ` # vX.Y.Z` comment.
  *
  * The template writes the action name itself and takes only this part as a placeholder, because a
- * bare `{{placeholder}}` as a YAML value is a flow mapping and the formatter rewrites it.
+ * bare `{{placeholder}}` as a YAML value is a flow mapping and the formatter rewrites it. The
+ * parameter type rejects, at compile time, a `PINNED` entry without an `@`.
  */
-function pinnedRef(pin: string): string {
-  const at = pin.indexOf('@');
-  if (at === -1) {
-    throw new Error(`Pinned action ref has no '@': ${pin}`);
-  }
-  return pin.slice(at + 1);
+function pinnedRef(pin: `${string}@${string}`): string {
+  return pin.slice(pin.indexOf('@') + 1);
 }
 
 /**
