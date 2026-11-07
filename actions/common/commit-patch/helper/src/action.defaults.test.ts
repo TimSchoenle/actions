@@ -93,6 +93,7 @@ beforeEach(async () => {
   vi.stubEnv('INPUT_BRANCH', 'feature');
   vi.stubEnv('INPUT_EXPECTED_HEAD_SHA', base);
   vi.stubEnv('INPUT_MAX_PATCH_BYTES', '10485760');
+  vi.stubEnv('INPUT_RUN_ID', '');
 });
 
 afterEach(async () => {

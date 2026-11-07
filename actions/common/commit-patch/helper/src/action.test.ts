@@ -74,6 +74,7 @@ beforeEach(async () => {
   vi.stubEnv('INPUT_BRANCH', 'feature');
   vi.stubEnv('INPUT_EXPECTED_HEAD_SHA', SHA);
   vi.stubEnv('INPUT_MAX_PATCH_BYTES', '10485760');
+  vi.stubEnv('INPUT_RUN_ID', '');
 });
 
 afterEach(async () => {
@@ -87,6 +88,15 @@ describe('prepare', () => {
     vi.stubEnv('INPUT_MODE', 'prepare');
     vi.stubEnv('INPUT_DIRECTORY', '');
     vi.stubEnv('INPUT_TOKEN', '');
+  });
+
+  it('accepts a run ID from another run', async () => {
+    vi.stubEnv('INPUT_RUN_ID', '19284756301');
+
+    await run({ temp, workspace: root });
+
+    expect(core.setFailed).not.toHaveBeenCalled();
+    expect(await readdir(temp)).toHaveLength(1);
   });
 
   it('creates a fresh, empty directory under the runner temp directory', async () => {
@@ -108,6 +118,11 @@ describe('prepare', () => {
     ['a malformed repository', 'INPUT_REPOSITORY', 'not-a-repo', /repository|owner\/repo/i],
     ['a malformed size limit', 'INPUT_MAX_PATCH_BYTES', '-1', /max_patch_bytes/],
     ['an empty commit message', 'INPUT_COMMIT_MESSAGE', '', /commit_message/],
+    ['a run_id that is not a number', 'INPUT_RUN_ID', 'latest', /run_id must be empty or a workflow run ID/],
+    ['a run_id of zero', 'INPUT_RUN_ID', '0', /run_id must be/],
+    ['a whitespace-only run_id', 'INPUT_RUN_ID', ' ', /run_id must be/],
+    ['a run_id with a trailing newline', 'INPUT_RUN_ID', '123\n', /run_id must be/],
+    ['an expression that did not resolve to a number', 'INPUT_RUN_ID', '${{ github.run_id }}', /run_id must be/],
   ])('fails on %s before anything is downloaded', async (_name, variable, value, message) => {
     vi.stubEnv(variable, value);
 
@@ -176,6 +191,17 @@ describe('commit', () => {
     await run({ temp, workspace: root }, { api: fakeApi(), git: fakeGit() });
 
     expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('token'));
+  });
+
+  it('validates run_id in commit mode too', async () => {
+    const api = fakeApi();
+    vi.stubEnv('INPUT_RUN_ID', 'latest');
+    await artifact('diff --git a/README.md b/README.md\n');
+
+    await run({ temp, workspace: root }, { api, git: fakeGit() });
+
+    expect(core.setFailed).toHaveBeenCalledWith(expect.stringMatching(/run_id must be/));
+    expect(api.createCommit).not.toHaveBeenCalled();
   });
 
   it('refuses an unknown mode', async () => {

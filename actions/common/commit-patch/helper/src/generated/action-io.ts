@@ -26,6 +26,7 @@ export const ActionInput = {
   branch: 'branch',
   expected_head_sha: 'expected_head_sha',
   max_patch_bytes: 'max_patch_bytes',
+  run_id: 'run_id',
 } as const;
 
 export type ActionInput = (typeof ActionInput)[keyof typeof ActionInput];
