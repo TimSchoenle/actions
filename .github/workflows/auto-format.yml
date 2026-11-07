@@ -43,15 +43,24 @@ jobs:
         run: bun run format
 
       - name: Create Patch
+        id: patch
         uses: TimSchoenle/actions/actions/common/create-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-patch-v1.1.1
         with:
           artifact_name: auto-format
 
+      # The patch is committed by auto-format-commit.yml after this run has finished. While it is
+      # non-empty this head is not the one to merge: the run on the bot commit decides.
+      - name: Fail while the patch is uncommitted
+        if: steps.patch.outputs.has_changes == 'true'
+        run: |
+          echo "::error::bun run format changed files; auto-format-commit.yml commits them and the run on that commit decides. If no bot commit appears, run bun run format locally and push."
+          exit 1
+
   # The one context branch protection requires from this workflow. `format` is skipped on a
   # release-please branch, and a skipped job reports success to branch protection, so it cannot be
-  # required on its own. This job always runs, and fails when `format` failed or was cancelled. The
-  # commit happens in auto-format-commit.yml once this run has finished, so it is not part of this
-  # gate. See scripts/lib/required-checks.ts.
+  # required on its own. This job always runs, and fails when `format` failed or was cancelled.
+  # `format` itself fails while its patch is uncommitted: the commit happens in
+  # auto-format-commit.yml once this run has finished. See scripts/lib/required-checks.ts.
   gate:
     name: Auto Format Gate
     needs: [format]
