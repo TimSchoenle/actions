@@ -264,9 +264,10 @@ describe('Renovate coverage of container images in actions', () => {
  * pair of step environment values. Renovate has to move both in one commit: a bumped version with the
  * old checksum fails the step's `sha256sum --check`, and a checksum nobody updates freezes the tool at
  * one release. Only a manager that captures the two together can do that, so every checksum pin in
- * `.github/workflows/` must be captured, with its version, by exactly one.
+ * `.github/workflows/` and in the composite actions under `actions/` must be captured, with its
+ * version, by exactly one.
  */
-describe('Renovate coverage of checksum-pinned release downloads in workflows', () => {
+describe('Renovate coverage of checksum-pinned release downloads in workflows and actions', () => {
   const WORKFLOWS_DIR = path.join(ROOT_DIR, '.github', 'workflows');
   /**
    * A `<NAME>_SHA256: <digest>` environment value in any YAML quoting: single, double or none.
@@ -298,6 +299,19 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows', 
 
   function workflowFiles(): string[] {
     return fs.readdirSync(WORKFLOWS_DIR).filter((entry) => /\.ya?ml$/.test(entry));
+  }
+
+  /** Every file that may download a release: the workflows and each action's metadata, repository-relative. */
+  async function pinnableFiles(): Promise<string[]> {
+    return [
+      ...workflowFiles().map((entry) => `.github/workflows/${entry}`),
+      ...(await scanSorted('actions/*/*/action.yaml')),
+      ...(await scanSorted('actions/*/*/action.yml')),
+    ];
+  }
+
+  function read(file: string): string {
+    return fs.readFileSync(path.join(ROOT_DIR, file), 'utf8');
   }
 
   function managersFor(file: string): CustomManager[] {
@@ -394,12 +408,30 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows', 
     expect(checksumPins(content).map(({ name }) => name)).toContain('ACTIONLINT');
   });
 
-  it('captures every checksum pin, with its version, by exactly one manager that reads its file', () => {
-    for (const entry of workflowFiles()) {
-      expect(
-        pinProblems(`.github/workflows/${entry}`, fs.readFileSync(path.join(WORKFLOWS_DIR, entry), 'utf8')),
-      ).toEqual([]);
+  it('finds the jactionlint pin in its action, so the scan of actions is not vacuous', async () => {
+    const file = 'actions/security/jactionlint/action.yaml';
+
+    expect(await pinnableFiles()).toContain(file);
+    expect(checksumPins(read(file)).map(({ name }) => name)).toContain('JACTIONLINT');
+  });
+
+  it('captures every checksum pin, with its version, by exactly one manager that reads its file', async () => {
+    for (const file of await pinnableFiles()) {
+      expect(pinProblems(file, read(file))).toEqual([]);
     }
+  });
+
+  it('captures a pin in an action with the same manager as in a workflow', () => {
+    const content = fixture('v1.2.3', DIGEST);
+    const pins = checksumPins(content);
+
+    expect(pinProblems('actions/example/tool/action.yaml', content)).toEqual([]);
+    expect(capturesOf('actions/example/tool/action.yaml', content, pins[0])[0]).toMatchObject({
+      datasource: 'github-release-attachments',
+      depName: 'example/tool',
+      currentValue: 'v1.2.3',
+      currentDigest: DIGEST,
+    });
   });
 
   it.each([
@@ -474,11 +506,9 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows', 
 
   // A checksum pin is only worth something if nothing else in the workflows fetches code and runs it
   // unverified. Piping a downloaded script into a shell is the shape the actionlint pin replaced.
-  it('lets no workflow pipe a downloaded script into a shell', () => {
-    for (const entry of workflowFiles()) {
-      const content = fs.readFileSync(path.join(WORKFLOWS_DIR, entry), 'utf8');
-
-      expect(pipesDownloadIntoShell(content), `.github/workflows/${entry} pipes a download into a shell`).toBe(false);
+  it('lets no workflow or action pipe a downloaded script into a shell', async () => {
+    for (const file of await pinnableFiles()) {
+      expect(pipesDownloadIntoShell(read(file)), `${file} pipes a download into a shell`).toBe(false);
     }
   });
 
