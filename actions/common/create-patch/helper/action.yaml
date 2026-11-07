@@ -25,5 +25,5 @@ outputs:
     description: 'Directory holding the patch and its metadata, for upload-artifact.'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'

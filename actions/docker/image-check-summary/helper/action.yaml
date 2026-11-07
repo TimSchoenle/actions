@@ -15,5 +15,5 @@ outputs:
     description: 'true when the comment step should run: a pull request from this repository, with at least one fragment.'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
