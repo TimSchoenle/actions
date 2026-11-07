@@ -46,7 +46,7 @@ is not, including older versions of a component whose neighbours have since rele
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Docker Image Check](./actions/docker/image-check) | [actions-docker-image-check-v1.1.9](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-v1.1.9) | :white_check_mark: |
+| [Docker Image Check](./actions/docker/image-check) | [actions-docker-image-check-v1.1.10](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-v1.1.10) | :white_check_mark: |
 | [Docker Image Check Summary](./actions/docker/image-check-summary) | [actions-docker-image-check-summary-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-summary-v2.0.1) | :white_check_mark: |
 
 #### Helm
@@ -99,7 +99,7 @@ is not, including older versions of a component whose neighbours have since rele
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Security CodeQL](./actions/security/codeql) | [actions-security-codeql-v1.1.6](https://github.com/TimSchoenle/actions/releases/tag/actions-security-codeql-v1.1.6) | :white_check_mark: |
-| [Security Jactionlint](./actions/security/jactionlint) | [actions-security-jactionlint-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-security-jactionlint-v1.0.0) | :white_check_mark: |
+| [Security Jactionlint](./actions/security/jactionlint) | [actions-security-jactionlint-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-security-jactionlint-v1.1.0) | :white_check_mark: |
 | [Security Zizmor](./actions/security/zizmor) | [actions-security-zizmor-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-security-zizmor-v2.0.1) | :white_check_mark: |
 
 #### Terrace

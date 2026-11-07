@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.10](https://github.com/TimSchoenle/actions/compare/actions-docker-image-check-v1.1.9...actions-docker-image-check-v1.1.10) (2026-11-07)
+
+
+### Bug Fixes
+
+* repair verify workflows broken by ubuntu-26.04 and fixture drift ([#1982](https://github.com/TimSchoenle/actions/issues/1982)) ([c614cc1](https://github.com/TimSchoenle/actions/commit/c614cc1a02ba5d0d3aeabc42c704ea6a28b8a9ec))
+
 ## [1.1.9](https://github.com/TimSchoenle/actions/compare/actions-docker-image-check-v1.1.8...actions-docker-image-check-v1.1.9) (2026-11-01)
 
 
