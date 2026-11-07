@@ -10,4 +10,7 @@ The `verify-action-terrace-helm-*` workflows run the actions against it. The tem
 because the bindings gate reads them: a value bound to a contract key that no template renders is
 refused. The chart is never rendered, so it does not declare the `common` library chart its
 templates include. When the image is moved, copy the new `values.yaml` digest and
-`contracts/viewer.json` together, or the pull job reports the contract as behind.
+`contracts/viewer.json` together, or the pull job reports the contract as behind. Renovate is
+disabled for this directory for that reason: it would move the digest alone. The
+`terrace-helm-fixture` suite in `scripts/__tests__` fails a digest that does not match the
+`source.digest` of the vendored contract.
