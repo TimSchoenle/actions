@@ -17,6 +17,7 @@
 install-exact:
   name: 'Install an exact release (${{ matrix.os }})'
   runs-on: ${{ matrix.os }}
+  timeout-minutes: 15
   permissions:
     contents: read # to fetch code
   strategy:
@@ -70,6 +71,7 @@ install-exact:
 install-from-terrace-yaml:
   name: Install the cli pin from terrace.yaml
   runs-on: ubuntu-latest
+  timeout-minutes: 15
   permissions:
     contents: read # to fetch code, and to list terrace-contract releases
   steps:
@@ -115,6 +117,7 @@ install-from-terrace-yaml:
 install-unpublished:
   name: An unpublished release fails the step
   runs-on: ubuntu-latest
+  timeout-minutes: 15
   permissions:
     contents: read # to fetch code
   steps:

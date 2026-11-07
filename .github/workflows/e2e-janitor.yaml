@@ -52,6 +52,7 @@ jobs:
       name: ci-e2e
       deployment: false
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     # The scratch repository is reached exclusively through the app token minted below, so this job
     # needs nothing from the ambient `GITHUB_TOKEN`.
     permissions: {}
@@ -67,7 +68,7 @@ jobs:
         id: token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          client-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
           owner: ${{ env.TEST_OWNER }}
           repositories: ${{ env.TEST_REPO_NAME }}

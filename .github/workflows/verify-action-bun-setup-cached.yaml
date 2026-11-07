@@ -27,6 +27,9 @@ jobs:
   prime-cache:
     name: Prime Cache
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
     outputs:
       seed: ${{ steps.generate.outputs.seed }}
     steps:
@@ -111,6 +114,9 @@ jobs:
     name: Verify Cache Hit
     needs: prime-cache
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -192,6 +198,9 @@ jobs:
   verify-modes:
     name: Verify Cache Modes And Version Resolution
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -318,6 +327,7 @@ jobs:
       - verify-cache
       - verify-modes
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions: {}
     steps:
       - name: Fail if any verify job did not succeed

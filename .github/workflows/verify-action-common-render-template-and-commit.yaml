@@ -38,6 +38,7 @@ jobs:
       deployment: false
     name: 'Test Render And Commit: happy path'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -200,6 +201,7 @@ jobs:
       deployment: false
     name: 'Test Skip: unchanged render makes no commit'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -318,6 +320,7 @@ jobs:
       deployment: false
     name: 'Test Pattern: explicit file_pattern'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -403,6 +406,7 @@ jobs:
       deployment: false
     name: 'Test Failure: ${{ matrix.name }}'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -516,6 +520,7 @@ jobs:
       - test-file-pattern-override
       - test-render-failure-commits-nothing
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions: {}
     steps:
       - name: Fail if any verify job did not succeed

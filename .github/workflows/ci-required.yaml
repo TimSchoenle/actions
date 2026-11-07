@@ -138,6 +138,7 @@ jobs:
     name: Aggregate verify checks
     if: ${{ github.event_name == 'workflow_run' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       actions: read # list the workflows and the workflow runs for the head commit, and the ensure-actions-are-executed fallback
       checks: read # read the verify check run states

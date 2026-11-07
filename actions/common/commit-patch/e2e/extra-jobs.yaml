@@ -12,6 +12,7 @@
 verify-composite:
   name: Round Trip Through The Runner
   runs-on: ubuntu-latest
+  timeout-minutes: 15
   permissions:
     contents: read # to fetch code
   steps:

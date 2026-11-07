@@ -26,6 +26,7 @@ jobs:
   warm-build:
     name: Warm JitPack Build
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions: {}
     steps:
       - name: Harden Runner

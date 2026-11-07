@@ -31,6 +31,7 @@ jobs:
   diff:
     name: 'Test: a removed key is reported, and an unchanged tree is not'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read # to fetch code, and to list terrace-contract releases
     steps:
@@ -109,6 +110,7 @@ jobs:
     needs:
       - diff
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions: {}
     steps:
       - name: Fail if any verify job did not succeed

@@ -22,6 +22,7 @@ jobs:
   verify:
     name: Verify Setup-base-environment
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -138,6 +139,7 @@ jobs:
     needs:
       - verify
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions: {}
     steps:
       - name: Fail if any verify job did not succeed

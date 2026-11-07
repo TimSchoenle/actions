@@ -33,6 +33,7 @@ jobs:
       deployment: false
     name: 'Test Auto-format: ${{ matrix.name }}'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -204,6 +205,7 @@ jobs:
     needs:
       - test-auto-format-formats-and-commits
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions: {}
     steps:
       - name: Fail if any verify job did not succeed

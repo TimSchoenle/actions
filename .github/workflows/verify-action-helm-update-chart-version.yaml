@@ -39,6 +39,7 @@ jobs:
       deployment: false
     name: 'Test: full chart version update and PR creation'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -244,6 +245,7 @@ jobs:
       deployment: false
     name: 'Test: many images at differing versions, with a changelog'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -443,6 +445,7 @@ jobs:
       deployment: false
     name: 'Test: custom PR branch prefix'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -570,6 +573,7 @@ jobs:
       deployment: false
     name: 'Test Version Bump: ${{ matrix.name }}'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -749,6 +753,7 @@ jobs:
       deployment: false
     name: 'Test: nested chart path'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -891,6 +896,7 @@ jobs:
       deployment: false
     name: 'Test: idempotent re-run resets branch'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -1060,6 +1066,7 @@ jobs:
       deployment: false
     name: 'Test: pull-contracts commits the contract the new digest carries'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       FIXTURE: tmp/actions-code/.github/testdata/terrace-helm
       CHART: charts/mp-stats-legacy-viewer
@@ -1217,6 +1224,7 @@ jobs:
       - test-idempotent-rerun
       - test-pull-contracts
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions: {}
     steps:
       - name: Fail if any verify job did not succeed

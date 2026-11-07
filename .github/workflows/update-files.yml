@@ -32,6 +32,7 @@ jobs:
   build:
     name: Build Actions
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read # to fetch code
     steps:
@@ -86,6 +87,7 @@ jobs:
       name: ci
       deployment: false
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       outcome: ${{ steps.commit.outputs.outcome }}
     permissions:
@@ -123,7 +125,7 @@ jobs:
         id: generate_token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
+          client-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
           private-key: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
@@ -155,6 +157,7 @@ jobs:
     needs: update-builds
     if: needs.update-builds.outputs.outcome == 'no_changes'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read # to fetch code
     steps:
@@ -205,6 +208,7 @@ jobs:
       name: ci
       deployment: false
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       outcome: ${{ steps.commit.outputs.outcome }}
     permissions:
@@ -241,7 +245,7 @@ jobs:
         id: generate_token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
+          client-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
           private-key: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
@@ -272,6 +276,7 @@ jobs:
     needs: [update-builds, update-generated-workflows]
     if: needs.update-builds.outputs.outcome == 'no_changes' && needs.update-generated-workflows.outputs.outcome == 'no_changes'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read # to fetch code and tags
     steps:
@@ -317,6 +322,7 @@ jobs:
       name: ci
       deployment: false
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read # to fetch the commit the patch applies to
     steps:
@@ -351,7 +357,7 @@ jobs:
         id: generate_token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
+          client-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
           private-key: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write

@@ -41,6 +41,7 @@ jobs:
       name: ci
       deployment: false
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read # to check out the sweep script
       actions: write # to re-run the failed jobs of a rate-limited run
@@ -67,7 +68,7 @@ jobs:
         id: probe_token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
+          client-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
           private-key: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
           permission-metadata: read
 

@@ -33,6 +33,7 @@ jobs:
       deployment: false
     name: 'Test Spotless: ${{ matrix.name }}'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -287,6 +288,7 @@ jobs:
     needs:
       - test-spotless-formats-and-commits
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions: {}
     steps:
       - name: Fail if any verify job did not succeed
