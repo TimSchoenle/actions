@@ -49,8 +49,8 @@ reads by itself. See [the configuration reference](https://jactionlint.jdx.dev/c
 | ------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | `files`             |                | Files to check, one per line, relative to `working-directory`. Empty checks the repository. See [Files](#files).            |
 | `config-file`       |                | Configuration file, relative to `working-directory`. Empty lets jactionlint read `.github/jactionlint.yaml` when it exists. |
-| `profile`           |                | `correctness`, `default` or `pedantic`. Empty takes the profile of the configuration file, or `default`.                    |
-| `online`            | `false`        | Run the checks that query the GitHub API: `false`, `true`, `cache` or `strict`.                                              |
+| `profile`           | `pedantic`     | `correctness`, `default` or `pedantic`. Overrides `profile` in the configuration file; empty hands it to the file. See [Profile](#profile). |
+| `online`            | `false`        | Run the checks that query the GitHub API: `false`, `true`, `cache` or `strict`. See [Online checks](#online-checks).        |
 | `token`             | `github.token` | Token for the online checks. Handed to jactionlint only when `online` is not `false`.                                        |
 | `strict-exit`       | `false`        | Also fail on findings of level `warn` and `info`, not only on `error`.                                                       |
 | `fail-on-findings`  | `true`         | `false` reports the findings as annotations, in the summary and in code scanning without failing the job.                    |
@@ -86,6 +86,67 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 | `objects.githubusercontent.com:443`        | the release download        |
 | `release-assets.githubusercontent.com:443` | the release download        |
 | `api.github.com:443`                       | the SARIF upload and the online checks |
+| `auth.docker.io:443`, `registry-1.docker.io:443`, `ghcr.io:443` | the online checks of container images |
+
+## Profile
+
+The default is `pedantic`, jactionlint's counterpart of zizmor's pedantic persona: every security audit at its strictest,
+plus the noisier policy and style rules. Turn off the ones a repository does not want in `.github/jactionlint.yaml`
+rather than lowering the profile, so the decision and its reason are written down:
+
+```yaml
+rules:
+  require-shell: off # every step runs the runner's default bash
+```
+
+`--profile` on the command line wins over the `profile` key of the configuration file, so the input decides. Set
+`profile: ''` to let the configuration file choose; without a `profile` key there, jactionlint uses `default`.
+
+## Online checks
+
+`online` is `false` by default. The online rules (`impostor-commit`, `known-vulnerable-actions`, `actions-lock-drift`,
+`ref-version-mismatch`, `ref-confusion`, `archived-uses`, `repojacking`, `stale-action-refs`, `action-release-cooldown`,
+`unpinnable-action`) query the GitHub API, Docker Hub and ghcr.io about the actions and images the workflows use. They
+find real problems, but as a default for a check that gates pull requests they cost more than they give:
+
+- **The result depends on the world, not on the change.** A new advisory, a moved tag or a fresh release turns a pull
+  request red that touched no workflow, and a re-run of an old commit can fail where it passed.
+- **A failed lookup passes silently.** A rate limit, a 5xx or a timeout skips the lookup and leaves the exit status
+  alone, so a green run does not prove the checks ran. `online: strict` makes a skipped lookup fail the job, which
+  turns GitHub's availability into a flaky check.
+- **The rate limit is shared.** The job token allows 1,000 requests an hour per repository, shared by every workflow run
+  in it; parallel pull requests and other jobs that call the API draw on the same quota.
+- **The job needs more egress**: `api.github.com`, `auth.docker.io`, `registry-1.docker.io` and `ghcr.io`, on top of
+  the release download.
+
+The token is not the concern: jactionlint sends it to the API host only, over https, refuses redirects to another host,
+and ignores an `api-url` that a repository's own configuration file names, so a pull request cannot redirect it.
+
+Run the online checks where a red result is news rather than noise: on a schedule and on pushes to the default branch.
+
+```yaml
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  push:
+    branches: [main]
+
+jobs:
+  jactionlint-online:
+    name: Action Lint (online)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@<ref>
+        with:
+          persist-credentials: false
+      - uses: <owner>/actions/actions/security/jactionlint@<ref>
+        with:
+          online: 'strict'
+```
 
 ## Files
 

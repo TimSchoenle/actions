@@ -159,6 +159,38 @@ jobs:
 
           echo "✅ config-file was read"
 
+      - name: Run Test (Default Profile Is Pedantic)
+        id: pedantic
+        uses: ./actions/security/jactionlint # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          files: actions/security/jactionlint/test/pedantic.yml
+          fail-on-findings: 'false'
+          upload: 'false'
+
+      - name: Run Test (Profile Default)
+        id: profile-default
+        uses: ./actions/security/jactionlint # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          files: actions/security/jactionlint/test/pedantic.yml
+          profile: default
+          upload: 'false'
+
+      - name: Assert Profiles
+        shell: bash
+        env:
+          PEDANTIC_EXIT_CODE: ${{ steps.pedantic.outputs.exit-code }}
+          PEDANTIC_SARIF: ${{ steps.pedantic.outputs.sarif-file }}
+          DEFAULT_EXIT_CODE: ${{ steps.profile-default.outputs.exit-code }}
+        run: |
+          set -euo pipefail
+
+          [ "$PEDANTIC_EXIT_CODE" = "1" ] || { echo "::error::without a profile input, exit-code '$PEDANTIC_EXIT_CODE', expected 1 from the pedantic profile"; exit 1; }
+          jq -e '[.runs[].results[].ruleId] == ["require-shell"]' "$PEDANTIC_SARIF" > /dev/null \
+            || { echo "::error::the pedantic run does not hold exactly the require-shell finding"; exit 1; }
+          [ "$DEFAULT_EXIT_CODE" = "0" ] || { echo "::error::profile: default reported findings (exit-code '$DEFAULT_EXIT_CODE')"; exit 1; }
+
+          echo "✅ The default profile is pedantic, and the profile input overrides it"
+
       - name: Run Test (Invalid Profile)
         id: invalid
         continue-on-error: true

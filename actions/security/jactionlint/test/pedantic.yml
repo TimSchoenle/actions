@@ -1,0 +1,20 @@
+# Fixture for the verify workflow: clean under the default profile, one require-shell finding under pedantic.
+# It is a loose file on purpose; a copy under .github/workflows would run as a real workflow.
+name: Pedantic
+
+on: push
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hello:
+    name: Hello
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Greet
+        run: echo hello

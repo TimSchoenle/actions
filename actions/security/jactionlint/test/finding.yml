@@ -11,6 +11,9 @@ concurrency:
 
 jobs:
   hello:
-    runs-on: ubuntu-latest
+    name: Hello
+    runs-on: ubuntu-24.04
     steps:
-      - run: echo hello
+      - name: Greet
+        shell: bash
+        run: echo hello

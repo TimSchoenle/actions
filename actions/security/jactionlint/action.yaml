@@ -11,11 +11,11 @@ inputs:
     required: false
     default: ''
   profile:
-    description: 'Rule profile: correctness, default or pedantic. Empty takes the profile of the configuration file, or default.'
+    description: 'Rule profile: correctness, default or pedantic. It overrides the profile key of the configuration file. Empty hands the choice to the configuration file, which falls back to default.'
     required: false
-    default: ''
+    default: 'pedantic'
   online:
-    description: 'Run the checks that query the GitHub API: false, true, cache or strict. false keeps the run offline and never hands over the token.'
+    description: 'Run the checks that query the GitHub API: false, true, cache or strict. false keeps the run offline and deterministic, and never hands over the token. See the README for the trade-off.'
     required: false
     default: 'false'
   token:
