@@ -43,10 +43,11 @@
   "actions/terrace/helm-sync": "1.1.0",
   "actions/terrace/image": "1.1.0",
   "actions/common/create-patch": "1.1.1",
-  "actions/common/commit-patch": "1.2.0",
+  "actions/common/commit-patch": "1.3.0",
   "actions/maintenance/wipe-cache": "3.0.1",
   "actions/maintenance/auto-rebase": "3.0.1",
   "actions/maintenance/timed-auto-merge": "2.0.2",
   "actions/maintenance/trigger-coderabbit-review": "1.1.0",
-  "actions/security/jactionlint": "1.1.0"
+  "actions/security/jactionlint": "1.1.0",
+  "actions/common/find-patch": "1.1.0"
 }

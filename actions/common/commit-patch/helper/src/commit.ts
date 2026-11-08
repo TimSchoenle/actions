@@ -1,6 +1,6 @@
 import { parseRepository, quoteForLog } from 'actions-util';
+import { readPatchArtifact } from 'actions-util/patch-reader';
 
-import { readPatchArtifact } from './artifact.js';
 import { findViolations } from './path-policy.js';
 
 import type { PatchGit } from './git.js';

@@ -2,9 +2,9 @@ import { constants } from 'node:fs';
 import { open, readdir } from 'node:fs/promises';
 import path from 'node:path';
 
-import { MAX_METADATA_BYTES, METADATA_FILE_NAME, parseMetadata, PATCH_FILE_NAME, sha256Hex } from 'actions-util/patch';
+import { MAX_METADATA_BYTES, METADATA_FILE_NAME, parseMetadata, PATCH_FILE_NAME, sha256Hex } from './patch-artifact.js';
 
-import type { PatchMetadata } from 'actions-util/patch';
+import type { PatchMetadata } from './patch-artifact.js';
 import type { FileHandle } from 'node:fs/promises';
 
 /** Raised when the downloaded artifact is not exactly what `create-patch` uploads. */
