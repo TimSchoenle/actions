@@ -6,6 +6,7 @@
     "create-action": "bun scripts/create-action.ts",
     "remove-action": "bun scripts/remove-action.ts",
     "generate-maven-central-signing-key": "bun scripts/generate-maven-central-signing-key.ts",
+    "generate-cosign-key": "bun scripts/generate-cosign-key.ts",
     "generate-docs": "bun scripts/generate-docs.ts",
     "generate-ci-required": "bun scripts/generate-ci-required.ts",
     "ci-required-registration": "bun scripts/ci-required-registration.ts",
@@ -64,6 +65,7 @@
     "yaml": "2.9.1"
   },
   "dependencies": {
+    "@noble/ciphers": "2.4.0",
     "actions-util": "workspace:*",
     "chalk": "6",
     "inquirer": "14.2.5",
