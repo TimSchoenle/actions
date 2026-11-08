@@ -6,7 +6,7 @@ import { describePatch, serializeMetadata } from 'actions-util/patch';
 import { ArtifactContentError } from 'actions-util/patch-reader';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { findArtifacts, inspectArtifact, RunNotFoundError } from './find.js';
+import { ARCHIVE_OVERHEAD_BYTES, assertArchiveSize, findArtifacts, inspectArtifact, RunNotFoundError } from './find.js';
 
 import type { ArtifactApi, ArtifactSummary } from './find.js';
 
@@ -16,12 +16,13 @@ const OTHER = 'b'.repeat(40);
 const PATCH = Buffer.from('diff --git a/x b/x\n');
 const MAX = 1024;
 
+/** An artifact listing that answers with `artifacts`. */
 function api(artifacts: ArtifactSummary[]): ArtifactApi & { listArtifacts: ReturnType<typeof vi.fn> } {
   return { listArtifacts: vi.fn().mockResolvedValue(artifacts) };
 }
 
 describe('findArtifacts', () => {
-  const live = (id: number, name = 'patch'): ArtifactSummary => ({ expired: false, id, name });
+  const live = (id: number, name = 'patch'): ArtifactSummary => ({ expired: false, id, name, sizeInBytes: 100 });
 
   it('asks for the named artifacts of the given run', async () => {
     const listing = api([]);
@@ -40,7 +41,9 @@ describe('findArtifacts', () => {
   });
 
   it('treats an expired artifact as missing, since it can no longer be downloaded', async () => {
-    expect(await findArtifacts(api([{ expired: true, id: 1, name: 'patch' }]), repository, 42, 'patch')).toEqual([]);
+    expect(
+      await findArtifacts(api([{ expired: true, id: 1, name: 'patch', sizeInBytes: 100 }]), repository, 42, 'patch'),
+    ).toEqual([]);
   });
 
   it('ignores an artifact whose name only resembles the one asked for', async () => {
@@ -48,7 +51,7 @@ describe('findArtifacts', () => {
   });
 
   it('keeps the live artifact beside an expired one of the same name', async () => {
-    const listing = api([{ expired: true, id: 1, name: 'patch' }, live(2)]);
+    const listing = api([{ expired: true, id: 1, name: 'patch', sizeInBytes: 100 }, live(2)]);
 
     expect(await findArtifacts(listing, repository, 42, 'patch')).toEqual([live(2)]);
   });
@@ -69,6 +72,21 @@ describe('findArtifacts', () => {
   });
 });
 
+describe('assertArchiveSize', () => {
+  const archive = (sizeInBytes: number): ArtifactSummary => ({ expired: false, id: 3, name: 'patch', sizeInBytes });
+
+  it('accepts an archive up to max_patch_bytes plus the overhead allowance', () => {
+    expect(() => assertArchiveSize(archive(MAX + ARCHIVE_OVERHEAD_BYTES), MAX)).not.toThrow();
+  });
+
+  it('refuses a larger archive, naming its size and the bound', () => {
+    expect(() => assertArchiveSize(archive(MAX + ARCHIVE_OVERHEAD_BYTES + 1), MAX)).toThrow(
+      `Artifact 3 (patch) is ${MAX + ARCHIVE_OVERHEAD_BYTES + 1} bytes, more than any create-patch artifact within ` +
+        `max_patch_bytes (${MAX}) can be (${MAX + ARCHIVE_OVERHEAD_BYTES}); it was not downloaded.`,
+    );
+  });
+});
+
 describe('RunNotFoundError', () => {
   it('names the run and the permission the token needs, and keeps the cause', () => {
     const cause = new Error('Not Found');
@@ -86,6 +104,7 @@ describe('inspectArtifact', () => {
   let root: string;
   let directory: string;
 
+  /** Writes an artifact holding `patch`, made from `baseSha`, into the download directory. */
   async function lay(patch: Buffer, baseSha = BASE): Promise<void> {
     await writeFile(path.join(directory, 'changes.patch'), patch);
     await writeFile(path.join(directory, 'metadata.json'), serializeMetadata(describePatch(baseSha, patch)));

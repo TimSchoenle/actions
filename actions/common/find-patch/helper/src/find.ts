@@ -8,6 +8,8 @@ export interface ArtifactSummary {
   name: string;
   /** True once the artifact is past its retention and can no longer be downloaded. */
   expired: boolean;
+  /** The size of the archive GitHub stores, before download-artifact extracts it. */
+  sizeInBytes: number;
 }
 
 /** The one GitHub call `lookup` makes, as a seam the tests can replace. */
@@ -52,6 +54,33 @@ export async function findArtifacts(
   return (await api.listArtifacts(repository, runId, name))
     .filter((artifact) => artifact.name === name && !artifact.expired)
     .toSorted((left, right) => right.id - left.id);
+}
+
+/**
+ * Room beside the patch for `metadata.json` and the archive's own headers. Both are a few hundred bytes;
+ * the margin only has to be far below anything that could hurt a runner.
+ */
+export const ARCHIVE_OVERHEAD_BYTES = 1024 * 1024;
+
+/**
+ * Refuses an archive larger than any create-patch artifact within `maxPatchBytes` can be, before it is
+ * downloaded.
+ *
+ * download-artifact extracts whatever the archive holds, and the reader only checks it afterwards. A
+ * create-patch artifact is one patch of at most `maxPatchBytes` and a small metadata file, so its
+ * archive can never exceed that plus {@link ARCHIVE_OVERHEAD_BYTES}. Anything bigger did not come from
+ * create-patch, and is refused without spending the job's time and disk on it.
+ *
+ * @throws {Error} when the archive is larger than that bound.
+ */
+export function assertArchiveSize(artifact: ArtifactSummary, maxPatchBytes: number): void {
+  const limit = maxPatchBytes + ARCHIVE_OVERHEAD_BYTES;
+  if (artifact.sizeInBytes > limit) {
+    throw new Error(
+      `Artifact ${artifact.id} (${artifact.name}) is ${artifact.sizeInBytes} bytes, more than any create-patch ` +
+        `artifact within max_patch_bytes (${maxPatchBytes}) can be (${limit}); it was not downloaded.`,
+    );
+  }
 }
 
 /** What the downloaded patch amounts to, for a job deciding whether to commit it. */

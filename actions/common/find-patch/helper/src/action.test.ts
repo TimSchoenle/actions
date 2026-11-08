@@ -30,18 +30,22 @@ const PATCH = Buffer.from('diff --git a/x b/x\n');
 
 let temp: string;
 
+/** Every output the run set, by name. */
 function outputs(): Record<string, unknown> {
   return Object.fromEntries(vi.mocked(core.setOutput).mock.calls);
 }
 
+/** The message the run failed with, or empty. */
 function failure(): string {
   return String(vi.mocked(core.setFailed).mock.calls[0]?.[0] ?? '');
 }
 
+/** An artifact listing that answers with `artifacts`. */
 function api(artifacts: ArtifactSummary[]): ArtifactApi & { listArtifacts: ReturnType<typeof vi.fn> } {
   return { listArtifacts: vi.fn().mockResolvedValue(artifacts) };
 }
 
+/** Sets action inputs the way the runner passes them. */
 function inputs(values: Record<string, string>): void {
   for (const [name, value] of Object.entries(values)) {
     vi.stubEnv(`INPUT_${name.toUpperCase()}`, value);
@@ -72,7 +76,7 @@ describe('lookup', () => {
   });
 
   it('reports a found artifact and creates an empty download directory under the runner temp', async () => {
-    const listing = api([{ expired: false, id: 7, name: 'docs-render' }]);
+    const listing = api([{ expired: false, id: 7, name: 'docs-render', sizeInBytes: 100 }]);
 
     await run({ runId: '1', temp }, { api: listing });
 
@@ -89,8 +93,8 @@ describe('lookup', () => {
 
   it('takes the newest of several live artifacts of the name, with a warning naming them all', async () => {
     const listing = api([
-      { expired: false, id: 7, name: 'docs-render' },
-      { expired: false, id: 9, name: 'docs-render' },
+      { expired: false, id: 7, name: 'docs-render', sizeInBytes: 100 },
+      { expired: false, id: 9, name: 'docs-render', sizeInBytes: 100 },
     ]);
 
     await run({ runId: '1', temp }, { api: listing });
@@ -101,8 +105,19 @@ describe('lookup', () => {
     expect(core.warning).toHaveBeenCalledWith(expect.stringContaining('fetches the newest, 9'));
   });
 
+  it('fails before any download on an archive larger than any create-patch artifact can be', async () => {
+    inputs({ max_patch_bytes: '1000' });
+    const listing = api([{ expired: false, id: 7, name: 'docs-render', sizeInBytes: 1000 + 1024 * 1024 + 1 }]);
+
+    await run({ runId: '1', temp }, { api: listing });
+
+    expect(failure()).toContain('it was not downloaded');
+    expect(outputs()).not.toHaveProperty('directory');
+    expect(await readdir(temp)).toEqual([]);
+  });
+
   it('does not warn for a single live artifact', async () => {
-    await run({ runId: '1', temp }, { api: api([{ expired: false, id: 7, name: 'docs-render' }]) });
+    await run({ runId: '1', temp }, { api: api([{ expired: false, id: 7, name: 'docs-render', sizeInBytes: 100 }]) });
 
     expect(core.warning).not.toHaveBeenCalled();
   });
@@ -166,6 +181,7 @@ describe('lookup', () => {
 describe('inspect', () => {
   let directory: string;
 
+  /** Writes an artifact holding `patch`, made from `baseSha`, into the download directory. */
   async function lay(patch: Buffer, baseSha = BASE): Promise<void> {
     await writeFile(path.join(directory, 'changes.patch'), patch);
     await writeFile(path.join(directory, 'metadata.json'), serializeMetadata(describePatch(baseSha, patch)));

@@ -6,7 +6,7 @@ import * as core from '@actions/core';
 import { parseRepository, runAction } from 'actions-util';
 import { isCommitSha, parseByteLimit, validateArtifactName } from 'actions-util/patch';
 
-import { findArtifacts, inspectArtifact } from './find.js';
+import { assertArchiveSize, findArtifacts, inspectArtifact } from './find.js';
 import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';
 import { createArtifactApi } from './github-api.js';
 
@@ -21,6 +21,7 @@ export interface RunnerContext {
   readonly runId: string;
 }
 
+/** Reads the {@link RunnerContext} from the runner's environment. */
 function readRunnerContext(): RunnerContext {
   return {
     runId: process.env['GITHUB_RUN_ID'] ?? '',
@@ -70,6 +71,7 @@ interface Request {
   repository: RepositoryCoordinates;
 }
 
+/** Reads and validates the inputs both modes share. */
 function readRequest(): Request {
   const artifactName = validateArtifactName(getInput(ActionInput.artifact_name, { required: true }));
 
@@ -110,6 +112,7 @@ async function lookup(context: RunnerContext, request: Request, overrides: Parti
     setOutput(ActionOutput.outcome, 'missing');
     return;
   }
+  assertArchiveSize(newest, request.maxPatchBytes);
   if (artifacts.length > 1) {
     core.warning(
       `Workflow run ${runId} holds ${artifacts.length} unexpired artifacts named ${request.artifactName} ` +

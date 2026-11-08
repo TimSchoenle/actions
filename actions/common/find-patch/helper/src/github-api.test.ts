@@ -49,8 +49,8 @@ describe('createArtifactApi', () => {
       run_id: 42,
     });
     expect(artifacts).toEqual([
-      { expired: false, id: 1, name: 'patch' },
-      { expired: true, id: 2, name: 'patch' },
+      { expired: false, id: 1, name: 'patch', sizeInBytes: 10 },
+      { expired: true, id: 2, name: 'patch', sizeInBytes: 10 },
     ]);
   });
 
@@ -64,6 +64,19 @@ describe('createArtifactApi', () => {
     await expect(failure).rejects.toMatchObject({
       cause,
       message: expect.stringContaining('Workflow run 42 of owner/repo was not found'),
+    });
+  });
+
+  it('reports a 422 with the run, repository and artifact name, keeping the cause', async () => {
+    const cause = httpError(422, 'Validation Failed');
+    octokit.paginate.mockRejectedValue(cause);
+
+    const failure = createArtifactApi('t').listArtifacts(repository, 42, 'patch');
+
+    await expect(failure).rejects.toMatchObject({
+      cause,
+      message:
+        'GitHub refused to list the artifacts named "patch" of workflow run 42 of owner/repo (422): Validation Failed',
     });
   });
 

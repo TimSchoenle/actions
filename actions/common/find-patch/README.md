@@ -3,7 +3,11 @@
 Reports whether a workflow run uploaded a non-empty [`common/create-patch`](../create-patch) artifact, without holding
 any secret. A `workflow_run` workflow runs it in a job of its own ahead of the job that mints the write token for
 [`common/commit-patch`](../commit-patch), and skips that job when there is nothing to commit: the producing job was
-skipped, its patch is empty, or the patch was made from a commit the branch has since moved past.
+skipped, its patch is empty, or the patch was made from another commit than `expected_head_sha`.
+
+It compares the patch with `expected_head_sha` only, which in a `workflow_run` workflow is the commit the producing run
+checked out, not the branch as it is now. A branch that moved on after a non-empty patch was made still reports
+`changes` and starts the token job; `commit-patch` then checks the branch itself and ends with `branch_moved`.
 
 The artifact is validated exactly as `commit-patch` validates it. A malformed one fails the step instead of reading as
 "nothing to commit", so a broken producer shows up as a red run, not as a pull request that silently never gets its
@@ -96,9 +100,12 @@ from them.
   otherwise skip every commit without a word.
 - **Several unexpired artifacts of the same name, from re-run attempts, resolve to the newest.** download-artifact
   fetches the one with the highest ID, so that is the one inspected; the step logs a warning naming them all.
-- **The outcome is the one `commit-patch` would end with.** A patch made from another commit than
-  `expected_head_sha` is `branch_moved`, empty or not, reported with a notice; otherwise an empty patch is
-  `no_changes`.
+- **The outcome is the one `commit-patch` would end with against `expected_head_sha`.** A patch made from another commit
+  than `expected_head_sha` is `branch_moved`, empty or not, reported with a notice; otherwise an empty patch is
+  `no_changes`. The branch's current tip is not looked at: that is `commit-patch`'s check, made when it commits.
+- **An archive larger than any create-patch artifact can be is refused before download.** That is `max_patch_bytes`
+  plus 1 MiB for the metadata and archive headers, read from the artifact listing. It bounds the download, not the
+  extraction: download-artifact extracts the archive before the reader checks what it holds.
 - **Only the two files are read.** The artifact must hold exactly `changes.patch` and `metadata.json`, both regular
   files opened without following links, with the patch within `max_patch_bytes` and matching the size and SHA-256
   recorded beside it. Nothing in it is executed.

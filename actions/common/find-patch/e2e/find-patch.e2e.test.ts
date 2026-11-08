@@ -30,6 +30,7 @@ describe('find-patch', () => {
   let temp: string;
   let base: string;
 
+  /** Runs git in the workspace with a throwaway identity, and returns its trimmed output. */
   async function git(...args: string[]): Promise<string> {
     return (await workspace.git(['-c', 'user.email=e2e@example.com', '-c', 'user.name=e2e', ...args])).trim();
   }
@@ -61,6 +62,7 @@ describe('find-patch', () => {
     return result.outputs.directory ?? '';
   }
 
+  /** Runs this action's helper in inspect mode over `directory`. */
   function inspect(
     directory: string,
     inputs: ProvidedInputs<ActionInput> = {},
