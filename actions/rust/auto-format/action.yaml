@@ -46,7 +46,7 @@ runs:
     # The caller checks out; this action never does. The patch must be computed against the exact
     # commit the commit job expects, and only the caller knows which commit that is.
     - name: Install stable toolchain
-      uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
+      uses: actions-rust-lang/setup-rust-toolchain@a188e68d0fd2bd36ad51dccb2b07ba6e75105f30 # v2.0.1
       with:
         components: rustfmt
 
