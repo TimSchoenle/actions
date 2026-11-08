@@ -161,6 +161,20 @@
         "vitest": "5.0.5",
       },
     },
+    "actions/common/generated-files-verdict/helper": {
+      "name": "actions-common-generated-files-verdict-helper",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "actions-util": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "26.6.6",
+        "@typescript/native": "npm:typescript@7.0.2",
+        "actions-e2e": "workspace:*",
+        "vitest": "5.0.5",
+      },
+    },
     "actions/common/get-app-git-identity": {
       "name": "actions-common-get-app-git-identity",
       "version": "1.0.0",
@@ -901,6 +915,8 @@
     "actions-common-delete-branch": ["actions-common-delete-branch@workspace:actions/common/delete-branch"],
 
     "actions-common-find-patch-helper": ["actions-common-find-patch-helper@workspace:actions/common/find-patch/helper"],
+
+    "actions-common-generated-files-verdict-helper": ["actions-common-generated-files-verdict-helper@workspace:actions/common/generated-files-verdict/helper"],
 
     "actions-common-get-app-git-identity": ["actions-common-get-app-git-identity@workspace:actions/common/get-app-git-identity"],
 

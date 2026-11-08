@@ -1,0 +1,491 @@
+# GENERATED — do not edit by hand. Run `bun run generate-e2e-workflows` to rebuild this file
+# from the actions that have an `e2e/` directory. The drift test in CI fails if it is out of date.
+#
+# The cases live in `actions/common/generated-files-verdict/e2e/` and are ordinary vitest files. This
+# workflow supplies only what they cannot get on a laptop: a token scoped to the scratch repository.
+name: Verify Common Generated-files-verdict
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/common/generated-files-verdict'
+    paths:
+      - 'actions/common/generated-files-verdict/**'
+      - '!actions/common/generated-files-verdict/CHANGELOG.md'
+      - 'packages/e2e/**'
+      - '.github/workflows/verify-action-common-generated-files-verdict.yaml'
+  pull_request:
+    paths:
+      - 'actions/common/generated-files-verdict/**'
+      - '!actions/common/generated-files-verdict/CHANGELOG.md'
+      - 'packages/e2e/**'
+      - '.github/workflows/verify-action-common-generated-files-verdict.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  install:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      cache-key: ${{ steps.key.outputs.value }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            objects.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            registry.npmjs.org:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Compute Cache Key
+        id: key
+        env:
+          CACHE_KEY: e2e-workspace-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+        run: echo "value=$CACHE_KEY" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Workspace Dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            actions/*/*/node_modules
+          key: ${{ steps.key.outputs.value }}
+
+      # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
+      # it to 'latest', which would win otherwise. It reinstalls on every run whatever the cache did,
+      # which is what validates the restored tree against the lockfile before the next job trusts it.
+      - name: Setup Bun And Install
+        uses: TimSchoenle/actions/actions/bun/setup-cached@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-bun-setup-cached-v2.0.0
+        with:
+          bun-version: ''
+          bun-version-file: '.bun-version'
+
+  e2e:
+    needs: install
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: End-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            objects.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            api.github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # setup-bun rather than setup-cached: the cached wrapper runs `bun install` on every job, cache
+      # hit or not, and this job is the one that must have no route to a package registry at all.
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: '.bun-version'
+
+      # The harness runs a node24 bundle with the first node on PATH and refuses any other major,
+      # and the image's default node is not 24. A major alone resolves from the runner's tool
+      # cache, so this reaches no endpoint the allowlist above does not already carry.
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+
+      # Restored, never installed, and never saved. `fail-on-cache-miss` is what keeps that honest:
+      # without it a miss would leave the suite to fail later on a missing import, several confusing
+      # minutes further on.
+      - name: Restore Dependencies
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            actions/*/*/node_modules
+          key: ${{ needs.install.outputs.cache-key }}
+          fail-on-cache-miss: true
+
+      # The cases run `dist/index.js`, the bundle GitHub itself would run, so nothing is built here.
+      - name: Generate Token
+        id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: TimSchoenle
+          repositories: actions-testing
+          permission-metadata: read
+
+      - name: Run End-to-end Cases
+        env:
+          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          # An installation token cannot call `GET /user`, so the suite resolves its own account by
+          # app slug instead. Without this a case matching commit authors fails only in CI.
+          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
+          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+        run: bun run e2e actions/common/generated-files-verdict
+
+  verdict-generate-docs:
+    name: 'Round Trip: Generator Changing README.md'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      has_changes: ${{ steps.patch.outputs.has_changes }}
+      artifact_name: ${{ steps.patch.outputs.artifact_name }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Change README.md
+        run: printf '\nappended by the docs generator\n' >> README.md
+
+      - name: Create Patch
+        id: patch
+        uses: ./actions/common/create-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact_name: verdict-e2e-docs-${{ github.run_attempt }}
+          paths: README.md
+
+  verdict-generate-license:
+    name: 'Round Trip: Generator Changing LICENSE'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      has_changes: ${{ steps.patch.outputs.has_changes }}
+      artifact_name: ${{ steps.patch.outputs.artifact_name }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Change LICENSE
+        run: printf '\nappended by the license generator\n' >> LICENSE
+
+      - name: Create Patch
+        id: patch
+        uses: ./actions/common/create-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact_name: verdict-e2e-license-${{ github.run_attempt }}
+          paths: LICENSE
+
+  verdict-generate-clean:
+    name: 'Round Trip: Generator With Nothing To Change'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      has_changes: ${{ steps.patch.outputs.has_changes }}
+      artifact_name: ${{ steps.patch.outputs.artifact_name }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Create Patch
+        id: patch
+        uses: ./actions/common/create-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact_name: verdict-e2e-clean-${{ github.run_attempt }}
+          paths: README.md
+
+  verdict-generate-failing:
+    name: 'Round Trip: Generator That Fails After Its Patch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      has_changes: ${{ steps.patch.outputs.has_changes }}
+      artifact_name: ${{ steps.patch.outputs.artifact_name }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Change CONTRIBUTING.md
+        run: printf '\nappended by the failing generator\n' >> CONTRIBUTING.md
+
+      - name: Create Patch
+        id: patch
+        uses: ./actions/common/create-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact_name: verdict-e2e-failing-${{ github.run_attempt }}
+          paths: CONTRIBUTING.md
+
+      - name: Fail
+        run: exit 1
+
+  # Two generators left changes and one did not: the verdict fails, and the merged patch it uploads
+  # before failing carries both changes.
+  verdict-pending:
+    name: 'Round Trip: Verdict With Pending Changes'
+    needs: [verdict-generate-docs, verdict-generate-license, verdict-generate-clean]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read # for find-patch to list and download this run's artifacts
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run The Verdict
+        id: verdict
+        continue-on-error: true
+        uses: ./actions/common/generated-files-verdict # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          needs: ${{ toJSON(needs) }}
+          artifact_name: verdict-e2e-merged-${{ github.run_attempt }}
+
+      - name: Find The Merged Patch
+        id: merged
+        uses: ./actions/common/find-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact_name: verdict-e2e-merged-${{ github.run_attempt }}
+
+      - name: Assert The Verdict
+        env:
+          OUTCOME: ${{ steps.verdict.outcome }}
+          PASSED: ${{ steps.verdict.outputs.passed }}
+          FAILED_JOBS: ${{ steps.verdict.outputs.failed_jobs }}
+          PENDING_JOBS: ${{ steps.verdict.outputs.pending_jobs }}
+          HAS_CHANGES: ${{ steps.verdict.outputs.has_changes }}
+          MERGED_HAS_CHANGES: ${{ steps.merged.outputs.has_changes }}
+          MERGED_DIRECTORY: ${{ steps.merged.outputs.directory }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          [ "$OUTCOME" = "failure" ] || fail "the verdict step ended '$OUTCOME' with changes pending"
+          [ "$PASSED" = "false" ] || fail "passed '$PASSED' with changes pending"
+          [ -z "$FAILED_JOBS" ] || fail "failed_jobs '$FAILED_JOBS' when every generator succeeded"
+          [ "$PENDING_JOBS" = "verdict-generate-docs verdict-generate-license" ] || fail "pending_jobs '$PENDING_JOBS'"
+          [ "$HAS_CHANGES" = "true" ] || fail "has_changes '$HAS_CHANGES' for a merged patch of two changes"
+          [ "$MERGED_HAS_CHANGES" = "true" ] || fail "find-patch read the merged patch as '$MERGED_HAS_CHANGES'"
+          patch="$MERGED_DIRECTORY/changes.patch"
+          grep -q '^+appended by the docs generator$' "$patch" || fail "the merged patch lacks the README.md change"
+          grep -q '^+appended by the license generator$' "$patch" || fail "the merged patch lacks the LICENSE change"
+          echo "The verdict failed on two pending generators and uploaded one patch with both changes"
+
+  # One generator failed after uploading its patch, one left changes: the verdict fails on both, and
+  # the merged patch holds only the successful generator's change. A failed generator's patch is not
+  # committed: its job decides nothing until it passes.
+  verdict-failed:
+    name: 'Round Trip: Verdict With A Failed Generator'
+    needs: [verdict-generate-docs, verdict-generate-failing]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read # for find-patch to list and download this run's artifacts
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run The Verdict
+        id: verdict
+        continue-on-error: true
+        uses: ./actions/common/generated-files-verdict # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          needs: ${{ toJSON(needs) }}
+          artifact_name: verdict-e2e-failed-merged-${{ github.run_attempt }}
+
+      - name: Find The Merged Patch
+        id: merged
+        uses: ./actions/common/find-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact_name: verdict-e2e-failed-merged-${{ github.run_attempt }}
+
+      - name: Assert The Verdict
+        env:
+          OUTCOME: ${{ steps.verdict.outcome }}
+          PASSED: ${{ steps.verdict.outputs.passed }}
+          FAILED_JOBS: ${{ steps.verdict.outputs.failed_jobs }}
+          PENDING_JOBS: ${{ steps.verdict.outputs.pending_jobs }}
+          MERGED_DIRECTORY: ${{ steps.merged.outputs.directory }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          [ "$OUTCOME" = "failure" ] || fail "the verdict step ended '$OUTCOME' with a failed generator"
+          [ "$PASSED" = "false" ] || fail "passed '$PASSED' with a failed generator"
+          [ "$FAILED_JOBS" = "verdict-generate-failing" ] || fail "failed_jobs '$FAILED_JOBS'"
+          [ "$PENDING_JOBS" = "verdict-generate-docs" ] || fail "pending_jobs '$PENDING_JOBS'"
+          patch="$MERGED_DIRECTORY/changes.patch"
+          grep -q '^+appended by the docs generator$' "$patch" || fail "the merged patch lacks the README.md change"
+          if grep -q 'failing generator' "$patch"; then fail "the merged patch holds the failed generator's change"; fi
+          echo "The verdict failed on the failed generator and merged only the successful one"
+
+  # Only the generator with nothing to change: the verdict passes and uploads an empty merged patch,
+  # which replaces anything an earlier attempt of the run uploaded.
+  verdict-clean:
+    name: 'Round Trip: Verdict With Nothing Pending'
+    needs: [verdict-generate-clean]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read # for find-patch to list this run's artifacts
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run The Verdict
+        id: verdict
+        uses: ./actions/common/generated-files-verdict # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          needs: ${{ toJSON(needs) }}
+          artifact_name: verdict-e2e-clean-merged-${{ github.run_attempt }}
+
+      - name: Find The Merged Patch
+        id: merged
+        uses: ./actions/common/find-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact_name: verdict-e2e-clean-merged-${{ github.run_attempt }}
+
+      - name: Assert The Verdict
+        env:
+          PASSED: ${{ steps.verdict.outputs.passed }}
+          HAS_CHANGES: ${{ steps.verdict.outputs.has_changes }}
+          MERGED_OUTCOME: ${{ steps.merged.outputs.outcome }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          [ "$PASSED" = "true" ] || fail "passed '$PASSED' with nothing pending"
+          [ "$HAS_CHANGES" = "false" ] || fail "has_changes '$HAS_CHANGES' with nothing pending"
+          [ "$MERGED_OUTCOME" = "no_changes" ] || fail "outcome '$MERGED_OUTCOME' for the merged patch with nothing pending"
+          echo "The verdict passed and uploaded an empty merged patch"
+
+  # <<< generated: summary (run 'bun run generate-ci-required' to update)
+  summary:
+    name: 'CI Summary: Common Generated-files-verdict'
+    if: ${{ always() }}
+    needs:
+      - install
+      - e2e
+      - verdict-generate-docs
+      - verdict-generate-license
+      - verdict-generate-clean
+      - verdict-generate-failing
+      - verdict-pending
+      - verdict-failed
+      - verdict-clean
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Fail if any verify job did not succeed
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
+  # >>> generated: summary

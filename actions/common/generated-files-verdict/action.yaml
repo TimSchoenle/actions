@@ -1,0 +1,158 @@
+name: 'Common Generated Files Verdict'
+description: 'Fails a pull request while a generator job failed or left changes uncommitted, and merges every pending generator patch into one artifact for common/commit-patch.'
+
+# The required check of a repository's Generate workflow. It runs in a job of its own that needs every
+# generator job and has `if: always()`, so it reports on every pull request, including one that
+# changed nothing a generator watches.
+#
+# It holds no secret: everything it reads came from jobs that may have run the pull request's code.
+# Each generator uploads its own create-patch artifact; this action applies all the non-empty ones to
+# a checkout of the commit they were made from and uploads the result as one artifact, so the
+# workflow_run commit job makes a single commit and the pull request's checks run once more, not once
+# per generator. The verdict is decided after that upload, so the commit job finds the merged patch
+# even though this step fails.
+#
+# The merged artifact is uploaded on every run, empty when nothing is pending or when the merge
+# itself failed. Artifacts belong to the run, not to the attempt, so an attempt that uploaded nothing
+# would leave an earlier attempt's patch for the commit job to find.
+
+inputs:
+  needs:
+    description: "The verdict job's needs context, as toJSON(needs). Every job listed counts: a failed or cancelled one fails the verdict, a skipped one passes."
+    required: true
+  changes_output:
+    description: "Name of the output each generator job sets to true when its patch is non-empty, normally create-patch's has_changes."
+    required: false
+    default: 'has_changes'
+  artifact_output:
+    description: 'Name of the output each generator job sets to the name of its create-patch artifact.'
+    required: false
+    default: 'artifact_name'
+  artifact_name:
+    description: 'Name of the merged patch artifact. Pass the same name to common/commit-generated-files. 1 to 100 characters of letters, digits, ., _ and -.'
+    required: false
+    default: 'generated-files'
+  max_patch_bytes:
+    description: 'Largest patch, in bytes, for each generator patch and for the merged one. Keep it equal to max_patch_bytes on the commit side.'
+    required: false
+    default: '10485760'
+
+outputs:
+  passed:
+    description: 'true when no generator failed and nothing is left to commit.'
+    value: ${{ steps.verdict.outputs.passed }}
+  failed_jobs:
+    description: 'Space-separated generator jobs that failed or were cancelled.'
+    value: ${{ steps.evaluate.outputs.failed_jobs }}
+  pending_jobs:
+    description: 'Space-separated generator jobs whose changes are not committed yet.'
+    value: ${{ steps.evaluate.outputs.pending_jobs }}
+  has_changes:
+    description: 'true when the merged patch is non-empty.'
+    value: ${{ steps.merged.outputs.has_changes == 'true' }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Evaluate Generator Jobs
+      id: evaluate
+      shell: bash
+      env:
+        INPUT_MODE: evaluate
+        INPUT_NEEDS: ${{ inputs.needs }}
+        INPUT_CHANGES_OUTPUT: ${{ inputs.changes_output }}
+        INPUT_ARTIFACT_OUTPUT: ${{ inputs.artifact_output }}
+        INPUT_MERGED_ARTIFACT: ${{ inputs.artifact_name }}
+      run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"
+
+    - name: Download Pending Patches
+      if: steps.evaluate.outputs.has_pending == 'true'
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        pattern: ${{ steps.evaluate.outputs.download_pattern }}
+        path: ${{ steps.evaluate.outputs.directory }}
+        merge-multiple: false
+
+    - name: Inspect Pending Patches
+      id: inspect
+      if: steps.evaluate.outputs.has_pending == 'true'
+      shell: bash
+      env:
+        INPUT_MODE: inspect
+        INPUT_DIRECTORY: ${{ steps.evaluate.outputs.directory }}
+        INPUT_ARTIFACTS: ${{ steps.evaluate.outputs.artifacts }}
+        INPUT_MAX_PATCH_BYTES: ${{ inputs.max_patch_bytes }}
+      run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"
+
+    # The commit the generators checked out, not the merge ref: the merged patch has to apply to the
+    # pull request head, which is what the commit job checks base_sha against. With nothing pending,
+    # the head itself, for the empty patch.
+    - name: Check Out The Patches' Base
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        ref: ${{ steps.inspect.outputs.base_sha || github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
+
+    - name: Apply Pending Patches
+      if: steps.evaluate.outputs.has_pending == 'true'
+      shell: bash
+      env:
+        INPUT_MODE: apply
+        INPUT_DIRECTORY: ${{ steps.evaluate.outputs.directory }}
+        INPUT_ARTIFACTS: ${{ steps.evaluate.outputs.artifacts }}
+        INPUT_MAX_PATCH_BYTES: ${{ inputs.max_patch_bytes }}
+      run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"
+
+    - name: Upload The Merged Patch
+      id: merged
+      uses: TimSchoenle/actions/actions/common/create-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-patch-v1.1.1
+      with:
+        artifact_name: ${{ inputs.artifact_name }}
+        max_patch_bytes: ${{ inputs.max_patch_bytes }}
+
+    # A failure before the upload (an invalid needs context, patches from different commits, two
+    # patches that conflict) still replaces any earlier attempt's patch, with an empty one made from
+    # a clean checkout of the head.
+    - name: Check Out The Head After A Failure
+      if: failure() && steps.merged.conclusion != 'success'
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
+
+    - name: Upload An Empty Patch After A Failure
+      if: failure() && steps.merged.conclusion != 'success'
+      uses: TimSchoenle/actions/actions/common/create-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-patch-v1.1.1
+      with:
+        artifact_name: ${{ inputs.artifact_name }}
+        max_patch_bytes: ${{ inputs.max_patch_bytes }}
+
+    - name: Verdict
+      id: verdict
+      shell: bash
+      env:
+        FAILED_JOBS: ${{ steps.evaluate.outputs.failed_jobs }}
+        PENDING_JOBS: ${{ steps.evaluate.outputs.pending_jobs }}
+        MERGED_HAS_CHANGES: ${{ steps.merged.outputs.has_changes }}
+      run: |
+        set -euo pipefail
+        passed=true
+        if [ -n "${FAILED_JOBS}" ]; then
+          echo "::error::These generator jobs failed or were cancelled: ${FAILED_JOBS}."
+          passed=false
+        fi
+        if [ "${MERGED_HAS_CHANGES}" = "true" ]; then
+          echo "::error::Generated files are out of date (${PENDING_JOBS}). The commit job adds them to this branch, and the run on that commit decides."
+          passed=false
+        fi
+        echo "passed=${passed}" >> "$GITHUB_OUTPUT"
+        if [ "${passed}" = "true" ]; then
+          echo "Every generated file is up to date." >> "$GITHUB_STEP_SUMMARY"
+        else
+          {
+            echo "Generated files are not up to date."
+            if [ -n "${FAILED_JOBS}" ]; then echo "- Failed: ${FAILED_JOBS}"; fi
+            if [ "${MERGED_HAS_CHANGES}" = "true" ]; then echo "- Waiting for the commit job: ${PENDING_JOBS}"; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+        fi

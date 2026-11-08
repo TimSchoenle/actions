@@ -1,0 +1,118 @@
+name: 'Common Commit Generated Files'
+description: 'Commits the merged generator patch from a pull_request run to the pull request branch as a GitHub App, from a workflow_run job.'
+
+# The commit half of a repository's Generate workflow. Call it from a job triggered by
+# `workflow_run` on Generate, which runs the default branch's copy of the workflow and so cannot be
+# rewritten by the pull request that produced the patch.
+#
+# The App key is used only when there is something to commit: find-patch checks the artifact first,
+# without any secret, and the token is minted afterwards, scoped to contents: write. A run that is
+# not a same-repository pull request's, or that was cancelled, is skipped without touching anything.
+
+inputs:
+  client_id:
+    description: 'Client ID of the GitHub App that commits. Its installation needs contents: write on this repository.'
+    required: true
+  private_key:
+    description: 'Private key of that GitHub App.'
+    required: true
+  allowed_paths:
+    description: 'Space- or newline-separated paths and globs the merged patch may change, as common/commit-patch takes them. Cover every generator: anything else fails the commit.'
+    required: true
+  commit_message:
+    description: 'Message of the commit.'
+    required: false
+    default: 'chore: update generated files'
+  artifact_name:
+    description: 'Name of the merged patch artifact, as given to common/generated-files-verdict.'
+    required: false
+    default: 'generated-files'
+  max_patch_bytes:
+    description: 'Largest patch, in bytes. Keep it equal to max_patch_bytes on common/generated-files-verdict.'
+    required: false
+    default: '10485760'
+
+outputs:
+  outcome:
+    description: 'committed, branch_moved, no_changes or missing as common/commit-patch and common/find-patch report them; skipped when the triggering run is not one to commit for; failed when the commit step failed.'
+    value: ${{ steps.commit.outcome == 'failure' && 'failed' || steps.commit.outputs.outcome || steps.find.outputs.outcome || steps.event.outputs.outcome }}
+  commit_sha:
+    description: 'SHA of the commit made, when one was.'
+    value: ${{ steps.commit.outputs.commit_sha }}
+  commit_url:
+    description: 'URL of the commit made, when one was.'
+    value: ${{ steps.commit.outputs.commit_url }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check The Triggering Run
+      id: event
+      shell: bash
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+        RUN_EVENT: ${{ github.event.workflow_run.event }}
+        RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        HEAD_REPOSITORY: ${{ github.event.workflow_run.head_repository.full_name }}
+        HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        REPOSITORY: ${{ github.repository }}
+        DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      run: bash "$GITHUB_ACTION_PATH/check-event.sh"
+
+    - name: Find The Merged Patch
+      id: find
+      if: steps.event.outputs.proceed == 'true'
+      uses: TimSchoenle/actions/actions/common/find-patch@7b20a67f0b18a6e64c30e5f47c92636729f6ad41 # tag=actions-common-find-patch-v1.1.0
+      with:
+        run_id: ${{ github.event.workflow_run.id }}
+        artifact_name: ${{ inputs.artifact_name }}
+        expected_head_sha: ${{ github.event.workflow_run.head_sha }}
+        max_patch_bytes: ${{ inputs.max_patch_bytes }}
+
+    # commit-patch needs the head commit's objects to apply the patch to.
+    - name: Check Out The Pull Request Head
+      if: steps.find.outputs.has_changes == 'true'
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        ref: ${{ github.event.workflow_run.head_sha }}
+        persist-credentials: false
+
+    - name: Generate App Token
+      id: token
+      if: steps.find.outputs.has_changes == 'true'
+      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      with:
+        client-id: ${{ inputs.client_id }}
+        private-key: ${{ inputs.private_key }}
+        permission-contents: write
+
+    - name: Commit The Generated Files
+      id: commit
+      if: steps.find.outputs.has_changes == 'true'
+      uses: TimSchoenle/actions/actions/common/commit-patch@7b20a67f0b18a6e64c30e5f47c92636729f6ad41 # tag=actions-common-commit-patch-v1.3.0
+      with:
+        token: ${{ steps.token.outputs.token }}
+        run_id: ${{ github.event.workflow_run.id }}
+        branch: ${{ github.event.workflow_run.head_branch }}
+        expected_head_sha: ${{ github.event.workflow_run.head_sha }}
+        artifact_name: ${{ inputs.artifact_name }}
+        allowed_paths: ${{ inputs.allowed_paths }}
+        commit_message: ${{ inputs.commit_message }}
+        max_patch_bytes: ${{ inputs.max_patch_bytes }}
+
+    - name: Summarise
+      if: steps.event.outputs.proceed == 'true'
+      shell: bash
+      env:
+        FIND_OUTCOME: ${{ steps.find.outputs.outcome }}
+        COMMIT_OUTCOME: ${{ steps.commit.outputs.outcome }}
+        COMMIT_URL: ${{ steps.commit.outputs.commit_url }}
+      run: |
+        set -euo pipefail
+        case "${COMMIT_OUTCOME:-${FIND_OUTCOME}}" in
+          committed) echo "Committed the generated files: ${COMMIT_URL}" ;;
+          branch_moved) echo "The branch moved after the patch was made; the run for the new head generates again." ;;
+          no_changes) echo "Every generated file was already up to date." ;;
+          missing) echo "The run uploaded no merged patch: no generator had changes, or the verdict job did not run." ;;
+          *) echo "Nothing committed (${COMMIT_OUTCOME:-${FIND_OUTCOME}})." ;;
+        esac >> "$GITHUB_STEP_SUMMARY"

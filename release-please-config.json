@@ -255,6 +255,16 @@
       "release-type": "simple",
       "component": "actions-common-find-patch",
       "include-component-in-tag": true
+    },
+    "actions/common/generated-files-verdict": {
+      "release-type": "simple",
+      "component": "actions-common-generated-files-verdict",
+      "include-component-in-tag": true
+    },
+    "actions/common/commit-generated-files": {
+      "release-type": "simple",
+      "component": "actions-common-commit-generated-files",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

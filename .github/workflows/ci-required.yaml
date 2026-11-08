@@ -79,12 +79,14 @@ on:
       - Verify Bun Setup Cached
       - Verify Common Close-pull-request
       - Verify Common Commit-changes
+      - Verify Common Commit-generated-files
       - Verify Common Commit-patch
       - Verify Common Create Pull Request
       - Verify Common Create-branch
       - Verify Common Create-patch
       - Verify Common Delete-branch
       - Verify Common Find-patch
+      - Verify Common Generated-files-verdict
       - Verify Common Get-app-git-identity
       - Verify Common Modify-yaml
       - Verify Common Read-yaml
