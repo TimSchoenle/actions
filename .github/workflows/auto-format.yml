@@ -56,6 +56,7 @@ jobs:
           steps.patch.outputs.has_changes == 'true' &&
           github.event.pull_request.head.repo.full_name == github.repository
         run: |
+          set -euo pipefail
           echo "::error::bun run format changed files; auto-format-commit.yml commits them and the run on that commit decides. If no bot commit appears, run bun run format locally and push."
           exit 1
 
