@@ -1,0 +1,57 @@
+name: 'Common Generated Files Verdict Helper'
+description: 'Internal to actions/common/generated-files-verdict, which runs this bundle with node in three modes. Not a public action: its inputs and outputs change without notice.'
+
+inputs:
+  mode:
+    description: 'evaluate reads the needs context; inspect validates the downloaded patches and finds their common base; apply applies them to the checkout.'
+    required: true
+  needs:
+    description: 'toJSON(needs) of the verdict job. Read in evaluate mode.'
+    required: false
+    default: ''
+  changes_output:
+    description: 'Name of the output each generator job sets to true when its patch is non-empty. Read in evaluate mode.'
+    required: false
+    default: 'has_changes'
+  artifact_output:
+    description: "Name of the output each generator job sets to its patch artifact's name. Read in evaluate mode."
+    required: false
+    default: 'artifact_name'
+  merged_artifact:
+    description: 'Name the merged patch is uploaded under. No generator artifact may have it. Read in evaluate mode.'
+    required: false
+    default: 'generated-files'
+  directory:
+    description: 'Directory the pending artifacts were downloaded into, one subdirectory each. Read in inspect and apply mode.'
+    required: false
+    default: ''
+  artifacts:
+    description: 'JSON array of the pending artifact names, as evaluate mode set it. Read in inspect and apply mode.'
+    required: false
+    default: '[]'
+  max_patch_bytes:
+    description: 'Largest patch accepted, in bytes. Read in inspect and apply mode.'
+    required: false
+    default: '10485760'
+
+outputs:
+  failed_jobs:
+    description: 'Space-separated jobs whose result was failure or cancelled. Set in evaluate mode.'
+  pending_jobs:
+    description: 'Space-separated jobs that reported a non-empty patch. Set in evaluate mode.'
+  artifacts:
+    description: "JSON array of the pending jobs' artifact names. Set in evaluate mode."
+  download_pattern:
+    description: 'download-artifact pattern matching exactly those artifacts. Set in evaluate mode.'
+  has_pending:
+    description: 'true when at least one job reported a non-empty patch. Set in evaluate mode.'
+  directory:
+    description: 'Empty directory the pending artifacts end up in, one subdirectory each. Set in evaluate mode.'
+  download_path:
+    description: 'path to give download-artifact so that layout results: the directory for several artifacts, the one subdirectory for a single artifact. Set in evaluate mode.'
+  base_sha:
+    description: 'The commit every pending patch was made from. Set in inspect mode.'
+
+runs:
+  using: 'node24'
+  main: 'dist/index.js'

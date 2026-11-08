@@ -1,0 +1,104 @@
+name: Verify Common Commit-generated-files
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'actions/common/commit-generated-files/**'
+      - '.github/workflows/verify-action-common-commit-generated-files.yaml'
+  pull_request:
+    paths:
+      - 'actions/common/commit-generated-files/**'
+      - '.github/workflows/verify-action-common-commit-generated-files.yaml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  # The action commits only from a workflow_run job, which runs the default branch's copy of the
+  # workflow. Started by anything else it must stop before it looks for a patch or touches the App
+  # key, so the inputs here are placeholders that are never read.
+  verify:
+    name: 'Test Commit Generated Files: refuses a non-workflow_run event'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run commit-generated-files
+        id: run
+        continue-on-error: true
+        uses: ./actions/common/commit-generated-files # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          client_id: placeholder-never-read
+          private_key: placeholder-never-read
+          allowed_paths: README.md
+
+      - name: Assert The Step Failed Before Doing Anything
+        env:
+          OUTCOME: ${{ steps.run.outcome }}
+          RESULT: ${{ steps.run.outputs.outcome }}
+          COMMIT_SHA: ${{ steps.run.outputs.commit_sha }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          [ "$OUTCOME" = "failure" ] || fail "the step ended '$OUTCOME' outside a workflow_run job"
+          [ -z "$RESULT" ] || fail "outcome '$RESULT' set by a step that should have stopped first"
+          [ -z "$COMMIT_SHA" ] || fail "commit_sha '$COMMIT_SHA' set outside a workflow_run job"
+          echo "Refused a ${GITHUB_EVENT_NAME} event without looking for a patch"
+
+  # The event filter decides whether the App key is used at all, so every branch of it is driven
+  # here with the fields a workflow_run event carries.
+  check-event:
+    name: 'Test Commit Generated Files: event filter'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Drive Every Branch
+        run: bash actions/common/commit-generated-files/check-event-test.sh actions/common/commit-generated-files/check-event.sh
+
+  # <<< generated: summary (run 'bun run generate-ci-required' to update)
+  summary:
+    name: 'CI Summary: Common Commit-generated-files'
+    if: ${{ always() }}
+    needs:
+      - verify
+      - check-event
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Fail if any verify job did not succeed
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
+  # >>> generated: summary

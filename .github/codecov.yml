@@ -92,6 +92,9 @@ component_management:
     - component_id: common-find-patch
       name: common/find-patch
       paths: ['actions/common/find-patch/**']
+    - component_id: common-generated-files-verdict
+      name: common/generated-files-verdict
+      paths: ['actions/common/generated-files-verdict/**']
     - component_id: common-get-app-git-identity
       name: common/get-app-git-identity
       paths: ['actions/common/get-app-git-identity/**']

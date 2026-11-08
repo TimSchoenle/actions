@@ -49,5 +49,7 @@
   "actions/maintenance/timed-auto-merge": "2.0.2",
   "actions/maintenance/trigger-coderabbit-review": "1.1.0",
   "actions/security/jactionlint": "1.1.0",
-  "actions/common/find-patch": "1.1.0"
+  "actions/common/find-patch": "1.1.0",
+  "actions/common/generated-files-verdict": "1.0.0",
+  "actions/common/commit-generated-files": "1.0.0"
 }
