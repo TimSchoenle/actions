@@ -122,6 +122,8 @@ jobs:
         uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
         with:
           token: ${{ steps.generate_token.outputs.token }}
+          # Only this App's own comment is updated; a pasted marker cannot redirect the edit.
+          author: '${{ steps.generate_token.outputs.app-slug }}[bot]'
           pr_url: ${{ github.server_url }}/${{ github.repository }}/pull/${{ github.event.workflow_run.pull_requests[0].number }}
           identifier: 'auto-format'
           body: 'Code has been auto-formatted to adhere to the style guide.'

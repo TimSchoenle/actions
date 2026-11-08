@@ -125,6 +125,8 @@ jobs:
         uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
         with:
           token: ${{ steps.generate_token.outputs.token }}
+          # Only this App's own comment is updated; a pasted marker cannot redirect the edit.
+          author: '${{ steps.generate_token.outputs.app-slug }}[bot]'
           pr_url: ${{ github.server_url }}/${{ github.repository }}/pull/${{ github.event.workflow_run.pull_requests[0].number }}
           identifier: 'update-builds'
           body: 'Build artifacts (`dist/` and `src/generated/`) have been auto-updated.'
@@ -236,6 +238,8 @@ jobs:
         uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
         with:
           token: ${{ steps.generate_token.outputs.token }}
+          # Only this App's own comment is updated; a pasted marker cannot redirect the edit.
+          author: '${{ steps.generate_token.outputs.app-slug }}[bot]'
           pr_url: ${{ github.server_url }}/${{ github.repository }}/pull/${{ github.event.workflow_run.pull_requests[0].number }}
           identifier: 'update-generated-workflows'
           body: 'Generated `verify-action-*` workflows, `ci-required.yaml` and the Codecov components in `.github/codecov.yml` have been rebuilt.'
@@ -338,6 +342,8 @@ jobs:
         uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
         with:
           token: ${{ steps.generate_token.outputs.token }}
+          # Only this App's own comment is updated; a pasted marker cannot redirect the edit.
+          author: '${{ steps.generate_token.outputs.app-slug }}[bot]'
           pr_url: ${{ github.server_url }}/${{ github.repository }}/pull/${{ github.event.workflow_run.pull_requests[0].number }}
           identifier: 'update-readme'
           body: '`README.md` and `SECURITY.md` have been auto-updated with the latest details.'
