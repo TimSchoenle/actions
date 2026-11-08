@@ -1,0 +1,292 @@
+# GENERATED — do not edit by hand. Run `bun run generate-e2e-workflows` to rebuild this file
+# from the actions that have an `e2e/` directory. The drift test in CI fails if it is out of date.
+#
+# The cases live in `actions/common/find-patch/e2e/` and are ordinary vitest files. This
+# workflow supplies only what they cannot get on a laptop: a token scoped to the scratch repository.
+name: Verify Common Find-patch
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/common/find-patch'
+    paths:
+      - 'actions/common/find-patch/**'
+      - '!actions/common/find-patch/CHANGELOG.md'
+      - 'packages/e2e/**'
+      - '.github/workflows/verify-action-common-find-patch.yaml'
+  pull_request:
+    paths:
+      - 'actions/common/find-patch/**'
+      - '!actions/common/find-patch/CHANGELOG.md'
+      - 'packages/e2e/**'
+      - '.github/workflows/verify-action-common-find-patch.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  install:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      cache-key: ${{ steps.key.outputs.value }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            objects.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            registry.npmjs.org:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Compute Cache Key
+        id: key
+        env:
+          CACHE_KEY: e2e-workspace-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+        run: echo "value=$CACHE_KEY" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Workspace Dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            actions/*/*/node_modules
+          key: ${{ steps.key.outputs.value }}
+
+      # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
+      # it to 'latest', which would win otherwise. It reinstalls on every run whatever the cache did,
+      # which is what validates the restored tree against the lockfile before the next job trusts it.
+      - name: Setup Bun And Install
+        uses: TimSchoenle/actions/actions/bun/setup-cached@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-bun-setup-cached-v2.0.0
+        with:
+          bun-version: ''
+          bun-version-file: '.bun-version'
+
+  e2e:
+    needs: install
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: End-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            objects.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            api.github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # setup-bun rather than setup-cached: the cached wrapper runs `bun install` on every job, cache
+      # hit or not, and this job is the one that must have no route to a package registry at all.
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: '.bun-version'
+
+      # The harness runs a node24 bundle with the first node on PATH and refuses any other major,
+      # and the image's default node is not 24. A major alone resolves from the runner's tool
+      # cache, so this reaches no endpoint the allowlist above does not already carry.
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+
+      # Restored, never installed, and never saved. `fail-on-cache-miss` is what keeps that honest:
+      # without it a miss would leave the suite to fail later on a missing import, several confusing
+      # minutes further on.
+      - name: Restore Dependencies
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            actions/*/*/node_modules
+          key: ${{ needs.install.outputs.cache-key }}
+          fail-on-cache-miss: true
+
+      # The cases run `dist/index.js`, the bundle GitHub itself would run, so nothing is built here.
+      - name: Generate Token
+        id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: TimSchoenle
+          repositories: actions-testing
+          permission-metadata: read
+
+      - name: Run End-to-end Cases
+        env:
+          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          # An installation token cannot call `GET /user`, so the suite resolves its own account by
+          # app slug instead. Without this a case matching commit authors fails only in CI.
+          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
+          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+        run: bun run e2e actions/common/find-patch
+
+  verify-composite:
+    name: Round Trip Through The Runner
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read # to list and download this run's artifacts through the REST API
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Create Empty Patch
+        id: empty
+        uses: ./actions/common/create-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact_name: find-patch-e2e-empty-${{ github.run_attempt }}
+          paths: README.md
+
+      - name: Change The Tree
+        run: printf '\nappended by the round trip\n' >> README.md
+
+      - name: Create Patch
+        id: changed
+        uses: ./actions/common/create-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact_name: find-patch-e2e-changed-${{ github.run_attempt }}
+          paths: README.md
+
+      - name: Find Changed Patch
+        id: find-changed
+        uses: ./actions/common/find-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          run_id: ${{ github.run_id }}
+          artifact_name: ${{ steps.changed.outputs.artifact_name }}
+          expected_head_sha: ${{ steps.changed.outputs.base_sha }}
+
+      # run_id left empty: this run is looked in.
+      - name: Find Empty Patch In This Run
+        id: find-empty
+        uses: ./actions/common/find-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact_name: ${{ steps.empty.outputs.artifact_name }}
+
+      - name: Find Patch Made From Another Commit
+        id: find-moved
+        uses: ./actions/common/find-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          run_id: ${{ github.run_id }}
+          artifact_name: ${{ steps.changed.outputs.artifact_name }}
+          expected_head_sha: '0000000000000000000000000000000000000000'
+
+      - name: Find Missing Patch
+        id: find-missing
+        uses: ./actions/common/find-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          run_id: ${{ github.run_id }}
+          artifact_name: find-patch-e2e-never-uploaded
+
+      # Run 1 of this repository does not exist. Were the run not found read as "missing", a mistyped
+      # run_id would silently skip every commit.
+      - name: Find Patch In A Run That Does Not Exist
+        id: find-no-run
+        continue-on-error: true
+        uses: ./actions/common/find-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          run_id: '1'
+          artifact_name: ${{ steps.empty.outputs.artifact_name }}
+
+      - name: Assert Find Patch Outputs
+        env:
+          CHANGED_FOUND: ${{ steps.find-changed.outputs.found }}
+          CHANGED_HAS_CHANGES: ${{ steps.find-changed.outputs.has_changes }}
+          CHANGED_OUTCOME: ${{ steps.find-changed.outputs.outcome }}
+          CHANGED_BASE: ${{ steps.find-changed.outputs.base_sha }}
+          CHANGED_DIRECTORY: ${{ steps.find-changed.outputs.directory }}
+          EMPTY_HAS_CHANGES: ${{ steps.find-empty.outputs.has_changes }}
+          EMPTY_DIRECTORY: ${{ steps.find-empty.outputs.directory }}
+          MISSING_DIRECTORY: ${{ steps.find-missing.outputs.directory }}
+          EMPTY_OUTCOME: ${{ steps.find-empty.outputs.outcome }}
+          MOVED_HAS_CHANGES: ${{ steps.find-moved.outputs.has_changes }}
+          MOVED_OUTCOME: ${{ steps.find-moved.outputs.outcome }}
+          MISSING_FOUND: ${{ steps.find-missing.outputs.found }}
+          MISSING_HAS_CHANGES: ${{ steps.find-missing.outputs.has_changes }}
+          MISSING_OUTCOME: ${{ steps.find-missing.outputs.outcome }}
+          NO_RUN_OUTCOME: ${{ steps.find-no-run.outcome }}
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+
+          fail() { echo "::error::$1"; exit 1; }
+          [ "$CHANGED_FOUND" = "true" ] || fail "found '$CHANGED_FOUND' for an uploaded patch"
+          [ "$CHANGED_HAS_CHANGES" = "true" ] || fail "has_changes '$CHANGED_HAS_CHANGES' for a changed patch"
+          [ "$CHANGED_OUTCOME" = "changes" ] || fail "outcome '$CHANGED_OUTCOME' for a changed patch"
+          [ "$CHANGED_BASE" = "$head" ] || fail "base_sha '$CHANGED_BASE' is not HEAD '$head'"
+          [ -s "$CHANGED_DIRECTORY/changes.patch" ] || fail "directory '$CHANGED_DIRECTORY' holds no non-empty changes.patch"
+          [ "$EMPTY_HAS_CHANGES" = "false" ] || fail "has_changes '$EMPTY_HAS_CHANGES' for an empty patch"
+          [ "$EMPTY_OUTCOME" = "no_changes" ] || fail "outcome '$EMPTY_OUTCOME' for an empty patch"
+          [ "$MOVED_HAS_CHANGES" = "false" ] || fail "has_changes '$MOVED_HAS_CHANGES' for a patch made from another commit"
+          [ "$MOVED_OUTCOME" = "branch_moved" ] || fail "outcome '$MOVED_OUTCOME' for a patch made from another commit"
+          [ "$MISSING_FOUND" = "false" ] || fail "found '$MISSING_FOUND' for an artifact never uploaded"
+          [ "$MISSING_HAS_CHANGES" = "false" ] || fail "has_changes '$MISSING_HAS_CHANGES' for an artifact never uploaded"
+          [ "$MISSING_OUTCOME" = "missing" ] || fail "outcome '$MISSING_OUTCOME' for an artifact never uploaded"
+          [ -z "$MISSING_DIRECTORY" ] || fail "directory '$MISSING_DIRECTORY' set for an artifact never uploaded"
+          [ -f "$EMPTY_DIRECTORY/metadata.json" ] || fail "directory '$EMPTY_DIRECTORY' holds no metadata.json"
+          [ "$NO_RUN_OUTCOME" = "failure" ] || fail "a run that does not exist did not fail the step ($NO_RUN_OUTCOME)"
+
+          echo "Found, empty, moved and missing patches each reported as expected, and an unknown run failed"
+
+  # <<< generated: summary (run 'bun run generate-ci-required' to update)
+  summary:
+    name: 'CI Summary: Common Find-patch'
+    if: ${{ always() }}
+    needs:
+      - install
+      - e2e
+      - verify-composite
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Fail if any verify job did not succeed
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
+  # >>> generated: summary

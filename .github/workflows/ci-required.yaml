@@ -84,6 +84,7 @@ on:
       - Verify Common Create-branch
       - Verify Common Create-patch
       - Verify Common Delete-branch
+      - Verify Common Find-patch
       - Verify Common Get-app-git-identity
       - Verify Common Modify-yaml
       - Verify Common Read-yaml

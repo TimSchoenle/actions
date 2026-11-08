@@ -2,10 +2,10 @@ import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { describePatch, serializeMetadata } from 'actions-util/patch';
+import { describePatch, serializeMetadata } from './patch-artifact.js';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { ArtifactContentError, readPatchArtifact, readRegularFile } from './artifact.js';
+import { ArtifactContentError, readPatchArtifact, readRegularFile } from './patch-artifact-reader.js';
 
 const SHA = 'a'.repeat(40);
 const PATCH = Buffer.from('diff --git a/x b/x\n');
@@ -24,7 +24,7 @@ function metadataFor(patch: Buffer): string {
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(path.join(tmpdir(), 'commit-patch-artifact-'));
+  root = await mkdtemp(path.join(tmpdir(), 'patch-artifact-reader-'));
   directory = path.join(root, 'download');
   await mkdir(directory);
 });
