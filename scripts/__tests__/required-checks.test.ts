@@ -407,6 +407,13 @@ describe('exported default-branch ruleset', () => {
     expect(ruleset.conditions?.ref_name?.include).toContain('~DEFAULT_BRANCH');
   });
 
+  // Deletion alone still lets a force push rewrite the branch's history.
+  it('blocks deletion and force pushes', () => {
+    const types = (ruleset.rules ?? []).map((rule) => rule.type);
+
+    expect(types).toEqual(expect.arrayContaining(['deletion', 'non_fast_forward']));
+  });
+
   it('requires exactly the contexts the manifest lists', () => {
     expect(enforcedContexts([ruleset])).toEqual(REQUIRED_CHECKS.map((check) => check.context).sort());
   });

@@ -1,7 +1,7 @@
 {
   "id": 11569096,
   "name": "Default Branch: Default Protection Rules",
-  "description": "Enforces standard protection rules on the default branch: requires squash-merged PRs with 1 approval that a new push dismisses, plus an extra approval for unattributed changes, signed commits, CodeQL code scanning, and the required status checks listed in scripts/lib/required-checks.ts.",
+  "description": "Enforces standard protection rules on the default branch: requires squash-merged PRs with 1 approval that a new push dismisses, plus an extra approval for unattributed changes, signed commits, no force pushes, CodeQL code scanning, and the required status checks listed in scripts/lib/required-checks.ts.",
   "target": "branch",
   "source_type": "Repository",
   "source": "TimSchoenle/actions",
@@ -15,6 +15,9 @@
   "rules": [
     {
       "type": "deletion"
+    },
+    {
+      "type": "non_fast_forward"
     },
     {
       "type": "code_scanning",
