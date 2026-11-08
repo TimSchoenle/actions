@@ -46,6 +46,7 @@ jobs:
 | `client_id`       | yes      |                                 | Client ID of the GitHub App. Its installation needs `contents: write`.              |
 | `private_key`     | yes      |                                 | Private key of that GitHub App.                                                     |
 | `allowed_paths`   | yes      |                                 | Paths and globs the merged patch may change, as `common/commit-patch` takes them.   |
+| `allow_binary`    | no       | `false`                         | Accept binary changes in the merged patch, as `common/commit-patch` takes it.       |
 | `commit_message`  | no       | `chore: update generated files` | Message of the commit.                                                              |
 | `artifact_name`   | no       | `generated-files`               | Name of the merged patch artifact, as given to generated-files-verdict.             |
 | `max_patch_bytes` | no       | `10485760`                      | Largest patch. Keep it equal to the verdict side.                                   |

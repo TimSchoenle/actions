@@ -19,6 +19,10 @@ inputs:
   allowed_paths:
     description: 'Space- or newline-separated paths and globs the merged patch may change, as common/commit-patch takes them. Cover every generator: anything else fails the commit.'
     required: true
+  allow_binary:
+    description: 'Accept binary changes in the merged patch, as common/commit-patch takes it. Off, a binary change fails the commit.'
+    required: false
+    default: 'false'
   commit_message:
     description: 'Message of the commit.'
     required: false
@@ -97,6 +101,7 @@ runs:
         expected_head_sha: ${{ github.event.workflow_run.head_sha }}
         artifact_name: ${{ inputs.artifact_name }}
         allowed_paths: ${{ inputs.allowed_paths }}
+        allow_binary: ${{ inputs.allow_binary }}
         commit_message: ${{ inputs.commit_message }}
         max_patch_bytes: ${{ inputs.max_patch_bytes }}
 

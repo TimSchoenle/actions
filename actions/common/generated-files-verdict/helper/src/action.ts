@@ -17,6 +17,7 @@ export interface RunnerContext {
   readonly workspace: string;
 }
 
+/** Reads the {@link RunnerContext} from the runner's environment. */
 function readRunnerContext(): RunnerContext {
   return {
     temp: process.env['RUNNER_TEMP'] || tmpdir(),
@@ -27,6 +28,7 @@ function readRunnerContext(): RunnerContext {
 /** An output name as GitHub accepts it: a letter or `_`, then letters, digits, `-` and `_`. */
 const OUTPUT_NAME = /^[A-Za-z_][A-Za-z0-9_-]*$/;
 
+/** Reads an input that names a job output, refusing a name GitHub would never set. */
 function readOutputName(input: ActionInput): string {
   const value = getInput(input, { required: true });
   if (!OUTPUT_NAME.test(value)) {

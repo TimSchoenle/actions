@@ -68,7 +68,7 @@ The commit half is a `workflow_run` workflow on Generate, described in
 | `needs`           | yes      |                   | `${{ toJSON(needs) }}` of the verdict job.                                                         |
 | `changes_output`  | no       | `has_changes`     | Output each generator job sets to `true` when its patch is non-empty.                              |
 | `artifact_output` | no       | `artifact_name`   | Output each generator job sets to the name of its create-patch artifact.                           |
-| `artifact_name`   | no       | `generated-files` | Name of the merged patch artifact. Give commit-generated-files the same name.                      |
+| `artifact_name`   | no       | `generated-files` | Name of the merged patch artifact, starting with a letter or digit. Give commit-generated-files the same name.                      |
 | `max_patch_bytes` | no       | `10485760`        | Largest patch, for each generator patch and for the merged one. Keep it equal on the commit side.  |
 
 ## Outputs

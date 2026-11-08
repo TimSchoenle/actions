@@ -32,6 +32,7 @@ describe('generated-files-verdict', () => {
   let downloads: string;
   let base: string;
 
+  /** Runs git in the workspace with a throwaway identity, and returns its trimmed output. */
   async function git(...args: string[]): Promise<string> {
     return (await workspace.git(['-c', 'user.email=e2e@example.com', '-c', 'user.name=e2e', ...args])).trim();
   }
@@ -70,6 +71,7 @@ describe('generated-files-verdict', () => {
     await git('checkout', '--quiet', '--', '.');
   }
 
+  /** Runs this action's helper bundle with `inputs`, expecting `expected`. */
   function helper(
     inputs: ProvidedInputs<ActionInput>,
     expected: ExpectedOutcome = 'success',
@@ -133,5 +135,16 @@ describe('generated-files-verdict', () => {
     const result = await helper({ artifacts: '["docs","lock"]', directory: downloads, mode: 'inspect' }, 'failure');
 
     expect(result.errors.join('\n')).toContain('different commits');
+  });
+
+  it.each(['inspect', 'apply'] as const)('%s refuses a patch larger than max_patch_bytes', async (mode) => {
+    await generator('docs', { 'README.md': `# ${'long line '.repeat(50)}\n` }, 'README.md');
+
+    const result = await helper(
+      { artifacts: '["docs"]', directory: downloads, max_patch_bytes: '64', mode },
+      'failure',
+    );
+
+    expect(result.errors.join('\n')).toMatch(/max_patch_bytes/);
   });
 });

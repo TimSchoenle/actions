@@ -35,6 +35,7 @@ export class NeedsInputError extends Error {
   }
 }
 
+/** Whether `value` is a plain object, as opposed to `null`, an array or a primitive. */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

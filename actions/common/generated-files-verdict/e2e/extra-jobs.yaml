@@ -108,6 +108,41 @@ verdict-generate-clean:
         artifact_name: verdict-e2e-clean-${{ github.run_attempt }}
         paths: README.md
 
+# Appends a different line where the docs generator appends its own, so the two patches conflict.
+verdict-generate-conflicting:
+  name: 'Round Trip: Generator Conflicting With The Docs Generator'
+  runs-on: ubuntu-latest
+  timeout-minutes: 10
+  permissions:
+    contents: read # to fetch code
+  outputs:
+    has_changes: ${{ steps.patch.outputs.has_changes }}
+    artifact_name: ${{ steps.patch.outputs.artifact_name }}
+  steps:
+    - name: Harden Runner
+      uses: pinned:hardenRunner
+      with:
+        egress-policy: block
+        allowed-endpoints: >
+          github.com:443
+          *.actions.githubusercontent.com:443
+          *.blob.core.windows.net:443
+
+    - name: Checkout
+      uses: pinned:checkout
+      with:
+        persist-credentials: false
+
+    - name: Change README.md
+      run: printf '\nappended by the conflicting generator\n' >> README.md
+
+    - name: Create Patch
+      id: patch
+      uses: ./actions/common/create-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+      with:
+        artifact_name: verdict-e2e-conflicting-${{ github.run_attempt }}
+        paths: README.md
+
 # Uploads a patch and succeeds: a job that really failed would fail this workflow too. The verdict
 # job below reports it to the action as failed, which is all the action reads.
 verdict-generate-failing:
@@ -208,6 +243,61 @@ verdict-pending:
         grep -q '^+appended by the license generator$' "$patch" || fail "the merged patch lacks the LICENSE change"
         echo "The verdict failed on two pending generators and uploaded one patch with both changes"
 
+# Two patches that conflict: the merge fails, and the merged artifact is still uploaded, empty, so
+# the commit job cannot pick up anything an earlier attempt left.
+verdict-conflict:
+  name: 'Round Trip: Verdict With Conflicting Patches'
+  needs: [verdict-generate-docs, verdict-generate-conflicting]
+  if: always()
+  runs-on: ubuntu-latest
+  timeout-minutes: 10
+  permissions:
+    actions: read # for find-patch to list and download this run's artifacts
+    contents: read # to fetch code
+  steps:
+    - name: Harden Runner
+      uses: pinned:hardenRunner
+      with:
+        egress-policy: block
+        allowed-endpoints: >
+          github.com:443
+          api.github.com:443
+          *.actions.githubusercontent.com:443
+          *.blob.core.windows.net:443
+
+    - name: Checkout
+      uses: pinned:checkout
+      with:
+        persist-credentials: false
+
+    - name: Run The Verdict
+      id: verdict
+      continue-on-error: true
+      uses: ./actions/common/generated-files-verdict # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+      with:
+        needs: ${{ toJSON(needs) }}
+        artifact_name: verdict-e2e-conflict-merged-${{ github.run_attempt }}
+
+    - name: Find The Merged Patch
+      id: merged
+      uses: ./actions/common/find-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+      with:
+        artifact_name: verdict-e2e-conflict-merged-${{ github.run_attempt }}
+
+    - name: Assert The Verdict
+      env:
+        OUTCOME: ${{ steps.verdict.outcome }}
+        MERGED_OUTCOME: ${{ steps.merged.outputs.outcome }}
+        MERGED_BASE: ${{ steps.merged.outputs.base_sha }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      run: |
+        set -euo pipefail
+        fail() { echo "::error::$1"; exit 1; }
+        [ "$OUTCOME" = "failure" ] || fail "the verdict step ended '$OUTCOME' with conflicting patches"
+        [ "$MERGED_OUTCOME" = "no_changes" ] || fail "outcome '$MERGED_OUTCOME' for the merged patch after a failed merge"
+        [ "$MERGED_BASE" = "$HEAD_SHA" ] || fail "the empty patch was made from '$MERGED_BASE', not the head '$HEAD_SHA'"
+        echo "The merge failed and an empty patch made from the head replaced the merged artifact"
+
 # One generator failed after uploading its patch, one left changes: the verdict fails on both, and
 # the merged patch holds only the successful generator's change. A failed generator's patch is not
 # committed: its job decides nothing until it passes. With one pending patch, this is also the case
@@ -282,11 +372,12 @@ verdict-failed:
         if grep -q 'failing generator' "$patch"; then fail "the merged patch holds the failed generator's change"; fi
         echo "The verdict failed on the failed generator and merged only the successful one"
 
-# Only the generator with nothing to change: the verdict passes and uploads an empty merged patch,
-# which replaces anything an earlier attempt of the run uploaded.
+# Only the generator with nothing to change: the verdict passes and uploads an empty merged patch.
+# It runs after verdict-pending and under the same artifact name, so the empty patch has to replace
+# the non-empty one, as it replaces an earlier attempt's in a re-run.
 verdict-clean:
   name: 'Round Trip: Verdict With Nothing Pending'
-  needs: [verdict-generate-clean]
+  needs: [verdict-generate-clean, verdict-pending]
   if: always()
   runs-on: ubuntu-latest
   timeout-minutes: 10
@@ -309,18 +400,31 @@ verdict-clean:
       with:
         persist-credentials: false
 
+    # Only the clean generator: verdict-pending is listed in needs to run first, not to be judged.
+    - name: Select The Clean Generator
+      id: needs
+      env:
+        NEEDS: ${{ toJSON(needs) }}
+      run: |
+        set -euo pipefail
+        {
+          echo 'json<<NEEDS_EOF'
+          jq -c '{"verdict-generate-clean": ."verdict-generate-clean"}' <<< "${NEEDS}"
+          echo 'NEEDS_EOF'
+        } >> "$GITHUB_OUTPUT"
+
     - name: Run The Verdict
       id: verdict
       uses: ./actions/common/generated-files-verdict # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
       with:
-        needs: ${{ toJSON(needs) }}
-        artifact_name: verdict-e2e-clean-merged-${{ github.run_attempt }}
+        needs: ${{ steps.needs.outputs.json }}
+        artifact_name: verdict-e2e-merged-${{ github.run_attempt }}
 
     - name: Find The Merged Patch
       id: merged
       uses: ./actions/common/find-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
       with:
-        artifact_name: verdict-e2e-clean-merged-${{ github.run_attempt }}
+        artifact_name: verdict-e2e-merged-${{ github.run_attempt }}
 
     - name: Assert The Verdict
       env:

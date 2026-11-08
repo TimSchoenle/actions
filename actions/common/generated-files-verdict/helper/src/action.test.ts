@@ -18,14 +18,17 @@ vi.mock('@actions/core', async (importOriginal) => ({
 
 let temp: string;
 
+/** Every output the run set, by name. */
 function outputs(): Record<string, unknown> {
   return Object.fromEntries(vi.mocked(core.setOutput).mock.calls);
 }
 
+/** The message the run failed with, or an empty string. */
 function failure(): string {
   return String(vi.mocked(core.setFailed).mock.calls[0]?.[0] ?? '');
 }
 
+/** Supplies action inputs the way the runner does, as `INPUT_*` variables. */
 function inputs(values: Record<string, string>): void {
   for (const [name, value] of Object.entries(values)) {
     vi.stubEnv(`INPUT_${name.toUpperCase()}`, value);

@@ -199,6 +199,7 @@ describe('inspectPatches and applyPatches', () => {
   let repository: string;
   let downloads: string;
 
+  /** Runs git in the scratch repository with a throwaway identity. */
   async function git(...args: string[]): Promise<string> {
     return runGitText(['-c', 'user.email=t@example.com', '-c', 'user.name=t', ...args], { cwd: repository });
   }

@@ -29,7 +29,7 @@ inputs:
     required: false
     default: 'artifact_name'
   artifact_name:
-    description: 'Name of the merged patch artifact. Pass the same name to common/commit-generated-files. 1 to 100 characters of letters, digits, ., _ and -.'
+    description: 'Name of the merged patch artifact. Pass the same name to common/commit-generated-files. 1 to 100 ASCII letters, digits, ., _ and -, starting with a letter or digit.'
     required: false
     default: 'generated-files'
   max_patch_bytes:
@@ -63,7 +63,9 @@ runs:
         INPUT_CHANGES_OUTPUT: ${{ inputs.changes_output }}
         INPUT_ARTIFACT_OUTPUT: ${{ inputs.artifact_output }}
         INPUT_MERGED_ARTIFACT: ${{ inputs.artifact_name }}
-      run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"
+      run: |
+        set -euo pipefail
+        node "$GITHUB_ACTION_PATH/helper/dist/index.js"
 
     - name: Download Pending Patches
       if: steps.evaluate.outputs.has_pending == 'true'
@@ -82,7 +84,9 @@ runs:
         INPUT_DIRECTORY: ${{ steps.evaluate.outputs.directory }}
         INPUT_ARTIFACTS: ${{ steps.evaluate.outputs.artifacts }}
         INPUT_MAX_PATCH_BYTES: ${{ inputs.max_patch_bytes }}
-      run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"
+      run: |
+        set -euo pipefail
+        node "$GITHUB_ACTION_PATH/helper/dist/index.js"
 
     # The commit the generators checked out, not the merge ref: the merged patch has to apply to the
     # pull request head, which is what the commit job checks base_sha against. With nothing pending,
@@ -101,7 +105,9 @@ runs:
         INPUT_DIRECTORY: ${{ steps.evaluate.outputs.directory }}
         INPUT_ARTIFACTS: ${{ steps.evaluate.outputs.artifacts }}
         INPUT_MAX_PATCH_BYTES: ${{ inputs.max_patch_bytes }}
-      run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"
+      run: |
+        set -euo pipefail
+        node "$GITHUB_ACTION_PATH/helper/dist/index.js"
 
     - name: Upload The Merged Patch
       id: merged
@@ -114,14 +120,17 @@ runs:
     # patches that conflict) still replaces any earlier attempt's patch, with an empty one made from
     # a clean checkout of the head.
     - name: Check Out The Head After A Failure
+      id: recover
       if: failure() && steps.merged.conclusion != 'success'
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
 
+    # Only from a clean checkout: were the recovery checkout itself to fail, the tree could still hold
+    # a partly applied merge.
     - name: Upload An Empty Patch After A Failure
-      if: failure() && steps.merged.conclusion != 'success'
+      if: failure() && steps.merged.conclusion != 'success' && steps.recover.outcome == 'success'
       uses: TimSchoenle/actions/actions/common/create-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-patch-v1.1.1
       with:
         artifact_name: ${{ inputs.artifact_name }}
