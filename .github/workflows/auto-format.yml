@@ -11,8 +11,9 @@ concurrency:
 permissions: {}
 
 # `bun run format` is the pull request's own script, so it runs in a job that holds nothing, and the
-# result is committed from a second job that runs no repository code, so the formatter never runs
-# beside the App token. See update-files.yml for the split, which this workflow follows.
+# result is committed by auto-format-commit.yml, a workflow_run workflow that runs no repository code
+# and, unlike this one, cannot be edited by the pull request it commits to. The formatter never runs
+# beside the App token, and the token never runs in a workflow the pull request controls.
 jobs:
   # Release-please branches carry only generated CHANGELOG.md and manifest edits, both of which
   # release-please already emits formatted.
@@ -42,75 +43,31 @@ jobs:
         run: bun run format
 
       - name: Create Patch
+        id: patch
         uses: TimSchoenle/actions/actions/common/create-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-patch-v1.1.1
         with:
           artifact_name: auto-format
 
-  # The formatter may rewrite any file a pull request could have changed itself, so the allowlist is
-  # the whole tree. What it never covers is decided by commit-patch defaults: workflow files, since this
-  # token has no workflows: write, binary content, file modes and anything below a symbolic link.
-  commit:
-    name: Commit Format
-    needs: format
-    environment:
-      name: ci
-      deployment: false
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read # to fetch the commit the patch applies to
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
-        with:
-          egress-policy: block
-          allowed-endpoints: >
-            github.com:443
-            api.github.com:443
-            objects.githubusercontent.com:443
-            release-assets.githubusercontent.com:443
-            *.actions.githubusercontent.com:443
+      # The patch is committed by auto-format-commit.yml after this run has finished. While it is
+      # non-empty this head is not the one to merge: the run on the bot commit decides.
+      # Nothing commits to a fork's branch; `bun run format:check` in Scripts CI reports it there.
+      - name: Fail while the patch is uncommitted
+        if: >-
+          steps.patch.outputs.has_changes == 'true' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          set -euo pipefail
+          echo "::error::bun run format changed files; auto-format-commit.yml commits them and the run on that commit decides. If no bot commit appears, run bun run format locally and push."
+          exit 1
 
-      # Only git's objects are needed. Nothing in this checkout is executed.
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Generate Bot Token
-        id: generate_token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ secrets.ACTIONS_MAINTENANCE_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_MAINTENANCE_PRIVATE_KEY }}
-          permission-contents: write
-          permission-pull-requests: write
-
-      - name: Commit Patch
-        id: commit
-        uses: TimSchoenle/actions/actions/common/commit-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-commit-patch-v1.1.1
-        with:
-          token: ${{ steps.generate_token.outputs.token }}
-          artifact_name: auto-format
-          allowed_paths: '**'
-          commit_message: 'style: auto-format code'
-
-      - name: Comment on PR
-        if: steps.commit.outputs.changes_committed == 'true'
-        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
-        with:
-          token: ${{ steps.generate_token.outputs.token }}
-          identifier: 'auto-format'
-          body: 'Code has been auto-formatted to adhere to the style guide.'
-
-  # The one context branch protection requires from this workflow. Both jobs above are skipped on a
-  # release-please branch, and `commit` is skipped whenever `format` fails; a skipped job reports
-  # success to branch protection, so neither can be required on its own. This job always runs, and
-  # fails when either of them failed or was cancelled. See scripts/lib/required-checks.ts.
+  # The one context branch protection requires from this workflow. `format` is skipped on a
+  # release-please branch, and a skipped job reports success to branch protection, so it cannot be
+  # required on its own. This job always runs, and fails when `format` failed or was cancelled.
+  # `format` itself fails while its patch is uncommitted: the commit happens in
+  # auto-format-commit.yml once this run has finished. See scripts/lib/required-checks.ts.
   gate:
     name: Auto Format Gate
-    needs: [format, commit]
+    needs: [format]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
