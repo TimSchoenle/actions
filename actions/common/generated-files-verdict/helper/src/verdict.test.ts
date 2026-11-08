@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   applyPatches,
+  downloadPath,
   downloadPattern,
   evaluateNeeds,
   inspectPatches,
@@ -163,6 +164,20 @@ describe('evaluateNeeds', () => {
         'generated-files',
       ),
     ).toThrow(/docs uploaded an artifact named generated-files/);
+  });
+});
+
+describe('downloadPath', () => {
+  it('is the subdirectory for one artifact, which download-artifact extracts into path directly', () => {
+    expect(downloadPath('/tmp/d', ['docs'])).toBe(path.join('/tmp/d', 'docs'));
+  });
+
+  it('is the directory itself for several', () => {
+    expect(downloadPath('/tmp/d', ['a', 'b'])).toBe('/tmp/d');
+  });
+
+  it('is empty with nothing to download', () => {
+    expect(downloadPath('', [])).toBe('');
   });
 });
 

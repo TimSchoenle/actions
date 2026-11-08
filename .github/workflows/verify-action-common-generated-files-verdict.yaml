@@ -253,8 +253,10 @@ jobs:
           artifact_name: verdict-e2e-clean-${{ github.run_attempt }}
           paths: README.md
 
+  # Uploads a patch and succeeds: a job that really failed would fail this workflow too. The verdict
+  # job below reports it to the action as failed, which is all the action reads.
   verdict-generate-failing:
-    name: 'Round Trip: Generator That Fails After Its Patch'
+    name: 'Round Trip: Generator Standing In For A Failed One'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -286,9 +288,6 @@ jobs:
         with:
           artifact_name: verdict-e2e-failing-${{ github.run_attempt }}
           paths: CONTRIBUTING.md
-
-      - name: Fail
-        run: exit 1
 
   # Two generators left changes and one did not: the verdict fails, and the merged patch it uploads
   # before failing carries both changes.
@@ -356,7 +355,8 @@ jobs:
 
   # One generator failed after uploading its patch, one left changes: the verdict fails on both, and
   # the merged patch holds only the successful generator's change. A failed generator's patch is not
-  # committed: its job decides nothing until it passes.
+  # committed: its job decides nothing until it passes. With one pending patch, this is also the case
+  # where download-artifact extracts straight into the path it is given.
   verdict-failed:
     name: 'Round Trip: Verdict With A Failed Generator'
     needs: [verdict-generate-docs, verdict-generate-failing]
@@ -382,12 +382,24 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Report The Stand-In Generator As Failed
+        id: needs
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          {
+            echo 'json<<NEEDS_EOF'
+            jq -c '."verdict-generate-failing".result = "failure"' <<< "${NEEDS}"
+            echo 'NEEDS_EOF'
+          } >> "$GITHUB_OUTPUT"
+
       - name: Run The Verdict
         id: verdict
         continue-on-error: true
         uses: ./actions/common/generated-files-verdict # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
-          needs: ${{ toJSON(needs) }}
+          needs: ${{ steps.needs.outputs.json }}
           artifact_name: verdict-e2e-failed-merged-${{ github.run_attempt }}
 
       - name: Find The Merged Patch
@@ -420,6 +432,7 @@ jobs:
   verdict-clean:
     name: 'Round Trip: Verdict With Nothing Pending'
     needs: [verdict-generate-clean]
+    if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

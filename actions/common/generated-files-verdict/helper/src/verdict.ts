@@ -129,6 +129,20 @@ export function evaluateNeeds(
 }
 
 /**
+ * Where download-artifact has to put the artifacts so each lands in `directory/<name>`.
+ *
+ * download-artifact extracts into a subdirectory per artifact only when its pattern matches several;
+ * a pattern matching exactly one is extracted straight into `path`. So for one artifact the path is
+ * its own subdirectory, and the layout {@link inspectPatches} reads is the same either way.
+ */
+export function downloadPath(directory: string, artifacts: readonly string[]): string {
+  if (directory === '' || artifacts.length === 0) {
+    return '';
+  }
+  return artifacts.length === 1 ? path.join(directory, artifacts[0] ?? '') : directory;
+}
+
+/**
  * The download-artifact `pattern` that matches exactly `artifacts`.
  *
  * Artifact names are limited to letters, digits, `.`, `_` and `-`, none of which minimatch treats as

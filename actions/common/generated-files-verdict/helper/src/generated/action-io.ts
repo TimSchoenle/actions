@@ -34,6 +34,7 @@ export const ActionOutput = {
   download_pattern: 'download_pattern',
   has_pending: 'has_pending',
   directory: 'directory',
+  download_path: 'download_path',
   base_sha: 'base_sha',
 } as const;
 

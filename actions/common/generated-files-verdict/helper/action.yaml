@@ -46,7 +46,9 @@ outputs:
   has_pending:
     description: 'true when at least one job reported a non-empty patch. Set in evaluate mode.'
   directory:
-    description: 'Empty directory to download the pending artifacts into. Set in evaluate mode.'
+    description: 'Empty directory the pending artifacts end up in, one subdirectory each. Set in evaluate mode.'
+  download_path:
+    description: 'path to give download-artifact so that layout results: the directory for several artifacts, the one subdirectory for a single artifact. Set in evaluate mode.'
   base_sha:
     description: 'The commit every pending patch was made from. Set in inspect mode.'
 

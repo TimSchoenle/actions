@@ -62,6 +62,7 @@ describe('evaluate', () => {
     expect(outputs()).toEqual({
       artifacts: '[]',
       directory: '',
+      download_path: '',
       download_pattern: '',
       failed_jobs: '',
       has_pending: 'false',
@@ -87,6 +88,7 @@ describe('evaluate', () => {
     expect(result['pending_jobs']).toBe('docs lock');
     expect(result['artifacts']).toBe('["docs","lock"]');
     expect(result['download_pattern']).toBe('{docs,lock}');
+    expect(result['download_path']).toBe(result['directory']);
     expect(result['has_pending']).toBe('true');
     expect((await stat(String(result['directory']))).isDirectory()).toBe(true);
   });

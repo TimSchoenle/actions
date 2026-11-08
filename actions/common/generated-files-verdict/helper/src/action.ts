@@ -7,7 +7,7 @@ import { runAction } from 'actions-util';
 import { parseByteLimit, validateArtifactName } from 'actions-util/patch';
 
 import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';
-import { applyPatches, downloadPattern, evaluateNeeds, inspectPatches, parseNeeds } from './verdict.js';
+import { applyPatches, downloadPath, downloadPattern, evaluateNeeds, inspectPatches, parseNeeds } from './verdict.js';
 
 /** The process-level facts this helper reads, gathered in one place so tests can supply them. */
 export interface RunnerContext {
@@ -71,10 +71,9 @@ async function evaluate(context: RunnerContext): Promise<void> {
   setOutput(ActionOutput.artifacts, JSON.stringify(evaluation.artifacts));
   setOutput(ActionOutput.download_pattern, downloadPattern(evaluation.artifacts));
   setOutput(ActionOutput.has_pending, String(hasPending));
-  setOutput(
-    ActionOutput.directory,
-    hasPending ? await mkdtemp(path.join(context.temp, 'generated-files-verdict-')) : '',
-  );
+  const directory = hasPending ? await mkdtemp(path.join(context.temp, 'generated-files-verdict-')) : '';
+  setOutput(ActionOutput.directory, directory);
+  setOutput(ActionOutput.download_path, downloadPath(directory, evaluation.artifacts));
 }
 
 /** `inspect`: validates the downloaded patches and reports the commit they share. */
