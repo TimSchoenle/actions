@@ -9,14 +9,14 @@ outside the markers.
 
 Fetches one commit into an empty repository and points HEAD at it without checking anything out, for steps that read only git objects.
 
-[actions-common-fetch-head-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-fetch-head-v1.0.0) · JavaScript action (node24)
+[actions-common-fetch-head-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-fetch-head-v1.1.0) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
 ## Usage
 
 ```yaml
-- uses: TimSchoenle/actions/actions/common/fetch-head@actions-common-fetch-head-v1.0.0 # tag=actions-common-fetch-head-v1.0.0
+- uses: TimSchoenle/actions/actions/common/fetch-head@3f47ad15da6762f9e07c5e6c70df81f37ddf2454 # tag=actions-common-fetch-head-v1.1.0
   with:
     sha: # required, see Inputs
 ```
@@ -63,6 +63,10 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 <!-- docs:generated reference -->
 ## Reference
 
+- Changelog: [CHANGELOG.md](./CHANGELOG.md)
 - End-to-end tests: [`.github/workflows/verify-action-common-fetch-head.yaml`](../../../.github/workflows/verify-action-common-fetch-head.yaml)
-- Not called from anywhere else in this repository.
+- Called from this repository by:
+  - [`.github/workflows/auto-format-commit.yml`](../../../.github/workflows/auto-format-commit.yml)
+  - [`.github/workflows/update-files-commit.yml`](../../../.github/workflows/update-files-commit.yml)
+  - [`actions/common/commit-generated-files/action.yaml`](../../../actions/common/commit-generated-files/action.yaml)
 <!-- /docs:generated reference -->
