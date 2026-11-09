@@ -1,0 +1,24 @@
+permissions:
+  - scope: contents
+    access: read
+    when: always
+
+egress:
+  - endpoint: api.adoptium.net:443
+    for: looking up the JDK, with the default temurin distribution
+  - endpoint: github.com:443
+    for: the JDK download, with the default temurin distribution
+  - endpoint: release-assets.githubusercontent.com:443
+    for: the JDK download, with the default temurin distribution
+  - endpoint: services.gradle.org:443
+    for: the Gradle distribution and the wrapper checksums
+  - endpoint: downloads.gradle.org:443
+    for: the Gradle distribution
+  - endpoint: '*.actions.githubusercontent.com:443'
+    for: the Gradle cache and the patch artifact
+  - endpoint: '*.blob.core.windows.net:443'
+    for: the Gradle cache and the patch artifact
+
+examples:
+  - title: Format in one job, commit in another
+    file: examples/two-job-workflow.yaml

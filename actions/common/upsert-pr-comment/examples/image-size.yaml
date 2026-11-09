@@ -1,0 +1,13 @@
+# Reports the image size after every build. The next run rewrites this comment instead of adding
+# another, because both carry the identifier docker-image-size.
+- id: size
+  run: |
+    set -euo pipefail
+    echo "bytes=$(docker image inspect api:${{ github.sha }} --format '{{ .Size }}')" >> "$GITHUB_OUTPUT"
+
+- uses: TimSchoenle/actions/actions/common/upsert-pr-comment@main
+  with:
+    token: ${{ steps.token.outputs.token }}
+    identifier: docker-image-size
+    body: |
+      **Image size:** ${{ steps.size.outputs.bytes }} bytes

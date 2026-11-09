@@ -38,7 +38,7 @@ inputs:
     required: false
     default: 'true'
   sarif-category:
-    description: "Code scanning category. Defaults to trivy-<slug> with a platform, and to upload-sarif's own default without one, so an existing single-image repository keeps its alerts."
+    description: "Code scanning category. Defaults to `trivy-<slug>` with a platform, and to upload-sarif's own default without one, so an existing single-image repository keeps its alerts."
     required: false
     default: ''
   comment:
@@ -46,7 +46,7 @@ inputs:
     required: false
     default: 'per-image'
   comment-identifier:
-    description: 'upsert-pr-comment identifier. Defaults to docker-image-size, or docker-image-size-<slug> with a platform.'
+    description: 'upsert-pr-comment identifier. Defaults to docker-image-size, or `docker-image-size-<slug>` with a platform.'
     required: false
     default: ''
   token:
@@ -56,7 +56,7 @@ inputs:
 
 outputs:
   size-bytes:
-    description: 'Uncompressed size of the image in bytes: the larger of the docker history layer sizes summed and docker image inspect .Size. Not the compressed pull size.'
+    description: 'Uncompressed size of the image in bytes: the larger of the docker history layer sizes summed and docker image inspect .Size. Not the compressed pull size. See Sizes are uncompressed below.'
     value: ${{ steps.measure.outputs.size_bytes }}
   size-mib:
     description: 'size-bytes / 1048576, to one decimal place.'
