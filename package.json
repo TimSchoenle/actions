@@ -20,6 +20,7 @@
     "check-renovate-configs": "bun scripts/check-renovate-configs.ts",
     "check-renovate-lookups": "bun scripts/check-renovate-lookups.ts",
     "rerun-rate-limited": "bun scripts/rerun-rate-limited.ts",
+    "wait-release-tags": "bun scripts/wait-release-tags.ts",
     "lint": "eslint \"scripts/**/*.ts\" \"actions/**/src/**/*.ts\" \"packages/**/src/**/*.ts\"",
     "typecheck": "bun run generate-action-sources && bun run --workspaces typecheck",
     "format": "oxfmt .",
