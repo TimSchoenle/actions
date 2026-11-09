@@ -584,6 +584,30 @@ jobs:
           [ "$MERGED_OUTCOME" = "no_changes" ] || fail "outcome '$MERGED_OUTCOME' for the merged patch with nothing pending"
           echo "The verdict passed and uploaded an empty merged patch"
 
+  # The verdict's wording decides what a contributor does next, and a fork's pull request is never
+  # committed to, so every branch of verdict.sh is driven here with the inputs the step receives.
+  verdict-message:
+    name: 'Test Generated Files Verdict: verdict message'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Drive Every Branch
+        run: bash actions/common/generated-files-verdict/verdict-test.sh actions/common/generated-files-verdict/verdict.sh
+
   # <<< generated: summary (run 'bun run generate-ci-required' to update)
   summary:
     name: 'CI Summary: Common Generated-files-verdict'
@@ -600,6 +624,7 @@ jobs:
       - verdict-conflict
       - verdict-failed
       - verdict-clean
+      - verdict-message
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

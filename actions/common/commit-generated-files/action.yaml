@@ -7,7 +7,12 @@ description: 'Commits the merged generator patch from a pull_request run to the 
 #
 # The App key is used only when there is something to commit: find-patch checks the artifact first,
 # without any secret, and the token is minted afterwards, scoped to contents: write. A run that is
-# not a same-repository pull request's, or that was cancelled, is skipped without touching anything.
+# not a pull request's, that was cancelled, or that comes from a fork not allowing edits by
+# maintainers, is skipped without touching anything.
+#
+# On a fork's pull request the artifact, and the tree checked out below, come from a run of the
+# fork's own workflow and are untrusted. Nothing here runs or reads them except through git
+# plumbing and the path policy in commit-patch, and the calling job must add no step that does.
 
 inputs:
   client_id:
@@ -38,8 +43,8 @@ inputs:
 
 outputs:
   outcome:
-    description: 'committed, branch_moved, no_changes or missing as common/commit-patch and common/find-patch report them; skipped when the triggering run is not one to commit for; failed when the commit step failed.'
-    value: ${{ steps.commit.outcome == 'failure' && 'failed' || steps.commit.outputs.outcome || steps.find.outputs.outcome || steps.event.outputs.outcome }}
+    description: 'committed, branch_moved, no_changes or missing as common/commit-patch and common/find-patch report them; skipped when the triggering run is not one to commit for, including a fork pull request that does not allow edits by maintainers; failed when the commit step failed.'
+    value: ${{ steps.commit.outcome == 'failure' && 'failed' || steps.commit.outputs.outcome || steps.find.outputs.outcome || steps.fork.outputs.outcome || steps.event.outputs.outcome }}
   commit_sha:
     description: 'SHA of the commit made, when one was.'
     value: ${{ steps.commit.outputs.commit_sha }}
@@ -61,11 +66,33 @@ runs:
         HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
         REPOSITORY: ${{ github.repository }}
         DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        HEAD_AUTHOR_EMAIL: ${{ github.event.workflow_run.head_commit.author.email }}
       run: bash "$GITHUB_ACTION_PATH/check-event.sh"
+
+    # A fork's branch only while its pull request allows edits by maintainers, which is what lets
+    # the App push there. The job token reads the open pull requests of a public repository without
+    # a pull-requests permission; a failed read skips the commit.
+    - name: Check The Fork Allows Edits
+      id: fork
+      if: steps.event.outputs.fork == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPOSITORY: ${{ github.repository }}
+        HEAD_REPOSITORY: ${{ github.event.workflow_run.head_repository.full_name }}
+        HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      run: |
+        set -euo pipefail
+        PULLS_FILE="$(mktemp)"
+        export PULLS_FILE
+        if ! gh api -X GET "repos/${REPOSITORY}/pulls" -f state=open -f head="${HEAD_REPOSITORY%%/*}:${HEAD_BRANCH}" -f per_page=100 > "${PULLS_FILE}"; then
+          : > "${PULLS_FILE}"
+        fi
+        bash "$GITHUB_ACTION_PATH/check-fork.sh"
 
     - name: Find The Merged Patch
       id: find
-      if: steps.event.outputs.proceed == 'true'
+      if: steps.event.outputs.proceed == 'true' && (steps.event.outputs.fork != 'true' || steps.fork.outputs.proceed == 'true')
       uses: TimSchoenle/actions/actions/common/find-patch@7b20a67f0b18a6e64c30e5f47c92636729f6ad41 # tag=actions-common-find-patch-v1.1.0
       with:
         run_id: ${{ github.event.workflow_run.id }}
@@ -97,6 +124,7 @@ runs:
       with:
         token: ${{ steps.token.outputs.token }}
         run_id: ${{ github.event.workflow_run.id }}
+        repository: ${{ github.event.workflow_run.head_repository.full_name }}
         branch: ${{ github.event.workflow_run.head_branch }}
         expected_head_sha: ${{ github.event.workflow_run.head_sha }}
         artifact_name: ${{ inputs.artifact_name }}
@@ -106,7 +134,7 @@ runs:
         max_patch_bytes: ${{ inputs.max_patch_bytes }}
 
     - name: Summarise
-      if: steps.event.outputs.proceed == 'true'
+      if: steps.event.outputs.proceed == 'true' && (steps.event.outputs.fork != 'true' || steps.fork.outputs.proceed == 'true')
       shell: bash
       env:
         FIND_OUTCOME: ${{ steps.find.outputs.outcome }}

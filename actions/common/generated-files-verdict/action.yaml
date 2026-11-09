@@ -143,25 +143,7 @@ runs:
         FAILED_JOBS: ${{ steps.evaluate.outputs.failed_jobs }}
         PENDING_JOBS: ${{ steps.evaluate.outputs.pending_jobs }}
         MERGED_HAS_CHANGES: ${{ steps.merged.outputs.has_changes }}
-      run: |
-        set -euo pipefail
-        passed=true
-        if [ -n "${FAILED_JOBS}" ]; then
-          echo "::error::These generator jobs failed or were cancelled: ${FAILED_JOBS}."
-          passed=false
-        fi
-        if [ "${MERGED_HAS_CHANGES}" = "true" ]; then
-          echo "::error::Generated files are out of date (${PENDING_JOBS}). The commit job adds them to this branch, and the run on that commit decides."
-          passed=false
-        fi
-        echo "passed=${passed}" >> "$GITHUB_OUTPUT"
-        if [ "${passed}" = "true" ]; then
-          echo "Every generated file is up to date." >> "$GITHUB_STEP_SUMMARY"
-        else
-          {
-            echo "Generated files are not up to date."
-            if [ -n "${FAILED_JOBS}" ]; then echo "- Failed: ${FAILED_JOBS}"; fi
-            if [ "${MERGED_HAS_CHANGES}" = "true" ]; then echo "- Waiting for the commit job: ${PENDING_JOBS}"; fi
-          } >> "$GITHUB_STEP_SUMMARY"
-          exit 1
-        fi
+        HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        REPOSITORY: ${{ github.repository }}
+        MAINTAINER_CAN_MODIFY: ${{ github.event.pull_request.maintainer_can_modify }}
+      run: bash "$GITHUB_ACTION_PATH/verdict.sh"
