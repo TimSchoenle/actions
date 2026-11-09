@@ -26,7 +26,7 @@ inputs:
     required: false
     default: ''
   dockerfile:
-    description: 'Dockerfile whose terrace-config:labels region is checked. Empty to skip.'
+    description: 'Dockerfile whose terrace-config:labels regions are checked. See The Dockerfile regions below. Empty to skip.'
     required: false
     default: 'Dockerfile'
   contract:
@@ -44,7 +44,7 @@ inputs:
   extra_args:
     description: 'Extra arguments for the generator itself, appended after the action''s own --format and --path.
       Split shell-style — whitespace separates, and '' or " quote a value containing spaces — into an argument
-      vector that is never re-parsed by a shell. --format and --path are the action''s own and are refused here.'
+      vector that is never re-parsed by a shell. --format and --path are the action''s own and are refused here. See Generator arguments below.'
     required: false
     default: ''
 

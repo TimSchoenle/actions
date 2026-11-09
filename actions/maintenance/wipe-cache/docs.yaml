@@ -1,0 +1,19 @@
+permissions:
+  - scope: actions
+    access: read
+    when: always
+    token: token
+  - scope: actions
+    access: write
+    when: { input: dry_run, equals: false }
+    token: token
+
+egress:
+  - endpoint: api.github.com:443
+    for: the REST calls that read the repository, list caches and delete them
+
+examples:
+  - title: Wipe a branch's caches when it is deleted
+    file: examples/wipe-deleted-branch.yaml
+  - title: Another branch, or a dry run first
+    file: examples/named-branch-dry-run.yaml
