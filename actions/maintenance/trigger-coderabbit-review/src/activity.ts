@@ -68,14 +68,17 @@ export function markedHead(body: string): string | undefined {
   return MARKER.exec(body)?.[1];
 }
 
+/** Whether the author is the CodeRabbit app, not a user who took a similar login. */
 function isCodeRabbit(author: { authorLogin: string; authorIsBot: boolean }): boolean {
   return author.authorIsBot && CODERABBIT_LOGINS.has(author.authorLogin.toLowerCase());
 }
 
+/** Whether the comment is CodeRabbit's answer to a review command. */
 function isCommandReply(comment: ActivityComment): boolean {
   return isCodeRabbit(comment) && comment.body.includes(COMMAND_REPLY);
 }
 
+/** Whether the comment is a command this action posted as `actor`. */
 function isOwnMarkedComment(comment: ActivityComment, actor: string): boolean {
   // GraphQL drops the `[bot]` suffix, so an app named like the actor must not pass as the actor.
   return (

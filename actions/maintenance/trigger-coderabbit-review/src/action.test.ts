@@ -208,8 +208,11 @@ describe('trigger-coderabbit-review action', () => {
           workflow_run: {
             event: 'pull_request',
             head_repository: { full_name: 'owner/repo' },
+            head_branch: 'feature',
             head_sha: 'a'.repeat(40),
-            pull_requests: [{ base: { ref: 'main', repo: { id: 42 } }, head: { sha: 'a'.repeat(40) }, number: 7 }],
+            pull_requests: [
+              { base: { ref: 'main', repo: { id: 42 } }, head: { ref: 'feature', sha: 'a'.repeat(40) }, number: 7 },
+            ],
             ...run,
           },
         }),

@@ -31,14 +31,17 @@ export type WorkflowRunResolution =
   | { kind: 'pull-request'; target: WorkflowRunPullRequest }
   | { kind: 'skip'; reason: WorkflowRunSkipReason };
 
+/** Whether `value` is a plain JSON object. */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/** `value` as an object, or an empty one when it is anything else, so a missing field reads as absent. */
 function record(value: unknown): Record<string, unknown> {
   return isRecord(value) ? value : {};
 }
 
+/** `value` as a string, or empty when it is anything else. */
 function text(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
@@ -67,6 +70,7 @@ export function resolveWorkflowRun(payload: unknown, repository: string, baseBra
 
   const run = record(record(payload)['workflow_run']);
   const headSha = text(run['head_sha']);
+  const headBranch = text(run['head_branch']);
 
   if (headSha === '') {
     throw new Error('The event payload carries no workflow_run.head_sha; is this a workflow_run event?');
@@ -91,6 +95,7 @@ export function resolveWorkflowRun(payload: unknown, repository: string, baseBra
         typeof baseRepoId === 'number' &&
         baseRepoId === repositoryId &&
         text(record(candidate['head'])['sha']) === headSha &&
+        text(record(candidate['head'])['ref']) === headBranch &&
         (requiredBase === '' || text(base['ref']) === requiredBase)
       );
     })

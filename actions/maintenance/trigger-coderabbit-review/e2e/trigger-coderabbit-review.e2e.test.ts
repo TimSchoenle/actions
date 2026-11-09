@@ -126,8 +126,15 @@ describe('trigger-coderabbit-review', () => {
 
       const result = await runFromEvent(
         {
+          head_branch: scratch.branch('workflow-run'),
           head_sha: head,
-          pull_requests: [{ base: { ref: defaultBranch, repo: { id: 1 } }, head: { sha: head }, number }],
+          pull_requests: [
+            {
+              base: { ref: defaultBranch, repo: { id: 1 } },
+              head: { ref: scratch.branch('workflow-run'), sha: head },
+              number,
+            },
+          ],
         },
         'failure',
       );

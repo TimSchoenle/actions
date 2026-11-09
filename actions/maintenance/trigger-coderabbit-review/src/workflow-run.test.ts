@@ -9,10 +9,17 @@ import { readEventPayload, resolveWorkflowRun } from './workflow-run.js';
 const HEAD = 'a'.repeat(40);
 const REPOSITORY_ID = 42;
 
-function pullRequest(number: number, overrides: { sha?: string; ref?: string; repoId?: number } = {}) {
+function pullRequest(
+  number: number,
+  overrides: { sha?: string; ref?: string; repoId?: number; headRef?: string } = {},
+) {
   return {
     base: { ref: overrides.ref ?? 'main', repo: { id: overrides.repoId ?? REPOSITORY_ID, name: 'repo' } },
-    head: { ref: 'feature', repo: { id: REPOSITORY_ID, name: 'repo' }, sha: overrides.sha ?? HEAD },
+    head: {
+      ref: overrides.headRef ?? 'feature',
+      repo: { id: REPOSITORY_ID, name: 'repo' },
+      sha: overrides.sha ?? HEAD,
+    },
     id: number * 100,
     number,
   };
@@ -24,6 +31,7 @@ function payload(run: Record<string, unknown> = {}) {
     workflow_run: {
       event: 'pull_request',
       head_repository: { full_name: 'owner/repo' },
+      head_branch: 'feature',
       head_sha: HEAD,
       pull_requests: [pullRequest(7)],
       ...run,
@@ -90,6 +98,10 @@ describe('resolveWorkflowRun', () => {
     { description: 'a pull request whose head has moved', pullRequests: [pullRequest(7, { sha: 'b'.repeat(40) })] },
     { description: 'a pull request into another repository', pullRequests: [pullRequest(7, { repoId: 99 })] },
     { description: 'a pull request into another base branch', pullRequests: [pullRequest(7, { ref: 'release' })] },
+    {
+      description: 'a pull request from another branch on the same commit',
+      pullRequests: [pullRequest(7, { headRef: 'other' })],
+    },
     { description: 'a malformed entry', pullRequests: ['7', null, { number: '7' }] },
   ])('skips a run with $description', ({ pullRequests }) => {
     expect(resolveWorkflowRun(payload({ pull_requests: pullRequests }), 'owner/repo', 'main')).toEqual({

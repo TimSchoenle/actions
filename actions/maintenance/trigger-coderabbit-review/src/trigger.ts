@@ -9,7 +9,7 @@
  *
  * @packageDocumentation
  */
-import { quoteForLog } from 'actions-util';
+import { errorMessage, quoteForLog } from 'actions-util';
 
 import { commandBody, duplicateReason, outdatedComments } from './activity.js';
 
@@ -192,10 +192,6 @@ async function readActivity(api: TriggerApi, options: TriggerOptions): Promise<A
 
     return { kind: 'unreadable', message: errorMessage(error) };
   }
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }
 
 /** Collapses each comment in turn, collecting failures instead of stopping at the first. */
