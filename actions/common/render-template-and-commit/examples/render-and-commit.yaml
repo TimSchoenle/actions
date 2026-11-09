@@ -8,7 +8,7 @@
     private-key: ${{ secrets.BOT_PRIVATE_KEY }}
     permission-contents: write
 
-- uses: TimSchoenle/actions/actions/common/render-template-and-commit@main
+- uses: TimSchoenle/actions/actions/common/render-template-and-commit@ea4465fbe2bec98efad19b63849f8d1ac67b5c88 # tag=actions-common-render-template-and-commit-v1.1.18
   id: docs
   with:
     template: docs/README.hbs

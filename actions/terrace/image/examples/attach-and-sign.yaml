@@ -8,7 +8,7 @@ permissions:
 
 steps:
   # ... build, log in and push, with the digest as steps.push.outputs.digest ...
-  - uses: TimSchoenle/actions/actions/terrace/image@main
+  - uses: TimSchoenle/actions/actions/terrace/image@ea4465fbe2bec98efad19b63849f8d1ac67b5c88 # tag=actions-terrace-image-v1.1.0
     with:
       contract: config/contract.json
       image: ghcr.io/${{ github.repository }}@${{ steps.push.outputs.digest }}

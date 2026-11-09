@@ -1,8 +1,16 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["github>TimSchoenle/actions//configs/renovate/default"],
+  "description": "ignorePaths replaces the list :ignoreModulesAndTests sets through config:best-practices; it is not mergeable. That list ignores **/examples/**, which holds the README example workflows, and **/test/** and **/tests/**, which hold the published actions actions/rust/test and actions/test/setup-e2e. A contract test in scripts/__tests__ fails an example this list ignores.",
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "**/vendor/**",
+    "**/__tests__/**",
+    "**/__fixtures__/**"
+  ],
   "github-actions": {
-    "description": "The example workflows each action README embeds, under actions/<category>/<name>/examples/. The shared preset reads only workflow directories and action.yaml, so without this the third-party pins in them go stale while every workflow moves. Their pins of this repository's own actions are written as @main and pinned by bun run generate-docs, so they hold nothing for Renovate. A contract test in scripts/__tests__ fails an example this pattern does not claim.",
+    "description": "The example workflows each action README embeds, under actions/<category>/<name>/examples/. The shared preset reads only workflow directories and action.yaml, so without this the third-party pins in them go stale while every workflow moves. Their pins of this repository's own actions are written by bun run generate-docs, which pins them to the latest release with a # tag= comment; the actions preset leaves them to the generator. A contract test in scripts/__tests__ fails an example this pattern does not claim.",
     "managerFilePatterns": ["/^actions/[^/]+/[^/]+/examples/[^/]+\\.ya?ml$/"]
   },
   "customManagers": [

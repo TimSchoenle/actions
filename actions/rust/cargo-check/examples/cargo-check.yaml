@@ -15,4 +15,4 @@ jobs:
     permissions:
       contents: read # to fetch code
     steps:
-      - uses: TimSchoenle/actions/actions/rust/cargo-check@main
+      - uses: TimSchoenle/actions/actions/rust/cargo-check@be7a69175612d9de514acc14bf55dda8e7ad2e57 # tag=actions-rust-cargo-check-v1.1.8

@@ -28,7 +28,7 @@ export interface DocsIo {
 }
 
 export interface GenerationReport {
-  /** READMEs whose content changed. */
+  /** READMEs and example files whose content changed. */
   written: string[];
   /** Problems that make a README wrong or impossible to generate. The run fails on any. */
   errors: string[];
@@ -155,8 +155,11 @@ async function loadExamples(
   model: Pick<ReadmeModel, 'repoId' | 'actionPath'>,
   docs: ActionDocs,
   releases: ReadonlyMap<string, Release | undefined>,
-): Promise<{ examples: LoadedExample[]; problems: string[] }> {
+): Promise<{ examples: LoadedExample[]; repinned: Map<string, string>; problems: string[] }> {
   const examples: LoadedExample[] = [];
+  // Example files whose pins moved, with their new content. They are written only when the action's
+  // manifest, docs.yaml and every example load cleanly.
+  const repinned = new Map<string, string>();
   const problems: string[] = [];
   for (const example of docs.examples) {
     const file = `${model.actionPath}/${example.file}`;
@@ -171,8 +174,9 @@ async function loadExamples(
       problems.push(`${file}: ${unsafe}`);
       continue;
     }
-    // Every published action the example calls is pinned, not only the documented one, so an
-    // example is written against `@main` and never holds a pin that goes stale.
+    // Every published action the example calls is pinned to its latest release, not only the
+    // documented one. The `# tag=` comment that comes with each pin is what lets Renovate move it in
+    // a workflow the example is copied into.
     const pinned = pinUses(normalised, model.repoId, (action) =>
       releases.has(action)
         ? usesReference({ repoId: model.repoId, actionPath: action, release: releases.get(action) })
@@ -182,9 +186,21 @@ async function loadExamples(
       problems.push(`${file}: never calls ${model.actionPath}, so it documents nothing`);
       continue;
     }
+    // The example file takes only pins to a commit. A tag that does not resolve yet, as on a release
+    // pull request or for a new action, keeps the line the file already has rather than downgrading
+    // a commit pin to the tag.
+    const committed = pinUses(normalised, model.repoId, (action) => {
+      const release = releases.get(action);
+      return release?.sha === undefined
+        ? undefined
+        : usesReference({ repoId: model.repoId, actionPath: action, release });
+    });
+    if (committed.content !== normalised) {
+      repinned.set(file, committed.content);
+    }
     examples.push({ title: example.title, content: withoutRenovateComments(pinned.content) });
   }
-  return { examples, problems };
+  return { examples, repinned, problems };
 }
 
 /** A `# renovate:` annotation, on a line of its own. */
@@ -270,6 +286,11 @@ async function generateOne(
   if (loaded.problems.length > 0) {
     report.errors.push(...loaded.problems);
     return;
+  }
+  // The example pins do not depend on the README, so they move even when the README is left alone.
+  for (const [file, content] of loaded.repinned) {
+    await io.write(file, content);
+    report.written.push(file);
   }
 
   const e2eWorkflow = workflowFileName({ category, name, actionPath });

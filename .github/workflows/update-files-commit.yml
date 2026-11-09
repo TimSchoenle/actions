@@ -333,7 +333,7 @@ jobs:
           branch: ${{ github.event.workflow_run.head_branch }}
           expected_head_sha: ${{ github.event.workflow_run.head_sha }}
           artifact_name: update-files-docs
-          allowed_paths: 'README.md SECURITY.md actions/*/*/README.md'
+          allowed_paths: 'README.md SECURITY.md actions/*/*/README.md actions/*/*/examples/*.yaml actions/*/*/examples/*.yml'
           commit_message: 'docs: auto-update documentation'
 
       - name: Comment on PR
