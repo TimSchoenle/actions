@@ -67,5 +67,7 @@ Give both the same inputs: the gate reproduces the render and compares, so any d
 
 - **`branch` defaults to the default branch, not `github.ref_name`.** On a pull request that is `<number>/merge`;
   rendered into badge URLs, it would make the generator and the drift gate disagree on every merge.
+- **`check` must be `true` or `false`** (case and surrounding spaces are ignored); anything else fails the step. With
+  an empty `branch` on an event whose payload names no default branch, the step fails and asks for `branch`.
 - **The patch covers `output` only.** A template that starts writing elsewhere is not picked up.
 - The job needs `contents: read` only. It runs the pull request's template, so give it no secret.

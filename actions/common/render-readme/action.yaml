@@ -63,6 +63,36 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    # Resolves the two inputs every later step agrees on: `check` as exactly true or false, so the
+    # render and the patch step can never disagree on the mode, and the branch, which fails here
+    # rather than reaching readme-variables empty on an event whose payload carries no repository.
+    - name: Resolve Inputs
+      id: resolve
+      shell: bash
+      env:
+        CHECK: ${{ inputs.check }}
+        BRANCH: ${{ inputs.branch }}
+        DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      run: |
+        set -euo pipefail
+        check="$(printf '%s' "$CHECK" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')"
+        case "$check" in
+          true | false) ;;
+          *)
+            echo "::error::check must be true or false, got '${CHECK}'."
+            exit 1
+            ;;
+        esac
+        branch="${BRANCH:-$DEFAULT_BRANCH}"
+        if [ -z "$branch" ]; then
+          echo "::error::This event's payload names no default branch; set the branch input."
+          exit 1
+        fi
+        {
+          echo "check=${check}"
+          echo "branch=${branch}"
+        } >> "$GITHUB_OUTPUT"
+
     - name: Collect The README Payload
       id: variables
       uses: TimSchoenle/actions/actions/common/readme-variables@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-readme-variables-v2.1.1
@@ -70,7 +100,7 @@ runs:
         manifest: ${{ inputs.manifest }}
         docs-dir: ${{ inputs.docs-dir }}
         extra: ${{ inputs.extra }}
-        branch: ${{ inputs.branch || github.event.repository.default_branch }}
+        branch: ${{ steps.resolve.outputs.branch }}
 
     - name: Render The README
       uses: TimSchoenle/actions/actions/common/render-template@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-render-template-v3.0.1
@@ -79,11 +109,11 @@ runs:
         output: ${{ inputs.output }}
         partials-dir: ${{ inputs.partials-dir }}
         variables: ${{ steps.variables.outputs.variables }}
-        check: ${{ inputs.check }}
+        check: ${{ steps.resolve.outputs.check }}
 
     - name: Create Patch
       id: patch
-      if: inputs.check != 'true'
+      if: steps.resolve.outputs.check == 'false'
       uses: TimSchoenle/actions/actions/common/create-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-patch-v1.1.1
       with:
         artifact_name: ${{ inputs.artifact_name }}

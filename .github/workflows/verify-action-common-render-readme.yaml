@@ -54,6 +54,26 @@ jobs:
           extra: '{"greeting":"hello"}'
           check: 'true'
 
+      # Padded and upper-case still selects check mode in both the render and the patch step.
+      - name: Check With A Padded Flag
+        id: padded
+        uses: ./actions/common/render-readme # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          template: actions/common/render-readme/test/README.md.hbs
+          output: actions/common/render-readme/test/README.md
+          extra: '{"greeting":"hello"}'
+          check: ' TRUE '
+
+      - name: Reject An Invalid Flag
+        id: invalid
+        continue-on-error: true
+        uses: ./actions/common/render-readme # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          template: actions/common/render-readme/test/README.md.hbs
+          output: actions/common/render-readme/test/README.md
+          extra: '{"greeting":"hello"}'
+          check: 'yes'
+
       - name: Render A Current README
         id: current
         uses: ./actions/common/render-readme # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
@@ -90,6 +110,9 @@ jobs:
 
       - name: Assert The Outputs
         env:
+          PADDED_CHANGES: ${{ steps.padded.outputs.has_changes }}
+          PADDED_ARTIFACT: ${{ steps.padded.outputs.artifact_name }}
+          INVALID: ${{ steps.invalid.outcome }}
           CURRENT_CHANGES: ${{ steps.current.outputs.has_changes }}
           STALE_CHECK: ${{ steps.stale-check.outcome }}
           STALE_CHANGES: ${{ steps.stale.outputs.has_changes }}
@@ -98,6 +121,8 @@ jobs:
         run: |
           set -euo pipefail
           fail() { echo "::error::$1"; exit 1; }
+          [ -z "$PADDED_CHANGES$PADDED_ARTIFACT" ] || fail "a padded check flag created a patch"
+          [ "$INVALID" = "failure" ] || fail "check 'yes' ended '$INVALID' instead of failing"
           [ "$CURRENT_CHANGES" = "false" ] || fail "has_changes '$CURRENT_CHANGES' for a current README"
           [ "$STALE_CHECK" = "failure" ] || fail "check mode ended '$STALE_CHECK' on a stale README"
           [ "$STALE_CHANGES" = "true" ] || fail "has_changes '$STALE_CHANGES' for a stale README"
