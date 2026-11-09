@@ -84,6 +84,7 @@ describe('parseLookupCase', () => {
       name: 'fixture',
       description: 'A fixture.',
       presets: ['default'],
+      repositoryConfig: false,
       files: { 'Cargo.toml': 'Cargo.toml' },
       dependencies: [
         {
@@ -94,6 +95,7 @@ describe('parseLookupCase', () => {
           newValue: undefined,
           branchName: undefined,
           updateTypes: undefined,
+          requireNewDigest: undefined,
         },
       ],
     });
@@ -138,8 +140,30 @@ describe('parseLookupCase', () => {
       /updateTypes' must be a non-empty array of Renovate update types/,
     ],
     ['a missing description', validCase({ description: '' }), /'description' must be a non-empty string/],
+    [
+      'presets next to repositoryConfig',
+      validCase({ repositoryConfig: true }),
+      /'presets' and 'repositoryConfig' exclude each other/,
+    ],
+    [
+      'a repositoryConfig that is not a boolean',
+      validCase({ repositoryConfig: 'yes' }),
+      /'repositoryConfig' must be a boolean/,
+    ],
+    [
+      'a requireNewDigest that is not a boolean',
+      validCase({ dependencies: [{ manager: 'cargo', depName: 'x', requireNewDigest: 'yes' }] }),
+      /requireNewDigest' must be a boolean/,
+    ],
   ])('rejects %s', (_label, raw, message) => {
     expect(() => parseLookupCase('fixture', raw)).toThrow(message);
+  });
+
+  it('accepts the repository config in place of presets', () => {
+    const { presets: _presets, ...withoutPresets } = validCase() as Record<string, unknown>;
+    const parsed = parseLookupCase('fixture', { ...withoutPresets, repositoryConfig: true });
+    expect(parsed.repositoryConfig).toBe(true);
+    expect(parsed.presets).toEqual([]);
   });
 
   it('names the fixture in the error', () => {
@@ -151,6 +175,7 @@ const CASE: LookupCase = {
   name: 'fixture',
   description: 'A fixture.',
   presets: ['default'],
+  repositoryConfig: false,
   files: { 'Cargo.toml': 'Cargo.toml' },
   dependencies: [
     {
@@ -305,6 +330,23 @@ describe('evaluateReport', () => {
       'problem: preset not found',
       'problem: Package lookup failures',
     ]);
+  });
+
+  it('fails an update without a new digest when the case requires one', () => {
+    const lookupCase: LookupCase = {
+      ...CASE,
+      dependencies: [{ ...CASE.dependencies[0], requireNewDigest: true }],
+    };
+    const failures = evaluateReport(
+      lookupCase,
+      report([
+        {
+          depName: 'csp-shell',
+          updates: [GOOD_UPDATE, { ...GOOD_UPDATE, newValue: 'csp-shell-v0.2.2', newDigest: 'a'.repeat(64) }],
+        },
+      ]),
+    );
+    expect(failures).toEqual(["cargo csp-shell: update to 'csp-shell-v0.2.1' carries no new digest."]);
   });
 
   it('fails a report without exactly one repository', () => {

@@ -1,0 +1,16 @@
+# One of each pin an example workflow holds, each behind its latest release.
+- name: Check out the repository
+  uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+
+- id: release
+  env:
+    # renovate: datasource=github-release-attachments depName=jdx/jactionlint
+    JACTIONLINT_VERSION: 'v2.4.0'
+    JACTIONLINT_SHA256: '28457aee0e12a1d5f8a2bc1acbe3379d1c02f4d3e927132794d9d977a2005fa1'
+  run: echo "tag=${JACTIONLINT_VERSION}" >> "$GITHUB_OUTPUT"
+
+# Pinned by bun run generate-docs, not by Renovate.
+- uses: TimSchoenle/actions/actions/terrace/setup@main
+  with:
+    # renovate: datasource=github-releases depName=TimSchoenle/terrace-config extractVersion=^terrace-contract-v(?<version>.+)$
+    version: '0.12.0'

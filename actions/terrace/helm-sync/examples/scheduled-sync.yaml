@@ -27,7 +27,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: TimSchoenle/actions/actions/terrace/helm-sync@main
+      - uses: TimSchoenle/actions/actions/terrace/helm-sync@81e4009704e0963651bbd8275e31244c1d1e220d # tag=actions-terrace-helm-sync-v1.1.0
         with:
           token: ${{ steps.token.outputs.token }}
           file_pattern: charts

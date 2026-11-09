@@ -267,7 +267,7 @@ describe('Renovate coverage of container images in actions', () => {
  * `.github/workflows/` and in the composite actions under `actions/` must be captured, with its
  * version, by exactly one.
  */
-describe('Renovate coverage of checksum-pinned release downloads in workflows and actions', () => {
+describe('Renovate coverage of checksum-pinned release downloads in workflows, actions and examples', () => {
   const WORKFLOWS_DIR = path.join(ROOT_DIR, '.github', 'workflows');
   /**
    * A `<NAME>_SHA256: <digest>` environment value in any YAML quoting: single, double or none.
@@ -301,12 +301,17 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows an
     return fs.readdirSync(WORKFLOWS_DIR).filter((entry) => /\.ya?ml$/.test(entry));
   }
 
-  /** Every file that may download a release: the workflows and each action's metadata, repository-relative. */
+  /**
+   * Every file that may download a release, repository-relative: the workflows, each action's metadata
+   * and the README examples, which the release-binary manager also reads.
+   */
   async function pinnableFiles(): Promise<string[]> {
     return [
       ...workflowFiles().map((entry) => `.github/workflows/${entry}`),
       ...(await scanSorted('actions/*/*/action.yaml')),
       ...(await scanSorted('actions/*/*/action.yml')),
+      ...(await scanSorted('actions/*/*/examples/*.yaml')),
+      ...(await scanSorted('actions/*/*/examples/*.yml')),
     ];
   }
 
@@ -415,6 +420,21 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows an
     for (const file of await pinnableFiles()) {
       expect(pinProblems(file, read(file))).toEqual([]);
     }
+  });
+
+  it('finds the jactionlint pins in the download-release-asset examples', async () => {
+    const file = 'actions/common/download-release-asset/examples/pin-the-asset.yaml';
+
+    expect(await pinnableFiles()).toContain(file);
+    expect(checksumPins(read(file)).map(({ name }) => name)).toEqual(['JACTIONLINT']);
+  });
+
+  it('rejects a mismatched pair in an example', () => {
+    const content = fixture('v1.2.3', DIGEST).replace('TOOL_SHA256', 'OTHER_SHA256');
+
+    expect(pinProblems('actions/example/tool/examples/example.yaml', content)).toEqual([
+      'OTHER_SHA256 is paired with TOOL_VERSION; both must name the same tool',
+    ]);
   });
 
   it('captures a pin in an action with the same manager as in a workflow', () => {
@@ -606,9 +626,9 @@ describe('Renovate coverage of the documentation pins', () => {
  * keeps them current.
  *
  * Their third-party pins are read by the github-actions manager only through the pattern this
- * repository adds, and their pins of this repository's actions are left to `bun run generate-docs`,
- * which pins every one it embeds. An example outside the pattern, or one that pins an internal
- * action by hand, would go stale without anything failing.
+ * repository adds, and their pins of this repository's actions are written by `bun run generate-docs`.
+ * An example outside the pattern, under an ignored path, or left unpinned would go stale without
+ * anything failing.
  */
 describe('Renovate coverage of the README examples', () => {
   async function exampleFiles(): Promise<string[]> {
@@ -632,6 +652,42 @@ describe('Renovate coverage of the README examples', () => {
     expect(await exampleFiles()).not.toEqual([]);
   });
 
+  it('ignores no example', async () => {
+    const config = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'renovate.json'), 'utf8')) as {
+      ignorePaths?: string[];
+    };
+    // Without a list of its own, config:best-practices brings :ignoreModulesAndTests, which ignores
+    // **/examples/**. ignorePaths is not mergeable, so a list here replaces that one.
+    expect(config.ignorePaths, 'renovate.json must set ignorePaths').toBeInstanceOf(Array);
+    const ignored = (await exampleFiles()).filter((file) =>
+      (config.ignorePaths ?? []).some((pattern) => path.matchesGlob(file, pattern)),
+    );
+    expect(ignored, 'these examples are under a path renovate.json ignores').toEqual([]);
+  });
+
+  /**
+   * The github-actions manager's `uses:` line regex (lib/modules/manager/github-actions/parse.ts). It
+   * needs whitespace first, so a step written as `- uses:` at column 0 is never extracted, and an
+   * example is a bare step list rather than a workflow its YAML parser reads.
+   */
+  const RENOVATE_USES_LINE = /^\s+(?:-\s+)?uses\s*:\s*/;
+
+  it('writes every third-party uses line in an example where the github-actions manager reads it', async () => {
+    const unread = (await exampleFiles()).flatMap((file) =>
+      fs
+        .readFileSync(path.join(ROOT_DIR, file), 'utf8')
+        .split(/\r?\n/)
+        .map((line, index) => ({ line, at: `${file}:${index + 1}` }))
+        // This repository's actions are pinned by generate-docs, and a local action has no version.
+        .filter(
+          ({ line }) => /^\s*(?:-\s+)?uses\s*:/.test(line) && !/uses\s*:\s*(?:TimSchoenle\/actions\/|\.\/)/i.test(line),
+        )
+        .filter(({ line }) => !RENOVATE_USES_LINE.test(line))
+        .map(({ at }) => at),
+    );
+    expect(unread, 'start these steps with a name: so uses: is indented').toEqual([]);
+  });
+
   it('claims every example for the github-actions manager', async () => {
     const patterns = githubActionsPatterns();
     for (const file of await exampleFiles()) {
@@ -642,14 +698,94 @@ describe('Renovate coverage of the README examples', () => {
     }
   });
 
-  it('leaves every internal action in an example on @main for the generator to pin', async () => {
-    for (const file of await exampleFiles()) {
-      const pinned = fs
+  /**
+   * A line that hands an example a literal release version: a `version:` or `tag:` key, or a
+   * `<NAME>_VERSION` value, set to something that reads as a version (`1.2`, `v1.2.3`). A bare major
+   * such as `java_version: '21'` picks a runtime line rather than pinning a release, and an
+   * expression such as `${{ steps.release.outputs.tag }}` is no literal, so neither counts.
+   */
+  const LITERAL_VERSION = /^\s*(?:[\w-]*version|tag)\s*:\s*['"]?v?\d+\.\d+/i;
+
+  /** The custom managers whose `managerFilePatterns` claim `file`. */
+  function managersFor(file: string): CustomManager[] {
+    return customManagers().filter((manager) =>
+      manager.managerFilePatterns.some(
+        (pattern) => pattern.startsWith('/') && pattern.endsWith('/') && new RegExp(pattern.slice(1, -1)).test(file),
+      ),
+    );
+  }
+
+  /**
+   * Every literal version line in `content` that is not updated by exactly one manager, as a failure
+   * message. A line counts as updated by a manager when one of its matches captures `currentValue`
+   * on that line, which is how a `# renovate:` comment on the line above carries over to the value.
+   */
+  function versionCoverageProblems(file: string, content: string): string[] {
+    // Where each manager's `currentValue` capture starts: that is the value Renovate rewrites, so a
+    // match that only passes over a line does not count for it.
+    const valueStarts = managersFor(file).map((manager) =>
+      manager.matchStrings.flatMap((matchString) =>
+        [...content.matchAll(new RegExp(matchString, 'gd'))].flatMap((match) => {
+          const range = match.indices?.groups?.currentValue;
+          return range ? [range[0]] : [];
+        }),
+      ),
+    );
+
+    const problems: string[] = [];
+    let offset = 0;
+    for (const [index, line] of content.split('\n').entries()) {
+      const start = offset;
+      offset += line.length + 1;
+      if (!LITERAL_VERSION.test(line)) {
+        continue;
+      }
+      const covering = valueStarts.filter((starts) => starts.some((at) => at >= start && at < offset)).length;
+      if (covering !== 1) {
+        problems.push(
+          `${file}:${index + 1} '${line.trim()}' is updated by ${covering} managers; put a '# renovate:' comment ` +
+            'naming its datasource on the line above, as actions/terrace/setup/examples/exact-with-oras.yaml does',
+        );
+      }
+    }
+    return problems;
+  }
+
+  it('updates every literal version in an example through exactly one manager', async () => {
+    const files = await exampleFiles();
+    const contents = files.map((file) => fs.readFileSync(path.join(ROOT_DIR, file), 'utf8').replaceAll('\r\n', '\n'));
+
+    // The examples hold literal versions today; a scan that found none would pass without checking.
+    expect(contents.some((content) => content.split('\n').some((line) => LITERAL_VERSION.test(line)))).toBe(true);
+    expect(files.flatMap((file, index) => versionCoverageProblems(file, contents[index]))).toEqual([]);
+  });
+
+  it('reports a literal version in an example that has no renovate comment', () => {
+    const file = 'actions/demo/tool/examples/example.yaml';
+    const content = ['- uses: TimSchoenle/actions/actions/demo/tool@main', '  with:', "    version: '1.2.3'", ''].join(
+      '\n',
+    );
+
+    expect(versionCoverageProblems(file, content)).toEqual([
+      expect.stringContaining(`${file}:3 'version: '1.2.3'' is updated by 0 managers`),
+    ]);
+  });
+
+  it('pins every internal action in an example to a commit with the tag Renovate reads', async () => {
+    const references = (await exampleFiles()).flatMap((file) =>
+      fs
         .readFileSync(path.join(ROOT_DIR, file), 'utf8')
         .split(/\r?\n/)
         // Case-insensitive, as the generator matches the owner.
-        .filter((line) => /TimSchoenle\/actions\/[^@\s]+@(?!main\b)/i.test(line));
-      expect(pinned, `${file} pins an internal action by hand; write it as @main`).toEqual([]);
-    }
+        .filter((line) => /TimSchoenle\/actions\/[^@\s]+@/i.test(line))
+        .map((line) => ({ file, line: line.trim() })),
+    );
+
+    // The examples call internal actions today; a scan that found none would pass without checking.
+    expect(references.length).toBeGreaterThan(0);
+    expect(
+      references.filter(({ line }) => !/@[0-9a-f]{40} # tag=actions-[\w-]+-v\d+\.\d+\.\d+$/.test(line)),
+      'run bun run generate-docs to pin these',
+    ).toEqual([]);
   });
 });

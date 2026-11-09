@@ -24,6 +24,8 @@ export interface CheckLookupsOptions {
   names?: string[];
   fixturesDir?: string;
   presetsDir?: string;
+  /** The repository's own Renovate config, for fixtures with `repositoryConfig`. */
+  repositoryConfigFile?: string;
   env?: NodeJS.ProcessEnv;
   renovate?: () => string;
   run?: CommandRunner;
@@ -50,6 +52,7 @@ export async function main({
   names = [],
   fixturesDir = path.join(ROOT_DIR, 'scripts', '__fixtures__', 'renovate'),
   presetsDir = path.join(ROOT_DIR, 'configs', 'renovate'),
+  repositoryConfigFile = path.join(ROOT_DIR, 'renovate.json'),
   env = process.env,
   renovate = () => renovateEntry('renovate'),
   run = runCommand,
@@ -65,7 +68,15 @@ export async function main({
   const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'renovate-lookups-'));
   const servedDir = path.join(workDir, 'presets');
   const server = await servePresets(servedDir);
-  const context: RunContext = { baseUrl: serverUrl(server), fixturesDir, renovate: renovateFile, run, token, workDir };
+  const context: RunContext = {
+    baseUrl: serverUrl(server),
+    fixturesDir,
+    repositoryConfigFile,
+    renovate: renovateFile,
+    run,
+    token,
+    workDir,
+  };
 
   try {
     writePresets(presetsDir, servedDir, context.baseUrl);
@@ -162,13 +173,18 @@ function writePresets(sourceDir: string, targetDir: string, baseUrl: string): vo
 interface RunContext {
   baseUrl: string;
   fixturesDir: string;
+  repositoryConfigFile: string;
   renovate: string;
   run: CommandRunner;
   token: string;
   workDir: string;
 }
 
-/** Builds the fixture repository: its files, a renovate.json extending the case's presets, one commit. */
+/**
+ * Builds the fixture repository: its files, a renovate.json, one commit. The renovate.json extends the
+ * case's presets, or is this repository's own config with its preset references pointed at the
+ * checkout.
+ */
 async function createRepository(lookupCase: LookupCase, repoDir: string, context: RunContext): Promise<string[]> {
   const caseDir = path.join(context.fixturesDir, lookupCase.name);
 
@@ -178,8 +194,10 @@ async function createRepository(lookupCase: LookupCase, repoDir: string, context
     fs.copyFileSync(path.join(caseDir, source), target);
   }
 
-  const config = { extends: lookupCase.presets.map((preset) => presetUrl(context.baseUrl, preset)) };
-  fs.writeFileSync(path.join(repoDir, 'renovate.json'), `${JSON.stringify(config, null, 2)}\n`);
+  const config = lookupCase.repositoryConfig
+    ? rewritePresetReferences(fs.readFileSync(context.repositoryConfigFile, 'utf8'), context.baseUrl)
+    : `${JSON.stringify({ extends: lookupCase.presets.map((preset) => presetUrl(context.baseUrl, preset)) }, null, 2)}\n`;
+  fs.writeFileSync(path.join(repoDir, 'renovate.json'), config);
 
   // A throwaway repository in a temporary directory: identity and signing come from flags so the
   // developer's global git configuration can neither block nor sign the commit.

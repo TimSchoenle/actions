@@ -1,8 +1,9 @@
 # With no inputs the Bun version comes from .bun-version, and the cache is written only on trusted
 # events (see Cache modes below).
-- uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+- name: Check out the repository
+  uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
   with:
     persist-credentials: false
 
 - name: Setup Bun
-  uses: TimSchoenle/actions/actions/bun/setup-cached@main
+  uses: TimSchoenle/actions/actions/bun/setup-cached@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-bun-setup-cached-v2.0.0
