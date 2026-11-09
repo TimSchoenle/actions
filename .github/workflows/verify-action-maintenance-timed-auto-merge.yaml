@@ -13,12 +13,14 @@ on:
     paths:
       - 'actions/maintenance/timed-auto-merge/**'
       - '!actions/maintenance/timed-auto-merge/CHANGELOG.md'
+      - '!actions/maintenance/timed-auto-merge/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-maintenance-timed-auto-merge.yaml'
   pull_request:
     paths:
       - 'actions/maintenance/timed-auto-merge/**'
       - '!actions/maintenance/timed-auto-merge/CHANGELOG.md'
+      - '!actions/maintenance/timed-auto-merge/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-maintenance-timed-auto-merge.yaml'
   workflow_dispatch:

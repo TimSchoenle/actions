@@ -6,12 +6,16 @@ on:
       - main
     paths:
       - 'actions/common/render-template-and-commit/**'
+      - '!actions/common/render-template-and-commit/CHANGELOG.md'
+      - '!actions/common/render-template-and-commit/README.md'
       - '.github/workflows/verify-action-common-render-template-and-commit.yaml'
   pull_request:
     branches:
       - main
     paths:
       - 'actions/common/render-template-and-commit/**'
+      - '!actions/common/render-template-and-commit/CHANGELOG.md'
+      - '!actions/common/render-template-and-commit/README.md'
       - '.github/workflows/verify-action-common-render-template-and-commit.yaml'
   workflow_dispatch:
 

@@ -13,12 +13,14 @@ on:
     paths:
       - 'actions/security/zizmor/**'
       - '!actions/security/zizmor/CHANGELOG.md'
+      - '!actions/security/zizmor/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-security-zizmor.yaml'
   pull_request:
     paths:
       - 'actions/security/zizmor/**'
       - '!actions/security/zizmor/CHANGELOG.md'
+      - '!actions/security/zizmor/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-security-zizmor.yaml'
   workflow_dispatch:

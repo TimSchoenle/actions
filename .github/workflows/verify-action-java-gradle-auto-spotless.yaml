@@ -6,10 +6,14 @@ on:
       - main
     paths:
       - 'actions/java-gradle/auto-spotless/**'
+      - '!actions/java-gradle/auto-spotless/CHANGELOG.md'
+      - '!actions/java-gradle/auto-spotless/README.md'
       - '.github/workflows/verify-action-java-gradle-auto-spotless.yaml'
   pull_request:
     paths:
       - 'actions/java-gradle/auto-spotless/**'
+      - '!actions/java-gradle/auto-spotless/CHANGELOG.md'
+      - '!actions/java-gradle/auto-spotless/README.md'
       - '.github/workflows/verify-action-java-gradle-auto-spotless.yaml'
   workflow_dispatch:
 

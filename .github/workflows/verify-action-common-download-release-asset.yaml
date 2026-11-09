@@ -13,12 +13,14 @@ on:
     paths:
       - 'actions/common/download-release-asset/**'
       - '!actions/common/download-release-asset/CHANGELOG.md'
+      - '!actions/common/download-release-asset/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-download-release-asset.yaml'
   pull_request:
     paths:
       - 'actions/common/download-release-asset/**'
       - '!actions/common/download-release-asset/CHANGELOG.md'
+      - '!actions/common/download-release-asset/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-download-release-asset.yaml'
   workflow_dispatch:

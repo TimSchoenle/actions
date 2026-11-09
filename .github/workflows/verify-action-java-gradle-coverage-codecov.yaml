@@ -13,10 +13,14 @@ on:
       - main
     paths:
       - 'actions/java-gradle/coverage-codecov/**'
+      - '!actions/java-gradle/coverage-codecov/CHANGELOG.md'
+      - '!actions/java-gradle/coverage-codecov/README.md'
       - '.github/workflows/verify-action-java-gradle-coverage-codecov.yaml'
   pull_request:
     paths:
       - 'actions/java-gradle/coverage-codecov/**'
+      - '!actions/java-gradle/coverage-codecov/CHANGELOG.md'
+      - '!actions/java-gradle/coverage-codecov/README.md'
       - '.github/workflows/verify-action-java-gradle-coverage-codecov.yaml'
 
 concurrency:

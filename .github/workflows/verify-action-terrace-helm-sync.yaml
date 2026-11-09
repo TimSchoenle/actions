@@ -6,11 +6,15 @@ on:
       - main
     paths:
       - 'actions/terrace/helm-sync/**'
+      - '!actions/terrace/helm-sync/CHANGELOG.md'
+      - '!actions/terrace/helm-sync/README.md'
       - '.github/testdata/terrace-helm/**'
       - '.github/workflows/verify-action-terrace-helm-sync.yaml'
   pull_request:
     paths:
       - 'actions/terrace/helm-sync/**'
+      - '!actions/terrace/helm-sync/CHANGELOG.md'
+      - '!actions/terrace/helm-sync/README.md'
       - '.github/testdata/terrace-helm/**'
       - '.github/workflows/verify-action-terrace-helm-sync.yaml'
   workflow_dispatch:

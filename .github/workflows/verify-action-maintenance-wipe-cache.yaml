@@ -13,12 +13,14 @@ on:
     paths:
       - 'actions/maintenance/wipe-cache/**'
       - '!actions/maintenance/wipe-cache/CHANGELOG.md'
+      - '!actions/maintenance/wipe-cache/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-maintenance-wipe-cache.yaml'
   pull_request:
     paths:
       - 'actions/maintenance/wipe-cache/**'
       - '!actions/maintenance/wipe-cache/CHANGELOG.md'
+      - '!actions/maintenance/wipe-cache/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-maintenance-wipe-cache.yaml'
   workflow_dispatch:

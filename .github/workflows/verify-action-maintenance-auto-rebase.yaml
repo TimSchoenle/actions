@@ -13,12 +13,14 @@ on:
     paths:
       - 'actions/maintenance/auto-rebase/**'
       - '!actions/maintenance/auto-rebase/CHANGELOG.md'
+      - '!actions/maintenance/auto-rebase/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-maintenance-auto-rebase.yaml'
   pull_request:
     paths:
       - 'actions/maintenance/auto-rebase/**'
       - '!actions/maintenance/auto-rebase/CHANGELOG.md'
+      - '!actions/maintenance/auto-rebase/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-maintenance-auto-rebase.yaml'
   workflow_dispatch:

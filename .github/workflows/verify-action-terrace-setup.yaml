@@ -13,12 +13,14 @@ on:
     paths:
       - 'actions/terrace/setup/**'
       - '!actions/terrace/setup/CHANGELOG.md'
+      - '!actions/terrace/setup/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-terrace-setup.yaml'
   pull_request:
     paths:
       - 'actions/terrace/setup/**'
       - '!actions/terrace/setup/CHANGELOG.md'
+      - '!actions/terrace/setup/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-terrace-setup.yaml'
   workflow_dispatch:

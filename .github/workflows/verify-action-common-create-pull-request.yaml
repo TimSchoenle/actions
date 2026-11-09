@@ -6,12 +6,16 @@ on:
       - main
     paths:
       - 'actions/common/create-pull-request/**'
+      - '!actions/common/create-pull-request/CHANGELOG.md'
+      - '!actions/common/create-pull-request/README.md'
       - '.github/workflows/verify-action-common-create-pull-request.yaml'
   pull_request:
     branches:
       - main
     paths:
       - 'actions/common/create-pull-request/**'
+      - '!actions/common/create-pull-request/CHANGELOG.md'
+      - '!actions/common/create-pull-request/README.md'
       - '.github/workflows/verify-action-common-create-pull-request.yaml'
   workflow_dispatch:
 

@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - 'actions/helm/update-chart-version/**'
+      - '!actions/helm/update-chart-version/CHANGELOG.md'
+      - '!actions/helm/update-chart-version/README.md'
       - '.github/testdata/terrace-helm/**'
       - '.github/workflows/verify-action-helm-update-chart-version.yaml'
   pull_request:
@@ -13,6 +15,8 @@ on:
       - main
     paths:
       - 'actions/helm/update-chart-version/**'
+      - '!actions/helm/update-chart-version/CHANGELOG.md'
+      - '!actions/helm/update-chart-version/README.md'
       - '.github/testdata/terrace-helm/**'
       - '.github/workflows/verify-action-helm-update-chart-version.yaml'
   workflow_dispatch:

@@ -6,11 +6,15 @@ on:
       - main
     paths:
       - 'actions/terrace/image/**'
+      - '!actions/terrace/image/CHANGELOG.md'
+      - '!actions/terrace/image/README.md'
       - '.github/testdata/terrace-image/**'
       - '.github/workflows/verify-action-terrace-image.yaml'
   pull_request:
     paths:
       - 'actions/terrace/image/**'
+      - '!actions/terrace/image/CHANGELOG.md'
+      - '!actions/terrace/image/README.md'
       - '.github/testdata/terrace-image/**'
       - '.github/workflows/verify-action-terrace-image.yaml'
   workflow_dispatch:

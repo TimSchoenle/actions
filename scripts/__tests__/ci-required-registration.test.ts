@@ -308,6 +308,32 @@ describe('the verify workflows on disk', () => {
 
     expect(registration.applicable).toEqual(['.github/workflows/verify-action-bun-setup-cached.yaml']);
   });
+
+  // The bundled release-please pull request rewrites every action's changelog, and the docs generator
+  // then repins the examples in every action's README. Neither file is read by an action.
+  it('applies none of them to a release pull request', () => {
+    const actionsDir = path.join(ROOT_DIR, 'actions');
+    const actionPaths = fs
+      .readdirSync(actionsDir)
+      .flatMap((group) => fs.readdirSync(path.join(actionsDir, group)).map((name) => `actions/${group}/${name}`));
+    const files = [
+      ...actionPaths.flatMap((action) => [`${action}/CHANGELOG.md`, `${action}/README.md`]),
+      ...['application', 'library'].map((config) => `configs/checkstyle/${config}/CHANGELOG.md`),
+      '.release-please-manifest.json',
+      'README.md',
+      'SECURITY.md',
+    ].map(modified);
+
+    const registration = evaluateRegistration({
+      event: 'pull_request',
+      workflows: workflowsOnDisk,
+      pullRequests: [change(files)],
+      runs: [],
+    });
+
+    expect(actionPaths.length).toBeGreaterThan(0);
+    expect(registration.applicable).toEqual([]);
+  });
 });
 
 describe('ci-required-registration entry point', () => {
