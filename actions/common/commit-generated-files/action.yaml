@@ -106,14 +106,9 @@ runs:
     # the head is fetched without a checkout and none of the branch's files reach the workspace.
     - name: Fetch The Pull Request Head
       if: steps.find.outputs.has_changes == 'true'
-      shell: bash
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-        WORKSPACE: ${{ github.workspace }}
-        SERVER_URL: ${{ github.server_url }}
-        REPOSITORY: ${{ github.repository }}
-        HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-      run: bash "$GITHUB_ACTION_PATH/fetch-head.sh"
+      uses: TimSchoenle/actions/actions/common/fetch-head@3f47ad15da6762f9e07c5e6c70df81f37ddf2454 # tag=actions-common-fetch-head-v1.1.0
+      with:
+        sha: ${{ github.event.workflow_run.head_sha }}
 
     - name: Generate App Token
       id: token
