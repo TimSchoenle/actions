@@ -1,0 +1,13 @@
+permissions:
+  - scope: pull-requests
+    access: write
+    when: always
+    token: token
+
+egress:
+  - endpoint: api.github.com:443
+    for: the REST calls that check the token, read the pull request and post the comment
+
+examples:
+  - title: Review every pull request and push
+    file: examples/review-every-push.yaml
