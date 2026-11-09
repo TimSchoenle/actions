@@ -35,6 +35,7 @@ is not, including older versions of a component whose neighbours have since rele
 | [Common Modify YAML](./actions/common/modify-yaml) | [actions-common-modify-yaml-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-modify-yaml-v2.0.1) | :white_check_mark: |
 | [Common Read YAML](./actions/common/read-yaml) | [actions-common-read-yaml-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-read-yaml-v2.0.1) | :white_check_mark: |
 | [Common Readme Variables](./actions/common/readme-variables) | [actions-common-readme-variables-v2.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-readme-variables-v2.1.1) | :white_check_mark: |
+| [Common Render README](./actions/common/render-readme) | [actions-common-render-readme-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-readme-v1.0.0) | :white_check_mark: |
 | [Create Branch](./actions/common/create-branch) | [actions-common-create-branch-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-branch-v2.0.1) | :white_check_mark: |
 | [Create Pull Request](./actions/common/create-pull-request) | [actions-common-create-pull-request-v1.0.28](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-pull-request-v1.0.28) | :white_check_mark: |
 | [Delete-Branch](./actions/common/delete-branch) | [actions-common-delete-branch-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-delete-branch-v2.0.1) | :white_check_mark: |
