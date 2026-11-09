@@ -84,7 +84,23 @@ jobs:
           fetch-tags: true
           ref: ${{ github.sha }}
 
+      # Commit Docs only commits onto this run's commit, so once main has moved on there is nothing
+      # this job could deliver. A run that release-please delayed past a later push can also check out
+      # a manifest that predates the release, and would wait for tags that will never exist.
+      - name: Check Main Has Not Moved
+        id: head
+        run: |
+          set -euo pipefail
+          head="$(git ls-remote origin "refs/heads/${GITHUB_REF_NAME}" | cut -f1)"
+          if [ "$head" = "$GITHUB_SHA" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::${GITHUB_REF_NAME} moved from ${GITHUB_SHA} to ${head}; pull requests will regenerate the docs."
+            echo "current=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Setup Bun
+        if: steps.head.outputs.current == 'true'
         uses: TimSchoenle/actions/actions/bun/setup-cached@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-bun-setup-cached-v2.0.0
         with:
           cache-mode: none
@@ -93,14 +109,17 @@ jobs:
       # git can trail the API briefly. A tag git cannot see would leave its README pinned to the tag
       # name, so this re-fetches until all of them are present and fails, naming them, if they are not.
       - name: Wait For Release Tags
+        if: steps.head.outputs.current == 'true'
         env:
           RELEASED_PATHS: ${{ needs.release-please.outputs.paths_released }}
         run: bun run wait-release-tags
 
       - name: Generate Docs
+        if: steps.head.outputs.current == 'true'
         run: bun run generate-docs
 
       - name: Create Patch
+        if: steps.head.outputs.current == 'true'
         id: patch
         uses: TimSchoenle/actions/actions/common/create-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-patch-v1.1.1
         with:

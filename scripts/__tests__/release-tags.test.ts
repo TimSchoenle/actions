@@ -166,6 +166,12 @@ describe('gitTagRepository', () => {
     ]);
   });
 
+  it('fails on a tag lookup error instead of reporting the tag missing', async () => {
+    const repository = gitTagRepository(async () => 128);
+
+    await expect(repository.hasTag('broken')).rejects.toThrow('git rev-parse failed for tag broken');
+  });
+
   it('fails when the fetch exits non-zero', async () => {
     const repository = gitTagRepository(async () => 128);
 

@@ -157,8 +157,16 @@ export function gitTagRepository(
         throw new Error(`git fetch --tags failed with exit code ${exitCode}.`);
       }
     },
+    // `rev-parse --verify --quiet` exits 1 for a ref that does not exist. Any other failure is a lookup
+    // error, which retrying would only turn into a misleading "missing" report.
     async hasTag(tag) {
-      return (await git(['rev-parse', '--verify', '--quiet', `refs/tags/${tag}`])) === 0;
+      const exitCode = await git(['rev-parse', '--verify', '--quiet', `refs/tags/${tag}`]);
+
+      if (exitCode !== 0 && exitCode !== 1) {
+        throw new Error(`git rev-parse failed for tag ${tag} with exit code ${exitCode}.`);
+      }
+
+      return exitCode === 0;
     },
     sleep,
   };

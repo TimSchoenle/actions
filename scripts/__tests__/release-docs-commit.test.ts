@@ -12,6 +12,7 @@ import { ROOT_DIR } from '../lib/utils.js';
 
 interface Step {
   id?: string;
+  if?: string;
   uses?: string;
   run?: string;
   env?: Record<string, string>;
@@ -74,6 +75,15 @@ describe('release-please docs commit', () => {
 
     expect(names.indexOf('bun run wait-release-tags')).toBeLessThan(names.indexOf('bun run generate-docs'));
     expect(wait?.env?.RELEASED_PATHS).toBe('${{ needs.release-please.outputs.paths_released }}');
+  });
+
+  it('generates nothing once main has moved past this run', () => {
+    const check = generate.steps.findIndex((step) => step.id === 'head');
+    const gated = generate.steps.slice(check + 1);
+
+    expect(check).toBeGreaterThan(-1);
+    expect(gated.length).toBeGreaterThan(0);
+    expect(gated.every((step) => step.if === "steps.head.outputs.current == 'true'")).toBe(true);
   });
 
   it('runs repository code without secrets, an environment or write access', () => {
