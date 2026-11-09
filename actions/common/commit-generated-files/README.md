@@ -80,8 +80,9 @@ On a fork's pull request the job token also reads the open pull requests. A publ
 - **A fork's branch is committed to while its pull request allows edits by maintainers.** GitHub lets the App push
   there then, with the token it mints for this repository. A fork that does not allow it, which includes every fork
   owned by an organization, is skipped, and the verdict tells the contributor to push the files. The decision is
-  `check-fork.sh`, also driven through every case. The run on the bot commit may wait for a maintainer's approval, as
-  GitHub asks for first-time contributors. Callers must not exclude forks in their own job-level `if:`.
+  `check-fork.sh`, over the pull requests `read-pulls.sh` reads in full (the list endpoint omits the flag), both
+  driven through every case. The run on the bot commit may wait for a maintainer's approval, as GitHub asks for
+  first-time contributors. Callers must not exclude forks in their own job-level `if:`.
 - **One bot commit per fork push.** A fork runs its own copy of the generators, so they need not settle. A fork whose
   head commit is already a bot's gets no further commit, and its next push starts over.
 - **Nothing else in the job.** On a fork's pull request the artifact and the checked-out tree come from the fork's
