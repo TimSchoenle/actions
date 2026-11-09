@@ -21,7 +21,7 @@
         "@typescript-eslint/eslint-plugin": "8.71.2",
         "@typescript-eslint/parser": "8.71.2",
         "@typescript/native": "npm:typescript@7.0.2",
-        "@vitest/coverage-v8": "5.0.5",
+        "@vitest/coverage-v8": "5.1.0",
         "ansi-escapes": "7.3.0",
         "chardet": "2.2.0",
         "cli-width": "4.1.0",
@@ -42,7 +42,7 @@
         "signal-exit": "4.1.0",
         "typescript": "npm:@typescript/typescript6@6.0.2",
         "typescript-eslint": "8.71.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
         "wrap-ansi": "10.0.2",
         "yaml": "2.9.1",
       },
@@ -61,7 +61,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/common/commit-changes": {
@@ -79,7 +79,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/common/commit-patch/helper": {
@@ -96,7 +96,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/common/create-branch": {
@@ -113,7 +113,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/common/create-patch/helper": {
@@ -127,7 +127,7 @@
         "@types/node": "26.6.6",
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/common/delete-branch": {
@@ -144,7 +144,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/common/download-release-asset": {
@@ -158,7 +158,7 @@
         "@types/node": "26.6.6",
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/common/fetch-head": {
@@ -172,7 +172,7 @@
         "@types/node": "26.6.6",
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/common/find-patch/helper": {
@@ -186,7 +186,7 @@
         "@types/node": "26.6.6",
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/common/generated-files-verdict/helper": {
@@ -200,7 +200,7 @@
         "@types/node": "26.6.6",
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/common/get-app-git-identity": {
@@ -217,7 +217,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/common/modify-yaml": {
@@ -233,7 +233,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
         "yaml": "2.9.1",
       },
     },
@@ -251,7 +251,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/common/readme-variables": {
@@ -268,7 +268,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/common/render-template": {
@@ -285,7 +285,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/common/setup-app-git-identity": {
@@ -301,7 +301,7 @@
         "@types/node": "26.6.6",
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/common/upsert-issue": {
@@ -318,7 +318,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/common/upsert-pr-comment": {
@@ -335,7 +335,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/docker/image-check-summary/helper": {
@@ -349,7 +349,7 @@
         "@types/node": "26.6.6",
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/docker/image-check/helper": {
@@ -364,7 +364,7 @@
         "@types/node": "26.6.6",
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/helm/apply-chart-updates": {
@@ -380,7 +380,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
         "yaml": "2.9.1",
       },
     },
@@ -398,7 +398,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/helper/verify-branch-name": {
@@ -414,7 +414,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/helper/verify-commit-authors": {
@@ -431,7 +431,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/maintenance/auto-approve-pr": {
@@ -448,7 +448,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/maintenance/auto-rebase": {
@@ -465,7 +465,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/maintenance/ensure-actions-are-executed": {
@@ -482,7 +482,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/maintenance/timed-auto-merge": {
@@ -499,7 +499,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/maintenance/trigger-coderabbit-review": {
@@ -514,7 +514,7 @@
         "@types/node": "26.6.6",
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/maintenance/wipe-cache": {
@@ -531,7 +531,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/rust/config-contract": {
@@ -548,7 +548,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/security/codeql/helper": {
@@ -562,7 +562,7 @@
         "@types/node": "26.6.6",
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/security/zizmor/helper": {
@@ -577,7 +577,7 @@
         "@types/node": "26.6.6",
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "actions/terrace/setup": {
@@ -597,7 +597,7 @@
         "@typescript/native": "npm:typescript@7.0.2",
         "actions-e2e": "workspace:*",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "packages/e2e": {
@@ -613,7 +613,7 @@
         "@types/node": "26.6.6",
         "@typescript/native": "npm:typescript@7.0.2",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
     "packages/ts-util": {
@@ -630,7 +630,7 @@
         "@types/node": "26.6.6",
         "@typescript/native": "npm:typescript@7.0.2",
         "fast-check": "4.10.2",
-        "vitest": "5.0.5",
+        "vitest": "5.1.0",
       },
     },
   },
@@ -917,15 +917,15 @@
 
     "@typescript/typescript-win32-x64": ["@typescript/typescript-win32-x64@7.0.2", "", { "os": "win32", "cpu": "x64" }, "sha512-0BQ3HkAHHlKLSp1qRvf3SUhGpGsDuhB/jgFw75guyqbxJqEaS0Cw/VFO8i2nHglJUzQCRtMMR/IBAKE3ETMC4g=="],
 
-    "@vitest/coverage-v8": ["@vitest/coverage-v8@5.0.5", "", { "dependencies": { "@bcoe/v8-coverage": "^1.0.2", "@vitest/istanbul-lib-coverage": "^1.0.2", "@vitest/istanbul-lib-report": "^1.0.2", "ast-v8-to-istanbul": "^1.0.7", "magicast": "^0.5.5", "obug": "^3.0.0", "std-env": "^4.3.0", "tinyrainbow": "^3.2.0" }, "peerDependencies": { "@vitest/browser": "5.0.5", "vitest": "5.0.5" }, "optionalPeers": ["@vitest/browser"] }, "sha512-4KpkGdIrSqBihx/JyP/e+S+IKB98etg1XDQiLAxksLfcShnwi1VReGeOT9NI43hLHbknosKp/1CCLn9Zgcs8mg=="],
+    "@vitest/coverage-v8": ["@vitest/coverage-v8@5.1.0", "", { "dependencies": { "@bcoe/v8-coverage": "^1.0.2", "@vitest/istanbul-lib-coverage": "^2.1.0", "@vitest/istanbul-lib-report": "^2.1.0", "ast-v8-to-istanbul": "^1.0.7", "magicast": "^0.5.5", "obug": "^3.0.0", "std-env": "^4.3.0", "tinyrainbow": "^3.2.0" }, "peerDependencies": { "@vitest/browser": "5.1.0", "vitest": "5.1.0" }, "optionalPeers": ["@vitest/browser"] }, "sha512-OY9aShBQG5KOIw2zCo9fDoCHI9RHliNHJ//nM7m6jGg41Hyke9JOGWmeMlK74xYErsxMoK8mIB3gAeEyFVA7LA=="],
 
-    "@vitest/istanbul-lib-coverage": ["@vitest/istanbul-lib-coverage@1.0.2", "", {}, "sha512-9J/JMwOf9AoJhAywhrn7ScKTL38hsWQP/qPG60OtaAFcQ5OXPwKsxZFlbnuCKmZ61m8/lGgHYnFpdyQZUvG/iA=="],
+    "@vitest/istanbul-lib-coverage": ["@vitest/istanbul-lib-coverage@2.1.0", "", {}, "sha512-WOjuS+xcjSIy7ruYBQ+9BUcV7XZQ0FyVcbWbWxW9TRx/kLGx5SQaeFRIFDJxjNplb6YsT7SpKo2zuXXUo91OIQ=="],
 
-    "@vitest/istanbul-lib-report": ["@vitest/istanbul-lib-report@1.0.2", "", { "dependencies": { "@vitest/istanbul-lib-coverage": "1.0.2" } }, "sha512-gUsfXZJbzPamoIY5TvHFiMMoXESBrUMo+xqaj+rYrWI69+EnvRlYBlP96ZnHPY4vX8kyUpgAnFUCg5wZG/HkDQ=="],
+    "@vitest/istanbul-lib-report": ["@vitest/istanbul-lib-report@2.1.0", "", { "dependencies": { "@vitest/istanbul-lib-coverage": "2.1.0" } }, "sha512-+ZFta25nWtGCOBG9/IET8w1RO5Oawsd6H8Uf6AJ9EA/StFuKVtKAEJEJ6uRt84OH+T4YkI0ASmIHAhRA+0KVxw=="],
 
-    "@vitest/mocker": ["@vitest/mocker@5.0.5", "", { "dependencies": { "@jridgewell/trace-mapping": "0.3.31", "@vitest/spy": "5.0.5", "estree-walker": "^3.0.3", "magic-string": "^1.4.3" }, "peerDependencies": { "msw": "^2.4.9 || ^3.0.0", "vite": "^6.0.0 || ^7.0.0 || ^8.0.0" }, "optionalPeers": ["msw", "vite"] }, "sha512-xLL3lkDegJZw+MGoGaCCsFayDZthGgpAtr3Vziyfc4p7xH89K7KRPcRBBh/kEYm0Aqkt5DtTmkYpBtRV/FrHZg=="],
+    "@vitest/mocker": ["@vitest/mocker@5.1.0", "", { "dependencies": { "@jridgewell/trace-mapping": "0.3.31", "@vitest/spy": "5.1.0", "estree-walker": "^3.0.3", "magic-string": "^1.4.3" }, "peerDependencies": { "msw": "^2.4.9 || ^3.0.0", "vite": "^6.0.0 || ^7.0.0 || ^8.0.0" }, "optionalPeers": ["msw", "vite"] }, "sha512-5umB9/jlWcqVS6fsrFmv5Gdnpu6wAUio/lEOwAmvB7v+lFo/IW2B9FhAD0p19GCULTgMzLCdUmuCDCnAzWgppQ=="],
 
-    "@vitest/spy": ["@vitest/spy@5.0.5", "", {}, "sha512-lwJRExuH417257Q5wv9QYugN9IMJkoxcrKrYxGPQkBzl7wlNpTUxD/5yNX4ESKVUIShKPgkGchYPFMWOOk0wzw=="],
+    "@vitest/spy": ["@vitest/spy@5.1.0", "", {}, "sha512-2DPO5OMHWKrBngC+fCmTQqemNF0gidRhp3lxbBmRhW+M1XJrfgPpqNqWVevXtn2f2ufD5ZaR1B6B641aAlcX5A=="],
 
     "acorn": ["acorn@8.19.0", "", { "bin": { "acorn": "bin/acorn" } }, "sha512-oJlA3XiRm7Cyk6qFD2Jn8ak9B7jSy0qy00ADO3+8dpT0LSjFihQYv4C02LFCSYJV3Q37xYwwRy5m+IpIiUzqWw=="],
 
@@ -1621,7 +1621,7 @@
 
     "vite": ["vite@8.3.4", "", { "dependencies": { "lightningcss": "^1.33.0", "picomatch": "^4.0.7", "postcss": "^8.5.29", "rolldown": "~1.2.12", "tinyglobby": "^0.2.17" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "peerDependencies": { "@types/node": "^20.19.0 || >=22.12.0", "@vitejs/devtools": "^0.7.1", "esbuild": "^0.27.0 || ^0.28.0", "jiti": ">=1.21.0", "less": "^4.0.0", "sass": "^1.70.0", "sass-embedded": "^1.70.0", "stylus": ">=0.54.8", "sugarss": "^5.0.0", "terser": "^5.16.0", "tsx": "^4.8.1", "yaml": "^2.4.2" }, "optionalPeers": ["@types/node", "@vitejs/devtools", "esbuild", "jiti", "less", "sass", "sass-embedded", "stylus", "sugarss", "terser", "tsx", "yaml"], "bin": { "vite": "bin/vite.js" } }, "sha512-IftLE8phJhdNRIGNEV4JCCvfNScoZQVfcXaN8TQropWGJtOHcu+iAB9pHcuGvmEb/kddw0LBe/jS8ztdC6xdiQ=="],
 
-    "vitest": ["vitest@5.0.5", "", { "dependencies": { "@types/chai": "^5.2.2", "@vitest/mocker": "5.0.5", "chai": "^6.3.0", "es-module-lexer": "^2.3.2", "expect-type": "^1.4.0", "magic-string": "^1.4.3", "obug": "^3.0.0", "picomatch": "^4.0.7", "std-env": "^4.3.0", "tinybench": "^6.2.2", "tinyexec": "^1.3.1", "tinyglobby": "^0.2.17", "why-is-node-running": "3.2.1" }, "peerDependencies": { "@edge-runtime/vm": "*", "@opentelemetry/api": "^1.9.0", "@types/node": "^22.0.0 || >=24.0.0", "@vitest/browser-playwright": "5.0.5", "@vitest/browser-preview": "5.0.5", "@vitest/browser-webdriverio": "^5.0.0-beta.5 || >=5.0.0", "@vitest/coverage-istanbul": "5.0.5", "@vitest/coverage-v8": "5.0.5", "@vitest/ui": "5.0.5", "happy-dom": "*", "jsdom": "*", "vite": "^6.4.0 || ^7.0.0 || ^8.0.0" }, "optionalPeers": ["@edge-runtime/vm", "@opentelemetry/api", "@types/node", "@vitest/browser-playwright", "@vitest/browser-preview", "@vitest/browser-webdriverio", "@vitest/coverage-istanbul", "@vitest/coverage-v8", "@vitest/ui", "happy-dom", "jsdom"], "bin": { "vitest": "./vitest.mjs" } }, "sha512-cPODOMF8YnkiiYtDdHo6n4wWmBrOBBbOIYH2d33M4l3CdNn72h+qMmO6uXffUN6A5AZFXNND/d+krS9mgkXRfg=="],
+    "vitest": ["vitest@5.1.0", "", { "dependencies": { "@types/chai": "^5.2.2", "@vitest/mocker": "5.1.0", "chai": "^6.3.0", "es-module-lexer": "^2.3.2", "expect-type": "^1.4.0", "magic-string": "^1.4.3", "obug": "^3.0.0", "picomatch": "^4.0.7", "std-env": "^4.3.0", "tinybench": "^6.2.2", "tinyexec": "^1.3.1", "tinyglobby": "^0.2.17", "why-is-node-running": "3.2.1" }, "peerDependencies": { "@edge-runtime/vm": "*", "@opentelemetry/api": "^1.9.0", "@types/node": "^22.0.0 || >=24.0.0", "@vitest/browser-playwright": "5.1.0", "@vitest/browser-preview": "5.1.0", "@vitest/browser-webdriverio": "^5.0.0-beta.5 || >=5.0.0", "@vitest/coverage-istanbul": "5.1.0", "@vitest/coverage-v8": "5.1.0", "@vitest/ui": "5.1.0", "happy-dom": "*", "jsdom": "*", "vite": "^6.4.0 || ^7.0.0 || ^8.0.0" }, "optionalPeers": ["@edge-runtime/vm", "@opentelemetry/api", "@types/node", "@vitest/browser-playwright", "@vitest/browser-preview", "@vitest/browser-webdriverio", "@vitest/coverage-istanbul", "@vitest/coverage-v8", "@vitest/ui", "happy-dom", "jsdom"], "bin": { "vitest": "./vitest.mjs" } }, "sha512-MzmNFnrwa8v8lF1bLxw3UJ4EREwVOVb75VqJZmUDRjJ6EluK/x9th7qTbaeDk41WxE1GxWqmTXcdsfobfH5sOA=="],
 
     "which": ["which@2.0.2", "", { "dependencies": { "isexe": "^2.0.0" }, "bin": { "node-which": "./bin/node-which" } }, "sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA=="],
 
