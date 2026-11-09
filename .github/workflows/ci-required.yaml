@@ -85,6 +85,7 @@ on:
       - Verify Common Create-branch
       - Verify Common Create-patch
       - Verify Common Delete-branch
+      - Verify Common Download-release-asset
       - Verify Common Find-patch
       - Verify Common Generated-files-verdict
       - Verify Common Get-app-git-identity

@@ -1,0 +1,22 @@
+{
+  "name": "actions-common-download-release-asset",
+  "version": "1.0.0",
+  "description": "Downloads a GitHub release asset, through the REST API asset endpoint when the release download fails, and verifies its SHA-256.",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "bun run ../../../scripts/build-action.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "actions-util": "workspace:*",
+    "@actions/core": "3.0.1"
+  },
+  "devDependencies": {
+    "actions-e2e": "workspace:*",
+    "@types/node": "26.6.6",
+    "@typescript/native": "npm:typescript@7.0.2",
+    "vitest": "5.0.5"
+  }
+}
