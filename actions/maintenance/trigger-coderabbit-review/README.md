@@ -24,7 +24,7 @@ start without anyone typing it.
 <!-- docs:generated usage -->
 ## Usage
 
-### Post the review command from the default branch (.github/workflows/coderabbit-review.yaml)
+### Review after the Generate workflow (.github/workflows/coderabbit-review.yaml)
 
 ```yaml
 name: CodeRabbit Review
@@ -69,6 +69,51 @@ jobs:
         with:
           token: ${{ secrets.CODERABBIT_TRIGGER_TOKEN }}
 ```
+
+### Or review after a request workflow (.github/workflows/coderabbit-review.yaml)
+
+```yaml
+name: CodeRabbit Review
+
+# workflow_run, not pull_request_target: GitHub runs this file from the default branch, so a pull
+# request cannot rewrite the job that receives the token, and nothing from the pull request is
+# checked out or run. It follows CodeRabbit Request, a pull_request workflow that only completes, for
+# a repository without a generator workflow to follow. pr_url is left empty: the action reads the
+# pull request from the event and skips it when its head has moved since.
+on:
+  workflow_run:
+    workflows: [CodeRabbit Request]
+    types: [completed]
+
+# A newer push to the same branch supersedes a run that has not posted yet. The head repository is
+# part of the group, so a fork branch with the same name cannot cancel a run of this repository.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  trigger:
+    name: Trigger CodeRabbit Review
+    # Only a successful run on a branch of this repository. A fork's run is skipped here, before the
+    # job enters the environment that holds the token.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # An environment restricted to the default branch keeps the token out of every other workflow.
+    environment:
+      name: coderabbit
+      deployment: false
+    permissions: {}
+    steps:
+      - uses: TimSchoenle/actions/actions/maintenance/trigger-coderabbit-review@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-maintenance-trigger-coderabbit-review-v1.1.1
+        with:
+          token: ${{ secrets.CODERABBIT_TRIGGER_TOKEN }}
+```
 <!-- /docs:generated usage -->
 
 No `pull_request_target` workflow is needed, which GitHub blocks by default on public repositories. The example
@@ -90,6 +135,31 @@ the token.
 Each push to the pull request runs `Generate` again and asks for an incremental review of the new commits, which is
 what automatic review did. A draft is skipped. To have it reviewed when it is marked ready, add `ready_for_review` to
 the `pull_request` types of the triggering workflow.
+
+### The request workflow for the alternative
+
+The alternative example follows `CodeRabbit Request` instead, a `pull_request` workflow that holds nothing and only
+completes. It reviews each push as soon as it lands, without waiting for generated files:
+
+```yaml
+name: CodeRabbit Request
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize]
+
+permissions: {}
+
+jobs:
+  request:
+    name: Request A CodeRabbit Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Record The Request
+        run: echo "CodeRabbit Review runs when this run completes."
+```
 
 ### Duplicates and old comments
 
