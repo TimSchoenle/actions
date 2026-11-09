@@ -1,0 +1,9 @@
+permissions: []
+
+egress: []
+
+examples:
+  - title: Render the README
+    file: examples/render-the-readme.yaml
+  - title: With a repository's own generator
+    file: examples/with-own-generator.yaml

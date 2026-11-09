@@ -1,0 +1,23 @@
+permissions: []
+
+egress:
+  - endpoint: github.com:443
+    for: the Bun release download by setup-bun
+  - endpoint: release-assets.githubusercontent.com:443
+    for: the Bun release asset that github.com redirects to
+  - endpoint: objects.githubusercontent.com:443
+    for: the Bun release asset that github.com redirects to
+  - endpoint: api.github.com:443
+    for: setup-bun resolving a version that is not an exact release, such as latest or a range
+  - endpoint: registry.npmjs.org:443
+    for: bun install, with the default registry
+  - endpoint: '*.actions.githubusercontent.com:443'
+    for: the Actions cache service
+  - endpoint: '*.blob.core.windows.net:443'
+    for: cache entry downloads and uploads
+
+examples:
+  - title: Default
+    file: examples/default.yaml
+  - title: In a privileged job
+    file: examples/privileged-job.yaml

@@ -1,0 +1,8 @@
+permissions:
+  - scope: contents
+    access: read
+    when: { repository: private }
+
+egress:
+  - endpoint: github.com:443
+    for: the git fetch, with the default server_url

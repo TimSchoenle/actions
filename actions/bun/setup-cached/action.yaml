@@ -16,7 +16,8 @@ inputs:
     required: false
     default: ''
   working-directory:
-    description: 'The working directory to run commands in.'
+    description: 'Directory holding package.json and bun.lock. bun install runs there, node_modules is cached from
+      there, and the Bun version lookup starts there.'
     required: false
     default: '.'
   cache-mode:
@@ -24,11 +25,11 @@ inputs:
       "read-only" restores it and never saves, "none" neither restores nor saves. "auto" is "read-write" on push,
       schedule, workflow_dispatch and merge_group, and "read-only" on every other event, pull_request and
       pull_request_target among them. A restored cache is code the job runs: use "none" in any job that holds secrets,
-      an App token or write permissions.'
+      an App token or write permissions. Any other value fails the step. See Cache modes below.'
     required: false
     default: 'auto'
   cache-key-prefix:
-    description: 'Optional prefix for the cache key.'
+    description: 'Optional prefix for the cache key. See Cache key below.'
     required: false
     default: ''
 

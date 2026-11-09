@@ -1,0 +1,24 @@
+# Check out the pull request head rather than the default merge commit. The patch has to apply to the
+# branch it is committed to, and commit-patch refuses one computed against any commit other than its
+# expected_head_sha, which defaults to the pull request head.
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      base_sha: ${{ steps.patch.outputs.base_sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - run: bun install --frozen-lockfile && bun run format
+      - id: patch
+        uses: TimSchoenle/actions/actions/common/create-patch@main
+        with:
+          artifact_name: format-patch
+
+  commit:
+    needs: format
+    # ... see common/commit-patch

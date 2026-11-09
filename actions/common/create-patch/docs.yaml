@@ -1,0 +1,14 @@
+permissions:
+  - scope: contents
+    access: read
+    when: always
+
+egress:
+  - endpoint: '*.actions.githubusercontent.com:443'
+    for: the artifact upload
+  - endpoint: '*.blob.core.windows.net:443'
+    for: the artifact upload
+
+examples:
+  - title: Formatting job
+    file: examples/format-job.yaml

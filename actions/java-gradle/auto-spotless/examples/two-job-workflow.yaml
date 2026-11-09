@@ -1,0 +1,72 @@
+name: Auto Spotless
+
+on:
+  pull_request:
+
+# A newer push supersedes the run formatting the older head.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  # Runs the pull request's build. Holds no secret and no write permission.
+  format:
+    name: Spotless
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      changes_detected: ${{ steps.spotless.outputs.changes_detected }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - id: spotless
+        uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@main
+        with:
+          java_version: '21'
+          artifact_name: auto-spotless
+
+  # Holds the write token. Runs no repository code.
+  commit:
+    name: Commit Spotless
+    needs: format
+    # A fork's pull request gets no secrets, and its branch is not in this repository.
+    if: needs.format.outputs.changes_detected == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch the commit the patch applies to
+    steps:
+      # Only git's objects are needed. Nothing in this checkout is executed.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.BOT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write # only for the comment below
+
+      - id: commit
+        uses: TimSchoenle/actions/actions/common/commit-patch@main
+        with:
+          token: ${{ steps.token.outputs.token }}
+          artifact_name: auto-spotless
+          allowed_paths: '**/*.java **/*.kt **/*.kts **/*.gradle'
+          commit_message: 'style: apply spotless formatting'
+
+      # Optional. v1 posted this comment itself.
+      - if: steps.commit.outputs.changes_committed == 'true'
+        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@main
+        with:
+          token: ${{ steps.token.outputs.token }}
+          identifier: 'java-gradle-auto-spotless'
+          body: 'Applied spotless formatting.'
