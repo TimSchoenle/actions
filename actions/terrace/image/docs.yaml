@@ -1,0 +1,32 @@
+permissions:
+  - scope: id-token
+    access: write
+    when: { input: sign, equals: 'true' }
+
+# With image, the registry it names is reached as well, through oras: to read the image, and to
+# write the referrer with attach. That host depends on the image, so it is not listed here.
+egress:
+  - endpoint: github.com:443
+    for: the terrace-contract, cosign and oras release downloads
+  - endpoint: objects.githubusercontent.com:443
+    for: the release assets that github.com redirects to
+  - endpoint: release-assets.githubusercontent.com:443
+    for: the release assets that github.com redirects to
+  - endpoint: api.github.com:443
+    for: listing terrace-contract releases for a MAJOR.MINOR version, and the REST API download fallback
+  - endpoint: tuf-repo-cdn.sigstore.dev:443
+    for: the Sigstore trust root cosign verifies the release, the image signature and the new signature against
+  - endpoint: '*.actions.githubusercontent.com:443'
+    for: the OIDC token cosign signs with, with sign
+  - endpoint: fulcio.sigstore.dev:443
+    for: the signing certificate, with sign
+  - endpoint: rekor.sigstore.dev:443
+    for: the transparency log entry of the signature, with sign
+
+examples:
+  - title: Check the document and the Dockerfile
+    file: examples/document-only.yaml
+  - title: Check the built image before it is pushed
+    file: examples/oci-layout.yaml
+  - title: Attach and sign the document after the push
+    file: examples/attach-and-sign.yaml

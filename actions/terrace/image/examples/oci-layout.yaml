@@ -1,0 +1,11 @@
+# The image is read from an OCI layout tarball, so it is checked after the build and before the push.
+- run: |
+    docker build --tag app:check .
+    docker save app:check --output image.tar
+
+- uses: TimSchoenle/actions/actions/terrace/image@main
+  with:
+    contract: config/contract.json
+    dockerfile: Dockerfile
+    image: image.tar:check
+    oci_layout: 'true'

@@ -15,8 +15,35 @@ Reports how the vendored configuration contracts changed against a base revision
 <!-- docs:generated usage -->
 ## Usage
 
+### Report contract changes on a pull request
+
 ```yaml
-- uses: TimSchoenle/actions/actions/terrace/helm-diff@81e4009704e0963651bbd8275e31244c1d1e220d # tag=actions-terrace-helm-diff-v1.1.0
+name: Helm
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  diff:
+    name: Configuration contract diff
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # the comment
+    steps:
+      # The full history, so since can be read with git show.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: TimSchoenle/actions/actions/terrace/helm-diff@81e4009704e0963651bbd8275e31244c1d1e220d # tag=actions-terrace-helm-diff-v1.1.0
+        with:
+          token: ${{ github.token }}
+          # Only the comment this token posted is updated.
+          comment_author: github-actions[bot]
 ```
 <!-- /docs:generated usage -->
 
@@ -45,9 +72,25 @@ Reports how the vendored configuration contracts changed against a base revision
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+| Permission             | Held by              | Needed when    |
+| ---------------------- | -------------------- | -------------- |
+| `pull-requests: write` | the token in `token` | `token` is set |
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint                                   | For                                                                                                           |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `github.com:443`                           | the terrace-contract and cosign release downloads                                                             |
+| `objects.githubusercontent.com:443`        | the release assets that github.com redirects to                                                               |
+| `release-assets.githubusercontent.com:443` | the release assets that github.com redirects to                                                               |
+| `api.github.com:443`                       | the pull request comment with token, the release listing for a MAJOR.MINOR version, and the download fallback |
+| `tuf-repo-cdn.sigstore.dev:443`            | the Sigstore trust root cosign verifies the terrace-contract release against                                  |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

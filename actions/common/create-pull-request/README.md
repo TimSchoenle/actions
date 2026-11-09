@@ -15,13 +15,48 @@ Creates or updates a pull request using GitHub App authentication with optional 
 <!-- docs:generated usage -->
 ## Usage
 
+### Open a pull request with updated files
+
 ```yaml
-- uses: TimSchoenle/actions/actions/common/create-pull-request@81e4009704e0963651bbd8275e31244c1d1e220d # tag=actions-common-create-pull-request-v1.0.28
-  with:
-    app-id: # required, see Inputs
-    private-key: # required, see Inputs
-    branch_name: # required, see Inputs
-    title: # required, see Inputs
+# The action mints its own App token, so the job token only reads the code for the checkout. The
+# pull request is opened by the App, which lets it start the pull request workflows.
+name: Update Data
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    environment: ci
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - run: ./scripts/update-data.sh
+
+      - id: pr
+        uses: TimSchoenle/actions/actions/common/create-pull-request@81e4009704e0963651bbd8275e31244c1d1e220d # tag=actions-common-create-pull-request-v1.0.28
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          branch_name: chore/update-data
+          title: 'chore: update data'
+          body: Weekly data refresh.
+          commit_message: 'chore: update data'
+          file_pattern: 'data/'
+
+      - if: steps.pr.outputs.pr_url != ''
+        run: echo "Pull request ${URL}"
+        env:
+          URL: ${{ steps.pr.outputs.pr_url }}
 ```
 <!-- /docs:generated usage -->
 
@@ -54,9 +89,19 @@ Creates or updates a pull request using GitHub App authentication with optional 
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+Needs no token permissions.
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint             | For                                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------- |
+| `api.github.com:443` | minting the App token, the branch and commit calls, the compare and opening or finding the pull request |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

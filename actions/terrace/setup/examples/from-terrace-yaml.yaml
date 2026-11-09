@@ -1,0 +1,13 @@
+# Empty version reads the cli pin from terrace.yaml in working_directory.
+permissions:
+  contents: read
+
+steps:
+  - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    with:
+      persist-credentials: false
+
+  - id: terrace
+    uses: TimSchoenle/actions/actions/terrace/setup@main
+
+  - run: terrace-contract doctor

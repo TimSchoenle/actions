@@ -1,0 +1,20 @@
+# The action checks the repository out itself. Findings appear as annotations on the run.
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions: {}
+
+jobs:
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - uses: TimSchoenle/actions/actions/rust/clippy@main
+        with:
+          clippy_arguments: '--all-features --all-targets -- -D warnings'

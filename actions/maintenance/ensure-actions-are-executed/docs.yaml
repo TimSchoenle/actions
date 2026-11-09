@@ -1,0 +1,19 @@
+permissions:
+  - scope: checks
+    access: read
+    when: always
+    token: token
+  # Only the fallback for a ref with no check runs reads the current run's jobs; without it the
+  # fallback is skipped with a notice.
+  - scope: actions
+    access: read
+    when: always
+    token: token
+
+egress:
+  - endpoint: api.github.com:443
+    for: listing the check runs of the ref, and the jobs of the current run as a fallback
+
+examples:
+  - title: Gate on the checks that started
+    file: examples/required-gate.yaml

@@ -1,0 +1,35 @@
+# The identity is written into the checkout's local git config, so the action runs after the
+# checkout. The checkout keeps the App token as its credential because the job pushes with git.
+name: Bump Version
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    environment: ci
+    permissions: {}
+    steps:
+      - id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          permission-contents: write
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          token: ${{ steps.token.outputs.token }}
+
+      - uses: TimSchoenle/actions/actions/common/setup-app-git-identity@main
+        with:
+          app-slug: ${{ steps.token.outputs.app-slug }}
+          token: ${{ steps.token.outputs.token }}
+
+      - run: |
+          ./scripts/bump-version.sh
+          git commit --all --message 'chore: bump version'
+          git push

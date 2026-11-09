@@ -15,12 +15,40 @@ Creates or resets a git branch using GitHub API.
 <!-- docs:generated usage -->
 ## Usage
 
+### Cut a release branch
+
 ```yaml
-- uses: TimSchoenle/actions/actions/common/create-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-branch-v2.0.1
-  with:
-    token: # required, see Inputs
-    repository: # required, see Inputs
-    branch_name: # required, see Inputs
+name: Cut Release Branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release line, e.g. 1.4
+        required: true
+
+permissions: {}
+
+jobs:
+  create-branch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # to create the branch
+    steps:
+      - id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-branch-v2.0.1
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          branch_name: release/${{ inputs.version }}
+          # No base_branch, so the branch starts from the default branch. reset_branch stays false:
+          # an existing release branch is left where it is, and created reports false.
+
+      - run: echo "release/${VERSION} is at ${SHA} (created ${CREATED})"
+        env:
+          VERSION: ${{ inputs.version }}
+          SHA: ${{ steps.branch.outputs.sha }}
+          CREATED: ${{ steps.branch.outputs.created }}
 ```
 <!-- /docs:generated usage -->
 
@@ -48,9 +76,21 @@ Creates or resets a git branch using GitHub API.
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+| Permission        | Held by              | Needed when |
+| ----------------- | -------------------- | ----------- |
+| `contents: write` | the token in `token` | always      |
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint             | For                                                                        |
+| -------------------- | -------------------------------------------------------------------------- |
+| `api.github.com:443` | the REST calls that read the repository and create or reset the branch ref |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

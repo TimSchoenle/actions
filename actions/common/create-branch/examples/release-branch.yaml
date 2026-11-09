@@ -1,0 +1,31 @@
+name: Cut Release Branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release line, e.g. 1.4
+        required: true
+
+permissions: {}
+
+jobs:
+  create-branch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # to create the branch
+    steps:
+      - id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@main
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          branch_name: release/${{ inputs.version }}
+          # No base_branch, so the branch starts from the default branch. reset_branch stays false:
+          # an existing release branch is left where it is, and created reports false.
+
+      - run: echo "release/${VERSION} is at ${SHA} (created ${CREATED})"
+        env:
+          VERSION: ${{ inputs.version }}
+          SHA: ${{ steps.branch.outputs.sha }}
+          CREATED: ${{ steps.branch.outputs.created }}

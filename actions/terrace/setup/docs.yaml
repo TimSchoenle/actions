@@ -1,0 +1,19 @@
+permissions: []
+
+egress:
+  - endpoint: github.com:443
+    for: the terrace-contract, cosign and oras release downloads
+  - endpoint: objects.githubusercontent.com:443
+    for: the release assets that github.com redirects to
+  - endpoint: release-assets.githubusercontent.com:443
+    for: the release assets that github.com redirects to
+  - endpoint: api.github.com:443
+    for: listing terrace-contract releases for a MAJOR.MINOR version, and the REST API download fallback
+  - endpoint: tuf-repo-cdn.sigstore.dev:443
+    for: the Sigstore trust root cosign verifies the terrace-contract release against
+
+examples:
+  - title: Install the version terrace.yaml pins
+    file: examples/from-terrace-yaml.yaml
+  - title: An exact version, with oras
+    file: examples/exact-with-oras.yaml

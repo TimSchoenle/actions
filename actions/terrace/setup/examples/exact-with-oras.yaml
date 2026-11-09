@@ -1,0 +1,6 @@
+# An exact version needs no release listing, so the run is reproducible and makes no API call
+# unless a download fails. oras is what terrace-contract pull fetches contracts from a registry with.
+- uses: TimSchoenle/actions/actions/terrace/setup@main
+  with:
+    version: '0.12.0'
+    oras: 'true'

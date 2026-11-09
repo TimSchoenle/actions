@@ -15,8 +15,33 @@ Installs a signature-verified terrace-contract release on PATH, together with co
 <!-- docs:generated usage -->
 ## Usage
 
+### Install the version terrace.yaml pins
+
 ```yaml
+# Empty version reads the cli pin from terrace.yaml in working_directory.
+permissions:
+  contents: read
+
+steps:
+  - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    with:
+      persist-credentials: false
+
+  - id: terrace
+    uses: TimSchoenle/actions/actions/terrace/setup@927daf80ad493b627b7384abf496d83abbac5f43 # tag=actions-terrace-setup-v3.1.0
+
+  - run: terrace-contract doctor
+```
+
+### An exact version, with oras
+
+```yaml
+# An exact version needs no release listing, so the run is reproducible and makes no API call
+# unless a download fails. oras is what terrace-contract pull fetches contracts from a registry with.
 - uses: TimSchoenle/actions/actions/terrace/setup@927daf80ad493b627b7384abf496d83abbac5f43 # tag=actions-terrace-setup-v3.1.0
+  with:
+    version: '0.12.0'
+    oras: 'true'
 ```
 <!-- /docs:generated usage -->
 
@@ -45,9 +70,23 @@ Installs a signature-verified terrace-contract release on PATH, together with co
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+Needs no token permissions.
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint                                   | For                                                                                             |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `github.com:443`                           | the terrace-contract, cosign and oras release downloads                                         |
+| `objects.githubusercontent.com:443`        | the release assets that github.com redirects to                                                 |
+| `release-assets.githubusercontent.com:443` | the release assets that github.com redirects to                                                 |
+| `api.github.com:443`                       | listing terrace-contract releases for a MAJOR.MINOR version, and the REST API download fallback |
+| `tuf-repo-cdn.sigstore.dev:443`            | the Sigstore trust root cosign verifies the terrace-contract release against                    |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

@@ -1,0 +1,39 @@
+# The action mints its own App token, so the job token only reads the code for the checkout. The
+# pull request is opened by the App, which lets it start the pull request workflows.
+name: Update Data
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    environment: ci
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - run: ./scripts/update-data.sh
+
+      - id: pr
+        uses: TimSchoenle/actions/actions/common/create-pull-request@main
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          branch_name: chore/update-data
+          title: 'chore: update data'
+          body: Weekly data refresh.
+          commit_message: 'chore: update data'
+          file_pattern: 'data/'
+
+      - if: steps.pr.outputs.pr_url != ''
+        run: echo "Pull request ${URL}"
+        env:
+          URL: ${{ steps.pr.outputs.pr_url }}

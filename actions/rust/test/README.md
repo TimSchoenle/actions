@@ -15,8 +15,27 @@ Action that runs cargo nextest to verify Rust code passes tests.
 <!-- docs:generated usage -->
 ## Usage
 
+### Test on every push and pull request
+
 ```yaml
-- uses: TimSchoenle/actions/actions/rust/test@e16a1e466faf8ec751b26289c1898143a253269f # tag=actions-rust-test-v1.1.2
+# The action checks the repository out itself.
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions: {}
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - uses: TimSchoenle/actions/actions/rust/test@e16a1e466faf8ec751b26289c1898143a253269f # tag=actions-rust-test-v1.1.2
 ```
 <!-- /docs:generated usage -->
 
@@ -38,9 +57,28 @@ This action sets no outputs.
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+| Permission       | Needed when |
+| ---------------- | ----------- |
+| `contents: read` | always      |
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint                                   | For                                                             |
+| ------------------------------------------ | --------------------------------------------------------------- |
+| `github.com:443`                           | the checkout and the nextest download                           |
+| `release-assets.githubusercontent.com:443` | the nextest release asset that github.com redirects to          |
+| `objects.githubusercontent.com:443`        | the nextest release asset that github.com redirects to          |
+| `static.rust-lang.org:443`                 | the toolchain                                                   |
+| `index.crates.io:443`                      | the project's dependencies, from the default crates.io registry |
+| `static.crates.io:443`                     | the project's dependencies, from the default crates.io registry |
+| `*.actions.githubusercontent.com:443`      | the Rust cache                                                  |
+| `*.blob.core.windows.net:443`              | the Rust cache                                                  |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

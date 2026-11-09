@@ -15,11 +15,29 @@ Deletes a branch from a repository. Fails gracefully if the branch does not exis
 <!-- docs:generated usage -->
 ## Usage
 
+### Delete a pull request's branch once it is closed
+
 ```yaml
-- uses: TimSchoenle/actions/actions/common/delete-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-delete-branch-v2.0.1
-  with:
-    token: # required, see Inputs
-    branch_name: # required, see Inputs
+name: Delete Closed Branch
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions: {}
+
+jobs:
+  delete-branch:
+    # A fork's branch is not in this repository, and a fork run's token is read-only anyway.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # to delete the branch
+    steps:
+      - uses: TimSchoenle/actions/actions/common/delete-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-delete-branch-v2.0.1
+        with:
+          token: ${{ github.token }}
+          branch_name: ${{ github.event.pull_request.head.ref }}
 ```
 <!-- /docs:generated usage -->
 
@@ -42,9 +60,21 @@ Deletes a branch from a repository. Fails gracefully if the branch does not exis
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+| Permission        | Held by              | Needed when |
+| ----------------- | -------------------- | ----------- |
+| `contents: write` | the token in `token` | always      |
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint             | For                                                |
+| -------------------- | -------------------------------------------------- |
+| `api.github.com:443` | the REST calls that read and delete the branch ref |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

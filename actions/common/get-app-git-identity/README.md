@@ -15,11 +15,31 @@ Resolves the git identity (username, email, user ID) for a GitHub App bot.
 <!-- docs:generated usage -->
 ## Usage
 
+### Credit the App bot as a co-author
+
 ```yaml
-- uses: TimSchoenle/actions/actions/common/get-app-git-identity@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-get-app-git-identity-v2.0.1
-  with:
-    app-slug: # required, see Inputs
-    token: # required, see Inputs
+name: Co-author Trailer
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  identity:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - id: bot
+        uses: TimSchoenle/actions/actions/common/get-app-git-identity@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-get-app-git-identity-v2.0.1
+        with:
+          app-slug: my-app
+          token: ${{ github.token }}
+
+      - run: 'echo "Co-authored-by: ${BOT_NAME} <${BOT_EMAIL}>"'
+        env:
+          BOT_NAME: ${{ steps.bot.outputs.bot-name }}
+          BOT_EMAIL: ${{ steps.bot.outputs.bot-email }}
 ```
 <!-- /docs:generated usage -->
 
@@ -43,9 +63,19 @@ Resolves the git identity (username, email, user ID) for a GitHub App bot.
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+Needs no token permissions.
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint             | For                     |
+| -------------------- | ----------------------- |
+| `api.github.com:443` | looking up the bot user |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

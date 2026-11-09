@@ -15,10 +15,19 @@ Setup Java and Gradle environment for building, with opinionated default setting
 <!-- docs:generated usage -->
 ## Usage
 
+### Build with Gradle
+
 ```yaml
+# The action makes ./gradlew executable, so check out the repository first.
+- uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+  with:
+    persist-credentials: false
+
 - uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-java-gradle-setup-base-environment-v1.2.15
   with:
-    java_version: # required, see Inputs
+    java_version: '21'
+
+- run: ./gradlew build
 ```
 <!-- /docs:generated usage -->
 
@@ -46,9 +55,26 @@ Setup Java and Gradle environment for building, with opinionated default setting
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+Needs no token permissions.
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint                                   | For                                                                                      |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `api.adoptium.net:443`                     | looking up the JDK, with the default temurin distribution                                |
+| `github.com:443`                           | the JDK download, with the default temurin distribution                                  |
+| `release-assets.githubusercontent.com:443` | the JDK download, with the default temurin distribution                                  |
+| `objects.githubusercontent.com:443`        | the JDK download, with the default temurin distribution                                  |
+| `services.gradle.org:443`                  | checksums of wrapper versions setup-gradle does not know, with gradle_wrapper_validation |
+| `downloads.gradle.org:443`                 | the wrapper checksums that services.gradle.org redirects to                              |
+| `*.actions.githubusercontent.com:443`      | the Gradle cache                                                                         |
+| `*.blob.core.windows.net:443`              | the Gradle cache                                                                         |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

@@ -15,10 +15,39 @@ Verify the head branch of a pull request matches a pattern and check whether it 
 <!-- docs:generated usage -->
 ## Usage
 
+### Gate a release pull request
+
 ```yaml
-- uses: TimSchoenle/actions/actions/helper/verify-branch-name@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-helper-verify-branch-name-v2.0.1
-  with:
-    branch_pattern: # required, see Inputs
+name: Release Pull Request
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  verify:
+    name: Verify Branch
+    runs-on: ubuntu-latest
+    permissions: {}
+    outputs:
+      verified: ${{ steps.branch.outputs.verified }}
+    steps:
+      # Reads the branch and both repositories from the pull_request payload, so it needs no checkout.
+      # A fork's branch fails the check even when its name matches.
+      - id: branch
+        uses: TimSchoenle/actions/actions/helper/verify-branch-name@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-helper-verify-branch-name-v2.0.1
+        with:
+          branch_pattern: '^release-please--branches--.*$'
+
+  release-checks:
+    name: Release Checks
+    needs: verify
+    if: needs.verify.outputs.verified == 'true'
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - run: echo "Release pull request from this repository"
 ```
 <!-- /docs:generated usage -->
 
@@ -46,9 +75,15 @@ Verify the head branch of a pull request matches a pattern and check whether it 
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+Needs no token permissions.
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+Reaches no endpoint beyond those the runner itself needs.
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

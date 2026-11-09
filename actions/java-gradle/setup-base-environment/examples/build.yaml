@@ -1,0 +1,10 @@
+# The action makes ./gradlew executable, so check out the repository first.
+- uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+  with:
+    persist-credentials: false
+
+- uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@main
+  with:
+    java_version: '21'
+
+- run: ./gradlew build

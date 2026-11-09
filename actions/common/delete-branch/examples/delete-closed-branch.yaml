@@ -1,0 +1,20 @@
+name: Delete Closed Branch
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions: {}
+
+jobs:
+  delete-branch:
+    # A fork's branch is not in this repository, and a fork run's token is read-only anyway.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # to delete the branch
+    steps:
+      - uses: TimSchoenle/actions/actions/common/delete-branch@main
+        with:
+          token: ${{ github.token }}
+          branch_name: ${{ github.event.pull_request.head.ref }}

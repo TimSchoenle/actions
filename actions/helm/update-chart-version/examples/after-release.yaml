@@ -1,0 +1,40 @@
+# Called by the release workflow once the image is pushed, with the tag and digest it pushed.
+name: Update Helm Chart
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
+      digest:
+        type: string
+        required: true
+      changelog:
+        type: string
+        default: ''
+    secrets:
+      charts-bot-private-key:
+        required: true
+
+permissions: {}
+
+jobs:
+  update-chart:
+    name: Update Chart
+    runs-on: ubuntu-latest
+    # Everything runs with the app's tokens, minted inside the action for helm-repo alone.
+    permissions: {}
+    steps:
+      # The action checks the charts repository out over the workspace, so it needs no checkout of
+      # its own and anything already in the workspace is replaced.
+      - uses: TimSchoenle/actions/actions/helm/update-chart-version@main
+        with:
+          app-id: ${{ vars.CHARTS_BOT_APP_ID }}
+          private-key: ${{ secrets.charts-bot-private-key }}
+          helm-repo: acme/helm-charts
+          chart-path: charts/my-app
+          images: |
+            { "image.tag": { "tag": "${{ inputs.tag }}", "digest": "${{ inputs.digest }}" } }
+          app-version: ${{ inputs.tag }}
+          changelog: ${{ inputs.changelog }}

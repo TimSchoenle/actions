@@ -1,0 +1,18 @@
+# The action checks the repository out itself.
+name: Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions: {}
+
+jobs:
+  check:
+    name: Cargo Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - uses: TimSchoenle/actions/actions/rust/cargo-check@main

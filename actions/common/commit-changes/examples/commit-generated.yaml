@@ -1,0 +1,42 @@
+# The commit is made through the GraphQL API with the App token, so it is verified and starts
+# workflows. The checkout only provides the working tree: the action reads the changed files from
+# disk and never pushes with git, so persist-credentials: false keeps the job token out of .git/config.
+name: Regenerate
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    environment: ci
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - run: ./scripts/generate.sh
+
+      - id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          permission-contents: write
+
+      - id: commit
+        uses: TimSchoenle/actions/actions/common/commit-changes@main
+        with:
+          token: ${{ steps.token.outputs.token }}
+          commit_message: 'chore: regenerate files'
+          file_pattern: 'generated/ docs/api.md'
+
+      - if: steps.commit.outputs.changes_detected == 'true'
+        run: echo "Committed ${URL}"
+        env:
+          URL: ${{ steps.commit.outputs.commit_url }}

@@ -1,0 +1,26 @@
+name: Helm
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  diff:
+    name: Configuration contract diff
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # the comment
+    steps:
+      # The full history, so since can be read with git show.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: TimSchoenle/actions/actions/terrace/helm-diff@main
+        with:
+          token: ${{ github.token }}
+          # Only the comment this token posted is updated.
+          comment_author: github-actions[bot]

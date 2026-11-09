@@ -15,12 +15,37 @@ Auto approve Pull Requests with the given user ids and branches.
 <!-- docs:generated usage -->
 ## Usage
 
+### Approve Renovate pull requests
+
 ```yaml
-- uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-maintenance-auto-approve-pr-v3.0.1
-  with:
-    token: # required, see Inputs
-    user_ids: # required, see Inputs
-    branch_pattern: # required, see Inputs
+name: Renovate Auto Approve
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# A newer push supersedes the run that judged the previous head.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  auto-approve:
+    name: Auto Approve
+    runs-on: ubuntu-latest
+    # Approving with the job token also needs the repository setting "Allow GitHub Actions to create
+    # and approve pull requests".
+    permissions:
+      pull-requests: write # read the pull request and its commits, and approve it
+    steps:
+      - uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-maintenance-auto-approve-pr-v3.0.1
+        with:
+          token: ${{ github.token }}
+          # Database IDs of the accounts whose pull requests may be approved; 29139614 is Renovate.
+          user_ids: '29139614'
+          branch_pattern: '^renovate/.*$'
 ```
 <!-- /docs:generated usage -->
 
@@ -45,9 +70,22 @@ This action sets no outputs.
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+| Permission             | Held by              | Needed when               |
+| ---------------------- | -------------------- | ------------------------- |
+| `pull-requests: write` | the token in `token` | always                    |
+| `contents: read`       | the token in `token` | the repository is private |
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint             | For                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------- |
+| `api.github.com:443` | reading the pull request, the GraphQL commit and signature lookup, and the approving review |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

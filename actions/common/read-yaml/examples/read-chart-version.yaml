@@ -1,0 +1,10 @@
+# Fails the step when the key is missing, so a later step never sees an empty version.
+- id: chart
+  uses: TimSchoenle/actions/actions/common/read-yaml@main
+  with:
+    file: charts/api/Chart.yaml
+    key: version
+
+- run: echo "Packaging chart version $VERSION"
+  env:
+    VERSION: ${{ steps.chart.outputs.value }}

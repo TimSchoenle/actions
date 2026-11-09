@@ -27,8 +27,7 @@ export interface ReadmeModel {
    * resolve yet, as in a release pull request, still counts: see {@link usesReference}.
    */
   release: Release | undefined;
-  /** `undefined` while the action has no `docs.yaml` yet. */
-  docs: ActionDocs | undefined;
+  docs: ActionDocs;
   examples: LoadedExample[];
   hasChangelog: boolean;
   /** File name of the action's end-to-end workflow under `.github/workflows`, if it has one. */
@@ -82,7 +81,7 @@ function renderHeader(model: ReadmeModel): string {
       ? `[${model.release.tag}](https://github.com/${model.repoId}/releases/tag/${model.release.tag})`
       : 'Not released yet',
     runtimeLabel(model.manifest.runtime),
-    ...(model.docs?.requires ?? []).map((requirement) => REQUIREMENT_LABELS[requirement]),
+    ...model.docs.requires.map((requirement) => REQUIREMENT_LABELS[requirement]),
   ];
   // One paragraph, so a multi-line description cannot put a line of its own into the README.
   const description = collapseWhitespace(model.manifest.description);
@@ -146,10 +145,7 @@ export function describeCondition(condition: Condition): string {
   return `${codeSpan(condition.input)} is ${codeSpan(condition.equals)}`;
 }
 
-function renderPermissions(docs: ActionDocs | undefined): string {
-  if (!docs) {
-    return '';
-  }
+function renderPermissions(docs: ActionDocs): string {
   if (docs.permissions.length === 0) {
     return '## Permissions\n\nNeeds no token permissions.';
   }
@@ -170,10 +166,7 @@ function renderPermissions(docs: ActionDocs | undefined): string {
   return `## Permissions\n\n${table(['Permission', 'Held by', 'Needed when'], withHolder)}`;
 }
 
-function renderEgress(docs: ActionDocs | undefined): string {
-  if (!docs) {
-    return '';
-  }
+function renderEgress(docs: ActionDocs): string {
   if (docs.egress.length === 0) {
     return '## Egress\n\nReaches no endpoint beyond those the runner itself needs.';
   }

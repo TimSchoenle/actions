@@ -42,33 +42,26 @@ function memoryIo(initial: Record<string, string>, tags: Record<string, string> 
 
 const ZIZMOR = 'actions/security/zizmor';
 
-function repository(extra: Record<string, string> = {}): Record<string, string> {
-  return {
-    '.release-please-manifest.json': JSON.stringify({ [ZIZMOR]: '2.0.2' }),
-    'release-please-config.json': JSON.stringify({
-      packages: { [ZIZMOR]: { component: 'actions-security-zizmor' } },
-    }),
-    [`${ZIZMOR}/action.yaml`]: [
-      "name: 'Security Zizmor'",
-      "description: 'Runs zizmor.'",
-      'inputs:',
-      '  upload:',
-      "    description: 'Upload the SARIF.'",
-      "    default: 'true'",
-      '  config:',
-      '    required: false',
-      'runs:',
-      "  using: 'composite'",
-      '  steps: []',
-      '',
-    ].join('\n'),
-    // A helper is not in the release config, so it gets no README.
-    [`${ZIZMOR}/helper/action.yaml`]: "name: helper\nruns:\n  using: 'node24'\n",
-    '.github/workflows/security.yml': 'jobs:\n  z:\n    steps:\n      - uses: ./actions/security/zizmor\n',
-    '.github/workflows/verify-action-security-zizmor.yaml': 'jobs: {}\n',
-    ...extra,
-  };
-}
+const CONFIG_DESCRIPTION = "    description: 'Path to a zizmor config.'\n";
+
+const MANIFEST = [
+  "name: 'Security Zizmor'",
+  "description: 'Runs zizmor.'",
+  'inputs:',
+  '  upload:',
+  "    description: 'Upload the SARIF.'",
+  "    default: 'true'",
+  '  config:',
+  CONFIG_DESCRIPTION.trimEnd(),
+  '    required: false',
+  'runs:',
+  "  using: 'composite'",
+  '  steps: []',
+  '',
+].join('\n');
+
+/** The manifest with the `config` input's description removed. */
+const MANIFEST_WITHOUT_DESCRIPTION = MANIFEST.replace(CONFIG_DESCRIPTION, '');
 
 const DOCS = `
 permissions:
@@ -87,12 +80,32 @@ const EXAMPLE = `jobs:
       - uses: Owner/actions/actions/security/zizmor@main
 `;
 
+/** A repository with one fully documented published action. `extra` adds or replaces files. */
+function repository(extra: Record<string, string> = {}): Record<string, string> {
+  return {
+    '.release-please-manifest.json': JSON.stringify({ [ZIZMOR]: '2.0.2' }),
+    'release-please-config.json': JSON.stringify({
+      packages: { [ZIZMOR]: { component: 'actions-security-zizmor' } },
+    }),
+    [`${ZIZMOR}/action.yaml`]: MANIFEST,
+    [`${ZIZMOR}/docs.yaml`]: DOCS,
+    [`${ZIZMOR}/examples/security.yaml`]: EXAMPLE,
+    // A helper is not in the release config, so it gets no README.
+    [`${ZIZMOR}/helper/action.yaml`]: "name: helper\nruns:\n  using: 'node24'\n",
+    '.github/workflows/security.yml': 'jobs:\n  z:\n    steps:\n      - uses: ./actions/security/zizmor\n',
+    '.github/workflows/verify-action-security-zizmor.yaml': 'jobs: {}\n',
+    ...extra,
+  };
+}
+
+/** The fixture repository without the given files. */
+function repositoryWithout(...omitted: string[]): Record<string, string> {
+  return Object.fromEntries(Object.entries(repository()).filter(([file]) => !omitted.includes(file)));
+}
+
 describe('generateActionReadmes', () => {
   it('writes a complete README for a published action that has none', async () => {
-    const { io, files, writes } = memoryIo(
-      repository({ [`${ZIZMOR}/docs.yaml`]: DOCS, [`${ZIZMOR}/examples/security.yaml`]: EXAMPLE }),
-      { 'actions-security-zizmor-v2.0.2': SHA },
-    );
+    const { io, files, writes } = memoryIo(repository(), { 'actions-security-zizmor-v2.0.2': SHA });
 
     const report = await generateActionReadmes(REPO, io);
 
@@ -110,13 +123,12 @@ describe('generateActionReadmes', () => {
     // The action's own e2e workflow is linked, not listed as a caller.
     expect(readme).toContain('- End-to-end tests: [`.github/workflows/verify-action-security-zizmor.yaml`]');
     expect(readme).toContain('  - [`.github/workflows/security.yml`](../../../.github/workflows/security.yml)');
-    expect(report.warnings).toEqual([`${ZIZMOR}/action.yaml: input 'config' has no description`]);
+    expect(report.warnings).toEqual([]);
   });
 
   it('pins every published action an example calls, not only the documented one', async () => {
     const OTHER = 'actions/common/commit-patch';
     const files = repository({
-      [`${ZIZMOR}/docs.yaml`]: DOCS,
       [`${ZIZMOR}/examples/security.yaml`]: `${EXAMPLE}      - uses: Owner/actions/${OTHER}@main\n`,
     });
     files['.release-please-manifest.json'] = JSON.stringify({ [ZIZMOR]: '2.0.2', [OTHER]: '1.3.0' });
@@ -136,7 +148,7 @@ describe('generateActionReadmes', () => {
 
   it('writes nothing on a second run', async () => {
     const { io, writes } = memoryIo(repository());
-    await generateActionReadmes(REPO, io);
+    expect((await generateActionReadmes(REPO, io)).written).toEqual([`${ZIZMOR}/README.md`]);
     writes.length = 0;
 
     expect((await generateActionReadmes(REPO, io)).written).toEqual([]);
@@ -180,20 +192,27 @@ describe('generateActionReadmes', () => {
     expect(report.warnings).toContain(`${ZIZMOR}/README.md: has no docs:generated regions yet, left as it is`);
   });
 
-  it('warns about a missing docs.yaml without failing', async () => {
-    const { io } = memoryIo(repository());
+  it('reports a missing docs.yaml as an error and writes nothing', async () => {
+    const { io, writes } = memoryIo(repositoryWithout(`${ZIZMOR}/docs.yaml`));
+
     const report = await generateActionReadmes(REPO, io);
-    expect(report.errors).toEqual([]);
-    expect(report.warnings).toContain(`${ZIZMOR}: no docs.yaml, so its README has no permissions or egress`);
+
+    expect(report.errors).toEqual([`${ZIZMOR}: has no docs.yaml, which its README needs for permissions and egress`]);
+    expect(report.warnings).toEqual([]);
+    expect(writes).toEqual([]);
   });
 
   it.each([
     ['an invalid docs.yaml', { [`${ZIZMOR}/docs.yaml`]: 'permissions: []\n' }, /egress: must be a list/],
     ['docs.yaml that is not YAML', { [`${ZIZMOR}/docs.yaml`]: 'a: [\n' }, /docs\.yaml: not valid YAML/],
-    ['a missing example file', { [`${ZIZMOR}/docs.yaml`]: DOCS }, /example examples\/security\.yaml does not exist/],
+    [
+      'a missing example file',
+      { [`${ZIZMOR}/docs.yaml`]: DOCS.replace('security.yaml', 'missing.yaml') },
+      /example examples\/missing\.yaml does not exist/,
+    ],
     [
       'an example that never calls the action',
-      { [`${ZIZMOR}/docs.yaml`]: DOCS, [`${ZIZMOR}/examples/security.yaml`]: 'jobs: {}\n' },
+      { [`${ZIZMOR}/examples/security.yaml`]: 'jobs: {}\n' },
       /never calls actions\/security\/zizmor/,
     ],
     [
@@ -202,24 +221,28 @@ describe('generateActionReadmes', () => {
       /README\.md:1: region 'header' is never closed/,
     ],
     [
+      'an input without a description',
+      { [`${ZIZMOR}/action.yaml`]: MANIFEST_WITHOUT_DESCRIPTION },
+      /action\.yaml: input 'config' has no description/,
+    ],
+    [
+      'an output without a description',
+      { [`${ZIZMOR}/action.yaml`]: MANIFEST.replace('runs:', "outputs:\n  sarif:\n    value: 'x'\nruns:") },
+      /action\.yaml: output 'sarif' has no description/,
+    ],
+    [
       'an unreadable action.yaml',
       { [`${ZIZMOR}/action.yaml`]: 'description: no name\n' },
       /action\.yaml: 'name' is missing/,
     ],
     [
       'an example holding a code fence',
-      {
-        [`${ZIZMOR}/docs.yaml`]: DOCS,
-        [`${ZIZMOR}/examples/security.yaml`]: `${EXAMPLE}        run: |\n          \`\`\`\n`,
-      },
+      { [`${ZIZMOR}/examples/security.yaml`]: `${EXAMPLE}        run: |\n          \`\`\`\n` },
       /examples\/security\.yaml: contains a Markdown code fence/,
     ],
     [
       'an example holding a marker',
-      {
-        [`${ZIZMOR}/docs.yaml`]: DOCS,
-        [`${ZIZMOR}/examples/security.yaml`]: `${EXAMPLE}# <!-- /docs:generated usage -->\n`,
-      },
+      { [`${ZIZMOR}/examples/security.yaml`]: `${EXAMPLE}# <!-- /docs:generated usage -->\n` },
       /examples\/security\.yaml: contains a docs:generated marker/,
     ],
   ])('reports %s as an error and writes nothing', async (_case, extra, message) => {
@@ -232,21 +255,21 @@ describe('generateActionReadmes', () => {
   });
 
   it('refuses a directory holding both action.yaml and action.yml', async () => {
-    const files = repository();
-    const { io } = memoryIo({ ...files, [`${ZIZMOR}/action.yml`]: files[`${ZIZMOR}/action.yaml`] });
+    const { io } = memoryIo(repository({ [`${ZIZMOR}/action.yml`]: MANIFEST }));
 
     const report = await generateActionReadmes(REPO, io);
 
     expect(report.errors).toEqual([`${ZIZMOR}: has both action.yaml and action.yml; keep one`]);
   });
 
-  it('names action.yml in a warning about an action that uses it', async () => {
-    const files = repository();
-    const { [`${ZIZMOR}/action.yaml`]: manifest, ...rest } = files;
-    const { io } = memoryIo({ ...rest, [`${ZIZMOR}/action.yml`]: manifest });
+  it('names action.yml in an error about an action that uses it', async () => {
+    const { io } = memoryIo({
+      ...repositoryWithout(`${ZIZMOR}/action.yaml`),
+      [`${ZIZMOR}/action.yml`]: MANIFEST_WITHOUT_DESCRIPTION,
+    });
 
     const report = await generateActionReadmes(REPO, io);
 
-    expect(report.warnings).toContain(`${ZIZMOR}/action.yml: input 'config' has no description`);
+    expect(report.errors).toContain(`${ZIZMOR}/action.yml: input 'config' has no description`);
   });
 });

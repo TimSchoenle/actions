@@ -1,0 +1,13 @@
+permissions:
+  - scope: pull-requests
+    access: write
+    when: always
+    token: token
+
+egress:
+  - endpoint: api.github.com:443
+    for: reading and closing the pull request, and posting the comment
+
+examples:
+  - title: Close a superseded pull request with a comment
+    file: examples/close-superseded.yaml

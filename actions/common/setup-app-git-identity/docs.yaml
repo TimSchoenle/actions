@@ -1,0 +1,11 @@
+# users.getByUsername reads a public profile, so the token needs no permission; it only has to be
+# a valid token.
+permissions: []
+
+egress:
+  - endpoint: api.github.com:443
+    for: looking up the bot user
+
+examples:
+  - title: Commit and push as the App bot
+    file: examples/commit-as-bot.yaml

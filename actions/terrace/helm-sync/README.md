@@ -15,8 +15,56 @@ Brings every file derived from the vendored configuration contracts up to date w
 <!-- docs:generated usage -->
 ## Usage
 
+### Sync and commit on a schedule
+
 ```yaml
-- uses: TimSchoenle/actions/actions/terrace/helm-sync@81e4009704e0963651bbd8275e31244c1d1e220d # tag=actions-terrace-helm-sync-v1.1.0
+name: Sync Configuration Contracts
+
+on:
+  schedule:
+    - cron: '23 5 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  sync:
+    name: Sync
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # An App token, so the commit is verified and starts workflows. github.token's would not.
+      - name: Generate Token
+        id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.MAINTENANCE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.MAINTENANCE_PRIVATE_KEY }}
+          permission-contents: write
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: TimSchoenle/actions/actions/terrace/helm-sync@81e4009704e0963651bbd8275e31244c1d1e220d # tag=actions-terrace-helm-sync-v1.1.0
+        with:
+          token: ${{ steps.token.outputs.token }}
+          file_pattern: charts
+```
+
+### Rewrite the derived files only, with no network
+
+```yaml
+# Only the value schemas and README references are rewritten from the contracts already vendored,
+# and with no token nothing is committed: a later step decides what to do with changed.
+- id: sync
+  uses: TimSchoenle/actions/actions/terrace/helm-sync@81e4009704e0963651bbd8275e31244c1d1e220d # tag=actions-terrace-helm-sync-v1.1.0
+  with:
+    pull: 'false'
+
+- if: steps.sync.outputs.changed == 'true'
+  run: git diff --stat
 ```
 <!-- /docs:generated usage -->
 
@@ -47,9 +95,25 @@ Brings every file derived from the vendored configuration contracts up to date w
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+| Permission        | Held by              | Needed when    |
+| ----------------- | -------------------- | -------------- |
+| `contents: write` | the token in `token` | `token` is set |
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint                                   | For                                                                                                     |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `github.com:443`                           | the terrace-contract, cosign and oras release downloads                                                 |
+| `objects.githubusercontent.com:443`        | the release assets that github.com redirects to                                                         |
+| `release-assets.githubusercontent.com:443` | the release assets that github.com redirects to                                                         |
+| `api.github.com:443`                       | the GraphQL commit with token, the release listing for a MAJOR.MINOR version, and the download fallback |
+| `tuf-repo-cdn.sigstore.dev:443`            | the Sigstore trust root cosign verifies the release and the image signatures against                    |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

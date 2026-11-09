@@ -1,0 +1,35 @@
+name: Renovate Pull Request
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  verify:
+    name: Verify Commit Authors
+    runs-on: ubuntu-latest
+    # Both are only needed in a private repository; a public one needs none.
+    permissions:
+      contents: read # to read the commits
+      pull-requests: read # to read the pull request
+    outputs:
+      verified: ${{ steps.authors.outputs.verified }}
+    steps:
+      # 29139614 is renovate[bot]. A commit pushed on top by anyone else, or one without a valid
+      # signature, makes verified false.
+      - id: authors
+        uses: TimSchoenle/actions/actions/helper/verify-commit-authors@main
+        with:
+          pr_url: ${{ github.event.pull_request.html_url }}
+          github_token: ${{ github.token }}
+          user_ids: '29139614'
+
+  act:
+    name: Act On Verified Pull Request
+    needs: verify
+    if: needs.verify.outputs.verified == 'true'
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - run: echo "Every commit is Renovate's and signed"

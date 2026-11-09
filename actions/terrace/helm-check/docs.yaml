@@ -1,0 +1,17 @@
+permissions: []
+
+egress:
+  - endpoint: github.com:443
+    for: the terrace-contract and cosign release downloads
+  - endpoint: objects.githubusercontent.com:443
+    for: the release assets that github.com redirects to
+  - endpoint: release-assets.githubusercontent.com:443
+    for: the release assets that github.com redirects to
+  - endpoint: api.github.com:443
+    for: listing terrace-contract releases for a MAJOR.MINOR version, and the REST API download fallback
+  - endpoint: tuf-repo-cdn.sigstore.dev:443
+    for: the Sigstore trust root cosign verifies the terrace-contract release against
+
+examples:
+  - title: Check the charts a pull request touched
+    file: examples/pull-request.yaml

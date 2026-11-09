@@ -15,10 +15,53 @@ Holds a service image to the configuration contract its build produced, in any l
 <!-- docs:generated usage -->
 ## Usage
 
+### Check the document and the Dockerfile
+
 ```yaml
+# No image: the committed document is held to what the configuration types print, to the
+# specification, and to the label block of the Dockerfile.
 - uses: TimSchoenle/actions/actions/terrace/image@ea4465fbe2bec98efad19b63849f8d1ac67b5c88 # tag=actions-terrace-image-v1.1.0
   with:
-    contract: # required, see Inputs
+    contract: config/contract.json
+    generate: cargo run -q --example contract -- --format contract
+    dockerfile: Dockerfile
+```
+
+### Check the built image before it is pushed
+
+```yaml
+# The image is read from an OCI layout tarball, so it is checked after the build and before the push.
+- run: |
+    docker build --tag app:check .
+    docker save app:check --output image.tar
+
+- uses: TimSchoenle/actions/actions/terrace/image@ea4465fbe2bec98efad19b63849f8d1ac67b5c88 # tag=actions-terrace-image-v1.1.0
+  with:
+    contract: config/contract.json
+    dockerfile: Dockerfile
+    image: image.tar:check
+    oci_layout: 'true'
+```
+
+### Attach and sign the document after the push
+
+```yaml
+# Once the image is in the registry: attach the document to its digest, sign the referrer under the
+# job's OIDC identity, then verify the image carries the document. The job must be logged in to the
+# registry with write access, here GHCR through the job token.
+permissions:
+  contents: read
+  packages: write # the referrer
+  id-token: write # sign
+
+steps:
+  # ... build, log in and push, with the digest as steps.push.outputs.digest ...
+  - uses: TimSchoenle/actions/actions/terrace/image@ea4465fbe2bec98efad19b63849f8d1ac67b5c88 # tag=actions-terrace-image-v1.1.0
+    with:
+      contract: config/contract.json
+      image: ghcr.io/${{ github.repository }}@${{ steps.push.outputs.digest }}
+      attach: 'true'
+      sign: 'true'
 ```
 <!-- /docs:generated usage -->
 
@@ -52,9 +95,28 @@ Holds a service image to the configuration contract its build produced, in any l
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+| Permission        | Needed when      |
+| ----------------- | ---------------- |
+| `id-token: write` | `sign` is `true` |
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint                                   | For                                                                                                    |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| `github.com:443`                           | the terrace-contract, cosign and oras release downloads                                                |
+| `objects.githubusercontent.com:443`        | the release assets that github.com redirects to                                                        |
+| `release-assets.githubusercontent.com:443` | the release assets that github.com redirects to                                                        |
+| `api.github.com:443`                       | listing terrace-contract releases for a MAJOR.MINOR version, and the REST API download fallback        |
+| `tuf-repo-cdn.sigstore.dev:443`            | the Sigstore trust root cosign verifies the release, the image signature and the new signature against |
+| `*.actions.githubusercontent.com:443`      | the OIDC token cosign signs with, with sign                                                            |
+| `fulcio.sigstore.dev:443`                  | the signing certificate, with sign                                                                     |
+| `rekor.sigstore.dev:443`                   | the transparency log entry of the signature, with sign                                                 |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

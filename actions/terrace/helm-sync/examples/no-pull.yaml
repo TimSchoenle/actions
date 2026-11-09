@@ -1,0 +1,9 @@
+# Only the value schemas and README references are rewritten from the contracts already vendored,
+# and with no token nothing is committed: a later step decides what to do with changed.
+- id: sync
+  uses: TimSchoenle/actions/actions/terrace/helm-sync@main
+  with:
+    pull: 'false'
+
+- if: steps.sync.outputs.changed == 'true'
+  run: git diff --stat

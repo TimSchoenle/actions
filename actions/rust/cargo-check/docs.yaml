@@ -1,0 +1,22 @@
+permissions:
+  - scope: contents
+    access: read
+    when: always
+
+egress:
+  - endpoint: github.com:443
+    for: the checkout
+  - endpoint: static.rust-lang.org:443
+    for: the toolchain
+  - endpoint: index.crates.io:443
+    for: the project's dependencies, from the default crates.io registry
+  - endpoint: static.crates.io:443
+    for: the project's dependencies, from the default crates.io registry
+  - endpoint: '*.actions.githubusercontent.com:443'
+    for: the Rust cache
+  - endpoint: '*.blob.core.windows.net:443'
+    for: the Rust cache
+
+examples:
+  - title: Check on every push and pull request
+    file: examples/cargo-check.yaml

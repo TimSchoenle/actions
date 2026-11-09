@@ -15,8 +15,31 @@ Action that measures Rust test coverage with cargo llvm-cov and nextest, and upl
 <!-- docs:generated usage -->
 ## Usage
 
+### Coverage on every push and pull request
+
 ```yaml
-- uses: TimSchoenle/actions/actions/rust/coverage-codecov@be7a69175612d9de514acc14bf55dda8e7ad2e57 # tag=actions-rust-coverage-codecov-v2.0.6
+# The action checks the repository out itself. Pull requests from forks get no OIDC token and
+# upload tokenless.
+name: Coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions: {}
+
+jobs:
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+      id-token: write # to authenticate the upload with OIDC
+    steps:
+      - uses: TimSchoenle/actions/actions/rust/coverage-codecov@be7a69175612d9de514acc14bf55dda8e7ad2e57 # tag=actions-rust-coverage-codecov-v2.0.6
+        with:
+          flags: unit
 ```
 <!-- /docs:generated usage -->
 
@@ -46,9 +69,33 @@ Action that measures Rust test coverage with cargo llvm-cov and nextest, and upl
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+| Permission        | Needed when                                   |
+| ----------------- | --------------------------------------------- |
+| `contents: read`  | always                                        |
+| `id-token: write` | `use_oidc` is `true` and `dry_run` is `false` |
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint                                   | For                                                                        |
+| ------------------------------------------ | -------------------------------------------------------------------------- |
+| `github.com:443`                           | the checkout and the cargo-llvm-cov and nextest downloads                  |
+| `release-assets.githubusercontent.com:443` | the cargo-llvm-cov and nextest release assets that github.com redirects to |
+| `objects.githubusercontent.com:443`        | the cargo-llvm-cov and nextest release assets that github.com redirects to |
+| `static.rust-lang.org:443`                 | the toolchain and the llvm-tools-preview component                         |
+| `index.crates.io:443`                      | the project's dependencies, from the default crates.io registry            |
+| `static.crates.io:443`                     | the project's dependencies, from the default crates.io registry            |
+| `*.actions.githubusercontent.com:443`      | the Rust cache and the OIDC token                                          |
+| `*.blob.core.windows.net:443`              | the Rust cache                                                             |
+| `cli.codecov.io:443`                       | the Codecov CLI download                                                   |
+| `keybase.io:443`                           | the key that verifies the Codecov CLI                                      |
+| `ingest.codecov.io:443`                    | the coverage and test result uploads                                       |
+| `storage.googleapis.com:443`               | the report storage Codecov hands the upload to                             |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

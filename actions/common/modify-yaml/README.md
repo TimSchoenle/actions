@@ -15,12 +15,22 @@ A action to modify a value in a YAML file while strictly preserving comments and
 <!-- docs:generated usage -->
 ## Usage
 
+### Pin a new image tag in values.yaml
+
 ```yaml
-- uses: TimSchoenle/actions/actions/common/modify-yaml@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-modify-yaml-v2.0.1
+# Edits the file in the workspace only. Comments and quoting elsewhere in values.yaml survive.
+# Committing the change is a separate step.
+- id: tag
+  uses: TimSchoenle/actions/actions/common/modify-yaml@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-modify-yaml-v2.0.1
   with:
-    file: # required, see Inputs
-    key: # required, see Inputs
-    value: # required, see Inputs
+    file: charts/api/values.yaml
+    key: image.tag
+    value: ${{ github.ref_name }}
+
+- run: echo "image.tag moved from $OLD to $NEW"
+  env:
+    OLD: ${{ steps.tag.outputs.old-value }}
+    NEW: ${{ steps.tag.outputs.new-value }}
 ```
 <!-- /docs:generated usage -->
 
@@ -44,9 +54,15 @@ A action to modify a value in a YAML file while strictly preserving comments and
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+Needs no token permissions.
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+Reaches no endpoint beyond those the runner itself needs.
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

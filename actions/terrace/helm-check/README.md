@@ -15,8 +15,30 @@ Runs every offline configuration contract gate over the charts a change touched,
 <!-- docs:generated usage -->
 ## Usage
 
+### Check the charts a pull request touched
+
 ```yaml
-- uses: TimSchoenle/actions/actions/terrace/helm-check@81e4009704e0963651bbd8275e31244c1d1e220d # tag=actions-terrace-helm-check-v1.1.0
+name: Helm
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  check:
+    name: Configuration contracts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # The full history, so since can find its merge base with HEAD.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: TimSchoenle/actions/actions/terrace/helm-check@81e4009704e0963651bbd8275e31244c1d1e220d # tag=actions-terrace-helm-check-v1.1.0
 ```
 <!-- /docs:generated usage -->
 
@@ -42,9 +64,23 @@ Runs every offline configuration contract gate over the charts a change touched,
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+Needs no token permissions.
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint                                   | For                                                                                             |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `github.com:443`                           | the terrace-contract and cosign release downloads                                               |
+| `objects.githubusercontent.com:443`        | the release assets that github.com redirects to                                                 |
+| `release-assets.githubusercontent.com:443` | the release assets that github.com redirects to                                                 |
+| `api.github.com:443`                       | listing terrace-contract releases for a MAJOR.MINOR version, and the REST API download fallback |
+| `tuf-repo-cdn.sigstore.dev:443`            | the Sigstore trust root cosign verifies the terrace-contract release against                    |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

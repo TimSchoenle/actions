@@ -15,11 +15,19 @@ A action to read a value from a YAML file using dot notation
 <!-- docs:generated usage -->
 ## Usage
 
+### Read a chart's version
+
 ```yaml
-- uses: TimSchoenle/actions/actions/common/read-yaml@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-read-yaml-v2.0.1
+# Fails the step when the key is missing, so a later step never sees an empty version.
+- id: chart
+  uses: TimSchoenle/actions/actions/common/read-yaml@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-read-yaml-v2.0.1
   with:
-    file: # required, see Inputs
-    key: # required, see Inputs
+    file: charts/api/Chart.yaml
+    key: version
+
+- run: echo "Packaging chart version $VERSION"
+  env:
+    VERSION: ${{ steps.chart.outputs.value }}
 ```
 <!-- /docs:generated usage -->
 
@@ -41,9 +49,15 @@ A action to read a value from a YAML file using dot notation
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+Needs no token permissions.
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+Reaches no endpoint beyond those the runner itself needs.
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

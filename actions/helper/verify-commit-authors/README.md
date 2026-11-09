@@ -15,12 +15,44 @@ Verifies that every commit in a PR is authored by a specific set of users and is
 <!-- docs:generated usage -->
 ## Usage
 
+### Only act on pull requests made entirely by Renovate
+
 ```yaml
-- uses: TimSchoenle/actions/actions/helper/verify-commit-authors@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-helper-verify-commit-authors-v3.0.1
-  with:
-    pr_url: # required, see Inputs
-    github_token: # required, see Inputs
-    user_ids: # required, see Inputs
+name: Renovate Pull Request
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  verify:
+    name: Verify Commit Authors
+    runs-on: ubuntu-latest
+    # Both are only needed in a private repository; a public one needs none.
+    permissions:
+      contents: read # to read the commits
+      pull-requests: read # to read the pull request
+    outputs:
+      verified: ${{ steps.authors.outputs.verified }}
+    steps:
+      # 29139614 is renovate[bot]. A commit pushed on top by anyone else, or one without a valid
+      # signature, makes verified false.
+      - id: authors
+        uses: TimSchoenle/actions/actions/helper/verify-commit-authors@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-helper-verify-commit-authors-v3.0.1
+        with:
+          pr_url: ${{ github.event.pull_request.html_url }}
+          github_token: ${{ github.token }}
+          user_ids: '29139614'
+
+  act:
+    name: Act On Verified Pull Request
+    needs: verify
+    if: needs.verify.outputs.verified == 'true'
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - run: echo "Every commit is Renovate's and signed"
 ```
 <!-- /docs:generated usage -->
 
@@ -44,9 +76,22 @@ Verifies that every commit in a PR is authored by a specific set of users and is
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+| Permission            | Held by                     | Needed when               |
+| --------------------- | --------------------------- | ------------------------- |
+| `pull-requests: read` | the token in `github_token` | the repository is private |
+| `contents: read`      | the token in `github_token` | the repository is private |
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint             | For                                                                     |
+| -------------------- | ----------------------------------------------------------------------- |
+| `api.github.com:443` | the GraphQL queries that read the commits, their authors and signatures |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

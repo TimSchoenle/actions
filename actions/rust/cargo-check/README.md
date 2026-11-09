@@ -15,8 +15,27 @@ Action that runs cargo check to verify Rust code compiles without errors.
 <!-- docs:generated usage -->
 ## Usage
 
+### Check on every push and pull request
+
 ```yaml
-- uses: TimSchoenle/actions/actions/rust/cargo-check@be7a69175612d9de514acc14bf55dda8e7ad2e57 # tag=actions-rust-cargo-check-v1.1.8
+# The action checks the repository out itself.
+name: Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions: {}
+
+jobs:
+  check:
+    name: Cargo Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - uses: TimSchoenle/actions/actions/rust/cargo-check@be7a69175612d9de514acc14bf55dda8e7ad2e57 # tag=actions-rust-cargo-check-v1.1.8
 ```
 <!-- /docs:generated usage -->
 
@@ -38,9 +57,26 @@ This action sets no outputs.
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+| Permission       | Needed when |
+| ---------------- | ----------- |
+| `contents: read` | always      |
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint                              | For                                                             |
+| ------------------------------------- | --------------------------------------------------------------- |
+| `github.com:443`                      | the checkout                                                    |
+| `static.rust-lang.org:443`            | the toolchain                                                   |
+| `index.crates.io:443`                 | the project's dependencies, from the default crates.io registry |
+| `static.crates.io:443`                | the project's dependencies, from the default crates.io registry |
+| `*.actions.githubusercontent.com:443` | the Rust cache                                                  |
+| `*.blob.core.windows.net:443`         | the Rust cache                                                  |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

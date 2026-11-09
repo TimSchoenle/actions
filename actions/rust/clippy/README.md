@@ -15,8 +15,29 @@ Action that runs clippy to catch common mistakes and improve your Rust code.
 <!-- docs:generated usage -->
 ## Usage
 
+### Lint on every push and pull request
+
 ```yaml
-- uses: TimSchoenle/actions/actions/rust/clippy@be7a69175612d9de514acc14bf55dda8e7ad2e57 # tag=actions-rust-clippy-v1.1.14
+# The action checks the repository out itself. Findings appear as annotations on the run.
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions: {}
+
+jobs:
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - uses: TimSchoenle/actions/actions/rust/clippy@be7a69175612d9de514acc14bf55dda8e7ad2e57 # tag=actions-rust-clippy-v1.1.14
+        with:
+          clippy_arguments: '--all-features --all-targets -- -D warnings'
 ```
 <!-- /docs:generated usage -->
 
@@ -38,9 +59,26 @@ This action sets no outputs.
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+| Permission       | Needed when |
+| ---------------- | ----------- |
+| `contents: read` | always      |
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint                              | For                                                             |
+| ------------------------------------- | --------------------------------------------------------------- |
+| `github.com:443`                      | the checkout                                                    |
+| `static.rust-lang.org:443`            | the toolchain and the clippy component                          |
+| `index.crates.io:443`                 | the project's dependencies, from the default crates.io registry |
+| `static.crates.io:443`                | the project's dependencies, from the default crates.io registry |
+| `*.actions.githubusercontent.com:443` | the Rust cache                                                  |
+| `*.blob.core.windows.net:443`         | the Rust cache                                                  |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

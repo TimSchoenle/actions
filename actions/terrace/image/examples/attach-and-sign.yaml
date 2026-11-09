@@ -1,0 +1,16 @@
+# Once the image is in the registry: attach the document to its digest, sign the referrer under the
+# job's OIDC identity, then verify the image carries the document. The job must be logged in to the
+# registry with write access, here GHCR through the job token.
+permissions:
+  contents: read
+  packages: write # the referrer
+  id-token: write # sign
+
+steps:
+  # ... build, log in and push, with the digest as steps.push.outputs.digest ...
+  - uses: TimSchoenle/actions/actions/terrace/image@main
+    with:
+      contract: config/contract.json
+      image: ghcr.io/${{ github.repository }}@${{ steps.push.outputs.digest }}
+      attach: 'true'
+      sign: 'true'

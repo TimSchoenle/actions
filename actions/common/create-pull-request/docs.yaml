@@ -1,0 +1,12 @@
+# Every API call is made with the App installation token the action mints from app-id and
+# private-key, never with the job token. That installation needs contents: write and
+# pull-requests: write on the repository.
+permissions: []
+
+egress:
+  - endpoint: api.github.com:443
+    for: minting the App token, the branch and commit calls, the compare and opening or finding the pull request
+
+examples:
+  - title: Open a pull request with updated files
+    file: examples/scheduled-update.yaml

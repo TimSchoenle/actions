@@ -15,11 +15,42 @@ Ensures selected checks completed successfully when they were started.
 <!-- docs:generated usage -->
 ## Usage
 
+### Gate on the checks that started
+
 ```yaml
-- uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-maintenance-ensure-actions-are-executed-v2.0.1
-  with:
-    token: # required, see Inputs
-    checks: # required, see Inputs
+# One required status check that stands for the jobs before it: every matched check that started
+# must have succeeded, and a job that was skipped, and so never started, is tolerated.
+name: CI
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  build:
+    name: Build
+    # ...
+
+  test:
+    name: Test (${{ matrix.os }})
+    # ...
+
+  gate:
+    name: Required checks
+    needs: [build, test]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      checks: read # the check runs of the head commit
+      actions: read # this run's jobs, the fallback when the commit has no check runs
+    steps:
+      - uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-maintenance-ensure-actions-are-executed-v2.0.1
+        with:
+          token: ${{ github.token }}
+          checks: |
+            Build
+            /^Test \(.+\)$/
 ```
 <!-- /docs:generated usage -->
 
@@ -46,9 +77,22 @@ Ensures selected checks completed successfully when they were started.
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+| Permission      | Held by              | Needed when |
+| --------------- | -------------------- | ----------- |
+| `checks: read`  | the token in `token` | always      |
+| `actions: read` | the token in `token` | always      |
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint             | For                                                                              |
+| -------------------- | -------------------------------------------------------------------------------- |
+| `api.github.com:443` | listing the check runs of the ref, and the jobs of the current run as a fallback |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->
