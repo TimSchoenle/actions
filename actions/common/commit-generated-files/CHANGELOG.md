@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/TimSchoenle/actions/compare/actions-common-commit-generated-files-v1.2.0...actions-common-commit-generated-files-v1.2.1) (2026-11-09)
+
+
+### Bug Fixes
+
+* **commit-generated-files:** read maintainer edits from the full pull request ([#2011](https://github.com/TimSchoenle/actions/issues/2011)) ([35c7330](https://github.com/TimSchoenle/actions/commit/35c733069496cf9f4552aa4cced2744237c14de0))
+
 ## [1.2.0](https://github.com/TimSchoenle/actions/compare/actions-common-commit-generated-files-v1.1.0...actions-common-commit-generated-files-v1.2.0) (2026-11-09)
 
 
