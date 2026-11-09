@@ -2,10 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import {
   expectedReleaseTags,
+  gitRunner,
+  gitTagRepository,
   parseReleasedPaths,
+  readReleaseFiles,
   type ReleaseFiles,
   type TagRepository,
   waitForTags,
+  waitReleaseTags,
 } from '../lib/release-tags.js';
 
 const FILES: ReleaseFiles = {
@@ -61,6 +65,18 @@ describe('expectedReleaseTags', () => {
     expect(() => expectedReleaseTags(FILES, ['actions/common/unknown'])).toThrow(
       'actions/common/unknown was released but is not a package',
     );
+  });
+
+  it('rejects config and manifest files that are not JSON objects', () => {
+    expect(() => expectedReleaseTags({ ...FILES, config: [] }, [])).toThrow('release-please-config.json');
+    expect(() => expectedReleaseTags({ ...FILES, config: {} }, [])).toThrow('Its packages');
+    expect(() => expectedReleaseTags({ ...FILES, manifest: null }, [])).toThrow('.release-please-manifest.json');
+  });
+
+  it('rejects a package with no component', () => {
+    const files = { ...FILES, config: { packages: { 'actions/common/read-yaml': {} } } };
+
+    expect(() => expectedReleaseTags(files, ['actions/common/read-yaml'])).toThrow('has no component');
   });
 
   it('rejects a package with no version in the manifest', () => {
@@ -128,5 +144,84 @@ describe('waitForTags', () => {
       'Release tags still missing after 3 fetches: b, c.',
     );
     expect(repository.sleeps).toEqual([5, 10]);
+  });
+});
+
+describe('gitTagRepository', () => {
+  it('fetches tags from origin and checks a tag by its full ref', async () => {
+    const calls: string[][] = [];
+    const repository = gitTagRepository(async (args) => {
+      calls.push(args);
+      return args[0] === 'rev-parse' && args[3] === 'refs/tags/missing' ? 1 : 0;
+    });
+
+    await repository.fetchTags();
+
+    expect(await repository.hasTag('present')).toBe(true);
+    expect(await repository.hasTag('missing')).toBe(false);
+    expect(calls).toEqual([
+      ['fetch', '--force', '--tags', '--quiet', 'origin'],
+      ['rev-parse', '--verify', '--quiet', 'refs/tags/present'],
+      ['rev-parse', '--verify', '--quiet', 'refs/tags/missing'],
+    ]);
+  });
+
+  it('fails when the fetch exits non-zero', async () => {
+    const repository = gitTagRepository(async () => 128);
+
+    await expect(repository.fetchTags()).rejects.toThrow('exit code 128');
+  });
+
+  it('sleeps with a real timer by default', async () => {
+    const repository = gitTagRepository(async () => 0);
+
+    await expect(repository.sleep(1)).resolves.toBeUndefined();
+  });
+});
+
+describe('gitRunner', () => {
+  it('resolves to the exit code of git', async () => {
+    const git = gitRunner();
+
+    expect(await git(['--version'])).toBe(0);
+    expect(await git(['rev-parse', '--verify', '--quiet', 'refs/tags/no-such-tag-anywhere'])).not.toBe(0);
+  });
+});
+
+describe('readReleaseFiles', () => {
+  it('reads the config and manifest of this repository', async () => {
+    const files = await readReleaseFiles();
+
+    expect(files.config).toHaveProperty('packages');
+    expect(files.manifest).toHaveProperty(['actions/common/read-yaml']);
+  });
+});
+
+describe('waitReleaseTags', () => {
+  it('requires the released paths', async () => {
+    const io = { releasedPaths: '', readFiles: async () => FILES, repository: fakeRepository({}), log: () => {} };
+
+    await expect(waitReleaseTags(io)).rejects.toThrow('RELEASED_PATHS is required.');
+  });
+
+  it('waits for the tags of the released paths', async () => {
+    const messages: string[] = [];
+    const repository = fakeRepository({ 'actions-common-read-yaml-v2.0.3': 2 });
+
+    await waitReleaseTags(
+      {
+        releasedPaths: '["actions/common/read-yaml"]',
+        readFiles: async () => FILES,
+        repository,
+        log: (message) => messages.push(message),
+      },
+      [5],
+    );
+
+    expect(repository.fetches).toBe(2);
+    expect(messages).toEqual([
+      'Waiting for 1 release tag(s): actions-common-read-yaml-v2.0.3',
+      'Every release tag is present.',
+    ]);
   });
 });

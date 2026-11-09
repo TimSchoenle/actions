@@ -1,3 +1,9 @@
+import { spawn } from 'node:child_process';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
+import { ROOT_DIR } from './utils.js';
+
 // Works out which tags a release-please run created and waits until git can see all of them.
 //
 // release-please creates each release through the REST API and reports `releases_created` only once
@@ -124,4 +130,74 @@ export async function waitForTags(
 
     await repository.sleep(retryDelaysMs[attempt]);
   }
+}
+
+/** Runs git in `cwd` with stderr passed through, and resolves to its exit code. */
+export type GitRunner = (args: string[]) => Promise<number>;
+
+export function gitRunner(cwd: string = ROOT_DIR): GitRunner {
+  return (args) =>
+    new Promise((resolve, reject) => {
+      const child = spawn('git', args, { cwd, stdio: ['ignore', 'ignore', 'inherit'] });
+      child.on('error', reject);
+      child.on('close', (code) => resolve(code ?? 1));
+    });
+}
+
+/** A {@link TagRepository} over a git checkout's `origin` remote. */
+export function gitTagRepository(
+  git: GitRunner,
+  sleep: (ms: number) => Promise<void> = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+): TagRepository {
+  return {
+    async fetchTags() {
+      const exitCode = await git(['fetch', '--force', '--tags', '--quiet', 'origin']);
+
+      if (exitCode !== 0) {
+        throw new Error(`git fetch --tags failed with exit code ${exitCode}.`);
+      }
+    },
+    async hasTag(tag) {
+      return (await git(['rev-parse', '--verify', '--quiet', `refs/tags/${tag}`])) === 0;
+    },
+    sleep,
+  };
+}
+
+export interface WaitReleaseTagsIo {
+  /** release-please's `paths_released` output. */
+  releasedPaths: string | undefined;
+  readFiles(): Promise<ReleaseFiles>;
+  repository: TagRepository;
+  log(message: string): void;
+}
+
+/** Reads the release-please config and manifest from a checkout. */
+export async function readReleaseFiles(root: string = ROOT_DIR): Promise<ReleaseFiles> {
+  const read = async (file: string): Promise<unknown> =>
+    JSON.parse(await fs.readFile(path.join(root, file), 'utf8')) as unknown;
+
+  return { config: await read('release-please-config.json'), manifest: await read('.release-please-manifest.json') };
+}
+
+/** Waits until every tag the release-please run released is visible to git. */
+export async function waitReleaseTags(io: WaitReleaseTagsIo, retryDelaysMs?: readonly number[]): Promise<void> {
+  if (!io.releasedPaths) {
+    throw new Error('RELEASED_PATHS is required.');
+  }
+
+  const tags = expectedReleaseTags(await io.readFiles(), parseReleasedPaths(io.releasedPaths));
+
+  io.log(`Waiting for ${tags.length} release tag(s): ${tags.join(', ')}`);
+  await waitForTags(io.repository, tags, retryDelaysMs);
+  io.log('Every release tag is present.');
+}
+
+export async function main(): Promise<void> {
+  await waitReleaseTags({
+    releasedPaths: process.env.RELEASED_PATHS,
+    readFiles: () => readReleaseFiles(),
+    repository: gitTagRepository(gitRunner()),
+    log: (message) => console.log(message),
+  });
 }

@@ -31,6 +31,8 @@ export default defineConfig({
         'packages/**/dist/**',
         // A two-line entry point; the step it runs is ./scripts/lib/ci-required-registration-step.ts.
         'scripts/ci-required-registration.ts',
+        // Likewise; the step it runs is ./scripts/lib/release-tags.ts.
+        'scripts/wait-release-tags.ts',
       ],
     },
   },
