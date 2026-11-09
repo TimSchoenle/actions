@@ -1,0 +1,121 @@
+name: Verify Common Render-readme
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'actions/common/render-readme/**'
+      - '!actions/common/render-readme/CHANGELOG.md'
+      - '.github/workflows/verify-action-common-render-readme.yaml'
+  pull_request:
+    paths:
+      - 'actions/common/render-readme/**'
+      - '!actions/common/render-readme/CHANGELOG.md'
+      - '.github/workflows/verify-action-common-render-readme.yaml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  # The fixture's committed output matches its template: check mode passes and render mode uploads
+  # an empty patch. Then the template changes and both modes see it.
+  verify:
+    name: 'Test Render README: render and check modes'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read # for find-patch to read this run's artifacts
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check A Current README
+        uses: ./actions/common/render-readme # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          template: actions/common/render-readme/test/README.md.hbs
+          output: actions/common/render-readme/test/README.md
+          extra: '{"greeting":"hello"}'
+          check: 'true'
+
+      - name: Render A Current README
+        id: current
+        uses: ./actions/common/render-readme # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          template: actions/common/render-readme/test/README.md.hbs
+          output: actions/common/render-readme/test/README.md
+          extra: '{"greeting":"hello"}'
+          artifact_name: render-readme-current-${{ github.run_attempt }}
+
+      - name: Check A Stale README
+        id: stale-check
+        continue-on-error: true
+        uses: ./actions/common/render-readme # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          template: actions/common/render-readme/test/README.md.hbs
+          output: actions/common/render-readme/test/README.md
+          extra: '{"greeting":"changed"}'
+          check: 'true'
+
+      - name: Render A Stale README
+        id: stale
+        uses: ./actions/common/render-readme # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          template: actions/common/render-readme/test/README.md.hbs
+          output: actions/common/render-readme/test/README.md
+          extra: '{"greeting":"changed"}'
+          artifact_name: render-readme-stale-${{ github.run_attempt }}
+
+      - name: Find The Stale Patch
+        id: find
+        uses: TimSchoenle/actions/actions/common/find-patch@7b20a67f0b18a6e64c30e5f47c92636729f6ad41 # tag=actions-common-find-patch-v1.1.0
+        with:
+          artifact_name: ${{ steps.stale.outputs.artifact_name }}
+
+      - name: Assert The Outputs
+        env:
+          CURRENT_CHANGES: ${{ steps.current.outputs.has_changes }}
+          STALE_CHECK: ${{ steps.stale-check.outcome }}
+          STALE_CHANGES: ${{ steps.stale.outputs.has_changes }}
+          STALE_ARTIFACT: ${{ steps.stale.outputs.artifact_name }}
+          PATCH_DIRECTORY: ${{ steps.find.outputs.directory }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          [ "$CURRENT_CHANGES" = "false" ] || fail "has_changes '$CURRENT_CHANGES' for a current README"
+          [ "$STALE_CHECK" = "failure" ] || fail "check mode ended '$STALE_CHECK' on a stale README"
+          [ "$STALE_CHANGES" = "true" ] || fail "has_changes '$STALE_CHANGES' for a stale README"
+          [ "$STALE_ARTIFACT" = "render-readme-stale-${GITHUB_RUN_ATTEMPT}" ] || fail "artifact_name '$STALE_ARTIFACT'"
+          grep -q '^+# changed$' "$PATCH_DIRECTORY/changes.patch" || fail "the patch lacks the re-rendered heading"
+          echo "Check and render modes reported current and stale READMEs as expected"
+
+  # <<< generated: summary (run 'bun run generate-ci-required' to update)
+  summary:
+    name: 'CI Summary: Common Render-readme'
+    if: ${{ always() }}
+    needs:
+      - verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Fail if any verify job did not succeed
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
+  # >>> generated: summary
