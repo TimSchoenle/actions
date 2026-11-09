@@ -89,12 +89,12 @@ jobs:
             registry.npmjs.org:443
             *.blob.core.windows.net:443
 
-      # Only git's objects are needed. Nothing in this checkout is executed.
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # commit-patch reads only git objects, so the head is fetched without a checkout and none of
+      # the pull request's files reach the runner.
+      - name: Fetch The Pull Request Head
+        uses: TimSchoenle/actions/actions/common/fetch-head@3f47ad15da6762f9e07c5e6c70df81f37ddf2454 # tag=actions-common-fetch-head-v1.1.0
         with:
-          persist-credentials: false
-          ref: ${{ github.event.workflow_run.head_sha }}
+          sha: ${{ github.event.workflow_run.head_sha }}
 
       - name: Generate Bot Token
         id: generate_token
@@ -199,11 +199,12 @@ jobs:
             registry.npmjs.org:443
             *.blob.core.windows.net:443
 
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # commit-patch reads only git objects, so the head is fetched without a checkout and none of
+      # the pull request's files reach the runner.
+      - name: Fetch The Pull Request Head
+        uses: TimSchoenle/actions/actions/common/fetch-head@3f47ad15da6762f9e07c5e6c70df81f37ddf2454 # tag=actions-common-fetch-head-v1.1.0
         with:
-          persist-credentials: false
-          ref: ${{ github.event.workflow_run.head_sha }}
+          sha: ${{ github.event.workflow_run.head_sha }}
 
       - name: Generate Bot Token
         id: generate_token
@@ -307,11 +308,12 @@ jobs:
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
 
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # commit-patch reads only git objects, so the head is fetched without a checkout and none of
+      # the pull request's files reach the runner.
+      - name: Fetch The Pull Request Head
+        uses: TimSchoenle/actions/actions/common/fetch-head@3f47ad15da6762f9e07c5e6c70df81f37ddf2454 # tag=actions-common-fetch-head-v1.1.0
         with:
-          persist-credentials: false
-          ref: ${{ github.event.workflow_run.head_sha }}
+          sha: ${{ github.event.workflow_run.head_sha }}
 
       - name: Generate Bot Token
         id: generate_token
