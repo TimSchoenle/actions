@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.1](https://github.com/TimSchoenle/actions/compare/actions-terrace-setup-v3.1.0...actions-terrace-setup-v3.1.1) (2026-11-09)
+
+
+### Dependencies
+
+* **deps:** update vitest monorepo to v5.1.0 ([#2022](https://github.com/TimSchoenle/actions/issues/2022)) ([398bfe5](https://github.com/TimSchoenle/actions/commit/398bfe5214f00683881663c77507141906b14cd2))
+
 ## [3.1.0](https://github.com/TimSchoenle/actions/compare/actions-terrace-setup-v3.0.3...actions-terrace-setup-v3.1.0) (2026-11-09)
 
 

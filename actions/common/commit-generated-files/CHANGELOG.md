@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/TimSchoenle/actions/compare/actions-common-commit-generated-files-v1.2.1...actions-common-commit-generated-files-v1.2.2) (2026-11-09)
+
+
+### Bug Fixes
+
+* **commit-generated-files:** fetch the head with common/fetch-head instead of a checkout ([#2014](https://github.com/TimSchoenle/actions/issues/2014)) ([d2a61ec](https://github.com/TimSchoenle/actions/commit/d2a61ec3a7bd64fb2eaa7221b4f299ec3870f170))
+
 ## [1.2.1](https://github.com/TimSchoenle/actions/compare/actions-common-commit-generated-files-v1.2.0...actions-common-commit-generated-files-v1.2.1) (2026-11-09)
 
 

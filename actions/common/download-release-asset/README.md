@@ -9,7 +9,7 @@ outside the markers.
 
 Downloads a GitHub release asset, through the REST API asset endpoint when the release download fails, and verifies it against a pinned SHA-256 or a pinned checksums file.
 
-[actions-common-download-release-asset-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-download-release-asset-v1.1.0) · JavaScript action (node24)
+[actions-common-download-release-asset-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-download-release-asset-v1.1.1) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 The release download URL (`github.com/<owner>/<repo>/releases/download/<tag>/<asset>`) is tried first, three
@@ -37,7 +37,7 @@ ID. A 404 is not retried that way: the asset does not exist. Both routes feed th
     } >> "$GITHUB_OUTPUT"
 
 - id: download
-  uses: TimSchoenle/actions/actions/common/download-release-asset@927daf80ad493b627b7384abf496d83abbac5f43 # tag=actions-common-download-release-asset-v1.1.0
+  uses: TimSchoenle/actions/actions/common/download-release-asset@actions-common-download-release-asset-v1.1.1 # tag=actions-common-download-release-asset-v1.1.1
   with:
     repository: jdx/jactionlint
     tag: ${{ steps.release.outputs.tag }}
@@ -66,7 +66,7 @@ ID. A 404 is not retried that way: the asset does not exist. Both routes feed th
     } >> "$GITHUB_OUTPUT"
 
 - id: download
-  uses: TimSchoenle/actions/actions/common/download-release-asset@927daf80ad493b627b7384abf496d83abbac5f43 # tag=actions-common-download-release-asset-v1.1.0
+  uses: TimSchoenle/actions/actions/common/download-release-asset@actions-common-download-release-asset-v1.1.1 # tag=actions-common-download-release-asset-v1.1.1
   with:
     repository: jdx/jactionlint
     tag: ${{ steps.release.outputs.tag }}

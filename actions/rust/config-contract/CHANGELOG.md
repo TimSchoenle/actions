@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.2](https://github.com/TimSchoenle/actions/compare/actions-rust-config-contract-v2.0.1...actions-rust-config-contract-v2.0.2) (2026-11-09)
+
+
+### Dependencies
+
+* **deps:** update vitest monorepo to v5.1.0 ([#2022](https://github.com/TimSchoenle/actions/issues/2022)) ([398bfe5](https://github.com/TimSchoenle/actions/commit/398bfe5214f00683881663c77507141906b14cd2))
+
 ## [2.0.1](https://github.com/TimSchoenle/actions/compare/actions-rust-config-contract-v2.0.0...actions-rust-config-contract-v2.0.1) (2026-11-01)
 
 
