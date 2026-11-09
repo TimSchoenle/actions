@@ -18,6 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions: {}
     steps:
-      - uses: TimSchoenle/actions/actions/maintenance/trigger-coderabbit-review@e4229b81c3c3c880b9561dc4d53bd87ccf49eaf3 # tag=actions-maintenance-trigger-coderabbit-review-v1.1.0
+      - uses: TimSchoenle/actions/actions/maintenance/trigger-coderabbit-review@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-maintenance-trigger-coderabbit-review-v1.1.1
         with:
           token: ${{ secrets.CODERABBIT_TRIGGER_TOKEN }}

@@ -32,7 +32,7 @@ issue losing its identity.
 ### Keep one state card per repository
 
 ```yaml
-- uses: TimSchoenle/actions/actions/common/upsert-issue@actions-common-upsert-issue-v2.0.2 # tag=actions-common-upsert-issue-v2.0.2
+- uses: TimSchoenle/actions/actions/common/upsert-issue@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-upsert-issue-v2.0.2
   with:
     token: ${{ steps.token.outputs.token }}
     identifier: repo-state-TimSchoenle-TankoVault
