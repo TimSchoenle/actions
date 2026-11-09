@@ -311,11 +311,14 @@ describe('createHttpTransport', () => {
   it('reports a body cut short as retryable', async () => {
     const base = await serve((_request, response) => {
       response.writeHead(200, { 'Content-Length': '100' });
-      response.write('short');
-      response.socket?.destroy();
+      // Cut only once the client has had time to read the partial body, so the failure comes from the
+      // truncated body and not from a connection lost before the response arrived.
+      response.write('short', () => setTimeout(() => response.socket?.destroy(), 100));
     });
+    const file = await target();
 
-    await expect(transport.download(`${base}/cut`, {}, await target())).rejects.toMatchObject({ retryable: true });
+    await expect(transport.download(`${base}/cut`, {}, file)).rejects.toMatchObject({ retryable: true });
+    expect(await readFile(file, 'utf8')).toBe('short');
   });
 
   it('reports a refused connection as retryable', async () => {

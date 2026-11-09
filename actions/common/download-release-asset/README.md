@@ -58,7 +58,8 @@ asset is downloaded. It must be in `sha256sum` format and list the asset exactly
 | ------ | -------------------------------------------------------------------------------------------- |
 | `path` | Absolute path of the verified asset, in a new directory under `RUNNER_TEMP`. Named `asset`. |
 
-When verification fails, the step fails, `path` stays unset and the downloaded files are deleted.
+When verification fails, the step fails and `path` stays unset. The action deletes the downloaded files; if that
+fails it logs a warning, and the files may remain under `RUNNER_TEMP`.
 
 ## Token
 
@@ -68,7 +69,8 @@ is anonymous. The asset URL is built from the numeric ID rather than read from t
 `Authorization` header is dropped when the asset endpoint redirects to the storage host.
 
 The token keeps the fallback clear of the anonymous rate limit of 60 requests an hour per IP address. Any token
-works for a public release; `contents: read` on the repository is needed for a private one.
+works. Only public releases are supported: the anonymous release download answers 404 for a private asset, and a
+404 ends the download instead of starting the fallback.
 
 ## Proxies
 
