@@ -60,7 +60,7 @@ runs:
   steps:
     - name: Install terrace-contract
       id: setup
-      uses: TimSchoenle/actions/actions/terrace/setup@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-terrace-setup-v1.1.0
+      uses: TimSchoenle/actions/actions/terrace/setup@927daf80ad493b627b7384abf496d83abbac5f43 # tag=actions-terrace-setup-v3.1.0
       with:
         version: ${{ inputs.version }}
         working_directory: ${{ inputs.working_directory }}
@@ -145,7 +145,7 @@ runs:
 
     - name: Comment on the pull request
       if: inputs.token != '' && github.event.pull_request.html_url != ''
-      uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
+      uses: TimSchoenle/actions/actions/common/upsert-pr-comment@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-upsert-pr-comment-v2.0.1
       with:
         token: ${{ inputs.token }}
         identifier: ${{ inputs.comment_identifier }}

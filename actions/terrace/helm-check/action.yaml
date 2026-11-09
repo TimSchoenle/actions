@@ -46,7 +46,7 @@ runs:
   steps:
     - name: Install terrace-contract
       id: setup
-      uses: TimSchoenle/actions/actions/terrace/setup@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-terrace-setup-v1.1.0
+      uses: TimSchoenle/actions/actions/terrace/setup@927daf80ad493b627b7384abf496d83abbac5f43 # tag=actions-terrace-setup-v3.1.0
       with:
         version: ${{ inputs.version }}
         working_directory: ${{ inputs.working_directory }}
