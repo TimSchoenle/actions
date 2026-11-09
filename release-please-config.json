@@ -265,6 +265,11 @@
       "release-type": "simple",
       "component": "actions-common-commit-generated-files",
       "include-component-in-tag": true
+    },
+    "actions/common/render-readme": {
+      "release-type": "simple",
+      "component": "actions-common-render-readme",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

@@ -91,6 +91,7 @@ on:
       - Verify Common Modify-yaml
       - Verify Common Read-yaml
       - Verify Common Readme-variables
+      - Verify Common Render-readme
       - Verify Common Render-template
       - Verify Common Setup-app-git-identity
       - Verify Common Upsert-issue

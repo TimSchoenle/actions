@@ -1,0 +1,121 @@
+name: 'Common Render README'
+description: 'Renders README.md from its Handlebars template with the shared README payload, and either uploads the result as a create-patch artifact or fails when the committed file is stale.'
+
+# The README job every repository repeats: common/readme-variables collects the payload,
+# common/render-template renders the template, and common/create-patch hands the result on as a
+# generator patch for common/generated-files-verdict. With `check: true` it writes nothing and fails
+# on a stale file instead, which is the drift gate for the default branch and for forks.
+#
+# `branch` defaults to the repository's default branch, not `github.ref_name`: on a pull request that
+# is `<number>/merge`, and rendering it into badge URLs would make the generator and the drift gate
+# disagree on every merge.
+
+inputs:
+  template:
+    description: 'Handlebars template to render.'
+    required: false
+    default: '.github/templates/README.md.hbs'
+  output:
+    description: 'File to write.'
+    required: false
+    default: 'README.md'
+  partials-dir:
+    description: 'Directory of Handlebars partials, as common/render-template takes it. Empty for none.'
+    required: false
+    default: ''
+  manifest:
+    description: 'Manifest the version is read from, as common/readme-variables takes it. Empty detects it.'
+    required: false
+    default: ''
+  docs-dir:
+    description: 'Directory of documents listed in the payload, as common/readme-variables takes it.'
+    required: false
+    default: 'docs'
+  extra:
+    description: 'JSON object merged into the payload, as common/readme-variables takes it.'
+    required: false
+    default: '{}'
+  branch:
+    description: 'Branch written into the payload. Empty means the default branch.'
+    required: false
+    default: ''
+  check:
+    description: 'true writes nothing and fails when the output is stale; false renders and uploads the patch.'
+    required: false
+    default: 'false'
+  artifact_name:
+    description: 'Name of the create-patch artifact. Unused with check: true.'
+    required: false
+    default: 'readme-render'
+  max_patch_bytes:
+    description: 'Largest patch, in bytes, as common/create-patch takes it.'
+    required: false
+    default: '10485760'
+
+outputs:
+  has_changes:
+    description: 'true when the rendered output differs from the committed file. Empty with check: true.'
+    value: ${{ steps.patch.outputs.has_changes }}
+  artifact_name:
+    description: 'Name of the uploaded patch artifact. Empty with check: true.'
+    value: ${{ steps.patch.outputs.artifact_name }}
+
+runs:
+  using: 'composite'
+  steps:
+    # Resolves the two inputs every later step agrees on: `check` as exactly true or false, so the
+    # render and the patch step can never disagree on the mode, and the branch, which fails here
+    # rather than reaching readme-variables empty on an event whose payload carries no repository.
+    - name: Resolve Inputs
+      id: resolve
+      shell: bash
+      env:
+        CHECK: ${{ inputs.check }}
+        BRANCH: ${{ inputs.branch }}
+        DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      run: |
+        set -euo pipefail
+        check="$(printf '%s' "$CHECK" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')"
+        case "$check" in
+          true | false) ;;
+          *)
+            echo "::error::check must be true or false, got '${CHECK}'."
+            exit 1
+            ;;
+        esac
+        branch="${BRANCH:-$DEFAULT_BRANCH}"
+        if [ -z "$branch" ]; then
+          echo "::error::This event's payload names no default branch; set the branch input."
+          exit 1
+        fi
+        {
+          echo "check=${check}"
+          echo "branch=${branch}"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Collect The README Payload
+      id: variables
+      uses: TimSchoenle/actions/actions/common/readme-variables@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-readme-variables-v2.1.1
+      with:
+        manifest: ${{ inputs.manifest }}
+        docs-dir: ${{ inputs.docs-dir }}
+        extra: ${{ inputs.extra }}
+        branch: ${{ steps.resolve.outputs.branch }}
+
+    - name: Render The README
+      uses: TimSchoenle/actions/actions/common/render-template@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-render-template-v3.0.1
+      with:
+        template: ${{ inputs.template }}
+        output: ${{ inputs.output }}
+        partials-dir: ${{ inputs.partials-dir }}
+        variables: ${{ steps.variables.outputs.variables }}
+        check: ${{ steps.resolve.outputs.check }}
+
+    - name: Create Patch
+      id: patch
+      if: steps.resolve.outputs.check == 'false'
+      uses: TimSchoenle/actions/actions/common/create-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-patch-v1.1.1
+      with:
+        artifact_name: ${{ inputs.artifact_name }}
+        paths: ${{ inputs.output }}
+        max_patch_bytes: ${{ inputs.max_patch_bytes }}
