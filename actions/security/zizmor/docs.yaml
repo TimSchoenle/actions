@@ -1,0 +1,24 @@
+permissions:
+  - scope: contents
+    access: read
+    when: always
+  - scope: security-events
+    access: write
+    when: { input: upload, equals: 'true' }
+  - scope: actions
+    access: read
+    when: { all: [{ input: upload, equals: 'true' }, { repository: private }] }
+
+egress:
+  - endpoint: ghcr.io:443
+    for: the image pull
+  - endpoint: pkg-containers.githubusercontent.com:443
+    for: the image layers
+  - endpoint: api.github.com:443
+    for: online audits and the SARIF upload
+
+requires: [linux, docker]
+
+examples:
+  - title: Audit on every push and pull request
+    file: examples/security.yaml

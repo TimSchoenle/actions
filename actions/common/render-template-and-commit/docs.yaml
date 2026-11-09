@@ -1,0 +1,13 @@
+permissions:
+  - scope: contents
+    access: write
+    when: always
+    token: token
+
+egress:
+  - endpoint: api.github.com:443
+    for: the GraphQL commit and the branch lookup
+
+examples:
+  - title: Render and commit
+    file: examples/render-and-commit.yaml

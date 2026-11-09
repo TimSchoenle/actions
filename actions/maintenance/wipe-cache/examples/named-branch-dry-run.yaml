@@ -1,0 +1,5 @@
+- uses: TimSchoenle/actions/actions/maintenance/wipe-cache@main
+  with:
+    token: ${{ github.token }}
+    branch: ${{ inputs.branch }}
+    dry_run: true

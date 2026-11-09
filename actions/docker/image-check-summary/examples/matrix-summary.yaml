@@ -1,0 +1,24 @@
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+    steps:
+      # ... build and load ...
+      - uses: TimSchoenle/actions/actions/docker/image-check@main
+        with:
+          image: app:test
+          platform: ${{ matrix.platform }}
+          comment: summary
+
+  image-size-report:
+    needs: build
+    # always(), so one failed leg does not cost the table the rows of the others.
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: TimSchoenle/actions/actions/docker/image-check-summary@main

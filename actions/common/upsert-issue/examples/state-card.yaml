@@ -1,0 +1,7 @@
+- uses: TimSchoenle/actions/actions/common/upsert-issue@main
+  with:
+    token: ${{ steps.token.outputs.token }}
+    identifier: repo-state-TimSchoenle-TankoVault
+    title: 'Repo state: TimSchoenle/TankoVault'
+    body_file: repo-state-body.md
+    labels: repo-state

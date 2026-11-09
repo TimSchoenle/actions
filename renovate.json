@@ -1,6 +1,10 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["github>TimSchoenle/actions//configs/renovate/default"],
+  "github-actions": {
+    "description": "The example workflows each action README embeds, under actions/<category>/<name>/examples/. The shared preset reads only workflow directories and action.yaml, so without this the third-party pins in them go stale while every workflow moves. Their pins of this repository's own actions are written as @main and pinned by bun run generate-docs, so they hold nothing for Renovate. A contract test in scripts/__tests__ fails an example this pattern does not claim.",
+    "managerFilePatterns": ["/^actions/[^/]+/[^/]+/examples/[^/]+\\.ya?ml$/"]
+  },
   "customManagers": [
     {
       "description": "Internal action refs pinned inside the end-to-end workflow generator. scripts/lib/e2e-workflow.ts is the source of truth for every generated verify-action-*.yaml, and is matched by no built-in manager because it is TypeScript rather than YAML. Without this, Renovate bumps only the generated copies and the drift check fails; with it, one branch carries both, because Renovate updates every occurrence of the same dependency at the same version together. A contract test in scripts/__tests__ fails any pin these managers would not match.",
@@ -127,6 +131,19 @@
     {
       "description": "The group half of the rule above. Majors stay outside the group so they arrive alone and are not auto-merged.",
       "matchFileNames": ["docs/**"],
+      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "groupName": "documentation pins",
+      "groupSlug": "docs-pins"
+    },
+    {
+      "description": "The example workflows under actions/<category>/<name>/examples/ are documentation and ship in no release: committed as docs(deps), a type release-please hides, so a pin bump in an example never cuts a release of the action it sits beside. Grouped with the docs/ pins above.",
+      "matchFileNames": ["actions/*/*/examples/**"],
+      "semanticCommitType": "docs",
+      "separateMinorPatch": false
+    },
+    {
+      "description": "The group half of the rule above. Majors stay outside the group so they arrive alone and are not auto-merged.",
+      "matchFileNames": ["actions/*/*/examples/**"],
       "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
       "groupName": "documentation pins",
       "groupSlug": "docs-pins"

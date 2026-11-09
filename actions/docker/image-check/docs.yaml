@@ -1,0 +1,41 @@
+permissions:
+  - scope: contents
+    access: read
+    when: always
+  - scope: security-events
+    access: write
+    when: { input: upload-sarif, equals: 'true' }
+  - scope: actions
+    access: read
+    when: { all: [{ input: upload-sarif, equals: 'true' }, { repository: private }] }
+  - scope: pull-requests
+    access: write
+    when: { input: comment, equals: per-image }
+
+egress:
+  - endpoint: github.com:443
+    for: the Trivy binary
+  - endpoint: get.trivy.dev:443
+    for: the Trivy binary
+  - endpoint: release-assets.githubusercontent.com:443
+    for: the Trivy binary
+  - endpoint: mirror.gcr.io:443
+    for: the Trivy vulnerability database
+  - endpoint: ghcr.io:443
+    for: the Trivy vulnerability database
+  - endpoint: api.github.com:443
+    for: the SARIF upload and the comment
+  - endpoint: '*.actions.githubusercontent.com:443'
+    for: the Actions cache and the summary artifact
+  - endpoint: '*.blob.core.windows.net:443'
+    for: the Actions cache and the summary artifact
+
+requires: [docker]
+
+examples:
+  - title: One image
+    file: examples/single-image.yaml
+  - title: One call per matrix leg
+    file: examples/matrix.yaml
+  - title: One table for every leg
+    file: examples/summary.yaml
