@@ -20,7 +20,7 @@ A action to read a value from a YAML file using dot notation
 ```yaml
 # Fails the step when the key is missing, so a later step never sees an empty version.
 - id: chart
-  uses: TimSchoenle/actions/actions/common/read-yaml@actions-common-read-yaml-v2.0.2 # tag=actions-common-read-yaml-v2.0.2
+  uses: TimSchoenle/actions/actions/common/read-yaml@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-read-yaml-v2.0.2
   with:
     file: charts/api/Chart.yaml
     key: version

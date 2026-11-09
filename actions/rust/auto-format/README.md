@@ -83,7 +83,7 @@ jobs:
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
           permission-contents: write
 
-      - uses: TimSchoenle/actions/actions/common/commit-patch@actions-common-commit-patch-v1.3.1 # tag=actions-common-commit-patch-v1.3.1
+      - uses: TimSchoenle/actions/actions/common/commit-patch@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-commit-patch-v1.3.1
         with:
           token: ${{ steps.token.outputs.token }}
           artifact_name: rust-auto-format

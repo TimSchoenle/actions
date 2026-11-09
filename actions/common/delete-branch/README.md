@@ -34,7 +34,7 @@ jobs:
     permissions:
       contents: write # to delete the branch
     steps:
-      - uses: TimSchoenle/actions/actions/common/delete-branch@actions-common-delete-branch-v2.0.2 # tag=actions-common-delete-branch-v2.0.2
+      - uses: TimSchoenle/actions/actions/common/delete-branch@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-delete-branch-v2.0.2
         with:
           token: ${{ github.token }}
           branch_name: ${{ github.event.pull_request.head.ref }}
