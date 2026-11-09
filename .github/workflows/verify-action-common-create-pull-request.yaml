@@ -157,7 +157,7 @@ jobs:
       # would report a second, misleading failure on top of the real result.
       - name: Cleanup Test Pull Request
         if: always() && steps.create-pr.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-close-pull-request-v1.5.9
+        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -229,7 +229,7 @@ jobs:
       # would report a second, misleading failure on top of the real result.
       - name: Cleanup Test Pull Request
         if: always() && steps.create-pr.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-close-pull-request-v1.5.9
+        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -303,7 +303,7 @@ jobs:
       # would report a second, misleading failure on top of the real result.
       - name: Cleanup Test Pull Request
         if: always() && steps.create-pr.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-close-pull-request-v1.5.9
+        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -458,7 +458,7 @@ jobs:
       # would report a second, misleading failure on top of the real result.
       - name: Cleanup Test Pull Request
         if: always() && steps.create-pr-reset.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-close-pull-request-v1.5.9
+        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
