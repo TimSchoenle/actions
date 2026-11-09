@@ -1,0 +1,30 @@
+# The checkout is there for git's objects: the patch is applied on top of expected_head_sha and needs
+# that commit's tree. Nothing in it is executed, and persist-credentials: false keeps the job token
+# out of .git/config.
+jobs:
+  format:
+    # ... runs the formatter, then common/create-patch with artifact_name: format-patch
+
+  commit:
+    needs: format
+    runs-on: ubuntu-latest
+    environment: ci
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          permission-contents: write
+      - uses: TimSchoenle/actions/actions/common/commit-patch@main
+        with:
+          token: ${{ steps.token.outputs.token }}
+          artifact_name: format-patch
+          allowed_paths: 'src/** README.md'
+          commit_message: 'style: auto-format code'

@@ -3,10 +3,10 @@ description: 'Reports whether a run uploaded a non-empty common/create-patch art
 
 inputs:
   artifact_name:
-    description: 'Name of the artifact create-patch uploaded.'
+    description: 'Name of the artifact create-patch uploaded: the artifact_name given to create-patch.'
     required: true
   run_id:
-    description: 'ID of the workflow run to look in, such as github.event.workflow_run.id. Empty looks in this run.'
+    description: 'ID of the workflow run of this repository to look in, such as github.event.workflow_run.id. Empty looks in this run.'
     required: false
     default: ''
   expected_head_sha:
@@ -27,7 +27,7 @@ outputs:
     description: 'true when the run holds a non-empty patch made from expected_head_sha; false otherwise.'
     value: ${{ steps.inspect.outputs.has_changes || steps.lookup.outputs.has_changes }}
   outcome:
-    description: 'changes; branch_moved when the patch was made from another commit; no_changes when it is empty; missing when the run holds no unexpired artifact of that name.'
+    description: 'changes for a non-empty patch made from expected_head_sha; branch_moved when the patch was made from another commit; no_changes when it is empty; missing when the run holds no unexpired artifact of that name.'
     value: ${{ steps.inspect.outputs.outcome || steps.lookup.outputs.outcome }}
   found:
     description: 'true when the run holds an unexpired artifact of that name.'
@@ -36,7 +36,7 @@ outputs:
     description: 'The commit the patch was made from, when the artifact was found.'
     value: ${{ steps.inspect.outputs.base_sha }}
   directory:
-    description: 'Directory holding the validated changes.patch and metadata.json, set once validation passed. For reading which paths the patch touches; never execute anything from it.'
+    description: 'Directory holding the validated changes.patch and metadata.json, set once validation passed. It is there for reading which paths the patch touches, to word a pull request comment for instance. Treat the files as untrusted data, as the job that wrote them ran pull request code: never execute or source anything from them.'
     value: ${{ steps.inspect.outputs.directory }}
 
 runs:

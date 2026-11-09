@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   sysWrite: vi.fn(),
   sysExec: vi.fn(),
   sysGlob: vi.fn(),
+  generateActionReadmes: vi.fn(),
 }));
 
 // Mock all dependencies
@@ -61,6 +62,10 @@ vi.mock('../lib/readme/git-utils.js', () => ({
   getRepoInfo: mocks.getRepoInfo,
 }));
 
+vi.mock('../lib/action-docs/generate.js', () => ({
+  generateActionReadmes: mocks.generateActionReadmes,
+}));
+
 // Both generated files put a category heading one level under the kind heading above it, so all
 // three calls below pass the same depth.
 const CATEGORY_HEADING_LEVEL = 4;
@@ -75,6 +80,8 @@ describe('Generate Readme Script', () => {
     mocks.checkstyleParse.mockResolvedValue([]);
     mocks.generateSection.mockResolvedValue('');
     mocks.getRepoInfo.mockResolvedValue('owner/repo');
+    mocks.generateActionReadmes.mockResolvedValue({ written: [], errors: [], warnings: [] });
+    process.exitCode = 0;
     mocks.sysGlob.mockReturnValue({
       scan: function* () {} as any,
     });
@@ -83,6 +90,7 @@ describe('Generate Readme Script', () => {
     vi.spyOn(process, 'exit').mockImplementation((() => {}) as any);
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
   it('should parse actions and generate sections', async () => {
@@ -176,8 +184,9 @@ describe('Generate Readme Script', () => {
       CATEGORY_HEADING_LEVEL,
     );
 
-    // Verify getRepoInfo was called
-    expect(mocks.getRepoInfo).toHaveBeenCalledTimes(1);
+    // Once for the root README, once for the per-action READMEs.
+    expect(mocks.getRepoInfo).toHaveBeenCalledTimes(2);
+    expect(mocks.generateActionReadmes).toHaveBeenCalledWith('owner/repo');
 
     // Verify file operations
     expect(mocks.sysFile).toHaveBeenCalled();
@@ -257,5 +266,41 @@ describe('Generate Readme Script', () => {
     const writtenContent = mocks.sysWrite.mock.calls[0][1] as string;
     expect(writtenContent).not.toContain('<!-- ACTIONS_TABLE -->');
     expect(writtenContent).not.toContain('<!-- CONFIGS_TABLE -->');
+  });
+
+  it('reports per-action README problems and fails the run on an error', async () => {
+    mocks.sysFile.mockReturnValue({
+      exists: async () => true,
+      text: async () => '<!-- ACTIONS_TABLE -->\n<!-- CONFIGS_TABLE -->',
+    });
+    mocks.generateActionReadmes.mockResolvedValue({
+      written: ['actions/x/y/README.md'],
+      errors: ['actions/x/y/docs.yaml: egress: must be a list; write [] for none'],
+      warnings: ['actions/x/z: no docs.yaml, so its README has no permissions or egress'],
+    });
+
+    const { main } = await import('../generate-docs.js');
+    await main();
+
+    expect(console.log).toHaveBeenCalledWith('🎉 Generated actions/x/y/README.md');
+    expect(console.warn).toHaveBeenCalledWith(
+      '⚠️ actions/x/z: no docs.yaml, so its README has no permissions or egress',
+    );
+    expect(console.error).toHaveBeenCalledWith('❌ actions/x/y/docs.yaml: egress: must be a list; write [] for none');
+    expect(process.exitCode).toBe(1);
+    process.exitCode = 0;
+  });
+
+  it('leaves the exit code alone when the per-action READMEs have only warnings', async () => {
+    mocks.sysFile.mockReturnValue({
+      exists: async () => true,
+      text: async () => '<!-- ACTIONS_TABLE -->\n<!-- CONFIGS_TABLE -->',
+    });
+    mocks.generateActionReadmes.mockResolvedValue({ written: [], errors: [], warnings: ['w'] });
+
+    const { main } = await import('../generate-docs.js');
+    await main();
+
+    expect(process.exitCode).toBe(0);
   });
 });

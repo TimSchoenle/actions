@@ -1,0 +1,26 @@
+permissions:
+  - scope: contents
+    access: read
+    when: always
+  - scope: security-events
+    access: write
+    when: { input: upload, equals: 'true' }
+  - scope: actions
+    access: read
+    when: { repository: private }
+
+egress:
+  - endpoint: github.com:443
+    for: the CodeQL bundle download
+  - endpoint: objects.githubusercontent.com:443
+    for: the CodeQL bundle download
+  - endpoint: release-assets.githubusercontent.com:443
+    for: the CodeQL bundle download
+  - endpoint: api.github.com:443
+    for: the SARIF upload and CodeQL's API calls
+  - endpoint: static.rust-lang.org:443
+    for: the rust-src component, for rust
+
+examples:
+  - title: Analyse Rust and workflows on push, pull request and a weekly schedule
+    file: examples/codeql.yaml

@@ -1,0 +1,17 @@
+# A workspace publishing several images renders one contract per image, selected by an argument only
+# that repository knows the spelling of. extra_args carries it. The action checks one contract per
+# invocation, so a repository with nine of them runs the step nine times, in a matrix or as nine
+# steps in the job that already built the images.
+strategy:
+  matrix:
+    service: [api, bootstrap, worker]
+
+steps:
+  - name: Config contract
+    uses: TimSchoenle/actions/actions/rust/config-contract@main
+    with:
+      bin: config-contract
+      extra_args: --service ${{ matrix.service }}
+      dockerfile: deploy/docker/Dockerfile
+      contract: docs/contracts/${{ matrix.service }}.json
+      image: ${{ matrix.service }}:test

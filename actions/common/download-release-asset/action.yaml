@@ -12,7 +12,7 @@ inputs:
     description: 'File name of the asset in the release.'
     required: true
   token:
-    description: 'Token for the REST API fallback, sent to api.github.com only when the release download fails and only when the job runs on github.com. Never sent to github.com, nor from a GitHub Enterprise Server job.'
+    description: 'Token for the REST API fallback, sent to api.github.com only when the release download fails and only when the job runs on github.com. Never sent to github.com, nor from a GitHub Enterprise Server job. Any token works. See Token below.'
     required: false
     default: ${{ github.token }}
   sha256:
@@ -20,7 +20,7 @@ inputs:
     required: false
     default: ''
   checksums-asset:
-    description: 'File name of a sha256sum-format checksums file in the same release, which must list the asset. Set together with checksums-sha256, instead of sha256.'
+    description: 'File name of a sha256sum-format checksums file in the same release, which must list the asset exactly once. Set together with checksums-sha256, instead of sha256.'
     required: false
     default: ''
   checksums-sha256:
@@ -30,7 +30,7 @@ inputs:
 
 outputs:
   path:
-    description: 'Absolute path of the verified asset, in a new directory under RUNNER_TEMP. Set only once the asset is verified.'
+    description: 'Absolute path of the verified asset, a file named as the asset input in a new directory under RUNNER_TEMP. Set only once the asset is verified. When verification fails, the step fails, path stays unset and the downloaded files are deleted; if deleting them fails, the action logs a warning and the files may remain under RUNNER_TEMP.'
 
 runs:
   using: 'node24'
