@@ -1,5 +1,5 @@
 # A CI gate: writes nothing and fails when README.md is missing or stale.
-- uses: TimSchoenle/actions/actions/common/render-template@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-render-template-v3.0.2
+- uses: TimSchoenle/actions/actions/common/render-template@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-render-template-v3.0.3
   with:
     template: docs/README.hbs
     output: README.md

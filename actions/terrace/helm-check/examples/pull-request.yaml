@@ -18,4 +18,4 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: TimSchoenle/actions/actions/terrace/helm-check@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-terrace-helm-check-v1.1.1
+      - uses: TimSchoenle/actions/actions/terrace/helm-check@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-terrace-helm-check-v1.1.2

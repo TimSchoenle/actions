@@ -1,4 +1,4 @@
-- uses: TimSchoenle/actions/actions/common/upsert-issue@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-upsert-issue-v2.0.2
+- uses: TimSchoenle/actions/actions/common/upsert-issue@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-upsert-issue-v2.0.3
   with:
     token: ${{ steps.token.outputs.token }}
     identifier: repo-state-TimSchoenle-TankoVault

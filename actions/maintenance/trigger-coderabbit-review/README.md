@@ -65,7 +65,7 @@ jobs:
       deployment: false
     permissions: {}
     steps:
-      - uses: TimSchoenle/actions/actions/maintenance/trigger-coderabbit-review@actions-maintenance-trigger-coderabbit-review-v2.0.0 # tag=actions-maintenance-trigger-coderabbit-review-v2.0.0
+      - uses: TimSchoenle/actions/actions/maintenance/trigger-coderabbit-review@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-maintenance-trigger-coderabbit-review-v2.0.0
         with:
           token: ${{ secrets.CODERABBIT_TRIGGER_TOKEN }}
 ```
@@ -110,7 +110,7 @@ jobs:
       deployment: false
     permissions: {}
     steps:
-      - uses: TimSchoenle/actions/actions/maintenance/trigger-coderabbit-review@actions-maintenance-trigger-coderabbit-review-v2.0.0 # tag=actions-maintenance-trigger-coderabbit-review-v2.0.0
+      - uses: TimSchoenle/actions/actions/maintenance/trigger-coderabbit-review@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-maintenance-trigger-coderabbit-review-v2.0.0
         with:
           token: ${{ secrets.CODERABBIT_TRIGGER_TOKEN }}
 ```

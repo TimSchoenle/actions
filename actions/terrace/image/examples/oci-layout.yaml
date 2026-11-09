@@ -3,7 +3,7 @@
     docker build --tag app:check .
     docker save app:check --output image.tar
 
-- uses: TimSchoenle/actions/actions/terrace/image@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-terrace-image-v1.1.1
+- uses: TimSchoenle/actions/actions/terrace/image@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-terrace-image-v1.1.2
   with:
     contract: config/contract.json
     dockerfile: Dockerfile

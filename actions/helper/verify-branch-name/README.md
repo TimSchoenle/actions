@@ -36,7 +36,7 @@ jobs:
       # Reads the branch and both repositories from the pull_request payload, so it needs no checkout.
       # A fork's branch fails the check even when its name matches.
       - id: branch
-        uses: TimSchoenle/actions/actions/helper/verify-branch-name@actions-helper-verify-branch-name-v2.0.3 # tag=actions-helper-verify-branch-name-v2.0.3
+        uses: TimSchoenle/actions/actions/helper/verify-branch-name@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-helper-verify-branch-name-v2.0.3
         with:
           branch_pattern: '^release-please--branches--.*$'
 

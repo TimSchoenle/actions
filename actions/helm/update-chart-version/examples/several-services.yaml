@@ -2,7 +2,7 @@
 # With pull-contracts, the charts repository needs a terrace.yaml at its root and the images must be
 # pullable without credentials.
 - id: chart
-  uses: TimSchoenle/actions/actions/helm/update-chart-version@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-helm-update-chart-version-v1.7.3
+  uses: TimSchoenle/actions/actions/helm/update-chart-version@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-helm-update-chart-version-v1.7.4
   with:
     app-id: ${{ vars.CHARTS_BOT_APP_ID }}
     private-key: ${{ secrets.CHARTS_BOT_PRIVATE_KEY }}

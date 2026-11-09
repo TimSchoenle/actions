@@ -28,7 +28,7 @@ jobs:
     steps:
       # The action checks the charts repository out over the workspace, so it needs no checkout of
       # its own and anything already in the workspace is replaced.
-      - uses: TimSchoenle/actions/actions/helm/update-chart-version@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-helm-update-chart-version-v1.7.3
+      - uses: TimSchoenle/actions/actions/helm/update-chart-version@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-helm-update-chart-version-v1.7.4
         with:
           app-id: ${{ vars.CHARTS_BOT_APP_ID }}
           private-key: ${{ secrets.charts-bot-private-key }}

@@ -58,7 +58,7 @@ jobs:
       has_changes: ${{ steps.patch.outputs.has_changes }}
     steps:
       - id: patch
-        uses: TimSchoenle/actions/actions/common/find-patch@actions-common-find-patch-v1.1.2 # tag=actions-common-find-patch-v1.1.2
+        uses: TimSchoenle/actions/actions/common/find-patch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-find-patch-v1.1.2
         with:
           run_id: ${{ github.event.workflow_run.id }}
           artifact_name: format-patch

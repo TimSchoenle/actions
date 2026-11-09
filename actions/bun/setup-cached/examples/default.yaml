@@ -6,4 +6,4 @@
     persist-credentials: false
 
 - name: Setup Bun
-  uses: TimSchoenle/actions/actions/bun/setup-cached@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-bun-setup-cached-v2.0.0
+  uses: TimSchoenle/actions/actions/bun/setup-cached@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-bun-setup-cached-v3.0.0

@@ -1,4 +1,4 @@
-- uses: TimSchoenle/actions/actions/common/render-template@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-render-template-v3.0.2
+- uses: TimSchoenle/actions/actions/common/render-template@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-render-template-v3.0.3
   id: render
   with:
     template: docs/README.hbs
@@ -13,7 +13,7 @@
         ]
       }
 
-- uses: TimSchoenle/actions/actions/common/commit-changes@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-commit-changes-v3.0.2
+- uses: TimSchoenle/actions/actions/common/commit-changes@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-commit-changes-v3.0.3
   if: steps.render.outputs.changed == 'true'
   with:
     # A GitHub App installation token, so the commit is verified.

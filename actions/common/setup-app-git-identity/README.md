@@ -44,7 +44,7 @@ jobs:
         with:
           token: ${{ steps.token.outputs.token }}
 
-      - uses: TimSchoenle/actions/actions/common/setup-app-git-identity@actions-common-setup-app-git-identity-v2.0.3 # tag=actions-common-setup-app-git-identity-v2.0.3
+      - uses: TimSchoenle/actions/actions/common/setup-app-git-identity@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-setup-app-git-identity-v2.0.3
         with:
           app-slug: ${{ steps.token.outputs.app-slug }}
           token: ${{ steps.token.outputs.token }}

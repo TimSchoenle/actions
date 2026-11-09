@@ -30,7 +30,7 @@ jobs:
         platform: [linux/amd64, linux/arm64]
     steps:
       # ... build and load ...
-      - uses: TimSchoenle/actions/actions/docker/image-check@actions-docker-image-check-v1.1.13 # tag=actions-docker-image-check-v1.1.13
+      - uses: TimSchoenle/actions/actions/docker/image-check@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-docker-image-check-v1.1.13
         with:
           image: app:test
           platform: ${{ matrix.platform }}
@@ -45,7 +45,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: TimSchoenle/actions/actions/docker/image-check-summary@actions-docker-image-check-summary-v2.0.3 # tag=actions-docker-image-check-summary-v2.0.3
+      - uses: TimSchoenle/actions/actions/docker/image-check-summary@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-docker-image-check-summary-v2.0.3
 ```
 <!-- /docs:generated usage -->
 

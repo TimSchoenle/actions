@@ -29,7 +29,7 @@ the result when the cache missed and the job is allowed to write it.
     persist-credentials: false
 
 - name: Setup Bun
-  uses: TimSchoenle/actions/actions/bun/setup-cached@actions-bun-setup-cached-v3.0.0 # tag=actions-bun-setup-cached-v3.0.0
+  uses: TimSchoenle/actions/actions/bun/setup-cached@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-bun-setup-cached-v3.0.0
 ```
 
 ### In a privileged job
@@ -37,7 +37,7 @@ the result when the cache missed and the job is allowed to write it.
 ```yaml
 # In a job that holds secrets, an App token or any write permission.
 - name: Setup Bun
-  uses: TimSchoenle/actions/actions/bun/setup-cached@actions-bun-setup-cached-v3.0.0 # tag=actions-bun-setup-cached-v3.0.0
+  uses: TimSchoenle/actions/actions/bun/setup-cached@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-bun-setup-cached-v3.0.0
   with:
     cache-mode: none
 ```

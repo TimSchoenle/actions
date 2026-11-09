@@ -1,7 +1,7 @@
 # Each check is skipped by emptying its input, so a repository with no image, or no committed
 # contract, takes only the half that applies to it.
 - name: Config contract
-  uses: TimSchoenle/actions/actions/rust/config-contract@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-rust-config-contract-v2.0.2
+  uses: TimSchoenle/actions/actions/rust/config-contract@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-rust-config-contract-v2.0.3
   with:
     source_directory: services/api
     package: api-config

@@ -40,7 +40,7 @@ jobs:
     permissions:
       pull-requests: write # read the pull request and its commits, and approve it
     steps:
-      - uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@actions-maintenance-auto-approve-pr-v3.0.3 # tag=actions-maintenance-auto-approve-pr-v3.0.3
+      - uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-maintenance-auto-approve-pr-v3.0.3
         with:
           token: ${{ github.token }}
           # Database IDs of the accounts whose pull requests may be approved; 29139614 is Renovate.
