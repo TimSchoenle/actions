@@ -9,7 +9,7 @@ outside the markers.
 
 Action that measures Rust test coverage with cargo llvm-cov and nextest, and uploads the coverage report and the JUnit test results to Codecov.
 
-[actions-rust-coverage-codecov-v2.0.7](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v2.0.7) · Composite action
+[actions-rust-coverage-codecov-v2.0.8](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v2.0.8) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -37,7 +37,7 @@ jobs:
       contents: read # to fetch code
       id-token: write # to authenticate the upload with OIDC
     steps:
-      - uses: TimSchoenle/actions/actions/rust/coverage-codecov@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-rust-coverage-codecov-v2.0.7
+      - uses: TimSchoenle/actions/actions/rust/coverage-codecov@actions-rust-coverage-codecov-v2.0.8 # tag=actions-rust-coverage-codecov-v2.0.8
         with:
           flags: unit
 ```

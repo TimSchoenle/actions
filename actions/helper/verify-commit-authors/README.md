@@ -9,7 +9,7 @@ outside the markers.
 
 Verifies that every commit in a PR is authored by a specific set of users and is either signed by GitHub or committed and signed by one of those users.
 
-[actions-helper-verify-commit-authors-v3.0.2](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v3.0.2) · JavaScript action (node24)
+[actions-helper-verify-commit-authors-v3.0.3](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-commit-authors-v3.0.3) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -39,7 +39,7 @@ jobs:
       # 29139614 is renovate[bot]. A commit pushed on top by anyone else, or one without a valid
       # signature, makes verified false.
       - id: authors
-        uses: TimSchoenle/actions/actions/helper/verify-commit-authors@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-helper-verify-commit-authors-v3.0.2
+        uses: TimSchoenle/actions/actions/helper/verify-commit-authors@actions-helper-verify-commit-authors-v3.0.3 # tag=actions-helper-verify-commit-authors-v3.0.3
         with:
           pr_url: ${{ github.event.pull_request.html_url }}
           github_token: ${{ github.token }}

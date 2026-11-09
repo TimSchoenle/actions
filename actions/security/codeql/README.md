@@ -9,7 +9,7 @@ outside the markers.
 
 Runs CodeQL on one language with build-mode none, excluding test sources so fixtures and assertion messages do not raise alerts, and uploads the result to code scanning.
 
-[actions-security-codeql-v1.1.8](https://github.com/TimSchoenle/actions/releases/tag/actions-security-codeql-v1.1.8) · Composite action
+[actions-security-codeql-v1.1.9](https://github.com/TimSchoenle/actions/releases/tag/actions-security-codeql-v1.1.9) · Composite action
 <!-- /docs:generated header -->
 
 Default setup reads a configuration file only from the `github-codeql-config-file` repository property, and custom
@@ -51,7 +51,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: TimSchoenle/actions/actions/security/codeql@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-security-codeql-v1.1.8
+      - uses: TimSchoenle/actions/actions/security/codeql@actions-security-codeql-v1.1.9 # tag=actions-security-codeql-v1.1.9
         with:
           language: ${{ matrix.language }}
           paths-ignore: |

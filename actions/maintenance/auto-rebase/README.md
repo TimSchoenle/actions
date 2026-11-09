@@ -9,7 +9,7 @@ outside the markers.
 
 Updates every open pull request carrying a label with the latest commits of its base branch, through the update-branch API, which merges the base into the head.
 
-[actions-maintenance-auto-rebase-v3.0.2](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-rebase-v3.0.2) · JavaScript action (node24)
+[actions-maintenance-auto-rebase-v3.0.3](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-rebase-v3.0.3) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 Each open pull request carrying `label` gets a call to
@@ -52,7 +52,7 @@ jobs:
           permission-contents: write
           permission-pull-requests: write
 
-      - uses: TimSchoenle/actions/actions/maintenance/auto-rebase@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-maintenance-auto-rebase-v3.0.2
+      - uses: TimSchoenle/actions/actions/maintenance/auto-rebase@actions-maintenance-auto-rebase-v3.0.3 # tag=actions-maintenance-auto-rebase-v3.0.3
         with:
           token: ${{ steps.token.outputs.token }}
           label: dependencies
