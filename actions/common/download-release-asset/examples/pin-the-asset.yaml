@@ -1,7 +1,22 @@
+# The version and the SHA-256 sit together under one `# renovate:` comment, so Renovate moves both in
+# one commit; keep the comment directly above the two lines. The asset name is derived from the
+# version rather than written out, so it never falls behind the tag.
+- id: release
+  env:
+    # renovate: datasource=github-release-attachments depName=jdx/jactionlint
+    JACTIONLINT_VERSION: 'v2.5.0'
+    JACTIONLINT_SHA256: '5cbf573f7d3828a6e679c35520f1bd00c512ec7bde31a281e40808ba68c8225c'
+  run: |
+    {
+      echo "tag=${JACTIONLINT_VERSION}"
+      echo "asset=jactionlint_${JACTIONLINT_VERSION#v}_checksums.txt"
+      echo "sha256=${JACTIONLINT_SHA256}"
+    } >> "$GITHUB_OUTPUT"
+
 - id: download
   uses: TimSchoenle/actions/actions/common/download-release-asset@main
   with:
     repository: jdx/jactionlint
-    tag: v2.5.0
-    asset: jactionlint_2.5.0_checksums.txt
-    sha256: 5cbf573f7d3828a6e679c35520f1bd00c512ec7bde31a281e40808ba68c8225c
+    tag: ${{ steps.release.outputs.tag }}
+    asset: ${{ steps.release.outputs.asset }}
+    sha256: ${{ steps.release.outputs.sha256 }}

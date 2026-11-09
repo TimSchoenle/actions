@@ -642,6 +642,79 @@ describe('Renovate coverage of the README examples', () => {
     }
   });
 
+  /**
+   * A line that hands an example a literal release version: a `version:` or `tag:` key, or a
+   * `<NAME>_VERSION` value, set to something that reads as a version (`1.2`, `v1.2.3`). A bare major
+   * such as `java_version: '21'` picks a runtime line rather than pinning a release, and an
+   * expression such as `${{ steps.release.outputs.tag }}` is no literal, so neither counts.
+   */
+  const LITERAL_VERSION = /^\s*(?:[\w-]*version|tag)\s*:\s*['"]?v?\d+\.\d+/i;
+
+  /** The custom managers whose `managerFilePatterns` claim `file`. */
+  function managersFor(file: string): CustomManager[] {
+    return customManagers().filter((manager) =>
+      manager.managerFilePatterns.some(
+        (pattern) => pattern.startsWith('/') && pattern.endsWith('/') && new RegExp(pattern.slice(1, -1)).test(file),
+      ),
+    );
+  }
+
+  /**
+   * Every literal version line in `content` that is not updated by exactly one manager, as a failure
+   * message. A line counts as updated by a manager when one of its matches captures `currentValue`
+   * on that line, which is how a `# renovate:` comment on the line above carries over to the value.
+   */
+  function versionCoverageProblems(file: string, content: string): string[] {
+    // Where each manager's `currentValue` capture starts: that is the value Renovate rewrites, so a
+    // match that only passes over a line does not count for it.
+    const valueStarts = managersFor(file).map((manager) =>
+      manager.matchStrings.flatMap((matchString) =>
+        [...content.matchAll(new RegExp(matchString, 'gd'))].flatMap((match) => {
+          const range = match.indices?.groups?.currentValue;
+          return range ? [range[0]] : [];
+        }),
+      ),
+    );
+
+    const problems: string[] = [];
+    let offset = 0;
+    for (const [index, line] of content.split('\n').entries()) {
+      const start = offset;
+      offset += line.length + 1;
+      if (!LITERAL_VERSION.test(line)) {
+        continue;
+      }
+      const covering = valueStarts.filter((starts) => starts.some((at) => at >= start && at < offset)).length;
+      if (covering !== 1) {
+        problems.push(
+          `${file}:${index + 1} '${line.trim()}' is updated by ${covering} managers; put a '# renovate:' comment ` +
+            'naming its datasource on the line above, as actions/terrace/setup/examples/exact-with-oras.yaml does',
+        );
+      }
+    }
+    return problems;
+  }
+
+  it('updates every literal version in an example through exactly one manager', async () => {
+    const files = await exampleFiles();
+    const contents = files.map((file) => fs.readFileSync(path.join(ROOT_DIR, file), 'utf8').replaceAll('\r\n', '\n'));
+
+    // The examples hold literal versions today; a scan that found none would pass without checking.
+    expect(contents.some((content) => content.split('\n').some((line) => LITERAL_VERSION.test(line)))).toBe(true);
+    expect(files.flatMap((file, index) => versionCoverageProblems(file, contents[index]))).toEqual([]);
+  });
+
+  it('reports a literal version in an example that has no renovate comment', () => {
+    const file = 'actions/demo/tool/examples/example.yaml';
+    const content = ['- uses: TimSchoenle/actions/actions/demo/tool@main', '  with:', "    version: '1.2.3'", ''].join(
+      '\n',
+    );
+
+    expect(versionCoverageProblems(file, content)).toEqual([
+      expect.stringContaining(`${file}:3 'version: '1.2.3'' is updated by 0 managers`),
+    ]);
+  });
+
   it('leaves every internal action in an example on @main for the generator to pin', async () => {
     for (const file of await exampleFiles()) {
       const pinned = fs

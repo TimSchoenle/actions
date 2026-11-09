@@ -68,9 +68,22 @@
       "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>.*)${{/if}}"
     },
     {
-      "description": "Release binaries the workflows under .github/workflows/ and the composite actions under actions/ download directly, pinned as a pair of step environment values: <NAME>_VERSION holds the release tag and <NAME>_SHA256 the SHA-256 of one release asset, each single-quoted, double-quoted or plain, under a `# renovate:` comment naming the github-release-attachments datasource. For an archive, that datasource finds the pinned checksum in the release's checksum manifest and reads the matching line of the new release's manifest; for the manifest itself (actions/security/jactionlint pins its checksums file, which then verifies the archive of each platform), it finds the asset whose own SHA-256 is the pin and hashes the asset of the same name in the new release. Either way version and checksum move in one commit and the step's verification keeps passing. A contract test in scripts/__tests__ fails any such pin this manager would not match.",
+      "description": "A version the example workflows under actions/<category>/<name>/examples/ pass as a literal input value, such as the terrace-contract version given to terrace/setup, with a `# renovate:` comment naming the datasource on the line above. No built-in manager reads an input value, so without this the example keeps recommending the version it was written with. The datasources are listed rather than matched with a wildcard so that a github-release-attachments pair, which the release-binary manager below updates with its checksum, is never matched twice. The commit is typed docs(deps) by the examples rule under packageRules. A contract test in scripts/__tests__ fails a literal version in an example that no manager matches.",
       "customType": "regex",
-      "managerFilePatterns": ["/^\\.github/workflows/[^/]+\\.ya?ml$/", "/^actions/[^/]+/[^/]+/action\\.ya?ml$/"],
+      "managerFilePatterns": ["/^actions/[^/]+/[^/]+/examples/[^/]+\\.ya?ml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>github-releases|github-tags|docker) depName=(?<depName>[\\w./-]+)(?: extractVersion=(?<extractVersion>\\S+))?\\s+[\\w-]+: [\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
+      ],
+      "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>.*)${{/if}}"
+    },
+    {
+      "description": "Release binaries the workflows under .github/workflows/, the composite actions under actions/ and the example workflows under actions/<category>/<name>/examples/ download directly, pinned as a pair of step environment values: <NAME>_VERSION holds the release tag and <NAME>_SHA256 the SHA-256 of one release asset, each single-quoted, double-quoted or plain, under a `# renovate:` comment naming the github-release-attachments datasource. For an archive, that datasource finds the pinned checksum in the release's checksum manifest and reads the matching line of the new release's manifest; for the manifest itself (actions/security/jactionlint pins its checksums file, which then verifies the archive of each platform), it finds the asset whose own SHA-256 is the pin and hashes the asset of the same name in the new release. Either way version and checksum move in one commit and the step's verification keeps passing. A contract test in scripts/__tests__ fails any such pin this manager would not match.",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/[^/]+\\.ya?ml$/",
+        "/^actions/[^/]+/[^/]+/action\\.ya?ml$/",
+        "/^actions/[^/]+/[^/]+/examples/[^/]+\\.ya?ml$/"
+      ],
       "matchStrings": [
         "# renovate: datasource=(?<datasource>github-release-attachments) depName=(?<depName>[\\w.-]+\\/[\\w.-]+)\\s+[A-Z0-9_]+_VERSION: [\"']?(?<currentValue>[^\"'\\s]+)[\"']?\\s+[A-Z0-9_]+_SHA256: [\"']?(?<currentDigest>[a-f0-9]{64})[\"']?"
       ]
