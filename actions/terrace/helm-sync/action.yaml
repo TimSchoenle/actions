@@ -140,7 +140,7 @@ runs:
     - name: Commit the result
       id: commit
       if: ${{ !cancelled() && inputs.token != '' && steps.sync.outputs.changed == 'true' }}
-      uses: TimSchoenle/actions/actions/common/commit-changes@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-commit-changes-v1.5.9
+      uses: TimSchoenle/actions/actions/common/commit-changes@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-commit-changes-v3.0.1
       with:
         token: ${{ inputs.token }}
         commit_message: ${{ inputs.commit_message }}
