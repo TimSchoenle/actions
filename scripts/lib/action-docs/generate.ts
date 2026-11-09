@@ -287,11 +287,6 @@ async function generateOne(
     report.errors.push(...loaded.problems);
     return;
   }
-  // The example pins do not depend on the README, so they move even when the README is left alone.
-  for (const [file, content] of loaded.repinned) {
-    await io.write(file, content);
-    report.written.push(file);
-  }
 
   const e2eWorkflow = workflowFileName({ category, name, actionPath });
   const e2ePath = `.github/workflows/${e2eWorkflow}`;
@@ -310,13 +305,13 @@ async function generateOne(
 
   const readmeFile = `${actionPath}/README.md`;
   const existing = (await io.read(readmeFile))?.replaceAll('\r\n', '\n');
-  let next: string;
+  // `undefined` leaves the README as it is.
+  let next: string | undefined;
   try {
     if (existing === undefined) {
       next = newReadme(regions);
     } else if (findRegions(existing, readmeFile).length === 0) {
       report.warnings.push(`${readmeFile}: has no docs:generated regions yet, left as it is`);
-      return;
     } else {
       next = spliceRegions(existing, regions, readmeFile);
     }
@@ -328,7 +323,13 @@ async function generateOne(
     throw error;
   }
 
-  if (next !== existing) {
+  // Written only once the README is known to generate, so a broken marker changes no file. The
+  // example pins do not depend on the README, so they move even when it is left as it is.
+  for (const [file, content] of loaded.repinned) {
+    await io.write(file, content);
+    report.written.push(file);
+  }
+  if (next !== undefined && next !== existing) {
     await io.write(readmeFile, next);
     report.written.push(readmeFile);
   }

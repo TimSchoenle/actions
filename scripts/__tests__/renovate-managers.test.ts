@@ -267,7 +267,7 @@ describe('Renovate coverage of container images in actions', () => {
  * `.github/workflows/` and in the composite actions under `actions/` must be captured, with its
  * version, by exactly one.
  */
-describe('Renovate coverage of checksum-pinned release downloads in workflows and actions', () => {
+describe('Renovate coverage of checksum-pinned release downloads in workflows, actions and examples', () => {
   const WORKFLOWS_DIR = path.join(ROOT_DIR, '.github', 'workflows');
   /**
    * A `<NAME>_SHA256: <digest>` environment value in any YAML quoting: single, double or none.
@@ -301,12 +301,17 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows an
     return fs.readdirSync(WORKFLOWS_DIR).filter((entry) => /\.ya?ml$/.test(entry));
   }
 
-  /** Every file that may download a release: the workflows and each action's metadata, repository-relative. */
+  /**
+   * Every file that may download a release, repository-relative: the workflows, each action's metadata
+   * and the README examples, which the release-binary manager also reads.
+   */
   async function pinnableFiles(): Promise<string[]> {
     return [
       ...workflowFiles().map((entry) => `.github/workflows/${entry}`),
       ...(await scanSorted('actions/*/*/action.yaml')),
       ...(await scanSorted('actions/*/*/action.yml')),
+      ...(await scanSorted('actions/*/*/examples/*.yaml')),
+      ...(await scanSorted('actions/*/*/examples/*.yml')),
     ];
   }
 
@@ -415,6 +420,21 @@ describe('Renovate coverage of checksum-pinned release downloads in workflows an
     for (const file of await pinnableFiles()) {
       expect(pinProblems(file, read(file))).toEqual([]);
     }
+  });
+
+  it('finds the jactionlint pins in the download-release-asset examples', async () => {
+    const file = 'actions/common/download-release-asset/examples/pin-the-asset.yaml';
+
+    expect(await pinnableFiles()).toContain(file);
+    expect(checksumPins(read(file)).map(({ name }) => name)).toEqual(['JACTIONLINT']);
+  });
+
+  it('rejects a mismatched pair in an example', () => {
+    const content = fixture('v1.2.3', DIGEST).replace('TOOL_SHA256', 'OTHER_SHA256');
+
+    expect(pinProblems('actions/example/tool/examples/example.yaml', content)).toEqual([
+      'OTHER_SHA256 is paired with TOOL_VERSION; both must name the same tool',
+    ]);
   });
 
   it('captures a pin in an action with the same manager as in a workflow', () => {

@@ -142,24 +142,37 @@ describe('generateActionReadmes', () => {
         [OTHER]: { component: 'actions-common-commit-patch' },
       },
     });
-    const { io, files: written } = memoryIo(files, { 'actions-common-commit-patch-v1.3.0': SHA });
+    const { io, files: written } = memoryIo(files, {
+      'actions-security-zizmor-v2.0.2': SHA,
+      'actions-common-commit-patch-v1.3.0': SHA,
+    });
 
     expect((await generateActionReadmes(REPO, io)).errors).toEqual([]);
-    expect(written.get(`${ZIZMOR}/README.md`)).toContain(
-      `      - uses: Owner/actions/${OTHER}@${SHA} # tag=actions-common-commit-patch-v1.3.0`,
-    );
+    for (const file of [`${ZIZMOR}/README.md`, `${ZIZMOR}/examples/security.yaml`]) {
+      expect(written.get(file)).toContain(
+        `      - uses: Owner/actions/actions/security/zizmor@${SHA} # tag=actions-security-zizmor-v2.0.2`,
+      );
+      expect(written.get(file)).toContain(
+        `      - uses: Owner/actions/${OTHER}@${SHA} # tag=actions-common-commit-patch-v1.3.0`,
+      );
+    }
   });
 
   it('leaves the renovate annotations of an example out of the README', async () => {
     const annotated = `${EXAMPLE}        with:\n          # renovate: datasource=github-releases depName=o/r\n          version: '1.2.3'\n`;
     const { io, files } = memoryIo(
       repository({ [`${ZIZMOR}/docs.yaml`]: DOCS, [`${ZIZMOR}/examples/security.yaml`]: annotated }),
+      { 'actions-security-zizmor-v2.0.2': SHA },
     );
 
     expect((await generateActionReadmes(REPO, io)).errors).toEqual([]);
     const readme = files.get(`${ZIZMOR}/README.md`) ?? '';
     expect(readme).toContain("        with:\n          version: '1.2.3'\n");
     expect(readme).not.toContain('renovate:');
+    // The repinned example file keeps the annotation Renovate reads.
+    const example = files.get(`${ZIZMOR}/examples/security.yaml`) ?? '';
+    expect(example).toContain(`zizmor@${SHA} # tag=`);
+    expect(example).toContain('          # renovate: datasource=github-releases depName=o/r\n');
   });
 
   it('leaves an example pin alone while its release tag does not resolve', async () => {
@@ -290,7 +303,8 @@ describe('generateActionReadmes', () => {
       /examples\/security\.yaml: contains a docs:generated marker/,
     ],
   ])('reports %s as an error and writes nothing', async (_case, extra, message) => {
-    const { io, writes } = memoryIo(repository(extra));
+    // The tag resolves, so an example that would be repinned is not written either.
+    const { io, writes } = memoryIo(repository(extra), { 'actions-security-zizmor-v2.0.2': SHA });
 
     const report = await generateActionReadmes(REPO, io);
 
