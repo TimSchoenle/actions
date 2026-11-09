@@ -27,12 +27,12 @@ is not, including older versions of a component whose neighbours have since rele
 | --- | --- | --- |
 | [Close Pull Request](./actions/common/close-pull-request) | [actions-common-close-pull-request-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-close-pull-request-v2.0.1) | :white_check_mark: |
 | [Commit Changes](./actions/common/commit-changes) | [actions-common-commit-changes-v3.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v3.0.1) | :white_check_mark: |
-| [Common Commit Generated Files](./actions/common/commit-generated-files) | [actions-common-commit-generated-files-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-generated-files-v1.1.0) | :white_check_mark: |
+| [Common Commit Generated Files](./actions/common/commit-generated-files) | [actions-common-commit-generated-files-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-generated-files-v1.2.0) | :white_check_mark: |
 | [Common Commit Patch](./actions/common/commit-patch) | [actions-common-commit-patch-v1.3.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-patch-v1.3.0) | :white_check_mark: |
 | [Common Create Patch](./actions/common/create-patch) | [actions-common-create-patch-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-patch-v1.1.1) | :white_check_mark: |
-| [Common Download Release Asset](./actions/common/download-release-asset) | [actions-common-download-release-asset-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-download-release-asset-v1.0.0) | :white_check_mark: |
+| [Common Download Release Asset](./actions/common/download-release-asset) | [actions-common-download-release-asset-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-download-release-asset-v1.1.0) | :white_check_mark: |
 | [Common Find Patch](./actions/common/find-patch) | [actions-common-find-patch-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-find-patch-v1.1.0) | :white_check_mark: |
-| [Common Generated Files Verdict](./actions/common/generated-files-verdict) | [actions-common-generated-files-verdict-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-generated-files-verdict-v1.1.0) | :white_check_mark: |
+| [Common Generated Files Verdict](./actions/common/generated-files-verdict) | [actions-common-generated-files-verdict-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-generated-files-verdict-v1.2.0) | :white_check_mark: |
 | [Common Modify YAML](./actions/common/modify-yaml) | [actions-common-modify-yaml-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-modify-yaml-v2.0.1) | :white_check_mark: |
 | [Common Read YAML](./actions/common/read-yaml) | [actions-common-read-yaml-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-read-yaml-v2.0.1) | :white_check_mark: |
 | [Common Readme Variables](./actions/common/readme-variables) | [actions-common-readme-variables-v2.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-readme-variables-v2.1.1) | :white_check_mark: |
@@ -115,7 +115,7 @@ is not, including older versions of a component whose neighbours have since rele
 | [Terrace Helm Diff](./actions/terrace/helm-diff) | [actions-terrace-helm-diff-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-diff-v1.1.0) | :white_check_mark: |
 | [Terrace Helm Sync](./actions/terrace/helm-sync) | [actions-terrace-helm-sync-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-sync-v1.1.0) | :white_check_mark: |
 | [Terrace Image](./actions/terrace/image) | [actions-terrace-image-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-image-v1.1.0) | :white_check_mark: |
-| [Terrace Setup](./actions/terrace/setup) | [actions-terrace-setup-v3.0.3](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-setup-v3.0.3) | :white_check_mark: |
+| [Terrace Setup](./actions/terrace/setup) | [actions-terrace-setup-v3.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-setup-v3.1.0) | :white_check_mark: |
 
 #### Test
 
