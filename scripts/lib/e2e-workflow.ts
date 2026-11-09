@@ -2,6 +2,8 @@ import path from 'node:path';
 
 import { scanSorted } from './utils.js';
 
+import type { Permission } from './action-docs/docs-file.js';
+
 /**
  * Generator for the one-job workflow that runs an action's end-to-end cases.
  *
@@ -227,6 +229,46 @@ export function tokenPermissions(action: E2eAction): TokenPermissions {
   return TOKEN_PERMISSIONS[action.actionPath] ?? METADATA_ONLY;
 }
 
+/**
+ * The `docs.yaml` permissions an end-to-end token does not cover.
+ *
+ * The suite's token is not derived from `docs.yaml`: the two answer different questions. `docs.yaml`
+ * says what a caller must grant; the token says what the cases need on the scratch repository, which
+ * adds fixture-only scopes and may deliberately be narrower. They overlap in exactly one place. The
+ * cases hand the action a token through its token input, so a scope documented on a token input
+ * (`token: <input>`) is one the cases will exercise, and a token without it is drift. Pass the token
+ * the action actually receives: see {@link actionTokenPermissions}.
+ *
+ * Every token-input entry is checked against that one token, whichever input it names. That holds
+ * while each action has a single token input. An action with two would need the cases' wiring to
+ * say which token reaches which input, and this check would report the other input's scopes.
+ *
+ * Job-token entries are ignored, because the harness passes no `GITHUB_TOKEN` for them to apply to.
+ * Conditional entries count as if their condition held. Which inputs a case sets is not visible
+ * here, and a suite that keeps away from the conditional path should say so with an opt-out rather
+ * than pass silently. `write` covers `read`.
+ */
+export function missingTokenInputScopes(granted: TokenPermissions, documented: readonly Permission[]): Permission[] {
+  return documented.filter((permission) => {
+    if (permission.token === undefined) {
+      return false;
+    }
+    const level = granted[permission.scope];
+
+    return level === undefined || (permission.access === 'write' && level !== 'write');
+  });
+}
+
+/**
+ * The scopes of the token the action under test receives.
+ *
+ * Usually the primary token. A suite that needs a second identity runs the action as that identity,
+ * since the second identity is the only one that may review, so the action gets the secondary token.
+ */
+export function actionTokenPermissions(action: E2eAction): TokenPermissions {
+  return needsSecondaryIdentity(action) ? SECONDARY_TOKEN_PERMISSIONS : tokenPermissions(action);
+}
+
 /** Renders the `permission-*` inputs, sorted so the generated file is stable. */
 function permissionInputs(permissions: TokenPermissions): string {
   return Object.keys(permissions)
@@ -272,11 +314,14 @@ export function needsSecondaryIdentity(action: E2eAction): boolean {
 }
 
 /**
- * The second identity's token, scoped to the one thing it exists to do.
+ * The second identity's scopes, limited to the one thing it exists to do.
  *
  * It only ever submits a review, so `pull-requests: write` alone — it must not be able to touch the
  * contents of the repository the first token already administers.
  */
+export const SECONDARY_TOKEN_PERMISSIONS: TokenPermissions = { 'pull-requests': 'write' };
+
+/** The second identity's token, minted with {@link SECONDARY_TOKEN_PERMISSIONS}. */
 function secondaryTokenStep(): string {
   return `
       - name: Generate Secondary Token
@@ -287,7 +332,7 @@ function secondaryTokenStep(): string {
           private-key: \${{ secrets.ACTIONS_TEST_BOT2_PRIVATE_KEY }}
           owner: ${TEST_OWNER}
           repositories: ${TEST_REPO_NAME}
-          permission-pull-requests: write
+${permissionInputs(SECONDARY_TOKEN_PERMISSIONS)}
 `;
 }
 
