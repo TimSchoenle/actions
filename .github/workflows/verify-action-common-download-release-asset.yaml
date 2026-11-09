@@ -212,11 +212,13 @@ jobs:
         run: |
           set -euo pipefail
 
+          # Hashed from stdin: given a Windows path, sha256sum escapes its backslashes and starts the
+          # line with a backslash, which the first field would then include.
           sha256() {
             if command -v sha256sum > /dev/null; then
-              sha256sum "$1" | cut -d ' ' -f 1
+              sha256sum < "$1" | cut -d ' ' -f 1
             else
-              shasum -a 256 "$1" | cut -d ' ' -f 1
+              shasum -a 256 < "$1" | cut -d ' ' -f 1
             fi
           }
 
