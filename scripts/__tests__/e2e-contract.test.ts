@@ -59,6 +59,16 @@ const E2E_EXEMPTIONS: Record<string, string> = {
  * covers, so a gap added later is not waved through by a reason written for a different one.
  */
 const NARROWER_TOKEN_SUITES: Record<string, { missing: string[]; reason: string }> = {
+  'actions/maintenance/auto-approve-pr': {
+    missing: ['contents: read (input token)'],
+    reason:
+      'docs.yaml needs it only on a private repository; the scratch repository is public, and the reviewing identity is kept to pull-requests: write',
+  },
+  'actions/maintenance/ensure-actions-are-executed': {
+    missing: ['actions: read (input token)'],
+    reason:
+      'only the jobs fallback reads actions, and it needs GITHUB_RUN_ID, which the harness does not pass, so every case reads check runs alone',
+  },
   'actions/maintenance/wipe-cache': {
     missing: ['actions: read (input token)', 'actions: write (input token)'],
     reason: 'every case stops before the cache API, so the suite runs on metadata: read and never deletes a cache',
