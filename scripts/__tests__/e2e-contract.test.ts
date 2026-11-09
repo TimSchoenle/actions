@@ -2,17 +2,24 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
 
 import { findDrift } from '../generate-e2e-workflows.js';
+import { DOCS_FILE_NAME, validateDocsFile } from '../lib/action-docs/docs-file.js';
+import { parseActionManifest } from '../lib/action-docs/manifest.js';
 import {
+  actionTokenPermissions,
   DECLARED_TOKEN_SCOPES,
   E2E_ALLOWED_ENDPOINTS,
   E2E_DIRECTORY,
   findE2eActions,
   INSTALL_ALLOWED_ENDPOINTS,
+  missingTokenInputScopes,
   workflowFileName,
 } from '../lib/e2e-workflow.js';
 import { ROOT_DIR, scanSorted } from '../lib/utils.js';
+
+import type { ActionDocs } from '../lib/action-docs/docs-file.js';
 
 /**
  * Contract between an action, its end-to-end cases and the workflow that runs them.
@@ -43,6 +50,68 @@ const E2E_EXEMPTIONS: Record<string, string> = {
   'actions/rust/test': 'composite: checks out inputs.repository as its own first step',
   'actions/test/setup-e2e': 'composite: the harness for the workflows that still need one',
 };
+
+/**
+ * Suites whose token deliberately lacks a scope `docs.yaml` lists on a token input, each with why.
+ *
+ * Without an entry here, a token narrower than the action's documented needs reads as drift. With
+ * one, the narrowing is a decision someone wrote down. `missing` lists the exact entries the reason
+ * covers, so a gap added later is not waved through by a reason written for a different one.
+ */
+const NARROWER_TOKEN_SUITES: Record<string, { missing: string[]; reason: string }> = {
+  'actions/maintenance/wipe-cache': {
+    missing: ['actions: read (input token)', 'actions: write (input token)'],
+    reason: 'every case stops before the cache API, so the suite runs on metadata: read and never deletes a cache',
+  },
+};
+
+/** Parses a YAML file, naming it in the error a syntax mistake would otherwise throw anonymously. */
+function parseYamlFile(file: string): unknown {
+  try {
+    return parse(fs.readFileSync(path.join(ROOT_DIR, file), 'utf8'));
+  } catch (error) {
+    throw new Error(`${file}: not valid YAML: ${(error as Error).message}`, { cause: error });
+  }
+}
+
+/** Reads and validates an action's `docs.yaml`, or `undefined` when it has none. */
+function docsOf(actionPath: string): ActionDocs | undefined {
+  const file = `${actionPath}/${DOCS_FILE_NAME}`;
+  if (!fs.existsSync(path.join(ROOT_DIR, file))) {
+    return undefined;
+  }
+  const manifest = parseActionManifest(
+    fs.readFileSync(path.join(ROOT_DIR, actionPath, 'action.yaml'), 'utf8'),
+    `${actionPath}/action.yaml`,
+  );
+  const result = validateDocsFile(parseYamlFile(file), {
+    file,
+    inputNames: new Set(manifest.inputs.map((input) => input.name)),
+  });
+  if (!result.ok) {
+    throw new Error(result.problems.join('\n'));
+  }
+
+  return result.docs;
+}
+
+/** Each action's token-input scopes from `docs.yaml` that its end-to-end token lacks. */
+async function tokenScopeGaps(): Promise<Record<string, string[]>> {
+  const gaps: Record<string, string[]> = {};
+
+  for (const action of await findE2eActions()) {
+    const docs = docsOf(action.actionPath);
+    const missing = docs === undefined ? [] : missingTokenInputScopes(actionTokenPermissions(action), docs.permissions);
+
+    if (missing.length > 0) {
+      gaps[action.actionPath] = missing.map(
+        (permission) => `${permission.scope}: ${permission.access} (input ${permission.token})`,
+      );
+    }
+  }
+
+  return gaps;
+}
 
 /** Reads `runs.using` without a YAML parse, which is all the composite/node split needs. */
 function runtimeOf(actionPath: string): string {
@@ -103,6 +172,21 @@ describe('end-to-end contract', () => {
     );
 
     expect(gone, 'these actions are gone; drop them from TOKEN_PERMISSIONS').toEqual([]);
+  });
+
+  // The harness passes its one token to the action's token input, so a scope docs.yaml documents on
+  // that input is one the cases exercise. Missing it is drift between the two files, not a choice.
+  // Compared exactly, so the check fails both ways: on a gap nobody explained, and on an explanation
+  // for a gap that has since closed.
+  it('grants every token the scopes docs.yaml documents on its token input, or states why not', async () => {
+    const explained = Object.fromEntries(
+      Object.entries(NARROWER_TOKEN_SUITES).map(([actionPath, { missing }]) => [actionPath, missing]),
+    );
+
+    expect(
+      await tokenScopeGaps(),
+      'grant the missing scopes in TOKEN_PERMISSIONS, or record them in NARROWER_TOKEN_SUITES with a reason',
+    ).toEqual(explained);
   });
 
   it('keeps every generated workflow in step with its generator', async () => {
