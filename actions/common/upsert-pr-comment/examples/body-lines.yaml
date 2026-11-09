@@ -1,0 +1,12 @@
+# Each line is gated by an earlier step's output. Empty lines are dropped, and when none survives
+# no comment is posted.
+- name: Comment on PR
+  if: github.event_name == 'pull_request'
+  uses: TimSchoenle/actions/actions/common/upsert-pr-comment@main
+  with:
+    token: ${{ steps.token.outputs.token }}
+    identifier: render-generated-files
+    header: 'Re-rendered from the configuration types in `crates/config`:'
+    body_lines: |
+      ${{ steps.readme.outputs.changes_detected == 'true' && '- `README.md`, from `.github/templates/README.md.hbs`' || '' }}
+      ${{ steps.example-config.outputs.changes_detected == 'true' && '- `config.example.toml`, from `.github/templates/config.example.toml.hbs`' || '' }}

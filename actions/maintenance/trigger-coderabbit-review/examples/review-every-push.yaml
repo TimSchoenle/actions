@@ -1,0 +1,23 @@
+name: CodeRabbit Review
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  trigger:
+    name: Trigger CodeRabbit Review
+    # A pull request from a fork runs without secrets, so the token would be empty.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - uses: TimSchoenle/actions/actions/maintenance/trigger-coderabbit-review@main
+        with:
+          token: ${{ secrets.CODERABBIT_TRIGGER_TOKEN }}

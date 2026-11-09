@@ -1,0 +1,47 @@
+# The pull_request workflow runs the formatter and create-patch with no secrets. This second
+# workflow, triggered by workflow_run when the first completes, always runs the copy on the default
+# branch, and commits the patch with run_id. See Keeping the App key out of pull request runs below.
+name: Auto Format Commit
+
+on:
+  workflow_run:
+    workflows: ['Auto Format'] # the name: of the pull_request workflow
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  commit:
+    # Only a successful pull_request run from a branch of this repository, never the default branch.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.head_branch != github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    environment: ci
+    permissions:
+      actions: read # to download the artifact from the pull_request run
+      contents: read # to fetch code
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          permission-contents: write
+      - uses: TimSchoenle/actions/actions/common/commit-patch@main
+        with:
+          token: ${{ steps.token.outputs.token }}
+          run_id: ${{ github.event.workflow_run.id }}
+          artifact_name: format-patch
+          allowed_paths: 'src/** README.md'
+          commit_message: 'style: auto-format code'
+          # Both have to be set: their defaults read the pull_request and push payloads, which a
+          # workflow_run event does not carry.
+          branch: ${{ github.event.workflow_run.head_branch }}
+          expected_head_sha: ${{ github.event.workflow_run.head_sha }}

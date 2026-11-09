@@ -16,7 +16,7 @@ inputs:
     required: false
     default: '.github/templates/README.md.hbs'
   output:
-    description: 'File to write.'
+    description: 'File to write. The patch covers this file only: a template that starts writing elsewhere is not picked up.'
     required: false
     default: 'README.md'
   partials-dir:
@@ -32,7 +32,7 @@ inputs:
     required: false
     default: 'docs'
   extra:
-    description: 'JSON object merged into the payload, as common/readme-variables takes it.'
+    description: "JSON object merged into the payload, such as a repository's own generator, as common/readme-variables takes it."
     required: false
     default: '{}'
   branch:
@@ -40,7 +40,7 @@ inputs:
     required: false
     default: ''
   check:
-    description: 'true writes nothing and fails when the output is stale; false renders and uploads the patch.'
+    description: 'true writes nothing and fails when the output is stale; false renders and uploads the patch. Case and whitespace are ignored; any other value fails the step.'
     required: false
     default: 'false'
   artifact_name:

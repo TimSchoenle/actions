@@ -1,0 +1,17 @@
+permissions: []
+
+egress:
+  - endpoint: index.crates.io:443
+    for: the generator's dependencies, when cargo has not fetched them yet
+  - endpoint: static.crates.io:443
+    for: the generator's dependencies, when cargo has not fetched them yet
+
+examples:
+  - title: The whole check, after a build
+    file: examples/after-build.yaml
+  - title: A generator that has to be a binary
+    file: examples/binary-generator.yaml
+  - title: A generator that renders more than one contract
+    file: examples/several-contracts.yaml
+  - title: Source only, in a job with no image
+    file: examples/source-only.yaml

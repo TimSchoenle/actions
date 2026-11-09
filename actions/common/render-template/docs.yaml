@@ -1,0 +1,9 @@
+permissions: []
+
+egress: []
+
+examples:
+  - title: Generate a file
+    file: examples/generate-a-file.yaml
+  - title: Verify a committed file is up to date
+    file: examples/verify-up-to-date.yaml

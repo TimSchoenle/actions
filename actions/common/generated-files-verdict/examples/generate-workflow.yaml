@@ -1,0 +1,41 @@
+name: Generate
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      has_changes: ${{ steps.patch.outputs.has_changes }}
+      artifact_name: ${{ steps.patch.outputs.artifact_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }} # the head, not the merge commit
+          persist-credentials: false
+      - run: ./scripts/render-docs.sh
+      - id: patch
+        uses: TimSchoenle/actions/actions/common/create-patch@main
+        with:
+          artifact_name: docs
+          paths: README.md docs
+
+  lockfile:
+    # ... the same shape, with artifact_name: lockfile
+
+  verdict:
+    name: Generated Files
+    needs: [docs, lockfile]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: TimSchoenle/actions/actions/common/generated-files-verdict@main
+        with:
+          needs: ${{ toJSON(needs) }}

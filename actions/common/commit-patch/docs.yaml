@@ -1,0 +1,25 @@
+permissions:
+  - scope: contents
+    access: read
+    when: always
+  - scope: actions
+    access: read
+    when: { input: run_id, set: true }
+  - scope: contents
+    access: write
+    when: always
+    token: token
+
+egress:
+  - endpoint: api.github.com:443
+    for: the GraphQL branch head lookup and commit, and the artifact download with run_id
+  - endpoint: '*.actions.githubusercontent.com:443'
+    for: the artifact download
+  - endpoint: '*.blob.core.windows.net:443'
+    for: the artifact download
+
+examples:
+  - title: Committing from a later job of the same run
+    file: examples/same-run.yaml
+  - title: Committing from a workflow_run
+    file: examples/workflow-run.yaml
