@@ -146,6 +146,18 @@ describe('generateActionReadmes', () => {
     );
   });
 
+  it('leaves the renovate annotations of an example out of the README', async () => {
+    const annotated = `${EXAMPLE}        with:\n          # renovate: datasource=github-releases depName=o/r\n          version: '1.2.3'\n`;
+    const { io, files } = memoryIo(
+      repository({ [`${ZIZMOR}/docs.yaml`]: DOCS, [`${ZIZMOR}/examples/security.yaml`]: annotated }),
+    );
+
+    expect((await generateActionReadmes(REPO, io)).errors).toEqual([]);
+    const readme = files.get(`${ZIZMOR}/README.md`) ?? '';
+    expect(readme).toContain("        with:\n          version: '1.2.3'\n");
+    expect(readme).not.toContain('renovate:');
+  });
+
   it('writes nothing on a second run', async () => {
     const { io, writes } = memoryIo(repository());
     expect((await generateActionReadmes(REPO, io)).written).toEqual([`${ZIZMOR}/README.md`]);

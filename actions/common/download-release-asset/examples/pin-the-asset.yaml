@@ -1,6 +1,5 @@
-# The version and the SHA-256 sit together under one `# renovate:` comment, so Renovate moves both in
-# one commit; keep the comment directly above the two lines. The asset name is derived from the
-# version rather than written out, so it never falls behind the tag.
+# The version and the SHA-256 are pinned side by side, so an update changes both in one place. The
+# asset name is derived from the version rather than written out, so it never falls behind the tag.
 - id: release
   env:
     # renovate: datasource=github-release-attachments depName=jdx/jactionlint

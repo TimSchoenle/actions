@@ -182,9 +182,23 @@ async function loadExamples(
       problems.push(`${file}: never calls ${model.actionPath}, so it documents nothing`);
       continue;
     }
-    examples.push({ title: example.title, content: pinned.content });
+    examples.push({ title: example.title, content: withoutRenovateComments(pinned.content) });
   }
   return { examples, problems };
+}
+
+/** A `# renovate:` annotation, on a line of its own. */
+const RENOVATE_COMMENT = /^\s*# renovate:/;
+
+/**
+ * The example without its `# renovate:` annotations. They tell this repository's Renovate which
+ * datasource a pinned value comes from, and mean nothing to a reader copying the example.
+ */
+function withoutRenovateComments(content: string): string {
+  return content
+    .split('\n')
+    .filter((line) => !RENOVATE_COMMENT.test(line))
+    .join('\n');
 }
 
 /**

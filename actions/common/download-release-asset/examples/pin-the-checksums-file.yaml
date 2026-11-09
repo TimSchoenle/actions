@@ -1,9 +1,7 @@
 # One digest covers the asset on every platform. The checksums file is downloaded and checked
 # against checksums-sha256 first, so a wrong pin fails before the asset is downloaded. It must be in
-# sha256sum format and list the asset exactly once.
-#
-# The version and the checksums file's SHA-256 sit together under one `# renovate:` comment, so
-# Renovate moves both in one commit; keep the comment directly above the two lines.
+# sha256sum format and list the asset exactly once. The version and the checksums file's SHA-256 are
+# pinned side by side, so an update changes both in one place.
 - id: release
   env:
     # renovate: datasource=github-release-attachments depName=jdx/jactionlint

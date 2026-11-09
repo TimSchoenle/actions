@@ -23,12 +23,10 @@ ID. A 404 is not retried that way: the asset does not exist. Both routes feed th
 ### Pin the asset itself
 
 ```yaml
-# The version and the SHA-256 sit together under one `# renovate:` comment, so Renovate moves both in
-# one commit; keep the comment directly above the two lines. The asset name is derived from the
-# version rather than written out, so it never falls behind the tag.
+# The version and the SHA-256 are pinned side by side, so an update changes both in one place. The
+# asset name is derived from the version rather than written out, so it never falls behind the tag.
 - id: release
   env:
-    # renovate: datasource=github-release-attachments depName=jdx/jactionlint
     JACTIONLINT_VERSION: 'v2.5.0'
     JACTIONLINT_SHA256: '5cbf573f7d3828a6e679c35520f1bd00c512ec7bde31a281e40808ba68c8225c'
   run: |
@@ -52,13 +50,10 @@ ID. A 404 is not retried that way: the asset does not exist. Both routes feed th
 ```yaml
 # One digest covers the asset on every platform. The checksums file is downloaded and checked
 # against checksums-sha256 first, so a wrong pin fails before the asset is downloaded. It must be in
-# sha256sum format and list the asset exactly once.
-#
-# The version and the checksums file's SHA-256 sit together under one `# renovate:` comment, so
-# Renovate moves both in one commit; keep the comment directly above the two lines.
+# sha256sum format and list the asset exactly once. The version and the checksums file's SHA-256 are
+# pinned side by side, so an update changes both in one place.
 - id: release
   env:
-    # renovate: datasource=github-release-attachments depName=jdx/jactionlint
     JACTIONLINT_VERSION: 'v2.5.0'
     JACTIONLINT_SHA256: '5cbf573f7d3828a6e679c35520f1bd00c512ec7bde31a281e40808ba68c8225c'
   run: |
