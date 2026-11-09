@@ -23,13 +23,26 @@ ID. A 404 is not retried that way: the asset does not exist. Both routes feed th
 ### Pin the asset itself
 
 ```yaml
+# The version and the SHA-256 are pinned side by side, so an update changes both in one place. The
+# asset name is derived from the version rather than written out, so it never falls behind the tag.
+- id: release
+  env:
+    JACTIONLINT_VERSION: 'v2.5.0'
+    JACTIONLINT_SHA256: '5cbf573f7d3828a6e679c35520f1bd00c512ec7bde31a281e40808ba68c8225c'
+  run: |
+    {
+      echo "tag=${JACTIONLINT_VERSION}"
+      echo "asset=jactionlint_${JACTIONLINT_VERSION#v}_checksums.txt"
+      echo "sha256=${JACTIONLINT_SHA256}"
+    } >> "$GITHUB_OUTPUT"
+
 - id: download
   uses: TimSchoenle/actions/actions/common/download-release-asset@927daf80ad493b627b7384abf496d83abbac5f43 # tag=actions-common-download-release-asset-v1.1.0
   with:
     repository: jdx/jactionlint
-    tag: v2.5.0
-    asset: jactionlint_2.5.0_checksums.txt
-    sha256: 5cbf573f7d3828a6e679c35520f1bd00c512ec7bde31a281e40808ba68c8225c
+    tag: ${{ steps.release.outputs.tag }}
+    asset: ${{ steps.release.outputs.asset }}
+    sha256: ${{ steps.release.outputs.sha256 }}
 ```
 
 ### Pin the release's checksums file
@@ -37,15 +50,30 @@ ID. A 404 is not retried that way: the asset does not exist. Both routes feed th
 ```yaml
 # One digest covers the asset on every platform. The checksums file is downloaded and checked
 # against checksums-sha256 first, so a wrong pin fails before the asset is downloaded. It must be in
-# sha256sum format and list the asset exactly once.
+# sha256sum format and list the asset exactly once. The version and the checksums file's SHA-256 are
+# pinned side by side, so an update changes both in one place.
+- id: release
+  env:
+    JACTIONLINT_VERSION: 'v2.5.0'
+    JACTIONLINT_SHA256: '5cbf573f7d3828a6e679c35520f1bd00c512ec7bde31a281e40808ba68c8225c'
+  run: |
+    version="${JACTIONLINT_VERSION#v}"
+    {
+      echo "tag=${JACTIONLINT_VERSION}"
+      echo "archive=jactionlint_${version}_linux_amd64.tar.gz"
+      echo "checksums=jactionlint_${version}_checksums.txt"
+      echo "checksums-sha256=${JACTIONLINT_SHA256}"
+    } >> "$GITHUB_OUTPUT"
+
 - id: download
   uses: TimSchoenle/actions/actions/common/download-release-asset@927daf80ad493b627b7384abf496d83abbac5f43 # tag=actions-common-download-release-asset-v1.1.0
   with:
     repository: jdx/jactionlint
-    tag: v2.5.0
-    asset: jactionlint_2.5.0_linux_amd64.tar.gz
-    checksums-asset: jactionlint_2.5.0_checksums.txt
-    checksums-sha256: 5cbf573f7d3828a6e679c35520f1bd00c512ec7bde31a281e40808ba68c8225c
+    tag: ${{ steps.release.outputs.tag }}
+    asset: ${{ steps.release.outputs.archive }}
+    checksums-asset: ${{ steps.release.outputs.checksums }}
+    checksums-sha256: ${{ steps.release.outputs.checksums-sha256 }}
+
 - run: tar -xzf "$ARCHIVE" -C "$RUNNER_TEMP" jactionlint
   env:
     ARCHIVE: ${{ steps.download.outputs.path }}

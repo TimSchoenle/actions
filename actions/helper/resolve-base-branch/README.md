@@ -27,7 +27,8 @@ Resolve the given base branch or return default branch. With optional existence 
     repository: acme/helm-charts
     branch_name: ${{ inputs.base_branch }}
 
-- uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+- name: Check out the repository
+  uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
   with:
     repository: acme/helm-charts
     token: ${{ steps.token.outputs.token }}

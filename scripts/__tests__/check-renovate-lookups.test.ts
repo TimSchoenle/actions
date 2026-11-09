@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadCases, main, selectCases, servePresets, serverUrl } from '../check-renovate-lookups.js';
 import type { RenovateReport } from '../lib/renovate-lookup.js';
 import type { CommandOptions, CommandResult, CommandRunner } from '../lib/renovate-tool.js';
+import { ROOT_DIR } from '../lib/utils.js';
 
 const TOKEN = 'test-token';
 const RENOVATE = '/opt/renovate/dist/renovate.js';
@@ -153,6 +154,31 @@ describe('main', () => {
     expect(preset.extends).toEqual(['config:best-practices', url.replace('default.json', 'base.json')]);
   });
 
+  it("gives a repositoryConfig fixture the repository's own config, its presets served locally", async () => {
+    // JSON.stringify drops an undefined key, so the case has no presets.
+    writeCase('own', { presets: undefined, repositoryConfig: true });
+    const repositoryConfigFile = path.join(root, 'renovate.json');
+    write(
+      repositoryConfigFile,
+      JSON.stringify({
+        extends: ['github>TimSchoenle/actions//configs/renovate/default'],
+        customManagers: [{ customType: 'regex', managerFilePatterns: ['/x/'], matchStrings: ['x'] }],
+      }),
+    );
+    let config: { extends: string[]; customManagers?: unknown[] } | undefined;
+    const { run, served } = fakeRunner(({ options: runOptions }) => {
+      config = JSON.parse(fs.readFileSync(path.join(runOptions.cwd, 'renovate.json'), 'utf8')) as typeof config;
+      return passingReport();
+    });
+
+    expect(await main({ ...options(run), repositoryConfigFile })).toBe(0);
+    expect(config?.customManagers).toEqual([
+      { customType: 'regex', managerFilePatterns: ['/x/'], matchStrings: ['x'] },
+    ]);
+    expect(config?.extends).toEqual([expect.stringMatching(/^http:\/\/127\.0\.0\.1:\d+\/default\.json$/)]);
+    expect(Object.keys(served)).toEqual(config?.extends);
+  });
+
   it('places the fixture files and allows only the preset server as an internal host', async () => {
     writeCase('cargo');
     let seen: { files: string[]; global: unknown } | undefined;
@@ -269,6 +295,12 @@ describe('loadCases', () => {
     write(path.join(fixturesDir, 'README.md'), '# fixtures');
 
     expect(loadCases(fixturesDir).map((lookupCase) => lookupCase.name)).toEqual(['alpha', 'beta']);
+  });
+
+  // Renovate needs Node and network, so the committed fixtures only reach it in CI. Parsing them
+  // here catches a malformed case.json without either.
+  it('parses every committed fixture', () => {
+    expect(loadCases(path.join(ROOT_DIR, 'scripts', '__fixtures__', 'renovate')).length).toBeGreaterThan(0);
   });
 });
 
