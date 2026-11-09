@@ -1,0 +1,34 @@
+{
+  "description": "This repository's own config updates every pin in a README example: a third-party action through the github-actions manager, a release-binary version together with its checksum, and an annotated literal version, all as docs(deps) in the documentation pins group.",
+  "repositoryConfig": true,
+  "files": {
+    "actions/demo/tool/examples/pins.yaml": "pins.yaml"
+  },
+  "dependencies": [
+    {
+      "manager": "github-actions",
+      "depName": "actions/checkout",
+      "updateTypes": ["minor", "patch"],
+      "minUpdates": 1,
+      "newValue": "^v4\\.\\d+\\.\\d+$",
+      "branchName": "renovate/docs-pins"
+    },
+    {
+      "manager": "regex",
+      "depName": "jdx/jactionlint",
+      "updateTypes": ["minor", "patch"],
+      "minUpdates": 1,
+      "newValue": "^v2\\.\\d+\\.\\d+$",
+      "requireNewDigest": true,
+      "branchName": "renovate/docs-pins"
+    },
+    {
+      "manager": "regex",
+      "depName": "TimSchoenle/terrace-config",
+      "updateTypes": ["minor", "patch"],
+      "minUpdates": 1,
+      "newValue": "^0\\.\\d+\\.\\d+$",
+      "branchName": "renovate/docs-pins"
+    }
+  ]
+}
