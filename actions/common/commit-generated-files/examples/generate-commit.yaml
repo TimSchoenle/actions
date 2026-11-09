@@ -1,0 +1,27 @@
+# allowed_paths must cover every generator's paths: a merged patch touching anything else fails the
+# commit.
+name: Generate Commit
+
+on:
+  workflow_run:
+    workflows: [Generate] # the name: of the pull_request workflow
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  commit:
+    runs-on: ubuntu-latest
+    environment: ci
+    permissions:
+      actions: read # to list and download the pull_request run's artifacts
+      contents: read
+    steps:
+      - uses: TimSchoenle/actions/actions/common/commit-generated-files@main
+        with:
+          client_id: ${{ vars.BOT_CLIENT_ID }}
+          private_key: ${{ secrets.BOT_PRIVATE_KEY }}
+          allowed_paths: |
+            README.md
+            docs/**
+            Cargo.lock

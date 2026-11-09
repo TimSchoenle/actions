@@ -3,15 +3,15 @@ description: 'Collect the standard README render payload — repository facts, r
 
 inputs:
   manifest:
-    description: 'Path to the manifest the release and toolchain facts are read from. Empty auto-detects Cargo.toml, package.json, Chart.yaml or gradle.properties, in that order.'
+    description: 'Path to the manifest the release and toolchain facts are read from. Empty auto-detects Cargo.toml, package.json, Chart.yaml or gradle.properties, in that order. See Manifests below.'
     required: false
     default: ''
   docs-dir:
-    description: 'Directory walked to build the documentation index. A directory that does not exist yields an empty index, which is not an error.'
+    description: 'Directory walked to build the documentation index. A directory that does not exist yields an empty index, which is not an error. See Docs index below.'
     required: false
     default: 'docs'
   extra:
-    description: "Strict JSON object deep-merged over the derived payload. This is where a repository's own generator output — configuration tables, publish targets — joins the render."
+    description: "Strict JSON object deep-merged over the derived payload. This is where a repository's own generator output — configuration tables, publish targets — joins the render. See Merging below."
     required: false
     default: '{}'
   repository:
