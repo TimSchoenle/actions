@@ -6,9 +6,13 @@ inputs:
     description: 'Personal access token of a user account, with Pull requests: write on the repository. CodeRabbit ignores commands posted by a GitHub App, so github.token and app installation tokens are refused before anything is posted. See The token below.'
     required: true
   pr_url:
-    description: 'URL of the pull request to comment on (e.g. "https://github.com/owner/repo/pull/123").'
+    description: 'URL of the pull request to comment on (e.g. "https://github.com/owner/repo/pull/123"). Leave it empty in a workflow_run job: the pull request is then read from the event of the run that finished, and skipped when its head has moved since. See Usage below.'
     required: false
     default: ${{ github.event.pull_request.html_url }}
+  base_branch:
+    description: 'Base branch a pull request must target to be reviewed. When empty, a workflow_run job reviews only pull requests into the default branch of the repository, and a job with pr_url set reviews pull requests into any branch.'
+    required: false
+    default: ''
   command:
     description: 'CodeRabbit command to post: "review" for an incremental review of the commits it has not reviewed yet, or "full review" to review every file again.'
     required: false
@@ -26,7 +30,15 @@ inputs:
     required: false
     default: ''
   reject_forks:
-    description: 'Skip a pull request whose head branch lives in another repository, so a fork cannot spend the review allowance of the token owner.'
+    description: 'Skip a pull request whose head branch lives in another repository, so a fork cannot spend the review allowance of the token owner. A workflow_run job always skips a fork, whatever this is set to.'
+    required: false
+    default: 'true'
+  skip_duplicates:
+    description: 'Skip when CodeRabbit already submitted a review on the head commit, or when a command this action posted for the head commit is still unanswered or was carried out. A command CodeRabbit answered with "Action not completed", such as a rate-limited one, is posted again on the next run. Only the latest 100 comments and reviews are read.'
+    required: false
+    default: 'true'
+  collapse_outdated:
+    description: 'After posting, collapse as outdated the earlier commands this action posted and every CodeRabbit reply to a review command, so the pull request shows only the latest. A comment that cannot be collapsed is reported as a warning and does not fail the step.'
     required: false
     default: 'true'
 
@@ -34,9 +46,11 @@ outputs:
   triggered:
     description: '"true" when the command was posted, "false" when the pull request was skipped.'
   skip_reason:
-    description: 'Why the pull request was skipped: closed, draft, fork, bot-author or skipped-author. Empty when the command was posted. The rules are checked in this order, and the first one that applies is reported.'
+    description: 'Why the pull request was skipped. Empty when the command was posted. In a workflow_run job the run is checked first: not-pull-request (it was not started by a pull_request event), fork (it ran on a branch of another repository), no-pull-request (it belongs to no pull request into base_branch whose head is the commit it ran on). The pull request is checked next: closed, other-base (it targets another branch than base_branch), outdated (its head moved after the triggering run), draft, fork (only with reject_forks), bot-author, skipped-author, then with skip_duplicates already-reviewed (CodeRabbit reviewed the head commit) and already-requested (a command for the head commit is pending or was carried out). The first rule that applies is reported.'
   comment_url:
     description: 'URL of the posted comment. Empty when the pull request was skipped.'
+  collapsed_comments:
+    description: 'How many outdated comments were collapsed. "0" when the pull request was skipped.'
 
 runs:
   using: 'node24'

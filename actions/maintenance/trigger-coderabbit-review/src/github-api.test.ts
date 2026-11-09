@@ -6,6 +6,7 @@ import { createTriggerApi } from './github-api.js';
 vi.mock('@actions/github');
 
 interface OctokitMock {
+  graphql: ReturnType<typeof vi.fn>;
   rest: {
     issues: { createComment: ReturnType<typeof vi.fn> };
     pulls: { get: ReturnType<typeof vi.fn> };
@@ -15,6 +16,7 @@ interface OctokitMock {
 
 function mockOctokit(): OctokitMock {
   const octokit: OctokitMock = {
+    graphql: vi.fn(),
     rest: {
       issues: { createComment: vi.fn() },
       pulls: { get: vi.fn() },
@@ -33,9 +35,9 @@ function httpError(status: number): Error & { status: number } {
 
 function apiPullRequest(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
-    base: { repo: { full_name: 'owner/repo' } },
+    base: { ref: 'main', repo: { full_name: 'owner/repo' } },
     draft: false,
-    head: { repo: { full_name: 'owner/repo' } },
+    head: { repo: { full_name: 'owner/repo' }, sha: 'a'.repeat(40) },
     state: 'open',
     user: { login: 'alice', type: 'User' },
     ...overrides,
@@ -90,7 +92,8 @@ describe('createTriggerApi', () => {
       octokit.rest.pulls.get.mockResolvedValue({
         data: apiPullRequest({
           draft: true,
-          head: { repo: { full_name: 'fork/repo' } },
+          base: { ref: 'release', repo: { full_name: 'owner/repo' } },
+          head: { repo: { full_name: 'fork/repo' }, sha: 'b'.repeat(40) },
           user: { login: 'renovate[bot]', type: 'Bot' },
         }),
       });
@@ -98,9 +101,11 @@ describe('createTriggerApi', () => {
       await expect(createTriggerApi('token').getPullRequest(pullRequest)).resolves.toEqual({
         authorLogin: 'renovate[bot]',
         authorType: 'Bot',
+        baseRef: 'release',
         baseRepoFullName: 'owner/repo',
         draft: true,
         headRepoFullName: 'fork/repo',
+        headSha: 'b'.repeat(40),
         state: 'open',
       });
       expect(octokit.rest.pulls.get).toHaveBeenCalledWith({ owner: 'owner', pull_number: 7, repo: 'repo' });
@@ -122,6 +127,100 @@ describe('createTriggerApi', () => {
       await expect(createTriggerApi('token').getPullRequest(pullRequest)).rejects.toThrow(
         'Incomplete data for pull request #7',
       );
+    });
+  });
+
+  describe('getReviewActivity', () => {
+    it('reads comments and reviews, marking bots and deleted accounts', async () => {
+      octokit.graphql.mockResolvedValue({
+        repository: {
+          pullRequest: {
+            comments: {
+              nodes: [
+                {
+                  author: { __typename: 'Bot', login: 'coderabbitai' },
+                  body: 'reply',
+                  createdAt: '2026-11-09T10:00:00Z',
+                  id: 'IC_1',
+                  updatedAt: '2026-11-09T10:05:00Z',
+                  isMinimized: true,
+                },
+                {
+                  author: null,
+                  body: 'ghost',
+                  createdAt: '2026-11-09T11:00:00Z',
+                  id: 'IC_2',
+                  isMinimized: false,
+                  updatedAt: '2026-11-09T11:00:00Z',
+                },
+                null,
+              ],
+            },
+            reviews: {
+              nodes: [
+                { author: { __typename: 'User', login: 'alice' }, body: 'lgtm', commit: { oid: 'a'.repeat(40) } },
+                { author: { __typename: 'Bot', login: 'coderabbitai' }, body: '', commit: null },
+              ],
+            },
+          },
+        },
+      });
+
+      await expect(createTriggerApi('token').getReviewActivity(pullRequest)).resolves.toEqual({
+        comments: [
+          {
+            authorIsBot: true,
+            authorLogin: 'coderabbitai',
+            body: 'reply',
+            createdAt: '2026-11-09T10:00:00Z',
+            isMinimized: true,
+            nodeId: 'IC_1',
+            updatedAt: '2026-11-09T10:05:00Z',
+          },
+          {
+            authorIsBot: false,
+            authorLogin: '',
+            body: 'ghost',
+            createdAt: '2026-11-09T11:00:00Z',
+            isMinimized: false,
+            nodeId: 'IC_2',
+            updatedAt: '2026-11-09T11:00:00Z',
+          },
+        ],
+        reviews: [
+          { authorIsBot: false, authorLogin: 'alice', body: 'lgtm', commitSha: 'a'.repeat(40) },
+          { authorIsBot: true, authorLogin: 'coderabbitai', body: '', commitSha: '' },
+        ],
+      });
+      expect(octokit.graphql).toHaveBeenCalledWith(expect.stringContaining('comments(last: $pageSize)'), {
+        number: 7,
+        owner: 'owner',
+        pageSize: 100,
+        repo: 'repo',
+      });
+    });
+
+    it.each([{ repository: null }, { repository: { pullRequest: null } }])(
+      'fails when GitHub returns no pull request (%j)',
+      async (response) => {
+        octokit.graphql.mockResolvedValue(response);
+
+        await expect(createTriggerApi('token').getReviewActivity(pullRequest)).rejects.toThrow(
+          'GitHub returned no comments or reviews for pull request #7.',
+        );
+      },
+    );
+  });
+
+  describe('minimizeComment', () => {
+    it('collapses the comment as outdated', async () => {
+      octokit.graphql.mockResolvedValue({ minimizeComment: { clientMutationId: null } });
+
+      await createTriggerApi('token').minimizeComment('IC_1');
+
+      expect(octokit.graphql).toHaveBeenCalledWith(expect.stringContaining('classifier: OUTDATED'), {
+        subjectId: 'IC_1',
+      });
     });
   });
 

@@ -52,6 +52,7 @@ describe('trigger-coderabbit-review', () => {
       actionDirectory: ACTION_DIRECTORY,
       expect: expected,
       inputs: {
+        base_branch: '',
         token: scratch.token,
         pr_url: `https://github.com/${scratch.repository}/pull/${number}`,
         ...inputs,
@@ -74,6 +75,66 @@ describe('trigger-coderabbit-review', () => {
     expectCleanRejection(result, /CodeRabbit ignores commands that do not come from a user account/);
     expect(result.outputs.triggered).toBeUndefined();
     await expectNoCommandPosted(number);
+  });
+
+  describe('in a workflow_run job', () => {
+    /** Runs with `pr_url` empty against a workflow_run event for `pullRequests`, written into the workspace. */
+    function runFromEvent(
+      workflowRun: Record<string, unknown>,
+      expected: ExpectedOutcome,
+    ): Promise<ActionRunResult<ActionOutput>> {
+      const event = {
+        repository: { full_name: scratch.repository, id: 1 },
+        workflow_run: {
+          event: 'pull_request',
+          head_repository: { full_name: scratch.repository },
+          head_sha: 'a'.repeat(40),
+          pull_requests: [],
+          ...workflowRun,
+        },
+      };
+
+      return runAction<ActionInput, ActionOutput>({
+        actionDirectory: ACTION_DIRECTORY,
+        env: {
+          GITHUB_EVENT_NAME: 'workflow_run',
+          GITHUB_EVENT_PATH: 'event.json',
+          GITHUB_REPOSITORY: scratch.repository,
+        },
+        expect: expected,
+        files: { 'event.json': JSON.stringify(event) },
+        inputs: { base_branch: defaultBranch, pr_url: '', token: scratch.token },
+        secrets: [scratch.token],
+      });
+    }
+
+    it('skips a run from a fork without using the token', async () => {
+      const result = await runFromEvent({ head_repository: { full_name: 'someone-else/fork' } }, 'success');
+
+      expect(result.outputs).toMatchObject({ skip_reason: 'fork', triggered: 'false' });
+    });
+
+    it('skips a run that was not started by a pull_request event', async () => {
+      const result = await runFromEvent({ event: 'push' }, 'success');
+
+      expect(result.outputs).toMatchObject({ skip_reason: 'not-pull-request', triggered: 'false' });
+    });
+
+    it('reaches the token check for the pull request the run belongs to, and posts nothing with an app token', async () => {
+      const number = await openPullRequest('workflow-run');
+      const head = await scratch.headOf(scratch.branch('workflow-run'));
+
+      const result = await runFromEvent(
+        {
+          head_sha: head,
+          pull_requests: [{ base: { ref: defaultBranch, repo: { id: 1 } }, head: { sha: head }, number }],
+        },
+        'failure',
+      );
+
+      expectCleanRejection(result, /CodeRabbit ignores commands that do not come from a user account/);
+      await expectNoCommandPosted(number);
+    });
   });
 
   describe('the command input', () => {

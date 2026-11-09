@@ -24,17 +24,24 @@ start without anyone typing it.
 <!-- docs:generated usage -->
 ## Usage
 
-### Review every pull request and push
+### Post the review command from the default branch (.github/workflows/coderabbit-review.yaml)
 
 ```yaml
 name: CodeRabbit Review
 
+# workflow_run, not pull_request_target: GitHub runs this file from the default branch, so a pull
+# request cannot rewrite the job that receives the token, and nothing from the pull request is
+# checked out or run. pr_url is left empty: the action reads the pull request from the event and
+# skips it when its head has moved since the request.
 on:
-  pull_request:
-    types: [opened, reopened, ready_for_review, synchronize]
+  workflow_run:
+    workflows: [CodeRabbit Request]
+    types: [completed]
 
+# A newer push to the same branch supersedes a run that has not posted yet. The head repository is
+# part of the group, so a fork branch with the same name cannot cancel a run of this repository.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
   cancel-in-progress: true
 
 permissions: {}
@@ -42,9 +49,17 @@ permissions: {}
 jobs:
   trigger:
     name: Trigger CodeRabbit Review
-    # A pull request from a fork runs without secrets, so the token would be empty.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # Only a request from a branch of this repository. A fork's run is skipped here, before the job
+    # enters the environment that holds the token.
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # An environment restricted to the default branch keeps the token out of every other workflow.
+    environment:
+      name: coderabbit
+      deployment: false
     permissions: {}
     steps:
       - uses: TimSchoenle/actions/actions/maintenance/trigger-coderabbit-review@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-maintenance-trigger-coderabbit-review-v1.1.1
@@ -53,32 +68,79 @@ jobs:
 ```
 <!-- /docs:generated usage -->
 
+The review is split across two workflows so that no `pull_request_target` workflow is needed; GitHub blocks that
+trigger by default on public repositories. `CodeRabbit Request`, below, runs on the pull request and holds nothing:
+
+```yaml
+name: CodeRabbit Request
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize]
+
+permissions: {}
+
+jobs:
+  request:
+    name: Request A CodeRabbit Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Record The Request
+        run: echo "CodeRabbit Review runs when this run completes."
+```
+
+`CodeRabbit Review` is a `workflow_run` workflow: GitHub always runs its default-branch copy, so a pull request cannot
+change the job that holds the token, and nothing from the pull request is checked out. With `pr_url` empty, the
+action reads the pull request from the event of the run that finished, takes the one into `base_branch` (the default
+branch when it is empty) whose head is the commit that run ran on, and skips it as `outdated` when its head has moved
+since. Keep the `coderabbit` environment restricted to the default branch, so no workflow a pull request adds can read
+the token.
+
 `synchronize` makes each push ask for an incremental review of the new commits, which is what automatic review did.
-Each push therefore adds one comment to the pull request. Drop it to review only when the pull request opens or
-leaves draft, and start later reviews by hand.
+Drop it to review only when the pull request opens or leaves draft, and start later reviews by hand.
+
+### Duplicates and old comments
+
+Each command ends with a hidden marker naming the head commit it asked about, which CodeRabbit ignores. With
+`skip_duplicates`, the action reads the latest 100 comments and reviews first and posts nothing when CodeRabbit already
+submitted a review on the head commit, or when the token's account already asked about it. A re-run of the workflow
+or a second `ready_for_review` therefore costs nothing. When CodeRabbit answered that request with "Action not
+completed", for example because it was rate limited, the next run asks again. Only markers in comments by the token's
+account count, so pasting one into a comment does not suppress a review. Two runs for the same head that start
+within a second or two of each other can both read before either posts, which costs one extra command.
+
+With `collapse_outdated`, the action then collapses as outdated its earlier commands and every CodeRabbit reply to a
+review command, including replies to commands typed by hand. The pull request keeps one expanded command, and
+CodeRabbit's answer to it. A comment that cannot be collapsed is reported as a warning; the command is already posted.
 
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input          | Required | Default                                     | Description                                                                                                                                                                                                                                       |
-| -------------- | -------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `token`        | yes      |                                             | Personal access token of a user account, with Pull requests: write on the repository. CodeRabbit ignores commands posted by a GitHub App, so github.token and app installation tokens are refused before anything is posted. See The token below. |
-| `pr_url`       | no       | `${{ github.event.pull_request.html_url }}` | URL of the pull request to comment on (e.g. "https://github.com/owner/repo/pull/123").                                                                                                                                                            |
-| `command`      | no       | `review`                                    | CodeRabbit command to post: "review" for an incremental review of the commits it has not reviewed yet, or "full review" to review every file again.                                                                                               |
-| `skip_drafts`  | no       | `true`                                      | Skip a draft pull request. Mark it ready for review to have the next run, started by the ready_for_review event, trigger one.                                                                                                                     |
-| `skip_bots`    | no       | `true`                                      | Skip a pull request opened by a bot account (Renovate, a release app). Matches on the account type GitHub reports (`Bot`), not on the login.                                                                                                      |
-| `skip_authors` | no       |                                             | Logins whose pull requests are skipped, separated by commas or newlines, compared case-insensitively. A bot is listed by its full login, e.g. "renovate[bot]".                                                                                    |
-| `reject_forks` | no       | `true`                                      | Skip a pull request whose head branch lives in another repository, so a fork cannot spend the review allowance of the token owner.                                                                                                                |
+| Input               | Required | Default                                     | Description                                                                                                                                                                                                                                                                                                                                     |
+| ------------------- | -------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `token`             | yes      |                                             | Personal access token of a user account, with Pull requests: write on the repository. CodeRabbit ignores commands posted by a GitHub App, so github.token and app installation tokens are refused before anything is posted. See The token below.                                                                                               |
+| `pr_url`            | no       | `${{ github.event.pull_request.html_url }}` | URL of the pull request to comment on (e.g. "https://github.com/owner/repo/pull/123"). Leave it empty in a workflow_run job: the pull request is then read from the event of the run that finished, and skipped when its head has moved since. See Usage below.                                                                                 |
+| `base_branch`       | no       |                                             | Base branch a pull request must target to be reviewed. When empty, a workflow_run job reviews only pull requests into the default branch of the repository, and a job with pr_url set reviews pull requests into any branch.                                                                                                                    |
+| `command`           | no       | `review`                                    | CodeRabbit command to post: "review" for an incremental review of the commits it has not reviewed yet, or "full review" to review every file again.                                                                                                                                                                                             |
+| `skip_drafts`       | no       | `true`                                      | Skip a draft pull request. Mark it ready for review to have the next run, started by the ready_for_review event, trigger one.                                                                                                                                                                                                                   |
+| `skip_bots`         | no       | `true`                                      | Skip a pull request opened by a bot account (Renovate, a release app). Matches on the account type GitHub reports (`Bot`), not on the login.                                                                                                                                                                                                    |
+| `skip_authors`      | no       |                                             | Logins whose pull requests are skipped, separated by commas or newlines, compared case-insensitively. A bot is listed by its full login, e.g. "renovate[bot]".                                                                                                                                                                                  |
+| `reject_forks`      | no       | `true`                                      | Skip a pull request whose head branch lives in another repository, so a fork cannot spend the review allowance of the token owner. A workflow_run job always skips a fork, whatever this is set to.                                                                                                                                             |
+| `skip_duplicates`   | no       | `true`                                      | Skip when CodeRabbit already submitted a review on the head commit, or when a command this action posted for the head commit is still unanswered or was carried out. A command CodeRabbit answered with "Action not completed", such as a rate-limited one, is posted again on the next run. Only the latest 100 comments and reviews are read. |
+| `collapse_outdated` | no       | `true`                                      | After posting, collapse as outdated the earlier commands this action posted and every CodeRabbit reply to a review command, so the pull request shows only the latest. A comment that cannot be collapsed is reported as a warning and does not fail the step.                                                                                  |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
 ## Outputs
 
-| Output        | Description                                                                                                                                                                                              |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `triggered`   | "true" when the command was posted, "false" when the pull request was skipped.                                                                                                                           |
-| `skip_reason` | Why the pull request was skipped: closed, draft, fork, bot-author or skipped-author. Empty when the command was posted. The rules are checked in this order, and the first one that applies is reported. |
-| `comment_url` | URL of the posted comment. Empty when the pull request was skipped.                                                                                                                                      |
+| Output               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `triggered`          | "true" when the command was posted, "false" when the pull request was skipped.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `skip_reason`        | Why the pull request was skipped. Empty when the command was posted. In a workflow_run job the run is checked first: not-pull-request (it was not started by a pull_request event), fork (it ran on a branch of another repository), no-pull-request (it belongs to no pull request into base_branch whose head is the commit it ran on). The pull request is checked next: closed, other-base (it targets another branch than base_branch), outdated (its head moved after the triggering run), draft, fork (only with reject_forks), bot-author, skipped-author, then with skip_duplicates already-reviewed (CodeRabbit reviewed the head commit) and already-requested (a command for the head commit is pending or was carried out). The first rule that applies is reported. |
+| `comment_url`        | URL of the posted comment. Empty when the pull request was skipped.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `collapsed_comments` | How many outdated comments were collapsed. "0" when the pull request was skipped.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 <!-- /docs:generated outputs -->
 
 A skipped pull request is not a failure.
@@ -101,9 +163,11 @@ A fine-grained personal access token of the account that should appear as the au
 - **Repository access:** only the repositories that run this workflow.
 - **Permissions:** Pull requests, read and write. Nothing else.
 
-Store it as a repository secret, `CODERABBIT_TRIGGER_TOKEN` in the example. GitHub does not hand secrets to a run
-started from a fork, so a fork cannot use it, and `reject_forks` skips a fork pull request even when the job is
-started some other way.
+Store it as a secret of the `coderabbit` environment, `CODERABBIT_TRIGGER_TOKEN` in the example, and allow only the
+default branch to deploy to that environment. A `workflow_run` job runs with the secrets of the base repository even
+when a fork started the run, so forks are kept out by the job's `if`, which skips a run from another repository before
+the job enters the environment, and by the action, which skips it again as `fork`. With `pr_url` set, `reject_forks`
+does the same.
 
 Before reading the pull request, the action calls `GET /user` with the token and fails unless the token authenticates
 as an account of type `User`. `github.token` and app installation tokens cannot call that endpoint, so passing one
@@ -127,7 +191,8 @@ The step fails without posting anything when:
 - the token does not authenticate as a user account;
 - `command` is anything other than `review` or `full review`. The comment body is built from it, so a value with a
   second line could otherwise post a second CodeRabbit command;
-- `pr_url` does not contain `owner/repo/pull/<number>`;
+- `pr_url` does not contain `owner/repo/pull/<number>`, or is empty outside a `workflow_run` job;
+- the event payload of a `workflow_run` job cannot be read, or carries no `workflow_run`;
 - GitHub returns the pull request without an author or without its head or base repository. The fork and bot checks
   would otherwise pass by default.
 
