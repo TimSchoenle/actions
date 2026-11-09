@@ -28,10 +28,12 @@ over unchanged inputs makes no commit and no API call.
 ### Render and commit
 
 ```yaml
-- uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+- name: Check out the repository
+  uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
 # The commit needs a GitHub App installation token with contents: write.
-- uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+- name: Create an app token
+  uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
   id: token
   with:
     client-id: ${{ secrets.BOT_APP_CLIENT_ID }}

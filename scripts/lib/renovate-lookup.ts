@@ -67,6 +67,11 @@ export interface DependencyExpectation {
    * day its dependency publishes a major, which Renovate deliberately keeps on a branch of its own.
    */
   updateTypes?: string[];
+  /**
+   * Every counted update must carry a new digest. A pin that holds a version and a checksum, such
+   * as a github-release-attachments pair, is only useful when the checksum moves with the version.
+   */
+  requireNewDigest?: boolean;
 }
 
 /** Renovate's update types, so a typo in a fixture fails parsing instead of matching nothing. */
@@ -87,8 +92,17 @@ export interface LookupCase {
   /** Directory name of the fixture. */
   name: string;
   description: string;
-  /** Presets from `configs/renovate/` the fixture's `renovate.json` extends, in order. */
+  /**
+   * Presets from `configs/renovate/` the fixture's `renovate.json` extends, in order. Empty when
+   * `repositoryConfig` is set.
+   */
   presets: string[];
+  /**
+   * Use this repository's own `renovate.json`, its preset references pointed at the checkout,
+   * instead of a config that only extends `presets`. For the managers and rules that live in the
+   * repository config rather than in a shared preset.
+   */
+  repositoryConfig: boolean;
   /** Destination path in the fixture repository → source file inside the fixture directory. */
   files: Record<string, string>;
   dependencies: DependencyExpectation[];
@@ -108,6 +122,32 @@ function requireString(caseName: string, value: unknown, field: string): string 
 
 function optionalString(caseName: string, value: unknown, field: string): string | undefined {
   return value === undefined ? undefined : requireString(caseName, value, field);
+}
+
+/** Where the fixture's renovate.json comes from: the named presets, or the repository's own config. */
+function parseConfigSource(
+  name: string,
+  data: Record<string, unknown>,
+): { presets: string[]; repositoryConfig: boolean } {
+  const repositoryConfig = data.repositoryConfig ?? false;
+  if (typeof repositoryConfig !== 'boolean') {
+    fail(name, "'repositoryConfig' must be a boolean.");
+  }
+  if (repositoryConfig && data.presets !== undefined) {
+    fail(name, "'presets' and 'repositoryConfig' exclude each other: the repository config names its own presets.");
+  }
+
+  const presets = data.presets ?? [];
+  if (!Array.isArray(presets) || (!repositoryConfig && presets.length === 0)) {
+    fail(name, "'presets' must be a non-empty array, unless 'repositoryConfig' is true.");
+  }
+  for (const preset of presets) {
+    if (typeof preset !== 'string' || !PRESET_NAME.test(preset)) {
+      fail(name, `'presets' entry '${String(preset)}' is not a preset name.`);
+    }
+  }
+
+  return { presets: presets as string[], repositoryConfig };
 }
 
 /** A relative path that cannot leave the directory it is joined to. */
@@ -142,6 +182,11 @@ function parseDependency(caseName: string, raw: unknown, index: number): Depende
     }
   }
 
+  const requireNewDigest = entry.requireNewDigest;
+  if (requireNewDigest !== undefined && typeof requireNewDigest !== 'boolean') {
+    fail(caseName, `'${field('requireNewDigest')}' must be a boolean.`);
+  }
+
   const updateTypes = entry.updateTypes;
   if (
     updateTypes !== undefined &&
@@ -160,6 +205,7 @@ function parseDependency(caseName: string, raw: unknown, index: number): Depende
     newValue,
     branchName: optionalString(caseName, entry.branchName, field('branchName')),
     updateTypes: updateTypes as string[] | undefined,
+    requireNewDigest,
   };
 }
 
@@ -171,15 +217,7 @@ export function parseLookupCase(name: string, raw: unknown): LookupCase {
 
   const data = raw as Record<string, unknown>;
 
-  const { presets } = data;
-  if (!Array.isArray(presets) || presets.length === 0) {
-    fail(name, "'presets' must be a non-empty array.");
-  }
-  for (const preset of presets) {
-    if (typeof preset !== 'string' || !PRESET_NAME.test(preset)) {
-      fail(name, `'presets' entry '${String(preset)}' is not a preset name.`);
-    }
-  }
+  const { presets, repositoryConfig } = parseConfigSource(name, data);
 
   const { files } = data;
   if (files === null || typeof files !== 'object' || Array.isArray(files) || Object.keys(files).length === 0) {
@@ -207,7 +245,8 @@ export function parseLookupCase(name: string, raw: unknown): LookupCase {
   return {
     name,
     description: requireString(name, data.description, 'description'),
-    presets: presets as string[],
+    presets,
+    repositoryConfig,
     files: fileMap,
     dependencies: dependencies.map((entry, index) => parseDependency(name, entry, index)),
   };
@@ -247,6 +286,7 @@ export interface ReportDependency {
 
 export interface ReportUpdate {
   newValue?: string;
+  newDigest?: string;
   branchName?: string;
   updateType?: string;
 }
@@ -305,6 +345,9 @@ function checkExpectation(expectation: DependencyExpectation, candidates: Locate
   for (const update of updates) {
     if (newValuePattern && !newValuePattern.test(update.newValue ?? '')) {
       failures.push(`${label(expectation)}: update to '${update.newValue}' does not match /${expectation.newValue}/.`);
+    }
+    if (expectation.requireNewDigest === true && !update.newDigest) {
+      failures.push(`${label(expectation)}: update to '${update.newValue}' carries no new digest.`);
     }
     if (expectation.branchName !== undefined && update.branchName !== expectation.branchName) {
       failures.push(

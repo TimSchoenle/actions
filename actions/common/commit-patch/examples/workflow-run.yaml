@@ -34,7 +34,7 @@ jobs:
           client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           permission-contents: write
-      - uses: TimSchoenle/actions/actions/common/commit-patch@main
+      - uses: TimSchoenle/actions/actions/common/commit-patch@7b20a67f0b18a6e64c30e5f47c92636729f6ad41 # tag=actions-common-commit-patch-v1.3.0
         with:
           token: ${{ steps.token.outputs.token }}
           run_id: ${{ github.event.workflow_run.id }}

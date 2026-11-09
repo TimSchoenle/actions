@@ -1,6 +1,6 @@
 # No image: the committed document is held to what the configuration types print, to the
 # specification, and to the label block of the Dockerfile.
-- uses: TimSchoenle/actions/actions/terrace/image@main
+- uses: TimSchoenle/actions/actions/terrace/image@ea4465fbe2bec98efad19b63849f8d1ac67b5c88 # tag=actions-terrace-image-v1.1.0
   with:
     contract: config/contract.json
     generate: cargo run -q --example contract -- --format contract
