@@ -159,12 +159,14 @@ because jactionlint would read it as an option; write `./-name` for a file that 
 
 - **The release is verified before it runs.** `action.yaml` pins `JACTIONLINT_VERSION` and `JACTIONLINT_SHA256`, the
   SHA-256 of `jactionlint_<version>_checksums.txt`. The checksums file is checked against that pin, and the archive for
-  the runner's platform against the line of the checksums file that names it. One pin covers every platform.
+  the runner's platform against the line of the checksums file that names it, by
+  [`common/download-release-asset`](../../common/download-release-asset). One pin covers every platform.
   Renovate's `github-release-attachments` manager in this repository bumps the version and the checksum together.
-- **A failed release download falls back to the REST API.** When `github.com/<repo>/releases/download/...` fails after
-  its retries (it can answer 5xx for one repository while the rest of GitHub works), the same asset is fetched through
-  `api.github.com`'s release asset endpoint, authenticated with `token` when the job runs on github.com (a GHES or
-  GHE.com token is never sent there). Both routes go through the same verification.
+- **A failed release download falls back to the REST API.** When `github.com/<repo>/releases/download/...` fails with
+  a 5xx, a timeout or a connection error after its retries (it can answer 5xx for one repository while the rest of
+  GitHub works), `common/download-release-asset` fetches the same asset through `api.github.com`'s release asset
+  endpoint, authenticated with `token` when the job runs on github.com (a GHES or GHE.com token is never sent there).
+  Both routes go through the same verification.
 - **Every input is validated before jactionlint runs.** A typo in `profile` or `online` fails in a second, without a
   partial result.
 - **The upload runs only when jactionlint completed.** Exit status 2 or higher means the check did not run to the end,
@@ -172,6 +174,6 @@ because jactionlint would read it as an option; write `./-name` for a file that 
   in code scanning, and the job fails.
 - **The job fails after the upload**, so findings reach code scanning whether or not they fail the job.
 - **The token stays out of offline runs.** It is exported to jactionlint as `GITHUB_TOKEN` only when `online` is on.
-  The install step sends it to `api.github.com` only, and only when the release download failed.
-- Linux and macOS runners, on X64 or ARM64. `jq` must be on `PATH` for the `findings` output and the download
-  fallback; it is on every GitHub-hosted runner.
+  The download step sends it to `api.github.com` only, and only when the release download failed.
+- Linux and macOS runners, on X64 or ARM64, with a runner version that supports `node24` actions. `jq` must be on
+  `PATH` for the `findings` output; it is on every GitHub-hosted runner.

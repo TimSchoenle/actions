@@ -22,7 +22,8 @@ permissions: {}
 # for its own code. Every case that runs jactionlint passes a config-file, so the
 # .github/jactionlint.yaml of the repository the workflow runs in cannot change a result. A case that
 # must fail sets continue-on-error, and the step after it asserts the outcome. harden-runner enforces
-# the egress allowlist on the Linux runners only.
+# the egress allowlist on the Linux runners only. api.github.com and codeload.github.com let the runner
+# fetch common/download-release-asset, which the local composite action names, when its step starts.
 
 jobs:
   install:
@@ -42,6 +43,8 @@ jobs:
           egress-policy: block
           allowed-endpoints: >
             github.com:443
+            api.github.com:443
+            codeload.github.com:443
             objects.githubusercontent.com:443
             release-assets.githubusercontent.com:443
 
@@ -104,6 +107,7 @@ jobs:
           allowed-endpoints: >
             github.com:443
             api.github.com:443
+            codeload.github.com:443
             objects.githubusercontent.com:443
             release-assets.githubusercontent.com:443
 
@@ -161,6 +165,8 @@ jobs:
           egress-policy: block
           allowed-endpoints: >
             github.com:443
+            api.github.com:443
+            codeload.github.com:443
             objects.githubusercontent.com:443
             release-assets.githubusercontent.com:443
 

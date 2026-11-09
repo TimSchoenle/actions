@@ -19,7 +19,7 @@ inputs:
     required: false
     default: 'false'
   token:
-    description: 'Token jactionlint uses for the online checks, handed to it only when online is not false. The install step also sends it to api.github.com when the release download fails and the REST API fallback runs.'
+    description: 'Token jactionlint uses for the online checks, handed to it only when online is not false. The download step also sends it to api.github.com when the release download fails and the REST API fallback runs.'
     required: false
     default: ${{ github.token }}
   strict-exit:
@@ -64,31 +64,19 @@ runs:
   steps:
     # jactionlint's own action downloads the release archive without checking it. Here the release is
     # pinned by version and by the SHA-256 of its checksums file, which lists the SHA-256 of every
-    # archive: the checksums file is verified against the pin, and the archive against the checksums
-    # file. One pin covers every platform. Renovate's github-release-attachments manager bumps the
-    # version and the checksum together; keep the comment directly above the two lines.
-    # The release download URL can answer 5xx for one repository while the REST API's asset endpoint
-    # still serves the same file, so a failed download is retried through the API, authenticated with
-    # the token input to stay clear of the anonymous rate limit. The token is sent only when it was issued
-    # by github.com, never one from GHES or GHE.com. Both routes feed the same verification.
-    - name: Install jactionlint
-      id: install
+    # archive: common/download-release-asset verifies the checksums file against the pin and the archive
+    # against the checksums file, so one pin covers every platform. When the release download fails, it
+    # retries through the REST API asset endpoint. Renovate's github-release-attachments manager bumps
+    # the version and the checksum together; keep the comment directly above the two lines.
+    - name: Resolve jactionlint release
+      id: release
       shell: bash
       env:
         # renovate: datasource=github-release-attachments depName=jdx/jactionlint
         JACTIONLINT_VERSION: 'v2.5.0'
         JACTIONLINT_SHA256: '5cbf573f7d3828a6e679c35520f1bd00c512ec7bde31a281e40808ba68c8225c'
-        TOKEN: ${{ inputs.token }}
       run: |
         set -euo pipefail
-
-        sha256() {
-          if command -v sha256sum > /dev/null; then
-            sha256sum "$1" | cut -d ' ' -f 1
-          else
-            shasum -a 256 "$1" | cut -d ' ' -f 1
-          fi
-        }
 
         case "$RUNNER_OS" in
           Linux) os=linux ;;
@@ -102,85 +90,47 @@ runs:
         esac
 
         version="${JACTIONLINT_VERSION#v}"
-        archive="jactionlint_${version}_${os}_${arch}.tar.gz"
-        sums="jactionlint_${version}_checksums.txt"
-        base="https://github.com/jdx/jactionlint/releases/download/${JACTIONLINT_VERSION}"
-        install_dir="${RUNNER_TEMP}/jactionlint-${version}"
-        download_dir="$(mktemp -d "${RUNNER_TEMP}/jactionlint-download.XXXXXX")"
-        trap 'rm -rf "$download_dir"' EXIT
+        {
+          echo "tag=${JACTIONLINT_VERSION}"
+          echo "archive=jactionlint_${version}_${os}_${arch}.tar.gz"
+          echo "checksums=jactionlint_${version}_checksums.txt"
+          echo "checksums-sha256=${JACTIONLINT_SHA256}"
+        } >> "$GITHUB_OUTPUT"
 
-        # --retry-max-time bounds the retries of one download, so the fallback still runs well inside a
-        # job timeout when the release download hangs.
-        curl_opts=(-fsSL --retry 3 --connect-timeout 20 --max-time 120 --retry-max-time 180)
+    - name: Download jactionlint
+      id: download
+      uses: TimSchoenle/actions/actions/common/download-release-asset@927daf80ad493b627b7384abf496d83abbac5f43 # tag=actions-common-download-release-asset-v1.1.0
+      with:
+        repository: jdx/jactionlint
+        tag: ${{ steps.release.outputs.tag }}
+        asset: ${{ steps.release.outputs.archive }}
+        checksums-asset: ${{ steps.release.outputs.checksums }}
+        checksums-sha256: ${{ steps.release.outputs.checksums-sha256 }}
+        token: ${{ inputs.token }}
 
-        # The token goes to curl on stdin, not on its command line. curl does not forward the header
-        # when the asset endpoint redirects to another host.
-        api_curl() {
-          if [[ -n "$TOKEN" && "${GITHUB_SERVER_URL:-}" == https://github.com ]]; then
-            printf 'Authorization: Bearer %s\n' "$TOKEN" | curl "${curl_opts[@]}" -H 'X-GitHub-Api-Version: 2022-11-28' -H @- "$@"
-          else
-            curl "${curl_opts[@]}" -H 'X-GitHub-Api-Version: 2022-11-28' "$@"
-          fi
-        }
+    - name: Install jactionlint
+      id: install
+      shell: bash
+      env:
+        TAG: ${{ steps.release.outputs.tag }}
+        ARCHIVE: ${{ steps.download.outputs.path }}
+      run: |
+        set -euo pipefail
 
-        release_json=''
-        fetch() {
-          local name="$1" dest="$2" asset_id
-          if curl "${curl_opts[@]}" -o "$dest" "${base}/${name}"; then
-            return 0
-          fi
-          echo "::warning::Downloading ${name} from ${base} failed; retrying through the GitHub REST API"
-          if ! command -v jq > /dev/null; then
-            echo "::error::the REST API fallback needs jq on PATH"
-            return 1
-          fi
-          if [[ -z "$release_json" ]]; then
-            api_curl -H 'Accept: application/vnd.github+json' -o "${download_dir}/release.json" \
-              "https://api.github.com/repos/jdx/jactionlint/releases/tags/${JACTIONLINT_VERSION}" || return 1
-            release_json="${download_dir}/release.json"
-          fi
-          # The download URL is built from the numeric asset ID, so the JSON cannot steer the token elsewhere.
-          if ! asset_id="$(jq -r --arg name "$name" \
-            '[.assets[] | select(.name == $name) | .id] | if length == 1 then .[0] else empty end' "$release_json")"; then
-            echo "::error::could not read the asset list of release ${JACTIONLINT_VERSION}"
-            return 1
-          fi
-          if ! [[ "$asset_id" =~ ^[0-9]+$ ]]; then
-            echo "::error::release ${JACTIONLINT_VERSION} has no single asset named ${name}"
-            return 1
-          fi
-          api_curl -H 'Accept: application/octet-stream' -o "$dest" \
-            "https://api.github.com/repos/jdx/jactionlint/releases/assets/${asset_id}"
-        }
-
-        fetch "$sums" "${download_dir}/${sums}"
-        actual="$(sha256 "${download_dir}/${sums}")"
-        if [[ "$actual" != "$JACTIONLINT_SHA256" ]]; then
-          echo "::error::${sums} has SHA-256 ${actual}, expected ${JACTIONLINT_SHA256}"
+        if [[ "$ARCHIVE" != /* ]]; then
+          echo "::error::common/download-release-asset returned no absolute path, got '${ARCHIVE}'"
           exit 1
         fi
+        trap 'rm -rf "$(dirname "$ARCHIVE")"' EXIT
 
-        # Exactly one line of the verified checksums file names the archive.
-        expected="$(awk -v name="$archive" '$2 == name { print $1 }' "${download_dir}/${sums}")"
-        if ! [[ "$expected" =~ ^[0-9a-f]{64}$ ]]; then
-          echo "::error::${sums} has no single SHA-256 for ${archive}"
-          exit 1
-        fi
-
-        fetch "$archive" "${download_dir}/${archive}"
-        actual="$(sha256 "${download_dir}/${archive}")"
-        if [[ "$actual" != "$expected" ]]; then
-          echo "::error::${archive} has SHA-256 ${actual}, expected ${expected}"
-          exit 1
-        fi
-
+        install_dir="${RUNNER_TEMP}/jactionlint-${TAG#v}"
         mkdir -p "$install_dir"
-        tar -xzf "${download_dir}/${archive}" -C "$install_dir" jactionlint
+        tar -xzf "$ARCHIVE" -C "$install_dir" jactionlint
 
         installed="$("${install_dir}/jactionlint" --version)"
-        echo "Installed ${installed%%$'\n'*} from ${archive}"
+        echo "Installed ${installed%%$'\n'*} from $(basename "$ARCHIVE")"
         {
-          echo "version=${JACTIONLINT_VERSION}"
+          echo "version=${TAG}"
           echo "executable=${install_dir}/jactionlint"
         } >> "$GITHUB_OUTPUT"
 
