@@ -1,0 +1,9 @@
+# Each check is skipped by emptying its input, so a repository with no image, or no committed
+# contract, takes only the half that applies to it.
+- name: Config contract
+  uses: TimSchoenle/actions/actions/rust/config-contract@main
+  with:
+    source_directory: services/api
+    package: api-config
+    features: config-schema
+    image: '' # the default: no image checks

@@ -13,10 +13,10 @@ inputs:
     required: false
     default: ''
   allowed_paths:
-    description: 'Whitespace-separated globs every changed path must match. * and ? stay within a path segment, ** spans segments. A patch touching any other path fails the step and nothing is committed.'
+    description: 'Whitespace-separated globs every changed path must match. * and ? stay within a path segment, ** spans segments. A patch touching any other path fails the step and nothing is committed. See allowed_paths below.'
     required: true
   allow_workflow_changes:
-    description: 'Accept changes under .github/workflows/. Off, such a change fails the step even when allowed_paths matches it.'
+    description: 'Accept changes under .github/workflows/. Off, such a change fails the step even when allowed_paths matches it. On, the token also needs workflows: write: GitHub refuses a commit that touches .github/workflows/ without it, whatever the action allows.'
     required: false
     default: 'false'
   allow_binary:

@@ -1,0 +1,17 @@
+permissions:
+  - scope: contents
+    access: write
+    when: always
+    token: token
+  - scope: pull-requests
+    access: write
+    when: always
+    token: token
+
+egress:
+  - endpoint: api.github.com:443
+    for: the REST calls that list, read, compare and update pull requests
+
+examples:
+  - title: Update dependency pull requests on every push to main
+    file: examples/update-dependency-pull-requests.yaml

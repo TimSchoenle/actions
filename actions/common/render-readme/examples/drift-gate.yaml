@@ -1,0 +1,4 @@
+# The drift gate on the default branch. Give it the same inputs as the generator job.
+- uses: TimSchoenle/actions/actions/common/render-readme@main
+  with:
+    check: 'true'
