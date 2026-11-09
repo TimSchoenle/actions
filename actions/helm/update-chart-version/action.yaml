@@ -182,7 +182,7 @@ runs:
     # that writes the contract is the one that repository's gates check it with.
     - name: Install terrace-contract
       if: inputs.pull-contracts == 'true'
-      uses: TimSchoenle/actions/actions/terrace/setup@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-terrace-setup-v1.1.0
+      uses: TimSchoenle/actions/actions/terrace/setup@927daf80ad493b627b7384abf496d83abbac5f43 # tag=actions-terrace-setup-v3.1.0
       with:
         oras: 'true'
 
