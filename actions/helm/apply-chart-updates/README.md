@@ -21,7 +21,7 @@ Applies a set of templated image updates to a Helm chart's values.yaml and bumps
 # Writes values.yaml and Chart.yaml in the workspace; the files output is what to commit.
 # To open a pull request in a separate charts repository, use helm/update-chart-version instead.
 - id: apply
-  uses: TimSchoenle/actions/actions/helm/apply-chart-updates@actions-helm-apply-chart-updates-v2.0.2 # tag=actions-helm-apply-chart-updates-v2.0.2
+  uses: TimSchoenle/actions/actions/helm/apply-chart-updates@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-helm-apply-chart-updates-v2.0.2
   with:
     chart-path: charts/my-app
     images: |
@@ -31,7 +31,7 @@ Applies a set of templated image updates to a Helm chart's values.yaml and bumps
       }
     version-bump: minor
 
-- uses: TimSchoenle/actions/actions/common/commit-changes@actions-common-commit-changes-v3.0.2 # tag=actions-common-commit-changes-v3.0.2
+- uses: TimSchoenle/actions/actions/common/commit-changes@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-commit-changes-v3.0.2
   if: steps.apply.outputs.updated-count != '0'
   with:
     token: ${{ steps.token.outputs.token }}
