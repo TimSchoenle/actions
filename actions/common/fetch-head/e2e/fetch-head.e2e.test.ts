@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { mkdir, mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -128,6 +128,7 @@ describe('fetch-head', () => {
   let tip: string;
   let pullHead: string;
 
+  /** Commits `files` in the source repository and resolves to the new commit. */
   async function commit(files: Record<string, string>, message: string): Promise<string> {
     await source.write(files);
     await source.git(['add', '--all']);
@@ -163,12 +164,15 @@ describe('fetch-head', () => {
     await rm(root, { force: true, recursive: true });
   });
 
+  /** Runs the action into `target` against the local server, with `inputs` over the defaults. */
   function fetch(
     inputs: ProvidedInputs<ActionInput>,
     expected: ExpectedOutcome = 'success',
+    env: Readonly<Record<string, string>> = {},
   ): Promise<ActionRunResult<ActionOutput>> {
     return runAction<ActionInput, ActionOutput>({
       actionDirectory: ACTION_DIRECTORY,
+      env,
       expect: expected,
       inputs: { path: '.', repository: 'owner/repo', server_url: serverUrl, token: '', ...inputs },
       workspace: target,
@@ -254,6 +258,29 @@ describe('fetch-head', () => {
       expect(result.errors.join('\n')).toMatch(/git fetch failed/);
       expect(http.authorizations.length).toBeGreaterThan(0);
       expect(await readdir(target.path)).toEqual([]);
+    });
+
+    it('fetches anonymously even when an earlier step left an authorization header in the environment', async () => {
+      const result = await fetch({ server_url: http.url, sha: tip, token: '' }, 'failure', {
+        GIT_CONFIG_COUNT: '1',
+        GIT_CONFIG_KEY_0: 'http.extraheader',
+        GIT_CONFIG_VALUE_0: authorizationHeader(TOKEN),
+      });
+
+      expect(result.errors.join('\n')).toMatch(/git fetch failed/);
+      expect(http.authorizations).not.toContain(EXPECTED);
+    });
+
+    it('fetches anonymously even when the global git configuration holds an authorization header', async () => {
+      const globalConfig = path.join(root, 'gitconfig');
+      await writeFile(globalConfig, `[http]\n\textraheader = ${authorizationHeader(TOKEN)}\n`);
+
+      const result = await fetch({ server_url: http.url, sha: tip, token: '' }, 'failure', {
+        GIT_CONFIG_GLOBAL: globalConfig,
+      });
+
+      expect(result.errors.join('\n')).toMatch(/git fetch failed/);
+      expect(http.authorizations).not.toContain(EXPECTED);
     });
   });
 

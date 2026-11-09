@@ -55,6 +55,13 @@ describe('validateRequest', () => {
     { field: 'serverUrl', value: 'ssh://git@github.com', reason: /server_url must be an https, http or file URL/ },
     { field: 'serverUrl', value: 'ext::sh -c touch', reason: /server_url must be/ },
     { field: 'serverUrl', value: 'http://ghe.example.com', reason: /server_url must be https to send a token/ },
+    {
+      field: 'serverUrl',
+      value: 'https://github.com/?x=',
+      reason: /must not carry credentials, a query or a fragment/,
+    },
+    { field: 'serverUrl', value: 'https://github.com/#x', reason: /must not carry credentials, a query or a fragment/ },
+    { field: 'serverUrl', value: 'https://user:pw@github.com', reason: /must not carry credentials/ },
   ] as const)('refuses $field $value', ({ field, value, reason }) => {
     expect(() => validateRequest({ ...valid, [field]: value })).toThrow(reason);
     expect(() => validateRequest({ ...valid, [field]: value })).toThrow(FetchHeadInputError);
@@ -85,13 +92,17 @@ describe('authEnvironment', () => {
 });
 
 describe('repositoryEnvironment', () => {
-  it('pins every location git would otherwise take from the environment to the new repository', () => {
+  it('pins every location and configuration source git would otherwise take from the environment', () => {
     const directory = path.join(tmpdir(), 'repo');
     const gitDirectory = path.join(directory, '.git');
 
     expect(repositoryEnvironment(directory)).toEqual({
       GIT_ALTERNATE_OBJECT_DIRECTORIES: '',
       GIT_COMMON_DIR: gitDirectory,
+      GIT_CONFIG_COUNT: '0',
+      GIT_CONFIG_GLOBAL: '/dev/null',
+      GIT_CONFIG_NOSYSTEM: '1',
+      GIT_CONFIG_PARAMETERS: '',
       GIT_DIR: gitDirectory,
       GIT_INDEX_FILE: path.join(gitDirectory, 'index'),
       GIT_OBJECT_DIRECTORY: path.join(gitDirectory, 'objects'),
@@ -207,8 +218,17 @@ describe('fetchHead', () => {
 
     await fetchHead(request(), git);
 
-    const withToken = calls.filter((call) => 'GIT_CONFIG_COUNT' in call.env).map((call) => call.args[0]);
+    const withToken = calls.filter((call) => 'GIT_CONFIG_KEY_0' in call.env).map((call) => call.args[0]);
     expect(withToken).toEqual(['fetch']);
+    expect(calls.filter((call) => call.env['GIT_CONFIG_COUNT'] === '1').map((call) => call.args[0])).toEqual(['fetch']);
+  });
+
+  it('creates a SHA-1 repository whatever the default object format is', async () => {
+    const { calls, git } = recorder();
+
+    await fetchHead(request(), git);
+
+    expect(calls[0]?.args).toEqual(['init', '--quiet', '--object-format=sha1']);
   });
 
   it('pins every command to the new repository', async () => {
@@ -238,7 +258,7 @@ describe('fetchHead', () => {
 
     await fetchHead(request({ token: '' }), git);
 
-    expect(calls.some((call) => 'GIT_CONFIG_COUNT' in call.env)).toBe(false);
+    expect(calls.every((call) => call.env['GIT_CONFIG_COUNT'] === '0')).toBe(true);
   });
 
   it('fails when HEAD does not resolve to the commit', async () => {

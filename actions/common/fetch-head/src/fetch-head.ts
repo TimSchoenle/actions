@@ -65,10 +65,16 @@ export function authorizationHeader(token: string): string {
 }
 
 /**
- * Environment that pins every git command to the repository in `directory`.
+ * Environment that pins every git command to the repository in `directory` and to no configuration
+ * but its own.
  *
  * An earlier step can export `GIT_DIR` and its relatives through `GITHUB_ENV`, and git would follow
  * them to another repository while `path` stayed empty. Each is set here explicitly instead.
+ *
+ * The system and global configuration, `git -c` parameters and inherited `GIT_CONFIG_*` entries are
+ * dropped too: any of them can carry an `http.extraHeader` or a credential helper, which would turn
+ * an anonymous fetch into an authenticated one, or send a second credential beside the token.
+ * `/dev/null` is the empty file git itself documents for this, and Git for Windows maps it too.
  */
 export function repositoryEnvironment(directory: string): Record<string, string> {
   const gitDirectory = path.join(directory, '.git');
@@ -76,6 +82,10 @@ export function repositoryEnvironment(directory: string): Record<string, string>
   return {
     GIT_ALTERNATE_OBJECT_DIRECTORIES: '',
     GIT_COMMON_DIR: gitDirectory,
+    GIT_CONFIG_COUNT: '0',
+    GIT_CONFIG_GLOBAL: '/dev/null',
+    GIT_CONFIG_NOSYSTEM: '1',
+    GIT_CONFIG_PARAMETERS: '',
     GIT_DIR: gitDirectory,
     GIT_INDEX_FILE: path.join(gitDirectory, 'index'),
     GIT_OBJECT_DIRECTORY: path.join(gitDirectory, 'objects'),
@@ -138,6 +148,13 @@ export function validateRequest(request: FetchHeadRequest): void {
       `server_url must be an https, http or file URL, got ${quoteForLog(request.serverUrl)}`,
     );
   }
+  // The repository is appended to the URL as text, so a query or fragment would swallow it, and
+  // credentials in the URL would bypass the token handling and its masking.
+  if (url.search !== '' || url.hash !== '' || url.username !== '' || url.password !== '') {
+    throw new FetchHeadInputError(
+      `server_url must not carry credentials, a query or a fragment, got ${quoteForLog(request.serverUrl)}`,
+    );
+  }
   if (url.protocol === 'http:' && request.token !== '' && !LOOPBACK_HOSTS.has(url.hostname)) {
     throw new FetchHeadInputError(
       `server_url must be https to send a token, got ${quoteForLog(request.serverUrl)}; set token to '' to fetch anonymously`,
@@ -181,7 +198,8 @@ export async function fetchHead(request: FetchHeadRequest, git: GitRunner = runG
   const { directory, repository, serverUrl, sha, token } = request;
   const pinned = repositoryEnvironment(directory);
   try {
-    await git(['init', '--quiet'], directory, pinned);
+    // The SHA input is SHA-1, so the repository is too, whatever default the runner's git has.
+    await git(['init', '--quiet', '--object-format=sha1'], directory, pinned);
     await git(
       [
         'fetch',
