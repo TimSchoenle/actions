@@ -92,6 +92,9 @@ component_management:
     - component_id: common-download-release-asset
       name: common/download-release-asset
       paths: ['actions/common/download-release-asset/**']
+    - component_id: common-fetch-head
+      name: common/fetch-head
+      paths: ['actions/common/fetch-head/**']
     - component_id: common-find-patch
       name: common/find-patch
       paths: ['actions/common/find-patch/**']

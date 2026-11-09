@@ -275,6 +275,11 @@
       "release-type": "simple",
       "component": "actions-common-download-release-asset",
       "include-component-in-tag": true
+    },
+    "actions/common/fetch-head": {
+      "release-type": "simple",
+      "component": "actions-common-fetch-head",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [
