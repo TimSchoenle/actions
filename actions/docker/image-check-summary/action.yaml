@@ -47,7 +47,7 @@ runs:
     - name: Upsert Pull Request Comment
       id: comment
       if: steps.render.outputs.write_comment == 'true'
-      uses: TimSchoenle/actions/actions/common/upsert-pr-comment@9414b1c665d3676efe832978d4e1728cf53119fd # tag=actions-common-upsert-pr-comment-v1.3.0
+      uses: TimSchoenle/actions/actions/common/upsert-pr-comment@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-upsert-pr-comment-v2.0.1
       with:
         token: ${{ inputs.token }}
         identifier: ${{ inputs.identifier }}
