@@ -645,6 +645,29 @@ describe('Renovate coverage of the README examples', () => {
     expect(ignored, 'these examples are under a path renovate.json ignores').toEqual([]);
   });
 
+  /**
+   * The github-actions manager's `uses:` line regex (lib/modules/manager/github-actions/parse.ts). It
+   * needs whitespace first, so a step written as `- uses:` at column 0 is never extracted, and an
+   * example is a bare step list rather than a workflow its YAML parser reads.
+   */
+  const RENOVATE_USES_LINE = /^\s+(?:-\s+)?uses\s*:\s*/;
+
+  it('writes every third-party uses line in an example where the github-actions manager reads it', async () => {
+    const unread = (await exampleFiles()).flatMap((file) =>
+      fs
+        .readFileSync(path.join(ROOT_DIR, file), 'utf8')
+        .split(/\r?\n/)
+        .map((line, index) => ({ line, at: `${file}:${index + 1}` }))
+        // This repository's actions are pinned by generate-docs, and a local action has no version.
+        .filter(
+          ({ line }) => /^\s*(?:-\s+)?uses\s*:/.test(line) && !/uses\s*:\s*(?:TimSchoenle\/actions\/|\.\/)/i.test(line),
+        )
+        .filter(({ line }) => !RENOVATE_USES_LINE.test(line))
+        .map(({ at }) => at),
+    );
+    expect(unread, 'start these steps with a name: so uses: is indented').toEqual([]);
+  });
+
   it('claims every example for the github-actions manager', async () => {
     const patterns = githubActionsPatterns();
     for (const file of await exampleFiles()) {

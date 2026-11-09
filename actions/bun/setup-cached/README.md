@@ -23,7 +23,8 @@ the result when the cache missed and the job is allowed to write it.
 ```yaml
 # With no inputs the Bun version comes from .bun-version, and the cache is written only on trusted
 # events (see Cache modes below).
-- uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+- name: Check out the repository
+  uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
   with:
     persist-credentials: false
 
