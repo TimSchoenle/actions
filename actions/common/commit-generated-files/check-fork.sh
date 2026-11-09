@@ -4,8 +4,8 @@
 # cannot, and the workflow_run event does not say whether it does, so the open pull requests are
 # read instead.
 #
-# PULLS_FILE holds the JSON array GitHub returns for the open pull requests from HEAD_REPOSITORY's
-# owner and HEAD_BRANCH, or is empty when that request failed. Writes `proceed=true` to
+# PULLS_FILE holds the JSON array read-pulls.sh prints, the open pull requests from HEAD_REPOSITORY's
+# HEAD_BRANCH each read in full, or is empty when reading them failed. Writes `proceed=true` to
 # GITHUB_OUTPUT when the matching pull request allows edits; otherwise `outcome=skipped` and
 # `proceed=false`, with the reason in the step summary. A skip leaves the verdict red, and the
 # verdict tells the contributor to regenerate the files and push.

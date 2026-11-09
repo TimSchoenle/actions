@@ -71,7 +71,8 @@ runs:
 
     # A fork's branch only while its pull request allows edits by maintainers, which is what lets
     # the App push there. The job token reads the open pull requests of a public repository without
-    # a pull-requests permission; a failed read skips the commit.
+    # a pull-requests permission, each in full, since only that carries the flag; a failed read skips
+    # the commit.
     - name: Check The Fork Allows Edits
       id: fork
       if: steps.event.outputs.fork == 'true'
@@ -85,7 +86,7 @@ runs:
         set -euo pipefail
         PULLS_FILE="$(mktemp)"
         export PULLS_FILE
-        if ! gh api -X GET "repos/${REPOSITORY}/pulls" -f state=open -f head="${HEAD_REPOSITORY%%/*}:${HEAD_BRANCH}" -f per_page=100 > "${PULLS_FILE}"; then
+        if ! bash "$GITHUB_ACTION_PATH/read-pulls.sh" > "${PULLS_FILE}"; then
           : > "${PULLS_FILE}"
         fi
         bash "$GITHUB_ACTION_PATH/check-fork.sh"
