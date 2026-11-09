@@ -27,7 +27,7 @@ is not, including older versions of a component whose neighbours have since rele
 | --- | --- | --- |
 | [Close Pull Request](./actions/common/close-pull-request) | [actions-common-close-pull-request-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-close-pull-request-v2.0.1) | :white_check_mark: |
 | [Commit Changes](./actions/common/commit-changes) | [actions-common-commit-changes-v3.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v3.0.1) | :white_check_mark: |
-| [Common Commit Generated Files](./actions/common/commit-generated-files) | [actions-common-commit-generated-files-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-generated-files-v1.2.0) | :white_check_mark: |
+| [Common Commit Generated Files](./actions/common/commit-generated-files) | [actions-common-commit-generated-files-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-generated-files-v1.2.1) | :white_check_mark: |
 | [Common Commit Patch](./actions/common/commit-patch) | [actions-common-commit-patch-v1.3.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-patch-v1.3.0) | :white_check_mark: |
 | [Common Create Patch](./actions/common/create-patch) | [actions-common-create-patch-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-patch-v1.1.1) | :white_check_mark: |
 | [Common Download Release Asset](./actions/common/download-release-asset) | [actions-common-download-release-asset-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-download-release-asset-v1.1.0) | :white_check_mark: |
@@ -104,7 +104,7 @@ is not, including older versions of a component whose neighbours have since rele
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Security CodeQL](./actions/security/codeql) | [actions-security-codeql-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/actions-security-codeql-v1.1.7) | :white_check_mark: |
-| [Security Jactionlint](./actions/security/jactionlint) | [actions-security-jactionlint-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-security-jactionlint-v1.1.1) | :white_check_mark: |
+| [Security Jactionlint](./actions/security/jactionlint) | [actions-security-jactionlint-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-security-jactionlint-v1.1.2) | :white_check_mark: |
 | [Security Zizmor](./actions/security/zizmor) | [actions-security-zizmor-v2.0.2](https://github.com/TimSchoenle/actions/releases/tag/actions-security-zizmor-v2.0.2) | :white_check_mark: |
 
 #### Terrace

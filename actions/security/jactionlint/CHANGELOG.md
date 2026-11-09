@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-security-jactionlint-v1.1.1...actions-security-jactionlint-v1.1.2) (2026-11-09)
+
+
+### Bug Fixes
+
+* **Actions/Jactionlint:** fall back to the REST API when the release download fails ([#2007](https://github.com/TimSchoenle/actions/issues/2007)) ([4a53fe9](https://github.com/TimSchoenle/actions/commit/4a53fe9969a223842f20f6d538a9edf56ce0331b))
+
 ## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-security-jactionlint-v1.1.0...actions-security-jactionlint-v1.1.1) (2026-11-09)
 
 
