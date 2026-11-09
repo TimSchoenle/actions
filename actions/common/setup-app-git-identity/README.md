@@ -9,7 +9,7 @@ outside the markers.
 
 Configures git with the identity of a GitHub App bot and outputs the bot details.
 
-[actions-common-setup-app-git-identity-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-setup-app-git-identity-v2.0.1) · JavaScript action (node24)
+[actions-common-setup-app-git-identity-v2.0.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-setup-app-git-identity-v2.0.2) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -44,7 +44,7 @@ jobs:
         with:
           token: ${{ steps.token.outputs.token }}
 
-      - uses: TimSchoenle/actions/actions/common/setup-app-git-identity@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-setup-app-git-identity-v2.0.1
+      - uses: TimSchoenle/actions/actions/common/setup-app-git-identity@actions-common-setup-app-git-identity-v2.0.2 # tag=actions-common-setup-app-git-identity-v2.0.2
         with:
           app-slug: ${{ steps.token.outputs.app-slug }}
           token: ${{ steps.token.outputs.token }}

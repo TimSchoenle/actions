@@ -9,7 +9,7 @@ outside the markers.
 
 Closes a pull request
 
-[actions-common-close-pull-request-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-close-pull-request-v2.0.1) · JavaScript action (node24)
+[actions-common-close-pull-request-v2.0.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-close-pull-request-v2.0.2) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -39,7 +39,7 @@ jobs:
       pull-requests: write # to comment on and close the pull request
     steps:
       - id: close
-        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
+        uses: TimSchoenle/actions/actions/common/close-pull-request@actions-common-close-pull-request-v2.0.2 # tag=actions-common-close-pull-request-v2.0.2
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}

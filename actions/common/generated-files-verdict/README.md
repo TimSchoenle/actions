@@ -9,7 +9,7 @@ outside the markers.
 
 Fails a pull request while a generator job failed or left changes uncommitted, and merges every pending generator patch into one artifact for common/commit-patch.
 
-[actions-common-generated-files-verdict-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-generated-files-verdict-v1.2.0) · Composite action
+[actions-common-generated-files-verdict-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-generated-files-verdict-v1.2.1) · Composite action
 <!-- /docs:generated header -->
 
 The required check of a repository's Generate workflow. It fails a pull request while any generator job failed or
@@ -52,7 +52,7 @@ jobs:
           persist-credentials: false
       - run: ./scripts/render-docs.sh
       - id: patch
-        uses: TimSchoenle/actions/actions/common/create-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-patch-v1.1.1
+        uses: TimSchoenle/actions/actions/common/create-patch@actions-common-create-patch-v1.1.2 # tag=actions-common-create-patch-v1.1.2
         with:
           artifact_name: docs
           paths: README.md docs
@@ -68,7 +68,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: TimSchoenle/actions/actions/common/generated-files-verdict@927daf80ad493b627b7384abf496d83abbac5f43 # tag=actions-common-generated-files-verdict-v1.2.0
+      - uses: TimSchoenle/actions/actions/common/generated-files-verdict@actions-common-generated-files-verdict-v1.2.1 # tag=actions-common-generated-files-verdict-v1.2.1
         with:
           needs: ${{ toJSON(needs) }}
 ```

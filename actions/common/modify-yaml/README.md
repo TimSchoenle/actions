@@ -9,7 +9,7 @@ outside the markers.
 
 A action to modify a value in a YAML file while strictly preserving comments and structure
 
-[actions-common-modify-yaml-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-modify-yaml-v2.0.1) · JavaScript action (node24)
+[actions-common-modify-yaml-v2.0.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-modify-yaml-v2.0.2) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -21,7 +21,7 @@ A action to modify a value in a YAML file while strictly preserving comments and
 # Edits the file in the workspace only. Comments and quoting elsewhere in values.yaml survive.
 # Committing the change is a separate step.
 - id: tag
-  uses: TimSchoenle/actions/actions/common/modify-yaml@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-modify-yaml-v2.0.1
+  uses: TimSchoenle/actions/actions/common/modify-yaml@actions-common-modify-yaml-v2.0.2 # tag=actions-common-modify-yaml-v2.0.2
   with:
     file: charts/api/values.yaml
     key: image.tag

@@ -9,7 +9,7 @@ outside the markers.
 
 Commits a common/create-patch artifact from this run or from the run run_id names as a verified commit, refusing any path outside allowed_paths, under .github/workflows/ or below a symbolic link.
 
-[actions-common-commit-patch-v1.3.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-patch-v1.3.0) · Composite action
+[actions-common-commit-patch-v1.3.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-patch-v1.3.1) · Composite action
 <!-- /docs:generated header -->
 
 Downloads the patch [`common/create-patch`](../create-patch) uploaded in an earlier job of the same run, or in the
@@ -50,7 +50,7 @@ jobs:
           client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           permission-contents: write
-      - uses: TimSchoenle/actions/actions/common/commit-patch@7b20a67f0b18a6e64c30e5f47c92636729f6ad41 # tag=actions-common-commit-patch-v1.3.0
+      - uses: TimSchoenle/actions/actions/common/commit-patch@actions-common-commit-patch-v1.3.1 # tag=actions-common-commit-patch-v1.3.1
         with:
           token: ${{ steps.token.outputs.token }}
           artifact_name: format-patch
@@ -97,7 +97,7 @@ jobs:
           client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           permission-contents: write
-      - uses: TimSchoenle/actions/actions/common/commit-patch@7b20a67f0b18a6e64c30e5f47c92636729f6ad41 # tag=actions-common-commit-patch-v1.3.0
+      - uses: TimSchoenle/actions/actions/common/commit-patch@actions-common-commit-patch-v1.3.1 # tag=actions-common-commit-patch-v1.3.1
         with:
           token: ${{ steps.token.outputs.token }}
           run_id: ${{ github.event.workflow_run.id }}

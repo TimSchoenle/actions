@@ -9,7 +9,7 @@ outside the markers.
 
 Updates a Helm chart's image tags, version and appVersion, then opens a Pull Request. Every image carries its own version and digest, so one call can move a chart with many services. This action requires a bot account with access to the charts repo.
 
-[actions-helm-update-chart-version-v1.7.2](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.7.2) · Composite action
+[actions-helm-update-chart-version-v1.7.3](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.7.3) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -48,7 +48,7 @@ jobs:
     steps:
       # The action checks the charts repository out over the workspace, so it needs no checkout of
       # its own and anything already in the workspace is replaced.
-      - uses: TimSchoenle/actions/actions/helm/update-chart-version@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-helm-update-chart-version-v1.7.2
+      - uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.7.3 # tag=actions-helm-update-chart-version-v1.7.3
         with:
           app-id: ${{ vars.CHARTS_BOT_APP_ID }}
           private-key: ${{ secrets.charts-bot-private-key }}
@@ -67,7 +67,7 @@ jobs:
 # With pull-contracts, the charts repository needs a terrace.yaml at its root and the images must be
 # pullable without credentials.
 - id: chart
-  uses: TimSchoenle/actions/actions/helm/update-chart-version@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-helm-update-chart-version-v1.7.2
+  uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.7.3 # tag=actions-helm-update-chart-version-v1.7.3
   with:
     app-id: ${{ vars.CHARTS_BOT_APP_ID }}
     private-key: ${{ secrets.CHARTS_BOT_PRIVATE_KEY }}
