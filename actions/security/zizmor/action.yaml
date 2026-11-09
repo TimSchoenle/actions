@@ -3,7 +3,7 @@ description: 'Runs zizmor over workflows and actions with strict collection, upl
 
 inputs:
   inputs:
-    description: 'Paths to audit, one per line, relative to the repository root. Each must exist. A line starting with - is refused; blank lines and lines starting with # are skipped.'
+    description: 'Paths to audit, one per line, relative to the repository root. Each must exist. A line starting with - is refused; blank lines and lines starting with # are skipped. See Paths below.'
     required: false
     default: '.'
   persona:
@@ -31,7 +31,7 @@ inputs:
     required: false
     default: 'informational'
   strict-collection:
-    description: 'Fail when zizmor cannot parse an input. false drops --strict-collection; keep it for a file zizmor wrongly rejects, with the upstream issue linked.'
+    description: 'Fail when zizmor cannot parse an input. false drops --strict-collection and lets zizmor skip a file it cannot parse; set it only for a file zizmor wrongly rejects, with the upstream issue linked next to it.'
     required: false
     default: 'true'
   upload:
@@ -39,7 +39,7 @@ inputs:
     required: false
     default: 'true'
   token:
-    description: 'Token handed to the container as GH_TOKEN for online audits.'
+    description: 'Token handed to the container as GH_TOKEN for online audits. Must not be empty while online-audits is on.'
     required: false
     default: ${{ github.token }}
 

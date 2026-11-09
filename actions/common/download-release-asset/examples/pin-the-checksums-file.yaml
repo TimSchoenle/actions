@@ -1,0 +1,14 @@
+# One digest covers the asset on every platform. The checksums file is downloaded and checked
+# against checksums-sha256 first, so a wrong pin fails before the asset is downloaded. It must be in
+# sha256sum format and list the asset exactly once.
+- id: download
+  uses: TimSchoenle/actions/actions/common/download-release-asset@main
+  with:
+    repository: jdx/jactionlint
+    tag: v2.5.0
+    asset: jactionlint_2.5.0_linux_amd64.tar.gz
+    checksums-asset: jactionlint_2.5.0_checksums.txt
+    checksums-sha256: 5cbf573f7d3828a6e679c35520f1bd00c512ec7bde31a281e40808ba68c8225c
+- run: tar -xzf "$ARCHIVE" -C "$RUNNER_TEMP" jactionlint
+  env:
+    ARCHIVE: ${{ steps.download.outputs.path }}

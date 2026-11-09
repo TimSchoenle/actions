@@ -6,7 +6,7 @@ inputs:
     description: 'GitHub token with contents: write and pull-requests: write on the repository. A pushed update only triggers workflows when the token is not github.token.'
     required: true
   label:
-    description: 'Label that marks a pull request for updating, compared case-insensitively.'
+    description: 'Label that marks a pull request for updating. Compared case-insensitively, as GitHub compares label names: a repository cannot hold both `Dependencies` and `dependencies`.'
     required: true
   repository:
     description: 'Repository whose pull requests are updated, in owner/repo format.'
@@ -17,17 +17,17 @@ inputs:
     required: false
     default: 'false'
   fail_on_error:
-    description: 'Fail the step when a pull request could not be updated for a reason other than GitHub rejecting the update (a merge conflict, a moved head). Those rejections are always warnings.'
+    description: 'Fail the step when a pull request could not be updated for a reason other than GitHub rejecting the update (a merge conflict, a moved head). `false` logs a warning instead. Those rejections are always warnings. See Failures below.'
     required: false
     default: 'true'
 
 outputs:
   updated:
-    description: 'JSON array of the pull request numbers an update was requested for.'
+    description: 'JSON array of the pull request numbers an update was requested for, for `fromJSON()` in a later step.'
   skipped:
-    description: 'JSON array of the pull request numbers left alone: closed, unlabelled, draft, already up to date, or on a fork the token cannot write to.'
+    description: 'JSON array of the pull request numbers left alone: closed, unlabelled, draft, already up to date, or on a fork the token cannot write to. The job log and summary give the reason for each.'
   failed:
-    description: 'JSON array of the pull request numbers whose update failed or was rejected.'
+    description: 'JSON array of the pull request numbers whose update GitHub rejected or that failed with an unexpected error.'
 
 runs:
   using: 'node24'

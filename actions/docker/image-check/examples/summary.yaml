@@ -1,0 +1,24 @@
+# Every leg sets comment: summary and uploads a fragment; docker/image-check-summary runs once,
+# after all of them, and posts one table.
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+    steps:
+      # ... build and load ...
+      - uses: TimSchoenle/actions/actions/docker/image-check@main
+        with:
+          image: app:test
+          platform: ${{ matrix.platform }}
+          comment: summary
+
+  image-size-report:
+    needs: build
+    if: always() && github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: TimSchoenle/actions/actions/docker/image-check-summary@main

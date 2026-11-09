@@ -1,0 +1,17 @@
+# A generator job of a repository's Generate workflow.
+jobs:
+  readme:
+    name: README
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      has_changes: ${{ steps.readme.outputs.has_changes }}
+      artifact_name: ${{ steps.readme.outputs.artifact_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - id: readme
+        uses: TimSchoenle/actions/actions/common/render-readme@main
