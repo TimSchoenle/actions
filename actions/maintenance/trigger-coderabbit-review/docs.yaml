@@ -9,5 +9,7 @@ egress:
     for: the REST calls that check the token, read the pull request and post the comment
 
 examples:
-  - title: Review every pull request and push
-    file: examples/review-every-push.yaml
+  - title: Review after the Generate workflow (.github/workflows/coderabbit-review.yaml)
+    file: examples/coderabbit-review.yaml
+  - title: Or review after a request workflow (.github/workflows/coderabbit-review.yaml)
+    file: examples/coderabbit-review-request.yaml

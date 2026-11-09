@@ -16,11 +16,14 @@ import { createActionIo } from 'actions-util';
 export const ActionInput = {
   token: 'token',
   pr_url: 'pr_url',
+  base_branch: 'base_branch',
   command: 'command',
   skip_drafts: 'skip_drafts',
   skip_bots: 'skip_bots',
   skip_authors: 'skip_authors',
   reject_forks: 'reject_forks',
+  skip_duplicates: 'skip_duplicates',
+  collapse_outdated: 'collapse_outdated',
 } as const;
 
 export type ActionInput = (typeof ActionInput)[keyof typeof ActionInput];
@@ -30,6 +33,7 @@ export const ActionOutput = {
   triggered: 'triggered',
   skip_reason: 'skip_reason',
   comment_url: 'comment_url',
+  collapsed_comments: 'collapsed_comments',
 } as const;
 
 export type ActionOutput = (typeof ActionOutput)[keyof typeof ActionOutput];

@@ -1,0 +1,40 @@
+name: CodeRabbit Review
+
+# workflow_run, not pull_request_target: GitHub runs this file from the default branch, so a pull
+# request cannot rewrite the job that receives the token, and nothing from the pull request is
+# checked out or run. It follows CodeRabbit Request, a pull_request workflow that only completes, for
+# a repository without a generator workflow to follow. pr_url is left empty: the action reads the
+# pull request from the event and skips it when its head has moved since.
+on:
+  workflow_run:
+    workflows: [CodeRabbit Request]
+    types: [completed]
+
+# A newer push to the same branch supersedes a run that has not posted yet. The head repository is
+# part of the group, so a fork branch with the same name cannot cancel a run of this repository.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  trigger:
+    name: Trigger CodeRabbit Review
+    # Only a successful run on a branch of this repository. A fork's run is skipped here, before the
+    # job enters the environment that holds the token.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # An environment restricted to the default branch keeps the token out of every other workflow.
+    environment:
+      name: coderabbit
+      deployment: false
+    permissions: {}
+    steps:
+      - uses: TimSchoenle/actions/actions/maintenance/trigger-coderabbit-review@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-maintenance-trigger-coderabbit-review-v1.1.1
+        with:
+          token: ${{ secrets.CODERABBIT_TRIGGER_TOKEN }}
