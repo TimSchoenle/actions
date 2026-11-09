@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { generateActionReadmes } from './lib/action-docs/generate.js';
 import { generateMarkdownTable, generateSection } from './lib/readme/generator.js';
 import { getRepoInfo } from './lib/readme/git-utils.js';
 import { ActionParser } from './lib/readme/parsers/action-parser.js';
@@ -104,6 +105,26 @@ export async function main() {
 
   // 4. Update SECURITY.md
   await updateSecurity(actions);
+
+  // 5. Update each action's own README
+  await updateActionReadmes();
+}
+
+async function updateActionReadmes() {
+  const report = await generateActionReadmes(await getRepoInfo());
+
+  for (const warning of report.warnings) {
+    console.warn(`⚠️ ${warning}`);
+  }
+  for (const file of report.written) {
+    console.log(`🎉 Generated ${file}`);
+  }
+  for (const error of report.errors) {
+    console.error(`❌ ${error}`);
+  }
+  if (report.errors.length > 0) {
+    process.exitCode = 1;
+  }
 }
 
 async function updateReadme(actionsOutput: string, configsOutput: string) {
