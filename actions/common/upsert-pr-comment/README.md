@@ -9,7 +9,7 @@ outside the markers.
 
 Posts a comment on a pull request, updating the previous comment carrying the same identifier.
 
-[actions-common-upsert-pr-comment-v2.0.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-upsert-pr-comment-v2.0.2) · JavaScript action (node24)
+[actions-common-upsert-pr-comment-v2.0.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-upsert-pr-comment-v2.0.3) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 A workflow that reports something after every build leaves one comment on the pull request rather than a column of
@@ -38,7 +38,7 @@ from the body alone.
     set -euo pipefail
     echo "bytes=$(docker image inspect api:${{ github.sha }} --format '{{ .Size }}')" >> "$GITHUB_OUTPUT"
 
-- uses: TimSchoenle/actions/actions/common/upsert-pr-comment@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-upsert-pr-comment-v2.0.2
+- uses: TimSchoenle/actions/actions/common/upsert-pr-comment@actions-common-upsert-pr-comment-v2.0.3 # tag=actions-common-upsert-pr-comment-v2.0.3
   with:
     token: ${{ steps.token.outputs.token }}
     identifier: docker-image-size
@@ -53,7 +53,7 @@ from the body alone.
 # no comment is posted.
 - name: Comment on PR
   if: github.event_name == 'pull_request'
-  uses: TimSchoenle/actions/actions/common/upsert-pr-comment@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-upsert-pr-comment-v2.0.2
+  uses: TimSchoenle/actions/actions/common/upsert-pr-comment@actions-common-upsert-pr-comment-v2.0.3 # tag=actions-common-upsert-pr-comment-v2.0.3
   with:
     token: ${{ steps.token.outputs.token }}
     identifier: render-generated-files

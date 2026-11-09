@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.0.0](https://github.com/TimSchoenle/actions/compare/actions-bun-setup-cached-v2.0.0...actions-bun-setup-cached-v3.0.0) (2026-11-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **trigger-coderabbit-review:** trigger from workflow_run and skip duplicate requests ([#2054](https://github.com/TimSchoenle/actions/issues/2054))
+
+### Features
+
+* **trigger-coderabbit-review:** trigger from workflow_run and skip duplicate requests ([#2054](https://github.com/TimSchoenle/actions/issues/2054)) ([e665b38](https://github.com/TimSchoenle/actions/commit/e665b387ceeeac72c08b9cbba172cd20598fefc2))
+
 ## [2.0.0](https://github.com/TimSchoenle/actions/compare/actions-bun-setup-cached-v1.1.11...actions-bun-setup-cached-v2.0.0) (2026-10-26)
 
 

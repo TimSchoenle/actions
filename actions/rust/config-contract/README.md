@@ -9,7 +9,7 @@ outside the markers.
 
 Action that checks a terrace-config contract, its Dockerfile LABEL block and a built image against the configuration types they claim to describe.
 
-[actions-rust-config-contract-v2.0.2](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-config-contract-v2.0.2) · JavaScript action (node24)
+[actions-rust-config-contract-v2.0.3](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-config-contract-v2.0.3) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 > [!WARNING]
@@ -64,7 +64,7 @@ took minutes.
   run: docker build -t myservice:test .
 
 - name: Config contract
-  uses: TimSchoenle/actions/actions/rust/config-contract@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-rust-config-contract-v2.0.2
+  uses: TimSchoenle/actions/actions/rust/config-contract@actions-rust-config-contract-v2.0.3 # tag=actions-rust-config-contract-v2.0.3
   with:
     features: config-schema
     image: myservice:test
@@ -77,7 +77,7 @@ took minutes.
 # precedence. Naming neither uses the example config-schema, which is what every workflow written
 # before bin existed relies on.
 - name: Config contract
-  uses: TimSchoenle/actions/actions/rust/config-contract@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-rust-config-contract-v2.0.2
+  uses: TimSchoenle/actions/actions/rust/config-contract@actions-rust-config-contract-v2.0.3 # tag=actions-rust-config-contract-v2.0.3
   with:
     # A [[bin]], because other crates link it and the build runs the compiled artefact.
     bin: config-contract
@@ -97,7 +97,7 @@ strategy:
 
 steps:
   - name: Config contract
-    uses: TimSchoenle/actions/actions/rust/config-contract@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-rust-config-contract-v2.0.2
+    uses: TimSchoenle/actions/actions/rust/config-contract@actions-rust-config-contract-v2.0.3 # tag=actions-rust-config-contract-v2.0.3
     with:
       bin: config-contract
       extra_args: --service ${{ matrix.service }}
@@ -112,7 +112,7 @@ steps:
 # Each check is skipped by emptying its input, so a repository with no image, or no committed
 # contract, takes only the half that applies to it.
 - name: Config contract
-  uses: TimSchoenle/actions/actions/rust/config-contract@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-rust-config-contract-v2.0.2
+  uses: TimSchoenle/actions/actions/rust/config-contract@actions-rust-config-contract-v2.0.3 # tag=actions-rust-config-contract-v2.0.3
   with:
     source_directory: services/api
     package: api-config

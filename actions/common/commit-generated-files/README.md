@@ -9,7 +9,7 @@ outside the markers.
 
 Commits the merged generator patch from a pull_request run to the pull request branch as a GitHub App, from a workflow_run job.
 
-[actions-common-commit-generated-files-v1.2.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-generated-files-v1.2.2) · Composite action
+[actions-common-commit-generated-files-v1.2.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-generated-files-v1.2.3) · Composite action
 <!-- /docs:generated header -->
 
 The commit half of a repository's Generate workflow. It commits the merged patch that
@@ -44,7 +44,7 @@ jobs:
       actions: read # to list and download the pull_request run's artifacts
       contents: read
     steps:
-      - uses: TimSchoenle/actions/actions/common/commit-generated-files@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-commit-generated-files-v1.2.2
+      - uses: TimSchoenle/actions/actions/common/commit-generated-files@actions-common-commit-generated-files-v1.2.3 # tag=actions-common-commit-generated-files-v1.2.3
         with:
           client_id: ${{ vars.BOT_CLIENT_ID }}
           private_key: ${{ secrets.BOT_PRIVATE_KEY }}

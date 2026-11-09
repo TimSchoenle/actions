@@ -9,7 +9,7 @@ outside the markers.
 
 A action to render a Handlebars template file to an output file from a JSON map of variables, deterministically
 
-[actions-common-render-template-v3.0.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-v3.0.2) · JavaScript action (node24)
+[actions-common-render-template-v3.0.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-v3.0.3) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 The template language is [Handlebars](https://handlebarsjs.com/). The action is built for generated documentation, with
@@ -26,7 +26,7 @@ on every run.
 ### Generate a file
 
 ```yaml
-- uses: TimSchoenle/actions/actions/common/render-template@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-render-template-v3.0.2
+- uses: TimSchoenle/actions/actions/common/render-template@actions-common-render-template-v3.0.3 # tag=actions-common-render-template-v3.0.3
   id: render
   with:
     template: docs/README.hbs
@@ -41,7 +41,7 @@ on every run.
         ]
       }
 
-- uses: TimSchoenle/actions/actions/common/commit-changes@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-commit-changes-v3.0.2
+- uses: TimSchoenle/actions/actions/common/commit-changes@actions-common-commit-changes-v3.0.3 # tag=actions-common-commit-changes-v3.0.3
   if: steps.render.outputs.changed == 'true'
   with:
     # A GitHub App installation token, so the commit is verified.
@@ -53,7 +53,7 @@ on every run.
 
 ```yaml
 # A CI gate: writes nothing and fails when README.md is missing or stale.
-- uses: TimSchoenle/actions/actions/common/render-template@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-render-template-v3.0.2
+- uses: TimSchoenle/actions/actions/common/render-template@actions-common-render-template-v3.0.3 # tag=actions-common-render-template-v3.0.3
   with:
     template: docs/README.hbs
     output: README.md

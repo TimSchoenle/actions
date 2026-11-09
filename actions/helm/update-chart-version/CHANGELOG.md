@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.4](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.7.3...actions-helm-update-chart-version-v1.7.4) (2026-11-09)
+
+
+### Dependencies
+
+* **deps:** update typescript-eslint monorepo to v8.72.1 ([#2021](https://github.com/TimSchoenle/actions/issues/2021)) ([ad426da](https://github.com/TimSchoenle/actions/commit/ad426da610d733784d0b1b40a4f616ccc804cf08))
+
 ## [1.7.3](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.7.2...actions-helm-update-chart-version-v1.7.3) (2026-11-09)
 
 
