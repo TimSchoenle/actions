@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import path from 'node:path';
 import * as createAction from '../create-action';
-import { Sys, createFromTemplate } from '../lib/utils';
+import { ACTIONS_DIR, Sys, createFromTemplate } from '../lib/utils';
 import { selectPackage, registerActionInReleasePlease, createVerifyWorkflow } from '../lib/action-utils';
 import { input } from '@inquirer/prompts';
 import { main as generateDocs } from '../generate-docs';
@@ -55,7 +56,7 @@ describe('create-action', () => {
       .mockResolvedValueOnce('new-sub') // Sub-action
       .mockResolvedValueOnce('A description'); // Description
 
-    vi.mocked(Sys.exists).mockReturnValue(true); // Changelog exists
+    vi.mocked(Sys.exists).mockReturnValue(false); // The action directory is new
 
     await createAction.main();
 
@@ -67,6 +68,18 @@ describe('create-action', () => {
       'action/action.yaml',
       expect.stringContaining('action.yaml'),
       expect.objectContaining({ packageName: 'existing-pkg', subAction: 'new-sub' }),
+    );
+
+    // The README generator runs at the end and reads docs.yaml, so it must exist by then.
+    expect(createFromTemplate).toHaveBeenCalledWith(
+      'action/docs.yaml',
+      path.join(ACTIONS_DIR, 'existing-pkg', 'new-sub', 'docs.yaml'),
+      expect.objectContaining({ packageName: 'existing-pkg', subAction: 'new-sub' }),
+    );
+    const templateMock = vi.mocked(createFromTemplate).mock;
+    const docsIndex = templateMock.calls.findIndex(([template]) => template === 'action/docs.yaml');
+    expect(templateMock.invocationCallOrder[docsIndex]).toBeLessThan(
+      vi.mocked(generateDocs).mock.invocationCallOrder[0],
     );
 
     // Verify Config Updates
@@ -84,5 +97,18 @@ describe('create-action', () => {
     vi.mocked(Sys.exists).mockReturnValue(false); // Changelog missing
 
     await createAction.main();
+  });
+
+  it('refuses to scaffold over an existing action', async () => {
+    vi.mocked(selectPackage).mockResolvedValue('existing-pkg');
+    vi.mocked(input).mockResolvedValueOnce('existing-sub').mockResolvedValueOnce('desc');
+    vi.mocked(Sys.exists).mockImplementation(
+      (target) => target === path.join(ACTIONS_DIR, 'existing-pkg', 'existing-sub'),
+    );
+
+    await expect(createAction.main()).rejects.toThrow('already exists');
+
+    expect(createFromTemplate).not.toHaveBeenCalled();
+    expect(generateDocs).not.toHaveBeenCalled();
   });
 });
