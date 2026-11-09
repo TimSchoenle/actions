@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.2](https://github.com/TimSchoenle/actions/compare/actions-rust-auto-format-v2.0.1...actions-rust-auto-format-v2.0.2) (2026-11-09)
+
+
+### Dependencies
+
+* **deps:** update all non-major action updates ([#1998](https://github.com/TimSchoenle/actions/issues/1998)) ([8002d47](https://github.com/TimSchoenle/actions/commit/8002d47b3051123182f5f290eb14ae4acf7cb876))
+
 ## [2.0.1](https://github.com/TimSchoenle/actions/compare/actions-rust-auto-format-v2.0.0...actions-rust-auto-format-v2.0.1) (2026-11-02)
 
 

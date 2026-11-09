@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.11](https://github.com/TimSchoenle/actions/compare/actions-docker-image-check-v1.1.10...actions-docker-image-check-v1.1.11) (2026-11-09)
+
+
+### Dependencies
+
+* **deps:** update all non-major action updates ([#1998](https://github.com/TimSchoenle/actions/issues/1998)) ([8002d47](https://github.com/TimSchoenle/actions/commit/8002d47b3051123182f5f290eb14ae4acf7cb876))
+
 ## [1.1.10](https://github.com/TimSchoenle/actions/compare/actions-docker-image-check-v1.1.9...actions-docker-image-check-v1.1.10) (2026-11-07)
 
 
