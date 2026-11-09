@@ -1,0 +1,32 @@
+permissions:
+  - scope: contents
+    access: read
+    when: always
+  - scope: security-events
+    access: write
+    when: { input: upload, equals: 'true' }
+  - scope: actions
+    access: read
+    when: { repository: private }
+
+egress:
+  - endpoint: github.com:443
+    for: the release download
+  - endpoint: objects.githubusercontent.com:443
+    for: the release download
+  - endpoint: release-assets.githubusercontent.com:443
+    for: the release download
+  - endpoint: api.github.com:443
+    for: the download fallback, the SARIF upload and the online checks
+  - endpoint: auth.docker.io:443
+    for: the online checks of container images
+  - endpoint: registry-1.docker.io:443
+    for: the online checks of container images
+  - endpoint: ghcr.io:443
+    for: the online checks of container images
+
+examples:
+  - title: Lint on every push and pull request
+    file: examples/security.yaml
+  - title: Online checks on a schedule and on pushes to the default branch
+    file: examples/online.yaml

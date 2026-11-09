@@ -2,21 +2,21 @@ name: 'Render Template'
 description: 'A action to render a Handlebars template file to an output file from a JSON map of variables, deterministically'
 inputs:
   template:
-    description: 'Path to the template file'
+    description: 'Path to the template file.'
     required: true
   output:
-    description: 'Path of the file to write the rendered result to'
+    description: 'Path of the file to write the rendered result to. Missing parent directories are created.'
     required: true
   variables:
-    description: 'Template variables as a JSON object. Must be strict JSON, not YAML.'
+    description: 'Template variables as a JSON object. Must be strict JSON with an object at the top level, not YAML. See Variables below.'
     required: false
     default: '{}'
   partials-dir:
-    description: 'Directory of reusable .hbs partials, registered under their path relative to it (e.g. tables/actions)'
+    description: 'Directory of reusable .hbs partials, registered under their path relative to it (e.g. tables/actions). See Partials below.'
     required: false
     default: ''
   strict:
-    description: 'Fail on a reference the variables do not define, instead of rendering it as empty. A flag that is off must be declared as false, not omitted.'
+    description: 'Fail on a reference the variables do not define, instead of rendering it as empty. A flag that is off must be declared as false, not omitted. See Strict mode below.'
     required: false
     default: 'true'
   escape-html:
@@ -24,16 +24,16 @@ inputs:
     required: false
     default: 'false'
   check:
-    description: 'Verify the output file is up to date instead of writing it, failing the step when it is stale'
+    description: 'Verify the output file is up to date instead of writing it. Writes nothing; fails the step when the committed file is missing or stale and reports the first differing line, so the log alone tells whether it is a real change or a stray newline.'
     required: false
     default: 'false'
 outputs:
   changed:
-    description: 'Whether the rendered content differs from what was already at the output path'
+    description: 'true when the rendered content differs from what was already at the output path. An unchanged file is left untouched, not rewritten with identical bytes, so its modification time survives.'
   checksum:
-    description: 'SHA-256 of the rendered content, as lowercase hex'
+    description: 'SHA-256 of the rendered content, as lowercase hex.'
   output-path:
-    description: 'Path the rendered content was written to, as given'
+    description: 'Path the rendered content was written to, as given.'
 runs:
   using: 'node24'
   main: 'dist/index.js'

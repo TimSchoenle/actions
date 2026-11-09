@@ -3,10 +3,10 @@ description: 'Posts a CodeRabbit review command on a pull request as a user acco
 
 inputs:
   token:
-    description: 'Personal access token of a user account, with Pull requests: write on the repository. CodeRabbit ignores commands posted by a GitHub App, so github.token and app installation tokens are refused before anything is posted.'
+    description: 'Personal access token of a user account, with Pull requests: write on the repository. CodeRabbit ignores commands posted by a GitHub App, so github.token and app installation tokens are refused before anything is posted. See The token below.'
     required: true
   pr_url:
-    description: 'URL of the pull request (e.g. "https://github.com/owner/repo/pull/123").'
+    description: 'URL of the pull request to comment on (e.g. "https://github.com/owner/repo/pull/123").'
     required: false
     default: ${{ github.event.pull_request.html_url }}
   command:
@@ -14,11 +14,11 @@ inputs:
     required: false
     default: 'review'
   skip_drafts:
-    description: 'Skip a draft pull request. Mark it ready for review to have the next run trigger one.'
+    description: 'Skip a draft pull request. Mark it ready for review to have the next run, started by the ready_for_review event, trigger one.'
     required: false
     default: 'true'
   skip_bots:
-    description: 'Skip a pull request opened by a bot account (Renovate, a release app). Matches on the account type GitHub reports, not on the login.'
+    description: 'Skip a pull request opened by a bot account (Renovate, a release app). Matches on the account type GitHub reports (`Bot`), not on the login.'
     required: false
     default: 'true'
   skip_authors:
@@ -34,7 +34,7 @@ outputs:
   triggered:
     description: '"true" when the command was posted, "false" when the pull request was skipped.'
   skip_reason:
-    description: 'Why the pull request was skipped: closed, draft, fork, bot-author or skipped-author. Empty when the command was posted.'
+    description: 'Why the pull request was skipped: closed, draft, fork, bot-author or skipped-author. Empty when the command was posted. The rules are checked in this order, and the first one that applies is reported.'
   comment_url:
     description: 'URL of the posted comment. Empty when the pull request was skipped.'
 

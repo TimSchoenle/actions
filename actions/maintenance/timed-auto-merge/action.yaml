@@ -6,22 +6,22 @@ inputs:
     description: 'GitHub token with contents: write and pull-requests: write. Must not belong to the author of the pull requests, since GitHub refuses a review from the author.'
     required: true
   trusted_authors:
-    description: 'Comma-separated list of GitHub user database IDs (e.g. "29139614, 123456"). Every author of every commit must be in this list, and every commit must carry a valid signature. A commit signed with a personal key must also have its committer and key owner in this list; a commit GitHub signed itself skips those two checks.'
+    description: 'Comma-separated list of GitHub user database IDs (e.g. "29139614, 123456"). Every author of every commit must be in this list, and every commit must carry a valid signature. A commit signed with a personal key must also have its committer and key owner in this list; a commit GitHub signed itself skips those two checks. See Commit verification below.'
     required: true
   branch_pattern:
-    description: 'Pattern the head branch must match. Read according to pattern_mode.'
+    description: 'Pattern the head branch must match. Read according to pattern_mode. An empty pattern is rejected. See Branch pattern below.'
     required: false
     default: 'release-please--branches--%'
   pattern_mode:
-    description: 'How branch_pattern is read. "legacy": every "%" becomes ".*" and the pattern is anchored at the start of the branch name. "regex": a POSIX extended regular expression, unanchored.'
+    description: 'How branch_pattern is read. "legacy": every "%" becomes ".*" and the pattern is anchored at the start of the branch name. "regex": a POSIX extended regular expression, unanchored. See Branch pattern below.'
     required: false
     default: 'legacy'
   time_elapsed:
-    description: 'How long a pull request must have been open, as a whole number followed by s, m, h or d (e.g. "24h", "7d").'
+    description: 'How long a pull request must have been open, as a whole number followed by s, m, h or d (e.g. "90m", "24h", "7d"). Nothing else is accepted, including "1 day", "1d12h" or "01h".'
     required: false
     default: '1d'
   minimum_age:
-    description: 'Lower bound for time_elapsed, same format. A time_elapsed below it fails the step, so a dispatch input cannot shorten the wait.'
+    description: 'Lower bound for time_elapsed, in the same format. A time_elapsed below it fails the step, so a dispatch input cannot shorten the wait.'
     required: false
     default: '1h'
   merge_method:
@@ -33,7 +33,7 @@ inputs:
     required: false
     default: ${{ github.repository }}
   approve_message:
-    description: 'Body of the approving review.'
+    description: 'Body of the approving review. Must not be empty.'
     required: false
     default: 'Auto-approved: every commit is signed by a trusted author and the pull request has been open long enough.'
   fail_on_error:
@@ -43,11 +43,11 @@ inputs:
 
 outputs:
   approved:
-    description: 'JSON array of the pull request numbers that were approved and either had auto-merge enabled or, when already mergeable, were merged.'
+    description: 'JSON array of the pull request numbers that were approved on this run and either had auto-merge enabled or, when already mergeable, were merged, e.g. `[12,15]`.'
   skipped:
-    description: 'JSON array of {"number", "reason"} for matching pull requests that were left alone.'
+    description: 'JSON array of {"number", "reason"} for matching pull requests that were left alone, e.g. `[{"number":13,"reason":"too-young"}]`.'
   failed:
-    description: 'JSON array of {"number", "message"} for pull requests where an API call failed.'
+    description: 'JSON array of {"number", "message"} for pull requests where an API call failed, with the error, e.g. `[{"number":14,"message":"..."}]`.'
 
 runs:
   using: 'node24'

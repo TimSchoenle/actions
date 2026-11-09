@@ -1,0 +1,24 @@
+- uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+# The commit needs a GitHub App installation token with contents: write.
+- uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+  id: token
+  with:
+    client-id: ${{ secrets.BOT_APP_CLIENT_ID }}
+    private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+    permission-contents: write
+
+- uses: TimSchoenle/actions/actions/common/render-template-and-commit@main
+  id: docs
+  with:
+    template: docs/README.hbs
+    output: README.md
+    partials-dir: docs/partials
+    variables: ${{ steps.collect.outputs.data }}
+    token: ${{ steps.token.outputs.token }}
+    commit_message: 'docs: regenerate README'
+
+- run: echo "Committed $COMMIT_URL"
+  if: steps.docs.outputs.changes_detected == 'true'
+  env:
+    COMMIT_URL: ${{ steps.docs.outputs.commit_url }}

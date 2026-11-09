@@ -3,7 +3,7 @@ description: 'Installs a checksum-verified jactionlint release, checks the workf
 
 inputs:
   files:
-    description: 'Files to check, one per line, relative to the working directory. Empty checks the repository: its workflows, its composite actions and its Dependabot config. Blank lines and lines starting with # are skipped; a line starting with - is refused.'
+    description: 'Files to check, one per line, relative to the working directory. Empty checks the repository: its workflows, its composite actions and its Dependabot config. Blank lines and lines starting with # are skipped; a line starting with - is refused. See Files below.'
     required: false
     default: ''
   config-file:
@@ -11,11 +11,11 @@ inputs:
     required: false
     default: ''
   profile:
-    description: 'Rule profile: correctness, default or pedantic. It overrides the profile key of the configuration file. Empty hands the choice to the configuration file, which falls back to default.'
+    description: 'Rule profile: correctness, default or pedantic. It overrides the profile key of the configuration file. Empty hands the choice to the configuration file, which falls back to default. See Profile below.'
     required: false
     default: 'pedantic'
   online:
-    description: 'Run the checks that query the GitHub API: false, true, cache or strict. false keeps the run offline and deterministic, and never hands over the token. See the README for the trade-off.'
+    description: 'Run the checks that query the GitHub API: false, true, cache or strict. false keeps the run offline and deterministic, and never hands over the token. See Online checks below for the trade-off.'
     required: false
     default: 'false'
   token:

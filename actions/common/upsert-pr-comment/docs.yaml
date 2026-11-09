@@ -1,0 +1,15 @@
+permissions:
+  - scope: pull-requests
+    access: write
+    when: always
+    token: token
+
+egress:
+  - endpoint: api.github.com:443
+    for: listing, creating and updating the comment
+
+examples:
+  - title: Report the image size on a pull request
+    file: examples/image-size.yaml
+  - title: Assemble the comment from body_lines
+    file: examples/body-lines.yaml
