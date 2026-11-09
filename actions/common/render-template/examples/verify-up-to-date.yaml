@@ -1,0 +1,7 @@
+# A CI gate: writes nothing and fails when README.md is missing or stale.
+- uses: TimSchoenle/actions/actions/common/render-template@main
+  with:
+    template: docs/README.hbs
+    output: README.md
+    variables: ${{ steps.collect.outputs.data }}
+    check: true

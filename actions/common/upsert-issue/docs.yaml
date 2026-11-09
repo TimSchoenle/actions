@@ -1,0 +1,13 @@
+permissions:
+  - scope: issues
+    access: write
+    when: always
+    token: token
+
+egress:
+  - endpoint: api.github.com:443
+    for: listing, creating and updating the issue and creating missing labels
+
+examples:
+  - title: Keep one state card per repository
+    file: examples/state-card.yaml

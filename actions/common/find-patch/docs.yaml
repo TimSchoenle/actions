@@ -1,0 +1,16 @@
+permissions:
+  - scope: actions
+    access: read
+    when: always
+
+egress:
+  - endpoint: api.github.com:443
+    for: listing the run's artifacts and downloading the patch
+  - endpoint: '*.actions.githubusercontent.com:443'
+    for: the artifact download
+  - endpoint: '*.blob.core.windows.net:443'
+    for: the artifact download
+
+examples:
+  - title: Skip the token job when there is nothing to commit
+    file: examples/workflow-run-commit.yaml

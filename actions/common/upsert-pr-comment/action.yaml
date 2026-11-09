@@ -3,25 +3,25 @@ description: 'Posts a comment on a pull request, updating the previous comment c
 
 inputs:
   token:
-    description: 'GitHub Token with pull-requests: write access.'
+    description: 'Token with pull-requests: write, used to list, create and update the comment.'
     required: true
   pr_url:
-    description: 'URL of the pull request to comment on (e.g. "https://github.com/owner/repo/pull/123").'
+    description: 'URL of the pull request to comment on (e.g. "https://github.com/owner/repo/pull/123"). The default reads it from the pull_request event, so a pull_request-triggered workflow passes nothing; any other trigger has to supply it.'
     required: false
     default: ${{ github.event.pull_request.html_url }}
   identifier:
-    description: 'Stable key naming this comment, e.g. "docker-image-size". Letters, digits, ".", "_" and "-", up to 64 characters. It is written into the comment as a hidden marker, which is how a later run finds the comment to update.'
+    description: 'Stable key naming this comment, e.g. "docker-image-size". One to 64 characters of letters, digits, ".", "_" and "-", starting with a letter or digit. It is written into the comment as a hidden marker, which is how a later run finds the comment to update. See identifier below.'
     required: true
   body:
     description: 'Markdown body of the comment. Exactly one of body, body_file or body_lines must be given.'
     required: false
     default: ''
   body_file:
-    description: 'Path, relative to the workspace, of a file holding the markdown body. Exactly one of body, body_file or body_lines must be given.'
+    description: 'Path, relative to the workspace, of a file holding the markdown body. Prefer it for anything a build step generated. Exactly one of body, body_file or body_lines must be given.'
     required: false
     default: ''
   body_lines:
-    description: 'Newline-separated markdown lines. Lines that are empty or whitespace are dropped; the rest are kept verbatim, in order. When no line survives, no comment is posted and operation is "skipped". Exactly one of body, body_file or body_lines must be given.'
+    description: 'Newline-separated markdown lines. Lines that are empty or whitespace are dropped; the rest are kept verbatim, in order. When no line survives, no comment is posted and operation is "skipped". Exactly one of body, body_file or body_lines must be given. See body_lines below.'
     required: false
     default: ''
   header:

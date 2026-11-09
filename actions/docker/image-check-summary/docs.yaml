@@ -1,0 +1,19 @@
+permissions:
+  - scope: contents
+    access: read
+    when: always
+  - scope: pull-requests
+    access: write
+    when: always
+
+egress:
+  - endpoint: '*.actions.githubusercontent.com:443'
+    for: downloading the fragment artifacts
+  - endpoint: '*.blob.core.windows.net:443'
+    for: downloading the fragment artifacts
+  - endpoint: api.github.com:443
+    for: the pull request comment
+
+examples:
+  - title: One table for every matrix leg
+    file: examples/matrix-summary.yaml
