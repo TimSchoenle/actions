@@ -1,0 +1,14 @@
+# Facts this action cannot derive, such as configuration tables, publish targets or a rendered
+# example file, arrive through extra and are merged over the derived payload.
+- name: Generate the configuration payload
+  id: config
+  run: |
+    set -euo pipefail
+    echo "json=$(cargo run -q -p portfolio-config --features config-schema \
+      --example config-schema -- --format variables)" >> "$GITHUB_OUTPUT"
+
+- name: Collect the README payload
+  id: variables
+  uses: TimSchoenle/actions/actions/common/readme-variables@main
+  with:
+    extra: ${{ steps.config.outputs.json }}

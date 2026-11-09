@@ -1,0 +1,21 @@
+- uses: TimSchoenle/actions/actions/common/render-template@main
+  id: render
+  with:
+    template: docs/README.hbs
+    output: README.md
+    partials-dir: docs/partials
+    variables: |
+      {
+        "repo": "acme/actions",
+        "actions": [
+          { "name": "read-yaml", "description": "Read a value from a YAML file" },
+          { "name": "clippy", "description": "Lint Rust" }
+        ]
+      }
+
+- uses: TimSchoenle/actions/actions/common/commit-changes@main
+  if: steps.render.outputs.changed == 'true'
+  with:
+    # A GitHub App installation token, so the commit is verified.
+    token: ${{ steps.token.outputs.token }}
+    commit_message: 'docs: regenerate README'

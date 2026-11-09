@@ -3,10 +3,10 @@ description: 'Runs CodeQL on one language with build-mode none, excluding test s
 
 inputs:
   language:
-    description: 'CodeQL language identifier, one per job: actions, c-cpp, csharp, java-kotlin, javascript-typescript, python, ruby or rust. Languages that need a build (go, swift) are refused.'
+    description: 'CodeQL language identifier, one per job: actions, c-cpp, csharp, java-kotlin, javascript-typescript, python, ruby or rust. Languages that need a build (go, swift) are refused. See Languages below.'
     required: true
   exclude-test-paths:
-    description: 'Exclude the shared test locations: Cargo tests and benches, Rust test modules in their own file, Gradle and Maven test source sets, and Vitest and Jest suites.'
+    description: 'Exclude the shared test locations: Cargo tests and benches, Rust test modules in their own file, Gradle and Maven test source sets, and Vitest and Jest suites. The patterns are listed under Excluded paths below.'
     required: false
     default: 'true'
   paths-ignore:

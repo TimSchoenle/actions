@@ -1,0 +1,61 @@
+name: Auto Format
+
+on:
+  pull_request:
+
+# A newer push supersedes the run formatting the older head.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  # Runs the pull request's code. Holds no secret and no write permission.
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      changes_detected: ${{ steps.format.outputs.changes_detected }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - id: format
+        uses: TimSchoenle/actions/actions/rust/auto-format@main
+        with:
+          artifact_name: rust-auto-format
+
+  # Holds the write token. Runs no repository code.
+  commit:
+    name: Commit Format
+    needs: format
+    # A fork's pull request gets no secrets, and its branch is not in this repository.
+    if: needs.format.outputs.changes_detected == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch the commit the patch applies to
+    steps:
+      # Only git's objects are needed. Nothing in this checkout is executed.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.BOT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+
+      - uses: TimSchoenle/actions/actions/common/commit-patch@main
+        with:
+          token: ${{ steps.token.outputs.token }}
+          artifact_name: rust-auto-format
+          allowed_paths: '**/*.rs'
+          commit_message: 'style: auto-format rust code'

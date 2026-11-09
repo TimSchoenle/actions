@@ -1,0 +1,16 @@
+permissions:
+  - scope: contents
+    access: read
+    when: always
+
+egress:
+  - endpoint: github.com:443
+    for: checking out the commit the merged patch is made from
+  - endpoint: '*.actions.githubusercontent.com:443'
+    for: downloading the generator patches and uploading the merged one
+  - endpoint: '*.blob.core.windows.net:443'
+    for: downloading the generator patches and uploading the merged one
+
+examples:
+  - title: A Generate workflow with two generators
+    file: examples/generate-workflow.yaml

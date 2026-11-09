@@ -1,0 +1,10 @@
+- name: Collect the README payload
+  id: variables
+  uses: TimSchoenle/actions/actions/common/readme-variables@main
+
+- name: Render the README
+  uses: TimSchoenle/actions/actions/common/render-template@main
+  with:
+    template: .github/templates/README.md.hbs
+    output: README.md
+    variables: ${{ steps.variables.outputs.variables }}
