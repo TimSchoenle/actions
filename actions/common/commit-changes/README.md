@@ -50,7 +50,7 @@ jobs:
           permission-contents: write
 
       - id: commit
-        uses: TimSchoenle/actions/actions/common/commit-changes@actions-common-commit-changes-v3.0.2 # tag=actions-common-commit-changes-v3.0.2
+        uses: TimSchoenle/actions/actions/common/commit-changes@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-commit-changes-v3.0.2
         with:
           token: ${{ steps.token.outputs.token }}
           commit_message: 'chore: regenerate files'

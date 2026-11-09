@@ -52,7 +52,7 @@ jobs:
           persist-credentials: false
       - run: ./scripts/render-docs.sh
       - id: patch
-        uses: TimSchoenle/actions/actions/common/create-patch@actions-common-create-patch-v1.1.2 # tag=actions-common-create-patch-v1.1.2
+        uses: TimSchoenle/actions/actions/common/create-patch@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-create-patch-v1.1.2
         with:
           artifact_name: docs
           paths: README.md docs
@@ -68,7 +68,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: TimSchoenle/actions/actions/common/generated-files-verdict@actions-common-generated-files-verdict-v1.2.1 # tag=actions-common-generated-files-verdict-v1.2.1
+      - uses: TimSchoenle/actions/actions/common/generated-files-verdict@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-generated-files-verdict-v1.2.1
         with:
           needs: ${{ toJSON(needs) }}
 ```

@@ -13,7 +13,7 @@
     } >> "$GITHUB_OUTPUT"
 
 - id: download
-  uses: TimSchoenle/actions/actions/common/download-release-asset@927daf80ad493b627b7384abf496d83abbac5f43 # tag=actions-common-download-release-asset-v1.1.0
+  uses: TimSchoenle/actions/actions/common/download-release-asset@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-download-release-asset-v1.1.1
   with:
     repository: jdx/jactionlint
     tag: ${{ steps.release.outputs.tag }}

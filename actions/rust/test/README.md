@@ -35,7 +35,7 @@ jobs:
     permissions:
       contents: read # to fetch code
     steps:
-      - uses: TimSchoenle/actions/actions/rust/test@actions-rust-test-v1.1.3 # tag=actions-rust-test-v1.1.3
+      - uses: TimSchoenle/actions/actions/rust/test@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-rust-test-v1.1.3
 ```
 <!-- /docs:generated usage -->
 
