@@ -67,13 +67,26 @@ jobs:
 | `contents: read` (job) | when there is something to commit, to check out the head      |
 | App `contents: write`  | when there is something to commit                             |
 
+On a fork's pull request the job token also reads the open pull requests. A public repository needs no
+`pull-requests: read` for that; a private one does, or every fork is skipped.
+
 ## Behaviour
 
 - **Only from `workflow_run`.** Started by any other event, the step fails before it looks for a patch.
-- **Skipped, without touching the key,** when the triggering run was not a pull request's, came from a fork, ran on
-  the default branch, or ended other than `success` or `failure` (cancelled, skipped, timed out). The filter is
+- **Skipped, without touching the key,** when the triggering run was not a pull request's, ran on this repository's
+  default branch, or ended other than `success` or `failure` (cancelled, skipped, timed out). The filter is
   `check-event.sh`, which the verify workflow drives through every case. A failed run still commits: the verdict job fails
   whenever there is something to commit.
+- **A fork's branch is committed to while its pull request allows edits by maintainers.** GitHub lets the App push
+  there then, with the token it mints for this repository. A fork that does not allow it, which includes every fork
+  owned by an organization, is skipped, and the verdict tells the contributor to push the files. The decision is
+  `check-fork.sh`, also driven through every case. The run on the bot commit may wait for a maintainer's approval, as
+  GitHub asks for first-time contributors. Callers must not exclude forks in their own job-level `if:`.
+- **One bot commit per fork push.** A fork runs its own copy of the generators, so they need not settle. A fork whose
+  head commit is already a bot's gets no further commit, and its next push starts over.
+- **Nothing else in the job.** On a fork's pull request the artifact and the checked-out tree come from the fork's
+  run. This action only applies them through git plumbing and commit-patch's path policy; a step added after it to
+  the same job would run over that tree next to the environment's secrets.
 - **One commit per push.** The verdict already merged every generator's patch, so the pull request's checks run once
   more, on the bot commit, and the verdict there decides.
 - **A branch that moved on is not written to.** commit-patch checks the branch against the head the run checked out

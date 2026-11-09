@@ -145,4 +145,5 @@ runs:
         MERGED_HAS_CHANGES: ${{ steps.merged.outputs.has_changes }}
         HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
         REPOSITORY: ${{ github.repository }}
+        MAINTAINER_CAN_MODIFY: ${{ github.event.pull_request.maintainer_can_modify }}
       run: bash "$GITHUB_ACTION_PATH/verdict.sh"

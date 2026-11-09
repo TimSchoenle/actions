@@ -108,8 +108,11 @@ The job holds no secret. Everything it reads came from jobs that may have run th
 - **The patches are applied in `needs` order** with `git apply`, which refuses paths outside the work tree. Two
   generators changing the same lines differently fail the step, naming the second patch.
 - **The merged patch is uploaded before the verdict fails**, so the commit job finds it even though this job is red.
-- **A fork's pull request is told to push the files itself.** The commit job never pushes to a fork, so the error
-  there names the remedy (regenerate locally, or apply this run's merged patch) instead of a commit that will not come.
+- **A fork's pull request is told who adds the files.** The commit job pushes to a fork only while its pull request
+  allows edits by maintainers, and only where the repository uses commit-generated-files 1.2 or later with no fork
+  filter of its own. Where the fork does not allow it, the error names the remedy (regenerate locally, or apply this
+  run's merged patch) instead of a commit that will not come; where it does, the error names that remedy as the
+  fallback.
 - **The merged patch is uploaded on every run**: empty when nothing is pending, and empty, from a clean checkout of
   the head, when the merge itself failed. Artifacts belong to the run, not to the attempt, so a re-run that uploaded
   nothing would leave an earlier attempt's patch for the commit job to commit.

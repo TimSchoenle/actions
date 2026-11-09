@@ -36,10 +36,18 @@ run_case 'nothing pending' 0 true 'Every generated file is up to date.'
 run_case 'a generator failed' 1 false 'failed or were cancelled: docs.' FAILED_JOBS=docs
 run_case 'pending on a branch of this repository' 1 false 'The commit job adds them to this branch' \
   MERGED_HAS_CHANGES=true PENDING_JOBS='docs lock'
-run_case 'pending on a fork' 1 false 'comes from a fork, which the commit job does not push to' \
+run_case 'pending on a fork without maintainer edits' 1 false 'does not allow edits by maintainers, so the commit job cannot push to it' \
+  MERGED_HAS_CHANGES=true PENDING_JOBS='docs' HEAD_REPOSITORY=someone/repo MAINTAINER_CAN_MODIFY=false
+run_case 'fork summary names the remedy' 1 false '- Regenerate and push (fork not allowing edits by maintainers): docs' \
+  MERGED_HAS_CHANGES=true PENDING_JOBS='docs' HEAD_REPOSITORY=someone/repo MAINTAINER_CAN_MODIFY=false
+run_case 'unknown maintainer edits counts as not allowed' 1 false '- Regenerate and push (fork not allowing edits by maintainers): docs' \
   MERGED_HAS_CHANGES=true PENDING_JOBS='docs' HEAD_REPOSITORY=someone/repo
-run_case 'fork summary names the remedy' 1 false '- Regenerate and push (fork pull request): docs' \
-  MERGED_HAS_CHANGES=true PENDING_JOBS='docs' HEAD_REPOSITORY=someone/repo
+run_case 'pending on a fork allowing maintainer edits' 1 false 'so the commit job adds them to its branch where this repository commits to forks' \
+  MERGED_HAS_CHANGES=true PENDING_JOBS='docs' HEAD_REPOSITORY=someone/repo MAINTAINER_CAN_MODIFY=true
+run_case 'fork allowing edits summary' 1 false '- Waiting for the commit job (fork allowing edits by maintainers): docs' \
+  MERGED_HAS_CHANGES=true PENDING_JOBS='docs' HEAD_REPOSITORY=someone/repo MAINTAINER_CAN_MODIFY=true
+run_case 'maintainer edits ignored on a branch of this repository' 1 false '- Waiting for the commit job: docs' \
+  MERGED_HAS_CHANGES=true PENDING_JOBS='docs' MAINTAINER_CAN_MODIFY=false
 run_case 'no head repository is not a fork' 1 false '- Waiting for the commit job: docs' \
   MERGED_HAS_CHANGES=true PENDING_JOBS='docs' HEAD_REPOSITORY=
 run_case 'clean fork passes' 0 true 'Every generated file is up to date.' HEAD_REPOSITORY=someone/repo
