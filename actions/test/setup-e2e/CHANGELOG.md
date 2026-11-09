@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.6](https://github.com/TimSchoenle/actions/compare/actions-test-setup-e2e-v1.2.5...actions-test-setup-e2e-v1.2.6) (2026-11-09)
+
+
+### Dependencies
+
+* **deps:** update typescript-eslint monorepo to v8.72.1 ([#2021](https://github.com/TimSchoenle/actions/issues/2021)) ([ad426da](https://github.com/TimSchoenle/actions/commit/ad426da610d733784d0b1b40a4f616ccc804cf08))
+
 ## [1.2.5](https://github.com/TimSchoenle/actions/compare/actions-test-setup-e2e-v1.2.4...actions-test-setup-e2e-v1.2.5) (2026-11-09)
 
 

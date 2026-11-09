@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-common-find-patch-v1.1.1...actions-common-find-patch-v1.1.2) (2026-11-09)
+
+
+### Dependencies
+
+* **deps:** update typescript-eslint monorepo to v8.72.1 ([#2021](https://github.com/TimSchoenle/actions/issues/2021)) ([ad426da](https://github.com/TimSchoenle/actions/commit/ad426da610d733784d0b1b40a4f616ccc804cf08))
+
 ## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-common-find-patch-v1.1.0...actions-common-find-patch-v1.1.1) (2026-11-09)
 
 

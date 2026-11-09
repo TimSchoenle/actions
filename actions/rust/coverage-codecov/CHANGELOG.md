@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.8](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v2.0.7...actions-rust-coverage-codecov-v2.0.8) (2026-11-09)
+
+
+### Dependencies
+
+* **deps:** update typescript-eslint monorepo to v8.72.1 ([#2021](https://github.com/TimSchoenle/actions/issues/2021)) ([ad426da](https://github.com/TimSchoenle/actions/commit/ad426da610d733784d0b1b40a4f616ccc804cf08))
+
 ## [2.0.7](https://github.com/TimSchoenle/actions/compare/actions-rust-coverage-codecov-v2.0.6...actions-rust-coverage-codecov-v2.0.7) (2026-11-09)
 
 

@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.0.0](https://github.com/TimSchoenle/actions/compare/actions-maintenance-trigger-coderabbit-review-v1.1.1...actions-maintenance-trigger-coderabbit-review-v2.0.0) (2026-11-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **trigger-coderabbit-review:** trigger from workflow_run and skip duplicate requests ([#2054](https://github.com/TimSchoenle/actions/issues/2054))
+
+### Features
+
+* **trigger-coderabbit-review:** trigger from workflow_run and skip duplicate requests ([#2054](https://github.com/TimSchoenle/actions/issues/2054)) ([e665b38](https://github.com/TimSchoenle/actions/commit/e665b387ceeeac72c08b9cbba172cd20598fefc2))
+
+
+### Dependencies
+
+* **deps:** update typescript-eslint monorepo to v8.72.1 ([#2021](https://github.com/TimSchoenle/actions/issues/2021)) ([ad426da](https://github.com/TimSchoenle/actions/commit/ad426da610d733784d0b1b40a4f616ccc804cf08))
+
 ## [1.1.1](https://github.com/TimSchoenle/actions/compare/actions-maintenance-trigger-coderabbit-review-v1.1.0...actions-maintenance-trigger-coderabbit-review-v1.1.1) (2026-11-09)
 
 
