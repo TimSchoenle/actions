@@ -216,7 +216,7 @@ jobs:
       # to it with a 422, which pinned close-pull-request releases report as a failure.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-close-pull-request-v1.5.9
+        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -417,7 +417,7 @@ jobs:
       # to it with a 422, which pinned close-pull-request releases report as a failure.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-close-pull-request-v1.5.9
+        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -545,7 +545,7 @@ jobs:
       # to it with a 422, which pinned close-pull-request releases report as a failure.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-close-pull-request-v1.5.9
+        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -725,7 +725,7 @@ jobs:
       # to it with a 422, which pinned close-pull-request releases report as a failure.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-close-pull-request-v1.5.9
+        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -868,7 +868,7 @@ jobs:
       # to it with a 422, which pinned close-pull-request releases report as a failure.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-close-pull-request-v1.5.9
+        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -964,7 +964,7 @@ jobs:
           pr-branch-prefix: test/idem/${{ env.TEST_ID }}
 
       - name: Close First PR
-        uses: TimSchoenle/actions/actions/common/close-pull-request@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-close-pull-request-v1.5.9
+        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -1032,7 +1032,7 @@ jobs:
       # Runs before the base branch is deleted, for the same reason as in the jobs above.
       - name: Cleanup PR
         if: always() && steps.second-run.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-close-pull-request-v1.5.9
+        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -1189,7 +1189,7 @@ jobs:
 
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@8da2713994ba2b5f542e7e3334db287b1e22854a # tag=actions-common-close-pull-request-v1.5.9
+        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
