@@ -9,7 +9,7 @@ outside the markers.
 
 Runs every offline configuration contract gate over the charts a change touched, with terrace-contract sync --check. Findings become annotations and a job summary. Writes nothing and needs no write token.
 
-[actions-terrace-helm-check-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-check-v1.1.0) · Composite action
+[actions-terrace-helm-check-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-check-v1.1.1) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -38,7 +38,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: TimSchoenle/actions/actions/terrace/helm-check@81e4009704e0963651bbd8275e31244c1d1e220d # tag=actions-terrace-helm-check-v1.1.0
+      - uses: TimSchoenle/actions/actions/terrace/helm-check@actions-terrace-helm-check-v1.1.1 # tag=actions-terrace-helm-check-v1.1.1
 ```
 <!-- /docs:generated usage -->
 
