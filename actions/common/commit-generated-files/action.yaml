@@ -11,9 +11,9 @@ description: 'Commits the merged generator patch from a pull_request run to the 
 # maintainers, is skipped without touching anything.
 #
 # On a fork's pull request the artifact and the head commit come from a run of the fork's own
-# workflow and are untrusted. The head is fetched without a checkout, nothing here reads either
-# except through git plumbing and the path policy in commit-patch, and the calling job must add no
-# step that does.
+# workflow and are untrusted. The head is fetched without a checkout for every pull request, nothing
+# here reads either except through git plumbing and the path policy in commit-patch, and the calling
+# job must add no step that does.
 
 inputs:
   client_id:
@@ -102,19 +102,13 @@ runs:
         expected_head_sha: ${{ github.event.workflow_run.head_sha }}
         max_patch_bytes: ${{ inputs.max_patch_bytes }}
 
-    # commit-patch needs the head commit's objects to apply the patch to.
-    - name: Check Out The Pull Request Head
-      if: steps.find.outputs.has_changes == 'true' && steps.event.outputs.fork != 'true'
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        ref: ${{ github.event.workflow_run.head_sha }}
-        persist-credentials: false
-
-    # A fork's head is fetched without a checkout, so none of its files reach the workspace.
-    - name: Fetch The Fork's Head
-      if: steps.find.outputs.has_changes == 'true' && steps.event.outputs.fork == 'true'
+    # commit-patch needs the head commit's objects to apply the patch to, and reads nothing else, so
+    # the head is fetched without a checkout and none of the branch's files reach the workspace.
+    - name: Fetch The Pull Request Head
+      if: steps.find.outputs.has_changes == 'true'
       shell: bash
       env:
+        GITHUB_TOKEN: ${{ github.token }}
         WORKSPACE: ${{ github.workspace }}
         SERVER_URL: ${{ github.server_url }}
         REPOSITORY: ${{ github.repository }}

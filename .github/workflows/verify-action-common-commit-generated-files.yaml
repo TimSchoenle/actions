@@ -153,8 +153,9 @@ jobs:
           fi
           echo "Pull request ${number} read in full carries maintainer_can_modify."
 
-  # A fork's head is fetched into an empty repository instead of checked out. This fetches this
-  # pull request's head the same way and checks that HEAD resolves to it with nothing on disk.
+  # The head is fetched into an empty repository instead of checked out. This fetches this pull
+  # request's head the same way, with the job token, and checks that HEAD resolves to it with
+  # nothing on disk and no token left in the repository's config.
   fetch-head:
     name: 'Test Commit Generated Files: fetches a head without a checkout'
     runs-on: ubuntu-latest
@@ -176,6 +177,7 @@ jobs:
 
       - name: Fetch And Assert
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           SERVER_URL: ${{ github.server_url }}
           REPOSITORY: ${{ github.repository }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -184,6 +186,7 @@ jobs:
           fail() { echo "::error::$1"; exit 1; }
           workspace="$(mktemp -d)"
           WORKSPACE="${workspace}" bash actions/common/commit-generated-files/fetch-head.sh
+          [ -z "$(git -C "${workspace}" config --get-regexp 'extraheader' || true)" ] || fail "the token was persisted to the repository config"
           head="$(git -C "${workspace}" rev-parse --verify 'HEAD^{commit}')"
           [ "${head}" = "${HEAD_SHA}" ] || fail "HEAD is ${head}, not ${HEAD_SHA}"
           git -C "${workspace}" cat-file -e "${HEAD_SHA}^{tree}" || fail "the head's tree was not fetched"

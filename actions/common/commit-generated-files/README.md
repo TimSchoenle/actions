@@ -64,7 +64,7 @@ jobs:
 | Permission             | Needed when                                                   |
 | ---------------------- | ------------------------------------------------------------- |
 | `actions: read` (job)  | always, to list and download the pull_request run's artifacts |
-| `contents: read` (job) | when there is something to commit, to check out the head      |
+| `contents: read` (job) | when there is something to commit, to fetch the head          |
 | App `contents: write`  | when there is something to commit                             |
 
 On a fork's pull request the job token also reads the open pull requests. A public repository needs no
@@ -85,9 +85,10 @@ On a fork's pull request the job token also reads the open pull requests. A publ
   first-time contributors. Callers must not exclude forks in their own job-level `if:`.
 - **One bot commit per fork push.** A fork runs its own copy of the generators, so they need not settle. A fork whose
   head commit is already a bot's gets no further commit, and its next push starts over.
-- **A fork's head is never checked out.** `actions/checkout` refuses fork code in a `workflow_run` job, and
-  commit-patch reads only git objects, so `fetch-head.sh` fetches the fork's commit into an empty repository and
-  points `HEAD` at it. None of the fork's files reach the workspace.
+- **The head is never checked out.** commit-patch reads only git objects, so `fetch-head.sh` fetches the pull
+  request's head commit into an empty repository and points `HEAD` at it, and none of its files reach the
+  workspace. For a fork this also respects `actions/checkout`'s refusal to check out fork code in a `workflow_run`
+  job.
 - **Nothing else in the job.** On a fork's pull request the artifact and the head commit come from the fork's run.
   This action only applies them through git plumbing and commit-patch's path policy; a step added after it to the
   same job must not run or read them next to the environment's secrets.
