@@ -85,9 +85,12 @@ On a fork's pull request the job token also reads the open pull requests. A publ
   first-time contributors. Callers must not exclude forks in their own job-level `if:`.
 - **One bot commit per fork push.** A fork runs its own copy of the generators, so they need not settle. A fork whose
   head commit is already a bot's gets no further commit, and its next push starts over.
-- **Nothing else in the job.** On a fork's pull request the artifact and the checked-out tree come from the fork's
-  run. This action only applies them through git plumbing and commit-patch's path policy; a step added after it to
-  the same job would run over that tree next to the environment's secrets.
+- **A fork's head is never checked out.** `actions/checkout` refuses fork code in a `workflow_run` job, and
+  commit-patch reads only git objects, so `fetch-head.sh` fetches the fork's commit into an empty repository and
+  points `HEAD` at it. None of the fork's files reach the workspace.
+- **Nothing else in the job.** On a fork's pull request the artifact and the head commit come from the fork's run.
+  This action only applies them through git plumbing and commit-patch's path policy; a step added after it to the
+  same job must not run or read them next to the environment's secrets.
 - **One commit per push.** The verdict already merged every generator's patch, so the pull request's checks run once
   more, on the bot commit, and the verdict there decides.
 - **A branch that moved on is not written to.** commit-patch checks the branch against the head the run checked out

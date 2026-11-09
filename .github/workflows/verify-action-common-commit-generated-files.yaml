@@ -153,6 +153,47 @@ jobs:
           fi
           echo "Pull request ${number} read in full carries maintainer_can_modify."
 
+  # A fork's head is fetched into an empty repository instead of checked out. This fetches this
+  # pull request's head the same way and checks that HEAD resolves to it with nothing on disk.
+  fetch-head:
+    name: 'Test Commit Generated Files: fetches a head without a checkout'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Fetch And Assert
+        env:
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          workspace="$(mktemp -d)"
+          WORKSPACE="${workspace}" bash actions/common/commit-generated-files/fetch-head.sh
+          head="$(git -C "${workspace}" rev-parse --verify 'HEAD^{commit}')"
+          [ "${head}" = "${HEAD_SHA}" ] || fail "HEAD is ${head}, not ${HEAD_SHA}"
+          git -C "${workspace}" cat-file -e "${HEAD_SHA}^{tree}" || fail "the head's tree was not fetched"
+          files="$(find "${workspace}" -mindepth 1 -maxdepth 1 ! -name .git | wc -l)"
+          [ "${files}" -eq 0 ] || fail "${files} entr(ies) written to the workspace"
+          if WORKSPACE="$(mktemp -d)" HEAD_SHA='not-a-sha' bash actions/common/commit-generated-files/fetch-head.sh; then
+            fail "an invalid SHA was accepted"
+          fi
+          echo "Fetched ${HEAD_SHA} without writing any file"
+
   # <<< generated: summary (run 'bun run generate-ci-required' to update)
   summary:
     name: 'CI Summary: Common Commit-generated-files'
@@ -162,6 +203,7 @@ jobs:
       - check-event
       - check-fork
       - fork-read
+      - fetch-head
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
