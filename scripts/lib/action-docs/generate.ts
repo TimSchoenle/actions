@@ -1,0 +1,309 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
+import { parse } from 'yaml';
+
+import { workflowFileName } from '../e2e-workflow.js';
+import { getTagCommitSha } from '../readme/utils.js';
+import { ROOT_DIR, scanSorted } from '../utils.js';
+import { DOCS_FILE_NAME, validateDocsFile } from './docs-file.js';
+import { parseActionManifest } from './manifest.js';
+import { findRegions, MarkerError, newReadme, spliceRegions } from './markers.js';
+import { renderRegions, usesReference } from './render.js';
+import { pinUses, referencedActions } from './uses.js';
+
+import type { ActionDocs } from './docs-file.js';
+import type { ActionManifest } from './manifest.js';
+import type { LoadedExample, ReadmeModel, Release } from './render.js';
+
+/** Disk and git access, injected so the generator can run against an in-memory repository in tests. */
+export interface DocsIo {
+  /** Repository-relative paths matching a shallow glob (`*` within one segment), sorted. */
+  list(pattern: string): Promise<string[]>;
+  /** File content, or `undefined` when the file does not exist. */
+  read(file: string): Promise<string | undefined>;
+  write(file: string, content: string): Promise<void>;
+  /** The commit a tag points at, or `undefined` when it does not resolve. */
+  tagSha(tag: string): Promise<string | undefined>;
+}
+
+export interface GenerationReport {
+  /** READMEs whose content changed. */
+  written: string[];
+  /** Problems that make a README wrong or impossible to generate. The run fails on any. */
+  errors: string[];
+  /** Gaps that are allowed for now: a missing `docs.yaml`, an empty description. */
+  warnings: string[];
+}
+
+const MANIFEST_FILE = '.release-please-manifest.json';
+const RELEASE_CONFIG_FILE = 'release-please-config.json';
+
+/** Action manifests, one level below a category. A helper one level deeper is not published. */
+const ACTION_PATTERNS = ['actions/*/*/action.yaml', 'actions/*/*/action.yml'];
+
+/** Files that can call an action: workflows, published actions and their helpers. */
+const CALLER_PATTERNS = [
+  '.github/workflows/*.yaml',
+  '.github/workflows/*.yml',
+  ...ACTION_PATTERNS,
+  'actions/*/*/*/action.yaml',
+  'actions/*/*/*/action.yml',
+];
+
+export const defaultIo: DocsIo = {
+  list: scanSorted,
+  async read(file) {
+    try {
+      return await fs.readFile(path.join(ROOT_DIR, file), 'utf8');
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return undefined;
+      }
+      throw error;
+    }
+  },
+  async write(file, content) {
+    await fs.writeFile(path.join(ROOT_DIR, file), content, 'utf8');
+  },
+  async tagSha(tag) {
+    return (await getTagCommitSha(tag)) ?? undefined;
+  },
+};
+
+async function listAll(io: DocsIo, patterns: readonly string[]): Promise<string[]> {
+  const files = await Promise.all(patterns.map((pattern) => io.list(pattern)));
+  return files.flat().sort();
+}
+
+async function readJson(io: DocsIo, file: string): Promise<Record<string, unknown>> {
+  const content = await io.read(file);
+  if (content === undefined) {
+    throw new Error(`${file} is missing`);
+  }
+  return JSON.parse(content) as Record<string, unknown>;
+}
+
+/** Maps each action directory to the sorted files outside it that call it. */
+async function collectCallers(io: DocsIo, repoId: string): Promise<Map<string, string[]>> {
+  const callers = new Map<string, string[]>();
+  for (const file of await listAll(io, CALLER_PATTERNS)) {
+    const content = (await io.read(file)) ?? '';
+    for (const action of referencedActions(content, repoId)) {
+      if (file.startsWith(`${action}/`)) {
+        continue;
+      }
+      callers.set(action, [...(callers.get(action) ?? []), file]);
+    }
+  }
+  return callers;
+}
+
+interface ReleaseIndex {
+  versions: Record<string, unknown>;
+  packages: Record<string, unknown>;
+}
+
+async function releaseOf(io: DocsIo, index: ReleaseIndex, actionPath: string): Promise<Release | undefined> {
+  const entry = index.packages[actionPath] as { component?: unknown } | undefined;
+  const version = index.versions[actionPath];
+  if (typeof entry?.component !== 'string' || typeof version !== 'string') {
+    return undefined;
+  }
+  const tag = `${entry.component}-v${version}`;
+  return { tag, sha: await io.tagSha(tag) };
+}
+
+/** Reads and validates `docs.yaml`. `undefined` with no problems means the file does not exist. */
+async function loadDocs(
+  io: DocsIo,
+  actionPath: string,
+  manifest: ActionManifest,
+): Promise<{ docs: ActionDocs | undefined; problems: string[] }> {
+  const file = `${actionPath}/${DOCS_FILE_NAME}`;
+  const content = await io.read(file);
+  if (content === undefined) {
+    return { docs: undefined, problems: [] };
+  }
+
+  let raw: unknown;
+  try {
+    raw = parse(content);
+  } catch (error) {
+    return { docs: undefined, problems: [`${file}: not valid YAML: ${(error as Error).message}`] };
+  }
+
+  const result = validateDocsFile(raw, { file, inputNames: new Set(manifest.inputs.map((input) => input.name)) });
+  return result.ok ? { docs: result.docs, problems: [] } : { docs: undefined, problems: result.problems };
+}
+
+async function loadExamples(
+  io: DocsIo,
+  model: Pick<ReadmeModel, 'repoId' | 'actionPath' | 'release'>,
+  docs: ActionDocs,
+): Promise<{ examples: LoadedExample[]; problems: string[] }> {
+  const examples: LoadedExample[] = [];
+  const problems: string[] = [];
+  for (const example of docs.examples) {
+    const file = `${model.actionPath}/${example.file}`;
+    const content = await io.read(file);
+    if (content === undefined) {
+      problems.push(`${model.actionPath}/${DOCS_FILE_NAME}: example ${example.file} does not exist`);
+      continue;
+    }
+    const normalised = content.replaceAll('\r\n', '\n');
+    const unsafe = unsafeExampleLine(normalised);
+    if (unsafe !== undefined) {
+      problems.push(`${file}: ${unsafe}`);
+      continue;
+    }
+    const pinned = pinUses(normalised, model.repoId, model.actionPath, usesReference(model));
+    if (pinned.replaced === 0) {
+      problems.push(`${file}: never calls ${model.actionPath}, so it documents nothing`);
+      continue;
+    }
+    examples.push({ title: example.title, content: pinned.content });
+  }
+  return { examples, problems };
+}
+
+/**
+ * Why an example cannot be embedded verbatim, or `undefined` when it can.
+ *
+ * The example lands inside a fenced block inside a marked region: a fence line would end the block
+ * early, and a marker line would make the next run read the README as malformed.
+ */
+function unsafeExampleLine(content: string): string | undefined {
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('```') || trimmed.startsWith('~~~')) {
+      return 'contains a Markdown code fence, which would end the README code block it is embedded in';
+    }
+    if (trimmed.includes('docs:generated')) {
+      return 'contains a docs:generated marker, which would corrupt the README region it is embedded in';
+    }
+  }
+  return undefined;
+}
+
+function descriptionWarnings(file: string, manifest: ActionManifest): string[] {
+  return [
+    ...manifest.inputs
+      .filter((input) => !input.description.trim())
+      .map((input) => `${file}: input '${input.name}' has no description`),
+    ...manifest.outputs
+      .filter((output) => !output.description.trim())
+      .map((output) => `${file}: output '${output.name}' has no description`),
+  ];
+}
+
+/** Generates one README into `report`. Writes nothing for an action that has an error. */
+async function generateOne(
+  io: DocsIo,
+  repoId: string,
+  manifestFile: string,
+  index: ReleaseIndex,
+  callers: Map<string, string[]>,
+  report: GenerationReport,
+): Promise<void> {
+  const actionPath = path.posix.dirname(manifestFile);
+  const [, category, name] = actionPath.split('/');
+
+  // An action release-please does not know is internal, like a helper, and is not documented.
+  if (!(actionPath in index.packages)) {
+    return;
+  }
+
+  let manifest: ActionManifest;
+  try {
+    manifest = parseActionManifest((await io.read(manifestFile)) ?? '', manifestFile);
+  } catch (error) {
+    report.errors.push((error as Error).message);
+    return;
+  }
+  report.warnings.push(...descriptionWarnings(manifestFile, manifest));
+
+  const release = await releaseOf(io, index, actionPath);
+  const { docs, problems } = await loadDocs(io, actionPath, manifest);
+  if (problems.length > 0) {
+    report.errors.push(...problems);
+    return;
+  }
+  if (!docs) {
+    report.warnings.push(`${actionPath}: no ${DOCS_FILE_NAME}, so its README has no permissions or egress`);
+  }
+
+  const loaded = docs ? await loadExamples(io, { repoId, actionPath, release }, docs) : { examples: [], problems: [] };
+  if (loaded.problems.length > 0) {
+    report.errors.push(...loaded.problems);
+    return;
+  }
+
+  const e2eWorkflow = workflowFileName({ category, name, actionPath });
+  const e2ePath = `.github/workflows/${e2eWorkflow}`;
+  const regions = renderRegions({
+    repoId,
+    actionPath,
+    manifest,
+    release,
+    docs,
+    examples: loaded.examples,
+    hasChangelog: (await io.read(`${actionPath}/CHANGELOG.md`)) !== undefined,
+    e2eWorkflow: (await io.read(e2ePath)) === undefined ? undefined : e2eWorkflow,
+    // The action's own end-to-end workflow is linked on its own line, not counted as a caller.
+    callers: (callers.get(actionPath) ?? []).filter((caller) => caller !== e2ePath),
+  });
+
+  const readmeFile = `${actionPath}/README.md`;
+  const existing = (await io.read(readmeFile))?.replaceAll('\r\n', '\n');
+  let next: string;
+  try {
+    if (existing === undefined) {
+      next = newReadme(regions);
+    } else if (findRegions(existing, readmeFile).length === 0) {
+      report.warnings.push(`${readmeFile}: has no docs:generated regions yet, left as it is`);
+      return;
+    } else {
+      next = spliceRegions(existing, regions, readmeFile);
+    }
+  } catch (error) {
+    if (error instanceof MarkerError) {
+      report.errors.push(error.message);
+      return;
+    }
+    throw error;
+  }
+
+  if (next !== existing) {
+    await io.write(readmeFile, next);
+    report.written.push(readmeFile);
+  }
+}
+
+/**
+ * Generates the README of every published action.
+ *
+ * An action without a README gets a complete one. An action with a README gets only its marked
+ * regions rewritten, and one without markers is left alone with a warning until it is migrated.
+ */
+export async function generateActionReadmes(repoId: string, io: DocsIo = defaultIo): Promise<GenerationReport> {
+  const report: GenerationReport = { written: [], errors: [], warnings: [] };
+  const index: ReleaseIndex = {
+    versions: await readJson(io, MANIFEST_FILE),
+    packages: ((await readJson(io, RELEASE_CONFIG_FILE)).packages ?? {}) as Record<string, unknown>,
+  };
+  const callers = await collectCallers(io, repoId);
+
+  const seen = new Set<string>();
+  for (const manifestFile of await listAll(io, ACTION_PATTERNS)) {
+    const actionPath = path.posix.dirname(manifestFile);
+    // GitHub reads action.yml first, so a directory with both files has one silently ignored.
+    if (seen.has(actionPath)) {
+      report.errors.push(`${actionPath}: has both action.yaml and action.yml; keep one`);
+      continue;
+    }
+    seen.add(actionPath);
+    await generateOne(io, repoId, manifestFile, index, callers, report);
+  }
+  return report;
+}
