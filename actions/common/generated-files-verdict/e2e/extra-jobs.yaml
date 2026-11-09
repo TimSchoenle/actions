@@ -438,3 +438,27 @@ verdict-clean:
         [ "$HAS_CHANGES" = "false" ] || fail "has_changes '$HAS_CHANGES' with nothing pending"
         [ "$MERGED_OUTCOME" = "no_changes" ] || fail "outcome '$MERGED_OUTCOME' for the merged patch with nothing pending"
         echo "The verdict passed and uploaded an empty merged patch"
+
+# The verdict's wording decides what a contributor does next, and a fork's pull request is never
+# committed to, so every branch of verdict.sh is driven here with the inputs the step receives.
+verdict-message:
+  name: 'Test Generated Files Verdict: verdict message'
+  runs-on: ubuntu-latest
+  timeout-minutes: 5
+  permissions:
+    contents: read # to fetch code
+  steps:
+    - name: Harden Runner
+      uses: pinned:hardenRunner
+      with:
+        egress-policy: block
+        allowed-endpoints: >
+          github.com:443
+
+    - name: Checkout
+      uses: pinned:checkout
+      with:
+        persist-credentials: false
+
+    - name: Drive Every Branch
+      run: bash actions/common/generated-files-verdict/verdict-test.sh actions/common/generated-files-verdict/verdict.sh
