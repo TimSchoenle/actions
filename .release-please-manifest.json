@@ -37,7 +37,7 @@
   "actions/security/codeql": "1.1.7",
   "actions/java-gradle/coverage-codecov": "1.1.4",
   "actions/security/zizmor": "2.0.2",
-  "actions/terrace/setup": "3.0.3",
+  "actions/terrace/setup": "3.1.0",
   "actions/terrace/helm-check": "1.1.0",
   "actions/terrace/helm-diff": "1.1.0",
   "actions/terrace/helm-sync": "1.1.0",
@@ -50,7 +50,8 @@
   "actions/maintenance/trigger-coderabbit-review": "1.1.0",
   "actions/security/jactionlint": "1.1.1",
   "actions/common/find-patch": "1.1.0",
-  "actions/common/generated-files-verdict": "1.1.0",
-  "actions/common/commit-generated-files": "1.1.0",
-  "actions/common/render-readme": "1.1.0"
+  "actions/common/generated-files-verdict": "1.2.0",
+  "actions/common/commit-generated-files": "1.2.0",
+  "actions/common/render-readme": "1.1.0",
+  "actions/common/download-release-asset": "1.1.0"
 }

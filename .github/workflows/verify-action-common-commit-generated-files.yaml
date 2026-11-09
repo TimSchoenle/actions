@@ -87,6 +87,59 @@ jobs:
       - name: Drive Every Branch
         run: bash actions/common/commit-generated-files/check-event-test.sh actions/common/commit-generated-files/check-event.sh
 
+  # Whether a fork's branch is committed to rests on the pull request allowing edits by
+  # maintainers, so every branch of that decision is driven here with fixture responses.
+  check-fork:
+    name: 'Test Commit Generated Files: fork check'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Drive Every Branch
+        run: bash actions/common/commit-generated-files/check-fork-test.sh actions/common/commit-generated-files/check-fork.sh
+
+  # The fork check reads the open pull requests with the job token of a caller that grants only
+  # actions: read and contents: read. This makes the same request with the same grant against this
+  # public repository, so a GitHub change that started requiring pull-requests: read fails here
+  # instead of silently skipping every fork.
+  fork-read:
+    name: 'Test Commit Generated Files: open pull requests are readable'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read # the grant a caller's commit job has
+      contents: read # the grant a caller's commit job has
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+
+      - name: Read The Open Pull Requests
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # The same query the action sends, filtered by head owner and branch.
+          count="$(gh api -X GET "repos/${REPOSITORY}/pulls" -f state=open -f head="${REPOSITORY%%/*}:main" -f per_page=100 --jq 'length')"
+          echo "Read ${count} open pull request(s) without a pull-requests permission."
+
   # <<< generated: summary (run 'bun run generate-ci-required' to update)
   summary:
     name: 'CI Summary: Common Commit-generated-files'
@@ -94,6 +147,8 @@ jobs:
     needs:
       - verify
       - check-event
+      - check-fork
+      - fork-read
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

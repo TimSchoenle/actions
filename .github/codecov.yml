@@ -89,6 +89,9 @@ component_management:
     - component_id: common-delete-branch
       name: common/delete-branch
       paths: ['actions/common/delete-branch/**']
+    - component_id: common-download-release-asset
+      name: common/download-release-asset
+      paths: ['actions/common/download-release-asset/**']
     - component_id: common-find-patch
       name: common/find-patch
       paths: ['actions/common/find-patch/**']

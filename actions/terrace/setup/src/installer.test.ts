@@ -5,24 +5,26 @@ import { describe, expect, it, vi } from 'vitest';
 import { ReleaseNotFoundError, VerificationError } from './errors.js';
 import { GITHUB_OIDC_ISSUER, installCosign, installOras, installTerrace, TERRACE_SIGNER } from './installer.js';
 
+import type { ReleaseAssetRef } from 'actions-util/release-download';
+
 import type { InstallPorts, Runner } from './installer.js';
 
 const LINUX: Runner = { platform: 'linux', arch: 'x64' };
 const GOOD = 'a'.repeat(64);
 
 /**
- * A fake network and tool cache. Each download lands at `/tmp/<file name>`, and every downloaded
- * file hashes to {@link GOOD} unless listed in `digests`.
+ * A fake network and tool cache. Each download is recorded as `<repository>@<tag>/<name>` and lands
+ * at `/tmp/<name>`, and every downloaded file hashes to {@link GOOD} unless listed in `digests`.
  */
 function fakePorts(
   options: { lists?: Record<string, string>; digests?: Record<string, string>; cached?: string } = {},
 ) {
   const downloaded: string[] = [];
   const ports: InstallPorts = {
-    download: vi.fn((url: string) => {
-      downloaded.push(url);
+    download: vi.fn((asset: ReleaseAssetRef) => {
+      downloaded.push(`${asset.repository}@${asset.tag}/${asset.name}`);
 
-      return Promise.resolve(`/tmp/${path.posix.basename(url)}`);
+      return Promise.resolve(`/tmp/${asset.name}`);
     }),
     extract: vi.fn(() => Promise.resolve('/tmp/unpacked')),
     cacheDirectory: vi.fn((_directory: string, tool: string, version: string) =>
@@ -51,7 +53,7 @@ describe('installTerrace', () => {
 
     const installed = await installTerrace(ports, LINUX, '0.8.0', '/cache/cosign/3.1.3/cosign');
 
-    const base = 'https://github.com/TimSchoenle/terrace-config/releases/download/terrace-contract-v0.8.0';
+    const base = 'TimSchoenle/terrace-config@terrace-contract-v0.8.0';
 
     expect(downloaded).toEqual([`${base}/${archive}`, `${base}/SHA256SUMS`, `${base}/SHA256SUMS.sigstore.json`]);
     expect(ports.run).toHaveBeenCalledWith('/cache/cosign/3.1.3/cosign', [
@@ -135,8 +137,8 @@ describe('installCosign', () => {
     const installed = await installCosign(ports, LINUX, 'v3.1.3');
 
     expect(downloaded).toEqual([
-      'https://github.com/sigstore/cosign/releases/download/v3.1.3/cosign-linux-amd64',
-      'https://github.com/sigstore/cosign/releases/download/v3.1.3/cosign_checksums.txt',
+      'sigstore/cosign@v3.1.3/cosign-linux-amd64',
+      'sigstore/cosign@v3.1.3/cosign_checksums.txt',
     ]);
     expect(ports.cacheFile).toHaveBeenCalledWith('/tmp/cosign-linux-amd64', 'cosign', 'cosign', '3.1.3');
     expect(ports.makeExecutable).toHaveBeenCalledWith(installed.path);
@@ -159,8 +161,8 @@ describe('installOras', () => {
     const installed = await installOras(ports, LINUX, '1.3.4');
 
     expect(downloaded).toEqual([
-      `https://github.com/oras-project/oras/releases/download/v1.3.4/${name}`,
-      'https://github.com/oras-project/oras/releases/download/v1.3.4/oras_1.3.4_checksums.txt',
+      `oras-project/oras@v1.3.4/${name}`,
+      'oras-project/oras@v1.3.4/oras_1.3.4_checksums.txt',
     ]);
     expect(installed).toEqual({ version: '1.3.4', path: path.join('/cache/oras/1.3.4', 'oras') });
   });
