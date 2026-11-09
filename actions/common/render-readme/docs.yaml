@@ -1,0 +1,16 @@
+permissions:
+  - scope: contents
+    access: read
+    when: always
+
+egress:
+  - endpoint: '*.actions.githubusercontent.com:443'
+    for: the artifact upload API
+  - endpoint: '*.blob.core.windows.net:443'
+    for: the uploaded patch content
+
+examples:
+  - title: Generator job
+    file: examples/generator-job.yaml
+  - title: Drift gate on the default branch
+    file: examples/drift-gate.yaml

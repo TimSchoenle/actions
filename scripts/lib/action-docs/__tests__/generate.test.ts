@@ -113,6 +113,27 @@ describe('generateActionReadmes', () => {
     expect(report.warnings).toEqual([`${ZIZMOR}/action.yaml: input 'config' has no description`]);
   });
 
+  it('pins every published action an example calls, not only the documented one', async () => {
+    const OTHER = 'actions/common/commit-patch';
+    const files = repository({
+      [`${ZIZMOR}/docs.yaml`]: DOCS,
+      [`${ZIZMOR}/examples/security.yaml`]: `${EXAMPLE}      - uses: Owner/actions/${OTHER}@main\n`,
+    });
+    files['.release-please-manifest.json'] = JSON.stringify({ [ZIZMOR]: '2.0.2', [OTHER]: '1.3.0' });
+    files['release-please-config.json'] = JSON.stringify({
+      packages: {
+        [ZIZMOR]: { component: 'actions-security-zizmor' },
+        [OTHER]: { component: 'actions-common-commit-patch' },
+      },
+    });
+    const { io, files: written } = memoryIo(files, { 'actions-common-commit-patch-v1.3.0': SHA });
+
+    expect((await generateActionReadmes(REPO, io)).errors).toEqual([]);
+    expect(written.get(`${ZIZMOR}/README.md`)).toContain(
+      `      - uses: Owner/actions/${OTHER}@${SHA} # tag=actions-common-commit-patch-v1.3.0`,
+    );
+  });
+
   it('writes nothing on a second run', async () => {
     const { io, writes } = memoryIo(repository());
     await generateActionReadmes(REPO, io);

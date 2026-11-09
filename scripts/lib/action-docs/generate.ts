@@ -114,6 +114,18 @@ async function releaseOf(io: DocsIo, index: ReleaseIndex, actionPath: string): P
   return { tag, sha: await io.tagSha(tag) };
 }
 
+/**
+ * The release of every published action, keyed by its directory, resolved once for the whole run:
+ * each README pins every published action its examples call. `undefined` before the first release.
+ */
+async function resolveReleases(io: DocsIo, index: ReleaseIndex): Promise<Map<string, Release | undefined>> {
+  const releases = new Map<string, Release | undefined>();
+  for (const actionPath of Object.keys(index.packages).filter((key) => key.startsWith('actions/'))) {
+    releases.set(actionPath, await releaseOf(io, index, actionPath));
+  }
+  return releases;
+}
+
 /** Reads and validates `docs.yaml`. `undefined` with no problems means the file does not exist. */
 async function loadDocs(
   io: DocsIo,
@@ -139,8 +151,9 @@ async function loadDocs(
 
 async function loadExamples(
   io: DocsIo,
-  model: Pick<ReadmeModel, 'repoId' | 'actionPath' | 'release'>,
+  model: Pick<ReadmeModel, 'repoId' | 'actionPath'>,
   docs: ActionDocs,
+  releases: ReadonlyMap<string, Release | undefined>,
 ): Promise<{ examples: LoadedExample[]; problems: string[] }> {
   const examples: LoadedExample[] = [];
   const problems: string[] = [];
@@ -157,8 +170,14 @@ async function loadExamples(
       problems.push(`${file}: ${unsafe}`);
       continue;
     }
-    const pinned = pinUses(normalised, model.repoId, model.actionPath, usesReference(model));
-    if (pinned.replaced === 0) {
+    // Every published action the example calls is pinned, not only the documented one, so an
+    // example is written against `@main` and never holds a pin that goes stale.
+    const pinned = pinUses(normalised, model.repoId, (action) =>
+      releases.has(action)
+        ? usesReference({ repoId: model.repoId, actionPath: action, release: releases.get(action) })
+        : undefined,
+    );
+    if (!pinned.pinned.has(model.actionPath)) {
       problems.push(`${file}: never calls ${model.actionPath}, so it documents nothing`);
       continue;
     }
@@ -204,6 +223,7 @@ async function generateOne(
   manifestFile: string,
   index: ReleaseIndex,
   callers: Map<string, string[]>,
+  releases: ReadonlyMap<string, Release | undefined>,
   report: GenerationReport,
 ): Promise<void> {
   const actionPath = path.posix.dirname(manifestFile);
@@ -223,7 +243,7 @@ async function generateOne(
   }
   report.warnings.push(...descriptionWarnings(manifestFile, manifest));
 
-  const release = await releaseOf(io, index, actionPath);
+  const release = releases.get(actionPath);
   const { docs, problems } = await loadDocs(io, actionPath, manifest);
   if (problems.length > 0) {
     report.errors.push(...problems);
@@ -233,7 +253,7 @@ async function generateOne(
     report.warnings.push(`${actionPath}: no ${DOCS_FILE_NAME}, so its README has no permissions or egress`);
   }
 
-  const loaded = docs ? await loadExamples(io, { repoId, actionPath, release }, docs) : { examples: [], problems: [] };
+  const loaded = docs ? await loadExamples(io, { repoId, actionPath }, docs, releases) : { examples: [], problems: [] };
   if (loaded.problems.length > 0) {
     report.errors.push(...loaded.problems);
     return;
@@ -293,6 +313,7 @@ export async function generateActionReadmes(repoId: string, io: DocsIo = default
     packages: ((await readJson(io, RELEASE_CONFIG_FILE)).packages ?? {}) as Record<string, unknown>,
   };
   const callers = await collectCallers(io, repoId);
+  const releases = await resolveReleases(io, index);
 
   const seen = new Set<string>();
   for (const manifestFile of await listAll(io, ACTION_PATTERNS)) {
@@ -303,7 +324,7 @@ export async function generateActionReadmes(repoId: string, io: DocsIo = default
       continue;
     }
     seen.add(actionPath);
-    await generateOne(io, repoId, manifestFile, index, callers, report);
+    await generateOne(io, repoId, manifestFile, index, callers, releases, report);
   }
   return report;
 }

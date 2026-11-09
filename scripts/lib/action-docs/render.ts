@@ -140,6 +140,9 @@ export function describeCondition(condition: Condition): string {
   if ('repository' in condition) {
     return `the repository is ${condition.repository}`;
   }
+  if ('set' in condition) {
+    return `${codeSpan(condition.input)} is set`;
+  }
   return `${codeSpan(condition.input)} is ${codeSpan(condition.equals)}`;
 }
 
@@ -154,7 +157,17 @@ function renderPermissions(docs: ActionDocs | undefined): string {
     codeSpan(`${permission.scope}: ${permission.access}`),
     tableCell(describeCondition(permission.when)),
   ]);
-  return `## Permissions\n\n${table(['Permission', 'Needed when'], rows)}`;
+  // Only an action that is handed a token gets a column saying whose permission it is; for every
+  // other action it would repeat "the job token" on each row.
+  if (!docs.permissions.some((permission) => permission.token !== undefined)) {
+    return `## Permissions\n\n${table(['Permission', 'Needed when'], rows)}`;
+  }
+  const withHolder = docs.permissions.map((permission, index) => [
+    rows[index][0],
+    permission.token === undefined ? 'the job token' : `the token in ${codeSpan(permission.token)}`,
+    rows[index][1],
+  ]);
+  return `## Permissions\n\n${table(['Permission', 'Held by', 'Needed when'], withHolder)}`;
 }
 
 function renderEgress(docs: ActionDocs | undefined): string {

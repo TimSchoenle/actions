@@ -1,0 +1,17 @@
+permissions: []
+
+egress:
+  - endpoint: github.com:443
+    for: the release download
+  - endpoint: objects.githubusercontent.com:443
+    for: the release download
+  - endpoint: release-assets.githubusercontent.com:443
+    for: the release download
+  - endpoint: api.github.com:443
+    for: the REST API fallback
+
+examples:
+  - title: Pin the asset itself
+    file: examples/pin-the-asset.yaml
+  - title: Pin the release's checksums file
+    file: examples/pin-the-checksums-file.yaml

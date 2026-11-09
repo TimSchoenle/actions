@@ -36,6 +36,7 @@ export type RunnerRequirement = (typeof RUNNER_REQUIREMENTS)[number];
 export type Condition =
   | 'always'
   | { input: string; equals: string }
+  | { input: string; set: true }
   | { repository: 'private' | 'public' }
   | { all: Condition[] };
 
@@ -43,6 +44,11 @@ export interface Permission {
   scope: TokenScope;
   access: 'read' | 'write';
   when: Condition;
+  /**
+   * The input whose token must hold the permission, for an action that calls the API with a token it
+   * is given rather than the job's `GITHUB_TOKEN`. `undefined` means the job token.
+   */
+  token?: string;
 }
 
 export interface EgressEndpoint {
@@ -145,7 +151,7 @@ function list(value: unknown, where: string, problems: Problems): unknown[] | un
   return value;
 }
 
-const CONDITION_SHAPES = "must be 'always', { input, equals }, { repository } or { all: [...] }";
+const CONDITION_SHAPES = "must be 'always', { input, equals }, { input, set: true }, { repository } or { all: [...] }";
 
 function allCondition(
   value: Record<string, unknown>,
@@ -183,17 +189,45 @@ function repositoryCondition(value: Record<string, unknown>, where: string, prob
   return { repository: value.repository };
 }
 
+/** An input the action declares. Reports a name action.yaml does not have. */
+function inputName(value: unknown, where: string, context: DocsContext, problems: Problems): string | undefined {
+  const input = text(value, where, problems);
+  if (input !== undefined && !context.inputNames.has(input)) {
+    problems.add(where, `action.yaml has no input '${input}'`);
+    return undefined;
+  }
+  return input;
+}
+
+/** `{ input, set: true }`: the input is given a non-empty value. */
+function setCondition(
+  value: Record<string, unknown>,
+  input: string | undefined,
+  where: string,
+  problems: Problems,
+): Condition | undefined {
+  if ('equals' in value) {
+    problems.add(where, "takes either 'equals' or 'set', not both");
+    return undefined;
+  }
+  // `set: false` would read as "the input is empty", which an input with a default never is.
+  if (value.set !== true) {
+    problems.add(`${where}.set`, 'must be true');
+    return undefined;
+  }
+  return input === undefined ? undefined : { input, set: true };
+}
+
 function inputCondition(
   value: Record<string, unknown>,
   where: string,
   context: DocsContext,
   problems: Problems,
 ): Condition | undefined {
-  checkKeys(value, ['input', 'equals'], where, problems);
-  const input = text(value.input, `${where}.input`, problems);
-  if (input !== undefined && !context.inputNames.has(input)) {
-    problems.add(`${where}.input`, `action.yaml has no input '${input}'`);
-    return undefined;
+  checkKeys(value, ['input', 'equals', 'set'], where, problems);
+  const input = inputName(value.input, `${where}.input`, context, problems);
+  if ('set' in value) {
+    return setCondition(value, input, where, problems);
   }
   // GitHub hands every input to the action as a string, so `true` and 'true' mean the same. A number
   // is refused: YAML reads `1.0` as 1, while the action receives the text as written.
@@ -227,7 +261,7 @@ function permission(value: unknown, where: string, context: DocsContext, problem
     problems.add(where, 'must be a map with scope, access and when');
     return undefined;
   }
-  checkKeys(value, ['scope', 'access', 'when'], where, problems);
+  checkKeys(value, ['scope', 'access', 'when', 'token'], where, problems);
 
   const scope = value.scope;
   if (!TOKEN_SCOPES.includes(scope as TokenScope)) {
@@ -240,11 +274,19 @@ function permission(value: unknown, where: string, context: DocsContext, problem
     problems.add(`${where}.access`, "id-token only takes 'write'");
   }
   const when = condition(value.when, `${where}.when`, context, problems);
+  const token = value.token === undefined ? undefined : inputName(value.token, `${where}.token`, context, problems);
 
-  if (!TOKEN_SCOPES.includes(scope as TokenScope) || (access !== 'read' && access !== 'write') || !when) {
+  if (
+    !TOKEN_SCOPES.includes(scope as TokenScope) ||
+    (access !== 'read' && access !== 'write') ||
+    !when ||
+    (value.token !== undefined && token === undefined)
+  ) {
     return undefined;
   }
-  return { scope: scope as TokenScope, access, when };
+  return token === undefined
+    ? { scope: scope as TokenScope, access, when }
+    : { scope: scope as TokenScope, access, when, token };
 }
 
 function egressEndpoint(value: unknown, where: string, problems: Problems): EgressEndpoint | undefined {
@@ -338,7 +380,12 @@ export function validateDocsFile(raw: unknown, context: DocsContext): DocsValida
 
   // One scope may appear at both levels, `contents: read` always and `contents: write` only when the
   // action commits, but the same scope and level twice is two conditions the reader has to merge.
-  duplicates(docs.permissions, (item) => `${item.scope}: ${item.access}`, 'permissions', problems);
+  duplicates(
+    docs.permissions,
+    (item) => `${item.scope}: ${item.access}${item.token === undefined ? '' : ` of ${item.token}`}`,
+    'permissions',
+    problems,
+  );
   duplicates(docs.egress, (item) => item.endpoint, 'egress', problems);
   duplicates(docs.requires, (item) => item, 'requires', problems);
   duplicates(docs.examples, (item) => item.file, 'examples', problems);

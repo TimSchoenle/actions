@@ -54,30 +54,38 @@ describe('referencedActions', () => {
 });
 
 describe('pinUses', () => {
-  it('rewrites only lines calling the action and keeps their indentation', () => {
+  const pins: Record<string, string> = {
+    'actions/security/zizmor': 'Owner/actions/actions/security/zizmor@abc # tag=t',
+    'actions/common/commit-patch': 'Owner/actions/actions/common/commit-patch@def # tag=u',
+  };
+
+  it('rewrites every line calling a pinned action and keeps the indentation', () => {
     const content = [
       '      - uses: actions/checkout@v4',
       '      - uses: Owner/actions/actions/security/zizmor@main',
       '        with:',
       '          upload: false',
-      '      - uses: Owner/actions/actions/security/zizmor-other@main',
+      '      - uses: Owner/actions/actions/common/commit-patch@0123 # tag=old',
+      '      - uses: Owner/actions/actions/security/zizmor/helper@main',
     ].join('\n');
 
-    expect(
-      pinUses(content, REPO, 'actions/security/zizmor', 'Owner/actions/actions/security/zizmor@abc # tag=t'),
-    ).toEqual({
-      content: [
+    const result = pinUses(content, REPO, (action) => pins[action]);
+
+    expect(result.content).toBe(
+      [
         '      - uses: actions/checkout@v4',
         '      - uses: Owner/actions/actions/security/zizmor@abc # tag=t',
         '        with:',
         '          upload: false',
-        '      - uses: Owner/actions/actions/security/zizmor-other@main',
+        '      - uses: Owner/actions/actions/common/commit-patch@def # tag=u',
+        // No pin for a helper: left as written.
+        '      - uses: Owner/actions/actions/security/zizmor/helper@main',
       ].join('\n'),
-      replaced: 1,
-    });
+    );
+    expect([...result.pinned].sort()).toEqual(['actions/common/commit-patch', 'actions/security/zizmor']);
   });
 
-  it('reports zero when the example never calls the action', () => {
-    expect(pinUses('- uses: actions/checkout@v4', REPO, 'actions/x/y', 'pinned').replaced).toBe(0);
+  it('pins nothing when the example calls no action of the repository', () => {
+    expect(pinUses('- uses: actions/checkout@v4', REPO, () => 'pinned').pinned.size).toBe(0);
   });
 });

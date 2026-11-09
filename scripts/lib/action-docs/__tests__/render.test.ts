@@ -55,6 +55,7 @@ describe('describeCondition', () => {
     ['always', 'always'],
     [{ input: 'upload', equals: 'true' }, '`upload` is `true`'],
     [{ repository: 'private' }, 'the repository is private'],
+    [{ input: 'run_id', set: true }, '`run_id` is set'],
     [
       { all: [{ input: 'upload', equals: 'true' }, { repository: 'private' }] },
       '`upload` is `true` and the repository is private',
@@ -181,6 +182,32 @@ describe('renderRegions', () => {
         '| Endpoint      | For            |',
         '| ------------- | -------------- |',
         '| `ghcr.io:443` | the image pull |',
+      ].join('\n'),
+    );
+  });
+
+  it('says whose token holds each permission once any is held by a token input', () => {
+    const regions = renderRegions(
+      model({
+        docs: {
+          permissions: [
+            { scope: 'contents', access: 'read', when: 'always' },
+            { scope: 'pull-requests', access: 'write', when: 'always', token: 'token' },
+          ],
+          egress: [],
+          requires: [],
+          examples: [],
+        },
+      }),
+    );
+    expect(regions.permissions).toBe(
+      [
+        '## Permissions',
+        '',
+        '| Permission             | Held by              | Needed when |',
+        '| ---------------------- | -------------------- | ----------- |',
+        '| `contents: read`       | the job token        | always      |',
+        '| `pull-requests: write` | the token in `token` | always      |',
       ].join('\n'),
     );
   });

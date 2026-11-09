@@ -13,26 +13,26 @@ inputs:
     required: false
     default: 'spotlessApply'
   java_version:
-    description: 'Java version to use for the build.'
+    description: 'Java version to set up for the build.'
     required: true
   java_distribution:
-    description: 'Java distribution to use'
+    description: 'Java distribution to set up.'
     required: false
     default: 'temurin'
   java_package:
-    description: 'The package type (jdk, jre, jdk+fx, jre+fx)'
+    description: 'Package type: jdk, jre, jdk+fx or jre+fx.'
     required: false
     default: 'jdk'
   gradle_wrapper_validation:
-    description: 'Validate Gradle wrapper'
+    description: 'Validate the Gradle wrapper checksum.'
     required: false
     default: 'true'
   gradle_wrapper_allow_snapshots:
-    description: 'Allow Gradle wrapper snapshots'
+    description: 'Accept snapshot wrappers during wrapper validation.'
     required: false
     default: 'false'
   paths:
-    description: 'Space- or newline-separated paths or globs scoping the patch, as common/create-patch takes them. . is the whole tree.'
+    description: 'Space- or newline-separated paths or globs scoping the patch, as common/create-patch takes them. . is the whole tree. It only narrows the patch: what may be committed is decided by allowed_paths on common/commit-patch.'
     required: false
     default: '.'
   artifact_name:

@@ -215,8 +215,59 @@ examples:
       'permissions: []\negress:\n  - { endpoint: ghcr.io:443, for: a }\n  - { endpoint: ghcr.io:443, for: b }\n',
       /egress: ghcr\.io:443 is listed twice/,
     ],
+    [
+      "'set' other than true",
+      'permissions:\n  - { scope: actions, access: read, when: { input: token, set: false } }\negress: []\n',
+      /permissions\[0\]\.when\.set: must be true/,
+    ],
+    [
+      "both 'set' and 'equals'",
+      "permissions:\n  - { scope: actions, access: read, when: { input: token, set: true, equals: 'x' } }\negress: []\n",
+      /permissions\[0\]\.when: takes either 'equals' or 'set', not both/,
+    ],
+    [
+      "'set' on an input the action does not have",
+      'permissions:\n  - { scope: actions, access: read, when: { input: run_id, set: true } }\negress: []\n',
+      /permissions\[0\]\.when\.input: action\.yaml has no input 'run_id'/,
+    ],
+    [
+      'a token input the action does not have',
+      'permissions:\n  - { scope: contents, access: write, when: always, token: github-token }\negress: []\n',
+      /permissions\[0\]\.token: action\.yaml has no input 'github-token'/,
+    ],
   ])('refuses %s', (_case, yaml, message) => {
     expect(problemsOf(yaml).join('\n')).toMatch(message);
+  });
+
+  it('accepts an input that only has to be set, and a permission held by a token input', () => {
+    const result = validate(`
+permissions:
+  - { scope: actions, access: read, when: { input: upload, set: true } }
+  - { scope: contents, access: write, when: always, token: token }
+egress: []
+`);
+    expect(result).toEqual({
+      ok: true,
+      docs: {
+        permissions: [
+          { scope: 'actions', access: 'read', when: { input: 'upload', set: true } },
+          { scope: 'contents', access: 'write', when: 'always', token: 'token' },
+        ],
+        egress: [],
+        requires: [],
+        examples: [],
+      },
+    });
+  });
+
+  it('allows one scope at one level on both the job token and a token input', () => {
+    const result = validate(`
+permissions:
+  - { scope: contents, access: read, when: always }
+  - { scope: contents, access: read, when: always, token: token }
+egress: []
+`);
+    expect(result.ok).toBe(true);
   });
 
   it('allows one scope at both levels under different conditions', () => {

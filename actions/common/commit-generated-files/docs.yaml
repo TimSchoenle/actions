@@ -1,0 +1,24 @@
+permissions:
+  - scope: actions
+    access: read
+    when: always
+  - scope: contents
+    access: read
+    when: always
+  - scope: pull-requests
+    access: read
+    when: { repository: private }
+
+egress:
+  - endpoint: api.github.com:443
+    for: reading the run's artifacts and fork pull requests, minting the App token and the GraphQL commit
+  - endpoint: github.com:443
+    for: checking out the pull request head
+  - endpoint: '*.actions.githubusercontent.com:443'
+    for: the artifact download
+  - endpoint: '*.blob.core.windows.net:443'
+    for: the artifact download
+
+examples:
+  - title: Generate Commit workflow
+    file: examples/generate-commit.yaml

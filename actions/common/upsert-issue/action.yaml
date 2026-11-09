@@ -3,28 +3,28 @@ description: 'Opens or updates a repository issue, updating the previous issue c
 
 inputs:
   token:
-    description: 'GitHub Token with issues: write access.'
+    description: 'GitHub token with issues: write on the target repository.'
     required: true
   repository:
-    description: 'Repository to open/update the issue on, as "owner/repo".'
+    description: 'Repository to open or update the issue on, as "owner/repo". Unlike a pull request reference, the default is populated regardless of the triggering event, so most callers pass nothing.'
     required: false
     default: ${{ github.repository }}
   identifier:
-    description: 'Stable key naming this issue, e.g. "repo-state:Name". Letters, digits, ".", "_" and "-", up to 64 characters. It is written into the issue body as a hidden marker, which is how a later run finds the issue to update.'
+    description: 'Stable key naming this issue, e.g. "repo-state-Name". One to 64 letters, digits, ".", "_" and "-", starting with a letter or digit; anything else fails the step. It is written into the issue body as a hidden marker, which is how a later run finds the issue to update. See identifier below.'
     required: true
   title:
     description: 'Issue title. Rewritten every run that finds the issue by marker -- the marker, not the title, is the identity, so the title may change between runs without losing it.'
     required: true
   body:
-    description: 'Markdown body of the issue. Exactly one of body or body_file must be given.'
+    description: 'Markdown body of the issue. Exactly one of body and body_file must be non-empty; setting both fails the step rather than picking one.'
     required: false
     default: ''
   body_file:
-    description: 'Path, relative to the workspace, of a file holding the markdown body. Exactly one of body or body_file must be given.'
+    description: 'Path, relative to the workspace, of a file holding the markdown body. Exactly one of body and body_file must be non-empty; setting both fails the step rather than picking one.'
     required: false
     default: ''
   labels:
-    description: 'Multiline list of labels the issue must carry. Enforced on every run: a label present here and missing from the issue is added, and one absent here but present on the issue is removed. A label that does not yet exist on the repository is created.'
+    description: 'Multiline list of labels the issue must carry. Enforced on every run: a label present here and missing from the issue is added, and one absent here but present on the issue is removed. A label that does not yet exist on the repository is created. See labels below.'
     required: false
     default: ''
   update_existing:
@@ -32,7 +32,7 @@ inputs:
     required: false
     default: 'true'
   search_state:
-    description: '"open" or "all". Scope of the issue listing searched for the marker. "all" also finds a manually closed issue so it can be reopened; "open" is cheaper on a repository with many closed issues.'
+    description: '"open" or "all". Scope of the issue listing searched for the marker. "all" also finds a manually closed issue so it can be reopened; "open" is cheaper on a repository with many closed issues. See Why not the Search API below.'
     required: false
     default: 'all'
   reopen_if_closed:
@@ -50,7 +50,7 @@ outputs:
   issue_url:
     description: 'URL of that issue.'
   operation:
-    description: 'What the run did: "created", "updated", "reopened" or "unchanged".'
+    description: 'What the run did: "created", "updated", "reopened" or "unchanged". See What happens on the second run below.'
 
 runs:
   using: 'node24'

@@ -82,26 +82,29 @@ export function referencedActions(content: string, repoId: string): Set<string> 
 }
 
 /**
- * Rewrites every `uses:` line that calls `actionPath` to `pinned`, keeping its indentation. A comment
- * after the original reference is replaced too, since `pinned` carries its own `# tag=` comment.
+ * Rewrites every `uses:` line that calls an action of this repository to the reference `pinFor`
+ * returns for it, keeping the indentation. A comment after the original reference is replaced too,
+ * since the pinned reference carries its own `# tag=` comment. Lines whose action `pinFor` has no
+ * reference for, like an unpublished helper, are left as written.
  *
- * Returns how many lines were rewritten, so the caller can refuse an example that never calls the
- * action it documents.
+ * Returns the actions whose lines were rewritten, so the caller can refuse an example that never
+ * calls the action it documents.
  */
 export function pinUses(
   content: string,
   repoId: string,
-  actionPath: string,
-  pinned: string,
-): { content: string; replaced: number } {
-  let replaced = 0;
+  pinFor: (actionPath: string) => string | undefined,
+): { content: string; pinned: Set<string> } {
+  const pinned = new Set<string>();
   const lines = content.split('\n').map((line) => {
     const parsed = parseUsesLine(line);
-    if (!parsed || referencedAction(parsed.reference, repoId) !== actionPath) {
+    const action = parsed ? referencedAction(parsed.reference, repoId) : undefined;
+    const reference = action ? pinFor(action) : undefined;
+    if (!parsed || !action || reference === undefined) {
       return line;
     }
-    replaced += 1;
-    return `${parsed.prefix}${pinned}`;
+    pinned.add(action);
+    return `${parsed.prefix}${reference}`;
   });
-  return { content: lines.join('\n'), replaced };
+  return { content: lines.join('\n'), pinned };
 }
