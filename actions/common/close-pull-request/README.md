@@ -15,12 +15,42 @@ Closes a pull request
 <!-- docs:generated usage -->
 ## Usage
 
+### Close a superseded pull request with a comment
+
 ```yaml
-- uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
-  with:
-    pull_request_id: # required, see Inputs
-    repository: # required, see Inputs
-    token: # required, see Inputs
+name: Close Superseded Pull Request
+
+on:
+  workflow_dispatch:
+    inputs:
+      pull_request:
+        description: Number of the pull request to close
+        required: true
+      replacement:
+        description: Number of the pull request that replaces it
+        required: true
+
+permissions: {}
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write # to comment on and close the pull request
+    steps:
+      - id: close
+        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          pull_request_id: ${{ inputs.pull_request }}
+          comment: 'Superseded by #${{ inputs.replacement }}.'
+
+      # closed is false when the pull request does not exist, which is not an error.
+      - if: steps.close.outputs.closed == 'false'
+        run: echo "Pull request ${PR} does not exist, nothing to close"
+        env:
+          PR: ${{ inputs.pull_request }}
 ```
 <!-- /docs:generated usage -->
 
@@ -44,9 +74,21 @@ Closes a pull request
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+| Permission             | Held by              | Needed when |
+| ---------------------- | -------------------- | ----------- |
+| `pull-requests: write` | the token in `token` | always      |
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint             | For                                                           |
+| -------------------- | ------------------------------------------------------------- |
+| `api.github.com:443` | reading and closing the pull request, and posting the comment |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

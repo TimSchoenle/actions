@@ -1,0 +1,19 @@
+# The commits are read through the GraphQL API, which a token without scopes may do on a public
+# repository. "The repository" below is the one pr_url points at.
+permissions:
+  - scope: pull-requests
+    access: read
+    when: { repository: private }
+    token: github_token
+  - scope: contents
+    access: read
+    when: { repository: private }
+    token: github_token
+
+egress:
+  - endpoint: api.github.com:443
+    for: the GraphQL queries that read the commits, their authors and signatures
+
+examples:
+  - title: Only act on pull requests made entirely by Renovate
+    file: examples/renovate-only.yaml

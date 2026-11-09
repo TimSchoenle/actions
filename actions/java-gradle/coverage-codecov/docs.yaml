@@ -1,0 +1,39 @@
+permissions:
+  - scope: contents
+    access: read
+    when: always
+  - scope: id-token
+    access: write
+    when: { all: [{ input: use_oidc, equals: 'true' }, { input: dry_run, equals: 'false' }] }
+
+egress:
+  - endpoint: github.com:443
+    for: the checkout, the JDK download with the default temurin distribution, and the Gradle distribution
+  - endpoint: release-assets.githubusercontent.com:443
+    for: the JDK and Gradle distribution assets that github.com redirects to
+  - endpoint: objects.githubusercontent.com:443
+    for: the JDK and Gradle distribution assets that github.com redirects to
+  - endpoint: api.adoptium.net:443
+    for: looking up the JDK, with the default temurin distribution
+  - endpoint: services.gradle.org:443
+    for: the Gradle distribution URL in the wrapper, and checksums of wrapper versions setup-gradle does not know
+  - endpoint: downloads.gradle.org:443
+    for: the wrapper checksums that services.gradle.org redirects to
+  - endpoint: repo.maven.apache.org:443
+    for: the JaCoCo agent and the build's dependencies, when the build resolves from Maven Central
+  - endpoint: '*.actions.githubusercontent.com:443'
+    for: the Gradle cache and the OIDC token
+  - endpoint: '*.blob.core.windows.net:443'
+    for: the Gradle cache
+  - endpoint: cli.codecov.io:443
+    for: the Codecov CLI download
+  - endpoint: keybase.io:443
+    for: the key that verifies the Codecov CLI
+  - endpoint: ingest.codecov.io:443
+    for: the coverage and test result uploads
+  - endpoint: storage.googleapis.com:443
+    for: the report storage Codecov hands the upload to
+
+examples:
+  - title: Coverage on every push and pull request
+    file: examples/coverage.yaml

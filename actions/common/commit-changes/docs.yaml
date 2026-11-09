@@ -1,0 +1,13 @@
+permissions:
+  - scope: contents
+    access: write
+    when: always
+    token: token
+
+egress:
+  - endpoint: api.github.com:443
+    for: the branch head lookup and the GraphQL commit
+
+examples:
+  - title: Commit regenerated files as a GitHub App
+    file: examples/commit-generated.yaml

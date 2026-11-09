@@ -1,0 +1,28 @@
+name: Renovate Auto Approve
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# A newer push supersedes the run that judged the previous head.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  auto-approve:
+    name: Auto Approve
+    runs-on: ubuntu-latest
+    # Approving with the job token also needs the repository setting "Allow GitHub Actions to create
+    # and approve pull requests".
+    permissions:
+      pull-requests: write # read the pull request and its commits, and approve it
+    steps:
+      - uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@main
+        with:
+          token: ${{ github.token }}
+          # Database IDs of the accounts whose pull requests may be approved; 29139614 is Renovate.
+          user_ids: '29139614'
+          branch_pattern: '^renovate/.*$'

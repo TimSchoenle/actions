@@ -1,0 +1,21 @@
+name: Helm
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  check:
+    name: Configuration contracts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # The full history, so since can find its merge base with HEAD.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: TimSchoenle/actions/actions/terrace/helm-check@main

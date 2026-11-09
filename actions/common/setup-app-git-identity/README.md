@@ -15,11 +15,44 @@ Configures git with the identity of a GitHub App bot and outputs the bot details
 <!-- docs:generated usage -->
 ## Usage
 
+### Commit and push as the App bot
+
 ```yaml
-- uses: TimSchoenle/actions/actions/common/setup-app-git-identity@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-setup-app-git-identity-v2.0.1
-  with:
-    app-slug: # required, see Inputs
-    token: # required, see Inputs
+# The identity is written into the checkout's local git config, so the action runs after the
+# checkout. The checkout keeps the App token as its credential because the job pushes with git.
+name: Bump Version
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    environment: ci
+    permissions: {}
+    steps:
+      - id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          permission-contents: write
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          token: ${{ steps.token.outputs.token }}
+
+      - uses: TimSchoenle/actions/actions/common/setup-app-git-identity@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-setup-app-git-identity-v2.0.1
+        with:
+          app-slug: ${{ steps.token.outputs.app-slug }}
+          token: ${{ steps.token.outputs.token }}
+
+      - run: |
+          ./scripts/bump-version.sh
+          git commit --all --message 'chore: bump version'
+          git push
 ```
 <!-- /docs:generated usage -->
 
@@ -43,9 +76,19 @@ Configures git with the identity of a GitHub App bot and outputs the bot details
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+Needs no token permissions.
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint             | For                     |
+| -------------------- | ----------------------- |
+| `api.github.com:443` | looking up the bot user |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

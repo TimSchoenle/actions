@@ -1,0 +1,15 @@
+permissions:
+  - scope: contents
+    access: read
+    when: always
+    token: token
+
+egress:
+  - endpoint: api.github.com:443
+    for: the REST calls that read the default branch and the branch ref
+
+examples:
+  - title: Check out the requested branch or the default one
+    file: examples/checkout-resolved-branch.yaml
+  - title: Create the branch when it does not exist
+    file: examples/silent-fail.yaml

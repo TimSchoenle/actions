@@ -1,0 +1,14 @@
+permissions:
+  - scope: contents
+    access: read
+    when: always
+
+egress:
+  - endpoint: api.github.com:443
+    for: minting the App token
+  - endpoint: github.com:443
+    for: checking out the test repository and this repository
+
+examples:
+  - title: An end-to-end test job
+    file: examples/e2e.yaml

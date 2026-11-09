@@ -1,0 +1,25 @@
+permissions:
+  - scope: contents
+    access: write
+    when: { input: token, set: true }
+    token: token
+
+# With pull, the registry of every image a chart pins is reached as well, through oras, and its
+# signature checked by cosign. Those hosts depend on the charts, so they are not listed here.
+egress:
+  - endpoint: github.com:443
+    for: the terrace-contract, cosign and oras release downloads
+  - endpoint: objects.githubusercontent.com:443
+    for: the release assets that github.com redirects to
+  - endpoint: release-assets.githubusercontent.com:443
+    for: the release assets that github.com redirects to
+  - endpoint: api.github.com:443
+    for: the GraphQL commit with token, the release listing for a MAJOR.MINOR version, and the download fallback
+  - endpoint: tuf-repo-cdn.sigstore.dev:443
+    for: the Sigstore trust root cosign verifies the release and the image signatures against
+
+examples:
+  - title: Sync and commit on a schedule
+    file: examples/scheduled-sync.yaml
+  - title: Rewrite the derived files only, with no network
+    file: examples/no-pull.yaml

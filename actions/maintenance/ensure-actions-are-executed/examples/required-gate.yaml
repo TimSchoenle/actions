@@ -1,0 +1,33 @@
+# One required status check that stands for the jobs before it: every matched check that started
+# must have succeeded, and a job that was skipped, and so never started, is tolerated.
+name: CI
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  build:
+    name: Build
+    # ...
+
+  test:
+    name: Test (${{ matrix.os }})
+    # ...
+
+  gate:
+    name: Required checks
+    needs: [build, test]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      checks: read # the check runs of the head commit
+      actions: read # this run's jobs, the fallback when the commit has no check runs
+    steps:
+      - uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@main
+        with:
+          token: ${{ github.token }}
+          checks: |
+            Build
+            /^Test \(.+\)$/

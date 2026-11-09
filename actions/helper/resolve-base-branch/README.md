@@ -15,11 +15,45 @@ Resolve the given base branch or return default branch. With optional existence 
 <!-- docs:generated usage -->
 ## Usage
 
+### Check out the requested branch or the default one
+
 ```yaml
-- uses: TimSchoenle/actions/actions/helper/resolve-base-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-helper-resolve-base-branch-v2.0.1
+# An empty branch_name resolves the repository's default branch. The step fails when the branch
+# does not exist, so the checkout never runs against a missing ref.
+- id: base
+  uses: TimSchoenle/actions/actions/helper/resolve-base-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-helper-resolve-base-branch-v2.0.1
   with:
-    token: # required, see Inputs
-    repository: # required, see Inputs
+    token: ${{ steps.token.outputs.token }}
+    repository: acme/helm-charts
+    branch_name: ${{ inputs.base_branch }}
+
+- uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+  with:
+    repository: acme/helm-charts
+    token: ${{ steps.token.outputs.token }}
+    ref: ${{ steps.base.outputs.base_branch }}
+    persist-credentials: false
+```
+
+### Create the branch when it does not exist
+
+```yaml
+# silent_fail turns only a missing branch into an empty output. A token that cannot see the
+# repository still fails the step, rather than reading as "branch not found".
+- id: base
+  uses: TimSchoenle/actions/actions/helper/resolve-base-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-helper-resolve-base-branch-v2.0.1
+  with:
+    token: ${{ steps.token.outputs.token }}
+    repository: ${{ github.repository }}
+    branch_name: release/next
+    silent_fail: 'true'
+
+- if: steps.base.outputs.base_branch == ''
+  uses: TimSchoenle/actions/actions/common/create-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-branch-v2.0.1
+  with:
+    token: ${{ steps.token.outputs.token }}
+    repository: ${{ github.repository }}
+    branch_name: release/next
 ```
 <!-- /docs:generated usage -->
 
@@ -44,9 +78,21 @@ Resolve the given base branch or return default branch. With optional existence 
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+| Permission       | Held by              | Needed when |
+| ---------------- | -------------------- | ----------- |
+| `contents: read` | the token in `token` | always      |
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint             | For                                                            |
+| -------------------- | -------------------------------------------------------------- |
+| `api.github.com:443` | the REST calls that read the default branch and the branch ref |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

@@ -1,0 +1,21 @@
+permissions:
+  - scope: pull-requests
+    access: write
+    when: { input: token, set: true }
+    token: token
+
+egress:
+  - endpoint: github.com:443
+    for: the terrace-contract and cosign release downloads
+  - endpoint: objects.githubusercontent.com:443
+    for: the release assets that github.com redirects to
+  - endpoint: release-assets.githubusercontent.com:443
+    for: the release assets that github.com redirects to
+  - endpoint: api.github.com:443
+    for: the pull request comment with token, the release listing for a MAJOR.MINOR version, and the download fallback
+  - endpoint: tuf-repo-cdn.sigstore.dev:443
+    for: the Sigstore trust root cosign verifies the terrace-contract release against
+
+examples:
+  - title: Report contract changes on a pull request
+    file: examples/pull-request-comment.yaml

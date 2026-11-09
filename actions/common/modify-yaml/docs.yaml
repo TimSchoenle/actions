@@ -1,0 +1,7 @@
+permissions: []
+
+egress: []
+
+examples:
+  - title: Pin a new image tag in values.yaml
+    file: examples/pin-image-tag.yaml

@@ -1,0 +1,26 @@
+# Every API call is made with the App installation tokens the action mints from app-id and
+# private-key, never with the job token. That installation needs contents: write and
+# pull-requests: write on the charts repository.
+permissions: []
+
+egress:
+  - endpoint: api.github.com:443
+    for: the app tokens, the base branch lookup, the branch, the commit and the pull request
+  - endpoint: github.com:443
+    for: the charts repository checkout, and the tool downloads with pull-contracts
+  - endpoint: release-assets.githubusercontent.com:443
+    for: the terrace-contract, cosign and oras downloads with pull-contracts
+  - endpoint: objects.githubusercontent.com:443
+    for: the terrace-contract, cosign and oras downloads with pull-contracts
+  - endpoint: tuf-repo-cdn.sigstore.dev:443
+    for: the sigstore trusted root cosign verifies against, with pull-contracts
+  - endpoint: ghcr.io:443
+    for: the configuration contracts with pull-contracts, for images on ghcr.io
+  - endpoint: pkg-containers.githubusercontent.com:443
+    for: the configuration contracts with pull-contracts, for images on ghcr.io
+
+examples:
+  - title: Update the chart after a release
+    file: examples/after-release.yaml
+  - title: Several services, with their configuration contracts
+    file: examples/several-services.yaml

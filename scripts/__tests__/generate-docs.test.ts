@@ -276,7 +276,7 @@ describe('Generate Readme Script', () => {
     mocks.generateActionReadmes.mockResolvedValue({
       written: ['actions/x/y/README.md'],
       errors: ['actions/x/y/docs.yaml: egress: must be a list; write [] for none'],
-      warnings: ['actions/x/z: no docs.yaml, so its README has no permissions or egress'],
+      warnings: ['actions/x/z/README.md: has no docs:generated regions yet, left as it is'],
     });
 
     const { main } = await import('../generate-docs.js');
@@ -284,7 +284,7 @@ describe('Generate Readme Script', () => {
 
     expect(console.log).toHaveBeenCalledWith('🎉 Generated actions/x/y/README.md');
     expect(console.warn).toHaveBeenCalledWith(
-      '⚠️ actions/x/z: no docs.yaml, so its README has no permissions or egress',
+      '⚠️ actions/x/z/README.md: has no docs:generated regions yet, left as it is',
     );
     expect(console.error).toHaveBeenCalledWith('❌ actions/x/y/docs.yaml: egress: must be a list; write [] for none');
     expect(process.exitCode).toBe(1);

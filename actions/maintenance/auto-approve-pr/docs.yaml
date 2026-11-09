@@ -1,0 +1,17 @@
+permissions:
+  - scope: pull-requests
+    access: write
+    when: always
+    token: token
+  - scope: contents
+    access: read
+    when: { repository: private }
+    token: token
+
+egress:
+  - endpoint: api.github.com:443
+    for: reading the pull request, the GraphQL commit and signature lookup, and the approving review
+
+examples:
+  - title: Approve Renovate pull requests
+    file: examples/renovate.yaml

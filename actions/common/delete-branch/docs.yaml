@@ -1,0 +1,13 @@
+permissions:
+  - scope: contents
+    access: write
+    when: always
+    token: token
+
+egress:
+  - endpoint: api.github.com:443
+    for: the REST calls that read and delete the branch ref
+
+examples:
+  - title: Delete a pull request's branch once it is closed
+    file: examples/delete-closed-branch.yaml

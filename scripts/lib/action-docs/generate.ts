@@ -12,7 +12,7 @@ import { findRegions, MarkerError, newReadme, spliceRegions } from './markers.js
 import { renderRegions, usesReference } from './render.js';
 import { pinUses, referencedActions } from './uses.js';
 
-import type { ActionDocs } from './docs-file.js';
+import type { ActionDocs, DocsValidation } from './docs-file.js';
 import type { ActionManifest } from './manifest.js';
 import type { LoadedExample, ReadmeModel, Release } from './render.js';
 
@@ -32,7 +32,7 @@ export interface GenerationReport {
   written: string[];
   /** Problems that make a README wrong or impossible to generate. The run fails on any. */
   errors: string[];
-  /** Gaps that are allowed for now: a missing `docs.yaml`, an empty description. */
+  /** Gaps that are allowed for now: a README without `docs:generated` regions. */
   warnings: string[];
 }
 
@@ -126,27 +126,28 @@ async function resolveReleases(io: DocsIo, index: ReleaseIndex): Promise<Map<str
   return releases;
 }
 
-/** Reads and validates `docs.yaml`. `undefined` with no problems means the file does not exist. */
-async function loadDocs(
-  io: DocsIo,
-  actionPath: string,
-  manifest: ActionManifest,
-): Promise<{ docs: ActionDocs | undefined; problems: string[] }> {
+/**
+ * Reads and validates `docs.yaml`. A published action must have one: without it the README could not
+ * say which permissions and egress the action needs.
+ */
+async function loadDocs(io: DocsIo, actionPath: string, manifest: ActionManifest): Promise<DocsValidation> {
   const file = `${actionPath}/${DOCS_FILE_NAME}`;
   const content = await io.read(file);
   if (content === undefined) {
-    return { docs: undefined, problems: [] };
+    return {
+      ok: false,
+      problems: [`${actionPath}: has no ${DOCS_FILE_NAME}, which its README needs for permissions and egress`],
+    };
   }
 
   let raw: unknown;
   try {
     raw = parse(content);
   } catch (error) {
-    return { docs: undefined, problems: [`${file}: not valid YAML: ${(error as Error).message}`] };
+    return { ok: false, problems: [`${file}: not valid YAML: ${(error as Error).message}`] };
   }
 
-  const result = validateDocsFile(raw, { file, inputNames: new Set(manifest.inputs.map((input) => input.name)) });
-  return result.ok ? { docs: result.docs, problems: [] } : { docs: undefined, problems: result.problems };
+  return validateDocsFile(raw, { file, inputNames: new Set(manifest.inputs.map((input) => input.name)) });
 }
 
 async function loadExamples(
@@ -205,7 +206,7 @@ function unsafeExampleLine(content: string): string | undefined {
   return undefined;
 }
 
-function descriptionWarnings(file: string, manifest: ActionManifest): string[] {
+function descriptionProblems(file: string, manifest: ActionManifest): string[] {
   return [
     ...manifest.inputs
       .filter((input) => !input.description.trim())
@@ -241,19 +242,17 @@ async function generateOne(
     report.errors.push((error as Error).message);
     return;
   }
-  report.warnings.push(...descriptionWarnings(manifestFile, manifest));
 
   const release = releases.get(actionPath);
-  const { docs, problems } = await loadDocs(io, actionPath, manifest);
-  if (problems.length > 0) {
-    report.errors.push(...problems);
+  const descriptions = descriptionProblems(manifestFile, manifest);
+  const loadedDocs = await loadDocs(io, actionPath, manifest);
+  if (descriptions.length > 0 || !loadedDocs.ok) {
+    report.errors.push(...descriptions, ...(loadedDocs.ok ? [] : loadedDocs.problems));
     return;
   }
-  if (!docs) {
-    report.warnings.push(`${actionPath}: no ${DOCS_FILE_NAME}, so its README has no permissions or egress`);
-  }
+  const { docs } = loadedDocs;
 
-  const loaded = docs ? await loadExamples(io, { repoId, actionPath }, docs, releases) : { examples: [], problems: [] };
+  const loaded = await loadExamples(io, { repoId, actionPath }, docs, releases);
   if (loaded.problems.length > 0) {
     report.errors.push(...loaded.problems);
     return;

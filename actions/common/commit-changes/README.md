@@ -15,11 +15,51 @@ Commits changes using the GitHub API to ensure verified bot commits.
 <!-- docs:generated usage -->
 ## Usage
 
+### Commit regenerated files as a GitHub App
+
 ```yaml
-- uses: TimSchoenle/actions/actions/common/commit-changes@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-commit-changes-v3.0.1
-  with:
-    commit_message: # required, see Inputs
-    token: # required, see Inputs
+# The commit is made through the GraphQL API with the App token, so it is verified and starts
+# workflows. The checkout only provides the working tree: the action reads the changed files from
+# disk and never pushes with git, so persist-credentials: false keeps the job token out of .git/config.
+name: Regenerate
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    environment: ci
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - run: ./scripts/generate.sh
+
+      - id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          permission-contents: write
+
+      - id: commit
+        uses: TimSchoenle/actions/actions/common/commit-changes@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-commit-changes-v3.0.1
+        with:
+          token: ${{ steps.token.outputs.token }}
+          commit_message: 'chore: regenerate files'
+          file_pattern: 'generated/ docs/api.md'
+
+      - if: steps.commit.outputs.changes_detected == 'true'
+        run: echo "Committed ${URL}"
+        env:
+          URL: ${{ steps.commit.outputs.commit_url }}
 ```
 <!-- /docs:generated usage -->
 
@@ -46,9 +86,21 @@ Commits changes using the GitHub API to ensure verified bot commits.
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+| Permission        | Held by              | Needed when |
+| ----------------- | -------------------- | ----------- |
+| `contents: write` | the token in `token` | always      |
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint             | For                                           |
+| -------------------- | --------------------------------------------- |
+| `api.github.com:443` | the branch head lookup and the GraphQL commit |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

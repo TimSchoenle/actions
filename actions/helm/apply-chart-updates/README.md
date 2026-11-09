@@ -15,11 +15,28 @@ Applies a set of templated image updates to a Helm chart's values.yaml and bumps
 <!-- docs:generated usage -->
 ## Usage
 
+### Update a chart in the same repository and commit it
+
 ```yaml
-- uses: TimSchoenle/actions/actions/helm/apply-chart-updates@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-helm-apply-chart-updates-v2.0.1
+# Writes values.yaml and Chart.yaml in the workspace; the files output is what to commit.
+# To open a pull request in a separate charts repository, use helm/update-chart-version instead.
+- id: apply
+  uses: TimSchoenle/actions/actions/helm/apply-chart-updates@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-helm-apply-chart-updates-v2.0.1
   with:
-    chart-path: # required, see Inputs
-    images: # required, see Inputs
+    chart-path: charts/my-app
+    images: |
+      {
+        "services.api.image.tag": { "tag": "v1.4.0", "digest": "${{ steps.api.outputs.digest }}" },
+        "services.worker.image.tag": { "tag": "v2.1.3", "digest": "${{ steps.worker.outputs.digest }}" }
+      }
+    version-bump: minor
+
+- uses: TimSchoenle/actions/actions/common/commit-changes@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-commit-changes-v3.0.1
+  if: steps.apply.outputs.updated-count != '0'
+  with:
+    token: ${{ steps.token.outputs.token }}
+    commit_message: 'chore(my-app): update chart to ${{ steps.apply.outputs.chart-version }}'
+    file_pattern: ${{ steps.apply.outputs.files }}
 ```
 <!-- /docs:generated usage -->
 
@@ -56,9 +73,15 @@ Applies a set of templated image updates to a Helm chart's values.yaml and bumps
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+Needs no token permissions.
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+Reaches no endpoint beyond those the runner itself needs.
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

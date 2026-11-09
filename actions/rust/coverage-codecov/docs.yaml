@@ -1,0 +1,37 @@
+permissions:
+  - scope: contents
+    access: read
+    when: always
+  - scope: id-token
+    access: write
+    when: { all: [{ input: use_oidc, equals: 'true' }, { input: dry_run, equals: 'false' }] }
+
+egress:
+  - endpoint: github.com:443
+    for: the checkout and the cargo-llvm-cov and nextest downloads
+  - endpoint: release-assets.githubusercontent.com:443
+    for: the cargo-llvm-cov and nextest release assets that github.com redirects to
+  - endpoint: objects.githubusercontent.com:443
+    for: the cargo-llvm-cov and nextest release assets that github.com redirects to
+  - endpoint: static.rust-lang.org:443
+    for: the toolchain and the llvm-tools-preview component
+  - endpoint: index.crates.io:443
+    for: the project's dependencies, from the default crates.io registry
+  - endpoint: static.crates.io:443
+    for: the project's dependencies, from the default crates.io registry
+  - endpoint: '*.actions.githubusercontent.com:443'
+    for: the Rust cache and the OIDC token
+  - endpoint: '*.blob.core.windows.net:443'
+    for: the Rust cache
+  - endpoint: cli.codecov.io:443
+    for: the Codecov CLI download
+  - endpoint: keybase.io:443
+    for: the key that verifies the Codecov CLI
+  - endpoint: ingest.codecov.io:443
+    for: the coverage and test result uploads
+  - endpoint: storage.googleapis.com:443
+    for: the report storage Codecov hands the upload to
+
+examples:
+  - title: Coverage on every push and pull request
+    file: examples/coverage.yaml

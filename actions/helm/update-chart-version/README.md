@@ -15,14 +15,77 @@ Updates a Helm chart's image tags, version and appVersion, then opens a Pull Req
 <!-- docs:generated usage -->
 ## Usage
 
+### Update the chart after a release
+
 ```yaml
-- uses: TimSchoenle/actions/actions/helm/update-chart-version@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-helm-update-chart-version-v1.7.2
+# Called by the release workflow once the image is pushed, with the tag and digest it pushed.
+name: Update Helm Chart
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
+      digest:
+        type: string
+        required: true
+      changelog:
+        type: string
+        default: ''
+    secrets:
+      charts-bot-private-key:
+        required: true
+
+permissions: {}
+
+jobs:
+  update-chart:
+    name: Update Chart
+    runs-on: ubuntu-latest
+    # Everything runs with the app's tokens, minted inside the action for helm-repo alone.
+    permissions: {}
+    steps:
+      # The action checks the charts repository out over the workspace, so it needs no checkout of
+      # its own and anything already in the workspace is replaced.
+      - uses: TimSchoenle/actions/actions/helm/update-chart-version@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-helm-update-chart-version-v1.7.2
+        with:
+          app-id: ${{ vars.CHARTS_BOT_APP_ID }}
+          private-key: ${{ secrets.charts-bot-private-key }}
+          helm-repo: acme/helm-charts
+          chart-path: charts/my-app
+          images: |
+            { "image.tag": { "tag": "${{ inputs.tag }}", "digest": "${{ inputs.digest }}" } }
+          app-version: ${{ inputs.tag }}
+          changelog: ${{ inputs.changelog }}
+```
+
+### Several services, with their configuration contracts
+
+```yaml
+# One call moves every service the chart pins; each image carries its own tag and digest.
+# With pull-contracts, the charts repository needs a terrace.yaml at its root and the images must be
+# pullable without credentials.
+- id: chart
+  uses: TimSchoenle/actions/actions/helm/update-chart-version@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-helm-update-chart-version-v1.7.2
   with:
-    app-id: # required, see Inputs
-    private-key: # required, see Inputs
-    helm-repo: # required, see Inputs
-    chart-path: # required, see Inputs
-    images: # required, see Inputs
+    app-id: ${{ vars.CHARTS_BOT_APP_ID }}
+    private-key: ${{ secrets.CHARTS_BOT_PRIVATE_KEY }}
+    helm-repo: acme/helm-charts
+    base_branch: main
+    chart-path: charts/platform
+    images: |
+      {
+        "services.api.image.tag": { "tag": "v1.4.0", "digest": "${{ steps.api.outputs.digest }}" },
+        "services.worker.image.tag": { "tag": "v2.1.3", "digest": "${{ steps.worker.outputs.digest }}" }
+      }
+    version-bump: minor
+    pull-contracts: 'true'
+
+- run: echo "Opened $PR_URL for chart version $VERSION"
+  env:
+    PR_URL: ${{ steps.chart.outputs.pr-url }}
+    VERSION: ${{ steps.chart.outputs.chart-version }}
 ```
 <!-- /docs:generated usage -->
 
@@ -64,9 +127,25 @@ Updates a Helm chart's image tags, version and appVersion, then opens a Pull Req
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+Needs no token permissions.
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint                                   | For                                                                                 |
+| ------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `api.github.com:443`                       | the app tokens, the base branch lookup, the branch, the commit and the pull request |
+| `github.com:443`                           | the charts repository checkout, and the tool downloads with pull-contracts          |
+| `release-assets.githubusercontent.com:443` | the terrace-contract, cosign and oras downloads with pull-contracts                 |
+| `objects.githubusercontent.com:443`        | the terrace-contract, cosign and oras downloads with pull-contracts                 |
+| `tuf-repo-cdn.sigstore.dev:443`            | the sigstore trusted root cosign verifies against, with pull-contracts              |
+| `ghcr.io:443`                              | the configuration contracts with pull-contracts, for images on ghcr.io              |
+| `pkg-containers.githubusercontent.com:443` | the configuration contracts with pull-contracts, for images on ghcr.io              |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

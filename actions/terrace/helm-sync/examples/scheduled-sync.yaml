@@ -1,0 +1,33 @@
+name: Sync Configuration Contracts
+
+on:
+  schedule:
+    - cron: '23 5 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  sync:
+    name: Sync
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # An App token, so the commit is verified and starts workflows. github.token's would not.
+      - name: Generate Token
+        id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.MAINTENANCE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.MAINTENANCE_PRIVATE_KEY }}
+          permission-contents: write
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: TimSchoenle/actions/actions/terrace/helm-sync@main
+        with:
+          token: ${{ steps.token.outputs.token }}
+          file_pattern: charts

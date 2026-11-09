@@ -15,10 +15,32 @@ Action that measures Java and Kotlin test coverage with JaCoCo through Gradle, a
 <!-- docs:generated usage -->
 ## Usage
 
+### Coverage on every push and pull request
+
 ```yaml
-- uses: TimSchoenle/actions/actions/java-gradle/coverage-codecov@e4229b81c3c3c880b9561dc4d53bd87ccf49eaf3 # tag=actions-java-gradle-coverage-codecov-v1.1.4
-  with:
-    java_version: # required, see Inputs
+# The action checks the repository out itself. Pull requests from forks get no OIDC token and
+# upload tokenless.
+name: Coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions: {}
+
+jobs:
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+      id-token: write # to authenticate the upload with OIDC
+    steps:
+      - uses: TimSchoenle/actions/actions/java-gradle/coverage-codecov@e4229b81c3c3c880b9561dc4d53bd87ccf49eaf3 # tag=actions-java-gradle-coverage-codecov-v1.1.4
+        with:
+          java_version: '21'
+          flags: unit
 ```
 <!-- /docs:generated usage -->
 
@@ -50,9 +72,34 @@ Action that measures Java and Kotlin test coverage with JaCoCo through Gradle, a
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+| Permission        | Needed when                                   |
+| ----------------- | --------------------------------------------- |
+| `contents: read`  | always                                        |
+| `id-token: write` | `use_oidc` is `true` and `dry_run` is `false` |
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint                                   | For                                                                                                      |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `github.com:443`                           | the checkout, the JDK download with the default temurin distribution, and the Gradle distribution        |
+| `release-assets.githubusercontent.com:443` | the JDK and Gradle distribution assets that github.com redirects to                                      |
+| `objects.githubusercontent.com:443`        | the JDK and Gradle distribution assets that github.com redirects to                                      |
+| `api.adoptium.net:443`                     | looking up the JDK, with the default temurin distribution                                                |
+| `services.gradle.org:443`                  | the Gradle distribution URL in the wrapper, and checksums of wrapper versions setup-gradle does not know |
+| `downloads.gradle.org:443`                 | the wrapper checksums that services.gradle.org redirects to                                              |
+| `repo.maven.apache.org:443`                | the JaCoCo agent and the build's dependencies, when the build resolves from Maven Central                |
+| `*.actions.githubusercontent.com:443`      | the Gradle cache and the OIDC token                                                                      |
+| `*.blob.core.windows.net:443`              | the Gradle cache                                                                                         |
+| `cli.codecov.io:443`                       | the Codecov CLI download                                                                                 |
+| `keybase.io:443`                           | the key that verifies the Codecov CLI                                                                    |
+| `ingest.codecov.io:443`                    | the coverage and test result uploads                                                                     |
+| `storage.googleapis.com:443`               | the report storage Codecov hands the upload to                                                           |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

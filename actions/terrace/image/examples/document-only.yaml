@@ -1,0 +1,7 @@
+# No image: the committed document is held to what the configuration types print, to the
+# specification, and to the label block of the Dockerfile.
+- uses: TimSchoenle/actions/actions/terrace/image@main
+  with:
+    contract: config/contract.json
+    generate: cargo run -q --example contract -- --format contract
+    dockerfile: Dockerfile

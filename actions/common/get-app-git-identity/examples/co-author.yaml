@@ -1,0 +1,22 @@
+name: Co-author Trailer
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  identity:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - id: bot
+        uses: TimSchoenle/actions/actions/common/get-app-git-identity@main
+        with:
+          app-slug: my-app
+          token: ${{ github.token }}
+
+      - run: 'echo "Co-authored-by: ${BOT_NAME} <${BOT_EMAIL}>"'
+        env:
+          BOT_NAME: ${{ steps.bot.outputs.bot-name }}
+          BOT_EMAIL: ${{ steps.bot.outputs.bot-email }}

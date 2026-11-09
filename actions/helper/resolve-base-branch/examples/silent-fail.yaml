@@ -1,0 +1,16 @@
+# silent_fail turns only a missing branch into an empty output. A token that cannot see the
+# repository still fails the step, rather than reading as "branch not found".
+- id: base
+  uses: TimSchoenle/actions/actions/helper/resolve-base-branch@main
+  with:
+    token: ${{ steps.token.outputs.token }}
+    repository: ${{ github.repository }}
+    branch_name: release/next
+    silent_fail: 'true'
+
+- if: steps.base.outputs.base_branch == ''
+  uses: TimSchoenle/actions/actions/common/create-branch@main
+  with:
+    token: ${{ steps.token.outputs.token }}
+    repository: ${{ github.repository }}
+    branch_name: release/next

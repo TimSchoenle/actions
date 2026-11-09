@@ -1,0 +1,23 @@
+# One call moves every service the chart pins; each image carries its own tag and digest.
+# With pull-contracts, the charts repository needs a terrace.yaml at its root and the images must be
+# pullable without credentials.
+- id: chart
+  uses: TimSchoenle/actions/actions/helm/update-chart-version@main
+  with:
+    app-id: ${{ vars.CHARTS_BOT_APP_ID }}
+    private-key: ${{ secrets.CHARTS_BOT_PRIVATE_KEY }}
+    helm-repo: acme/helm-charts
+    base_branch: main
+    chart-path: charts/platform
+    images: |
+      {
+        "services.api.image.tag": { "tag": "v1.4.0", "digest": "${{ steps.api.outputs.digest }}" },
+        "services.worker.image.tag": { "tag": "v2.1.3", "digest": "${{ steps.worker.outputs.digest }}" }
+      }
+    version-bump: minor
+    pull-contracts: 'true'
+
+- run: echo "Opened $PR_URL for chart version $VERSION"
+  env:
+    PR_URL: ${{ steps.chart.outputs.pr-url }}
+    VERSION: ${{ steps.chart.outputs.chart-version }}

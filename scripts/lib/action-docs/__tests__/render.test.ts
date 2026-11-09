@@ -23,7 +23,7 @@ function model(overrides: Partial<ReadmeModel> = {}): ReadmeModel {
       outputs: [{ name: 'findings', description: 'Number of results.' }],
     },
     release: { tag: 'actions-security-zizmor-v2.0.2', sha: SHA },
-    docs: undefined,
+    docs: { permissions: [], egress: [], requires: [], examples: [] },
     examples: [],
     hasChangelog: true,
     e2eWorkflow: undefined,
@@ -137,14 +137,8 @@ describe('renderRegions', () => {
     expect(regions.outputs).toBe('## Outputs\n\nThis action sets no outputs.');
   });
 
-  it('leaves permissions and egress empty without a docs.yaml', () => {
+  it('says so when docs.yaml lists no permissions and no egress', () => {
     const regions = renderRegions(model());
-    expect(regions.permissions).toBe('');
-    expect(regions.egress).toBe('');
-  });
-
-  it('distinguishes an explicit "none" from a missing docs.yaml', () => {
-    const regions = renderRegions(model({ docs: { permissions: [], egress: [], requires: [], examples: [] } }));
     expect(regions.permissions).toBe('## Permissions\n\nNeeds no token permissions.');
     expect(regions.egress).toBe('## Egress\n\nReaches no endpoint beyond those the runner itself needs.');
   });

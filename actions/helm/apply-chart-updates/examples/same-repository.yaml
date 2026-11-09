@@ -1,0 +1,19 @@
+# Writes values.yaml and Chart.yaml in the workspace; the files output is what to commit.
+# To open a pull request in a separate charts repository, use helm/update-chart-version instead.
+- id: apply
+  uses: TimSchoenle/actions/actions/helm/apply-chart-updates@main
+  with:
+    chart-path: charts/my-app
+    images: |
+      {
+        "services.api.image.tag": { "tag": "v1.4.0", "digest": "${{ steps.api.outputs.digest }}" },
+        "services.worker.image.tag": { "tag": "v2.1.3", "digest": "${{ steps.worker.outputs.digest }}" }
+      }
+    version-bump: minor
+
+- uses: TimSchoenle/actions/actions/common/commit-changes@main
+  if: steps.apply.outputs.updated-count != '0'
+  with:
+    token: ${{ steps.token.outputs.token }}
+    commit_message: 'chore(my-app): update chart to ${{ steps.apply.outputs.chart-version }}'
+    file_pattern: ${{ steps.apply.outputs.files }}

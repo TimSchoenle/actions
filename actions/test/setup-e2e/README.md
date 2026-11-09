@@ -15,14 +15,48 @@ Sets up the environment for E2E testing: generates token, checks out test repo, 
 <!-- docs:generated usage -->
 ## Usage
 
+### An end-to-end test job
+
 ```yaml
-- uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
-  with:
-    app_id: # required, see Inputs
-    private_key: # required, see Inputs
-    test_repo: # required, see Inputs
-    test_owner: # required, see Inputs
-    test_repo_name: # required, see Inputs
+# The App's installation on the test repository needs contents: write and pull-requests: write, the
+# two permissions the token is minted with. The job token only checks out this repository.
+name: Verify Create-branch
+
+on:
+  pull_request:
+
+permissions: {}
+
+env:
+  TEST_OWNER: my-org
+  TEST_REPO_NAME: actions-testing
+  TEST_REPO: my-org/actions-testing
+
+jobs:
+  verify:
+    name: Verify Create-branch
+    runs-on: ubuntu-latest
+    environment: ci-e2e
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
+        with:
+          app_id: ${{ secrets.TEST_APP_ID }}
+          private_key: ${{ secrets.TEST_APP_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      # The test repository is checked out at the workspace root and the code under test at
+      # current_repo_checkout_path, so the pull request's version of an action runs against it.
+      - uses: ./tmp/actions-code/actions/common/create-branch
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/create-branch/${{ github.run_id }}
 ```
 <!-- /docs:generated usage -->
 
@@ -52,9 +86,22 @@ Sets up the environment for E2E testing: generates token, checks out test repo, 
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
+## Permissions
+
+| Permission       | Needed when |
+| ---------------- | ----------- |
+| `contents: read` | always      |
 <!-- /docs:generated permissions -->
 
 <!-- docs:generated egress -->
+## Egress
+
+A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
+
+| Endpoint             | For                                                  |
+| -------------------- | ---------------------------------------------------- |
+| `api.github.com:443` | minting the App token                                |
+| `github.com:443`     | checking out the test repository and this repository |
 <!-- /docs:generated egress -->
 
 <!-- docs:generated reference -->

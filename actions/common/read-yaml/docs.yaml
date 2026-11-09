@@ -1,0 +1,7 @@
+permissions: []
+
+egress: []
+
+examples:
+  - title: Read a chart's version
+    file: examples/read-chart-version.yaml

@@ -1,0 +1,7 @@
+permissions: []
+
+egress: []
+
+examples:
+  - title: Update a chart in the same repository and commit it
+    file: examples/same-repository.yaml

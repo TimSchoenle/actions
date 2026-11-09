@@ -1,0 +1,33 @@
+name: Close Superseded Pull Request
+
+on:
+  workflow_dispatch:
+    inputs:
+      pull_request:
+        description: Number of the pull request to close
+        required: true
+      replacement:
+        description: Number of the pull request that replaces it
+        required: true
+
+permissions: {}
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write # to comment on and close the pull request
+    steps:
+      - id: close
+        uses: TimSchoenle/actions/actions/common/close-pull-request@main
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          pull_request_id: ${{ inputs.pull_request }}
+          comment: 'Superseded by #${{ inputs.replacement }}.'
+
+      # closed is false when the pull request does not exist, which is not an error.
+      - if: steps.close.outputs.closed == 'false'
+        run: echo "Pull request ${PR} does not exist, nothing to close"
+        env:
+          PR: ${{ inputs.pull_request }}

@@ -1,0 +1,13 @@
+# Edits the file in the workspace only. Comments and quoting elsewhere in values.yaml survive.
+# Committing the change is a separate step.
+- id: tag
+  uses: TimSchoenle/actions/actions/common/modify-yaml@main
+  with:
+    file: charts/api/values.yaml
+    key: image.tag
+    value: ${{ github.ref_name }}
+
+- run: echo "image.tag moved from $OLD to $NEW"
+  env:
+    OLD: ${{ steps.tag.outputs.old-value }}
+    NEW: ${{ steps.tag.outputs.new-value }}

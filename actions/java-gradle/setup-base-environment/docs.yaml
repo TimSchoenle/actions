@@ -1,0 +1,23 @@
+permissions: []
+
+egress:
+  - endpoint: api.adoptium.net:443
+    for: looking up the JDK, with the default temurin distribution
+  - endpoint: github.com:443
+    for: the JDK download, with the default temurin distribution
+  - endpoint: release-assets.githubusercontent.com:443
+    for: the JDK download, with the default temurin distribution
+  - endpoint: objects.githubusercontent.com:443
+    for: the JDK download, with the default temurin distribution
+  - endpoint: services.gradle.org:443
+    for: checksums of wrapper versions setup-gradle does not know, with gradle_wrapper_validation
+  - endpoint: downloads.gradle.org:443
+    for: the wrapper checksums that services.gradle.org redirects to
+  - endpoint: '*.actions.githubusercontent.com:443'
+    for: the Gradle cache
+  - endpoint: '*.blob.core.windows.net:443'
+    for: the Gradle cache
+
+examples:
+  - title: Build with Gradle
+    file: examples/build.yaml

@@ -1,0 +1,7 @@
+permissions: []
+
+egress: []
+
+examples:
+  - title: Gate a release pull request
+    file: examples/gate-release-pull-request.yaml
