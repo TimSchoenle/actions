@@ -84,6 +84,70 @@ jobs:
 
           echo "✅ $VERSION installed and checked the clean fixture with an empty SARIF"
 
+  # github.com is pointed at a closed port after checkout, so both release downloads fail and the
+  # install has to go through the REST API asset endpoint.
+  fallback:
+    name: 'Install through the REST API when the release download fails (${{ matrix.os }})'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Block github.com
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '127.0.0.1 github.com' | sudo tee -a /etc/hosts > /dev/null
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            sudo dscacheutil -flushcache
+            sudo killall -HUP mDNSResponder
+          fi
+          if curl -fsS --max-time 10 -o /dev/null https://github.com/; then
+            echo "::error::github.com is still reachable"
+            exit 1
+          fi
+
+      - name: Run Test (Fallback)
+        id: fallback
+        uses: ./actions/security/jactionlint # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          config-file: actions/security/jactionlint/test/empty.yaml
+          files: actions/security/jactionlint/test/clean.yml
+          upload: 'false'
+
+      - name: Assert Fallback
+        shell: bash
+        env:
+          VERSION: ${{ steps.fallback.outputs.version }}
+          EXECUTABLE: ${{ steps.fallback.outputs.executable }}
+          EXIT_CODE: ${{ steps.fallback.outputs.exit-code }}
+        run: |
+          set -euo pipefail
+
+          "$EXECUTABLE" --version | grep -qF "${VERSION#v}" || { echo "::error::$EXECUTABLE is not jactionlint $VERSION"; exit 1; }
+          [ "$EXIT_CODE" = "0" ] || { echo "::error::exit-code '$EXIT_CODE' on the clean fixture, expected 0"; exit 1; }
+
+          echo "✅ $VERSION installed through the REST API with github.com unreachable"
+
   cases:
     name: Findings, configuration and input validation
     runs-on: ubuntu-latest
@@ -239,6 +303,7 @@ jobs:
     if: ${{ always() }}
     needs:
       - install
+      - fallback
       - cases
     runs-on: ubuntu-latest
     timeout-minutes: 5
