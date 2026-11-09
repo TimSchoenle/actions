@@ -1,0 +1,22 @@
+{
+  "name": "actions-common-fetch-head",
+  "version": "1.0.0",
+  "description": "Fetches one commit into an empty repository and points HEAD at it without checking anything out",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "bun run ../../../scripts/build-action.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "actions-util": "workspace:*",
+    "@actions/core": "3.0.1"
+  },
+  "devDependencies": {
+    "actions-e2e": "workspace:*",
+    "@types/node": "26.6.6",
+    "@typescript/native": "npm:typescript@7.0.2",
+    "vitest": "5.0.5"
+  }
+}

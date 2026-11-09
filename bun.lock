@@ -161,6 +161,20 @@
         "vitest": "5.0.5",
       },
     },
+    "actions/common/fetch-head": {
+      "name": "actions-common-fetch-head",
+      "version": "1.0.0",
+      "dependencies": {
+        "@actions/core": "3.0.1",
+        "actions-util": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "26.6.6",
+        "@typescript/native": "npm:typescript@7.0.2",
+        "actions-e2e": "workspace:*",
+        "vitest": "5.0.5",
+      },
+    },
     "actions/common/find-patch/helper": {
       "name": "actions-common-find-patch-helper",
       "version": "1.0.0",
@@ -930,6 +944,8 @@
     "actions-common-delete-branch": ["actions-common-delete-branch@workspace:actions/common/delete-branch"],
 
     "actions-common-download-release-asset": ["actions-common-download-release-asset@workspace:actions/common/download-release-asset"],
+
+    "actions-common-fetch-head": ["actions-common-fetch-head@workspace:actions/common/fetch-head"],
 
     "actions-common-find-patch-helper": ["actions-common-find-patch-helper@workspace:actions/common/find-patch/helper"],
 

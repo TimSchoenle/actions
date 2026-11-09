@@ -1,0 +1,31 @@
+name: 'Common Fetch Head'
+description: 'Fetches one commit into an empty repository and points HEAD at it without checking anything out, for steps that read only git objects.'
+
+inputs:
+  sha:
+    description: 'The commit to fetch, as a full 40-character SHA. Any other value fails the step before anything is fetched.'
+    required: true
+  repository:
+    description: 'Repository to fetch from, as owner/repo. A pull request from a fork is fetched from the base repository, which serves its head under refs/pull.'
+    required: false
+    default: ${{ github.repository }}
+  token:
+    description: 'Token sent with the fetch, as actions/checkout sends it, so a private repository can be read. It reaches git through the environment only and is never written to the repository config. Empty fetches anonymously. A token is sent over https only, or plain http to this machine.'
+    required: false
+    default: ${{ github.token }}
+  path:
+    description: 'Directory, relative to the workspace, to create the repository in. It must not exist yet or be empty. When git fails, the repository is removed again, so the step can be re-run.'
+    required: false
+    default: '.'
+  server_url:
+    description: 'URL of the GitHub server to fetch from.'
+    required: false
+    default: ${{ github.server_url }}
+
+outputs:
+  sha:
+    description: 'The commit HEAD points at, equal to the sha input.'
+
+runs:
+  using: 'node24'
+  main: 'dist/index.js'
