@@ -13,12 +13,14 @@ on:
     paths:
       - 'actions/common/upsert-pr-comment/**'
       - '!actions/common/upsert-pr-comment/CHANGELOG.md'
+      - '!actions/common/upsert-pr-comment/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-upsert-pr-comment.yaml'
   pull_request:
     paths:
       - 'actions/common/upsert-pr-comment/**'
       - '!actions/common/upsert-pr-comment/CHANGELOG.md'
+      - '!actions/common/upsert-pr-comment/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-upsert-pr-comment.yaml'
   workflow_dispatch:

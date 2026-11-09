@@ -6,10 +6,14 @@ on:
       - main
     paths:
       - 'actions/common/commit-generated-files/**'
+      - '!actions/common/commit-generated-files/CHANGELOG.md'
+      - '!actions/common/commit-generated-files/README.md'
       - '.github/workflows/verify-action-common-commit-generated-files.yaml'
   pull_request:
     paths:
       - 'actions/common/commit-generated-files/**'
+      - '!actions/common/commit-generated-files/CHANGELOG.md'
+      - '!actions/common/commit-generated-files/README.md'
       - '.github/workflows/verify-action-common-commit-generated-files.yaml'
 
 concurrency:

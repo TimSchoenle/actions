@@ -13,12 +13,14 @@ on:
     paths:
       - 'actions/common/render-template/**'
       - '!actions/common/render-template/CHANGELOG.md'
+      - '!actions/common/render-template/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-render-template.yaml'
   pull_request:
     paths:
       - 'actions/common/render-template/**'
       - '!actions/common/render-template/CHANGELOG.md'
+      - '!actions/common/render-template/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-render-template.yaml'
   workflow_dispatch:

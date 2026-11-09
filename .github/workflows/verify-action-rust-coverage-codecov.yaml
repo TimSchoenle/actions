@@ -14,10 +14,14 @@ on:
       - main
     paths:
       - 'actions/rust/coverage-codecov/**'
+      - '!actions/rust/coverage-codecov/CHANGELOG.md'
+      - '!actions/rust/coverage-codecov/README.md'
       - '.github/workflows/verify-action-rust-coverage-codecov.yaml'
   pull_request:
     paths:
       - 'actions/rust/coverage-codecov/**'
+      - '!actions/rust/coverage-codecov/CHANGELOG.md'
+      - '!actions/rust/coverage-codecov/README.md'
       - '.github/workflows/verify-action-rust-coverage-codecov.yaml'
 
 concurrency:

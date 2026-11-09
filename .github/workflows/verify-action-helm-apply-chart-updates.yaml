@@ -13,12 +13,14 @@ on:
     paths:
       - 'actions/helm/apply-chart-updates/**'
       - '!actions/helm/apply-chart-updates/CHANGELOG.md'
+      - '!actions/helm/apply-chart-updates/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-helm-apply-chart-updates.yaml'
   pull_request:
     paths:
       - 'actions/helm/apply-chart-updates/**'
       - '!actions/helm/apply-chart-updates/CHANGELOG.md'
+      - '!actions/helm/apply-chart-updates/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-helm-apply-chart-updates.yaml'
   workflow_dispatch:

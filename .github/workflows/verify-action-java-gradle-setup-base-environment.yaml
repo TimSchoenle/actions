@@ -6,10 +6,14 @@ on:
       - main
     paths:
       - 'actions/java-gradle/setup-base-environment/**'
+      - '!actions/java-gradle/setup-base-environment/CHANGELOG.md'
+      - '!actions/java-gradle/setup-base-environment/README.md'
       - '.github/workflows/verify-action-java-gradle-setup-base-environment.yaml'
   pull_request:
     paths:
       - 'actions/java-gradle/setup-base-environment/**'
+      - '!actions/java-gradle/setup-base-environment/CHANGELOG.md'
+      - '!actions/java-gradle/setup-base-environment/README.md'
       - '.github/workflows/verify-action-java-gradle-setup-base-environment.yaml'
 
 concurrency:

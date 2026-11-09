@@ -13,12 +13,14 @@ on:
     paths:
       - 'actions/security/codeql/**'
       - '!actions/security/codeql/CHANGELOG.md'
+      - '!actions/security/codeql/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-security-codeql.yaml'
   pull_request:
     paths:
       - 'actions/security/codeql/**'
       - '!actions/security/codeql/CHANGELOG.md'
+      - '!actions/security/codeql/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-security-codeql.yaml'
   workflow_dispatch:

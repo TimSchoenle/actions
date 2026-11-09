@@ -7,11 +7,13 @@ on:
     paths:
       - 'actions/common/render-readme/**'
       - '!actions/common/render-readme/CHANGELOG.md'
+      - '!actions/common/render-readme/README.md'
       - '.github/workflows/verify-action-common-render-readme.yaml'
   pull_request:
     paths:
       - 'actions/common/render-readme/**'
       - '!actions/common/render-readme/CHANGELOG.md'
+      - '!actions/common/render-readme/README.md'
       - '.github/workflows/verify-action-common-render-readme.yaml'
 
 concurrency:

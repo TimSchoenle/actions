@@ -13,12 +13,14 @@ on:
     paths:
       - 'actions/common/generated-files-verdict/**'
       - '!actions/common/generated-files-verdict/CHANGELOG.md'
+      - '!actions/common/generated-files-verdict/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-generated-files-verdict.yaml'
   pull_request:
     paths:
       - 'actions/common/generated-files-verdict/**'
       - '!actions/common/generated-files-verdict/CHANGELOG.md'
+      - '!actions/common/generated-files-verdict/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-generated-files-verdict.yaml'
   workflow_dispatch:

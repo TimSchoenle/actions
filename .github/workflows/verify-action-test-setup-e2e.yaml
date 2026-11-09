@@ -6,10 +6,14 @@ on:
       - main
     paths:
       - 'actions/test/setup-e2e/**'
+      - '!actions/test/setup-e2e/CHANGELOG.md'
+      - '!actions/test/setup-e2e/README.md'
       - '.github/workflows/verify-action-test-setup-e2e.yaml'
   pull_request:
     paths:
       - 'actions/test/setup-e2e/**'
+      - '!actions/test/setup-e2e/CHANGELOG.md'
+      - '!actions/test/setup-e2e/README.md'
       - '.github/workflows/verify-action-test-setup-e2e.yaml'
   workflow_dispatch:
 

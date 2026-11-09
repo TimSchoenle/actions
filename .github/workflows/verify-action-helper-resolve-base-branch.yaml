@@ -13,12 +13,14 @@ on:
     paths:
       - 'actions/helper/resolve-base-branch/**'
       - '!actions/helper/resolve-base-branch/CHANGELOG.md'
+      - '!actions/helper/resolve-base-branch/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-helper-resolve-base-branch.yaml'
   pull_request:
     paths:
       - 'actions/helper/resolve-base-branch/**'
       - '!actions/helper/resolve-base-branch/CHANGELOG.md'
+      - '!actions/helper/resolve-base-branch/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-helper-resolve-base-branch.yaml'
   workflow_dispatch:

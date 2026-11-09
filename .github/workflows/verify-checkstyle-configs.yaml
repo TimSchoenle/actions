@@ -11,11 +11,13 @@ on:
       - main
     paths:
       - 'configs/checkstyle/**'
+      - '!configs/checkstyle/*/CHANGELOG.md'
       - 'jitpack.yml'
       - '.github/workflows/verify-checkstyle-configs.yaml'
   pull_request:
     paths:
       - 'configs/checkstyle/**'
+      - '!configs/checkstyle/*/CHANGELOG.md'
       - 'jitpack.yml'
       - '.github/workflows/verify-checkstyle-configs.yaml'
 

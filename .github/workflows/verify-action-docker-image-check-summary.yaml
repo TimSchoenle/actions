@@ -13,12 +13,14 @@ on:
     paths:
       - 'actions/docker/image-check-summary/**'
       - '!actions/docker/image-check-summary/CHANGELOG.md'
+      - '!actions/docker/image-check-summary/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-docker-image-check-summary.yaml'
   pull_request:
     paths:
       - 'actions/docker/image-check-summary/**'
       - '!actions/docker/image-check-summary/CHANGELOG.md'
+      - '!actions/docker/image-check-summary/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-docker-image-check-summary.yaml'
   workflow_dispatch:

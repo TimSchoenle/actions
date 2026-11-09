@@ -13,12 +13,14 @@ on:
     paths:
       - 'actions/common/fetch-head/**'
       - '!actions/common/fetch-head/CHANGELOG.md'
+      - '!actions/common/fetch-head/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-fetch-head.yaml'
   pull_request:
     paths:
       - 'actions/common/fetch-head/**'
       - '!actions/common/fetch-head/CHANGELOG.md'
+      - '!actions/common/fetch-head/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-fetch-head.yaml'
   workflow_dispatch:

@@ -32,6 +32,14 @@ jobs:
   # "Action Lint" because the branch ruleset requires that context (see scripts/lib/required-checks.ts).
   action-lint:
     name: Action Lint
+    # Skipped on release-please pull requests, which only change changelogs, the manifest and generated
+    # docs: Update Files still checks those. All three conditions are needed, since a skipped required
+    # job reports success: the branch name alone is chosen by whoever opens the pull request.
+    # Anyone with write access can still push to that branch; the required approval and
+    # timed-auto-merge's commit author check are what cover that. 248313786 is
+    # automatic-release-manager[bot].
+    if: >-
+      !(startsWith(github.head_ref, 'release-please--') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.id == 248313786)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

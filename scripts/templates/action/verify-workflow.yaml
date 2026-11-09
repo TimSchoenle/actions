@@ -6,10 +6,14 @@ on:
       - main
     paths:
       - 'actions/{{packageName}}/{{subAction}}/**'
+      - '!actions/{{packageName}}/{{subAction}}/CHANGELOG.md'
+      - '!actions/{{packageName}}/{{subAction}}/README.md'
       - '.github/workflows/verify-action-{{packageName}}-{{subAction}}.yaml'
   pull_request:
     paths:
       - 'actions/{{packageName}}/{{subAction}}/**'
+      - '!actions/{{packageName}}/{{subAction}}/CHANGELOG.md'
+      - '!actions/{{packageName}}/{{subAction}}/README.md'
       - '.github/workflows/verify-action-{{packageName}}-{{subAction}}.yaml'
 
 concurrency:

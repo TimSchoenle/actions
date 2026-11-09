@@ -15,6 +15,14 @@ permissions: {}
 jobs:
   lint-and-test:
     name: Lint & Test
+    # Skipped on release-please pull requests, which only change changelogs, the manifest and generated
+    # docs: Update Files still checks those. All three conditions are needed, since a skipped required
+    # job reports success: the branch name alone is chosen by whoever opens the pull request.
+    # Anyone with write access can still push to that branch; the required approval and
+    # timed-auto-merge's commit author check are what cover that. 248313786 is
+    # automatic-release-manager[bot].
+    if: >-
+      !(startsWith(github.head_ref, 'release-please--') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.id == 248313786)
     permissions:
       contents: read # to fetch code
     runs-on: ubuntu-latest
@@ -76,6 +84,9 @@ jobs:
   # Codecov statuses check.
   coverage-tests:
     name: Coverage Tests
+    # Skipped on release-please pull requests; see lint-and-test.
+    if: >-
+      !(startsWith(github.head_ref, 'release-please--') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.id == 248313786)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -118,8 +129,10 @@ jobs:
   coverage:
     name: Coverage
     needs: coverage-tests
-    # Runs when the tests failed too, so the failing cases still reach Test Analytics.
-    if: ${{ !cancelled() }}
+    # Runs when the tests failed too, so the failing cases still reach Test Analytics, but not when
+    # they were skipped on a release-please pull request: there is nothing to upload.
+    if: >-
+      !cancelled() && needs.coverage-tests.result != 'skipped'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

@@ -13,12 +13,14 @@ on:
     paths:
       - 'actions/maintenance/trigger-coderabbit-review/**'
       - '!actions/maintenance/trigger-coderabbit-review/CHANGELOG.md'
+      - '!actions/maintenance/trigger-coderabbit-review/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-maintenance-trigger-coderabbit-review.yaml'
   pull_request:
     paths:
       - 'actions/maintenance/trigger-coderabbit-review/**'
       - '!actions/maintenance/trigger-coderabbit-review/CHANGELOG.md'
+      - '!actions/maintenance/trigger-coderabbit-review/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-maintenance-trigger-coderabbit-review.yaml'
   workflow_dispatch:

@@ -6,10 +6,14 @@ on:
       - main
     paths:
       - 'actions/rust/auto-format/**'
+      - '!actions/rust/auto-format/CHANGELOG.md'
+      - '!actions/rust/auto-format/README.md'
       - '.github/workflows/verify-action-rust-auto-format.yaml'
   pull_request:
     paths:
       - 'actions/rust/auto-format/**'
+      - '!actions/rust/auto-format/CHANGELOG.md'
+      - '!actions/rust/auto-format/README.md'
       - '.github/workflows/verify-action-rust-auto-format.yaml'
   workflow_dispatch:
 

@@ -4,11 +4,15 @@ on:
     branches: ['main']
     paths:
       - 'actions/bun/setup-cached/**'
+      - '!actions/bun/setup-cached/CHANGELOG.md'
+      - '!actions/bun/setup-cached/README.md'
       - '.github/workflows/verify-action-bun-setup-cached.yaml'
   pull_request:
     branches: ['main']
     paths:
       - 'actions/bun/setup-cached/**'
+      - '!actions/bun/setup-cached/CHANGELOG.md'
+      - '!actions/bun/setup-cached/README.md'
       - '.github/workflows/verify-action-bun-setup-cached.yaml'
   workflow_dispatch:
 

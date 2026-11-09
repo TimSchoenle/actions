@@ -13,12 +13,14 @@ on:
     paths:
       - 'actions/common/upsert-issue/**'
       - '!actions/common/upsert-issue/CHANGELOG.md'
+      - '!actions/common/upsert-issue/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-upsert-issue.yaml'
   pull_request:
     paths:
       - 'actions/common/upsert-issue/**'
       - '!actions/common/upsert-issue/CHANGELOG.md'
+      - '!actions/common/upsert-issue/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-upsert-issue.yaml'
   workflow_dispatch:

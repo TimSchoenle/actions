@@ -6,10 +6,14 @@ on:
       - main
     paths:
       - 'actions/security/jactionlint/**'
+      - '!actions/security/jactionlint/CHANGELOG.md'
+      - '!actions/security/jactionlint/README.md'
       - '.github/workflows/verify-action-security-jactionlint.yaml'
   pull_request:
     paths:
       - 'actions/security/jactionlint/**'
+      - '!actions/security/jactionlint/CHANGELOG.md'
+      - '!actions/security/jactionlint/README.md'
       - '.github/workflows/verify-action-security-jactionlint.yaml'
 
 concurrency:

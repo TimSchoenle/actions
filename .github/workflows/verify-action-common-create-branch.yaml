@@ -13,12 +13,14 @@ on:
     paths:
       - 'actions/common/create-branch/**'
       - '!actions/common/create-branch/CHANGELOG.md'
+      - '!actions/common/create-branch/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-create-branch.yaml'
   pull_request:
     paths:
       - 'actions/common/create-branch/**'
       - '!actions/common/create-branch/CHANGELOG.md'
+      - '!actions/common/create-branch/README.md'
       - 'packages/e2e/**'
       - '.github/workflows/verify-action-common-create-branch.yaml'
   workflow_dispatch:
