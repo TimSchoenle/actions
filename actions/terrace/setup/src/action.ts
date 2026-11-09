@@ -1,12 +1,12 @@
-import { chmod, readFile } from 'node:fs/promises';
+import { chmod, mkdtemp, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import * as core from '@actions/core';
 import { getExecOutput } from '@actions/exec';
 import * as toolCache from '@actions/tool-cache';
 import { resolveWithinWorkspace, runAction, workspaceRoot } from 'actions-util';
+import { createReleaseDownloadPorts, ReleaseDownloader, sha256File } from 'actions-util/release-download';
 
-import { sha256File } from './checksums.js';
 import { InvalidInputError, ReleaseNotFoundError } from './errors.js';
 import { getInput, setOutput } from './generated/action-io.js';
 import { installCosign, installOras, installTerrace } from './installer.js';
@@ -17,6 +17,7 @@ import { formatVersion, isExact, parseVersionRequest, selectRelease } from './ve
 import type { InstallPorts, Runner } from './installer.js';
 import type { FetchJson } from './releases.js';
 import type { VersionRequest } from './version.js';
+import type { ReleaseDownloadOptions } from 'actions-util/release-download';
 
 /** The things this action cannot do for itself, injected so its wiring stays testable. */
 export interface ActionDependencies {
@@ -28,10 +29,48 @@ export interface ActionDependencies {
   readonly workspace: string;
 }
 
+/** Creates the downloader for the given credentials. */
+export type CreateDownloader = (options: ReleaseDownloadOptions) => Pick<ReleaseDownloader, 'download'>;
+
+/**
+ * The download port: each asset into a new directory under `RUNNER_TEMP`, which the runner empties
+ * after the job.
+ *
+ * The downloader is created on the first download, once the inputs are readable: the REST API
+ * fallback authenticates with github_token, and only when the job runs on github.com.
+ */
+export function releaseDownloadPort(
+  env: Readonly<Record<string, string | undefined>>,
+  readToken: () => string,
+  createDownloader: CreateDownloader,
+): InstallPorts['download'] {
+  let downloader: Pick<ReleaseDownloader, 'download'> | undefined;
+
+  return async (asset) => {
+    const temp = env.RUNNER_TEMP;
+
+    if (temp === undefined || temp === '') {
+      throw new Error('RUNNER_TEMP is not set, so there is nowhere to download to.');
+    }
+
+    downloader ??= createDownloader({ token: readToken(), serverUrl: env.GITHUB_SERVER_URL ?? '' });
+
+    const file = path.join(await mkdtemp(path.join(temp, 'terrace-setup-')), asset.name);
+
+    await downloader.download(asset, file);
+
+    return file;
+  };
+}
+
 /** The real ports, bound to the runner, its tool cache and the network. */
 function defaultPorts(): InstallPorts {
   return {
-    download: (url) => toolCache.downloadTool(url),
+    download: releaseDownloadPort(
+      process.env,
+      () => getInput('github_token'),
+      (options) => new ReleaseDownloader(createReleaseDownloadPorts('terrace-setup'), options),
+    ),
     extract: (archive, packaging) =>
       packaging === 'zip' ? toolCache.extractZip(archive) : toolCache.extractTar(archive),
     cacheDirectory: (directory, tool, version) => toolCache.cacheDir(directory, tool, version),
