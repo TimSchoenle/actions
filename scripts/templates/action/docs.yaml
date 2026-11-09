@@ -1,0 +1,17 @@
+# What the README cannot learn from action.yaml. `bun run generate-docs` renders it into README.md.
+# The schema and the rules are in scripts/lib/action-docs/docs-file.ts.
+#
+# The scaffolded action needs no token scope and reaches no host, so both lists start empty.
+# Update them as soon as the action calls the GitHub API or the network: [] means "none", not
+# "not filled in". For example:
+#
+# permissions:
+#   - { scope: contents, access: read, when: always }
+#   - { scope: pull-requests, access: write, when: { input: comment, equals: 'true' }, token: token }
+# egress:
+#   - { endpoint: ghcr.io:443, for: pulling the image }
+# requires: [linux, docker]
+# examples:
+#   - { title: Basic usage, file: examples/basic.yaml }
+permissions: []
+egress: []
