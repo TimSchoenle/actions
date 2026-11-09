@@ -32,10 +32,5 @@ export class ReleaseNotFoundError extends Error {
   }
 }
 
-/** A downloaded file is not the one its publisher signed or listed. */
-export class VerificationError extends Error {
-  constructor(message: string, cause?: unknown) {
-    super(message, { cause });
-    this.name = 'VerificationError';
-  }
-}
+/** A downloaded file is not the one its publisher signed or listed. Shared with the checksum checks. */
+export { VerificationError } from 'actions-util/release-download';

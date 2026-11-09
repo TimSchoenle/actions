@@ -270,6 +270,11 @@
       "release-type": "simple",
       "component": "actions-common-render-readme",
       "include-component-in-tag": true
+    },
+    "actions/common/download-release-asset": {
+      "release-type": "simple",
+      "component": "actions-common-download-release-asset",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

@@ -1,9 +1,13 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import * as core from '@actions/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { run } from './action.js';
+import { releaseDownloadPort, run } from './action.js';
+
+import type { ReleaseAssetRef } from 'actions-util/release-download';
 
 import type { ActionDependencies } from './action.js';
 import type { InstallPorts } from './installer.js';
@@ -49,7 +53,7 @@ function ports(): InstallPorts {
     .join('\n');
 
   return {
-    download: vi.fn((url: string) => Promise.resolve(`/tmp/${path.posix.basename(url)}`)),
+    download: vi.fn((asset: ReleaseAssetRef) => Promise.resolve(`/tmp/${asset.name}`)),
     extract: vi.fn(() => Promise.resolve('/tmp/unpacked')),
     cacheDirectory: vi.fn((_d: string, tool: string, version: string) => Promise.resolve(`/cache/${tool}/${version}`)),
     cacheFile: vi.fn((_f: string, _n: string, tool: string, version: string) =>
@@ -175,10 +179,10 @@ describe('terrace setup action', () => {
     setInputs({ version: '0.8.0', oras: 'true' });
     const deps = dependencies();
 
-    vi.mocked(deps.ports.download).mockImplementation((url: string) =>
-      url.includes('oras')
+    vi.mocked(deps.ports.download).mockImplementation((asset) =>
+      asset.repository === 'oras-project/oras'
         ? Promise.reject(new Error('oras unavailable'))
-        : Promise.resolve(`/tmp/${path.posix.basename(url)}`),
+        : Promise.resolve(`/tmp/${asset.name}`),
     );
 
     await run(deps);
@@ -208,5 +212,47 @@ describe('terrace setup action', () => {
 
     expect(failure()).toMatch(/could not verify SHA256SUMS.*signature mismatch/);
     expect(deps.addPath).not.toHaveBeenCalled();
+  });
+});
+
+describe('releaseDownloadPort', () => {
+  const ASSET: ReleaseAssetRef = { repository: 'sigstore/cosign', tag: 'v3.1.3', name: 'cosign-linux-amd64' };
+  let temp: string | undefined;
+
+  afterEach(async () => {
+    if (temp !== undefined) {
+      await rm(temp, { recursive: true, force: true });
+      temp = undefined;
+    }
+  });
+
+  it('downloads each asset into its own directory under RUNNER_TEMP, with one downloader', async () => {
+    temp = await mkdtemp(path.join(tmpdir(), 'terrace-port-'));
+    const download = vi.fn(() => Promise.resolve());
+    const create = vi.fn(() => ({ download }));
+    const readToken = vi.fn(() => 'job-token');
+    const port = releaseDownloadPort(
+      { RUNNER_TEMP: temp, GITHUB_SERVER_URL: 'https://ghes.example.com' },
+      readToken,
+      create,
+    );
+
+    const first = await port(ASSET);
+    const second = await port({ ...ASSET, name: 'cosign_checksums.txt' });
+
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(create).toHaveBeenCalledWith({ token: 'job-token', serverUrl: 'https://ghes.example.com' });
+    expect(path.basename(first)).toBe('cosign-linux-amd64');
+    expect(path.dirname(first).startsWith(path.join(temp, 'terrace-setup-'))).toBe(true);
+    expect(path.dirname(second)).not.toBe(path.dirname(first));
+    expect(download).toHaveBeenCalledWith(ASSET, first);
+  });
+
+  it('refuses to download without RUNNER_TEMP', async () => {
+    const create = vi.fn();
+    const port = releaseDownloadPort({}, () => '', create);
+
+    await expect(port(ASSET)).rejects.toThrow(/RUNNER_TEMP is not set/);
+    expect(create).not.toHaveBeenCalled();
   });
 });

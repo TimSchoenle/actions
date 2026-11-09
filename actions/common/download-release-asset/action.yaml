@@ -1,0 +1,37 @@
+name: 'Common Download Release Asset'
+description: 'Downloads a GitHub release asset, through the REST API asset endpoint when the release download fails, and verifies it against a pinned SHA-256 or a pinned checksums file.'
+
+inputs:
+  repository:
+    description: 'Repository the release belongs to, as owner/repo.'
+    required: true
+  tag:
+    description: 'Tag of the release, for example v2.5.0.'
+    required: true
+  asset:
+    description: 'File name of the asset in the release.'
+    required: true
+  token:
+    description: 'Token for the REST API fallback, sent to api.github.com only when the release download fails and only when the job runs on github.com. Never sent to github.com, nor from a GitHub Enterprise Server job.'
+    required: false
+    default: ${{ github.token }}
+  sha256:
+    description: 'SHA-256 the asset must have, as 64 hex digits. Set either this, or checksums-asset together with checksums-sha256.'
+    required: false
+    default: ''
+  checksums-asset:
+    description: 'File name of a sha256sum-format checksums file in the same release, which must list the asset. Set together with checksums-sha256, instead of sha256.'
+    required: false
+    default: ''
+  checksums-sha256:
+    description: 'SHA-256 the checksums file must have, as 64 hex digits. The checksums file is verified against it before the asset is downloaded, so one pin covers every asset it lists.'
+    required: false
+    default: ''
+
+outputs:
+  path:
+    description: 'Absolute path of the verified asset, in a new directory under RUNNER_TEMP. Set only once the asset is verified.'
+
+runs:
+  using: 'node24'
+  main: 'dist/index.js'

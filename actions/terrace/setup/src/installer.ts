@@ -14,14 +14,15 @@
 import path from 'node:path';
 
 import { errorMessage } from 'actions-util';
+import { assertListed, parseChecksums } from 'actions-util/release-download';
 
-import { assertListed, parseChecksums } from './checksums.js';
 import { ReleaseNotFoundError, VerificationError } from './errors.js';
 import { COSIGN_CHECKSUMS, cosignAsset, orasAsset, orasChecksums, terraceAsset } from './platform.js';
 import { RELEASE_REPOSITORY } from './releases.js';
 import { RELEASE_TAG_PREFIX } from './version.js';
 
 import type { Architecture, Asset, Packaging, Platform } from './platform.js';
+import type { ReleaseAssetRef } from 'actions-util/release-download';
 
 /**
  * The certificate identity every terrace-contract `SHA256SUMS` signature must carry: the release
@@ -35,8 +36,11 @@ export const GITHUB_OIDC_ISSUER = 'https://token.actions.githubusercontent.com';
 
 /** What an install needs from the outside world, injected so each install can be tested offline. */
 export interface InstallPorts {
-  /** Downloads a URL to a temporary file. Rejects with `httpStatusCode` set on an HTTP failure. */
-  download(url: string): Promise<string>;
+  /**
+   * Downloads a release asset to a temporary file, through the REST API when the release download
+   * fails. Rejects with `httpStatusCode` set on an HTTP failure.
+   */
+  download(asset: ReleaseAssetRef): Promise<string>;
   /** Unpacks an archive into a new temporary directory. */
   extract(archive: string, packaging: Exclude<Packaging, 'binary'>): Promise<string>;
   /** Copies a directory into the tool cache, returning the cached directory. */
@@ -76,14 +80,17 @@ function httpStatus(error: unknown): number | undefined {
   return undefined;
 }
 
+/** A release: the repository as `owner/repo` and the tag. */
+type Release = Omit<ReleaseAssetRef, 'name'>;
+
 async function verifiedChecksums(
   ports: InstallPorts,
   file: string,
   asset: Asset,
-  listUrl: string,
+  release: Release,
   listName: string,
 ): Promise<void> {
-  const list = await ports.download(listUrl);
+  const list = await ports.download({ ...release, name: listName });
   const digests = parseChecksums(await ports.readText(list), listName);
 
   assertListed(digests, listName, asset.name, await ports.sha256(file));
@@ -129,12 +136,12 @@ export async function installCosign(ports: InstallPorts, runner: Runner, version
     return { version: plain, path: hit };
   }
 
-  const base = `https://github.com/sigstore/cosign/releases/download/${version}`;
+  const release: Release = { repository: 'sigstore/cosign', tag: version };
 
   ports.info(`Downloading cosign ${version} (${asset.name}).`);
-  const file = await ports.download(`${base}/${asset.name}`);
+  const file = await ports.download({ ...release, name: asset.name });
 
-  await verifiedChecksums(ports, file, asset, `${base}/${COSIGN_CHECKSUMS}`, COSIGN_CHECKSUMS);
+  await verifiedChecksums(ports, file, asset, release, COSIGN_CHECKSUMS);
 
   return { version: plain, path: await cached(ports, file, asset, 'cosign', plain) };
 }
@@ -148,13 +155,12 @@ export async function installOras(ports: InstallPorts, runner: Runner, version: 
     return { version, path: hit };
   }
 
-  const base = `https://github.com/oras-project/oras/releases/download/v${version}`;
+  const release: Release = { repository: 'oras-project/oras', tag: `v${version}` };
 
   ports.info(`Downloading oras ${version} (${asset.name}).`);
-  const file = await ports.download(`${base}/${asset.name}`);
-  const list = orasChecksums(version);
+  const file = await ports.download({ ...release, name: asset.name });
 
-  await verifiedChecksums(ports, file, asset, `${base}/${list}`, list);
+  await verifiedChecksums(ports, file, asset, release, orasChecksums(version));
 
   return { version, path: await cached(ports, file, asset, 'oras', version) };
 }
@@ -173,10 +179,10 @@ export async function installTerrace(
     return { version, path: hit };
   }
 
-  const base = `https://github.com/${RELEASE_REPOSITORY}/releases/download/${RELEASE_TAG_PREFIX}${version}`;
+  const release: Release = { repository: RELEASE_REPOSITORY, tag: `${RELEASE_TAG_PREFIX}${version}` };
   const fetchFile = async (name: string): Promise<string> => {
     try {
-      return await ports.download(`${base}/${name}`);
+      return await ports.download({ ...release, name });
     } catch (error) {
       if (httpStatus(error) === 404) {
         throw new ReleaseNotFoundError(

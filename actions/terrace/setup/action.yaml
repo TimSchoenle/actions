@@ -31,8 +31,8 @@ inputs:
     # renovate: datasource=github-releases depName=oras-project/oras extractVersion=^v(?<version>.*)$
     default: '1.3.6'
   github_token:
-    description: 'Token for listing terrace-contract releases on api.github.com, needed only when the version is a
-      MAJOR.MINOR line. Defaults to the job token on github.com and to empty elsewhere, because a GitHub Enterprise
+    description: 'Token for api.github.com: for listing terrace-contract releases, needed only when the version is a
+      MAJOR.MINOR line, and for the REST API fallback that runs when a release download fails. Defaults to the job token on github.com and to empty elsewhere, because a GitHub Enterprise
       Server token is not a github.com credential and must not be sent there. Unauthenticated listing works but
       shares a low per-IP rate limit.'
     required: false

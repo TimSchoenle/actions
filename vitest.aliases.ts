@@ -48,6 +48,10 @@ export const workspaceAliases: Alias[] = [
     replacement: fileURLToPath(new URL('./packages/ts-util/src/read-after-write.ts', import.meta.url)),
   },
   {
+    find: 'actions-util/release-download',
+    replacement: fileURLToPath(new URL('./packages/ts-util/src/release-download.ts', import.meta.url)),
+  },
+  {
     find: 'actions-util',
     replacement: fileURLToPath(new URL('./packages/ts-util/src/index.ts', import.meta.url)),
   },

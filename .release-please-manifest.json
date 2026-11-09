@@ -52,5 +52,6 @@
   "actions/common/find-patch": "1.1.0",
   "actions/common/generated-files-verdict": "1.1.0",
   "actions/common/commit-generated-files": "1.1.0",
-  "actions/common/render-readme": "1.1.0"
+  "actions/common/render-readme": "1.1.0",
+  "actions/common/download-release-asset": "1.0.0"
 }

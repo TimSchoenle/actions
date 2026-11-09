@@ -56,3 +56,9 @@ ignores:
   - rule: dangerous-triggers
     file: .github/workflows/auto-format-commit.yml
     reason: workflow_run commit job; the artifact is validated by commit-patch, nothing from it runs
+  # The e2e generator gives every verify workflow a `feature/<action path>` push filter. This path
+  # contains "release", so jactionlint v2.5.0's release-branch heuristic (namesReleaseBranch) treats
+  # the filter as a release branch. The workflow only runs tests and publishes nothing.
+  - rule: cache-poisoning
+    file: .github/workflows/verify-action-common-download-release-asset.yaml
+    reason: the generated feature/<action path> push filter contains "release"; this workflow publishes nothing
