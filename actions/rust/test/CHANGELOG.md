@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/TimSchoenle/actions/compare/actions-rust-test-v1.1.2...actions-rust-test-v1.1.3) (2026-11-09)
+
+
+### Dependencies
+
+* **deps:** update all non-major action updates (minor) ([#2020](https://github.com/TimSchoenle/actions/issues/2020)) ([7977d5a](https://github.com/TimSchoenle/actions/commit/7977d5a78b1061de0edaef01a2b2c8bc08ce70bc))
+
 ## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-rust-test-v1.1.1...actions-rust-test-v1.1.2) (2026-08-30)
 
 

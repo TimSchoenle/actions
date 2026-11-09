@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.5](https://github.com/TimSchoenle/actions/compare/actions-test-setup-e2e-v1.2.4...actions-test-setup-e2e-v1.2.5) (2026-11-09)
+
+
+### Dependencies
+
+* **deps:** update all non-major action updates (minor) ([#2020](https://github.com/TimSchoenle/actions/issues/2020)) ([7977d5a](https://github.com/TimSchoenle/actions/commit/7977d5a78b1061de0edaef01a2b2c8bc08ce70bc))
+
 ## [1.2.4](https://github.com/TimSchoenle/actions/compare/actions-test-setup-e2e-v1.2.3...actions-test-setup-e2e-v1.2.4) (2026-10-10)
 
 
