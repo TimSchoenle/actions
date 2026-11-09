@@ -2,11 +2,12 @@ name: CodeRabbit Review
 
 # workflow_run, not pull_request_target: GitHub runs this file from the default branch, so a pull
 # request cannot rewrite the job that receives the token, and nothing from the pull request is
-# checked out or run. pr_url is left empty: the action reads the pull request from the event and
-# skips it when its head has moved since the request.
+# checked out or run. It follows the pull_request workflow that generates files, so CodeRabbit
+# reviews the head after the generated files are committed. pr_url is left empty: the action reads
+# the pull request from the event and skips it when its head has moved since.
 on:
   workflow_run:
-    workflows: [CodeRabbit Request]
+    workflows: [Generate]
     types: [completed]
 
 # A newer push to the same branch supersedes a run that has not posted yet. The head repository is
@@ -20,9 +21,11 @@ permissions: {}
 jobs:
   trigger:
     name: Trigger CodeRabbit Review
-    # Only a request from a branch of this repository. A fork's run is skipped here, before the job
-    # enters the environment that holds the token.
+    # Only a successful run on a branch of this repository. A failed run usually means a generated
+    # patch is about to be committed, and the run on that commit asks instead. A fork's run is
+    # skipped here, before the job enters the environment that holds the token.
     if: >-
+      github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
