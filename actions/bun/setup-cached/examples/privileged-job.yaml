@@ -1,0 +1,5 @@
+# In a job that holds secrets, an App token or any write permission.
+- name: Setup Bun
+  uses: TimSchoenle/actions/actions/bun/setup-cached@main
+  with:
+    cache-mode: none

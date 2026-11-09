@@ -3,13 +3,13 @@ description: 'Renders a Handlebars template to a file and commits the result as 
 
 inputs:
   template:
-    description: 'Path to the template file'
+    description: 'Path to the template file.'
     required: true
   output:
-    description: 'Path of the file to write the rendered result to'
+    description: 'Path of the file to write the rendered result to. Missing parent directories are created.'
     required: true
   variables:
-    description: 'Template variables as a JSON object. Must be strict JSON.'
+    description: 'Template variables as a JSON object. Must be strict JSON, not YAML.'
     required: false
     default: '{}'
   partials-dir:
@@ -25,33 +25,33 @@ inputs:
     required: false
     default: 'false'
   token:
-    description: 'The GitHub token to commit with (must be an App installation token for verified commits)'
+    description: 'GitHub App installation token to commit with, with contents: write on the target repository. The default GITHUB_TOKEN produces an unverified commit and does not trigger downstream workflows.'
     required: true
   commit_message:
-    description: 'The commit message'
+    description: 'The commit message.'
     required: true
   repository:
-    description: 'Repository name to commit to (e.g. owner/repo)'
+    description: 'Repository to commit to, as owner/repo.'
     required: false
     default: ${{ github.repository }}
   branch:
-    description: 'Branch to commit to'
+    description: 'Branch to commit to.'
     required: false
     default: ${{ github.head_ref || github.ref_name }}
   file_pattern:
-    description: 'File pattern to commit. Defaults to the rendered output path alone, so an unrelated dirty file in the workspace cannot ride along in a documentation commit.'
+    description: 'What to commit, in the pathspec syntax common/commit-changes accepts. Defaults to the rendered output path alone, so an unrelated dirty file in the workspace cannot ride along in a documentation commit. See file_pattern below.'
     required: false
     default: ''
 
 outputs:
   changed:
-    description: 'Whether the rendered content differs from what was already at the output path'
+    description: 'true when the rendered content differed from what was already at the output path. It describes the file on disk, not the branch.'
     value: ${{ steps.render.outputs.changed }}
   checksum:
-    description: 'SHA-256 of the rendered content, as lowercase hex'
+    description: 'SHA-256 of the rendered content, as lowercase hex.'
     value: ${{ steps.render.outputs.checksum }}
   output-path:
-    description: 'Path the rendered content was written to, as given'
+    description: 'Path the rendered content was written to, as given.'
     value: ${{ steps.render.outputs.output-path }}
   commit_hash:
     description: 'The SHA of the created commit. Empty when the render changed nothing and no commit was made.'
@@ -60,7 +60,7 @@ outputs:
     description: 'The URL of the created commit. Empty when the render changed nothing and no commit was made.'
     value: ${{ steps.commit.outputs.commit_url }}
   changes_detected:
-    description: 'True if changes were committed'
+    description: 'true when a commit was made, false otherwise. Never empty, even when the commit was skipped. It describes the branch, not the file on disk: a render that changed the workspace file but matched what was already committed on the branch reports changed true and changes_detected false.'
     # The commit step is skipped on an unchanged render, which leaves its outputs empty rather than
     # false; the fallback keeps this a boolean string for every caller.
     value: ${{ steps.commit.outputs.changes_detected || 'false' }}

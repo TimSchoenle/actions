@@ -1,0 +1,9 @@
+# example and bin are mutually exclusive, and naming both is refused rather than resolved by
+# precedence. Naming neither uses the example config-schema, which is what every workflow written
+# before bin existed relies on.
+- name: Config contract
+  uses: TimSchoenle/actions/actions/rust/config-contract@main
+  with:
+    # A [[bin]], because other crates link it and the build runs the compiled artefact.
+    bin: config-contract
+    image: myservice:test

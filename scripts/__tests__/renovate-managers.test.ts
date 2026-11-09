@@ -600,3 +600,56 @@ describe('Renovate coverage of the documentation pins', () => {
     }
   });
 });
+
+/**
+ * Contract between the example workflows the action READMEs embed and the Renovate configuration that
+ * keeps them current.
+ *
+ * Their third-party pins are read by the github-actions manager only through the pattern this
+ * repository adds, and their pins of this repository's actions are left to `bun run generate-docs`,
+ * which pins every one it embeds. An example outside the pattern, or one that pins an internal
+ * action by hand, would go stale without anything failing.
+ */
+describe('Renovate coverage of the README examples', () => {
+  async function exampleFiles(): Promise<string[]> {
+    return [...(await scanSorted('actions/*/*/examples/*.yaml')), ...(await scanSorted('actions/*/*/examples/*.yml'))];
+  }
+
+  function githubActionsPatterns(): RegExp[] {
+    const config = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'renovate.json'), 'utf8')) as {
+      'github-actions'?: { managerFilePatterns?: string[] };
+    };
+    return (config['github-actions']?.managerFilePatterns ?? []).map((pattern) => {
+      // A glob entry would slice into an unanchored regex that passes here without Renovate matching.
+      if (!pattern.startsWith('/') || !pattern.endsWith('/')) {
+        throw new Error(`github-actions pattern ${pattern} is not a /regex/; extend this test to read globs`);
+      }
+      return new RegExp(pattern.slice(1, -1));
+    });
+  }
+
+  it('finds example workflows at all', async () => {
+    expect(await exampleFiles()).not.toEqual([]);
+  });
+
+  it('claims every example for the github-actions manager', async () => {
+    const patterns = githubActionsPatterns();
+    for (const file of await exampleFiles()) {
+      expect(
+        patterns.some((pattern) => pattern.test(file)),
+        `${file} is read by no Renovate manager`,
+      ).toBe(true);
+    }
+  });
+
+  it('leaves every internal action in an example on @main for the generator to pin', async () => {
+    for (const file of await exampleFiles()) {
+      const pinned = fs
+        .readFileSync(path.join(ROOT_DIR, file), 'utf8')
+        .split(/\r?\n/)
+        // Case-insensitive, as the generator matches the owner.
+        .filter((line) => /TimSchoenle\/actions\/[^@\s]+@(?!main\b)/i.test(line));
+      expect(pinned, `${file} pins an internal action by hand; write it as @main`).toEqual([]);
+    }
+  });
+});
