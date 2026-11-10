@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { affected, rootBuildInputs, sourceInputs, workspacePackages } from './source-inputs.js';
-import { compositeAction, createRepository, nodeAction, removeRepository } from './test-fixtures.js';
+import { compositeAction, createRepository, nodeAction, removeRepository, writeFiles } from './test-fixtures.js';
 
 let root: string | undefined;
 
@@ -63,6 +63,18 @@ describe('sourceInputs', () => {
     expect(sourceInputs(monorepo(), ['actions/b/helper'])).not.toContain('packages/shared');
   });
 
+  it('names the package.json it cannot parse', () => {
+    const repository = monorepo();
+    writeFiles(repository, { 'packages/util/package.json': '{ "name": ' });
+
+    expect(() => sourceInputs(repository, ['actions/a'])).toThrow(
+      expect.objectContaining({
+        message: expect.stringMatching(/^packages\/util\/package\.json: not valid JSON: /),
+        cause: expect.any(SyntaxError),
+      }),
+    );
+  });
+
   it('lists only root build inputs that exist', () => {
     expect(rootBuildInputs(monorepo())).toEqual(['bun.lock', '.bun-version']);
   });
@@ -74,6 +86,12 @@ describe('affected', () => {
     ['packages/util/src/x.ts', ['actions/a']],
     ['actions/b/helper/src/x.ts', ['actions/b']],
     ['bun.lock', ['actions/a', 'actions/b']],
+    // actions/c builds nothing, so a toolchain change cannot affect it.
+    ['.bun-version', ['actions/a', 'actions/b']],
+    // A path equal to an action directory, as a deleted or renamed directory is reported.
+    ['actions/a', ['actions/a']],
+    // Compared by segment: actions/a2 is not inside actions/a.
+    ['actions/a2/x', []],
     ['actions/c/action.yaml', ['actions/c']],
     ['packages/unused/src/x.ts', []],
     ['README.md', []],

@@ -40,13 +40,19 @@ interface PackageJson {
   readonly [field: string]: unknown;
 }
 
+/** @throws an `Error` naming the repository-relative file when it is not valid JSON */
 function readPackageJson(root: string, directory: string): PackageJson | undefined {
-  const file = toAbsolute(root, joinRepoPath(directory, 'package.json'));
+  const repoPath = joinRepoPath(directory, 'package.json');
+  const file = toAbsolute(root, repoPath);
   if (!fs.existsSync(file)) {
     return undefined;
   }
 
-  return JSON.parse(fs.readFileSync(file, 'utf8')) as PackageJson;
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8')) as PackageJson;
+  } catch (error) {
+    throw new Error(`${repoPath}: not valid JSON: ${(error as Error).message}`, { cause: error });
+  }
 }
 
 /** The names a `package.json` depends on through the `workspace:` protocol. */
