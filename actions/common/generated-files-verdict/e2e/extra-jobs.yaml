@@ -214,6 +214,13 @@ verdict-pending:
         needs: ${{ toJSON(needs) }}
         artifact_name: verdict-e2e-merged-${{ github.run_attempt }}
 
+    # The verdict's own checkout cleaned the workspace, and the gitignored bundles with it.
+    - name: Reinstall Built Actions
+      uses: pinned:installBuiltActions
+      with:
+        artifact-id: ${{ needs.build.outputs.artifact-id }}
+        expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
+
     - name: Find The Merged Patch
       id: merged
       uses: ./actions/common/find-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
@@ -277,6 +284,13 @@ verdict-conflict:
       with:
         needs: ${{ toJSON(needs) }}
         artifact_name: verdict-e2e-conflict-merged-${{ github.run_attempt }}
+
+    # The verdict's own checkout cleaned the workspace, and the gitignored bundles with it.
+    - name: Reinstall Built Actions
+      uses: pinned:installBuiltActions
+      with:
+        artifact-id: ${{ needs.build.outputs.artifact-id }}
+        expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
 
     - name: Find The Merged Patch
       id: merged
@@ -346,6 +360,13 @@ verdict-failed:
       with:
         needs: ${{ steps.needs.outputs.json }}
         artifact_name: verdict-e2e-failed-merged-${{ github.run_attempt }}
+
+    # The verdict's own checkout cleaned the workspace, and the gitignored bundles with it.
+    - name: Reinstall Built Actions
+      uses: pinned:installBuiltActions
+      with:
+        artifact-id: ${{ needs.build.outputs.artifact-id }}
+        expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
 
     - name: Find The Merged Patch
       id: merged
@@ -419,6 +440,13 @@ verdict-clean:
       with:
         needs: ${{ steps.needs.outputs.json }}
         artifact_name: verdict-e2e-merged-${{ github.run_attempt }}
+
+    # The verdict's own checkout cleaned the workspace, and the gitignored bundles with it.
+    - name: Reinstall Built Actions
+      uses: pinned:installBuiltActions
+      with:
+        artifact-id: ${{ needs.build.outputs.artifact-id }}
+        expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
 
     - name: Find The Merged Patch
       id: merged

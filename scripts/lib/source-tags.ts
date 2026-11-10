@@ -192,7 +192,7 @@ export async function planSourceTags(files: ReleaseFiles, git: SourceTagGit): Pr
   return decisions;
 }
 
-/** The tags to create, as the apply job of bootstrap-source-tags.yml reads them. */
+/** The tags to create, as the source-tags job of release.yml reads them. */
 export function tagsToCreate(decisions: readonly SourceTagDecision[]): { tag: string; sha: string }[] {
   return decisions.flatMap((decision) =>
     decision.kind === 'create' ? [{ tag: decision.tag, sha: decision.sha }] : [],

@@ -88,6 +88,19 @@ runs:
         set -euo pipefail
         node "$GITHUB_ACTION_PATH/helper/dist/index.js"
 
+    # The checkout below cleans the workspace. When this action runs from a checkout in the workspace,
+    # as it does in this repository's end-to-end jobs, its gitignored bundle is deleted with it, so
+    # the apply step runs a copy kept under the runner's temporary directory.
+    - name: Keep The Helper Out Of The Workspace
+      id: helper
+      if: steps.evaluate.outputs.has_pending == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        dir="$(mktemp -d "$RUNNER_TEMP/generated-files-verdict-helper.XXXXXX")"
+        cp "$GITHUB_ACTION_PATH/helper/dist/index.js" "$dir/index.mjs"
+        echo "path=$dir/index.mjs" >> "$GITHUB_OUTPUT"
+
     # The commit the generators checked out, not the merge ref: the merged patch has to apply to the
     # pull request head, which is what the commit job checks base_sha against. With nothing pending,
     # the head itself, for the empty patch.
@@ -105,9 +118,10 @@ runs:
         INPUT_DIRECTORY: ${{ steps.evaluate.outputs.directory }}
         INPUT_ARTIFACTS: ${{ steps.evaluate.outputs.artifacts }}
         INPUT_MAX_PATCH_BYTES: ${{ inputs.max_patch_bytes }}
+        HELPER: ${{ steps.helper.outputs.path }}
       run: |
         set -euo pipefail
-        node "$GITHUB_ACTION_PATH/helper/dist/index.js"
+        node "$HELPER"
 
     - name: Upload The Merged Patch
       id: merged

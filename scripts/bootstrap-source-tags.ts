@@ -10,7 +10,7 @@ import type { SourceTagDecision } from './lib/source-tags.js';
 //
 //   bun scripts/bootstrap-source-tags.ts [--output <file>] [--strict]
 //
-// Read-only: it creates no tag. The apply job of .github/workflows/bootstrap-source-tags.yml creates
+// Read-only: it creates no tag. The source-tags job of .github/workflows/release.yml creates
 // what the plan lists, with the release App, after checking each commit is on the default branch.
 // Needs a checkout with the full history and every tag (fetch-depth: 0, fetch-tags: true).
 //
