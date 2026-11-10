@@ -36,6 +36,8 @@ A `node24` action needs Node 24 first on `PATH`; see *Fidelity, and its limits*.
 | `E2E_GITHUB_TOKEN_SECONDARY` | `auto-approve-pr` only | A second identity. See *Two identities*, below. |
 | `E2E_APP_SLUG_SECONDARY` | CI only | Slug of the app behind the secondary token. |
 | `E2E_KEEP_WORKSPACE` | no | Keeps each run's scratch directory for inspection. |
+| `BUILT_ACTIONS_MANIFEST` | CI only | The `bundles.json` `release/install-built-actions` exported. See *Which bundle runs*, below. |
+| `E2E_NO_AUTOBUILD` | no | `1` skips rebuilding stale bundles before a local run. |
 
 A CI run without `E2E_GITHUB_TOKEN` **fails before any file loads**; it does not skip. Locally the
 check is relaxed, so the suites that never reach GitHub — `read-yaml`, `modify-yaml`,
@@ -189,9 +191,23 @@ run of `ensure-actions-are-executed` leaves four behind on an orphaned commit.
 The harness reproduces the runner's contract: `INPUT_*` naming (including that a hyphen is *not*
 translated), `action.yaml` defaults, the `GITHUB_OUTPUT` heredoc encoding, `GITHUB_ENV`,
 `GITHUB_STATE`, the `::command::` stream, and starting the process in `GITHUB_WORKSPACE`. The default
-`entry: 'dist'` runs the committed bundle under node, which is the artifact GitHub runs;
-`entry: 'source'` runs `src/generated/index.ts` under bun for a faster edit loop, at the cost of
-testing a different runtime.
+`entry: 'dist'` runs the bundle under node, which is the artifact GitHub runs; `entry: 'source'`
+runs `src/generated/index.ts` under bun for a faster edit loop, at the cost of testing a different
+runtime.
+
+### Which bundle runs
+
+In CI, the generated verify workflow builds every bundle the suite needs in a `build` job, from the
+commit under test, and the `e2e` job installs them with `release/install-built-actions` before the
+cases run. A committed bundle never reaches a case. The harness checks each bundle it is about to run
+against the installed manifest (`BUILT_ACTIONS_MANIFEST`): an unlisted bundle or one with other bytes
+fails the run, and so does a CI run without the variable. A case that reaches another action's
+bundle must do so through a literal `new URL('<path>', import.meta.url)`, which is how the generator
+finds it; anything computed at run time fails this check and names the fix.
+
+Locally, `bun run e2e` first rebuilds every bundle older than its sources (the action, its workspace
+dependencies, the lockfile, the Bun pin) with `bun run build:actions`. Set `E2E_NO_AUTOBUILD=1` to
+run on the bundles as they are.
 
 The node is the first one on `PATH`, and for a `node24` manifest it must be Node 24: the run fails
 naming the version it found rather than testing the bundle under a runtime GitHub never uses. The

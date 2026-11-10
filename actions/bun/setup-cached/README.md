@@ -152,7 +152,7 @@ from restoring entries saved by earlier releases, which wrote from every event.
 - End-to-end tests: [`.github/workflows/verify-action-bun-setup-cached.yaml`](../../../.github/workflows/verify-action-bun-setup-cached.yaml)
 
 <details>
-<summary>Called from 46 files in this repository</summary>
+<summary>Called from 48 files in this repository</summary>
 
 - [`.github/workflows/auto-format.yml`](../../../.github/workflows/auto-format.yml)
 - [`.github/workflows/ci-required.yaml`](../../../.github/workflows/ci-required.yaml)
@@ -184,6 +184,7 @@ from restoring entries saved by earlier releases, which wrote from every event.
 - [`.github/workflows/verify-action-helper-resolve-base-branch.yaml`](../../../.github/workflows/verify-action-helper-resolve-base-branch.yaml)
 - [`.github/workflows/verify-action-helper-verify-branch-name.yaml`](../../../.github/workflows/verify-action-helper-verify-branch-name.yaml)
 - [`.github/workflows/verify-action-helper-verify-commit-authors.yaml`](../../../.github/workflows/verify-action-helper-verify-commit-authors.yaml)
+- [`.github/workflows/verify-action-java-gradle-auto-spotless.yaml`](../../../.github/workflows/verify-action-java-gradle-auto-spotless.yaml)
 - [`.github/workflows/verify-action-maintenance-auto-approve-pr.yaml`](../../../.github/workflows/verify-action-maintenance-auto-approve-pr.yaml)
 - [`.github/workflows/verify-action-maintenance-auto-rebase.yaml`](../../../.github/workflows/verify-action-maintenance-auto-rebase.yaml)
 - [`.github/workflows/verify-action-maintenance-ensure-actions-are-executed.yaml`](../../../.github/workflows/verify-action-maintenance-ensure-actions-are-executed.yaml)
@@ -195,6 +196,7 @@ from restoring entries saved by earlier releases, which wrote from every event.
 - [`.github/workflows/verify-action-release-plan-release-please.yaml`](../../../.github/workflows/verify-action-release-plan-release-please.yaml)
 - [`.github/workflows/verify-action-release-publish-build-commit.yaml`](../../../.github/workflows/verify-action-release-publish-build-commit.yaml)
 - [`.github/workflows/verify-action-release-resolve-actions.yaml`](../../../.github/workflows/verify-action-release-resolve-actions.yaml)
+- [`.github/workflows/verify-action-rust-auto-format.yaml`](../../../.github/workflows/verify-action-rust-auto-format.yaml)
 - [`.github/workflows/verify-action-rust-config-contract.yaml`](../../../.github/workflows/verify-action-rust-config-contract.yaml)
 - [`.github/workflows/verify-action-security-codeql.yaml`](../../../.github/workflows/verify-action-security-codeql.yaml)
 - [`.github/workflows/verify-action-security-zizmor.yaml`](../../../.github/workflows/verify-action-security-zizmor.yaml)

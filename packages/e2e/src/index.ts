@@ -11,6 +11,7 @@
  */
 export * from './action-inputs.js';
 export * from './adversarial.js';
+export * from './built-bundle.js';
 export * from './action-manifest.js';
 export * from './github-file-commands.js';
 export * from './in-process.js';

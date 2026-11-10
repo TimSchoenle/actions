@@ -17,6 +17,8 @@ import {
   INSTALL_ALLOWED_ENDPOINTS,
   missingTokenInputScopes,
   workflowFileName,
+  workspaceMemberDirectories,
+  workspaceModulePaths,
 } from '../lib/e2e-workflow.js';
 import { ROOT_DIR, scanSorted } from '../lib/utils.js';
 
@@ -289,12 +291,11 @@ describe('end-to-end contract', () => {
 
       expect(saved, `${file}: the install job caches no dependency paths`).toBeDefined();
       expect(restored, `${file}: the e2e job restores no dependency paths`).toEqual(saved);
-      expect(saved, `${file}: the cache must cover each package's own node_modules, not just the root`).toContain(
-        'packages/*/node_modules',
-      );
-      expect(saved, `${file}: the cache must cover each action's own node_modules`).toContain(
-        'actions/*/*/node_modules',
-      );
+      // Every workspace member keeps its own tree, at whatever depth it sits (an action's `helper/`
+      // included); a member the cache misses only fails later, when the build cannot resolve it.
+      for (const pattern of workspaceModulePaths(workspaceMemberDirectories())) {
+        expect(saved, `${file}: the cache must cover ${pattern}`).toContain(`            ${pattern}\n`);
+      }
     }
   });
 

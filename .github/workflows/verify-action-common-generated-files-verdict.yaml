@@ -11,18 +11,40 @@ on:
       - main
       - 'feature/common/generated-files-verdict'
     paths:
+      - '.bun-version'
+      - '.github/workflows/verify-action-common-generated-files-verdict.yaml'
+      - 'actions/common/create-patch/**'
+      - 'actions/common/find-patch/**'
       - 'actions/common/generated-files-verdict/**'
+      - 'bun.lock'
+      - 'packages/action-graph/**'
+      - 'packages/e2e/**'
+      - 'packages/ts-util/**'
+      - 'scripts/build-action.ts'
+      - '!actions/common/create-patch/CHANGELOG.md'
+      - '!actions/common/create-patch/README.md'
+      - '!actions/common/find-patch/CHANGELOG.md'
+      - '!actions/common/find-patch/README.md'
       - '!actions/common/generated-files-verdict/CHANGELOG.md'
       - '!actions/common/generated-files-verdict/README.md'
-      - 'packages/e2e/**'
-      - '.github/workflows/verify-action-common-generated-files-verdict.yaml'
   pull_request:
     paths:
+      - '.bun-version'
+      - '.github/workflows/verify-action-common-generated-files-verdict.yaml'
+      - 'actions/common/create-patch/**'
+      - 'actions/common/find-patch/**'
       - 'actions/common/generated-files-verdict/**'
+      - 'bun.lock'
+      - 'packages/action-graph/**'
+      - 'packages/e2e/**'
+      - 'packages/ts-util/**'
+      - 'scripts/build-action.ts'
+      - '!actions/common/create-patch/CHANGELOG.md'
+      - '!actions/common/create-patch/README.md'
+      - '!actions/common/find-patch/CHANGELOG.md'
+      - '!actions/common/find-patch/README.md'
       - '!actions/common/generated-files-verdict/CHANGELOG.md'
       - '!actions/common/generated-files-verdict/README.md'
-      - 'packages/e2e/**'
-      - '.github/workflows/verify-action-common-generated-files-verdict.yaml'
   workflow_dispatch:
 
 concurrency:
@@ -68,8 +90,9 @@ jobs:
         with:
           path: |
             node_modules
-            packages/*/node_modules
+            actions/*/*/*/node_modules
             actions/*/*/node_modules
+            packages/*/node_modules
           key: ${{ steps.key.outputs.value }}
 
       # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
@@ -81,8 +104,63 @@ jobs:
           bun-version: ''
           bun-version-file: '.bun-version'
 
-  e2e:
+  build:
+    name: Build Actions
     needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      artifact-id: ${{ steps.build.outputs.artifact-id }}
+      manifest-sha256: ${{ steps.build.outputs.manifest-sha256 }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            objects.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        id: bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: '.bun-version'
+
+      - name: Restore Dependencies
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            node_modules
+            actions/*/*/*/node_modules
+            actions/*/*/node_modules
+            packages/*/node_modules
+          key: ${{ needs.install.outputs.cache-key }}
+          fail-on-cache-miss: true
+
+      - name: Build Actions
+        id: build
+        uses: TimSchoenle/actions/actions/release/build-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-build-actions-v1.1.0
+        with:
+          build-dirs: |
+            actions/common/create-patch/helper
+            actions/common/find-patch/helper
+            actions/common/generated-files-verdict/helper
+          build-command: bun run build
+          artifact-name: built-actions-${{ github.run_attempt }}
+          toolchain: bun ${{ steps.bun.outputs.bun-version }}
+
+  e2e:
+    needs: [install, build]
     environment:
       name: ci-e2e
       deployment: false
@@ -108,6 +186,13 @@ jobs:
         with:
           persist-credentials: false
 
+      # Replaces the committed bundles with the ones the build job built from this commit.
+      - name: Install Built Actions
+        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
+
       # setup-bun rather than setup-cached: the cached wrapper runs `bun install` on every job, cache
       # hit or not, and this job is the one that must have no route to a package registry at all.
       - name: Setup Bun
@@ -131,12 +216,14 @@ jobs:
         with:
           path: |
             node_modules
-            packages/*/node_modules
+            actions/*/*/*/node_modules
             actions/*/*/node_modules
+            packages/*/node_modules
           key: ${{ needs.install.outputs.cache-key }}
           fail-on-cache-miss: true
 
-      # The cases run `dist/index.js`, the bundle GitHub itself would run, so nothing is built here.
+      # The cases run `dist/index.js`, the bundle GitHub itself would run: the one the install step
+      # above put there, which the harness checks against BUILT_ACTIONS_MANIFEST before it runs it.
       - name: Generate Token
         id: token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
@@ -157,6 +244,7 @@ jobs:
         run: bun run e2e actions/common/generated-files-verdict
 
   verdict-generate-docs:
+    needs: build
     name: 'Round Trip: Generator Changing README.md'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -180,6 +268,13 @@ jobs:
         with:
           persist-credentials: false
 
+      # Replaces the committed bundles with the ones the build job built from this commit.
+      - name: Install Built Actions
+        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
+
       - name: Change README.md
         run: printf '\nappended by the docs generator\n' >> README.md
 
@@ -191,6 +286,7 @@ jobs:
           paths: README.md
 
   verdict-generate-license:
+    needs: build
     name: 'Round Trip: Generator Changing LICENSE'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -214,6 +310,13 @@ jobs:
         with:
           persist-credentials: false
 
+      # Replaces the committed bundles with the ones the build job built from this commit.
+      - name: Install Built Actions
+        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
+
       - name: Change LICENSE
         run: printf '\nappended by the license generator\n' >> LICENSE
 
@@ -225,6 +328,7 @@ jobs:
           paths: LICENSE
 
   verdict-generate-clean:
+    needs: build
     name: 'Round Trip: Generator With Nothing To Change'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -248,6 +352,13 @@ jobs:
         with:
           persist-credentials: false
 
+      # Replaces the committed bundles with the ones the build job built from this commit.
+      - name: Install Built Actions
+        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
+
       - name: Create Patch
         id: patch
         uses: ./actions/common/create-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
@@ -257,6 +368,7 @@ jobs:
 
   # Appends a different line where the docs generator appends its own, so the two patches conflict.
   verdict-generate-conflicting:
+    needs: build
     name: 'Round Trip: Generator Conflicting With The Docs Generator'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -280,6 +392,13 @@ jobs:
         with:
           persist-credentials: false
 
+      # Replaces the committed bundles with the ones the build job built from this commit.
+      - name: Install Built Actions
+        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
+
       - name: Change README.md
         run: printf '\nappended by the conflicting generator\n' >> README.md
 
@@ -293,6 +412,7 @@ jobs:
   # Uploads a patch and succeeds: a job that really failed would fail this workflow too. The verdict
   # job below reports it to the action as failed, which is all the action reads.
   verdict-generate-failing:
+    needs: build
     name: 'Round Trip: Generator Standing In For A Failed One'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -316,6 +436,13 @@ jobs:
         with:
           persist-credentials: false
 
+      # Replaces the committed bundles with the ones the build job built from this commit.
+      - name: Install Built Actions
+        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
+
       - name: Change CONTRIBUTING.md
         run: printf '\nappended by the failing generator\n' >> CONTRIBUTING.md
 
@@ -330,8 +457,8 @@ jobs:
   # before failing carries both changes.
   verdict-pending:
     name: 'Round Trip: Verdict With Pending Changes'
-    needs: [verdict-generate-docs, verdict-generate-license, verdict-generate-clean]
-    if: always()
+    needs: [build, verdict-generate-docs, verdict-generate-license, verdict-generate-clean]
+    if: ${{ (always()) && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -352,6 +479,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      # Replaces the committed bundles with the ones the build job built from this commit.
+      - name: Install Built Actions
+        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
 
       - name: Run The Verdict
         id: verdict
@@ -394,8 +528,8 @@ jobs:
   # the commit job cannot pick up anything an earlier attempt left.
   verdict-conflict:
     name: 'Round Trip: Verdict With Conflicting Patches'
-    needs: [verdict-generate-docs, verdict-generate-conflicting]
-    if: always()
+    needs: [build, verdict-generate-docs, verdict-generate-conflicting]
+    if: ${{ (always()) && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -416,6 +550,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      # Replaces the committed bundles with the ones the build job built from this commit.
+      - name: Install Built Actions
+        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
 
       - name: Run The Verdict
         id: verdict
@@ -451,8 +592,8 @@ jobs:
   # where download-artifact extracts straight into the path it is given.
   verdict-failed:
     name: 'Round Trip: Verdict With A Failed Generator'
-    needs: [verdict-generate-docs, verdict-generate-failing]
-    if: always()
+    needs: [build, verdict-generate-docs, verdict-generate-failing]
+    if: ${{ (always()) && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -473,6 +614,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      # Replaces the committed bundles with the ones the build job built from this commit.
+      - name: Install Built Actions
+        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
 
       - name: Report The Stand-In Generator As Failed
         id: needs
@@ -524,8 +672,8 @@ jobs:
   # the non-empty one, as it replaces an earlier attempt's in a re-run.
   verdict-clean:
     name: 'Round Trip: Verdict With Nothing Pending'
-    needs: [verdict-generate-clean, verdict-pending]
-    if: always()
+    needs: [build, verdict-generate-clean, verdict-pending]
+    if: ${{ (always()) && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -546,6 +694,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      # Replaces the committed bundles with the ones the build job built from this commit.
+      - name: Install Built Actions
+        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
 
       # Only the clean generator: verdict-pending is listed in needs to run first, not to be judged.
       - name: Select The Clean Generator
@@ -616,6 +771,7 @@ jobs:
     if: ${{ always() }}
     needs:
       - install
+      - build
       - e2e
       - verdict-generate-docs
       - verdict-generate-license

@@ -7,6 +7,7 @@ import {
   resolvePins,
   SECONDARY_TOKEN_PERMISSIONS,
   tokenPermissions,
+  workspaceModulePaths,
 } from '../e2e-workflow.js';
 
 import type { Permission } from '../action-docs/docs-file.js';
@@ -163,5 +164,22 @@ describe('actionTokenPermissions', () => {
 
     expect(actionTokenPermissions(action)).toEqual(SECONDARY_TOKEN_PERMISSIONS);
     expect(actionTokenPermissions(action)).not.toEqual(tokenPermissions(action));
+  });
+});
+
+describe('workspaceModulePaths', () => {
+  it('maps each member to its top-level directory, one wildcard per remaining segment, root first', () => {
+    expect(
+      workspaceModulePaths([
+        'packages/ts-util',
+        'actions/common/delete-branch',
+        'actions/docker/image-check/helper',
+        'actions/common/fetch-head',
+      ]),
+    ).toEqual(['node_modules', 'actions/*/*/*/node_modules', 'actions/*/*/node_modules', 'packages/*/node_modules']);
+  });
+
+  it('returns only the root for a repository without members', () => {
+    expect(workspaceModulePaths([])).toEqual(['node_modules']);
   });
 });

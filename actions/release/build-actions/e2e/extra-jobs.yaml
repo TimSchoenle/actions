@@ -114,7 +114,7 @@ round-trip-install:
         printf "runs:\n  using: 'node24'\n  main: 'dist/index.js'\n" > round-trip/actions/demo/action.yml
         printf "runs:\n  using: 'node24'\n  main: 'dist/index.js'\n" > round-trip/.github/actions/second/action.yml
 
-    - name: Install Built Actions
+    - name: Install Demo Actions
       id: install
       uses: ./actions/release/install-built-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
       with:

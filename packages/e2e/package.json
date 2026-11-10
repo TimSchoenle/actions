@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "action-graph": "workspace:*",
     "actions-util": "workspace:*",
     "yaml": "2.9.1"
   },
