@@ -86,6 +86,14 @@ describe('plan-release-please', () => {
     expect(result.outputs).toMatchObject({ 'is-release': 'false', 'pull-request': '', releases: '[]' });
   });
 
+  // Hostile inputs are covered case by case in the unit tests; this one shows the shipped bundle
+  // refusing one under the runner's contract, before it spends a request.
+  it('refuses an injection-style sha before calling the API', async () => {
+    const result = await plan({ mode: 'preflight', sha: '$(id)' }, 'failure');
+
+    expect(result.errors.join('\n')).toContain('sha must be a full lowercase commit id; got "$(id)".');
+  });
+
   it('fails on a commit that does not exist', async () => {
     const result = await plan({ mode: 'preflight', sha: '0'.repeat(40) }, 'failure');
 

@@ -108,10 +108,19 @@ describe('run', () => {
   it.each([
     [{ mode: 'release' }, /mode must be preflight or plan/],
     [{ mode: 'plan', sha: 'main' }, /sha must be a full lowercase commit id/],
+    [{ mode: 'plan', sha: '$(id)' }, /sha must be a full lowercase commit id/],
+    [{ mode: 'plan', sha: `${'a'.repeat(40)}; curl example.com` }, /sha must be a full lowercase commit id/],
+    [{ mode: 'plan', sha: `${'a'.repeat(40)}\n::set-output name=x::y` }, /sha must be a full lowercase commit id/],
+    [{ mode: 'plan', sha: 'A'.repeat(40) }, /sha must be a full lowercase commit id/],
+    [{ mode: 'plan', sha: 'a'.repeat(39) }, /sha must be a full lowercase commit id/],
     [{ mode: 'plan', 'consumer-tag-pattern': '(' }, /consumer-tag-pattern is not a valid regular expression/],
     [{ mode: 'plan', 'release-pr-author-id': 'bot' }, /release-pr-author-id must be empty or a numeric user ID/],
     [{ mode: 'plan', 'source-tag-prefix': 'src//' }, /source-tag-prefix must be/],
     [{ mode: 'plan', 'source-tag-prefix': '-src' }, /source-tag-prefix must be/],
+    [{ mode: 'plan', 'source-tag-prefix': 'src-ü-' }, /source-tag-prefix must be/],
+    [{ mode: 'plan', 'source-tag-prefix': 'src/../' }, /source-tag-prefix must be/],
+    [{ mode: 'plan', 'source-tag-prefix': 'src-$(id)' }, /source-tag-prefix must be/],
+    [{ mode: 'plan', 'source-tag-prefix': `${'s'.repeat(101)}-` }, /source-tag-prefix must be at most 100/],
     [{ mode: 'plan', 'config-file': '../x.json' }, /'\.\.' segment/],
   ])('fails for %j without calling the API', async (inputs, message) => {
     const factory = vi.fn<ApiFactory>();

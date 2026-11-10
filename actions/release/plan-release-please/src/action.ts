@@ -64,11 +64,22 @@ function readAuthorId(): number | undefined {
   return Number(value);
 }
 
+/**
+ * The longest source tag prefix: the source tag adds the component and version to it, and the tag
+ * as a whole has to stay within the 250 characters publish-build-commit accepts.
+ */
+const MAX_PREFIX_LENGTH = 100;
+
 function readOptions(): PlanOptions {
   const prefix = getInput(ActionInput['source-tag-prefix'], { required: true });
-  if (!/^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(prefix) || prefix.includes('..') || prefix.includes('//')) {
+  if (
+    prefix.length > MAX_PREFIX_LENGTH ||
+    !/^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(prefix) ||
+    prefix.includes('..') ||
+    prefix.includes('//')
+  ) {
     throw new Error(
-      `source-tag-prefix must be letters, digits, '.', '_', '-' and '/', without '..' or '//'; got ${JSON.stringify(prefix)}.`,
+      `source-tag-prefix must be at most ${MAX_PREFIX_LENGTH} letters, digits, '.', '_', '-' and '/', without '..' or '//'; got ${JSON.stringify(prefix)}.`,
     );
   }
   const pendingLabel = getInput(ActionInput['pending-label'], { required: true });
