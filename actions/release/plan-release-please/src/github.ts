@@ -61,6 +61,13 @@ export function createReleaseStateApi(token: string, repository: RepositoryCoord
         if (Array.isArray(data) || data.type !== 'file' || !('content' in data)) {
           throw new Error(`${path} at ${ref} is not a file.`);
         }
+        // Above 1 MB the contents API sends no content and `encoding: none`; decoding that would
+        // read the file as empty.
+        if (data.encoding !== 'base64') {
+          throw new Error(
+            `${path} at ${ref} is too large for the contents API (${data.size} bytes, encoding ${JSON.stringify(data.encoding)}).`,
+          );
+        }
 
         return Buffer.from(data.content, 'base64').toString('utf8');
       } catch (error) {
