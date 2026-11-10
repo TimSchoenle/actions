@@ -41,7 +41,7 @@ jobs:
       has_changes: ${{ steps.patch.outputs.has_changes }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -53,7 +53,7 @@ jobs:
       # checked out, and reports whether it holds anything to commit. Nothing in it is executed.
       - name: Find The Patch
         id: patch
-        uses: TimSchoenle/actions/actions/common/find-patch@7b20a67f0b18a6e64c30e5f47c92636729f6ad41 # tag=actions-common-find-patch-v1.1.0
+        uses: TimSchoenle/actions/actions/common/find-patch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-find-patch-v1.1.2
         with:
           run_id: ${{ github.event.workflow_run.id }}
           artifact_name: auto-format
@@ -76,7 +76,7 @@ jobs:
       contents: read # to fetch the commit the patch applies to
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -90,7 +90,7 @@ jobs:
       # commit-patch reads only git objects, so the head is fetched without a checkout and none of
       # the pull request's files reach the runner.
       - name: Fetch The Pull Request Head
-        uses: TimSchoenle/actions/actions/common/fetch-head@3f47ad15da6762f9e07c5e6c70df81f37ddf2454 # tag=actions-common-fetch-head-v1.1.0
+        uses: TimSchoenle/actions/actions/common/fetch-head@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-fetch-head-v1.1.1
         with:
           sha: ${{ github.event.workflow_run.head_sha }}
 
@@ -105,7 +105,7 @@ jobs:
 
       - name: Commit Patch
         id: commit
-        uses: TimSchoenle/actions/actions/common/commit-patch@7b20a67f0b18a6e64c30e5f47c92636729f6ad41 # tag=actions-common-commit-patch-v1.3.0
+        uses: TimSchoenle/actions/actions/common/commit-patch@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-commit-patch-v1.3.1
         with:
           token: ${{ steps.generate_token.outputs.token }}
           run_id: ${{ github.event.workflow_run.id }}
@@ -119,7 +119,7 @@ jobs:
         if: >-
           steps.commit.outputs.changes_committed == 'true' &&
           github.event.workflow_run.pull_requests[0].number
-        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-upsert-pr-comment-v2.0.1
+        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-upsert-pr-comment-v2.0.3
         with:
           token: ${{ steps.generate_token.outputs.token }}
           # Only this App's own comment is updated; a pasted marker cannot redirect the edit.

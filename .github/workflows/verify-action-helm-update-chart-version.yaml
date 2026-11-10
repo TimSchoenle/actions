@@ -46,13 +46,13 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
+        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -63,7 +63,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/create-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-create-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -94,7 +94,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-commit-changes-v3.0.1
+        uses: TimSchoenle/actions/actions/common/commit-changes@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-commit-changes-v3.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -120,7 +120,7 @@ jobs:
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
+        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -220,7 +220,7 @@ jobs:
       # to it with a 422, which pinned close-pull-request releases report as a failure.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
+        uses: TimSchoenle/actions/actions/common/close-pull-request@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-close-pull-request-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -228,7 +228,7 @@ jobs:
 
       - name: Cleanup Base Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-delete-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -236,7 +236,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-delete-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -252,13 +252,13 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
+        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -269,7 +269,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/create-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-create-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -307,7 +307,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-commit-changes-v3.0.1
+        uses: TimSchoenle/actions/actions/common/commit-changes@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-commit-changes-v3.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -342,7 +342,7 @@ jobs:
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
+        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -421,7 +421,7 @@ jobs:
       # to it with a 422, which pinned close-pull-request releases report as a failure.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
+        uses: TimSchoenle/actions/actions/common/close-pull-request@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-close-pull-request-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -429,7 +429,7 @@ jobs:
 
       - name: Cleanup Base Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-delete-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -437,7 +437,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-delete-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -452,13 +452,13 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
+        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -469,7 +469,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/create-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-create-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -495,7 +495,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-commit-changes-v3.0.1
+        uses: TimSchoenle/actions/actions/common/commit-changes@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-commit-changes-v3.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -521,7 +521,7 @@ jobs:
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
+        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -549,7 +549,7 @@ jobs:
       # to it with a 422, which pinned close-pull-request releases report as a failure.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
+        uses: TimSchoenle/actions/actions/common/close-pull-request@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-close-pull-request-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -557,7 +557,7 @@ jobs:
 
       - name: Cleanup Base Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-delete-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -565,7 +565,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-delete-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -622,13 +622,13 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
+        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -639,7 +639,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/create-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-create-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -667,7 +667,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-commit-changes-v3.0.1
+        uses: TimSchoenle/actions/actions/common/commit-changes@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-commit-changes-v3.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -694,7 +694,7 @@ jobs:
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
+        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -729,7 +729,7 @@ jobs:
       # to it with a 422, which pinned close-pull-request releases report as a failure.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
+        uses: TimSchoenle/actions/actions/common/close-pull-request@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-close-pull-request-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -737,7 +737,7 @@ jobs:
 
       - name: Cleanup Base Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-delete-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -745,7 +745,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-delete-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -760,13 +760,13 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
+        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -777,7 +777,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/create-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-create-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -803,7 +803,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-commit-changes-v3.0.1
+        uses: TimSchoenle/actions/actions/common/commit-changes@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-commit-changes-v3.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -829,7 +829,7 @@ jobs:
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
+        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -872,7 +872,7 @@ jobs:
       # to it with a 422, which pinned close-pull-request releases report as a failure.
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
+        uses: TimSchoenle/actions/actions/common/close-pull-request@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-close-pull-request-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -880,7 +880,7 @@ jobs:
 
       - name: Cleanup Base Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-delete-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -888,7 +888,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-delete-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -903,13 +903,13 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
+        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -920,7 +920,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/create-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-create-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -946,7 +946,7 @@ jobs:
           EOF
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-commit-changes-v3.0.1
+        uses: TimSchoenle/actions/actions/common/commit-changes@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-commit-changes-v3.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -968,7 +968,7 @@ jobs:
           pr-branch-prefix: test/idem/${{ env.TEST_ID }}
 
       - name: Close First PR
-        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
+        uses: TimSchoenle/actions/actions/common/close-pull-request@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-close-pull-request-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -979,7 +979,7 @@ jobs:
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
+        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -1008,7 +1008,7 @@ jobs:
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
+        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -1036,7 +1036,7 @@ jobs:
       # Runs before the base branch is deleted, for the same reason as in the jobs above.
       - name: Cleanup PR
         if: always() && steps.second-run.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
+        uses: TimSchoenle/actions/actions/common/close-pull-request@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-close-pull-request-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -1044,7 +1044,7 @@ jobs:
 
       - name: Cleanup Base Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-delete-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -1052,7 +1052,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-delete-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -1077,13 +1077,13 @@ jobs:
       FIXTURE_IMAGE: '{"image.tag": {"tag": "v0.21.5", "digest": "sha256:b219ff217a3ef8453ca059871fe24ab7f3ece8d185c1027d2e9e701d52e90ddc"}}'
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
+        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -1094,7 +1094,7 @@ jobs:
 
       - name: Create Test base Branch
         id: base-branch
-        uses: TimSchoenle/actions/actions/common/create-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/create-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-create-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -1130,7 +1130,7 @@ jobs:
           fi
 
       - name: Commit Initial Chart Files
-        uses: TimSchoenle/actions/actions/common/commit-changes@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-commit-changes-v3.0.1
+        uses: TimSchoenle/actions/actions/common/commit-changes@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-commit-changes-v3.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -1153,7 +1153,7 @@ jobs:
 
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@5f23e7ecae779a09b699ce2983ec5e49e5f2b0a5 # tag=actions-test-setup-e2e-v1.2.4
+        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -1193,7 +1193,7 @@ jobs:
 
       - name: Cleanup PR
         if: always() && steps.update.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-close-pull-request-v2.0.1
+        uses: TimSchoenle/actions/actions/common/close-pull-request@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-close-pull-request-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -1201,7 +1201,7 @@ jobs:
 
       - name: Cleanup Base Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-delete-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -1209,7 +1209,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always() && steps.update.outputs.chart-version != ''
-        uses: TimSchoenle/actions/actions/common/delete-branch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-delete-branch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
