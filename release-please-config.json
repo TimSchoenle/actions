@@ -295,6 +295,16 @@
       "release-type": "simple",
       "component": "actions-release-install-built-actions",
       "include-component-in-tag": true
+    },
+    "actions/release/plan-release-please": {
+      "release-type": "simple",
+      "component": "actions-release-plan-release-please",
+      "include-component-in-tag": true
+    },
+    "actions/release/publish-build-commit": {
+      "release-type": "simple",
+      "component": "actions-release-publish-build-commit",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

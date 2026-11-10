@@ -57,5 +57,7 @@
   "actions/common/fetch-head": "2.0.0",
   "actions/release/resolve-actions": "1.0.0",
   "actions/release/build-actions": "1.0.0",
-  "actions/release/install-built-actions": "1.0.0"
+  "actions/release/install-built-actions": "1.0.0",
+  "actions/release/plan-release-please": "1.0.0",
+  "actions/release/publish-build-commit": "1.0.0"
 }

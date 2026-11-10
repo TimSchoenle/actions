@@ -1,0 +1,147 @@
+name: 'Release Publish Build Commit'
+description: 'Publishes bundles built by release/build-actions: a build commit B with the source commit tree plus the bundles, a fast-forwarded releases branch, consumer tags on B, source tags on the source commit, and GitHub Releases with checksum assets. Every step is idempotent and no repository code runs.'
+
+inputs:
+  token:
+    description: 'Token that writes the repository: contents: write, plus pull-requests: write and issues: write when pull-request is set. Typically a GitHub App installation token, which also gets B signed.'
+    required: true
+  github-token:
+    description: "Token that reads this run's artifacts, for the artifact record check and the download. Needs actions: read."
+    required: false
+    default: ${{ github.token }}
+  source-sha:
+    description: 'The source commit M the bundles were built from. B is M plus the bundles.'
+    required: true
+  artifact-id:
+    description: 'artifact-id output of release/build-actions in this run.'
+    required: true
+  expected-artifact-digest:
+    description: 'artifact-digest output of release/build-actions; the artifact record must carry it.'
+    required: true
+  expected-manifest-sha256:
+    description: 'manifest-sha256 output of release/build-actions. Every file is verified against the manifest with this SHA-256.'
+    required: true
+  cross-check-manifest-sha256:
+    description: 'manifest-sha256 of an independent second build. When set, it must equal expected-manifest-sha256.'
+    required: false
+    default: ''
+  allowed-paths:
+    description: 'Space- or newline-separated globs every bundle path must match. ** matches any number of directories, * anything within one.'
+    required: false
+    default: 'actions/**/dist/**'
+  existing-files:
+    description: 'fail refuses a bundle path that already exists in the source commit, so B only adds files. require-identical accepts it when the bytes are identical, for a repository that still commits its bundles.'
+    required: false
+    default: 'fail'
+  releases-branch:
+    description: 'Branch every B is chained on and that is fast-forwarded to B, so every B belongs to a branch. Empty gives B the source commit as its only parent and moves no branch.'
+    required: false
+    default: 'releases'
+  releases:
+    description: 'JSON array of releases: the releases output of release/plan-release-please, or hand-written {consumerTag, sourceTag?, releaseName, notesFile, path?}. consumerTag is created on B, sourceTag on the source commit.'
+    required: true
+  release-assets:
+    description: 'none, checksums (a bundles.sha256 listing the bundles below the release path), or bundles (that file plus each of those bundles).'
+    required: false
+    default: 'checksums'
+  make-latest:
+    description: 'true, false or legacy, passed to the Releases API when a release is published.'
+    required: false
+    default: 'legacy'
+  pull-request:
+    description: 'Release pull request to mark as released once everything else is done: a comment listing the releases, tagged-label added, pending-label removed. Empty leaves pull requests alone.'
+    required: false
+    default: ''
+  pending-label:
+    description: 'Label removed from pull-request.'
+    required: false
+    default: 'autorelease: pending'
+  tagged-label:
+    description: 'Label added to pull-request.'
+    required: false
+    default: 'autorelease: tagged'
+  dry-run:
+    description: 'true verifies the artifact, computes the tree of B and checks every tag and release against the repository, and writes nothing.'
+    required: false
+    default: 'false'
+
+outputs:
+  build-sha:
+    description: 'The build commit B. Empty in a dry run that found no existing B.'
+    value: ${{ steps.publish.outputs.build_sha }}
+  tree-sha:
+    description: 'The tree of B, computed locally and checked against the one GitHub returns.'
+    value: ${{ steps.publish.outputs.tree_sha }}
+  created:
+    description: 'JSON array of what this run created or changed: commits, refs, releases, assets, labels and comments. [] on a re-run that found everything in place.'
+    value: ${{ steps.publish.outputs.created }}
+  releases:
+    description: 'JSON array of {tag, id, url} for every release, published or found published.'
+    value: ${{ steps.publish.outputs.releases }}
+
+runs:
+  using: 'composite'
+  steps:
+    # Validates every input, checks that cross-check-manifest-sha256 agrees, and checks the artifact
+    # record (digest, run, expiry) before anything is downloaded.
+    - name: Prepare
+      id: prepare
+      shell: bash
+      env:
+        INPUT_MODE: prepare
+        INPUT_TOKEN: ${{ inputs.token }}
+        INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
+        INPUT_REPOSITORY: ${{ github.repository }}
+        INPUT_SOURCE_SHA: ${{ inputs.source-sha }}
+        INPUT_ARTIFACT_ID: ${{ inputs.artifact-id }}
+        INPUT_EXPECTED_ARTIFACT_DIGEST: ${{ inputs.expected-artifact-digest }}
+        INPUT_EXPECTED_MANIFEST_SHA256: ${{ inputs.expected-manifest-sha256 }}
+        INPUT_CROSS_CHECK_MANIFEST_SHA256: ${{ inputs.cross-check-manifest-sha256 }}
+        INPUT_ALLOWED_PATHS: ${{ inputs.allowed-paths }}
+        INPUT_EXISTING_FILES: ${{ inputs.existing-files }}
+        INPUT_RELEASES_BRANCH: ${{ inputs.releases-branch }}
+        INPUT_RELEASES: ${{ inputs.releases }}
+        INPUT_RELEASE_ASSETS: ${{ inputs.release-assets }}
+        INPUT_MAKE_LATEST: ${{ inputs.make-latest }}
+        INPUT_PULL_REQUEST: ${{ inputs.pull-request }}
+        INPUT_PENDING_LABEL: ${{ inputs.pending-label }}
+        INPUT_TAGGED_LABEL: ${{ inputs.tagged-label }}
+        INPUT_DRY_RUN: ${{ inputs.dry-run }}
+      run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"
+
+    - name: Download Bundles
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        artifact-ids: ${{ steps.prepare.outputs.artifact_id }}
+        path: ${{ steps.prepare.outputs.directory }}
+        github-token: ${{ inputs.github-token }}
+        repository: ${{ github.repository }}
+        run-id: ${{ github.run_id }}
+        digest-mismatch: error
+
+    # Verifies the download against the manifest hash, then creates B, moves the releases branch,
+    # creates the tags and releases, and relabels the pull request, in that order.
+    - name: Publish
+      id: publish
+      shell: bash
+      env:
+        INPUT_MODE: publish
+        INPUT_TOKEN: ${{ inputs.token }}
+        INPUT_REPOSITORY: ${{ github.repository }}
+        INPUT_SOURCE_SHA: ${{ inputs.source-sha }}
+        INPUT_ARTIFACT_ID: ${{ inputs.artifact-id }}
+        INPUT_EXPECTED_MANIFEST_SHA256: ${{ inputs.expected-manifest-sha256 }}
+        INPUT_CROSS_CHECK_MANIFEST_SHA256: ${{ inputs.cross-check-manifest-sha256 }}
+        INPUT_ALLOWED_PATHS: ${{ inputs.allowed-paths }}
+        INPUT_EXISTING_FILES: ${{ inputs.existing-files }}
+        INPUT_RELEASES_BRANCH: ${{ inputs.releases-branch }}
+        INPUT_RELEASES: ${{ inputs.releases }}
+        INPUT_RELEASE_ASSETS: ${{ inputs.release-assets }}
+        INPUT_MAKE_LATEST: ${{ inputs.make-latest }}
+        INPUT_PULL_REQUEST: ${{ inputs.pull-request }}
+        INPUT_PENDING_LABEL: ${{ inputs.pending-label }}
+        INPUT_TAGGED_LABEL: ${{ inputs.tagged-label }}
+        INPUT_DRY_RUN: ${{ inputs.dry-run }}
+        INPUT_DIRECTORY: ${{ steps.prepare.outputs.directory }}
+        INPUT_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
+      run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"

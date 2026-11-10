@@ -178,4 +178,5 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 - End-to-end tests: [`.github/workflows/verify-action-release-build-actions.yaml`](../../../.github/workflows/verify-action-release-build-actions.yaml)
 - Called from this repository by:
   - [`.github/workflows/verify-action-release-install-built-actions.yaml`](../../../.github/workflows/verify-action-release-install-built-actions.yaml)
+  - [`.github/workflows/verify-action-release-publish-build-commit.yaml`](../../../.github/workflows/verify-action-release-publish-build-commit.yaml)
 <!-- /docs:generated reference -->

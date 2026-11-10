@@ -71,3 +71,9 @@ ignores:
   - rule: cache-poisoning
     file: .github/workflows/verify-action-release-resolve-actions.yaml
     reason: the generated feature/<action path> push filter contains "release"; this workflow publishes nothing
+  - rule: cache-poisoning
+    file: .github/workflows/verify-action-release-plan-release-please.yaml
+    reason: the generated feature/<action path> push filter contains "release"; this workflow publishes nothing
+  - rule: cache-poisoning
+    file: .github/workflows/verify-action-release-publish-build-commit.yaml
+    reason: the generated feature/<action path> push filter contains "release"; this workflow publishes nothing

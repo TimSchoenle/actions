@@ -563,6 +563,34 @@
         "vitest": "5.1.0",
       },
     },
+    "actions/release/plan-release-please": {
+      "name": "actions-release-plan-release-please",
+      "version": "1.0.0",
+      "dependencies": {
+        "action-graph": "workspace:*",
+        "actions-util": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "26.6.6",
+        "@typescript/native": "npm:typescript@7.0.2",
+        "actions-e2e": "workspace:*",
+        "vitest": "5.1.0",
+      },
+    },
+    "actions/release/publish-build-commit/helper": {
+      "name": "actions-release-publish-build-commit-helper",
+      "version": "1.0.0",
+      "dependencies": {
+        "action-graph": "workspace:*",
+        "actions-util": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "26.6.6",
+        "@typescript/native": "npm:typescript@7.0.2",
+        "actions-e2e": "workspace:*",
+        "vitest": "5.1.0",
+      },
+    },
     "actions/release/resolve-actions": {
       "name": "actions-release-resolve-actions",
       "version": "1.0.0",
@@ -1053,6 +1081,10 @@
     "actions-release-build-actions-helper": ["actions-release-build-actions-helper@workspace:actions/release/build-actions/helper"],
 
     "actions-release-install-built-actions-helper": ["actions-release-install-built-actions-helper@workspace:actions/release/install-built-actions/helper"],
+
+    "actions-release-plan-release-please": ["actions-release-plan-release-please@workspace:actions/release/plan-release-please"],
+
+    "actions-release-publish-build-commit-helper": ["actions-release-publish-build-commit-helper@workspace:actions/release/publish-build-commit/helper"],
 
     "actions-release-resolve-actions": ["actions-release-resolve-actions@workspace:actions/release/resolve-actions"],
 

@@ -152,7 +152,7 @@ from restoring entries saved by earlier releases, which wrote from every event.
 - End-to-end tests: [`.github/workflows/verify-action-bun-setup-cached.yaml`](../../../.github/workflows/verify-action-bun-setup-cached.yaml)
 
 <details>
-<summary>Called from 44 files in this repository</summary>
+<summary>Called from 46 files in this repository</summary>
 
 - [`.github/workflows/auto-format.yml`](../../../.github/workflows/auto-format.yml)
 - [`.github/workflows/ci-required.yaml`](../../../.github/workflows/ci-required.yaml)
@@ -192,6 +192,8 @@ from restoring entries saved by earlier releases, which wrote from every event.
 - [`.github/workflows/verify-action-maintenance-wipe-cache.yaml`](../../../.github/workflows/verify-action-maintenance-wipe-cache.yaml)
 - [`.github/workflows/verify-action-release-build-actions.yaml`](../../../.github/workflows/verify-action-release-build-actions.yaml)
 - [`.github/workflows/verify-action-release-install-built-actions.yaml`](../../../.github/workflows/verify-action-release-install-built-actions.yaml)
+- [`.github/workflows/verify-action-release-plan-release-please.yaml`](../../../.github/workflows/verify-action-release-plan-release-please.yaml)
+- [`.github/workflows/verify-action-release-publish-build-commit.yaml`](../../../.github/workflows/verify-action-release-publish-build-commit.yaml)
 - [`.github/workflows/verify-action-release-resolve-actions.yaml`](../../../.github/workflows/verify-action-release-resolve-actions.yaml)
 - [`.github/workflows/verify-action-rust-config-contract.yaml`](../../../.github/workflows/verify-action-rust-config-contract.yaml)
 - [`.github/workflows/verify-action-security-codeql.yaml`](../../../.github/workflows/verify-action-security-codeql.yaml)

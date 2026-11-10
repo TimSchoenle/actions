@@ -1,0 +1,33 @@
+# What the README cannot learn from action.yaml. `bun run generate-docs` renders it into README.md.
+# The schema and the rules are in scripts/lib/action-docs/docs-file.ts.
+permissions:
+  - scope: actions
+    access: read
+    when: always
+    token: github-token
+  - scope: contents
+    access: write
+    when: always
+    token: token
+  - scope: pull-requests
+    access: write
+    when: { input: pull-request, set: true }
+    token: token
+  - scope: issues
+    access: write
+    when: { input: pull-request, set: true }
+    token: token
+egress:
+  - endpoint: api.github.com:443
+    for: the artifact record, the Git Data API, tags, releases and the pull request
+  - endpoint: uploads.github.com:443
+    for: release assets
+  - endpoint: '*.actions.githubusercontent.com:443'
+    for: the artifact download
+  - endpoint: '*.blob.core.windows.net:443'
+    for: the artifact download
+examples:
+  - title: Publish a release-please release from two agreeing builds
+    file: examples/publish-job.yaml
+  - title: Publish a single action at the repository root
+    file: examples/root-action.yaml

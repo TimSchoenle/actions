@@ -12,6 +12,7 @@ import {
   DECLARED_TOKEN_SCOPES,
   E2E_ALLOWED_ENDPOINTS,
   E2E_DIRECTORY,
+  EXTRA_E2E_ENDPOINTS,
   findE2eActions,
   INSTALL_ALLOWED_ENDPOINTS,
   missingTokenInputScopes,
@@ -73,6 +74,15 @@ const NARROWER_TOKEN_SUITES: Record<string, { missing: string[]; reason: string 
     missing: ['actions: read (input github-token)'],
     reason:
       'the cases drive the helper over a staged directory; the artifact record lookup runs in the Install And Refuse extra job, with the job token and actions: read',
+  },
+  'actions/release/publish-build-commit': {
+    missing: [
+      'actions: read (input github-token)',
+      'pull-requests: write (input token)',
+      'issues: write (input token)',
+    ],
+    reason:
+      'the cases drive the helper in publish mode over a staged directory, without an artifact record or a pull request; the Dry Run Through The Runner extra job reads the artifact with actions: read',
   },
   'actions/maintenance/wipe-cache': {
     missing: ['actions: read (input token)', 'actions: write (input token)'],
@@ -242,6 +252,15 @@ describe('end-to-end contract', () => {
       // registry back on the critical path of the job holding the token.
       expect(e2eJob, `${file}: the e2e job must not use the installing bun setup`).not.toContain('bun/setup-cached@');
       expect(e2eJob, `${file}: the e2e job must restore what install cached`).toContain('fail-on-cache-miss: true');
+    }
+  });
+
+  it('widens an e2e allowlist only for an action with cases, and never to a package registry', async () => {
+    const withCases = new Set((await findE2eActions()).map((action) => action.actionPath));
+
+    for (const [actionPath, endpoints] of Object.entries(EXTRA_E2E_ENDPOINTS)) {
+      expect(withCases.has(actionPath), `${actionPath} has no e2e cases; drop it from EXTRA_E2E_ENDPOINTS`).toBe(true);
+      expect(endpoints.filter((endpoint) => /registry|npmjs|pypi|crates/.test(endpoint))).toEqual([]);
     }
   });
 
