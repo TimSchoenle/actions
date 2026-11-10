@@ -277,14 +277,16 @@ export function stageBundles(
   stagingDirectory: string,
   metadata: ManifestMetadata,
 ): StagedBundles {
+  // Every path is checked before the first file-system access, so an invalid one has no side effect:
+  // `toAbsolute` would resolve a `..` segment and read or write outside the checkout and the staging
+  // directory.
+  buildDirs.forEach((directory, index) => checkRepoPath(directory, `buildDirs[${index}]`));
+  bundles.forEach((bundle, index) => checkRepoPath(bundle, `bundles[${index}]`));
+
   fs.mkdirSync(stagingDirectory, { recursive: true });
   if (fs.readdirSync(stagingDirectory).length > 0) {
     fail(`Staging directory ${stagingDirectory} is not empty.`);
   }
-
-  // Every path is checked before the first file-system access: `toAbsolute` would resolve a `..`
-  // segment and read or write outside the checkout and the staging directory.
-  bundles.forEach((bundle, index) => checkRepoPath(bundle, `bundles[${index}]`));
 
   const missing = bundles.filter((bundle) => !fs.existsSync(toAbsolute(root, bundle)));
   if (missing.length > 0) {

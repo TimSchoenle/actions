@@ -103,7 +103,15 @@ describe('stageBundles', () => {
       /contains a '\.\.' segment/,
     );
     expect(fs.existsSync(path.join(scratch, 'deep', 'outside.js'))).toBe(false);
-    expect(fs.readdirSync(deepStaging)).toEqual([]);
+    expect(fs.existsSync(path.join(scratch, 'deep'))).toBe(false);
+  });
+
+  it('rejects an invalid build directory before creating the staging directory', () => {
+    expectRejected(
+      () => stageBundles(checkout, ['../elsewhere'], ['actions/a/dist/index.js'], staging, METADATA),
+      /buildDirs\[0\].*'\.\.' segment/,
+    );
+    expect(fs.existsSync(staging)).toBe(false);
   });
 
   it('rejects a bundle path that is not canonical', () => {
