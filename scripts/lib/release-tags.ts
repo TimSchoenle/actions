@@ -4,11 +4,11 @@ import path from 'node:path';
 
 import { ROOT_DIR } from './utils.js';
 
-// Works out which tags a release-please run created and waits until git can see all of them.
+// Works out which consumer tags a release published and waits until git can see all of them.
 //
-// release-please creates each release through the REST API and reports `releases_created` only once
-// every call has succeeded, so the tags exist by the time a later job starts. A `git fetch` can still
-// trail the API for a moment, and the docs generator pins each README to the commit its tag resolves
+// release/publish-build-commit creates each tag through the REST API and succeeds only once every call
+// has, so the tags exist by the time a later job starts. A `git fetch` can still trail the API for a
+// moment, and the docs generator pins each README to the commit its tag resolves
 // to, so a tag that is not visible yet would leave that README pinned to the tag name. The wait here
 // turns that gap into a short retry, and into a failure naming the tags if it does not close.
 
@@ -39,6 +39,37 @@ function asRecord(value: unknown, what: string): Record<string, unknown> {
 }
 
 /**
+ * Prefix of every release-please component, and so of every tag release-please reads.
+ *
+ * release-please finds a package's previous release by its tag and then walks the default branch back
+ * to that tag's commit. The tags consumers pin point at build commits on the `releases` branch, which
+ * the walk never reaches, so release-please gets tags of its own on the default branch: the consumer
+ * tag with this prefix. Components without it are configured for no package, so release-please ignores
+ * the consumer tags as belonging to an unknown component.
+ */
+export const SOURCE_TAG_PREFIX = 'src-';
+
+/** A component as consumers see it: the release-please component without {@link SOURCE_TAG_PREFIX}. */
+export function consumerComponent(component: string): string {
+  return component.startsWith(SOURCE_TAG_PREFIX) ? component.slice(SOURCE_TAG_PREFIX.length) : component;
+}
+
+/** The tag consumers pin for a release: `<consumer component>-v<version>`, on the build commit. */
+export function consumerTag(component: string, version: string): string {
+  return `${consumerComponent(component)}-v${version}`;
+}
+
+/** The tag release-please reads for a release: `src-<consumer component>-v<version>`, on the source commit. */
+export function sourceTag(component: string, version: string): string {
+  return `${SOURCE_TAG_PREFIX}${consumerTag(component, version)}`;
+}
+
+/** The release-please component of the package at `packagePath`: `src-` plus the path with `/` as `-`. */
+export function sourceComponentFor(packagePath: string): string {
+  return `${SOURCE_TAG_PREFIX}${packagePath.replaceAll('/', '-')}`;
+}
+
+/**
  * Parses release-please's `paths_released` output, a JSON array of package paths.
  */
 export function parseReleasedPaths(raw: string): string[] {
@@ -58,8 +89,9 @@ export function parseReleasedPaths(raw: string): string[] {
 }
 
 /**
- * The tag release-please created for each released path: `<component>-v<version>`, the form every
- * package in this repository uses (`include-component-in-tag`, true by default).
+ * The consumer tag of each released path: `<component>-v<version>` with the source prefix removed
+ * from the component (`include-component-in-tag`, true by default). These are the tags
+ * release/publish-build-commit creates on the build commit, and the ones every README pins.
  *
  * A path missing from the config or the manifest throws instead of being skipped: the commit being
  * released is the one these files were read from, so a gap means the inputs are wrong, and waiting
@@ -91,7 +123,7 @@ export function expectedReleaseTags(files: ReleaseFiles, releasedPaths: readonly
       throw new Error(`${releasedPath} has no version in .release-please-manifest.json.`);
     }
 
-    return `${entry.component}-v${version}`;
+    return consumerTag(entry.component, version);
   });
 }
 
@@ -173,7 +205,7 @@ export function gitTagRepository(
 }
 
 export interface WaitReleaseTagsIo {
-  /** release-please's `paths_released` output. */
+  /** JSON array of the released package paths. */
   releasedPaths: string | undefined;
   readFiles(): Promise<ReleaseFiles>;
   repository: TagRepository;
@@ -188,7 +220,7 @@ export async function readReleaseFiles(root: string = ROOT_DIR): Promise<Release
   return { config: await read('release-please-config.json'), manifest: await read('.release-please-manifest.json') };
 }
 
-/** Waits until every tag the release-please run released is visible to git. */
+/** Waits until every consumer tag the release published is visible to git. */
 export async function waitReleaseTags(io: WaitReleaseTagsIo, retryDelaysMs?: readonly number[]): Promise<void> {
   if (!io.releasedPaths) {
     throw new Error('RELEASED_PATHS is required.');
