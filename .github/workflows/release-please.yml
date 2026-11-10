@@ -27,7 +27,7 @@ jobs:
       pull-requests: write # to manage release PRs
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -72,7 +72,7 @@ jobs:
       contents: read # to fetch code and tags
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
 
@@ -121,7 +121,7 @@ jobs:
       - name: Create Patch
         if: steps.head.outputs.current == 'true'
         id: patch
-        uses: TimSchoenle/actions/actions/common/create-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-patch-v1.1.1
+        uses: TimSchoenle/actions/actions/common/create-patch@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-create-patch-v1.1.2
         with:
           artifact_name: release-docs
           paths: 'README.md SECURITY.md actions/*/*/README.md actions/*/*/examples/*.yaml actions/*/*/examples/*.yml'
@@ -143,7 +143,7 @@ jobs:
       contents: read # to fetch the commit the patch applies to
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -156,7 +156,7 @@ jobs:
 
       # commit-patch reads only git objects, so the release commit is fetched without a checkout.
       - name: Fetch The Release Commit
-        uses: TimSchoenle/actions/actions/common/fetch-head@3f47ad15da6762f9e07c5e6c70df81f37ddf2454 # tag=actions-common-fetch-head-v1.1.0
+        uses: TimSchoenle/actions/actions/common/fetch-head@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-fetch-head-v1.1.1
         with:
           sha: ${{ github.sha }}
 
@@ -171,7 +171,7 @@ jobs:
       # `docs` is a hidden changelog section, so the release-please run this commit starts opens no
       # release pull request.
       - name: Commit Patch
-        uses: TimSchoenle/actions/actions/common/commit-patch@7b20a67f0b18a6e64c30e5f47c92636729f6ad41 # tag=actions-common-commit-patch-v1.3.0
+        uses: TimSchoenle/actions/actions/common/commit-patch@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-commit-patch-v1.3.1
         with:
           token: ${{ steps.generate_token.outputs.token }}
           branch: ${{ github.ref_name }}
