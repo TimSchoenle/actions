@@ -122,7 +122,7 @@ runs:
     - name: Commit The Generated Files
       id: commit
       if: steps.find.outputs.has_changes == 'true'
-      uses: TimSchoenle/actions/actions/common/commit-patch@7b20a67f0b18a6e64c30e5f47c92636729f6ad41 # tag=actions-common-commit-patch-v1.3.0
+      uses: TimSchoenle/actions/actions/common/commit-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-commit-patch-v2.0.1
       with:
         token: ${{ steps.token.outputs.token }}
         run_id: ${{ github.event.workflow_run.id }}

@@ -687,7 +687,7 @@ jobs:
       # `docs` is a hidden changelog section, so the release-please run this commit starts opens no
       # release pull request for it.
       - name: Commit Patch
-        uses: TimSchoenle/actions/actions/common/commit-patch@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-commit-patch-v1.3.1
+        uses: TimSchoenle/actions/actions/common/commit-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-commit-patch-v2.0.1
         with:
           token: ${{ steps.generate_token.outputs.token }}
           branch: ${{ github.ref_name }}
