@@ -276,6 +276,17 @@ describe('httpRequest through a proxy', () => {
       expect(proxy.tunnels).toHaveLength(1);
     });
 
+    it('verifies an https:// proxy by its own name', async () => {
+      const proxy = connectProxy(() => 1, { secure: true });
+      const { port: proxyPort } = await listen(proxy.server);
+
+      // The certificate is valid for 127.0.0.1, which the connection reaches, but not for `localhost`.
+      await expect(
+        httpRequest('http://plain.test/', { env: { HTTP_PROXY: `https://localhost:${proxyPort}` } }),
+      ).rejects.toThrow(/altnames|certificate/i);
+      expect(proxy.tunnels).toEqual([]);
+    });
+
     it('refuses to follow a redirect from https:// down to http://', async () => {
       const target = origin(
         (_request, response) => response.writeHead(302, { Location: 'http://127.0.0.1:1/' }).end(),
