@@ -46,7 +46,8 @@ export function assertBuiltBundle(
   root: string = REPOSITORY_ROOT,
 ): void {
   const relative = path.relative(root, bundle).split(path.sep).join('/');
-  if (relative.startsWith('..') || path.isAbsolute(relative)) {
+  // Outside the repository by path segment: a directory named `..foo` inside it is still checked.
+  if (relative === '..' || relative.startsWith('../') || path.isAbsolute(relative)) {
     return;
   }
 

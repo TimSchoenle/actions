@@ -58,6 +58,12 @@ describe('assertBuiltBundle', () => {
     expect(() => assertBuiltBundle(bundle, {}, root)).not.toThrow();
   });
 
+  it('checks a bundle under a repository directory whose name starts with two dots', () => {
+    expect(() => assertBuiltBundle(path.join(root, '..foo/dist/index.js'), { CI: 'true' }, root)).toThrow(
+      BuiltBundleError,
+    );
+  });
+
   it('does not check a bundle outside the repository', () => {
     expect(() => assertBuiltBundle(path.join(tmpdir(), 'elsewhere/index.js'), { CI: 'true' }, root)).not.toThrow();
   });
