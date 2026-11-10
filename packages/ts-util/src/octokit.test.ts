@@ -1,3 +1,7 @@
+import { createRequire } from 'node:module';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
 import { Octokit } from '@octokit/core';
 import { restEndpointMethods } from '@octokit/plugin-rest-endpoint-methods';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -31,6 +35,17 @@ describe('REST_ROUTES', () => {
     Object.entries(methods).map(([name, route]) => ({ scope, name, route: route as string })),
   );
 
+  /**
+   * The plugin's own endpoint table, `[route, defaults?, decorations?]` per method. It is not among
+   * the package's exports, so it is loaded from the file next to the entry point.
+   */
+  const endpointTable = (async () => {
+    const entry = createRequire(import.meta.url).resolve('@octokit/plugin-rest-endpoint-methods');
+    const table = pathToFileURL(path.join(path.dirname(entry), 'generated', 'endpoints.js')).href;
+
+    return ((await import(table)) as { default: Record<string, Record<string, readonly unknown[]>> }).default;
+  })();
+
   it.each(routes)(
     'routes $scope.$name exactly as @octokit/plugin-rest-endpoint-methods does',
     ({ scope, name, route }) => {
@@ -39,6 +54,15 @@ describe('REST_ROUTES', () => {
       expect(route).toBe(`${method} ${url}`);
     },
   );
+
+  // `restEndpoints` builds every method from its route alone; an endpoint the plugin gives defaults
+  // (such as another `baseUrl`) or decorations (`mapToData`, `renamed`, ...) would need more.
+  it.each(routes)('finds neither defaults nor decorations on $scope.$name in the plugin', async ({ scope, name }) => {
+    const entry = (await endpointTable)[scope]?.[name];
+
+    expect(entry).toBeDefined();
+    expect(entry?.slice(1).filter((part) => part !== undefined && Object.keys(part as object).length > 0)).toEqual([]);
+  });
 
   it('builds methods the pagination plugin can follow', async () => {
     const fetch = fakeFetch((url) =>
@@ -88,6 +112,21 @@ describe('getOctokit', () => {
 
     expect(typeof fetch).toBe('function');
     expect(fetch).not.toBe(globalThis.fetch);
+  });
+
+  it('keeps the proxy-aware fetch when request.fetch is given as undefined', () => {
+    const { fetch } = getOctokit('t', { request: { fetch: undefined, retries: 1 } }).request.endpoint.DEFAULTS
+      .request as { fetch?: unknown; retries?: number };
+
+    expect(typeof fetch).toBe('function');
+    expect(fetch).not.toBe(globalThis.fetch);
+  });
+
+  it('keeps the other request options alongside a given fetch', () => {
+    const fetch = fakeFetch();
+    const { request } = getOctokit('t', { request: { fetch, retries: 1 } }).request.endpoint.DEFAULTS;
+
+    expect(request).toMatchObject({ fetch, retries: 1 });
   });
 
   it('accepts an auth option instead of a token, but not both and not neither', () => {
