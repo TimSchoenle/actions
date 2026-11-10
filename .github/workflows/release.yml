@@ -317,6 +317,10 @@ jobs:
           client-id: ${{ secrets.RELEASE_BOT_APP_ID }}
           private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
           permission-contents: write # to create B, move the releases branch, tag and publish Releases
+          # GitHub refuses an App a new ref, or a ref update, that brings in workflow files unless the
+          # token carries workflows: write. Every new tag does, and so does moving releases to a B
+          # whose tree changed a workflow since the last release.
+          permission-workflows: write
           permission-issues: write # to relabel the release pull request
           permission-pull-requests: write # to comment on the release pull request
 
@@ -442,6 +446,9 @@ jobs:
           client-id: ${{ secrets.RELEASE_BOT_APP_ID }}
           private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
           permission-contents: write
+          # GitHub refuses an App a new ref that brings in workflow files unless the token carries
+          # workflows: write, and a new tag on any commit of main does.
+          permission-workflows: write
 
       # The plan came from repository code, so nothing in it is trusted: each tag must be a source tag
       # name and each commit a full id already in the default branch's history. An existing tag is

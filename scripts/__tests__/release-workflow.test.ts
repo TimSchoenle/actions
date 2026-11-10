@@ -243,6 +243,10 @@ describe('source tags', () => {
 
   it('applies the plan with the release App', () => {
     expect(apply.permissions).toEqual({});
+    expect(stepsOf(apply).find((step) => step.id === 'token')?.with).toMatchObject({
+      'permission-contents': 'write',
+      'permission-workflows': 'write',
+    });
     expect(apply.environment).toEqual({ name: 'release', deployment: false });
     expect(stepsOf(apply).find((step) => step.name === 'Create Tags')?.env?.TAGS).toBe(
       '${{ needs.source-tags-plan.outputs.tags }}',
