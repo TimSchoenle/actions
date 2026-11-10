@@ -106,7 +106,7 @@ runs:
     # the head is fetched without a checkout and none of the branch's files reach the workspace.
     - name: Fetch The Pull Request Head
       if: steps.find.outputs.has_changes == 'true'
-      uses: TimSchoenle/actions/actions/common/fetch-head@3f47ad15da6762f9e07c5e6c70df81f37ddf2454 # tag=actions-common-fetch-head-v1.1.0
+      uses: TimSchoenle/actions/actions/common/fetch-head@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-fetch-head-v1.1.1
       with:
         sha: ${{ github.event.workflow_run.head_sha }}
 
