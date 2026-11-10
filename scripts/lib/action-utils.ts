@@ -4,6 +4,7 @@ import { input, search } from '@inquirer/prompts';
 import chalk from 'chalk';
 
 import { PINNED } from './e2e-workflow.js';
+import { sourceComponentFor } from './release-tags.js';
 import { ACTIONS_DIR, capitalize, createFromTemplate, ROOT_DIR, START_VERSION, Sys } from './utils.js';
 
 // Naming Conventions Helpers
@@ -12,9 +13,12 @@ export function generateActionKey(packageName: string, subAction: string): strin
   return `actions/${packageName}/${subAction}`;
 }
 
-/** The action's release-please component, which prefixes every tag it is released under. */
+/**
+ * The action's release-please component: `src-` plus its key with `/` as `-`. release-please tags
+ * the source commit with it; consumers pin the same name without the prefix (see release-tags.ts).
+ */
 export function generateComponentName(packageName: string, subAction: string): string {
-  return `actions-${packageName}-${subAction}`;
+  return sourceComponentFor(generateActionKey(packageName, subAction));
 }
 
 function listDirectories(dir: string): string[] {

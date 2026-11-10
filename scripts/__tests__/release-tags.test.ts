@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  consumerComponent,
+  consumerTag,
   expectedReleaseTags,
   gitRunner,
   gitTagRepository,
   parseReleasedPaths,
   readReleaseFiles,
   type ReleaseFiles,
+  SOURCE_TAG_PREFIX,
+  sourceComponentFor,
+  sourceTag,
   type TagRepository,
   waitForTags,
   waitReleaseTags,
@@ -53,7 +58,57 @@ describe('parseReleasedPaths', () => {
   });
 });
 
+describe('tag names', () => {
+  it('strips the source prefix for consumers and adds it for release-please', () => {
+    expect(consumerComponent('src-actions-common-read-yaml')).toBe('actions-common-read-yaml');
+    expect(consumerComponent('actions-common-read-yaml')).toBe('actions-common-read-yaml');
+    expect(consumerTag('src-actions-common-read-yaml', '2.0.3')).toBe('actions-common-read-yaml-v2.0.3');
+    expect(sourceTag('src-actions-common-read-yaml', '2.0.3')).toBe('src-actions-common-read-yaml-v2.0.3');
+    expect(sourceTag('actions-common-read-yaml', '2.0.3')).toBe('src-actions-common-read-yaml-v2.0.3');
+  });
+
+  it('strips the prefix once, so a component cannot be released under a src- consumer tag', () => {
+    expect(consumerComponent('src-src-x')).toBe('src-x');
+  });
+
+  it('derives the component from the package path', () => {
+    expect(sourceComponentFor('actions/common/read-yaml')).toBe('src-actions-common-read-yaml');
+  });
+});
+
+// release/plan-release-please derives every consumer tag by removing the prefix from release-please's
+// tag, and the README pins, the docs and Renovate all assume the consumer tag is the package path
+// with '-' for '/'. A component that breaks either rule would release under a tag nobody expects, or
+// let release-please read the consumer tags again.
+describe('release-please-config.json', () => {
+  it('gives every package the source component of its path', async () => {
+    const { config } = await readReleaseFiles();
+    const packages = (config as { packages: Record<string, { component?: string }> }).packages;
+    const wrong = Object.entries(packages)
+      .filter(([packagePath, entry]) => entry.component !== `${SOURCE_TAG_PREFIX}${packagePath.replaceAll('/', '-')}`)
+      .map(([packagePath]) => packagePath);
+
+    expect(Object.keys(packages).length).toBeGreaterThan(0);
+    expect(wrong).toEqual([]);
+  });
+
+  it('leaves releasing to the publish job', async () => {
+    const { config } = await readReleaseFiles();
+
+    expect((config as Record<string, unknown>)['skip-github-release']).toBe(true);
+  });
+});
+
 describe('expectedReleaseTags', () => {
+  it('names a release by its consumer tag, without the source prefix', () => {
+    const files = {
+      ...FILES,
+      config: { packages: { 'actions/common/read-yaml': { component: 'src-actions-common-read-yaml' } } },
+    };
+
+    expect(expectedReleaseTags(files, ['actions/common/read-yaml'])).toEqual(['actions-common-read-yaml-v2.0.3']);
+  });
+
   it('names each released path by component and manifest version', () => {
     expect(expectedReleaseTags(FILES, ['actions/common/read-yaml', 'configs/checkstyle/library'])).toEqual([
       'actions-common-read-yaml-v2.0.3',

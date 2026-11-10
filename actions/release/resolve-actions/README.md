@@ -146,5 +146,6 @@ Reaches no endpoint beyond those the runner itself needs.
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
 - End-to-end tests: [`.github/workflows/verify-action-release-resolve-actions.yaml`](../../../.github/workflows/verify-action-release-resolve-actions.yaml)
-- Not called from anywhere else in this repository.
+- Called from this repository by:
+  - [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
 <!-- /docs:generated reference -->

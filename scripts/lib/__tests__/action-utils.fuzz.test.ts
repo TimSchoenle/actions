@@ -30,8 +30,8 @@ describe('action-utils fuzzing', () => {
     it('should generate action component names correctly', () => {
       fc.assert(
         fc.property(safePackageName, safeSubName, (pkg, sub) => {
-          // Component format: actions-{packageName}-{subAction}
-          expect(generateComponentName(pkg, sub)).toBe(`actions-${pkg}-${sub}`);
+          // Component format: src-actions-{packageName}-{subAction}
+          expect(generateComponentName(pkg, sub)).toBe(`src-actions-${pkg}-${sub}`);
         }),
       );
     });
@@ -39,7 +39,7 @@ describe('action-utils fuzzing', () => {
     it('should match the release-please package key with its slashes turned into hyphens', () => {
       fc.assert(
         fc.property(safePackageName, safeSubName, (pkg, sub) => {
-          expect(generateComponentName(pkg, sub)).toBe(generateActionKey(pkg, sub).replaceAll('/', '-'));
+          expect(generateComponentName(pkg, sub)).toBe(`src-${generateActionKey(pkg, sub).replaceAll('/', '-')}`);
         }),
       );
     });

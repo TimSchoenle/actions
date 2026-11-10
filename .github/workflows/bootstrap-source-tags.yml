@@ -26,6 +26,12 @@ on:
         type: boolean
         default: false
 
+# Its own group rather than one built from github.workflow, which inside a call from release.yml is
+# release.yml's name and would collide with that run's group.
+concurrency:
+  group: bootstrap-source-tags-${{ github.ref }}
+  queue: max
+
 permissions: {}
 
 jobs:

@@ -238,7 +238,7 @@ The policy judges git's view of the result: the patch is applied to a throwaway 
 - End-to-end tests: [`.github/workflows/verify-action-common-commit-patch.yaml`](../../../.github/workflows/verify-action-common-commit-patch.yaml)
 - Called from this repository by:
   - [`.github/workflows/auto-format-commit.yml`](../../../.github/workflows/auto-format-commit.yml)
-  - [`.github/workflows/release-please.yml`](../../../.github/workflows/release-please.yml)
+  - [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
   - [`.github/workflows/update-files-commit.yml`](../../../.github/workflows/update-files-commit.yml)
   - [`actions/common/commit-generated-files/action.yaml`](../../../actions/common/commit-generated-files/action.yaml)
 <!-- /docs:generated reference -->

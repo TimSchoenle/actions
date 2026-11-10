@@ -97,5 +97,35 @@ describe('Readme Utils', () => {
       const result = await getTagCommitSha('actions-example-v1.0.2');
       expect(result).toBeNull();
     });
+
+    it('asks origin when the tag is not in the local repository, preferring the peeled commit', async () => {
+      const tagObject = '1111111111111111111111111111111111111111';
+      const commit = '2222222222222222222222222222222222222222';
+      vi.mocked(Sys.exec)
+        .mockResolvedValueOnce('')
+        .mockResolvedValueOnce(
+          `${tagObject}\trefs/tags/actions-example-v1.0.3\n${commit}\trefs/tags/actions-example-v1.0.3^{}\n`,
+        );
+
+      expect(await getTagCommitSha('actions-example-v1.0.3')).toBe(commit);
+      expect(vi.mocked(Sys.exec).mock.calls[1][0]).toBe(
+        'git ls-remote --tags origin refs/tags/actions-example-v1.0.3 refs/tags/actions-example-v1.0.3^{}',
+      );
+    });
+
+    it('takes a lightweight tag on origin as its commit', async () => {
+      const commit = '3333333333333333333333333333333333333333';
+      vi.mocked(Sys.exec)
+        .mockResolvedValueOnce('')
+        .mockResolvedValueOnce(`${commit}\trefs/tags/actions-example-v1.0.4\n`);
+
+      expect(await getTagCommitSha('actions-example-v1.0.4')).toBe(commit);
+    });
+
+    it('does not look up a name that is not a plain tag name', async () => {
+      expect(await getTagCommitSha('--upload-pack=evil')).toBeNull();
+      expect(await getTagCommitSha('main^{commit}')).toBeNull();
+      expect(Sys.exec).not.toHaveBeenCalled();
+    });
   });
 });

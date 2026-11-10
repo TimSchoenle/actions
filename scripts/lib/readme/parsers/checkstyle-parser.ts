@@ -1,5 +1,6 @@
 import path from 'node:path';
 
+import { consumerTag } from '../../release-tags.js';
 import { ROOT_DIR, Sys } from '../../utils.js';
 import { getRepoInfo } from '../git-utils.js';
 import { getManifestVersions, getReleaseComponent } from '../utils.js';
@@ -151,7 +152,7 @@ export class CheckstyleParser implements Parser {
 
       const component = await getReleaseComponent(normalizedDir);
       const shortVersion = component ? manifestShortVersions[normalizedDir] : undefined;
-      const version = component && shortVersion ? `${component}-v${shortVersion}` : null;
+      const version = component && shortVersion ? consumerTag(component, shortVersion) : null;
       if (!version) {
         console.log(`⚠️ ${file} has no release yet, publishing vendor-only usage`);
       }
