@@ -296,4 +296,15 @@ describe('replaceableDirectories', () => {
 
     expect(replaceableDirectories(manifest)).toEqual(['actions/x/dist']);
   });
+
+  it('gives a bundle to the innermost build directory, so a nested action written in place keeps its sources', () => {
+    const manifest: BundleManifest = {
+      schema: 1,
+      ...METADATA,
+      buildDirs: ['.', 'actions/x'],
+      files: [{ path: 'actions/x/index.js', sha256: 'b'.repeat(64), size: 1 }],
+    };
+
+    expect(replaceableDirectories(manifest)).toEqual([]);
+  });
 });

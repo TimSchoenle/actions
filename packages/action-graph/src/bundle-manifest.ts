@@ -412,7 +412,14 @@ export function replaceableDirectories(manifest: BundleManifest): string[] {
   const directories = manifest.files
     .map((file) => {
       const parent = parentOf(file.path);
-      const owner = manifest.buildDirs.find((directory) => isWithin(directory, file.path));
+      // The innermost build directory owns the bundle: with `.` and `actions/x` both built, a bundle
+      // at `actions/x/index.js` belongs to `actions/x`, whose directory must not be cleared.
+      const owner = manifest.buildDirs
+        .filter((directory) => isWithin(directory, file.path))
+        .reduce<string | undefined>(
+          (longest, directory) => (longest === undefined || directory.length > longest.length ? directory : longest),
+          undefined,
+        );
 
       return owner !== undefined && parent !== owner && isWithin(owner, parent) ? parent : undefined;
     })
