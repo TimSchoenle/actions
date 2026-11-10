@@ -11,18 +11,34 @@ on:
       - main
       - 'feature/release/publish-build-commit'
     paths:
+      - '.bun-version'
+      - '.github/workflows/verify-action-release-publish-build-commit.yaml'
+      - 'actions/release/build-actions/**'
       - 'actions/release/publish-build-commit/**'
+      - 'bun.lock'
+      - 'packages/action-graph/**'
+      - 'packages/e2e/**'
+      - 'packages/ts-util/**'
+      - 'scripts/build-action.ts'
+      - '!actions/release/build-actions/CHANGELOG.md'
+      - '!actions/release/build-actions/README.md'
       - '!actions/release/publish-build-commit/CHANGELOG.md'
       - '!actions/release/publish-build-commit/README.md'
-      - 'packages/e2e/**'
-      - '.github/workflows/verify-action-release-publish-build-commit.yaml'
   pull_request:
     paths:
+      - '.bun-version'
+      - '.github/workflows/verify-action-release-publish-build-commit.yaml'
+      - 'actions/release/build-actions/**'
       - 'actions/release/publish-build-commit/**'
+      - 'bun.lock'
+      - 'packages/action-graph/**'
+      - 'packages/e2e/**'
+      - 'packages/ts-util/**'
+      - 'scripts/build-action.ts'
+      - '!actions/release/build-actions/CHANGELOG.md'
+      - '!actions/release/build-actions/README.md'
       - '!actions/release/publish-build-commit/CHANGELOG.md'
       - '!actions/release/publish-build-commit/README.md'
-      - 'packages/e2e/**'
-      - '.github/workflows/verify-action-release-publish-build-commit.yaml'
   workflow_dispatch:
 
 concurrency:
@@ -81,8 +97,61 @@ jobs:
           bun-version: ''
           bun-version-file: '.bun-version'
 
-  e2e:
+  build:
+    name: Build Actions
     needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      artifact-id: ${{ steps.build.outputs.artifact-id }}
+      manifest-sha256: ${{ steps.build.outputs.manifest-sha256 }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            objects.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        id: bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: '.bun-version'
+
+      - name: Restore Dependencies
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            actions/*/*/node_modules
+          key: ${{ needs.install.outputs.cache-key }}
+          fail-on-cache-miss: true
+
+      - name: Build Actions
+        id: build
+        uses: ./actions/release/build-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          build-dirs: |
+            actions/release/build-actions/helper
+            actions/release/publish-build-commit/helper
+          build-command: bun run build
+          artifact-name: built-actions-${{ github.run_attempt }}
+          toolchain: bun ${{ steps.bun.outputs.bun-version }}
+
+  e2e:
+    needs: [install, build]
     environment:
       name: ci-e2e
       deployment: false
@@ -108,6 +177,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      # Replaces the committed bundles with the ones the build job built from this commit.
+      - name: Install Built Actions
+        uses: ./actions/release/install-built-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
 
       # setup-bun rather than setup-cached: the cached wrapper runs `bun install` on every job, cache
       # hit or not, and this job is the one that must have no route to a package registry at all.
@@ -137,7 +213,8 @@ jobs:
           key: ${{ needs.install.outputs.cache-key }}
           fail-on-cache-miss: true
 
-      # The cases run `dist/index.js`, the bundle GitHub itself would run, so nothing is built here.
+      # The cases run `dist/index.js`, the bundle GitHub itself would run: the one the install step
+      # above put there, which the harness checks against BUILT_ACTIONS_MANIFEST before it runs it.
       - name: Generate Token
         id: token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
@@ -158,6 +235,7 @@ jobs:
         run: bun run e2e actions/release/publish-build-commit
 
   dry-run-build:
+    needs: build
     name: Build The Fixture
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -182,6 +260,13 @@ jobs:
         with:
           persist-credentials: false
 
+      # Replaces the committed bundles with the ones the build job built from this commit.
+      - name: Install Built Actions
+        uses: ./actions/release/install-built-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
+
       - name: Write Demo Action
         run: |
           set -euo pipefail
@@ -199,7 +284,7 @@ jobs:
 
   dry-run-publish:
     name: Dry Run Through The Runner
-    needs: dry-run-build
+    needs: [build, dry-run-build]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -220,6 +305,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      # Replaces the committed bundles with the ones the build job built from this commit.
+      - name: Install Built Actions
+        uses: ./actions/release/install-built-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
 
       - name: Write Release Notes
         id: notes
@@ -277,6 +369,7 @@ jobs:
     if: ${{ always() }}
     needs:
       - install
+      - build
       - e2e
       - dry-run-build
       - dry-run-publish

@@ -3,8 +3,11 @@ import path from 'node:path';
 
 import chalk from 'chalk';
 
+import { planE2eBuild } from './lib/e2e-build-plan.js';
 import { extraJobsPath, findE2eActions, renderE2eWorkflow, workflowFileName } from './lib/e2e-workflow.js';
 import { ROOT_DIR } from './lib/utils.js';
+
+import type { E2eAction } from './lib/e2e-workflow.js';
 
 const WORKFLOWS_DIR = path.join(ROOT_DIR, '.github', 'workflows');
 
@@ -28,6 +31,14 @@ function stripComments(fragment: string): string {
   return firstJob === -1 ? '' : lines.slice(firstJob).join('\n');
 }
 
+/** The workflow the generator produces for one action, from its fragment and its build plan. */
+function render(action: E2eAction): string {
+  const extraJobs = readExtraJobs(action);
+  const plan = planE2eBuild(action.actionPath, extraJobs, `.github/workflows/${workflowFileName(action)}`);
+
+  return renderE2eWorkflow(action, extraJobs, plan);
+}
+
 /** One workflow whose content on disk differs from what the generator produces. */
 export interface WorkflowDrift {
   file: string;
@@ -49,7 +60,7 @@ export async function findDrift(): Promise<WorkflowDrift[]> {
 
     if (!fs.existsSync(filePath)) {
       drift.push({ file, reason: 'missing' });
-    } else if (fs.readFileSync(filePath, 'utf8') !== renderE2eWorkflow(action, readExtraJobs(action))) {
+    } else if (fs.readFileSync(filePath, 'utf8') !== render(action)) {
       drift.push({ file, reason: 'stale' });
     }
   }
@@ -64,7 +75,7 @@ export async function writeWorkflows(): Promise<string[]> {
   for (const action of await findE2eActions()) {
     const file = workflowFileName(action);
     const filePath = path.join(WORKFLOWS_DIR, file);
-    const next = renderE2eWorkflow(action, readExtraJobs(action));
+    const next = render(action);
 
     if (!fs.existsSync(filePath) || fs.readFileSync(filePath, 'utf8') !== next) {
       fs.writeFileSync(filePath, next);

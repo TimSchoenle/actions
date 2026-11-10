@@ -1,8 +1,10 @@
 import path from 'node:path';
 
+import { BUILD_ACTIONS, injectInstallSteps, installStepLines, SELF_REPOSITORY_COMMENT } from './e2e-fragment.js';
 import { scanSorted } from './utils.js';
 
 import type { Permission } from './action-docs/docs-file.js';
+import type { E2eBuildPlan } from './e2e-build-plan.js';
 
 /**
  * Generator for the one-job workflow that runs an action's end-to-end cases.
@@ -440,35 +442,94 @@ function indentJobs(fragment: string): string {
 /**
  * The `paths` filter shared by this workflow's push and pull_request triggers.
  *
+ * The includes are everything the workflow's verdict depends on (see `planE2eBuild`): every action
+ * it builds or runs, the workspace packages and toolchain those builds read, the harness, the shared
+ * build script and the workflow itself. With the bundles built in the run rather than committed, a
+ * change to `packages/ts-util` or `bun.lock` has to start these workflows on its own.
+ *
  * The negations are what keep release pull requests cheap. `<action>/**` also matches the action's
  * own CHANGELOG.md, which release-please rewrites on every release, and its README.md, whose
  * example pins the docs generator rewrites on the same pull request. Neither is read by the action,
  * so a docs-only diff used to run the action's entire end-to-end suite for nothing — and the
  * bundled release pull request touches every changelog and README at once. GitHub evaluates these
- * last-match-wins, so the negations have to follow the glob they narrow. Excluding a workflow here cannot wedge the required-check gate:
- * ensure-actions-are-executed reads a check that never started as "not a failure".
+ * last-match-wins, so every negation follows every include. Excluding a workflow here cannot wedge
+ * the required-check gate: ensure-actions-are-executed reads a check that never started as "not a
+ * failure".
  */
-function triggerPaths(action: E2eAction): string {
-  return [
-    `'${action.actionPath}/**'`,
-    `'!${action.actionPath}/CHANGELOG.md'`,
-    `'!${action.actionPath}/README.md'`,
-    `'packages/e2e/**'`,
-    `'.github/workflows/${workflowFileName(action)}'`,
-  ]
-    .map((pattern) => `      - ${pattern}`)
+function triggerPaths(plan: E2eBuildPlan): string {
+  return [...plan.triggerIncludes, ...plan.triggerExcludes.map((pattern) => `!${pattern}`)]
+    .map((pattern) => `      - '${pattern}'`)
     .join('\n');
 }
 
+/**
+ * The job that builds every bundle the workflow runs, from the commit under test.
+ *
+ * It restores the install job's tree and builds with no registry in reach, which also proves the
+ * build needs no network. Nothing is cached: building is cheaper than proving a cached bundle is the
+ * one this commit produces. The artifact name carries the run attempt because a name cannot be
+ * reused within a run; consumers download by the ID in the job outputs, never by name.
+ *
+ * `build-actions` is used from this checkout until its first release, while every bundle is still
+ * committed; once released it moves to a SHA pin in {@link PINNED}.
+ */
+function buildJob(plan: E2eBuildPlan): string {
+  const dirs = plan.buildDirs.map((dir) => `            ${dir}`).join('\n');
+
+  return `  build:
+    name: Build Actions
+    needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      artifact-id: \${{ steps.build.outputs.artifact-id }}
+      manifest-sha256: \${{ steps.build.outputs.manifest-sha256 }}
+    steps:
+${hardenRunnerStep(BASE_ENDPOINTS)}
+
+      - name: Checkout
+        uses: ${PINNED.checkout}
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        id: bun
+        uses: ${PINNED.setupBunOnly}
+        with:
+          bun-version-file: '.bun-version'
+
+      - name: Restore Dependencies
+        uses: ${PINNED.cacheRestore}
+        with:
+${cachePathsInput()}
+          key: \${{ needs.install.outputs.cache-key }}
+          fail-on-cache-miss: true
+
+      - name: Build Actions
+        id: build
+        uses: ./${BUILD_ACTIONS} ${SELF_REPOSITORY_COMMENT}
+        with:
+          build-dirs: |
+${dirs}
+          build-command: bun run build
+          artifact-name: built-actions-\${{ github.run_attempt }}
+          toolchain: bun \${{ steps.bun.outputs.bun-version }}
+`;
+}
+
 /** Renders the complete workflow for one action. */
-export function renderE2eWorkflow(action: E2eAction, extraJobs = ''): string {
+export function renderE2eWorkflow(action: E2eAction, extraJobs: string, plan: E2eBuildPlan): string {
   const name = workflowName(action);
   const secondary = needsSecondaryIdentity(action);
-  const resolvedExtraJobs = resolvePins(extraJobs);
+  const builds = plan.buildDirs.length > 0;
+  const resolvedExtraJobs = injectInstallSteps(resolvePins(extraJobs), builds ? plan.installs : new Map());
   const extraIds = extraJobIds(resolvedExtraJobs);
-  // `install` is in the summary's needs as well as `e2e`'s: a failed install leaves `e2e` *skipped*,
-  // and a summary that only watched `e2e` would read that absence as nothing having gone wrong.
-  const needs = ['install', 'e2e', ...extraIds].map((id) => `      - ${id}`).join('\n');
+  // `install` and `build` are in the summary's needs as well as `e2e`'s: a failed install or build
+  // leaves `e2e` *skipped*, and a summary that only watched `e2e` would read that absence as nothing
+  // having gone wrong.
+  const needs = ['install', ...(builds ? ['build'] : []), 'e2e', ...extraIds].map((id) => `      - ${id}`).join('\n');
 
   return `# GENERATED — do not edit by hand. Run \`bun run generate-e2e-workflows\` to rebuild this file
 # from the actions that have an \`e2e/\` directory. The drift test in CI fails if it is out of date.
@@ -483,10 +544,10 @@ on:
       - main
       - 'feature/${action.actionPath.replace('actions/', '')}'
     paths:
-${triggerPaths(action)}
+${triggerPaths(plan)}
   pull_request:
     paths:
-${triggerPaths(action)}
+${triggerPaths(plan)}
   workflow_dispatch:
 
 concurrency:
@@ -496,9 +557,9 @@ concurrency:
 permissions: {}
 
 jobs:
-${installJob()}
+${installJob()}${builds ? `\n${buildJob(plan)}` : ''}
   e2e:
-    needs: install
+    needs: ${builds ? '[install, build]' : 'install'}
     environment:
       name: ci-e2e
       deployment: false
@@ -514,7 +575,7 @@ ${hardenRunnerStep(e2eEndpoints(action))}
         uses: ${PINNED.checkout}
         with:
           persist-credentials: false
-
+${builds ? `\n${installStepLines('      ', '.').join('\n')}\n` : ''}
       # setup-bun rather than setup-cached: the cached wrapper runs \`bun install\` on every job, cache
       # hit or not, and this job is the one that must have no route to a package registry at all.
       - name: Setup Bun
@@ -540,7 +601,8 @@ ${cachePathsInput()}
           key: \${{ needs.install.outputs.cache-key }}
           fail-on-cache-miss: true
 
-      # The cases run \`dist/index.js\`, the bundle GitHub itself would run, so nothing is built here.
+      # The cases run \`dist/index.js\`, the bundle GitHub itself would run: the one the install step
+      # above put there, which the harness checks against BUILT_ACTIONS_MANIFEST before it runs it.
       - name: Generate Token
         id: token
         uses: ${PINNED.createAppToken}
