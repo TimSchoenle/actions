@@ -370,6 +370,17 @@ describe('httpRequest redirects', () => {
     expect(target.seen).toHaveLength(4);
   });
 
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, -1])('follows no redirect for maxRedirects %s', async (limit) => {
+    const target = origin((_request, response) => response.writeHead(302, { Location: '/again' }).end());
+    const { port } = await listen(target.server);
+
+    const { message } = await httpRequest(`http://127.0.0.1:${port}/`, { maxRedirects: limit, env: {} });
+    message.resume();
+
+    expect(message.statusCode).toBe(302);
+    expect(target.seen).toHaveLength(1);
+  });
+
   it('returns a redirect without a Location as it is', async () => {
     const target = origin((_request, response) => response.writeHead(302).end('no location'));
     const { port } = await listen(target.server);

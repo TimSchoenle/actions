@@ -2,8 +2,8 @@
  * The job summary: Markdown and HTML appended to the file the runner names in `GITHUB_STEP_SUMMARY`.
  *
  * The subset of `@actions/core`'s `summary` this repository uses, rendering exactly the same markup.
- * Like the toolkit's, the builder does not escape what it is given: callers escape untrusted text
- * before adding it (see the `escapeHtml` helpers beside each caller).
+ * Like the toolkit's, the builder does not escape what it is given: text and attribute values are
+ * written into the markup verbatim, so a caller must HTML-escape any untrusted text before adding it.
  */
 import { constants } from 'node:fs';
 import { access, appendFile, writeFile } from 'node:fs/promises';
