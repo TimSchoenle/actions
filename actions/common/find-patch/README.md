@@ -25,6 +25,12 @@ The artifact is validated exactly as `commit-patch` validates it. A malformed on
 "nothing to commit", so a broken producer shows up as a red run, not as a pull request that silently never gets its
 commit.
 
+GitHub can list an artifact a few seconds after the upload that created it finished. When `run_id` is empty or names
+this run, an artifact a job of this run just uploaded may not be listed yet, so the action lists again after 1, 2, 3
+and 4 seconds before it settles on `missing`: at most five listings and 10 seconds, and only when the artifact is not
+there. Expect that wait when the producing job of this run was skipped. Another run's listing, such as the
+`workflow_run` producer's, is read once and never waited on.
+
 <!-- docs:generated usage -->
 ## Usage
 

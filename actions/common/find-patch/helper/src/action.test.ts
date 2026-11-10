@@ -7,7 +7,7 @@ import { describePatch, serializeMetadata } from 'actions-util/patch';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { run } from './action.js';
-import { RunNotFoundError } from './find.js';
+import { CURRENT_RUN_LISTING_DELAYS_MS, RunNotFoundError } from './find.js';
 import { createArtifactApi } from './github-api.js';
 
 import type { ArtifactApi, ArtifactSummary } from './find.js';
@@ -43,6 +43,11 @@ function failure(): string {
 /** An artifact listing that answers with `artifacts`. */
 function api(artifacts: ArtifactSummary[]): ArtifactApi & { listArtifacts: ReturnType<typeof vi.fn> } {
   return { listArtifacts: vi.fn().mockResolvedValue(artifacts) };
+}
+
+/** A sleep that returns at once, recording what it was asked to wait. */
+function noSleep(): ReturnType<typeof vi.fn<(milliseconds: number) => Promise<void>>> {
+  return vi.fn<(milliseconds: number) => Promise<void>>().mockResolvedValue(undefined);
 }
 
 /** Sets action inputs the way the runner passes them. */
@@ -134,10 +139,58 @@ describe('lookup', () => {
     inputs({ run_id: '' });
     const listing = api([]);
 
-    await run({ runId: '99', temp }, { api: listing });
+    await run({ runId: '99', temp }, { api: listing, sleep: noSleep() });
 
     expect(listing.listArtifacts).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo' }, 99, 'docs-render');
     expect(outputs()['run_id']).toBe('99');
+  });
+
+  describe('in this run, whose listing can lag behind an upload that just finished', () => {
+    it.each([
+      ['empty', ''],
+      ['this run', '42'],
+    ])('lists again until the artifact appears when run_id is %s', async (_, runIdInput) => {
+      inputs({ run_id: runIdInput });
+      const listing = api([]);
+      listing.listArtifacts
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValue([{ expired: false, id: 7, name: 'docs-render', sizeInBytes: 100 }]);
+      const sleep = noSleep();
+
+      await run({ runId: '42', temp }, { api: listing, sleep });
+
+      expect(core.setFailed).not.toHaveBeenCalled();
+      expect(listing.listArtifacts).toHaveBeenCalledTimes(3);
+      expect(sleep).toHaveBeenCalledTimes(2);
+      expect(outputs()).toMatchObject({ found: 'true', run_id: '42' });
+      expect(outputs()).not.toHaveProperty('outcome');
+    });
+
+    it('settles as missing once the bounded waits are spent', async () => {
+      inputs({ run_id: '' });
+      const listing = api([]);
+      const sleep = noSleep();
+
+      await run({ runId: '42', temp }, { api: listing, sleep });
+
+      expect(core.setFailed).not.toHaveBeenCalled();
+      expect(listing.listArtifacts).toHaveBeenCalledTimes(CURRENT_RUN_LISTING_DELAYS_MS.length + 1);
+      expect(sleep.mock.calls.map(([milliseconds]) => milliseconds)).toEqual(CURRENT_RUN_LISTING_DELAYS_MS);
+      expect(outputs()).toEqual({ found: 'false', has_changes: 'false', outcome: 'missing', run_id: '42' });
+      expect(await readdir(temp)).toEqual([]);
+    });
+  });
+
+  it('lists another run exactly once, without waiting', async () => {
+    const listing = api([]);
+    const sleep = noSleep();
+
+    await run({ runId: '1', temp }, { api: listing, sleep });
+
+    expect(listing.listArtifacts).toHaveBeenCalledTimes(1);
+    expect(sleep).not.toHaveBeenCalled();
+    expect(outputs()['outcome']).toBe('missing');
   });
 
   it('fails when run_id is empty outside a runner', async () => {
