@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.7](https://github.com/TimSchoenle/actions/compare/src-actions-test-setup-e2e-v1.2.6...src-actions-test-setup-e2e-v1.2.7) (2026-11-10)
+
+
+### Dependencies
+
+* **deps:** update actions/checkout action to v7 ([#2070](https://github.com/TimSchoenle/actions/issues/2070)) ([b468997](https://github.com/TimSchoenle/actions/commit/b4689970003a599b7b08933722d85e92a2f69571))
+
 ## [1.2.6](https://github.com/TimSchoenle/actions/compare/actions-test-setup-e2e-v1.2.5...actions-test-setup-e2e-v1.2.6) (2026-11-09)
 
 
