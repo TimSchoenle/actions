@@ -672,7 +672,7 @@ jobs:
 
       # commit-patch reads only git objects, so the release commit is fetched without a checkout.
       - name: Fetch The Release Commit
-        uses: TimSchoenle/actions/actions/common/fetch-head@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-fetch-head-v1.1.1
+        uses: TimSchoenle/actions/actions/common/fetch-head@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-fetch-head-v2.0.1
         with:
           sha: ${{ github.sha }}
 
