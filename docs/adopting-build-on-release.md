@@ -283,9 +283,11 @@ differences, all of which this repository's own
   as `'^actions-[a-z0-9-]+-v\d+\.\d+\.\d+$'`.
 - `release-assets: bundles` attaches to each Release only the bundles below that package's path.
 - A package added later has no tag at all, and preflight fails until it gets a source tag. This
-  repository creates it automatically with
-  [`bootstrap-source-tags.yml`](../.github/workflows/bootstrap-source-tags.yml), on the parent of the
-  commit that added the package; copy that workflow and its script, or create the tag by hand.
+  repository creates it automatically with the `source-tags-plan` and `source-tags` jobs of
+  [`release.yml`](../.github/workflows/release.yml), on the parent of the commit that added the
+  package. Copy those jobs and their script, or create the tag by hand. Keep the job that creates the
+  tags in the same workflow as the rest: a job of a called workflow read the release environment's
+  secrets as empty.
 
 ## Cutting over
 

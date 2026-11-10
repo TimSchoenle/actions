@@ -68,15 +68,14 @@ const PINNED = /^[\w.-]+\/[\w.-]+(?:\/[\w./-]+)?@[0-9a-f]{40}$/;
 
 const RELEASE = workflow('release.yml');
 const RELEASE_TEXT = fs.readFileSync(path.join(ROOT_DIR, '.github', 'workflows', 'release.yml'), 'utf8');
-const BOOTSTRAP = workflow('bootstrap-source-tags.yml');
 const jobs = RELEASE.jobs;
 const updateFiles = workflow('update-files.yml').jobs;
 const updateFilesCommit = workflow('update-files-commit.yml').jobs;
 
 /** Jobs that run this repository's code, and so must hold no secret and no write access. */
-const CODE_JOBS = ['build', 'build-verify', 'generate-docs'];
+const CODE_JOBS = ['build', 'build-verify', 'source-tags-plan', 'generate-docs'];
 /** Jobs that hold a secret or id-token: write, and so must run nothing from the repository. */
-const PRIVILEGED_JOBS = ['attest', 'publish', 'release-please', 'commit-docs'];
+const PRIVILEGED_JOBS = ['attest', 'publish', 'source-tags', 'release-please', 'commit-docs'];
 
 describe('release workflow', () => {
   it('replaces release-please.yml, whose path no attestation may name', () => {
@@ -92,13 +91,10 @@ describe('release workflow', () => {
 
   it('queues runs instead of cancelling them, so no release is skipped', () => {
     expect(RELEASE.concurrency).toEqual({ group: '${{ github.workflow }}-caller-${{ github.ref }}', queue: 'max' });
-    expect(jobs.publish.concurrency).toEqual({ group: 'release-publish', queue: 'max' });
-    expect(BOOTSTRAP.jobs.apply.concurrency).toEqual(jobs.publish.concurrency);
   });
 
   it('grants nothing at the workflow level', () => {
     expect(RELEASE.permissions).toEqual({});
-    expect(BOOTSTRAP.permissions).toEqual({});
   });
 
   it('chains the release jobs in order', () => {
@@ -112,12 +108,16 @@ describe('release workflow', () => {
   });
 
   it('runs release-please only after the source tags are in place', () => {
-    expect(needsOf(jobs['source-tags'])).toEqual(['plan', 'publish']);
-    expect(jobs['source-tags'].uses).toBe('./.github/workflows/bootstrap-source-tags.yml');
-    expect(jobs['source-tags'].if).toContain("needs.publish.result == 'success'");
-    expect(jobs['source-tags'].if).toContain("needs.plan.outputs.release-pending != 'true'");
-    expect(needsOf(jobs.preflight)).toEqual(['source-tags']);
-    expect(jobs.preflight.if).toBe("${{ !cancelled() && needs.source-tags.result == 'success' }}");
+    expect(needsOf(jobs['source-tags-plan'])).toEqual(['plan', 'publish']);
+    expect(jobs['source-tags-plan'].if).toContain("needs.publish.result == 'success'");
+    expect(jobs['source-tags-plan'].if).toContain("needs.plan.outputs.release-pending != 'true'");
+    expect(needsOf(jobs['source-tags'])).toEqual(['source-tags-plan']);
+    expect(jobs['source-tags'].if).toBe("needs.source-tags-plan.outputs.count != '0'");
+    expect(needsOf(jobs.preflight)).toEqual(['source-tags-plan', 'source-tags']);
+    expect(jobs.preflight.if).toBe(
+      "${{ !cancelled() && needs.source-tags-plan.result == 'success' && " +
+        "(needs.source-tags.result == 'success' || needs.source-tags.result == 'skipped') }}",
+    );
     expect(stepUsing(jobs.preflight, 'release/plan-release-please').with?.mode).toBe('preflight');
     expect(needsOf(jobs['release-please'])).toEqual(['preflight']);
     expect(jobs['release-please'].if).toBe("${{ !cancelled() && needs.preflight.result == 'success' }}");
@@ -166,14 +166,6 @@ describe('release workflow', () => {
 
   it.each(Object.keys(jobs))('%s uses only actions pinned by commit', (id) => {
     for (const step of stepsOf(jobs[id])) {
-      if (step.uses !== undefined) {
-        expect(step.uses, `${id}: ${step.name}`).toMatch(PINNED);
-      }
-    }
-  });
-
-  it.each(Object.keys(BOOTSTRAP.jobs))('bootstrap-source-tags %s uses only actions pinned by commit', (id) => {
-    for (const step of stepsOf(BOOTSTRAP.jobs[id])) {
       if (step.uses !== undefined) {
         expect(step.uses, `${id}: ${step.name}`).toMatch(PINNED);
       }
@@ -229,29 +221,29 @@ describe('release workflow', () => {
   });
 });
 
-describe('bootstrap source tags', () => {
-  const plan = BOOTSTRAP.jobs.plan;
-  const apply = BOOTSTRAP.jobs.apply;
+describe('source tags', () => {
+  const plan = jobs['source-tags-plan'];
+  const apply = jobs['source-tags'];
 
-  it('can be dispatched by hand and called from release.yml', () => {
-    expect(Object.keys(BOOTSTRAP.on).sort()).toEqual(['workflow_call', 'workflow_dispatch']);
+  // A job of a called workflow read the release environment's secrets as empty on the first run.
+  it('creates tags in a job of release.yml, not of a called workflow', () => {
+    expect(Object.values(jobs).some((job) => job.uses !== undefined)).toBe(false);
+    expect(fs.existsSync(path.join(ROOT_DIR, '.github', 'workflows', 'bootstrap-source-tags.yml'))).toBe(false);
   });
 
-  it('plans from repository code with a read-only token and no secret', () => {
+  it('plans from the pushed commit with a read-only token and no secret', () => {
     expect(plan.permissions).toEqual({ contents: 'read' });
     expect(plan.environment).toBeUndefined();
     expect(JSON.stringify(plan)).not.toMatch(/secrets\b/);
-    expect(plan.if).toBe("github.ref == 'refs/heads/main'");
+    expect(stepsOf(plan).find((step) => step.name === 'Checkout')?.with?.ref).toBe('${{ github.sha }}');
   });
 
-  it('applies with the release App and runs nothing from the repository', () => {
-    expect(needsOf(apply)).toEqual(['plan']);
+  it('applies the plan with the release App', () => {
     expect(apply.permissions).toEqual({});
     expect(apply.environment).toEqual({ name: 'release', deployment: false });
-    for (const step of stepsOf(apply)) {
-      expect(step.uses ?? '').not.toMatch(/^actions\/checkout@|^\.\/|setup-(?:bun|node)/);
-      expect(step.run ?? '').not.toMatch(/\b(?:bun|node|npm|npx|bunx)\b|scripts\//);
-    }
+    expect(stepsOf(apply).find((step) => step.name === 'Create Tags')?.env?.TAGS).toBe(
+      '${{ needs.source-tags-plan.outputs.tags }}',
+    );
   });
 
   it('re-checks every tag name and commit it is handed, and never moves a tag', () => {

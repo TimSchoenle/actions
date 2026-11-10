@@ -53,23 +53,25 @@ On the merge commit `M` of a release pull request:
 
 ```text
 plan ─┬─ build ────────┬─ attest ── publish ─┬─ generate-docs ── commit-docs
-      └─ build-verify ─┘                     └─ source-tags ── preflight ── release-please
+      └─ build-verify ─┘                     └─ source-tags-plan ── source-tags ── preflight ── release-please
 ```
 
-On every other push to `main`: `plan`, then `source-tags`, `preflight` and `release-please`. Runs of
+On every other push to `main`: `plan`, then `source-tags-plan`, `source-tags`, `preflight` and
+`release-please`. Runs of
 the workflow queue behind each other and are never cancelled.
 
-| Job                     | Token                                                           | Secrets                                | Runs repository code | Egress (harden-runner `block`)                                                                       |
-| ----------------------- | --------------------------------------------------------------- | -------------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------- |
-| `plan`                  | `contents`, `issues`, `pull-requests`: read                     | none                                   | no                   | api.github.com                                                                                       |
-| `build`, `build-verify` | `contents: read`                                                | none                                   | yes, `M`             | github.com, objects/release-assets.githubusercontent.com, registry.npmjs.org, artifact storage       |
-| `attest`                | `id-token`, `attestations`: write; `actions`, `contents`: read  | none                                   | no                   | fulcio.sigstore.dev, rekor.sigstore.dev, tuf-repo-cdn.sigstore.dev, api.github.com, artifact storage |
-| `publish`               | `actions`, `contents`, `pull-requests`: read; release App token | release App key, environment `release` | no                   | api.github.com, uploads.github.com, artifact storage                                                 |
-| `source-tags`           | plan: `contents: read`; apply: release App token                | apply: release App key, `release`      | plan only            | plan: github.com; apply: api.github.com                                                              |
-| `preflight`             | `contents: read`                                                | none                                   | no                   | api.github.com                                                                                       |
-| `release-please`        | none; release App token                                         | release App key, `release`             | no                   | api.github.com                                                                                       |
-| `generate-docs`         | `contents: read`                                                | none                                   | yes                  | audit                                                                                                |
-| `commit-docs`           | `contents: read`; release App token                             | release App key, `release`             | no                   | as before                                                                                            |
+| Job                     | Token                                                           | Secrets                                | Runs repository code   | Egress (harden-runner `block`)                                                                       |
+| ----------------------- | --------------------------------------------------------------- | -------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------- |
+| `plan`                  | `contents`, `issues`, `pull-requests`: read                     | none                                   | no                     | api.github.com                                                                                       |
+| `build`, `build-verify` | `contents: read`                                                | none                                   | yes, `M`               | github.com, objects/release-assets.githubusercontent.com, registry.npmjs.org, artifact storage       |
+| `attest`                | `id-token`, `attestations`: write; `actions`, `contents`: read  | none                                   | no                     | fulcio.sigstore.dev, rekor.sigstore.dev, tuf-repo-cdn.sigstore.dev, api.github.com, artifact storage |
+| `publish`               | `actions`, `contents`, `pull-requests`: read; release App token | release App key, environment `release` | no                     | api.github.com, uploads.github.com, artifact storage                                                 |
+| `source-tags-plan`      | `contents: read`                                                | none                                   | yes, the pushed commit | github.com                                                                                           |
+| `source-tags`           | none; release App token                                         | release App key, `release`             | no                     | api.github.com                                                                                       |
+| `preflight`             | `contents: read`                                                | none                                   | no                     | api.github.com                                                                                       |
+| `release-please`        | none; release App token                                         | release App key, `release`             | no                     | api.github.com                                                                                       |
+| `generate-docs`         | `contents: read`                                                | none                                   | yes                    | audit                                                                                                |
+| `commit-docs`           | `contents: read`; release App token                             | release App key, `release`             | no                     | as before                                                                                            |
 
 - **plan** runs [`release/plan-release-please`](../actions/release/plan-release-please) in `plan` mode.
   It reports a release only when the commit is the merge commit of a merged pull request from the
@@ -88,10 +90,11 @@ the workflow queue behind each other and are never cancelled.
   `bundles.sha256` and the bundles as assets, and relabels the pull request last. Every step is an
   ensure: a re-run finishes what a failed run started and changes nothing that is already in place.
   `existing-files: fail` refuses a bundle path that exists in `M`, so `B` only adds files.
-- **source-tags** calls [`bootstrap-source-tags.yml`](../.github/workflows/bootstrap-source-tags.yml):
-  [`scripts/bootstrap-source-tags.ts`](../scripts/bootstrap-source-tags.ts) plans the missing source
-  tags, and the apply job creates them after checking each name and that each commit is on `main`. It
-  is skipped while a release is in flight, except in the run that published it.
+- **source-tags-plan** runs [`scripts/bootstrap-source-tags.ts`](../scripts/bootstrap-source-tags.ts),
+  which plans the missing source tags, and **source-tags** creates them after checking each name and
+  that each commit is on `main`. Both are skipped while a release is in flight, except in the run that
+  published it. They are jobs of this workflow rather than of a called one, because a job in a called
+  workflow read the `release` environment's secrets as empty.
 - **preflight** runs `plan-release-please` in `preflight` mode and fails while any package lacks the
   source tag of its manifest version. **release-please** runs only after it passed.
 - **generate-docs** and **commit-docs** regenerate the READMEs once the consumer tags exist, so every
@@ -146,13 +149,13 @@ skipped (see below) and the fix ships with the next release.
 Only once it is decided that `M` will never be published. An admin, under a temporary bypass of the
 tag ruleset, creates `src-<component>-vX.Y.Z` on `M` for every version the pull request released, then
 labels the pull request `autorelease: tagged`. No consumer tag or Release exists for those versions,
-so no consumer can pin them, and release-please proposes the next versions from `M`. The bootstrap
-cannot create these tags itself: with no consumer tag it reports them as unresolved, by design.
+so no consumer can pin them, and release-please proposes the next versions from `M`. The source-tags
+jobs cannot create these tags themselves: with no consumer tag it reports them as unresolved, by design.
 
 ### Preflight failed
 
-Its log lists the missing source tags. Dispatch **Bootstrap Source Tags** with `dry-run` checked to see
-why each is missing:
+Its log lists the missing source tags. The log of `source-tags-plan` in the same run, or
+`bun run bootstrap-source-tags` in a full clone, says why each is missing:
 
 - _a release of it is in flight or failed part-way_: finish that release (see above).
 - _points at a build commit, but its source tag is missing_: re-run that release's publish job, which
