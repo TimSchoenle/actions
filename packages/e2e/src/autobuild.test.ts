@@ -1,10 +1,10 @@
-import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { staleBuildDirs } from './autobuild.js';
+import { rebuildStaleBundles, staleBuildDirs } from './autobuild.js';
 
 let root: string;
 
@@ -69,5 +69,35 @@ describe('staleBuildDirs', () => {
     write('actions/a/fresh/dist/extra.js', 'extra', 1);
 
     expect(staleBuildDirs(root)).toEqual([]);
+  });
+});
+
+describe('rebuildStaleBundles', () => {
+  /** A root `build:actions` script that records its arguments, then exits with `code`. */
+  function buildScript(code: number): void {
+    const script = `require('fs').writeFileSync('built.txt', process.argv.slice(1).join(' ')); process.exit(${code});`;
+    write('package.json', JSON.stringify({ name: 'root', scripts: { 'build:actions': `node -e "${script}"` } }), 100);
+  }
+
+  it('builds nothing and spawns nothing when every bundle is fresh', () => {
+    buildScript(0);
+
+    expect(rebuildStaleBundles(root)).toEqual([]);
+    expect(() => readFileSync(path.join(root, 'built.txt'))).toThrow();
+  });
+
+  it('rebuilds exactly the stale build directories with build:actions', () => {
+    buildScript(0);
+    write('actions/a/fresh/src/action.ts', 'changed', 1);
+
+    expect(rebuildStaleBundles(root)).toEqual(['actions/a/fresh']);
+    expect(readFileSync(path.join(root, 'built.txt'), 'utf8')).toBe('actions/a/fresh');
+  });
+
+  it('throws with the exit code when the build fails', () => {
+    buildScript(3);
+    write('actions/a/fresh/src/action.ts', 'changed', 1);
+
+    expect(() => rebuildStaleBundles(root)).toThrow(/Rebuilding stale bundles failed \(exit code 3\)/);
   });
 });
