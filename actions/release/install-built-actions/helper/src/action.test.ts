@@ -6,7 +6,7 @@ import { CHECKSUMS_FILE, MANIFEST_FILE, sha256Hex, stageBundles } from 'action-g
 import { runInProcess } from 'actions-e2e';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { MANIFEST_ENV, run } from './action.js';
+import { isStrictlyWithin, MANIFEST_ENV, run } from './action.js';
 
 import type { RunnerContext } from './action.js';
 import type { ArtifactLookup } from './artifact-api.js';
@@ -216,5 +216,33 @@ describe('install', () => {
 
   it('refuses a download directory outside RUNNER_TEMP', async () => {
     await expectRefused({ directory: context.workspace }, /directory must be the download directory/);
+  });
+
+  it('refuses RUNNER_TEMP itself as the download directory', async () => {
+    await expectRefused({ directory: context.temp }, /directory must be the download directory/);
+  });
+});
+
+describe('isStrictlyWithin', () => {
+  it.each([
+    ['/runner/temp', '/runner/temp/install-built-actions-x', true],
+    ['/runner/temp', '/runner/temp/..foo', true],
+    ['/runner/temp', '/runner/temp', false],
+    ['/runner/temp', '/runner', false],
+    ['/runner/temp', '/runner/other', false],
+    ['/runner/temp', '/runner/temp-sibling', false],
+  ])('POSIX: %s contains %s: %s', (parent, child, expected) => {
+    expect(isStrictlyWithin(parent, child, path.posix)).toBe(expected);
+  });
+
+  it.each([
+    ['C:\\runner\\temp', 'C:\\runner\\temp\\install-built-actions-x', true],
+    ['C:\\runner\\temp', 'C:\\runner\\temp\\..foo', true],
+    ['C:\\runner\\temp', 'C:\\runner\\temp', false],
+    ['C:\\runner\\temp', 'C:\\runner', false],
+    // path.relative across drives returns the absolute target.
+    ['C:\\runner\\temp', 'D:\\runner\\temp\\x', false],
+  ])('Windows: %s contains %s: %s', (parent, child, expected) => {
+    expect(isStrictlyWithin(parent, child, path.win32)).toBe(expected);
   });
 });

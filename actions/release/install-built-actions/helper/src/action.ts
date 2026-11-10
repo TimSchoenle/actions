@@ -136,11 +136,25 @@ function exportVariable(context: RunnerContext, name: string, value: string): vo
   fs.appendFileSync(context.envFile, `${name}=${value}\n`);
 }
 
+/**
+ * Whether `child` lies strictly below `parent`: not `parent` itself, not outside it, and not on
+ * another drive. Compared by path segment, so a child named `..foo` is inside.
+ *
+ * @param pathApi - the platform's path module; replaceable so the Windows rules can be tested anywhere
+ */
+export function isStrictlyWithin(parent: string, child: string, pathApi: typeof path = path): boolean {
+  const relative = pathApi.relative(parent, child);
+
+  return (
+    relative !== '' && relative !== '..' && !relative.startsWith(`..${pathApi.sep}`) && !pathApi.isAbsolute(relative)
+  );
+}
+
 function install(context: RunnerContext): void {
   const { manifestSha256, targetRoot } = readCommonInputs(context);
   const replace = readReplace();
   const directory = getInput(ActionInput.directory, { required: true });
-  if (!path.isAbsolute(directory) || path.relative(context.temp, directory).startsWith('..')) {
+  if (!path.isAbsolute(directory) || !isStrictlyWithin(context.temp, directory)) {
     throw new Error(`directory must be the download directory under RUNNER_TEMP; got ${JSON.stringify(directory)}.`);
   }
 
