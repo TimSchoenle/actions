@@ -35,7 +35,7 @@ afterEach(async () => {
 });
 
 /** Answers ref creation with 422, and the ref lookup as `lookup` says. */
-function refusingCreate(lookup: 'present' | 'absent'): void {
+function refusingCreate(lookup: 'present' | 'absent' | 'failing'): void {
   handler = (request, response) => {
     // Octokit sends the ref of `git/ref/{ref}` with its slash encoded.
     const url = decodeURIComponent(request.url ?? '');
@@ -44,6 +44,8 @@ function refusingCreate(lookup: 'present' | 'absent'): void {
     } else if (request.method === 'GET' && url === '/repos/o/r/git/ref/tags/v1') {
       if (lookup === 'present') {
         reply(response, 200, { ref: 'refs/tags/v1', object: { type: 'commit', sha: SHA } });
+      } else if (lookup === 'failing') {
+        reply(response, 500, { message: 'Server Error' });
       } else {
         reply(response, 404, { message: 'Not Found' });
       }
@@ -68,6 +70,16 @@ describe('createPublishApi createRef', () => {
     await expect(createPublishApi('token', { owner: 'o', repo: 'r' }).createRef('tags/v1', SHA)).rejects.toMatchObject({
       status: 422,
       message: expect.stringContaining('Object does not exist'),
+    });
+  });
+
+  it('rethrows the 422 when the lookup after it fails, with the lookup failure as its cause', async () => {
+    refusingCreate('failing');
+
+    await expect(createPublishApi('token', { owner: 'o', repo: 'r' }).createRef('tags/v1', SHA)).rejects.toMatchObject({
+      status: 422,
+      message: expect.stringContaining('Object does not exist'),
+      cause: expect.objectContaining({ status: 500 }),
     });
   });
 

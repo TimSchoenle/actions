@@ -116,6 +116,21 @@ export function createPublishApi(token: string, repository: RepositoryCoordinate
   const octokit = createOctokit(token);
   const { owner, repo } = repository;
 
+  /**
+   * Whether `ref` is there after `refusal`, the 422 that creating it got. A failed lookup reports
+   * the refusal, not itself: the lookup failure becomes the refusal's cause, and the refusal is thrown.
+   */
+  async function existsAfterRefusal(ref: string, refusal: unknown): Promise<boolean> {
+    try {
+      return (await api.resolveRef(ref)) !== undefined;
+    } catch (lookupError) {
+      if (refusal instanceof Error && refusal.cause === undefined) {
+        refusal.cause = lookupError;
+      }
+      throw refusal;
+    }
+  }
+
   const api: PublishApi = {
     async getCommit(sha) {
       const { data } = await octokit.request('GET /repos/{owner}/{repo}/git/commits/{commit_sha}', {
@@ -207,7 +222,7 @@ export function createPublishApi(token: string, repository: RepositoryCoordinate
         return 'created';
       } catch (error) {
         // 422 also answers an unknown object or an invalid ref name: only a ref that is there exists.
-        if (hasStatus(error, UNPROCESSABLE) && (await api.resolveRef(ref)) !== undefined) {
+        if (hasStatus(error, UNPROCESSABLE) && (await existsAfterRefusal(ref, error))) {
           return 'exists';
         }
         throw error;
