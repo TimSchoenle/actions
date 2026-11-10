@@ -427,4 +427,14 @@ describe('createHttpTransport', () => {
     });
     await expect.poll(closed).toBe(true);
   });
+
+  it('closes a failed response without reading its body', async () => {
+    const { base, closed } = await serveEndless(503);
+
+    await expect(transport.download(`${base}/file`, {}, await target())).rejects.toMatchObject({
+      httpStatusCode: 503,
+      retryable: true,
+    });
+    await expect.poll(closed).toBe(true);
+  });
 });

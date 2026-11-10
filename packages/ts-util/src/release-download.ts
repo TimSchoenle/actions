@@ -434,8 +434,9 @@ export function createHttpTransport(userAgent: string, timeouts: TransportTimeou
         const status = statusOf(message);
 
         if (status !== 200) {
-          // The body of a failed response is not needed; draining it frees the connection.
-          message.resume();
+          // The body of a failed response is not needed, and the connection is never reused: close it
+          // rather than read a body that may never end.
+          message.destroy();
           throw failure(url, status, message.statusMessage);
         }
 
