@@ -102,7 +102,15 @@ function readSteps(runs: Record<string, unknown>, file: string): { localUses: st
       continue;
     }
     if (typeof step['uses'] === 'string') {
-      const local = localUsesPath(step['uses']);
+      let local: string | undefined;
+      try {
+        local = localUsesPath(step['uses']);
+      } catch (error) {
+        if (error instanceof InvalidPathError) {
+          throw new ManifestError(`${file}: ${error.message}`, { cause: error });
+        }
+        throw error;
+      }
       if (local !== undefined) {
         localUses.push(local);
       }

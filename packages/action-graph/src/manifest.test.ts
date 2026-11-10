@@ -69,6 +69,11 @@ describe('parseActionManifest', () => {
     ['escaping main', "runs:\n  using: 'node24'\n  main: '../x.js'\n", /'\.\.' segment/],
     ['empty post', "runs:\n  using: 'node24'\n  main: 'a.js'\n  post: ''\n", /'runs.post' must be/],
     ['steps not a list', 'runs:\n  using: composite\n  steps: {}\n', /must be a list/],
+    [
+      'escaping local uses',
+      'runs:\n  using: composite\n  steps:\n    - uses: ./../x\n',
+      /a\/action\.yaml: .*'\.\.' segment/,
+    ],
   ])('rejects a manifest with %s', (_name, content, message) => {
     expect(() => parseActionManifest(content, 'a/action.yaml')).toThrow(ManifestError);
     expect(() => parseActionManifest(content, 'a/action.yaml')).toThrow(message);
