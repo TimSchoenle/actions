@@ -58,10 +58,17 @@ export function selectBuildSet(argv: readonly string[], root: string): BuildSet 
  * Builds the bundles of a build set through each build directory's own `build` script, the same
  * script `check-action-dist` and the release build run, then checks that every bundle exists.
  *
+ * Every bundle is deleted first, so a committed bundle cannot stand in for one a build script failed
+ * to write. A failed build therefore leaves its bundle missing; rebuilding restores it.
+ *
  * @returns the bundles that were built
  * @throws an `Error` naming the directory whose build failed, or the bundles no build produced
  */
 export async function buildActions(set: BuildSet, context: BuildActionsContext = defaultContext): Promise<string[]> {
+  for (const bundle of set.bundles) {
+    fs.rmSync(toAbsolute(context.root, bundle), { force: true });
+  }
+
   for (const directory of set.buildDirs) {
     context.log(`Building ${directory}`);
     const result = await context.run(['bun', 'run', 'build'], toAbsolute(context.root, directory));

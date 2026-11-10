@@ -91,6 +91,25 @@ describe('buildActions', () => {
       /did not produce: actions\/a\/one\/dist\/index\.js/,
     );
   });
+
+  it('does not accept a stale bundle in place of one the build did not write', async () => {
+    write('actions/a/one/dist/index.js', 'stale');
+    const run: CommandRunner = async () => ({ exitCode: 0, stderr: '' });
+
+    await expect(buildActions(selectBuildSet(['actions/a/one'], root), context(run))).rejects.toThrow(
+      /did not produce: actions\/a\/one\/dist\/index\.js/,
+    );
+  });
+
+  it('leaves only the bundles of the build set, rebuilt', async () => {
+    write('actions/a/one/dist/index.js', 'stale');
+    write('actions/a/one/dist/other.js', 'not a bundle');
+
+    await buildActions(selectBuildSet(['actions/a/one'], root), context(fakeBuild()));
+
+    expect(fs.readFileSync(path.join(root, 'actions/a/one/dist/index.js'), 'utf8')).toBe('built');
+    expect(fs.readFileSync(path.join(root, 'actions/a/one/dist/other.js'), 'utf8')).toBe('not a bundle');
+  });
 });
 
 describe('main', () => {
