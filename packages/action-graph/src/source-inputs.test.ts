@@ -59,8 +59,8 @@ describe('sourceInputs', () => {
     ]);
   });
 
-  it('follows devDependencies through the workspace protocol', () => {
-    expect(sourceInputs(monorepo(), ['actions/b/helper'])).toContain('packages/shared');
+  it('does not follow devDependencies, which never reach a bundle', () => {
+    expect(sourceInputs(monorepo(), ['actions/b/helper'])).not.toContain('packages/shared');
   });
 
   it('lists only root build inputs that exist', () => {
@@ -70,7 +70,7 @@ describe('sourceInputs', () => {
 
 describe('affected', () => {
   it.each([
-    ['packages/shared/src/x.ts', ['actions/a', 'actions/b']],
+    ['packages/shared/src/x.ts', ['actions/a']],
     ['packages/util/src/x.ts', ['actions/a']],
     ['actions/b/helper/src/x.ts', ['actions/b']],
     ['bun.lock', ['actions/a', 'actions/b']],

@@ -28,8 +28,12 @@ export const LOCKFILES: readonly string[] = [
  */
 export const TOOLCHAIN_FILES: readonly string[] = ['.bun-version', '.node-version', '.nvmrc', '.tool-versions'];
 
-/** The fields of a `package.json` that can name a workspace dependency. */
-const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies'] as const;
+/**
+ * The fields of a `package.json` whose workspace dependencies can end up in a bundle.
+ * `devDependencies` are left out: every action lists the test harness there, and a harness change
+ * does not change a bundle. A workspace package a build runs as a tool belongs in `dependencies`.
+ */
+const DEPENDENCY_FIELDS = ['dependencies', 'optionalDependencies', 'peerDependencies'] as const;
 
 interface PackageJson {
   readonly name?: unknown;

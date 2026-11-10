@@ -133,7 +133,8 @@ Reaches no endpoint beyond those the runner itself needs.
 - **Affected mode** keeps the candidates a changed file reaches: a file in an action directory of the candidate's
   closure, or in one of its source paths. A candidate that builds nothing is not affected by a lockfile change.
 - **Source paths** are each action directory of the closure, the directory of every workspace package its build
-  directories depend on through the `workspace:` protocol (transitively), and whichever of `bun.lock`, `bun.lockb`,
+  directories depend on through the `workspace:` protocol in `dependencies`, `optionalDependencies` or
+  `peerDependencies` (transitively; `devDependencies` never reach a bundle), and whichever of `bun.lock`, `bun.lockb`,
   `package-lock.json`, `npm-shrinkwrap.json`, `pnpm-lock.yaml`, `yarn.lock`, `.bun-version`, `.node-version`,
   `.nvmrc` and `.tool-versions` exist at the root. A directory is written as `<dir>/**`.
 - **Paths are repository-relative.** Every path in and out is POSIX-separated with no `..` segment; an absolute path
