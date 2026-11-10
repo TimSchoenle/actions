@@ -9,7 +9,7 @@ outside the markers.
 
 Creates or resets a git branch using GitHub API.
 
-[actions-common-create-branch-v2.0.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-branch-v2.0.3) · JavaScript action (node24)
+[actions-common-create-branch-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-branch-v2.0.4) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -36,7 +36,7 @@ jobs:
       contents: write # to create the branch
     steps:
       - id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-create-branch-v2.0.3
+        uses: TimSchoenle/actions/actions/common/create-branch@actions-common-create-branch-v2.0.4 # tag=actions-common-create-branch-v2.0.4
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}

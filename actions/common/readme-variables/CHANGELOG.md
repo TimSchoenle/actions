@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.1.4](https://github.com/TimSchoenle/actions/compare/actions-common-readme-variables-v2.1.3...actions-common-readme-variables-v2.1.4) (2026-11-10)
+
+
+### Code Refactoring
+
+* **common:** move the common actions off the toolkit's HTTP stack ([#2058](https://github.com/TimSchoenle/actions/issues/2058)) ([812d078](https://github.com/TimSchoenle/actions/commit/812d07807a9c34351af3e31e39248b85b8eeb282))
+* move the remaining actions off the toolkit's HTTP stack ([#2059](https://github.com/TimSchoenle/actions/issues/2059)) ([55e9a9a](https://github.com/TimSchoenle/actions/commit/55e9a9a8ef8a7ee13fb4080c2c3b584d1bb94fea))
+* **ts-util:** add a dependency-free actions runtime and a proxy-aware HTTP client ([#2057](https://github.com/TimSchoenle/actions/issues/2057)) ([23115ff](https://github.com/TimSchoenle/actions/commit/23115ff1123f61b51591663a15a3bae3ac79d4cb))
+
 ## [2.1.3](https://github.com/TimSchoenle/actions/compare/actions-common-readme-variables-v2.1.2...actions-common-readme-variables-v2.1.3) (2026-11-09)
 
 

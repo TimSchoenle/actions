@@ -9,7 +9,7 @@ outside the markers.
 
 Applies a set of templated image updates to a Helm chart's values.yaml and bumps Chart.yaml, preserving comments and structure. Every image carries its own version and digest.
 
-[actions-helm-apply-chart-updates-v2.0.3](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-apply-chart-updates-v2.0.3) · JavaScript action (node24)
+[actions-helm-apply-chart-updates-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-apply-chart-updates-v2.0.4) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -21,7 +21,7 @@ Applies a set of templated image updates to a Helm chart's values.yaml and bumps
 # Writes values.yaml and Chart.yaml in the workspace; the files output is what to commit.
 # To open a pull request in a separate charts repository, use helm/update-chart-version instead.
 - id: apply
-  uses: TimSchoenle/actions/actions/helm/apply-chart-updates@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-helm-apply-chart-updates-v2.0.3
+  uses: TimSchoenle/actions/actions/helm/apply-chart-updates@actions-helm-apply-chart-updates-v2.0.4 # tag=actions-helm-apply-chart-updates-v2.0.4
   with:
     chart-path: charts/my-app
     images: |
@@ -31,7 +31,7 @@ Applies a set of templated image updates to a Helm chart's values.yaml and bumps
       }
     version-bump: minor
 
-- uses: TimSchoenle/actions/actions/common/commit-changes@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-commit-changes-v3.0.3
+- uses: TimSchoenle/actions/actions/common/commit-changes@actions-common-commit-changes-v3.0.4 # tag=actions-common-commit-changes-v3.0.4
   if: steps.apply.outputs.updated-count != '0'
   with:
     token: ${{ steps.token.outputs.token }}

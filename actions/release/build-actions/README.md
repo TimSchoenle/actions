@@ -9,7 +9,7 @@ outside the markers.
 
 Builds JavaScript actions from source with a caller-supplied command, checks that every bundle their manifests name exists, and uploads the bundles with a manifest of their SHA-256 digests as one artifact for release/install-built-actions.
 
-[actions-release-build-actions-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-build-actions-v1.0.0) · Composite action
+[actions-release-build-actions-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-build-actions-v1.1.0) · Composite action
 <!-- /docs:generated header -->
 
 The first half of a build-then-test pipeline: one job builds the bundles from the commit under test and uploads them
@@ -50,7 +50,7 @@ jobs:
           bun-version-file: '.bun-version'
       - run: bun install --frozen-lockfile
       - id: build
-        uses: TimSchoenle/actions/actions/release/build-actions@actions-release-build-actions-v1.0.0 # tag=actions-release-build-actions-v1.0.0
+        uses: TimSchoenle/actions/actions/release/build-actions@actions-release-build-actions-v1.1.0 # tag=actions-release-build-actions-v1.1.0
         with:
           build-dirs: |
             actions/my/action
@@ -67,7 +67,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: TimSchoenle/actions/actions/release/install-built-actions@actions-release-install-built-actions-v1.0.0 # tag=actions-release-install-built-actions-v1.0.0
+      - uses: TimSchoenle/actions/actions/release/install-built-actions@actions-release-install-built-actions-v1.1.0 # tag=actions-release-install-built-actions-v1.1.0
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -98,7 +98,7 @@ jobs:
           node-version-file: '.nvmrc'
       - run: npm ci
       # action.yml at the root runs dist/index.js; the build writes it.
-      - uses: TimSchoenle/actions/actions/release/build-actions@actions-release-build-actions-v1.0.0 # tag=actions-release-build-actions-v1.0.0
+      - uses: TimSchoenle/actions/actions/release/build-actions@actions-release-build-actions-v1.1.0 # tag=actions-release-build-actions-v1.1.0
         with:
           build-dirs: .
           build-command: npm run build
@@ -175,6 +175,7 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 <!-- docs:generated reference -->
 ## Reference
 
+- Changelog: [CHANGELOG.md](./CHANGELOG.md)
 - End-to-end tests: [`.github/workflows/verify-action-release-build-actions.yaml`](../../../.github/workflows/verify-action-release-build-actions.yaml)
 
 <details>
