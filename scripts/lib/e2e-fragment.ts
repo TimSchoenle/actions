@@ -156,6 +156,38 @@ function withBuildNeeded(block: string[]): string[] {
   return [...block.slice(0, at), `  needs: [${needs.join(', ')}]`, ...block.slice(at + 1)];
 }
 
+/** Status functions that let a job run although a job it needs failed or was cancelled. */
+const OVERRIDES_NEEDS = /\b(?:always|failure|cancelled)\s*\(/;
+
+/**
+ * The job's `if:` extended to require a successful build, when the condition would otherwise run the
+ * job after a failed or cancelled one. A job without such a status function is skipped by default
+ * when `build` does not succeed, so its condition is left alone. Without this, the install step of an
+ * `always()` job fails on an empty artifact id and buries the build's own error under a second one.
+ *
+ * @throws an `Error` for a condition written as a block scalar, which this rewrite cannot extend
+ */
+function withBuildSucceeded(block: string[], job: string): string[] {
+  const at = block.findIndex((line) => /^ {2}if:/.test(line));
+  if (at === -1) {
+    return block;
+  }
+  const raw = block[at].slice('  if:'.length).trim();
+  if (/^[>|]/.test(raw)) {
+    throw new Error(`Extra job ${job} writes its if: as a block scalar; write it on one line.`);
+  }
+  const expression = /^\$\{\{([\s\S]*)\}\}$/.exec(raw)?.[1]?.trim() ?? raw;
+  if (!OVERRIDES_NEEDS.test(expression)) {
+    return block;
+  }
+
+  return [
+    ...block.slice(0, at),
+    `  if: \${{ (${expression}) && needs.build.result == 'success' }}`,
+    ...block.slice(at + 1),
+  ];
+}
+
 /**
  * The job block with {@link ARTIFACT_ENDPOINTS} added to its harden-runner allowlist, when it has one,
  * so the injected install step can download the artifact under `egress-policy: block`.
@@ -221,7 +253,7 @@ function checkoutEnd(block: readonly string[], prefix: string, job: string): { a
 
 /**
  * Adds the install step to every fragment job that runs a local action with a bundle, and makes the
- * job need the build job whose outputs the step reads.
+ * job need the build job whose outputs the step reads, and run only once that build succeeded.
  *
  * @param installs - per job id, the checkout prefixes to install into
  * @throws an `Error` for a job without a checkout of the repository at a prefix it needs
@@ -247,7 +279,11 @@ export function injectInstallSteps(fragment: string, installs: ReadonlyMap<strin
     for (const { prefix, after, indent } of insertions) {
       block = [...block.slice(0, after + 1), '', ...installStepLines(indent, prefix), ...block.slice(after + 1)];
     }
-    lines.splice(range.start, range.end - range.start, ...withBuildNeeded(withArtifactEndpoints(block)));
+    lines.splice(
+      range.start,
+      range.end - range.start,
+      ...withBuildSucceeded(withBuildNeeded(withArtifactEndpoints(block)), job),
+    );
   }
 
   return lines.join('\n');

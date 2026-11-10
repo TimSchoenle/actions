@@ -458,7 +458,7 @@ jobs:
   verdict-pending:
     name: 'Round Trip: Verdict With Pending Changes'
     needs: [build, verdict-generate-docs, verdict-generate-license, verdict-generate-clean]
-    if: always()
+    if: ${{ (always()) && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -529,7 +529,7 @@ jobs:
   verdict-conflict:
     name: 'Round Trip: Verdict With Conflicting Patches'
     needs: [build, verdict-generate-docs, verdict-generate-conflicting]
-    if: always()
+    if: ${{ (always()) && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -593,7 +593,7 @@ jobs:
   verdict-failed:
     name: 'Round Trip: Verdict With A Failed Generator'
     needs: [build, verdict-generate-docs, verdict-generate-failing]
-    if: always()
+    if: ${{ (always()) && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -673,7 +673,7 @@ jobs:
   verdict-clean:
     name: 'Round Trip: Verdict With Nothing Pending'
     needs: [build, verdict-generate-clean, verdict-pending]
-    if: always()
+    if: ${{ (always()) && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

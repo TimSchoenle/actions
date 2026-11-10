@@ -112,6 +112,35 @@ describe('injectInstallSteps', () => {
     expect(injectInstallSteps(fragment, new Map([['job', ['.']]]))).toContain('  needs: [build, a, b]\n');
   });
 
+  it('makes a job that runs whatever its needs did wait for a successful build', () => {
+    const job = (condition: string): string =>
+      `job:\n  needs: [a]\n  if: ${condition}\n  steps:\n    - uses: actions/checkout@x\n    - uses: ./actions/x\n`;
+    const conditionOf = (condition: string): unknown =>
+      (parse(injectInstallSteps(job(condition), new Map([['job', ['.']]]))) as Record<string, { if: unknown }>)['job']
+        .if;
+
+    expect(conditionOf('always()')).toBe("${{ (always()) && needs.build.result == 'success' }}");
+    expect(conditionOf("${{ failure() || github.event_name == 'push' }}")).toBe(
+      "${{ (failure() || github.event_name == 'push') && needs.build.result == 'success' }}",
+    );
+  });
+
+  it('leaves a condition that already skips the job after a failed build alone', () => {
+    const fragment =
+      "job:\n  if: ${{ github.event_name == 'pull_request' }}\n  steps:\n    - uses: actions/checkout@x\n    - uses: ./actions/x\n";
+
+    expect(injectInstallSteps(fragment, new Map([['job', ['.']]]))).toContain(
+      "  if: ${{ github.event_name == 'pull_request' }}\n",
+    );
+  });
+
+  it('refuses a block-scalar condition it cannot extend', () => {
+    const fragment =
+      'job:\n  if: >-\n    always()\n  steps:\n    - uses: actions/checkout@x\n    - uses: ./actions/x\n';
+
+    expect(() => injectInstallSteps(fragment, new Map([['job', ['.']]]))).toThrow(/block scalar/);
+  });
+
   it('leaves a fragment alone when nothing needs installing', () => {
     expect(injectInstallSteps(FRAGMENT, new Map())).toBe(FRAGMENT);
   });
