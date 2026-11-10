@@ -2,7 +2,7 @@ import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import * as core from '@actions/core';
+import * as core from 'actions-util/core';
 import { describePatch, serializeMetadata } from 'actions-util/patch';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,7 +12,7 @@ import { createArtifactApi } from './github-api.js';
 
 import type { ArtifactApi, ArtifactSummary } from './find.js';
 
-vi.mock('@actions/core', async (importOriginal) => ({
+vi.mock('actions-util/core', async (importOriginal) => ({
   ...(await importOriginal<typeof core>()),
   debug: vi.fn(),
   info: vi.fn(),

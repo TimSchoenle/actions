@@ -1,4 +1,4 @@
-import * as core from '@actions/core';
+import * as core from 'actions-util/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { run } from './action.js';
@@ -7,11 +7,11 @@ import type { GitConfigurator } from './git.js';
 import type { AppUserApi } from 'actions-util';
 
 /**
- * Only the reporting side of `@actions/core` is mocked. Input reading stays real so that the tests
+ * Only the reporting side of `actions-util/core` is mocked. Input reading stays real so that the tests
  * exercise the actual `getInput` semantics — including the `required` check — instead of a
  * hand-written stand-in.
  */
-vi.mock('@actions/core', async (importOriginal) => ({
+vi.mock('actions-util/core', async (importOriginal) => ({
   ...(await importOriginal<typeof core>()),
   info: vi.fn(),
   setFailed: vi.fn(),

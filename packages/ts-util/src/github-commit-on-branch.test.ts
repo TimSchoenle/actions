@@ -1,12 +1,12 @@
-import * as github from '@actions/github';
+import * as github from './octokit.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createCommitApi, toCommitMessage } from './github-commit-on-branch.js';
 
 import type { CreateCommitRequest } from './github-commit-on-branch.js';
 
-vi.mock('@actions/github');
-vi.mock('@actions/core');
+vi.mock('./octokit.js');
+vi.mock('./core.js');
 
 /** Builds an object shaped like an Octokit `RequestError`. */
 function httpError(status: number): unknown {

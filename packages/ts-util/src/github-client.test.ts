@@ -1,5 +1,5 @@
-import * as core from '@actions/core';
-import * as github from '@actions/github';
+import * as core from './core.js';
+import * as github from './octokit.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -13,8 +13,8 @@ import {
   type RetryPolicy,
 } from './github-client.js';
 
-vi.mock('@actions/github');
-vi.mock('@actions/core');
+vi.mock('./octokit.js');
+vi.mock('./core.js');
 
 const POLICY: RetryPolicy = { maxRetries: 3, baseDelayMs: 1_000, maxDelayMs: 60_000, maxTotalDelayMs: 300_000 };
 

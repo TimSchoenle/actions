@@ -1,5 +1,5 @@
-import * as core from '@actions/core';
 import { quoteForLog, resolveRealWithinWorkspace, runAction, workspaceRoot } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import { generateFile } from './generate.js';
 import { getBooleanInput, getInput, setOutput } from './generated/action-io.js';

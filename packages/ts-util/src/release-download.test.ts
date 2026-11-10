@@ -336,6 +336,22 @@ describe('createHttpTransport', () => {
     await expect(transport.getJson(`${base}/text`, {})).rejects.toMatchObject({ retryable: false });
   });
 
+  it('reports a JSON request answered with a 5xx as retryable and a 404 as not', async () => {
+    const base = await serve((request, response) => {
+      response.statusCode = request.url === '/missing' ? 404 : 503;
+      response.end('{"message":"error"}');
+    });
+
+    await expect(transport.getJson(`${base}/busy`, {})).rejects.toMatchObject({
+      httpStatusCode: 503,
+      retryable: true,
+    });
+    await expect(transport.getJson(`${base}/missing`, {})).rejects.toMatchObject({
+      httpStatusCode: 404,
+      retryable: false,
+    });
+  });
+
   it('drops the Authorization header when a redirect leaves the host', async () => {
     const seen: (string | undefined)[] = [];
     const base = await serve((request, response) => {
@@ -381,5 +397,44 @@ describe('createHttpTransport', () => {
     // Past the idle limit: an idle guard left behind by the failed open would now throw uncaught,
     // which vitest reports as a failure.
     await new Promise((resolve) => setTimeout(resolve, 150));
+  });
+
+  /**
+   * A server answering every request with `statusCode` and a body that never ends, and whether the
+   * connection of the last request has closed.
+   */
+  async function serveEndless(statusCode: number): Promise<{ base: string; closed: () => boolean }> {
+    let closed = false;
+    const base = await serve((_request, response) => {
+      response.socket?.once('close', () => {
+        closed = true;
+      });
+      response.writeHead(statusCode);
+      const stream = setInterval(() => response.write('x'.repeat(1024)), 5);
+      response.once('close', () => clearInterval(stream));
+    });
+
+    return { base, closed: () => closed };
+  }
+
+  it('closes a response that never finishes when the destination cannot open', async () => {
+    const { base, closed } = await serveEndless(200);
+    const missing = path.join(path.dirname(await target()), 'no-such-directory', 'file');
+
+    await expect(transport.download(`${base}/file`, {}, missing)).rejects.toMatchObject({
+      retryable: false,
+      message: expect.stringContaining('Cannot write') as string,
+    });
+    await expect.poll(closed).toBe(true);
+  });
+
+  it('closes a failed response without reading its body', async () => {
+    const { base, closed } = await serveEndless(503);
+
+    await expect(transport.download(`${base}/file`, {}, await target())).rejects.toMatchObject({
+      httpStatusCode: 503,
+      retryable: true,
+    });
+    await expect.poll(closed).toBe(true);
   });
 });

@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import * as core from '@actions/core';
+import * as core from 'actions-util/core';
 import { createCommitApi } from 'actions-util/commit-on-branch';
 import { describePatch, runGit, runGitText, serializeMetadata } from 'actions-util/patch';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,7 +14,7 @@ import type { CommitApi } from 'actions-util/commit-on-branch';
 // The tests in action.test.ts inject every collaborator. These run the helper the way the bundle
 // does: no arguments, the runner context read from the environment, and the real git client applying
 // a real patch. Only the GitHub API is replaced, at the module boundary.
-vi.mock('@actions/core', async (importOriginal) => ({
+vi.mock('actions-util/core', async (importOriginal) => ({
   ...(await importOriginal<typeof core>()),
   debug: vi.fn(),
   info: vi.fn(),

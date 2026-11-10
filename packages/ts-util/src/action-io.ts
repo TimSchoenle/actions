@@ -1,7 +1,8 @@
-import * as core from '@actions/core';
+import * as core from './core.js';
 
 /**
- * The `@actions/core` I/O surface of one action, narrowed to the names its `action.yaml` declares.
+ * The runner I/O surface of one action (`actions-util/core`), narrowed to the names its
+ * `action.yaml` declares.
  *
  * `TInput` and `TOutput` are the unions generated from the manifest, so reading an input or writing
  * an output the action does not declare is a compile error rather than a value the runner silently
@@ -15,11 +16,11 @@ export interface ActionIo<TInput extends string, TOutput extends string> {
 }
 
 /**
- * Binds `@actions/core` to the declared names of a single action.
+ * Binds `actions-util/core` to the declared names of a single action.
  *
  * Every input stays a `string`: that is what the runner hands over, and inferring a type from an
- * input's default would silently take over validation that belongs to `@actions/core`, which already
- * rejects anything outside the YAML 1.2 core schema.
+ * input's default would silently take over validation that belongs to `actions-util/core`, which
+ * already rejects anything outside the YAML 1.2 core schema.
  *
  * The generated module per action is what supplies the name unions; this holds the calls themselves,
  * which are identical in every action and were previously emitted ten times over.

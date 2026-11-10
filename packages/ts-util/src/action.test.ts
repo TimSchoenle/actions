@@ -1,9 +1,9 @@
-import * as core from '@actions/core';
+import * as core from './core.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { runAction } from './action.js';
 
-vi.mock('@actions/core', async (importOriginal) => ({
+vi.mock('./core.js', async (importOriginal) => ({
   ...(await importOriginal<typeof core>()),
   debug: vi.fn(),
   setFailed: vi.fn(),
