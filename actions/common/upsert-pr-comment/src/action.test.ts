@@ -1,4 +1,4 @@
-import * as core from '@actions/core';
+import * as core from 'actions-util/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { run } from './action.js';
@@ -6,7 +6,7 @@ import { run } from './action.js';
 import type { CommentApi, ExistingComment } from './comment-api.js';
 import type { Mock } from 'vitest';
 
-vi.mock('@actions/core', async (importOriginal) => ({
+vi.mock('actions-util/core', async (importOriginal) => ({
   ...(await importOriginal<typeof core>()),
   info: vi.fn(),
   setFailed: vi.fn(),

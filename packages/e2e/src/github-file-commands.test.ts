@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { FileCommandParseError, parseFileCommands } from './github-file-commands.js';
 
-/** Reproduces what `@actions/core.setOutput` appends, delimiter and all. */
+/** Reproduces what `actions-util/core`'s `setOutput` appends, delimiter and all. */
 function heredoc(key: string, value: string, eol = '\n'): string {
   const delimiter = 'ghadelimiter_11111111-2222-3333-4444-555555555555';
 
@@ -10,7 +10,7 @@ function heredoc(key: string, value: string, eol = '\n'): string {
 }
 
 describe('parseFileCommands', () => {
-  it('reads the heredoc form written by @actions/core', () => {
+  it('reads the heredoc form written by actions-util/core', () => {
     expect(parseFileCommands(heredoc('sha', 'abc123'))).toEqual({ sha: 'abc123' });
   });
 

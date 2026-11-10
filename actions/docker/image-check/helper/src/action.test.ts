@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import * as core from '@actions/core';
+import * as core from 'actions-util/core';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { run } from './action.js';
@@ -12,10 +12,10 @@ import type { ActionDependencies } from './action.js';
 import type { CommandResult } from './docker.js';
 
 /**
- * Only the reporting side of `@actions/core` is mocked. Input reading and the step summary stay
+ * Only the reporting side of `actions-util/core` is mocked. Input reading and the step summary stay
  * real, so these exercise the manifest's own input names and what actually lands in the summary.
  */
-vi.mock('@actions/core', async (importOriginal) => ({
+vi.mock('actions-util/core', async (importOriginal) => ({
   ...(await importOriginal<typeof core>()),
   info: vi.fn(),
   notice: vi.fn(),

@@ -2,16 +2,16 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import * as core from '@actions/core';
+import * as core from 'actions-util/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { run } from './action.js';
 
 /**
- * Only the reporting side of `@actions/core` is mocked. Input reading stays real, so the tests
+ * Only the reporting side of `actions-util/core` is mocked. Input reading stays real, so the tests
  * exercise the `INPUT_*` semantics the runner actually uses rather than a stand-in for them.
  */
-vi.mock('@actions/core', async (importOriginal) => ({
+vi.mock('actions-util/core', async (importOriginal) => ({
   ...(await importOriginal<typeof core>()),
   info: vi.fn(),
   setFailed: vi.fn(),

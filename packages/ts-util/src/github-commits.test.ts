@@ -1,10 +1,10 @@
-import * as github from '@actions/github';
+import * as github from './octokit.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { verifyCommits } from './commit-verification.js';
 import { fetchPullRequestCommits } from './github-commits.js';
 
-vi.mock('@actions/github');
+vi.mock('./octokit.js');
 
 const PR_URL = 'https://github.com/owner/repo/pull/1';
 

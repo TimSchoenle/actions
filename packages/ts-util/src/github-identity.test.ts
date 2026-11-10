@@ -1,9 +1,9 @@
-import * as github from '@actions/github';
+import * as github from './octokit.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createAppUserApi } from './github-identity.js';
 
-vi.mock('@actions/github');
+vi.mock('./octokit.js');
 
 interface OctokitMock {
   rest: {

@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import * as core from '@actions/core';
+import * as core from 'actions-util/core';
 import { ReleaseDownloadError } from 'actions-util/release-download';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -9,10 +9,10 @@ import { InvalidInputError, run, verificationFrom } from './action.js';
 import type { ActionDependencies } from './action.js';
 
 /**
- * Only the reporting side of `@actions/core` is mocked; inputs are published as `INPUT_*`
+ * Only the reporting side of `actions-util/core` is mocked; inputs are published as `INPUT_*`
  * environment variables, the way the runner does.
  */
-vi.mock('@actions/core', async (importOriginal) => ({
+vi.mock('actions-util/core', async (importOriginal) => ({
   ...(await importOriginal<typeof core>()),
   info: vi.fn(),
   setFailed: vi.fn(),

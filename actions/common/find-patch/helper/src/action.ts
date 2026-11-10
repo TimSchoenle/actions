@@ -2,8 +2,8 @@ import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import * as core from '@actions/core';
 import { parseRepository, runAction } from 'actions-util';
+import * as core from 'actions-util/core';
 import { isCommitSha, parseByteLimit, validateArtifactName } from 'actions-util/patch';
 
 import { assertArchiveSize, findArtifacts, inspectArtifact } from './find.js';

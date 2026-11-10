@@ -98,7 +98,7 @@ describe('apply-chart-updates under hostile input', () => {
       expect(result.errors.join('\n')).not.toMatch(/must not traverse/);
     });
 
-    // Refused one step earlier than the containment check, by `@actions/core`, which treats an empty
+    // Refused one step earlier than the containment check, by `actions-util/core`, which treats an empty
     // required input as an absent one. Asserted anyway: what matters is that no run ever reaches
     // `resolve(workspace, '')` and quietly adopts the repository root as the chart directory.
     it.each([

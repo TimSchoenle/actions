@@ -2,7 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import * as core from '@actions/core';
+import * as core from 'actions-util/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { releaseDownloadPort, run } from './action.js';
@@ -13,10 +13,10 @@ import type { ActionDependencies } from './action.js';
 import type { InstallPorts } from './installer.js';
 
 /**
- * Only the reporting side of `@actions/core` is mocked; inputs are published as `INPUT_*`
+ * Only the reporting side of `actions-util/core` is mocked; inputs are published as `INPUT_*`
  * environment variables, the way the runner does.
  */
-vi.mock('@actions/core', async (importOriginal) => ({
+vi.mock('actions-util/core', async (importOriginal) => ({
   ...(await importOriginal<typeof core>()),
   info: vi.fn(),
   setFailed: vi.fn(),

@@ -11,10 +11,8 @@
   },
   "dependencies": {
     "actions-util": "workspace:*",
-    "@actions/core": "3.0.1",
     "@actions/exec": "3.0.0",
-    "@actions/http-client": "4.0.1",
-    "@actions/tool-cache": "4.0.0",
+    "@actions/io": "3.0.2",
     "yaml": "2.9.1"
   },
   "devDependencies": {

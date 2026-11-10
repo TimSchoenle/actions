@@ -10,8 +10,8 @@
  * The token is sent only to `api.github.com`, and only when the job runs on github.com: a GitHub
  * Enterprise Server token is not a github.com credential. The asset URL is built from the numeric
  * asset ID, never taken from the release JSON, so the response cannot steer the token to another
- * host. `@actions/http-client` drops the `Authorization` header when the asset endpoint redirects
- * to the storage host.
+ * host. `http-request.ts` drops the `Authorization` header when the asset endpoint redirects to the
+ * storage host.
  */
 import { once } from 'node:events';
 import { createWriteStream } from 'node:fs';
@@ -19,10 +19,9 @@ import { Transform, Writable } from 'node:stream';
 import { finished, pipeline } from 'node:stream/promises';
 import { setTimeout as sleep } from 'node:timers/promises';
 
-import * as core from '@actions/core';
-import { HttpClient } from '@actions/http-client';
-
+import * as core from './core.js';
 import { errorMessage } from './errors.js';
+import { httpRequest } from './http-request.js';
 
 import type { WriteStream } from 'node:fs';
 
@@ -338,8 +337,8 @@ function asDownloadError(url: string, error: unknown): ReleaseDownloadError {
 /**
  * A pass-through that fails once no chunk has arrived for `idleMs`, so a server that stops sending
  * mid-body cannot hold the job until its timeout. Idle rather than total, so a large asset on a slow
- * link still finishes. The client's own socket timeout does not cover this: once the response has
- * arrived it only half-closes the socket, which a stalled server may never answer.
+ * link still finishes. The socket timeout is only a backstop at twice this limit, so a stalled body
+ * is reported here, as a stall, rather than as a timed-out request.
  */
 function idleGuard(idleMs: number): Transform {
   let timer: NodeJS.Timeout | undefined;
@@ -408,29 +407,27 @@ async function openDestination(destination: string): Promise<Writable> {
 }
 
 /**
- * The real network: `@actions/http-client`, not Node's `fetch`, because `fetch` ignores `HTTPS_PROXY`
- * and a self-hosted runner behind a proxy would fail here while every other download succeeds.
+ * The real network: `http-request.ts`, not Node's `fetch`, because `fetch` ignores `HTTPS_PROXY` and
+ * a self-hosted runner behind a proxy would fail here while every other download succeeds.
  *
- * The client's own retries are off; {@link ReleaseDownloader} retries, so it can fall back after.
+ * Nothing is retried here; {@link ReleaseDownloader} retries, so it can fall back after.
  */
 export function createHttpTransport(userAgent: string, timeouts: TransportTimeouts = DEFAULT_TIMEOUTS): HttpTransport {
   // The socket timeout covers connecting and waiting for headers; the idle guard covers the body.
   // It is a backstop at twice the idle limit, so a stalled body is reported by the guard.
-  const client = (): HttpClient =>
-    new HttpClient(userAgent, [], { allowRetries: false, socketTimeout: timeouts.idleMs * 2 });
+  const get = (url: string, headers: Readonly<Record<string, string>>) =>
+    httpRequest(url, { headers: { 'user-agent': userAgent, ...headers }, timeoutMs: timeouts.idleMs * 2 });
 
   return {
     async download(url, headers, destination) {
-      const http = client();
-
       try {
-        const response = await http.get(url, { ...headers });
-        const status = response.message.statusCode ?? 0;
+        const { message } = await get(url, headers);
+        const status = message.statusCode ?? 0;
 
         if (status !== 200) {
           // The body of a failed response is not needed; draining it frees the connection.
-          response.message.resume();
-          throw failure(url, status, response.message.statusMessage);
+          message.resume();
+          throw failure(url, status, message.statusMessage);
         }
 
         let sink: Writable;
@@ -438,35 +435,32 @@ export function createHttpTransport(userAgent: string, timeouts: TransportTimeou
         try {
           sink = await openDestination(destination);
         } catch (error) {
-          response.message.resume();
+          message.resume();
           throw error;
         }
 
         // The guard's timer starts when it is created, so it is created only once the pipeline that
         // owns it is certain to run.
-        await pipeline(response.message, idleGuard(timeouts.idleMs), sink);
+        await pipeline(message, idleGuard(timeouts.idleMs), sink);
 
         // A cut connection can end the stream without an error; only a complete body is a download.
-        if (!response.message.complete) {
+        if (!message.complete) {
           throw new ReleaseDownloadError(`GET ${url} ended before the whole body arrived.`, { retryable: true });
         }
       } catch (error) {
         throw asDownloadError(url, error);
-      } finally {
-        http.dispose();
       }
     },
 
     async getJson(url, headers) {
-      const http = client();
       const chunks: Buffer[] = [];
 
       try {
-        const response = await http.get(url, { ...headers });
-        const status = response.message.statusCode ?? 0;
+        const { message } = await get(url, headers);
+        const status = message.statusCode ?? 0;
 
         await pipeline(
-          response.message,
+          message,
           idleGuard(timeouts.idleMs),
           new Writable({
             write(chunk: Buffer, _encoding, done) {
@@ -477,12 +471,10 @@ export function createHttpTransport(userAgent: string, timeouts: TransportTimeou
         );
 
         if (status < 200 || status >= 300) {
-          throw failure(url, status, response.message.statusMessage);
+          throw failure(url, status, message.statusMessage);
         }
       } catch (error) {
         throw asDownloadError(url, error);
-      } finally {
-        http.dispose();
       }
 
       try {

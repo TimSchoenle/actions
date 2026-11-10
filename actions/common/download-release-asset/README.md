@@ -134,7 +134,8 @@ works. Only public releases are supported: the anonymous release download answer
 
 ## Proxies
 
-Requests go through `@actions/http-client`, which honours `HTTPS_PROXY` and `NO_PROXY` on self-hosted runners.
+Requests honour `HTTPS_PROXY` and `NO_PROXY` (or their lower-case forms) on self-hosted runners, by the same rules
+`@actions/http-client` applied, credentials in the proxy URL included.
 
 <!-- docs:generated reference -->
 ## Reference

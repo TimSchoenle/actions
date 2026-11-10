@@ -51,8 +51,6 @@
       "name": "actions-common-close-pull-request",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -68,9 +66,7 @@
       "name": "actions-common-commit-changes",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "@actions/exec": "3.0.0",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -86,8 +82,6 @@
       "name": "actions-common-commit-patch-helper",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -103,8 +97,6 @@
       "name": "actions-common-create-branch",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -120,7 +112,6 @@
       "name": "actions-common-create-patch-helper",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -134,8 +125,6 @@
       "name": "actions-common-delete-branch",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -151,7 +140,6 @@
       "name": "actions-common-download-release-asset",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -165,7 +153,6 @@
       "name": "actions-common-fetch-head",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -179,7 +166,6 @@
       "name": "actions-common-find-patch-helper",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -193,7 +179,6 @@
       "name": "actions-common-generated-files-verdict-helper",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -207,8 +192,6 @@
       "name": "actions-common-get-app-git-identity",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -224,7 +207,6 @@
       "name": "actions-common-modify-yaml",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -241,7 +223,6 @@
       "name": "actions-common-read-yaml",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
         "yaml": "2.9.1",
       },
@@ -258,7 +239,6 @@
       "name": "actions-common-readme-variables",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
         "yaml": "2.9.1",
       },
@@ -275,7 +255,6 @@
       "name": "actions-common-render-template",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
         "handlebars": "4.7.10",
       },
@@ -292,9 +271,7 @@
       "name": "actions-common-setup-app-git-identity",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "@actions/exec": "3.0.0",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -308,8 +285,6 @@
       "name": "actions-common-upsert-issue",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -325,8 +300,6 @@
       "name": "actions-common-upsert-pr-comment",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -342,7 +315,6 @@
       "name": "actions-docker-image-check-summary-helper",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -356,7 +328,6 @@
       "name": "actions-docker-image-check-helper",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "@actions/exec": "3.0.0",
         "actions-util": "workspace:*",
       },
@@ -371,7 +342,6 @@
       "name": "actions-helm-apply-chart-updates",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -388,8 +358,6 @@
       "name": "actions-helper-resolve-base-branch",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -405,7 +373,6 @@
       "name": "actions-helper-verify-branch-name",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -421,8 +388,6 @@
       "name": "actions-helper-verify-commit-authors",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -438,8 +403,6 @@
       "name": "actions-maintenance-auto-approve-pr",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -455,8 +418,6 @@
       "name": "actions-maintenance-auto-rebase",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -472,8 +433,6 @@
       "name": "actions-maintenance-ensure-actions-are-executed",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -489,8 +448,6 @@
       "name": "actions-maintenance-timed-auto-merge",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -506,8 +463,6 @@
       "name": "actions-maintenance-trigger-coderabbit-review",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -521,8 +476,6 @@
       "name": "actions-maintenance-wipe-cache",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -538,7 +491,6 @@
       "name": "actions-rust-config-contract",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "@actions/exec": "3.0.0",
         "actions-util": "workspace:*",
       },
@@ -555,7 +507,6 @@
       "name": "actions-security-codeql-helper",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -569,7 +520,6 @@
       "name": "actions-security-zizmor-helper",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "@actions/exec": "3.0.0",
         "actions-util": "workspace:*",
       },
@@ -584,10 +534,8 @@
       "name": "actions-terrace-setup",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "@actions/exec": "3.0.0",
-        "@actions/http-client": "4.0.1",
-        "@actions/tool-cache": "4.0.0",
+        "@actions/io": "3.0.2",
         "actions-util": "workspace:*",
         "yaml": "2.9.1",
       },
@@ -604,7 +552,6 @@
       "name": "actions-e2e",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
         "yaml": "2.9.1",
       },
@@ -620,9 +567,6 @@
       "name": "actions-util",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
-        "@actions/http-client": "4.0.1",
         "@octokit/core": "7.0.8",
         "@octokit/plugin-paginate-rest": "14.0.0",
         "yaml": "2.9.1",
@@ -638,17 +582,9 @@
     },
   },
   "packages": {
-    "@actions/core": ["@actions/core@3.0.1", "", { "dependencies": { "@actions/exec": "^3.0.0", "@actions/http-client": "^4.0.0" } }, "sha512-a6d/Nwahm9fliVGRhdhofo40HjHQasUPusmc7vBfyky+7Z+P2A1J68zyFVaNcEclc/Se+eO595oAr5nwEIoIUA=="],
-
     "@actions/exec": ["@actions/exec@3.0.0", "", { "dependencies": { "@actions/io": "^3.0.2" } }, "sha512-6xH/puSoNBXb72VPlZVm7vQ+svQpFyA96qdDBvhB8eNZOE8LtPf9L4oAsfzK/crCL8YZ+19fKYVnM63Sl+Xzlw=="],
 
-    "@actions/github": ["@actions/github@9.1.1", "", { "dependencies": { "@actions/http-client": "^3.0.2", "@octokit/core": "^7.0.6", "@octokit/plugin-paginate-rest": "^14.0.0", "@octokit/plugin-rest-endpoint-methods": "^17.0.0", "@octokit/request": "^10.0.7", "@octokit/request-error": "^7.1.0", "undici": "^6.23.0" } }, "sha512-tL5JbYOBZHc0ngEnCsaDcryUizIUIlQyIMwy1Wkx93H5HzbBJ7TbiPx2PnFjBwZW0Vh05JmfFZhecE6gglYegA=="],
-
-    "@actions/http-client": ["@actions/http-client@4.0.1", "", { "dependencies": { "tunnel": "^0.0.6", "undici": "^6.23.0" } }, "sha512-+Nvd1ImaOZBSoPbsUtEhv+1z99H12xzncCkz0a3RuehINE81FZSe2QTj3uvAPTcJX/SCzUQHQ0D1GrPMbrPitg=="],
-
     "@actions/io": ["@actions/io@3.0.2", "", {}, "sha512-nRBchcMM+QK1pdjO7/idu86rbJI5YHUKCvKs0KxnSYbVe3F51UfGxuZX4Qy/fWlp6l7gWFwIkrOzN+oUK03kfw=="],
-
-    "@actions/tool-cache": ["@actions/tool-cache@4.0.0", "", { "dependencies": { "@actions/core": "^3.0.0", "@actions/exec": "^3.0.0", "@actions/http-client": "^4.0.0", "@actions/io": "^3.0.0", "semver": "^7.7.3" } }, "sha512-L8P9HbXvpvqjZDveb/fdsa55IVC0trfPgQ4ZwGo6r5af6YDVdM9vMGPZ7rgY2fAT9gGj4PSYd6bYlg3p3jD78A=="],
 
     "@babel/helper-string-parser": ["@babel/helper-string-parser@7.29.7", "", {}, "sha512-Pb5ijPrZ89GDH8223L4UP8i6QApWxs04RbPQJTeWDV0/keR2E36MeKnyr6LYmUUvqRRI+Iv87SuF1W6ErINzYw=="],
 
@@ -1592,8 +1528,6 @@
 
     "tslib": ["tslib@2.8.1", "", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
 
-    "tunnel": ["tunnel@0.0.6", "", {}, "sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg=="],
-
     "type-check": ["type-check@0.4.0", "", { "dependencies": { "prelude-ls": "^1.2.1" } }, "sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew=="],
 
     "typed-array-buffer": ["typed-array-buffer@1.0.3", "", { "dependencies": { "call-bound": "^1.0.3", "es-errors": "^1.3.0", "is-typed-array": "^1.1.14" } }, "sha512-nAYYwfY3qnzX30IkA6AQZjVbtK6duGontcQm1WSG1MD94YLqK0515GNApXkoxKOWMusVssAHWLh9SeaoefYFGw=="],
@@ -1611,8 +1545,6 @@
     "uglify-js": ["uglify-js@3.19.3", "", { "bin": { "uglifyjs": "bin/uglifyjs" } }, "sha512-v3Xu+yuwBXisp6QYTcH4UbH+xYJXqnq2m/LtQVWKWzYc1iehYnLixoQDN9FH6/j9/oybfd6W9Ghwkl8+UMKTKQ=="],
 
     "unbox-primitive": ["unbox-primitive@1.1.0", "", { "dependencies": { "call-bound": "^1.0.3", "has-bigints": "^1.0.2", "has-symbols": "^1.1.0", "which-boxed-primitive": "^1.1.1" } }, "sha512-nWJ91DjeOkej/TA8pXQ3myruKpKEYgqvpw9lz4OPHj/NWFNluYrjbz9j01CJ8yKQd2g4jFoOkINCTW2I5LEEyw=="],
-
-    "undici": ["undici@6.29.0", "", {}, "sha512-R+RODBqp6i2pPflGdq+xIOUkl+RNfGgHwoinecKu/JCuf2uO06cOKoDbI2P7Dn6KcswdKwrczbU6IYJ6K8X+wg=="],
 
     "undici-types": ["undici-types@8.9.0", "", {}, "sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg=="],
 
@@ -1647,10 +1579,6 @@
     "yaml": ["yaml@2.9.1", "", { "bin": { "yaml": "bin.mjs" } }, "sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw=="],
 
     "yocto-queue": ["yocto-queue@0.1.0", "", {}, "sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q=="],
-
-    "@actions/github/@actions/http-client": ["@actions/http-client@3.0.2", "", { "dependencies": { "tunnel": "^0.0.6", "undici": "^6.23.0" } }, "sha512-JP38FYYpyqvUsz+Igqlc/JG6YO9PaKuvqjM3iGvaLqFnJ7TFmcLyy2IDrY0bI0qCQug8E9K+elv5ZNfw62ZJzA=="],
-
-    "@actions/tool-cache/semver": ["semver@7.8.5", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA=="],
 
     "@eslint-community/eslint-utils/eslint-visitor-keys": ["eslint-visitor-keys@3.4.3", "", {}, "sha512-wpc+LXeiyiisxPlEkUzU6svyS1frIO3Mgxj1fdy7Pm8Ygzguax2N3Fa/D/ag1WqbOprdI+uY6wMUl8/a2G+iag=="],
 

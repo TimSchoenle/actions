@@ -1,4 +1,4 @@
-import * as github from '@actions/github';
+import * as github from 'actions-util/octokit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createIssueApi } from './github-api.js';
@@ -6,7 +6,7 @@ import { IssueUnavailableError } from './issue-api.js';
 
 import type { ExistingIssue } from './issue-api.js';
 
-vi.mock('@actions/github');
+vi.mock('actions-util/octokit');
 
 const target = { owner: 'owner', repo: 'repo' };
 

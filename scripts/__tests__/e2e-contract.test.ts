@@ -251,7 +251,7 @@ describe('end-to-end contract', () => {
    *
    * The set also has to cover more than the root: a bun workspace leaves each package's own
    * dependencies in its own `node_modules`, so a cache of the root alone restores a tree that is
-   * missing `@actions/core` — which fails as a module resolution error inside a package, long past
+   * missing `@octokit/core` — which fails as a module resolution error inside a package, long past
    * anything that would name the cache as the cause.
    */
   it('saves and restores the same dependency paths, covering every workspace', async () => {

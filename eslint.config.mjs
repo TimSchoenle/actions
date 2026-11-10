@@ -97,7 +97,7 @@ export default tseslint.config(
   },
 
   // Action sources must read inputs and write outputs through the generated `action-io` module, so
-  // that every name is checked against the action.yaml that declares it. Calling @actions/core
+  // that every name is checked against the action.yaml that declares it. Calling actions-util/core
   // directly would bypass that check and reintroduce unverifiable string literals.
   {
     files: ['actions/**/src/**/*.ts'],
@@ -111,14 +111,50 @@ export default tseslint.config(
           selector:
             "CallExpression[callee.type='MemberExpression'][callee.property.name=/^(getInput|getBooleanInput|getMultilineInput|setOutput)$/]",
           message:
-            "Import getInput/getBooleanInput/getMultilineInput/setOutput from './generated/action-io.js' instead of reaching into @actions/core, so the name is checked against action.yaml.",
+            "Import getInput/getBooleanInput/getMultilineInput/setOutput from './generated/action-io.js' instead of reaching into actions-util/core, so the name is checked against action.yaml.",
         },
         {
-          // Named import, e.g. `import { getInput } from '@actions/core'`.
+          // Named import, e.g. `import { getInput } from 'actions-util/core'`.
           selector:
-            "ImportDeclaration[source.value='@actions/core'] > ImportSpecifier[imported.name=/^(getInput|getBooleanInput|getMultilineInput|setOutput)$/]",
+            "ImportDeclaration[source.value='actions-util/core'] > ImportSpecifier[imported.name=/^(getInput|getBooleanInput|getMultilineInput|setOutput)$/]",
           message:
-            "Import this from './generated/action-io.js' instead of @actions/core, so the name is checked against action.yaml.",
+            "Import this from './generated/action-io.js' instead of actions-util/core, so the name is checked against action.yaml.",
+        },
+      ],
+    },
+  },
+
+  // These toolkit packages each pull undici into the committed bundle (over 400 KB); actions-util
+  // replaces them. `@actions/exec` and `@actions/io` bundle no HTTP client and stay allowed.
+  {
+    files: ['actions/**/src/**/*.ts', 'packages/**/src/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@actions/core',
+              message: "Use 'actions-util/core', which writes the same commands without undici.",
+            },
+            {
+              name: '@actions/github',
+              message: "Use 'actions-util/octokit' (or createOctokit from 'actions-util/client').",
+            },
+            {
+              name: '@actions/http-client',
+              message: "Use httpRequest from 'actions-util', which honours the same proxy settings.",
+            },
+            {
+              name: '@actions/tool-cache',
+              message:
+                'It depends on @actions/core and @actions/http-client; see actions/terrace/setup/src/tool-cache.ts.',
+            },
+            {
+              name: 'undici',
+              message: 'Bundling undici adds over 400 KB to every action; see packages/ts-util/src/http-fetch.ts.',
+            },
+          ],
         },
       ],
     },

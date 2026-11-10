@@ -222,7 +222,7 @@ describe('renderModule', () => {
   });
 
   // The accessors are identical in every action, so they are bound from `actions-util` rather than
-  // re-emitted per action. Reaching for `@actions/core` here would put that back.
+  // re-emitted per action. Reaching for `actions-util/core` here would put that back.
   it('binds the shared accessors to the declared names instead of re-emitting them', () => {
     const rendered = renderModule(parseActionDefinition(MANIFEST, 'action.yaml'), 'actions/example/action');
 
@@ -230,7 +230,7 @@ describe('renderModule', () => {
     expect(rendered).toContain(
       'export const { getBooleanInput, getInput, getMultilineInput, setOutput } = createActionIo<ActionInput, ActionOutput>();',
     );
-    expect(rendered).not.toContain("from '@actions/core'");
+    expect(rendered).not.toContain("from 'actions-util/core'");
   });
 
   // A name that is not a valid identifier — `modify-yaml` declares `old-value` — must stay verbatim

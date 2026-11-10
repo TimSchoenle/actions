@@ -2,8 +2,8 @@ import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import * as core from '@actions/core';
 import { quoteAllForLog, quoteForLog, resolveRealWithinWorkspace, runAction, workspaceRoot } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import { runChecks } from './checks.js';
 import { createCommandRunner } from './command.js';

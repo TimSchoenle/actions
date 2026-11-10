@@ -1,8 +1,8 @@
 import { mkdtemp, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
-import * as core from '@actions/core';
 import { quoteAllForLog, quoteForLog, runAction, workspaceRoot } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import { findByteOrderMarks } from './bom.js';
 import { describeExit, runContainer } from './container.js';

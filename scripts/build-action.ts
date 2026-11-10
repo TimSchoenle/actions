@@ -18,7 +18,7 @@ interface ModulePathBinding {
 /**
  * Runtime bindings for the CommonJS `__dirname` / `__filename` free variables.
  *
- * Bundled to an ES module, a CommonJS dependency that reads `__dirname` (as `@actions/tool-cache` does)
+ * Bundled to an ES module, a CommonJS dependency that reads `__dirname` (as `@actions/tool-cache` did)
  * gets the absolute path of its build-time source directory inlined as a string. That path differs per
  * checkout, which breaks the byte-for-byte freshness check, and it is wrong at runtime, where the code
  * runs from `dist/`. Defining each variable as a plain identifier and binding that identifier from

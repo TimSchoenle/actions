@@ -1,4 +1,4 @@
-import * as core from '@actions/core';
+import * as core from 'actions-util/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { run } from './action.js';
@@ -7,13 +7,13 @@ import { createTimedAutoMergeApi } from './github-api.js';
 import type { OpenPullRequest, TimedAutoMergeApi } from './github-api.js';
 
 /**
- * Only the reporting side of `@actions/core` is mocked. Input reading stays real, so the tests
+ * Only the reporting side of `actions-util/core` is mocked. Input reading stays real, so the tests
  * exercise `getInput` and `getBooleanInput` as the runner would drive them.
  */
 const summaryWrite = vi.fn(async () => {});
 const summaryAddRaw = vi.fn((_text: string) => ({ write: summaryWrite }));
 
-vi.mock('@actions/core', async (importOriginal) => ({
+vi.mock('actions-util/core', async (importOriginal) => ({
   ...(await importOriginal<typeof core>()),
   debug: vi.fn(),
   endGroup: vi.fn(),

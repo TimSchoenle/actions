@@ -1,7 +1,7 @@
-import { loadYaml, readYamlFile, splitKeyPath, stringifyValue, YamlKeyNotFoundError } from 'actions-util';
+import { loadYaml, readYamlFile, splitKeyPath, stringifyValue, YamlKeyNotFoundError } from 'actions-util/yaml';
 import { isAlias, isCollection, isScalar } from 'yaml';
 
-import type { YamlFileReader, YamlValueNode } from 'actions-util';
+import type { YamlFileReader, YamlValueNode } from 'actions-util/yaml';
 import type { Document } from 'yaml';
 
 /**

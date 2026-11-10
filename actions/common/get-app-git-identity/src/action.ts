@@ -1,5 +1,5 @@
-import * as core from '@actions/core';
 import { quoteForLog, resolveBotIdentity, runAction } from 'actions-util';
+import * as core from 'actions-util/core';
 import { createAppUserApi } from 'actions-util/identity';
 
 import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';
