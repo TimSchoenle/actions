@@ -45,7 +45,9 @@ runs:
     # Validates every input, then lists the run's artifacts by name over the REST API. An artifact
     # that is missing or expired ends the action here with outcome missing: the job that makes it was
     # skipped, or the run is older than the artifact's retention, and either way there is nothing to
-    # commit. Found, it creates a fresh directory under RUNNER_TEMP for the download.
+    # commit. In this run, where an upload can finish moments before the listing shows it, an empty
+    # listing is repeated with a bounded backoff (10 s, five listings at most) before settling on missing.
+    # Found, it creates a fresh directory under RUNNER_TEMP for the download.
     - name: Look Up Patch
       id: lookup
       shell: bash

@@ -6,9 +6,22 @@ import { describePatch, serializeMetadata } from 'actions-util/patch';
 import { ArtifactContentError } from 'actions-util/patch-reader';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ARCHIVE_OVERHEAD_BYTES, assertArchiveSize, findArtifacts, inspectArtifact, RunNotFoundError } from './find.js';
+import {
+  ARCHIVE_OVERHEAD_BYTES,
+  assertArchiveSize,
+  findArtifacts,
+  findArtifactsWithin,
+  inspectArtifact,
+  realSleep,
+  RunNotFoundError,
+} from './find.js';
 
 import type { ArtifactApi, ArtifactSummary } from './find.js';
+
+vi.mock('actions-util/core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('actions-util/core')>()),
+  info: vi.fn(),
+}));
 
 const repository = { owner: 'owner', repo: 'repo' };
 const BASE = 'a'.repeat(40);
@@ -69,6 +82,114 @@ describe('findArtifacts', () => {
     const listing: ArtifactApi = { listArtifacts: vi.fn().mockRejectedValue(error) };
 
     await expect(findArtifacts(listing, repository, 42, 'patch')).rejects.toBe(error);
+  });
+});
+
+describe('findArtifactsWithin', () => {
+  const live = (id: number): ArtifactSummary => ({ expired: false, id, name: 'patch', sizeInBytes: 100 });
+  const DELAYS = [1000, 2000, 3000];
+
+  /** A sleep that records what it was asked to wait for instead of waiting. */
+  function recordingSleep(): ((milliseconds: number) => Promise<void>) & { waits: number[] } {
+    const waits: number[] = [];
+
+    return Object.assign(
+      (milliseconds: number): Promise<void> => {
+        waits.push(milliseconds);
+        return Promise.resolve();
+      },
+      { waits },
+    );
+  }
+
+  it('lists once and does not wait when the first listing holds the artifact', async () => {
+    const listing = api([live(1)]);
+    const sleep = recordingSleep();
+
+    expect(await findArtifactsWithin(listing, repository, 42, 'patch', DELAYS, sleep)).toEqual([live(1)]);
+    expect(listing.listArtifacts).toHaveBeenCalledTimes(1);
+    expect(sleep.waits).toEqual([]);
+  });
+
+  it('lists again after each wait until the artifact appears, then stops', async () => {
+    const listing: ArtifactApi & { listArtifacts: ReturnType<typeof vi.fn> } = {
+      listArtifacts: vi
+        .fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValue([live(1)]),
+    };
+    const sleep = recordingSleep();
+
+    expect(await findArtifactsWithin(listing, repository, 42, 'patch', DELAYS, sleep)).toEqual([live(1)]);
+    expect(listing.listArtifacts).toHaveBeenCalledTimes(3);
+    expect(sleep.waits).toEqual([1000, 2000]);
+  });
+
+  it('keeps waiting while only an expired or near-miss artifact is listed', async () => {
+    const listing: ArtifactApi & { listArtifacts: ReturnType<typeof vi.fn> } = {
+      listArtifacts: vi
+        .fn()
+        .mockResolvedValueOnce([
+          { ...live(1), expired: true },
+          { ...live(2), name: 'patch-2' },
+        ])
+        .mockResolvedValue([live(3)]),
+    };
+    const sleep = recordingSleep();
+
+    expect(await findArtifactsWithin(listing, repository, 42, 'patch', DELAYS, sleep)).toEqual([live(3)]);
+    expect(sleep.waits).toEqual([1000]);
+  });
+
+  it('reports none once every wait is spent, listing exactly once per wait plus the first', async () => {
+    const listing = api([]);
+    const sleep = recordingSleep();
+
+    expect(await findArtifactsWithin(listing, repository, 42, 'patch', DELAYS, sleep)).toEqual([]);
+    expect(listing.listArtifacts).toHaveBeenCalledTimes(DELAYS.length + 1);
+    expect(sleep.waits).toEqual(DELAYS);
+  });
+
+  it('lists exactly once without waiting when given no delays', async () => {
+    const listing = api([]);
+    const sleep = recordingSleep();
+
+    expect(await findArtifactsWithin(listing, repository, 42, 'patch', [], sleep)).toEqual([]);
+    expect(listing.listArtifacts).toHaveBeenCalledTimes(1);
+    expect(sleep.waits).toEqual([]);
+  });
+
+  it('does not retry a failed listing', async () => {
+    const error = new RunNotFoundError(repository, 42);
+    const listing: ArtifactApi & { listArtifacts: ReturnType<typeof vi.fn> } = {
+      listArtifacts: vi.fn().mockRejectedValue(error),
+    };
+    const sleep = recordingSleep();
+
+    await expect(findArtifactsWithin(listing, repository, 42, 'patch', DELAYS, sleep)).rejects.toBe(error);
+    expect(listing.listArtifacts).toHaveBeenCalledTimes(1);
+    expect(sleep.waits).toEqual([]);
+  });
+});
+
+describe('realSleep', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('resolves once the timer for the given wait fires', async () => {
+    vi.useFakeTimers();
+    let settled = false;
+    const waiting = realSleep(1000).then(() => {
+      settled = true;
+    });
+
+    await vi.advanceTimersByTimeAsync(999);
+    expect(settled).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    await waiting;
+    expect(settled).toBe(true);
   });
 });
 
