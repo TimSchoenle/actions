@@ -1,0 +1,9 @@
+# What the README cannot learn from action.yaml. `bun run generate-docs` renders it into README.md.
+# The schema and the rules are in scripts/lib/action-docs/docs-file.ts.
+#
+# The action reads the checkout and nothing else: no token scope, no network.
+permissions: []
+egress: []
+examples:
+  - title: Build what a pull request affects
+    file: examples/affected.yaml

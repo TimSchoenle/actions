@@ -1,0 +1,25 @@
+name: Verify My Action
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  # build: release/build-actions, publishing artifact-id and manifest-sha256 as job outputs
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Before any step that runs a local action with a bundle.
+      - uses: ./actions/release/install-built-actions
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
+      - uses: ./actions/my/action

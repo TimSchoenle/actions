@@ -1,0 +1,46 @@
+name: 'Release Resolve Actions'
+description: 'Resolves which actions of a checkout have to be built for a set of actions or workflows to run, or which a set of changed files affects: the build directories, the bundle paths and the source paths to filter triggers on.'
+
+inputs:
+  targets:
+    description: 'Newline-separated action directories, relative to the checkout root. With targets and workflows both empty, every action found below path is a target, minus exclude.'
+    required: false
+    default: ''
+  workflows:
+    description: 'Newline-separated workflow files, relative to the checkout root, whose uses: ./<path> steps join the targets.'
+    required: false
+    default: ''
+  checkout-prefixes:
+    description: 'Newline-separated directories a workflow job checks this repository out to, such as tmp/actions-code, removed from the front of its local uses: references.'
+    required: false
+    default: ''
+  exclude:
+    description: 'Newline-separated directories left out when targets is empty, such as a directory of action templates that are not valid manifests.'
+    required: false
+    default: ''
+  mode:
+    description: 'build-set resolves what the targets need. affected first narrows the targets to those changed-files affects.'
+    required: false
+    default: 'build-set'
+  changed-files:
+    description: 'Newline-separated changed files, relative to the checkout root. Read in affected mode only.'
+    required: false
+    default: ''
+  path:
+    description: 'Checkout root, relative to the workspace.'
+    required: false
+    default: '.'
+
+outputs:
+  build-dirs:
+    description: 'JSON array of the directories whose build produces a bundle, sorted. Pass it to release/build-actions.'
+  bundles:
+    description: 'JSON array of the bundle files those builds must produce, sorted.'
+  actions:
+    description: 'JSON array of every action directory the targets reach, built or not, sorted.'
+  source-paths:
+    description: 'JSON array of path globs whose change can change those bundles or actions: each action directory, its workspace dependencies, the lockfile and the toolchain pins.'
+
+runs:
+  using: 'node24'
+  main: 'dist/index.js'
