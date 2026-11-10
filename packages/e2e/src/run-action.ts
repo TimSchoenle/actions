@@ -5,6 +5,7 @@ import path from 'node:path';
 
 import { resolveInputEnv } from './action-inputs.js';
 import { loadActionManifest } from './action-manifest.js';
+import { assertBuiltBundle } from './built-bundle.js';
 import { parseFileCommands } from './github-file-commands.js';
 import { resolveRuntime } from './runtime.js';
 import { parseWorkflowCommands, redact } from './workflow-commands.js';
@@ -61,8 +62,10 @@ export interface RunActionOptions<TInput extends string> {
   actionDirectory: string;
   inputs?: ProvidedInputs<TInput>;
   /**
-   * `dist` runs the committed bundle GitHub itself would run, and is the default because it is the
-   * artifact that ships. `source` runs `src/generated/index.ts` under bun, for a fast edit loop.
+   * `dist` runs the bundle GitHub itself would run, and is the default because it is the artifact
+   * that ships. In CI that is the bundle the verify workflow built and installed, checked against
+   * `BUILT_ACTIONS_MANIFEST` before it runs. `source` runs `src/generated/index.ts` under bun, for a
+   * fast edit loop.
    */
   entry?: ActionEntry;
   expect?: ExpectedOutcome;
@@ -290,7 +293,11 @@ export async function runAction<TInput extends string, TOutput extends string>(
   options: RunActionOptions<TInput>,
 ): Promise<ActionRunResult<TOutput>> {
   const manifest = await loadActionManifest(options.actionDirectory);
-  const { script, runtime } = entryPoint(manifest, options.entry ?? 'dist');
+  const entry = options.entry ?? 'dist';
+  const { script, runtime } = entryPoint(manifest, entry);
+  if (entry === 'dist') {
+    assertBuiltBundle(script);
+  }
   const executable = resolveRuntime(runtime, { declaredRuntime: manifest.using });
 
   const scratch = await mkdtemp(path.join(tmpdir(), 'actions-e2e-'));

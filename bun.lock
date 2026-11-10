@@ -688,6 +688,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@actions/github": "9.1.1",
+        "action-graph": "workspace:*",
         "actions-util": "workspace:*",
         "yaml": "2.9.1",
       },
