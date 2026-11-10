@@ -16,6 +16,7 @@
     "paths": {
       "actions-util": ["./packages/ts-util/src/index.ts"],
       "actions-util/core": ["./packages/ts-util/src/core.ts"],
+      "actions-util/octokit": ["./packages/ts-util/src/octokit.ts"],
       "actions-util/branches": ["./packages/ts-util/src/github-branches.ts"],
       "actions-util/identity": ["./packages/ts-util/src/github-identity.ts"],
       "actions-util/commits": ["./packages/ts-util/src/github-commits.ts"],
