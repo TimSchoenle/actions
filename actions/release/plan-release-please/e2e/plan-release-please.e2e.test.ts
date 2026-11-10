@@ -69,18 +69,15 @@ describe('plan-release-please', () => {
     });
   }
 
-  it('lists every package whose source tag is missing', async () => {
-    const result = await plan({ mode: 'preflight' }, 'failure');
+  // One case, not two: the passing run needs the tag the failing run must not see.
+  it('lists every package whose source tag is missing, and passes once it exists', async () => {
+    const missing = await plan({ mode: 'preflight' }, 'failure');
+    expect(missing.errors.join('\n')).toContain(`Missing source tags (1): ${missingTag}.`);
 
-    expect(result.errors.join('\n')).toContain(`Missing source tags (1): ${missingTag}.`);
-  });
-
-  it('passes once every source tag exists', async () => {
     await scratch.createTag(missingTag, fixture);
 
-    const result = await plan({ mode: 'preflight' });
-
-    expect(result.exitCode).toBe(0);
+    const complete = await plan({ mode: 'preflight' });
+    expect(complete.exitCode).toBe(0);
   });
 
   it('reports a commit that merges no release pull request', async () => {
