@@ -138,9 +138,7 @@ describe('publish-build-commit', () => {
     await scratch.createTag(consumerTag, source);
 
     const refused = await publish(staged, inputs, 'failure');
-    expect(refused.errors.join('\n')).toMatch(
-      new RegExp(`Tag ${consumerTag.replaceAll('/', '\\/')} exists at ${source}`),
-    );
+    expect(refused.errors.join('\n')).toContain(`Tag ${consumerTag} exists at ${source}`);
     expect(await scratch.releasesForTag(consumerTag)).toEqual([]);
 
     // The blocker was the consumer tag itself, which is checked before any write, so nothing moved.
