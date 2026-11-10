@@ -315,7 +315,6 @@
       "name": "actions-docker-image-check-summary-helper",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -329,7 +328,6 @@
       "name": "actions-docker-image-check-helper",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "@actions/exec": "3.0.0",
         "actions-util": "workspace:*",
       },
@@ -344,7 +342,6 @@
       "name": "actions-helm-apply-chart-updates",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -361,8 +358,6 @@
       "name": "actions-helper-resolve-base-branch",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -378,7 +373,6 @@
       "name": "actions-helper-verify-branch-name",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -394,8 +388,6 @@
       "name": "actions-helper-verify-commit-authors",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -411,8 +403,6 @@
       "name": "actions-maintenance-auto-approve-pr",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -428,8 +418,6 @@
       "name": "actions-maintenance-auto-rebase",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -445,8 +433,6 @@
       "name": "actions-maintenance-ensure-actions-are-executed",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -462,8 +448,6 @@
       "name": "actions-maintenance-timed-auto-merge",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -479,8 +463,6 @@
       "name": "actions-maintenance-trigger-coderabbit-review",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -494,8 +476,6 @@
       "name": "actions-maintenance-wipe-cache",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -511,7 +491,6 @@
       "name": "actions-rust-config-contract",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "@actions/exec": "3.0.0",
         "actions-util": "workspace:*",
       },
@@ -528,7 +507,6 @@
       "name": "actions-security-codeql-helper",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -542,7 +520,6 @@
       "name": "actions-security-zizmor-helper",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "@actions/exec": "3.0.0",
         "actions-util": "workspace:*",
       },

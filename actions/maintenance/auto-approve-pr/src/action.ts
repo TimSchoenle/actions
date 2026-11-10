@@ -1,5 +1,5 @@
-import * as core from '@actions/core';
 import { runAction } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import { autoApprove } from './approve.js';
 import { ActionInput, getBooleanInput, getInput } from './generated/action-io.js';

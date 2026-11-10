@@ -1,6 +1,6 @@
-import * as core from '@actions/core';
 import { parseUserIds, quoteUrlForLog, runAction, verifyCommits } from 'actions-util';
 import { fetchPullRequestCommits } from 'actions-util/commits';
+import * as core from 'actions-util/core';
 
 import { getInput, setOutput } from './generated/action-io.js';
 

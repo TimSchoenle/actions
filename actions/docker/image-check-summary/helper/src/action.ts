@@ -1,8 +1,8 @@
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import * as core from '@actions/core';
 import { quoteForLog, runAction } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import { collectFragments, parseFragmentText } from './fragment.js';
 import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';

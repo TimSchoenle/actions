@@ -8,7 +8,8 @@
  */
 import { relative, resolve } from 'node:path';
 
-import { loadYaml, resolveRealWithinWorkspace, resolveWithinWorkspace } from 'actions-util';
+import { resolveRealWithinWorkspace, resolveWithinWorkspace } from 'actions-util';
+import { loadYaml } from 'actions-util/yaml';
 
 export const CHART_FILE_NAME = 'Chart.yaml';
 export const VALUES_FILE_NAME = 'values.yaml';

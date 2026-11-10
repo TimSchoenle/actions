@@ -1,9 +1,9 @@
-import * as github from '@actions/github';
+import * as github from 'actions-util/octokit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createUpdateBranchApi } from './github-api.js';
 
-vi.mock('@actions/github');
+vi.mock('actions-util/octokit');
 
 interface OctokitMock {
   paginate: { iterator: ReturnType<typeof vi.fn> };

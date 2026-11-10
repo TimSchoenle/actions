@@ -1,14 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  parseRepository,
-  hasStatus,
-  inferValueType,
-  generateYamlString,
-  formatValue,
-  normalizeAppSlug,
-  botUsername,
-  botEmail,
-} from './index.js';
+import { parseRepository, hasStatus, normalizeAppSlug, botUsername, botEmail } from './index.js';
+import { inferValueType, generateYamlString, formatValue } from './yaml-index.js';
 
 describe('github utils', () => {
   it('parseRepository splits correctly', () => {

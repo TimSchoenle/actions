@@ -1,5 +1,5 @@
-import * as core from '@actions/core';
 import { quoteForLog, runAction, verifyBranch } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import { getBooleanInput, getInput, setOutput } from './generated/action-io.js';
 

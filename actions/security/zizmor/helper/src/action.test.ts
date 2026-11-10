@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 
-import * as core from '@actions/core';
+import * as core from 'actions-util/core';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { run } from './action.js';
@@ -10,7 +10,7 @@ import { runContainer } from './container.js';
 
 import type { ContainerRun } from './container.js';
 
-vi.mock('@actions/core', async (importOriginal) => ({
+vi.mock('actions-util/core', async (importOriginal) => ({
   ...(await importOriginal<typeof core>()),
   error: vi.fn(),
   info: vi.fn(),

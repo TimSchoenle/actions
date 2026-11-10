@@ -1,5 +1,5 @@
-import * as core from '@actions/core';
 import { parsePullRequestUrl, quoteForLog, runAction } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import { ActionInput, ActionOutput, getBooleanInput, getInput, setOutput } from './generated/action-io.js';
 import { createTriggerApi } from './github-api.js';

@@ -1,34 +1,10 @@
-import { fileURLToPath } from 'node:url';
-
 import { configDefaults, defineConfig } from 'vitest/config';
 
 import { E2E_TEST_PATTERN, workspaceAliases } from './vitest.aliases.js';
 
-import type { Alias } from 'vite';
-
-/**
- * Temporary, for the unit suite only, while the actions move off the toolkit in stages.
- *
- * `actions-util` already reports through `actions-util/core` and builds its client from
- * `actions-util/octokit`. An action that still imports `@actions/core`, or whose tests mock
- * `@actions/github`, would otherwise mock a module `actions-util` no longer calls, and its tests
- * would miss every failure `runAction` reports. Resolving both specifiers to the replacements keeps
- * one module per role under test. Removed once the last action is migrated.
- */
-const toolkitBridge: Alias[] = [
-  {
-    find: /^@actions\/core$/,
-    replacement: fileURLToPath(new URL('./packages/ts-util/src/core.ts', import.meta.url)),
-  },
-  {
-    find: /^@actions\/github$/,
-    replacement: fileURLToPath(new URL('./packages/ts-util/src/octokit.ts', import.meta.url)),
-  },
-];
-
 export default defineConfig({
   resolve: {
-    alias: [...toolkitBridge, ...workspaceAliases],
+    alias: workspaceAliases,
   },
   test: {
     globals: true,
