@@ -14,6 +14,7 @@ import {
   workspacePackages,
 } from 'action-graph';
 
+import { SHARED_BUILD_SCRIPT } from './action-sources.js';
 import { fragmentLocalRefs } from './e2e-fragment.js';
 import { E2E_DIRECTORY } from './e2e-workflow.js';
 import { ROOT_DIR } from './utils.js';
@@ -34,9 +35,6 @@ export interface E2eBuildPlan {
 
 /** The package that runs the end-to-end cases; its sources and dependencies change every verdict. */
 const HARNESS_PACKAGE = 'packages/e2e';
-
-/** The shared bundler every action's `build` script runs. */
-const SHARED_BUILD_SCRIPT = 'scripts/build-action.ts';
 
 /** The nearest directory at or above `repoPath` that holds an action manifest, below `actions/`. */
 function owningAction(root: string, repoPath: string): string | undefined {

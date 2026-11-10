@@ -28,6 +28,7 @@ beforeEach(() => {
   write('actions/a/fresh/package.json', JSON.stringify({ name: 'fresh', dependencies: { util: 'workspace:*' } }), 100);
   write('actions/a/fresh/dist/index.js', 'built', 10);
   write('actions/a/composite/action.yml', 'runs:\n  using: composite\n  steps: []\n', 100);
+  write('scripts/build-action.ts', 'bundler', 100);
 });
 
 afterEach(() => {
@@ -47,6 +48,12 @@ describe('staleBuildDirs', () => {
 
   it('finds an action whose workspace dependency changed after the build', () => {
     write('packages/util/src/index.ts', 'changed', 1);
+
+    expect(staleBuildDirs(root)).toEqual(['actions/a/fresh']);
+  });
+
+  it('finds every action when the shared bundler changed after the build', () => {
+    write('scripts/build-action.ts', 'changed', 1);
 
     expect(staleBuildDirs(root)).toEqual(['actions/a/fresh']);
   });

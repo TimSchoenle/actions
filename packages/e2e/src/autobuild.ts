@@ -12,6 +12,12 @@ import { findActions, readActionManifest, sourceInputs, toAbsolute, workspacePac
 /** Directory names whose files are build outputs or dependencies, not sources. */
 const NOT_SOURCES = new Set(['node_modules', 'dist', '.git']);
 
+/**
+ * The shared bundler every action's `build` script runs, so a source of every bundle. Mirrors
+ * `SHARED_BUILD_SCRIPT` in `scripts/lib/action-sources.ts`, which this workspace package cannot import.
+ */
+const SHARED_BUILD_SCRIPT = 'scripts/build-action.ts';
+
 /** The newest modification time of any source file at or below `repoPath`, cached per path. */
 function newestSource(root: string, repoPath: string, cache: Map<string, number>): number {
   const known = cache.get(repoPath);
@@ -41,13 +47,15 @@ function newestSource(root: string, repoPath: string, cache: Map<string, number>
 
 /**
  * The build directories under `actions/` whose bundles are missing or older than any of their
- * sources: the action directory, its workspace dependencies, the lockfile and the toolchain pins.
+ * sources: the action directory, its workspace dependencies, the lockfile, the toolchain pins and
+ * the shared bundler.
  *
  * @param root - absolute path of the repository root
  */
 export function staleBuildDirs(root: string): string[] {
   const packages = workspacePackages(root);
   const cache = new Map<string, number>();
+  const shared = fs.existsSync(toAbsolute(root, SHARED_BUILD_SCRIPT)) ? [SHARED_BUILD_SCRIPT] : [];
 
   return findActions(root, { within: 'actions' }).filter((directory) => {
     const bundles = readActionManifest(root, directory).bundles.map((bundle) => toAbsolute(root, bundle));
@@ -59,7 +67,9 @@ export function staleBuildDirs(root: string): string[] {
     }
     const built = Math.min(...bundles.map((bundle) => fs.statSync(bundle).mtimeMs));
 
-    return sourceInputs(root, [directory], packages).some((input) => newestSource(root, input, cache) > built);
+    return [...sourceInputs(root, [directory], packages), ...shared].some(
+      (input) => newestSource(root, input, cache) > built,
+    );
   });
 }
 
