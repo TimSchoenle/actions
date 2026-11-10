@@ -27,12 +27,6 @@ const REPOSITORY_ID = 'TimSchoenle/actions';
 /** The remote action that checks this repository out at `current_repo_checkout_path`. */
 const SETUP_E2E = 'actions/test/setup-e2e';
 
-/**
- * The actions this contract cannot apply to: they are what installs and builds the bundles, so they
- * run with the bundle the checkout carries until they are pinned to a release.
- */
-const SELF_HOSTING: ReadonlySet<string> = new Set([BUILD_ACTIONS, INSTALL_BUILT_ACTIONS]);
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -131,7 +125,7 @@ export function builtActionsViolations(content: string, root: string): ContractV
       }
       const prefix = prefixes.find((candidate) => candidate === '.' || local.startsWith(`${candidate}/`));
       const action = prefix === undefined || prefix === '.' ? local : local.slice(prefix.length + 1);
-      if (prefix === undefined || !action.startsWith('actions/') || SELF_HOSTING.has(action)) {
+      if (prefix === undefined || !action.startsWith('actions/')) {
         return;
       }
       const required = buildSet(root, [action]).buildDirs;

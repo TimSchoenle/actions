@@ -137,7 +137,7 @@ jobs:
 
       - name: Build Actions
         id: build
-        uses: ./actions/release/build-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        uses: TimSchoenle/actions/actions/release/build-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-build-actions-v1.1.0
         with:
           build-dirs: |
             actions/common/commit-changes
@@ -174,7 +174,7 @@ jobs:
 
       # Replaces the committed bundles with the ones the build job built from this commit.
       - name: Install Built Actions
-        uses: ./actions/release/install-built-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}

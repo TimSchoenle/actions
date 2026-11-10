@@ -8,6 +8,11 @@ import { ROOT_DIR } from '../utils.js';
 
 const WORKFLOWS_DIR = path.join(ROOT_DIR, '.github', 'workflows');
 
+/** Released, pinned refs of the build and install actions, as the generated workflows use them. */
+const PIN = `@${'a'.repeat(40)}`;
+const BUILD_USES = `TimSchoenle/actions/actions/release/build-actions${PIN}`;
+const INSTALL_USES = `TimSchoenle/actions/actions/release/install-built-actions${PIN}`;
+
 /** A workflow with a build job building `buildDirs` and a test job running `steps` after a checkout. */
 function workflow(buildDirs: string[], steps: string, checkout = '      - uses: actions/checkout@x\n'): string {
   return `on: push
@@ -15,7 +20,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: ./actions/release/build-actions
+      - uses: ${BUILD_USES}
         with:
           build-dirs: |
 ${buildDirs.map((dir) => `            ${dir}`).join('\n')}
@@ -28,7 +33,7 @@ ${buildDirs.map((dir) => `            ${dir}`).join('\n')}
 ${checkout}${steps}`;
 }
 
-const INSTALL = `      - uses: ./actions/release/install-built-actions
+const INSTALL = `      - uses: ${INSTALL_USES}
         with:
           artifact-id: \${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: \${{ needs.build.outputs.manifest-sha256 }}
@@ -53,6 +58,19 @@ describe('builtActionsViolations', () => {
     );
 
     expect(builtActionsViolations(content, ROOT_DIR)).toEqual([]);
+  });
+
+  it('reports an install step run from the checkout, which runs the bundle it is meant to replace', () => {
+    const local = INSTALL.replace(INSTALL_USES, './actions/release/install-built-actions');
+    const content = workflow(
+      ['actions/common/create-patch/helper'],
+      `${local}      - uses: ./actions/common/create-patch\n`,
+    );
+
+    expect(builtActionsViolations(content, ROOT_DIR)).toEqual([
+      // The install is the finding; the step after it is covered, since an install did run.
+      expect.objectContaining({ job: 'test', step: 1, uses: './actions/release/install-built-actions' }),
+    ]);
   });
 
   it('ignores an action without a bundle and one written into the workspace at run time', () => {

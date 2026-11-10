@@ -15,13 +15,6 @@ export const INSTALL_BUILT_ACTIONS = 'actions/release/install-built-actions';
 /** The action this repository's build step is, relative to a checkout of the repository. */
 export const BUILD_ACTIONS = 'actions/release/build-actions';
 
-/**
- * The comment every local `uses:` in the generated workflows carries: jactionlint (and zizmor before
- * it) flags a self-repository reference, and the `$/` syntax it suggests is rejected by actionlint.
- */
-export const SELF_REPOSITORY_COMMENT =
-  '# zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.';
-
 /** One local action of this repository that a fragment job runs. */
 export interface FragmentLocalRef {
   readonly job: string;
@@ -101,17 +94,17 @@ function jobLocalRefs(job: string, steps: readonly unknown[]): FragmentLocalRef[
   });
 }
 
-/** The `uses:` of this repository's action `action` in a job that checked the repository out to `prefix`. */
-export function localUses(prefix: string, action: string): string {
-  return `./${prefix === '.' ? '' : `${prefix}/`}${action}`;
-}
-
-/** The install step, as lines indented to sit in a job's step list at `indent`. */
-export function installStepLines(indent: string, prefix: string): string[] {
+/**
+ * The install step, as lines indented to sit in a job's step list at `indent`.
+ *
+ * @param prefix - the checkout to install into, `.` for the workspace root
+ * @param uses - the pinned `uses:` of the released install action, with its `# tag=` comment
+ */
+export function installStepLines(indent: string, prefix: string, uses: string): string[] {
   return [
     `${indent}# Replaces the committed bundles with the ones the build job built from this commit.`,
     `${indent}- name: Install Built Actions`,
-    `${indent}  uses: ${localUses(prefix, INSTALL_BUILT_ACTIONS)} ${SELF_REPOSITORY_COMMENT}`,
+    `${indent}  uses: ${uses}`,
     `${indent}  with:`,
     `${indent}    artifact-id: \${{ needs.build.outputs.artifact-id }}`,
     `${indent}    expected-manifest-sha256: \${{ needs.build.outputs.manifest-sha256 }}`,
@@ -256,9 +249,14 @@ function checkoutEnd(block: readonly string[], prefix: string, job: string): { a
  * job need the build job whose outputs the step reads, and run only once that build succeeded.
  *
  * @param installs - per job id, the checkout prefixes to install into
+ * @param installUses - the pinned `uses:` of the released install action
  * @throws an `Error` for a job without a checkout of the repository at a prefix it needs
  */
-export function injectInstallSteps(fragment: string, installs: ReadonlyMap<string, readonly string[]>): string {
+export function injectInstallSteps(
+  fragment: string,
+  installs: ReadonlyMap<string, readonly string[]>,
+  installUses: string,
+): string {
   if (installs.size === 0) {
     return fragment;
   }
@@ -277,7 +275,12 @@ export function injectInstallSteps(fragment: string, installs: ReadonlyMap<strin
       .map((prefix) => ({ prefix, ...checkoutEnd(block, prefix, job) }))
       .sort((a, b) => b.after - a.after);
     for (const { prefix, after, indent } of insertions) {
-      block = [...block.slice(0, after + 1), '', ...installStepLines(indent, prefix), ...block.slice(after + 1)];
+      block = [
+        ...block.slice(0, after + 1),
+        '',
+        ...installStepLines(indent, prefix, installUses),
+        ...block.slice(after + 1),
+      ];
     }
     lines.splice(
       range.start,

@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { sortedUnique, workspacePackages } from 'action-graph';
 
-import { BUILD_ACTIONS, injectInstallSteps, installStepLines, SELF_REPOSITORY_COMMENT } from './e2e-fragment.js';
+import { injectInstallSteps, installStepLines } from './e2e-fragment.js';
 import { ROOT_DIR, scanSorted } from './utils.js';
 
 import type { Permission } from './action-docs/docs-file.js';
@@ -52,6 +52,12 @@ export const PINNED = {
   setupNode: 'actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0',
   cache: 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0',
   cacheRestore: 'actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0',
+  // The build and install steps run released versions, not this checkout's: the code that decides
+  // which bundles a verdict runs must not come from the change under test.
+  buildActions:
+    'TimSchoenle/actions/actions/release/build-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-build-actions-v1.1.0',
+  installBuiltActions:
+    'TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0',
 } as const;
 
 /** The scratch repository every case mutates. */
@@ -507,8 +513,8 @@ function triggerPaths(plan: E2eBuildPlan): string {
  * one this commit produces. The artifact name carries the run attempt because a name cannot be
  * reused within a run; consumers download by the ID in the job outputs, never by name.
  *
- * `build-actions` is used from this checkout until its first release, while every bundle is still
- * committed; once released it moves to a SHA pin in {@link PINNED}.
+ * `build-actions` is pinned to a release in {@link PINNED}, like the install step: a change to it
+ * reaches these workflows through a Renovate pin bump, after its own verify workflow passed.
  */
 function buildJob(plan: E2eBuildPlan): string {
   const dirs = plan.buildDirs.map((dir) => `            ${dir}`).join('\n');
@@ -546,7 +552,7 @@ ${cachePathsInput()}
 
       - name: Build Actions
         id: build
-        uses: ./${BUILD_ACTIONS} ${SELF_REPOSITORY_COMMENT}
+        uses: ${PINNED.buildActions}
         with:
           build-dirs: |
 ${dirs}
@@ -561,7 +567,11 @@ export function renderE2eWorkflow(action: E2eAction, extraJobs: string, plan: E2
   const name = workflowName(action);
   const secondary = needsSecondaryIdentity(action);
   const builds = plan.buildDirs.length > 0;
-  const resolvedExtraJobs = injectInstallSteps(resolvePins(extraJobs), builds ? plan.installs : new Map());
+  const resolvedExtraJobs = injectInstallSteps(
+    resolvePins(extraJobs),
+    builds ? plan.installs : new Map(),
+    PINNED.installBuiltActions,
+  );
   const extraIds = extraJobIds(resolvedExtraJobs);
   // `install` and `build` are in the summary's needs as well as `e2e`'s: a failed install or build
   // leaves `e2e` *skipped*, and a summary that only watched `e2e` would read that absence as nothing
@@ -612,7 +622,7 @@ ${hardenRunnerStep(e2eEndpoints(action))}
         uses: ${PINNED.checkout}
         with:
           persist-credentials: false
-${builds ? `\n${installStepLines('      ', '.').join('\n')}\n` : ''}
+${builds ? `\n${installStepLines('      ', '.', PINNED.installBuiltActions).join('\n')}\n` : ''}
       # setup-bun rather than setup-cached: the cached wrapper runs \`bun install\` on every job, cache
       # hit or not, and this job is the one that must have no route to a package registry at all.
       - name: Setup Bun

@@ -3,6 +3,8 @@ import { parse } from 'yaml';
 
 import { fragmentLocalRefs, injectInstallSteps, installStepLines } from '../e2e-fragment.js';
 
+const INSTALL_USES = `TimSchoenle/actions/actions/release/install-built-actions@${'a'.repeat(40)} # tag=actions-release-install-built-actions-v9.9.9`;
+
 const FRAGMENT = `first:
   name: First
   runs-on: ubuntu-latest
@@ -67,6 +69,7 @@ describe('injectInstallSteps', () => {
       ['second', ['source']],
       ['third', ['.']],
     ]),
+    INSTALL_USES,
   );
   const jobs = parse(injected) as Record<string, { needs: unknown; steps: Array<Record<string, unknown>> }>;
 
@@ -78,14 +81,14 @@ describe('injectInstallSteps', () => {
       'Run It',
     ]);
     expect(injected).toContain(
-      `${installStepLines('    ', '.').join('\n')}\n\n    # A comment that belongs to the next step.`,
+      `${installStepLines('    ', '.', INSTALL_USES).join('\n')}\n\n    # A comment that belongs to the next step.`,
     );
   });
 
-  it('installs into the checkout the job runs the action from', () => {
+  it('installs the released action into the checkout the job runs the action from', () => {
     expect(jobs['second'].steps[1]).toEqual({
       name: 'Install Built Actions',
-      uses: './source/actions/release/install-built-actions',
+      uses: INSTALL_USES.split(' #')[0],
       with: {
         'artifact-id': '${{ needs.build.outputs.artifact-id }}',
         'expected-manifest-sha256': '${{ needs.build.outputs.manifest-sha256 }}',
@@ -109,15 +112,19 @@ describe('injectInstallSteps', () => {
   it('keeps a flow list of needs in flow form', () => {
     const fragment = 'job:\n  needs: [a, b]\n  steps:\n    - uses: actions/checkout@x\n    - uses: ./actions/x\n';
 
-    expect(injectInstallSteps(fragment, new Map([['job', ['.']]]))).toContain('  needs: [build, a, b]\n');
+    expect(injectInstallSteps(fragment, new Map([['job', ['.']]]), INSTALL_USES)).toContain('  needs: [build, a, b]\n');
   });
 
   it('makes a job that runs whatever its needs did wait for a successful build', () => {
     const job = (condition: string): string =>
       `job:\n  needs: [a]\n  if: ${condition}\n  steps:\n    - uses: actions/checkout@x\n    - uses: ./actions/x\n`;
     const conditionOf = (condition: string): unknown =>
-      (parse(injectInstallSteps(job(condition), new Map([['job', ['.']]]))) as Record<string, { if: unknown }>)['job']
-        .if;
+      (
+        parse(injectInstallSteps(job(condition), new Map([['job', ['.']]]), INSTALL_USES)) as Record<
+          string,
+          { if: unknown }
+        >
+      )['job'].if;
 
     expect(conditionOf('always()')).toBe("${{ (always()) && needs.build.result == 'success' }}");
     expect(conditionOf("${{ failure() || github.event_name == 'push' }}")).toBe(
@@ -129,7 +136,7 @@ describe('injectInstallSteps', () => {
     const fragment =
       "job:\n  if: ${{ github.event_name == 'pull_request' }}\n  steps:\n    - uses: actions/checkout@x\n    - uses: ./actions/x\n";
 
-    expect(injectInstallSteps(fragment, new Map([['job', ['.']]]))).toContain(
+    expect(injectInstallSteps(fragment, new Map([['job', ['.']]]), INSTALL_USES)).toContain(
       "  if: ${{ github.event_name == 'pull_request' }}\n",
     );
   });
@@ -138,18 +145,22 @@ describe('injectInstallSteps', () => {
     const fragment =
       'job:\n  if: >-\n    always()\n  steps:\n    - uses: actions/checkout@x\n    - uses: ./actions/x\n';
 
-    expect(() => injectInstallSteps(fragment, new Map([['job', ['.']]]))).toThrow(/block scalar/);
+    expect(() => injectInstallSteps(fragment, new Map([['job', ['.']]]), INSTALL_USES)).toThrow(/block scalar/);
   });
 
   it('leaves a fragment alone when nothing needs installing', () => {
-    expect(injectInstallSteps(FRAGMENT, new Map())).toBe(FRAGMENT);
+    expect(injectInstallSteps(FRAGMENT, new Map(), INSTALL_USES)).toBe(FRAGMENT);
   });
 
   it('refuses a job without a checkout where it runs the action from', () => {
-    expect(() => injectInstallSteps(FRAGMENT, new Map([['first', ['elsewhere']]]))).toThrow(
+    expect(() => injectInstallSteps(FRAGMENT, new Map([['first', ['elsewhere']]]), INSTALL_USES)).toThrow(
       /Extra job first runs this repository's actions from elsewhere but never checks the repository out there/,
     );
-    expect(() => injectInstallSteps('job:\n  runs-on: x\n', new Map([['job', ['.']]]))).toThrow(/has no steps/);
-    expect(() => injectInstallSteps(FRAGMENT, new Map([['missing', ['.']]]))).toThrow(/not in the fragment/);
+    expect(() => injectInstallSteps('job:\n  runs-on: x\n', new Map([['job', ['.']]]), INSTALL_USES)).toThrow(
+      /has no steps/,
+    );
+    expect(() => injectInstallSteps(FRAGMENT, new Map([['missing', ['.']]]), INSTALL_USES)).toThrow(
+      /not in the fragment/,
+    );
   });
 });
