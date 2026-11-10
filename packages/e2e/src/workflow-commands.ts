@@ -37,7 +37,7 @@ export interface WorkflowCommands {
   masks: string[];
 }
 
-/** Reverses `escapeData` from `@actions/core`, which encodes only these three characters. */
+/** Reverses `escapeData` from `actions-util/core`, which encodes only these three characters. */
 function unescapeData(value: string): string {
   return value.replaceAll('%0D', '\r').replaceAll('%0A', '\n').replaceAll('%25', '%');
 }

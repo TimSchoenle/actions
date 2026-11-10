@@ -24,7 +24,7 @@ const BRANCH_INPUTS = `  token:
 `;
 
 describe('inputEnvName', () => {
-  it('uppercases and replaces spaces, exactly as @actions/core does', () => {
+  it('uppercases and replaces spaces, exactly as actions-util/core does', () => {
     expect(inputEnvName('branch name')).toBe('INPUT_BRANCH_NAME');
   });
 

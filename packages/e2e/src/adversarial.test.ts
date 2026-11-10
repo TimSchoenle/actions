@@ -213,7 +213,7 @@ describe('expectNoCrash', () => {
   });
 
   // `getBooleanInput` refuses `yes` with a bare `TypeError`; the message is the explanation.
-  it("accepts @actions/core's own refusal of a boolean input", () => {
+  it("accepts actions-util/core's own refusal of a boolean input", () => {
     const message =
       'Input does not meet YAML 1.2 "Core Schema" specification: silent_fail\n' +
       'Support boolean input list: `true | True | TRUE | false | False | FALSE`';

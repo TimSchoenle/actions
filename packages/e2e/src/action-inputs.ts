@@ -1,9 +1,9 @@
 import type { ActionManifest } from './action-manifest.js';
 
 /**
- * The environment variable `@actions/core.getInput` reads for an input.
+ * The environment variable `actions-util/core`'s `getInput` reads for an input.
  *
- * Mirrors `@actions/core` exactly — uppercase, spaces to underscores, and nothing else. Notably a
+ * Mirrors `actions-util/core` exactly — uppercase, spaces to underscores, and nothing else. Notably a
  * hyphen is *not* translated, so `app-id` is read from `INPUT_APP-ID`; normalising it here would
  * make the harness pass inputs the real runner never delivers.
  */
@@ -41,7 +41,7 @@ function assertNoUnknownInputs(manifest: ActionManifest, provided: ProvidedInput
 /**
  * Guards the case where two declared inputs map onto one environment variable.
  *
- * `@actions/core`'s mapping is lossy — `a b`, `a_b` and `A_B` all become `INPUT_A_B` — so an action
+ * `actions-util/core`'s mapping is lossy — `a b`, `a_b` and `A_B` all become `INPUT_A_B` — so an action
  * declaring such a pair silently makes one input unreachable. That is a defect in the action, and it
  * is worth failing its tests loudly rather than letting the second value quietly win.
  */

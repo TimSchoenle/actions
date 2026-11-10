@@ -2,7 +2,7 @@
  * Reader for the append-only files the runner exposes as `GITHUB_OUTPUT`, `GITHUB_ENV` and
  * `GITHUB_STATE`.
  *
- * All three share one format, so one parser serves them. `@actions/core` writes the heredoc form
+ * All three share one format, so one parser serves them. `actions-util/core` writes the heredoc form
  * (`key<<delimiter`), while shell steps commonly append the flat `key=value` form; both are accepted
  * because a composite action's steps and a node action's `setOutput` end up in the same file.
  */
