@@ -24,7 +24,8 @@
       "actions-util/patch-reader": ["./packages/ts-util/src/patch-reader.ts"],
       "actions-util/read-after-write": ["./packages/ts-util/src/read-after-write.ts"],
       "actions-util/release-download": ["./packages/ts-util/src/release-download.ts"],
-      "actions-e2e": ["./packages/e2e/src/index.ts"]
+      "actions-e2e": ["./packages/e2e/src/index.ts"],
+      "action-graph": ["./packages/action-graph/src/index.ts"]
     }
   },
   "include": ["scripts/**/*", "actions/**/*", "packages/**/*"],
