@@ -156,3 +156,65 @@ describe('ScratchRepo.commitFile', () => {
     await expect(scratch.commitFile('b', 'f.txt', 'x', 'm')).rejects.toThrow('Forbidden');
   });
 });
+
+describe('ScratchRepo tags', () => {
+  let octokit: OctokitMock & { paginate: ReturnType<typeof vi.fn>; request: ReturnType<typeof vi.fn> };
+  let scratch: ScratchRepo;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubEnv('E2E_GITHUB_TOKEN', 'ghs_test_token');
+    vi.stubEnv('E2E_TEST_REPOSITORY', 'owner/repo');
+    vi.stubEnv('GITHUB_RUN_ID', '9');
+    vi.stubEnv('GITHUB_RUN_ATTEMPT', '1');
+    octokit = Object.assign(mockOctokit(), { paginate: vi.fn(), request: vi.fn() });
+    vi.mocked(createOctokit).mockReturnValue(octokit as unknown as ReturnType<typeof createOctokit>);
+    scratch = ScratchRepo.fromEnvironment('unit');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('names a tag in the suite namespace', () => {
+    expect(scratch.tag('demo-v1.0.0')).toBe('test/unit/9-1/demo-v1.0.0');
+  });
+
+  it('deletes the releases on a reserved tag, then the tag, at teardown', async () => {
+    const tag = scratch.tag('demo-v1.0.0');
+    octokit.paginate.mockResolvedValue([
+      { id: 1, tag_name: tag, draft: false, name: 'demo', body: '', assets: [{ name: 'b' }, { name: 'a' }] },
+      { id: 2, tag_name: 'other', draft: false, name: 'x', body: '', assets: [] },
+    ]);
+    octokit.request.mockResolvedValue({});
+    octokit.rest.git.deleteRef.mockResolvedValue({});
+
+    expect(await scratch.releasesForTag(tag)).toEqual([
+      { id: 1, draft: false, name: 'demo', body: '', assets: ['a', 'b'] },
+    ]);
+    await scratch.teardown();
+
+    expect(octokit.request).toHaveBeenCalledWith('DELETE /repos/{owner}/{repo}/releases/{release_id}', {
+      owner: 'owner',
+      release_id: 1,
+      repo: 'repo',
+    });
+    expect(octokit.rest.git.deleteRef).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo', ref: `tags/${tag}` });
+  });
+
+  it('treats a tag that was never created as deleted', async () => {
+    scratch.tag('never-created');
+    octokit.paginate.mockResolvedValue([]);
+    octokit.rest.git.deleteRef.mockRejectedValue(httpError(422, 'Reference does not exist'));
+
+    await expect(scratch.teardown()).resolves.toBeUndefined();
+  });
+
+  it('reports a tag teardown could not delete', async () => {
+    const tag = scratch.tag('stuck');
+    octokit.paginate.mockResolvedValue([]);
+    octokit.rest.git.deleteRef.mockRejectedValue(httpError(403, 'Forbidden'));
+
+    await expect(scratch.teardown()).rejects.toThrow(`tag ${tag}: Forbidden`);
+  });
+});
