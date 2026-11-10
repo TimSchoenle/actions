@@ -10,11 +10,13 @@
  *
  * @packageDocumentation
  */
+export * from './artifact-record.js';
 export * from './build-set.js';
 export * from './bundle-manifest.js';
 export * from './discover.js';
 export * from './hash.js';
 export * from './local-refs.js';
 export * from './manifest.js';
+export * from './path-list.js';
 export * from './paths.js';
 export * from './source-inputs.js';
