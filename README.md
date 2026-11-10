@@ -162,8 +162,8 @@ outputs. Where an action needs more than that, a README sits next to it.
 | [Rust Cargo-check](./actions/rust/cargo-check) | Action that runs cargo check to verify Rust code compiles without errors. | [actions-rust-cargo-check-v1.1.8](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.1.8) | `uses: TimSchoenle/actions/actions/rust/cargo-check@be7a69175612d9de514acc14bf55dda8e7ad2e57 # tag=actions-rust-cargo-check-v1.1.8` |
 | [Rust Clippy](./actions/rust/clippy) | Action that runs clippy to catch common mistakes and improve your Rust code. | [actions-rust-clippy-v1.1.14](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-clippy-v1.1.14) | `uses: TimSchoenle/actions/actions/rust/clippy@be7a69175612d9de514acc14bf55dda8e7ad2e57 # tag=actions-rust-clippy-v1.1.14` |
 | [Rust Config Contract](./actions/rust/config-contract) | Action that checks a terrace-config contract, its Dockerfile LABEL block and a built image against the configuration types they claim to describe. | [actions-rust-config-contract-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-config-contract-v2.0.4) | `uses: TimSchoenle/actions/actions/rust/config-contract@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-rust-config-contract-v2.0.4` |
-| [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | Action that measures Rust test coverage with cargo llvm-cov and nextest, and uploads the coverage report and the JUnit test results to Codecov. | [actions-rust-coverage-codecov-v2.0.8](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v2.0.8) | `uses: TimSchoenle/actions/actions/rust/coverage-codecov@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-rust-coverage-codecov-v2.0.8` |
-| [Rust Test](./actions/rust/test) | Action that runs cargo nextest to verify Rust code passes tests. | [actions-rust-test-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.4) | `uses: TimSchoenle/actions/actions/rust/test@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-rust-test-v1.1.4` |
+| [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | Action that measures Rust test coverage with cargo llvm-cov and nextest, and uploads the coverage report and the JUnit test results to Codecov. | [actions-rust-coverage-codecov-v2.0.9](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v2.0.9) | `uses: TimSchoenle/actions/actions/rust/coverage-codecov@actions-rust-coverage-codecov-v2.0.9 # tag=actions-rust-coverage-codecov-v2.0.9` |
+| [Rust Test](./actions/rust/test) | Action that runs cargo nextest to verify Rust code passes tests. | [actions-rust-test-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.5) | `uses: TimSchoenle/actions/actions/rust/test@actions-rust-test-v1.1.5 # tag=actions-rust-test-v1.1.5` |
 
 #### Security
 
@@ -187,7 +187,7 @@ outputs. Where an action needs more than that, a README sits next to it.
 
 | Action | Description | Version | Usage |
 | --- | --- | --- | --- |
-| [Setup E2E Test](./actions/test/setup-e2e) | Sets up the environment for E2E testing: generates token, checks out test repo, and checks out actions code. | [actions-test-setup-e2e-v1.2.6](https://github.com/TimSchoenle/actions/releases/tag/actions-test-setup-e2e-v1.2.6) | `uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6` |
+| [Setup E2E Test](./actions/test/setup-e2e) | Sets up the environment for E2E testing: generates token, checks out test repo, and checks out actions code. | [actions-test-setup-e2e-v1.2.7](https://github.com/TimSchoenle/actions/releases/tag/actions-test-setup-e2e-v1.2.7) | `uses: TimSchoenle/actions/actions/test/setup-e2e@actions-test-setup-e2e-v1.2.7 # tag=actions-test-setup-e2e-v1.2.7` |
 
 
 

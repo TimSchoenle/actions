@@ -107,8 +107,8 @@ is not, including older versions of a component whose neighbours have since rele
 | [Rust Cargo-check](./actions/rust/cargo-check) | [actions-rust-cargo-check-v1.1.8](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.1.8) | :white_check_mark: |
 | [Rust Clippy](./actions/rust/clippy) | [actions-rust-clippy-v1.1.14](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-clippy-v1.1.14) | :white_check_mark: |
 | [Rust Config Contract](./actions/rust/config-contract) | [actions-rust-config-contract-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-config-contract-v2.0.4) | :white_check_mark: |
-| [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | [actions-rust-coverage-codecov-v2.0.8](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v2.0.8) | :white_check_mark: |
-| [Rust Test](./actions/rust/test) | [actions-rust-test-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.4) | :white_check_mark: |
+| [Rust Coverage (Codecov)](./actions/rust/coverage-codecov) | [actions-rust-coverage-codecov-v2.0.9](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v2.0.9) | :white_check_mark: |
+| [Rust Test](./actions/rust/test) | [actions-rust-test-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.5) | :white_check_mark: |
 
 #### Security
 
@@ -132,7 +132,7 @@ is not, including older versions of a component whose neighbours have since rele
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| [Setup E2E Test](./actions/test/setup-e2e) | [actions-test-setup-e2e-v1.2.6](https://github.com/TimSchoenle/actions/releases/tag/actions-test-setup-e2e-v1.2.6) | :white_check_mark: |
+| [Setup E2E Test](./actions/test/setup-e2e) | [actions-test-setup-e2e-v1.2.7](https://github.com/TimSchoenle/actions/releases/tag/actions-test-setup-e2e-v1.2.7) | :white_check_mark: |
 
 
 

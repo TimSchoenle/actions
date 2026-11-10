@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.5](https://github.com/TimSchoenle/actions/compare/src-actions-rust-test-v1.1.4...src-actions-rust-test-v1.1.5) (2026-11-10)
+
+
+### Dependencies
+
+* **deps:** update actions-rust-lang/setup-rust-toolchain action to v2 ([#2069](https://github.com/TimSchoenle/actions/issues/2069)) ([4359922](https://github.com/TimSchoenle/actions/commit/4359922f5bf416775e0f169d228c2004a7544bf1))
+* **deps:** update actions/checkout action to v7 ([#2070](https://github.com/TimSchoenle/actions/issues/2070)) ([b468997](https://github.com/TimSchoenle/actions/commit/b4689970003a599b7b08933722d85e92a2f69571))
+* **deps:** update taiki-e/install-action action to v2.90.2 ([#2068](https://github.com/TimSchoenle/actions/issues/2068)) ([72ced4d](https://github.com/TimSchoenle/actions/commit/72ced4dc3bd62b6edf4c35f423ecbec8d15ea060))
+
 ## [1.1.4](https://github.com/TimSchoenle/actions/compare/actions-rust-test-v1.1.3...actions-rust-test-v1.1.4) (2026-11-09)
 
 
