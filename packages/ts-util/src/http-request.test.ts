@@ -9,7 +9,7 @@ import tls from 'node:tls';
 
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { httpRequest, readBody } from './http-request.js';
+import { DEFAULT_TIMEOUT_MS, httpRequest, readBody } from './http-request.js';
 
 import type { AddressInfo } from 'node:net';
 
@@ -57,6 +57,8 @@ const certificate = makeCertificate();
 const servers: net.Server[] = [];
 /** Tunnelled sockets, which the proxy server no longer tracks once the tunnel is open. */
 const tunnelSockets: net.Socket[] = [];
+/** Sockets of raw `net` test servers, which `close()` waits for. */
+const sockets: net.Socket[] = [];
 
 async function listen<T extends net.Server>(server: T): Promise<{ server: T; port: number }> {
   servers.push(server);
@@ -66,7 +68,7 @@ async function listen<T extends net.Server>(server: T): Promise<{ server: T; por
 }
 
 afterEach(async () => {
-  for (const socket of tunnelSockets.splice(0)) {
+  for (const socket of [...tunnelSockets.splice(0), ...sockets.splice(0)]) {
     socket.destroy();
   }
 
@@ -277,14 +279,19 @@ describe('httpRequest through a proxy', () => {
     });
 
     it('verifies an https:// proxy by its own name', async () => {
-      const proxy = connectProxy(() => 1, { secure: true });
+      const target = origin((_request, response) => response.end('never'), true);
+      const { port } = await listen(target.server);
+      const proxy = connectProxy(() => port, { secure: true });
       const { port: proxyPort } = await listen(proxy.server);
 
       // The certificate is valid for 127.0.0.1, which the connection reaches, but not for `localhost`.
+      // It is valid for `secure.test`, the tunnel's target, so verifying the proxy against the
+      // tunnel's `Host` instead of the proxy's own name would let the request through.
       await expect(
-        httpRequest('http://plain.test/', { env: { HTTP_PROXY: `https://localhost:${proxyPort}` } }),
+        httpRequest('https://secure.test/', { env: { HTTPS_PROXY: `https://localhost:${proxyPort}` } }),
       ).rejects.toThrow(/altnames|certificate/i);
       expect(proxy.tunnels).toEqual([]);
+      expect(target.seen).toEqual([]);
     });
 
     it('refuses to follow a redirect from https:// down to http://', async () => {
@@ -356,14 +363,26 @@ describe('httpRequest redirects', () => {
 
     await (
       await httpRequest(`http://127.0.0.1:${port}/same`, {
-        headers: { Authorization: 'Bearer secret', Cookie: 'c=1', Accept: 'x/y' },
+        headers: {
+          Authorization: 'Bearer secret',
+          Cookie: 'c=1',
+          'Proxy-Authorization': 'Basic cHJveHk=',
+          Host: `127.0.0.1:${port}`,
+          Accept: 'x/y',
+        },
         env: {},
       })
     ).message.resume();
 
     expect(first.seen.map((entry) => entry.headers.authorization)).toEqual(['Bearer secret', 'Bearer secret']);
+    expect(first.seen.map((entry) => entry.headers['proxy-authorization'])).toEqual([
+      'Basic cHJveHk=',
+      'Basic cHJveHk=',
+    ]);
     expect(other.seen[0]?.headers.authorization).toBeUndefined();
     expect(other.seen[0]?.headers.cookie).toBeUndefined();
+    expect(other.seen[0]?.headers['proxy-authorization']).toBeUndefined();
+    expect(other.seen[0]?.headers.host).toBe(`localhost:${otherPort}`);
     expect(other.seen[0]?.headers.accept).toBe('x/y');
   });
 
@@ -392,6 +411,30 @@ describe('httpRequest redirects', () => {
     expect(target.seen).toHaveLength(1);
   });
 
+  it("closes a redirect's connection instead of reading its body", async () => {
+    let firstClosed = false;
+    const first = net.createServer((socket) => {
+      sockets.push(socket);
+      socket.once('data', () => {
+        // A redirect whose chunked body never ends.
+        socket.write(
+          `HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:${landingPort}/\r\nTransfer-Encoding: chunked\r\n\r\n`,
+        );
+        const stream = setInterval(() => socket.write('5\r\nchunk\r\n'), 5);
+        socket.once('close', () => {
+          clearInterval(stream);
+          firstClosed = true;
+        });
+      });
+    });
+    const { port } = await listen(first);
+    const landing = origin((_request, response) => response.end('landed'));
+    const { port: landingPort } = await listen(landing.server);
+
+    await expect(text(`http://127.0.0.1:${port}/`, { env: {} })).resolves.toBe('landed');
+    await expect.poll(() => firstClosed).toBe(true);
+  });
+
   it('returns a redirect without a Location as it is', async () => {
     const target = origin((_request, response) => response.writeHead(302).end('no location'));
     const { port } = await listen(target.server);
@@ -404,6 +447,40 @@ describe('httpRequest redirects', () => {
 });
 
 describe('httpRequest failures', () => {
+  it('applies the default timeout unless told otherwise, and none for 0', async () => {
+    const target = origin((_request, response) => response.end('ok'));
+    const { port } = await listen(target.server);
+    const timeoutOf = async (timeoutMs?: number): Promise<number | undefined> => {
+      const { message } = await httpRequest(`http://127.0.0.1:${port}/`, { timeoutMs, env: {} });
+      const { timeout } = message.socket as net.Socket;
+      await readBody(message);
+
+      return timeout;
+    };
+
+    expect(DEFAULT_TIMEOUT_MS).toBe(180_000);
+    expect(await timeoutOf()).toBe(DEFAULT_TIMEOUT_MS);
+    expect(await timeoutOf(250)).toBe(250);
+    expect(await timeoutOf(Number.NaN)).toBe(DEFAULT_TIMEOUT_MS);
+    expect(await timeoutOf(-1)).toBe(DEFAULT_TIMEOUT_MS);
+    expect(await timeoutOf(Number.POSITIVE_INFINITY)).toBe(DEFAULT_TIMEOUT_MS);
+    expect(await timeoutOf(0)).toBeFalsy();
+  });
+
+  it('fails a body that stalls after the headers, naming the request without its query', async () => {
+    const target = origin((_request, response) => {
+      response.writeHead(200, { 'Content-Length': '100' });
+      response.write('partial');
+    });
+    const { port } = await listen(target.server);
+
+    const { message } = await httpRequest(`http://127.0.0.1:${port}/asset?token=secret`, { timeoutMs: 100, env: {} });
+    const failure = readBody(message);
+
+    await expect(failure).rejects.toThrow(`Request timeout: http://127.0.0.1:${port}/asset`);
+    await expect(failure).rejects.not.toThrow(/secret/);
+  });
+
   it('fails a request whose socket goes idle', async () => {
     const target = origin(() => undefined);
     const { port } = await listen(target.server);
@@ -424,6 +501,44 @@ describe('httpRequest failures', () => {
 
   it('refuses a protocol other than http and https', async () => {
     await expect(httpRequest('file:///etc/passwd')).rejects.toThrow('Unsupported protocol file:');
+  });
+
+  it('reads a body up to the limit, and refuses a larger one, closing its connection', async () => {
+    let closed = false;
+    const target = origin((request, response) => {
+      if (request.url === '/small') {
+        response.end('12345');
+
+        return;
+      }
+
+      response.socket?.once('close', () => {
+        closed = true;
+      });
+      response.writeHead(200);
+      const stream = setInterval(() => response.write('x'.repeat(1024)), 5);
+      response.once('close', () => clearInterval(stream));
+    });
+    const { port } = await listen(target.server);
+
+    await expect(text(`http://127.0.0.1:${port}/small`, { env: {} })).resolves.toBe('12345');
+    const small = await httpRequest(`http://127.0.0.1:${port}/small`, { env: {} });
+    expect((await readBody(small.message, 5)).toString()).toBe('12345');
+
+    const { message } = await httpRequest(`http://127.0.0.1:${port}/endless`, { env: {} });
+
+    await expect(readBody(message, 4096)).rejects.toThrow('The response body is larger than the limit of 4096 bytes.');
+    expect(message.destroyed).toBe(true);
+    await expect.poll(() => closed).toBe(true);
+  });
+
+  it.each([Number.NaN, -1])('refuses the body size limit %s', async (limit) => {
+    const target = origin((_request, response) => response.end('body'));
+    const { port } = await listen(target.server);
+    const { message } = await httpRequest(`http://127.0.0.1:${port}/`, { env: {} });
+
+    await expect(readBody(message, limit)).rejects.toThrow(RangeError);
+    expect(message.destroyed).toBe(true);
   });
 
   it('resolves an error status rather than throwing', async () => {
