@@ -176,7 +176,50 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - End-to-end tests: [`.github/workflows/verify-action-release-build-actions.yaml`](../../../.github/workflows/verify-action-release-build-actions.yaml)
-- Called from this repository by:
-  - [`.github/workflows/verify-action-release-install-built-actions.yaml`](../../../.github/workflows/verify-action-release-install-built-actions.yaml)
-  - [`.github/workflows/verify-action-release-publish-build-commit.yaml`](../../../.github/workflows/verify-action-release-publish-build-commit.yaml)
+
+<details>
+<summary>Called from 40 files in this repository</summary>
+
+- [`.github/workflows/verify-action-common-close-pull-request.yaml`](../../../.github/workflows/verify-action-common-close-pull-request.yaml)
+- [`.github/workflows/verify-action-common-commit-changes.yaml`](../../../.github/workflows/verify-action-common-commit-changes.yaml)
+- [`.github/workflows/verify-action-common-commit-patch.yaml`](../../../.github/workflows/verify-action-common-commit-patch.yaml)
+- [`.github/workflows/verify-action-common-create-branch.yaml`](../../../.github/workflows/verify-action-common-create-branch.yaml)
+- [`.github/workflows/verify-action-common-create-patch.yaml`](../../../.github/workflows/verify-action-common-create-patch.yaml)
+- [`.github/workflows/verify-action-common-delete-branch.yaml`](../../../.github/workflows/verify-action-common-delete-branch.yaml)
+- [`.github/workflows/verify-action-common-download-release-asset.yaml`](../../../.github/workflows/verify-action-common-download-release-asset.yaml)
+- [`.github/workflows/verify-action-common-fetch-head.yaml`](../../../.github/workflows/verify-action-common-fetch-head.yaml)
+- [`.github/workflows/verify-action-common-find-patch.yaml`](../../../.github/workflows/verify-action-common-find-patch.yaml)
+- [`.github/workflows/verify-action-common-generated-files-verdict.yaml`](../../../.github/workflows/verify-action-common-generated-files-verdict.yaml)
+- [`.github/workflows/verify-action-common-get-app-git-identity.yaml`](../../../.github/workflows/verify-action-common-get-app-git-identity.yaml)
+- [`.github/workflows/verify-action-common-modify-yaml.yaml`](../../../.github/workflows/verify-action-common-modify-yaml.yaml)
+- [`.github/workflows/verify-action-common-read-yaml.yaml`](../../../.github/workflows/verify-action-common-read-yaml.yaml)
+- [`.github/workflows/verify-action-common-readme-variables.yaml`](../../../.github/workflows/verify-action-common-readme-variables.yaml)
+- [`.github/workflows/verify-action-common-render-template.yaml`](../../../.github/workflows/verify-action-common-render-template.yaml)
+- [`.github/workflows/verify-action-common-setup-app-git-identity.yaml`](../../../.github/workflows/verify-action-common-setup-app-git-identity.yaml)
+- [`.github/workflows/verify-action-common-upsert-issue.yaml`](../../../.github/workflows/verify-action-common-upsert-issue.yaml)
+- [`.github/workflows/verify-action-common-upsert-pr-comment.yaml`](../../../.github/workflows/verify-action-common-upsert-pr-comment.yaml)
+- [`.github/workflows/verify-action-docker-image-check-summary.yaml`](../../../.github/workflows/verify-action-docker-image-check-summary.yaml)
+- [`.github/workflows/verify-action-docker-image-check.yaml`](../../../.github/workflows/verify-action-docker-image-check.yaml)
+- [`.github/workflows/verify-action-helm-apply-chart-updates.yaml`](../../../.github/workflows/verify-action-helm-apply-chart-updates.yaml)
+- [`.github/workflows/verify-action-helper-resolve-base-branch.yaml`](../../../.github/workflows/verify-action-helper-resolve-base-branch.yaml)
+- [`.github/workflows/verify-action-helper-verify-branch-name.yaml`](../../../.github/workflows/verify-action-helper-verify-branch-name.yaml)
+- [`.github/workflows/verify-action-helper-verify-commit-authors.yaml`](../../../.github/workflows/verify-action-helper-verify-commit-authors.yaml)
+- [`.github/workflows/verify-action-java-gradle-auto-spotless.yaml`](../../../.github/workflows/verify-action-java-gradle-auto-spotless.yaml)
+- [`.github/workflows/verify-action-maintenance-auto-approve-pr.yaml`](../../../.github/workflows/verify-action-maintenance-auto-approve-pr.yaml)
+- [`.github/workflows/verify-action-maintenance-auto-rebase.yaml`](../../../.github/workflows/verify-action-maintenance-auto-rebase.yaml)
+- [`.github/workflows/verify-action-maintenance-ensure-actions-are-executed.yaml`](../../../.github/workflows/verify-action-maintenance-ensure-actions-are-executed.yaml)
+- [`.github/workflows/verify-action-maintenance-timed-auto-merge.yaml`](../../../.github/workflows/verify-action-maintenance-timed-auto-merge.yaml)
+- [`.github/workflows/verify-action-maintenance-trigger-coderabbit-review.yaml`](../../../.github/workflows/verify-action-maintenance-trigger-coderabbit-review.yaml)
+- [`.github/workflows/verify-action-maintenance-wipe-cache.yaml`](../../../.github/workflows/verify-action-maintenance-wipe-cache.yaml)
+- [`.github/workflows/verify-action-release-install-built-actions.yaml`](../../../.github/workflows/verify-action-release-install-built-actions.yaml)
+- [`.github/workflows/verify-action-release-plan-release-please.yaml`](../../../.github/workflows/verify-action-release-plan-release-please.yaml)
+- [`.github/workflows/verify-action-release-publish-build-commit.yaml`](../../../.github/workflows/verify-action-release-publish-build-commit.yaml)
+- [`.github/workflows/verify-action-release-resolve-actions.yaml`](../../../.github/workflows/verify-action-release-resolve-actions.yaml)
+- [`.github/workflows/verify-action-rust-auto-format.yaml`](../../../.github/workflows/verify-action-rust-auto-format.yaml)
+- [`.github/workflows/verify-action-rust-config-contract.yaml`](../../../.github/workflows/verify-action-rust-config-contract.yaml)
+- [`.github/workflows/verify-action-security-codeql.yaml`](../../../.github/workflows/verify-action-security-codeql.yaml)
+- [`.github/workflows/verify-action-security-zizmor.yaml`](../../../.github/workflows/verify-action-security-zizmor.yaml)
+- [`.github/workflows/verify-action-terrace-setup.yaml`](../../../.github/workflows/verify-action-terrace-setup.yaml)
+
+</details>
 <!-- /docs:generated reference -->
