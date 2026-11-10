@@ -69,13 +69,6 @@ export const REQUIRED_CHECKS: readonly RequiredCheck[] = [
     reason: 'jactionlint over every workflow and composite action: the checks of actionlint and the audits of zizmor.',
   },
   {
-    context: 'Build Actions and Commit',
-    workflow: 'update-files.yml',
-    kind: 'job',
-    reason:
-      'Compiled bundles are committed, so a red build must not merge. The privileged commit job, which runs after the unprivileged "Build Actions" job and fails when it did.',
-  },
-  {
     context: 'Update README',
     workflow: 'update-files.yml',
     kind: 'job',

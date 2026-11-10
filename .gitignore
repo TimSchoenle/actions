@@ -17,6 +17,8 @@ yarn-error.log*
 pnpm-debug.log*
 *.tsbuildinfo
 packages/*/dist/
+# Action bundles are built at release time and published on the build commit (docs/release-pipeline.md).
+actions/**/dist/
 
 # Java
 *.class

@@ -64,10 +64,6 @@
             "integration_id": 15368
           },
           {
-            "context": "Build Actions and Commit",
-            "integration_id": 15368
-          },
-          {
             "context": "Action Lint",
             "integration_id": 15368
           },
