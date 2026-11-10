@@ -100,13 +100,19 @@ export function toCommandProperties(properties: AnnotationProperties): CommandPr
  *
  * The delimiter is random per entry, so a value cannot know it in advance; a key or value that
  * nonetheless contains it is refused rather than written, because the runner would end the value
- * early at it and read whatever follows as further entries.
+ * early at it and read whatever follows as further entries. A key containing a line break is refused
+ * for the same reason: the runner would read the text before the break as an entry of its own.
+ * `@actions/core` writes such a key unchecked.
  *
  * @param delimiterId the random part of the delimiter, injectable so tests can force a collision.
  */
 export function prepareKeyValueMessage(key: string, value: unknown, delimiterId: string = randomUUID()): string {
   const delimiter = `ghadelimiter_${delimiterId}`;
   const convertedValue = toCommandValue(value);
+
+  if (key.includes('\r') || key.includes('\n')) {
+    throw new Error('Unexpected input: name should not contain a line break');
+  }
 
   if (key.includes(delimiter)) {
     throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);

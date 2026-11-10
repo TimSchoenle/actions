@@ -90,7 +90,9 @@ describe('checkBypass', () => {
     'http://LOCALHOST:8080/',
     'http://127.0.0.1/',
     'http://127.1.2.3:9/',
+    'http://127.1/',
     'http://[::1]/',
+    'http://[0:0:0:0:0:0:0:1]/',
   ])('always bypasses the loopback host %s', (url) => {
     expect(bypassed(url, undefined)).toBe(true);
   });
@@ -98,6 +100,13 @@ describe('checkBypass', () => {
   it('does not treat a host that merely starts with "localhost" as loopback', () => {
     expect(bypassed('http://localhost.example.com/', undefined)).toBe(false);
   });
+
+  it.each(['http://127.evil.example/', 'http://127.0.0.1.example.com/'])(
+    'does not treat the host name %s, which only starts with "127", as loopback',
+    (url) => {
+      expect(bypassed(url, undefined)).toBe(false);
+    },
+  );
 
   it('bypasses nothing else without NO_PROXY', () => {
     expect(bypassed('https://github.com/', undefined)).toBe(false);

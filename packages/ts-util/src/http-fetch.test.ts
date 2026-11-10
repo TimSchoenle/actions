@@ -48,7 +48,12 @@ async function proxiedOrigin(handler: http.RequestListener): Promise<{
       handler(request, response);
     });
   });
-  const targetPort = await listen(target);
+
+  return { proxyUrl: await connectProxy(await listen(target)), seen };
+}
+
+/** A `CONNECT` proxy that sends every tunnel to `targetPort` on 127.0.0.1, returning its URL. */
+async function connectProxy(targetPort: number): Promise<string> {
   const proxy = http.createServer();
   proxy.on('connect', (_request, socket: net.Socket, head: Buffer) => {
     const upstream = net.connect(targetPort, '127.0.0.1', () => {
@@ -60,7 +65,7 @@ async function proxiedOrigin(handler: http.RequestListener): Promise<{
     sockets.push(socket, upstream);
   });
 
-  return { proxyUrl: `http://127.0.0.1:${await listen(proxy)}`, seen };
+  return `http://127.0.0.1:${await listen(proxy)}`;
 }
 
 describe('createProxyAwareFetch', () => {
@@ -148,6 +153,40 @@ describe('createProxyAwareFetch', () => {
     expect(manual.status).toBe(302);
     expect(manual.headers.get('location')).toBe('/x');
     await expect(proxiedFetch('http://api.test/', { redirect: 'error' })).rejects.toThrow(TypeError);
+  });
+
+  it('fails as fetch does when the redirects run out under redirect: follow', async () => {
+    const { proxyUrl, seen } = await proxiedOrigin((_request, response) => {
+      response.writeHead(302, { Location: '/again' }).end('redirect body');
+    });
+
+    const failure = createProxyAwareFetch({ HTTP_PROXY: proxyUrl })('http://api.test/');
+
+    await expect(failure).rejects.toThrow(new TypeError('fetch failed'));
+    await expect(failure).rejects.toHaveProperty('cause.message', 'redirect count exceeded');
+    // The first request and the 20 redirects fetch follows.
+    expect(seen).toHaveLength(21);
+  });
+
+  it('fails a status the Response constructor refuses, closing the connection', async () => {
+    let closed = false;
+    const origin = net.createServer((socket) => {
+      socket.once('data', () => {
+        // Headers and the start of a chunked body: the connection stays open until the client ends it.
+        socket.write('HTTP/1.1 999 Odd\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n');
+      });
+      socket.once('close', () => {
+        closed = true;
+      });
+      sockets.push(socket);
+    });
+    const proxyUrl = await connectProxy(await listen(origin));
+
+    const failure = createProxyAwareFetch({ HTTP_PROXY: proxyUrl })('http://api.test/');
+
+    await expect(failure).rejects.toThrow(new TypeError('fetch failed'));
+    await expect(failure).rejects.toHaveProperty('cause.name', 'RangeError');
+    await expect.poll(() => closed).toBe(true);
   });
 
   it('answers a bodiless status and a HEAD request with a null body', async () => {
