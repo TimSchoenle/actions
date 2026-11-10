@@ -102,7 +102,11 @@ export function toCommandProperties(properties: AnnotationProperties): CommandPr
  * nonetheless contains it is refused rather than written, because the runner would end the value
  * early at it and read whatever follows as further entries. A key containing a line break is refused
  * for the same reason: the runner would read the text before the break as an entry of its own.
- * `@actions/core` writes such a key unchecked.
+ *
+ * The runner splits the first line at its first `=` or `<<`, whichever comes first, so a key is also
+ * refused when it is empty, contains `=` (the line would be read as `name=value`), or contains `<<`
+ * or ends with `<` (the line would be split inside the key or the delimiter). `@actions/core` writes
+ * all of these unchecked.
  *
  * @param delimiterId the random part of the delimiter, injectable so tests can force a collision.
  */
@@ -110,8 +114,20 @@ export function prepareKeyValueMessage(key: string, value: unknown, delimiterId:
   const delimiter = `ghadelimiter_${delimiterId}`;
   const convertedValue = toCommandValue(value);
 
+  if (key === '') {
+    throw new Error('Unexpected input: name should not be empty');
+  }
+
   if (key.includes('\r') || key.includes('\n')) {
     throw new Error('Unexpected input: name should not contain a line break');
+  }
+
+  if (key.includes('=')) {
+    throw new Error('Unexpected input: name should not contain "="');
+  }
+
+  if (key.includes('<<') || key.endsWith('<')) {
+    throw new Error('Unexpected input: name should not contain "<<" or end with "<"');
   }
 
   if (key.includes(delimiter)) {

@@ -23,6 +23,33 @@ const hostile = fc.string({
   ),
 });
 
+/** Keys rich in the characters the runner splits a file command's first line at. */
+const hostileKey = fc.string({
+  unit: fc.oneof(
+    fc.constantFrom('=', '<', '<<', '\r', '\n', '\r\n', ' ', 'ghadelimiter_'),
+    fc.string({ minLength: 1, maxLength: 1 }),
+  ),
+});
+
+/**
+ * The key the runner reads from a heredoc entry's first line, or `undefined` where it would read no
+ * heredoc entry: it reads up to the first line break, takes `name=value` when an `=` precedes the
+ * first `<<`, and otherwise needs exactly one `<<` with text on both sides.
+ */
+function runnerKey(entry: string): { key: string; delimiter: string } | undefined {
+  const [header] = entry.split(/\r\n|\r|\n/);
+  const equalsIndex = header.indexOf('=');
+  const heredocIndex = header.indexOf('<<');
+
+  if (heredocIndex < 0 || (equalsIndex >= 0 && equalsIndex < heredocIndex)) {
+    return undefined;
+  }
+
+  const parts = header.split('<<');
+
+  return parts.length === 2 && parts[0] !== '' && parts[1] !== '' ? { key: parts[0], delimiter: parts[1] } : undefined;
+}
+
 describe('workflow command escaping properties', () => {
   it.prop([hostile])('never lets a message break the line', (value) => {
     expect(escapeData(value)).not.toMatch(/[\r\n]/);
@@ -75,6 +102,26 @@ describe('file command properties', () => {
       // The runner reads lines up to the first that is exactly the delimiter.
       expect(rest.slice(0, -1).join(EOL)).toBe(value);
       expect(rest.slice(0, -1)).not.toContain(delimiter);
+    },
+  );
+
+  it.prop([hostileKey, fc.uuid()])(
+    'accepts exactly the keys the runner reads back unchanged, and writes them so it does',
+    (key, id) => {
+      const delimiter = `ghadelimiter_${id}`;
+      const read = runnerKey(`${key}<<${delimiter}`);
+      const readsBack = read?.key === key && read.delimiter === delimiter;
+
+      if (!readsBack) {
+        expect(() => prepareKeyValueMessage(key, 'value', id)).toThrow(/^Unexpected input: name should not /);
+
+        return;
+      }
+
+      const entry = prepareKeyValueMessage(key, 'value', id);
+
+      expect(runnerKey(entry)).toEqual({ key, delimiter });
+      expect(entry.split(EOL).at(-1)).toBe(delimiter);
     },
   );
 

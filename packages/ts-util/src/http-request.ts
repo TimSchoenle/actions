@@ -13,12 +13,18 @@
  *  * redirects are followed (up to 50), an `https:` → `http:` downgrade is refused, and running out
  *    of redirects returns the last redirect response rather than throwing;
  *  * connections are not kept alive, so nothing holds the process open after the last request;
- *  * the socket timeout fails the request with an error naming the URL.
+ *  * a socket idle for 3 minutes ({@link DEFAULT_TIMEOUT_MS}) fails the request, or the body being
+ *    read, with an error naming the URL.
  *
- * Stricter than `@actions/http-client`: `Authorization` and `Cookie` are dropped on a redirect to
- * another *origin* (it compared host names only), a relative `Location` is resolved against the
- * request URL (it threw), and a `303` — or a `301`/`302` answering a `POST` — is followed with a
- * bodiless `GET`, as `fetch` does.
+ * Stricter than `@actions/http-client`: a redirect to another *origin* drops `Authorization`,
+ * `Cookie`, `Proxy-Authorization` and an explicit `Host` (it dropped `Authorization` alone, and only
+ * when the host name changed), a relative `Location` is resolved against the request URL (it threw),
+ * a `303` — or a `301`/`302` answering a `POST` — is followed with a bodiless `GET`, as `fetch` does,
+ * and a redirect's body is discarded by closing its connection rather than reading it to the end.
+ *
+ * Different from `@actions/http-client`: a `timeoutMs` of `0` disables the timeout (it applied the
+ * default), and every proxied request, each redirect hop included, opens its own `CONNECT` tunnel,
+ * where it routed all of a client's proxied requests through one shared `tunnel` agent.
  */
 import http from 'node:http';
 import https from 'node:https';
@@ -37,8 +43,11 @@ export const REDIRECT_STATUSES: ReadonlySet<number> = new Set([300, 301, 302, 30
 /** Redirects followed before the redirect response itself is returned, as in `@actions/http-client`. */
 export const DEFAULT_MAX_REDIRECTS = 50;
 
-/** Request headers that carry a credential for the origin they were sent to, and no further. */
-const ORIGIN_CREDENTIAL_HEADERS = new Set(['authorization', 'cookie']);
+/** Socket idle time after which a request fails, as `@actions/http-client`'s default socket timeout. */
+export const DEFAULT_TIMEOUT_MS = 180_000;
+
+/** Request headers bound to the origin they were sent to — credentials and `Host` — and not sent further. */
+const ORIGIN_BOUND_HEADERS = new Set(['authorization', 'cookie', 'host', 'proxy-authorization']);
 
 /** Request headers that describe a body, dropped with it when a redirect turns the request into a `GET`. */
 const BODY_HEADERS = new Set([
@@ -57,7 +66,15 @@ export interface HttpRequestOptions {
   readonly headers?: Readonly<Record<string, string>>;
   /** The request body. */
   readonly body?: string | Uint8Array;
-  /** Fails the request when its socket is idle this long. Unset waits indefinitely. */
+  /**
+   * Fails the request when its socket is idle this long, in milliseconds; {@link DEFAULT_TIMEOUT_MS}
+   * by default, `0` for no timeout. A negative or non-finite value (`NaN`, `Infinity`) applies the
+   * default, so an invalid timeout can never lift the bound.
+   *
+   * The timeout covers the whole exchange, the body included: once the response has arrived it fails
+   * the body stream instead. Idle time is measured on the socket, so a consumer that stops reading —
+   * a slow pipeline exerting backpressure included — counts towards it.
+   */
   readonly timeoutMs?: number;
   /** Aborts the request. */
   readonly signal?: AbortSignal;
@@ -75,7 +92,10 @@ export interface HttpRequestOptions {
 export interface HttpResponse {
   /** The URL that answered, after redirects. */
   readonly url: string;
-  /** The response, its body still to be consumed (or `resume()`d to discard it). */
+  /**
+   * The response, its body still to be consumed, or `destroy()`ed to discard it: the connection is
+   * never reused, so reading an unwanted body to the end gains nothing.
+   */
   readonly message: IncomingMessage;
 }
 
@@ -220,6 +240,15 @@ function normaliseHeaders(headers: Readonly<Record<string, string>> | undefined)
   return normalised;
 }
 
+/** The socket idle timeout a request applies, per {@link HttpRequestOptions.timeoutMs}; `0` for none. */
+function idleTimeout(timeoutMs: number | undefined): number {
+  if (timeoutMs === 0) {
+    return 0;
+  }
+
+  return timeoutMs !== undefined && Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : DEFAULT_TIMEOUT_MS;
+}
+
 /** One request, without following redirects. */
 function send(
   url: URL,
@@ -230,17 +259,34 @@ function send(
 ): Promise<IncomingMessage> {
   const proxy = getProxySettings(url, options.env);
   const secure = url.protocol === 'https:';
-  const agent = proxy === undefined ? false : tunnelAgent(proxy, url, options.timeoutMs, options.signal);
+  const timeoutMs = idleTimeout(options.timeoutMs);
+  const agent =
+    proxy === undefined ? false : tunnelAgent(proxy, url, timeoutMs > 0 ? timeoutMs : undefined, options.signal);
 
   return new Promise((resolve, reject) => {
     const request = (secure ? https : http).request(url, { method, headers, agent, signal: options.signal });
+    let response: IncomingMessage | undefined;
 
-    request.once('response', resolve);
+    request.once('response', (message: IncomingMessage) => {
+      response = message;
+      resolve(message);
+    });
     request.once('error', reject);
 
-    if (options.timeoutMs !== undefined) {
-      request.setTimeout(options.timeoutMs, () => {
-        request.destroy(new Error(`Request timeout: ${url.origin}${url.pathname}`));
+    if (timeoutMs > 0) {
+      request.setTimeout(timeoutMs, () => {
+        // The URL without its query, which may carry a credential.
+        const error = new Error(`Request timeout: ${url.origin}${url.pathname}`);
+
+        if (response === undefined) {
+          request.destroy(error);
+        } else if (response.complete) {
+          // The whole body has arrived; only the idle connection is left to close.
+          request.destroy();
+        } else {
+          // The promise has settled, so the error goes to the body its consumer is reading.
+          response.destroy(error);
+        }
       });
     }
 
@@ -282,8 +328,8 @@ export async function httpRequest(url: string, options: HttpRequestOptions = {})
       return { url: current.href, message };
     }
 
-    // The redirect's own body is not needed; draining it frees the socket.
-    message.resume();
+    // The redirect's own body is not needed, and the connection is never reused: close it.
+    message.destroy();
 
     const next = new URL(location, current);
     if (current.protocol === 'https:' && next.protocol === 'http:') {
@@ -291,7 +337,7 @@ export async function httpRequest(url: string, options: HttpRequestOptions = {})
     }
 
     if (next.origin !== current.origin) {
-      headers = Object.fromEntries(Object.entries(headers).filter(([name]) => !ORIGIN_CREDENTIAL_HEADERS.has(name)));
+      headers = Object.fromEntries(Object.entries(headers).filter(([name]) => !ORIGIN_BOUND_HEADERS.has(name)));
     }
 
     const status = message.statusCode ?? 0;
@@ -306,11 +352,29 @@ export async function httpRequest(url: string, options: HttpRequestOptions = {})
   }
 }
 
-/** Reads a whole response body. */
-export async function readBody(message: IncomingMessage): Promise<Buffer> {
+/**
+ * Reads a whole response body.
+ *
+ * @param maxBytes the largest body accepted, in bytes; unset accepts any. A body that grows past it
+ *   is not read further: the response is destroyed, closing its connection, and the read rejects.
+ */
+export async function readBody(message: IncomingMessage, maxBytes?: number): Promise<Buffer> {
+  if (maxBytes !== undefined && !(maxBytes >= 0)) {
+    message.destroy();
+    throw new RangeError(`The body size limit must be a non-negative number of bytes, not ${maxBytes}.`);
+  }
+
   const chunks: Buffer[] = [];
+  let length = 0;
 
   for await (const chunk of message) {
+    length += (chunk as Buffer).length;
+
+    if (maxBytes !== undefined && length > maxBytes) {
+      message.destroy();
+      throw new Error(`The response body is larger than the limit of ${maxBytes} bytes.`);
+    }
+
     chunks.push(chunk as Buffer);
   }
 

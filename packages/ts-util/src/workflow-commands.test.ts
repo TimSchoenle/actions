@@ -116,6 +116,24 @@ describe('prepareKeyValueMessage', () => {
     );
   });
 
+  it('refuses an empty key', () => {
+    expect(() => prepareKeyValueMessage('', 'v', 'id')).toThrow('Unexpected input: name should not be empty');
+  });
+
+  it.each(['a=b', '=', 'a=<<b'])('refuses the key %j, which the runner would read as name=value', (key) => {
+    expect(() => prepareKeyValueMessage(key, 'v', 'id')).toThrow('Unexpected input: name should not contain "="');
+  });
+
+  it.each(['a<<b', '<<', 'a<'])('refuses the key %j, which the runner would split inside the key', (key) => {
+    expect(() => prepareKeyValueMessage(key, 'v', 'id')).toThrow(
+      'Unexpected input: name should not contain "<<" or end with "<"',
+    );
+  });
+
+  it('accepts a single < inside a key', () => {
+    expect(prepareKeyValueMessage('a<b', 'v', 'id')).toBe(`a<b<<ghadelimiter_id${EOL}v${EOL}ghadelimiter_id`);
+  });
+
   it('refuses a key containing the delimiter', () => {
     expect(() => prepareKeyValueMessage('ghadelimiter_id', 'v', 'id')).toThrow(
       'Unexpected input: name should not contain the delimiter "ghadelimiter_id"',
