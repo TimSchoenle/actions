@@ -54,5 +54,8 @@
   "actions/common/commit-generated-files": "1.2.3",
   "actions/common/render-readme": "1.1.0",
   "actions/common/download-release-asset": "1.1.2",
-  "actions/common/fetch-head": "2.0.0"
+  "actions/common/fetch-head": "2.0.0",
+  "actions/release/resolve-actions": "1.0.0",
+  "actions/release/build-actions": "1.0.0",
+  "actions/release/install-built-actions": "1.0.0"
 }

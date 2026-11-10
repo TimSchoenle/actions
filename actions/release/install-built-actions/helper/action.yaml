@@ -1,0 +1,56 @@
+name: 'Release Install Built Actions Helper'
+description: 'Internal to actions/release/install-built-actions, which runs this bundle with node once before and once after downloading the artifact. Not a public action: its inputs and outputs change without notice.'
+
+inputs:
+  mode:
+    description: 'prepare validates the inputs, optionally checks the artifact record, and creates the download directory; install verifies the download and copies the bundles.'
+    required: true
+  artifact_id:
+    description: 'ID of the artifact.'
+    required: true
+  expected_manifest_sha256:
+    description: 'SHA-256 of bundles.json.'
+    required: true
+  expected_artifact_digest:
+    description: 'Digest the artifact record must carry; empty skips the record check. Read in prepare mode.'
+    required: false
+    default: ''
+  path:
+    description: 'Checkout root to install into, relative to the workspace.'
+    required: false
+    default: '.'
+  replace:
+    description: 'true clears each bundle output directory before copying.'
+    required: false
+    default: 'true'
+  run_id:
+    description: 'Workflow run that uploaded the artifact; empty for this run. Read in prepare mode.'
+    required: false
+    default: ''
+  token:
+    description: 'Token for the artifact record check. Read in prepare mode.'
+    required: false
+    default: ''
+  repository:
+    description: 'owner/repo the artifact belongs to.'
+    required: true
+  directory:
+    description: 'Directory the artifact was downloaded to. Read in install mode.'
+    required: false
+    default: ''
+
+outputs:
+  artifact_id:
+    description: 'The validated artifact ID. Set in prepare mode.'
+  run_id:
+    description: 'The run to download from. Set in prepare mode.'
+  directory:
+    description: 'The empty directory to download into. Set in prepare mode.'
+  manifest_path:
+    description: 'Absolute path of the verified bundles.json. Set in install mode.'
+  bundles:
+    description: 'JSON array of the installed bundle paths. Set in install mode.'
+
+runs:
+  using: 'node24'
+  main: 'dist/index.js'

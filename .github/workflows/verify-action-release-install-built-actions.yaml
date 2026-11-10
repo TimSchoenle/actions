@@ -1,0 +1,293 @@
+# GENERATED — do not edit by hand. Run `bun run generate-e2e-workflows` to rebuild this file
+# from the actions that have an `e2e/` directory. The drift test in CI fails if it is out of date.
+#
+# The cases live in `actions/release/install-built-actions/e2e/` and are ordinary vitest files. This
+# workflow supplies only what they cannot get on a laptop: a token scoped to the scratch repository.
+name: Verify Release Install-built-actions
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/release/install-built-actions'
+    paths:
+      - 'actions/release/install-built-actions/**'
+      - '!actions/release/install-built-actions/CHANGELOG.md'
+      - '!actions/release/install-built-actions/README.md'
+      - 'packages/e2e/**'
+      - '.github/workflows/verify-action-release-install-built-actions.yaml'
+  pull_request:
+    paths:
+      - 'actions/release/install-built-actions/**'
+      - '!actions/release/install-built-actions/CHANGELOG.md'
+      - '!actions/release/install-built-actions/README.md'
+      - 'packages/e2e/**'
+      - '.github/workflows/verify-action-release-install-built-actions.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  install:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      cache-key: ${{ steps.key.outputs.value }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            objects.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            registry.npmjs.org:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Compute Cache Key
+        id: key
+        env:
+          CACHE_KEY: e2e-workspace-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+        run: echo "value=$CACHE_KEY" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Workspace Dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            actions/*/*/node_modules
+          key: ${{ steps.key.outputs.value }}
+
+      # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
+      # it to 'latest', which would win otherwise. It reinstalls on every run whatever the cache did,
+      # which is what validates the restored tree against the lockfile before the next job trusts it.
+      - name: Setup Bun And Install
+        uses: TimSchoenle/actions/actions/bun/setup-cached@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-bun-setup-cached-v2.0.0
+        with:
+          bun-version: ''
+          bun-version-file: '.bun-version'
+
+  e2e:
+    needs: install
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: End-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            objects.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            api.github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # setup-bun rather than setup-cached: the cached wrapper runs `bun install` on every job, cache
+      # hit or not, and this job is the one that must have no route to a package registry at all.
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: '.bun-version'
+
+      # The harness runs a node24 bundle with the first node on PATH and refuses any other major,
+      # and the image's default node is not 24. A major alone resolves from the runner's tool
+      # cache, so this reaches no endpoint the allowlist above does not already carry.
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+
+      # Restored, never installed, and never saved. `fail-on-cache-miss` is what keeps that honest:
+      # without it a miss would leave the suite to fail later on a missing import, several confusing
+      # minutes further on.
+      - name: Restore Dependencies
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            actions/*/*/node_modules
+          key: ${{ needs.install.outputs.cache-key }}
+          fail-on-cache-miss: true
+
+      # The cases run `dist/index.js`, the bundle GitHub itself would run, so nothing is built here.
+      - name: Generate Token
+        id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: TimSchoenle
+          repositories: actions-testing
+          permission-metadata: read
+
+      - name: Run End-to-end Cases
+        env:
+          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          # An installation token cannot call `GET /user`, so the suite resolves its own account by
+          # app slug instead. Without this a case matching commit authors fails only in CI.
+          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
+          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+        run: bun run e2e actions/release/install-built-actions
+
+  install-fixture-build:
+    name: Build The Fixture
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      artifact-id: ${{ steps.build.outputs.artifact-id }}
+      artifact-digest: ${{ steps.build.outputs.artifact-digest }}
+      manifest-sha256: ${{ steps.build.outputs.manifest-sha256 }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Write Demo Action
+        run: |
+          set -euo pipefail
+          mkdir -p fixture/actions/demo
+          printf "runs:\n  using: 'node24'\n  main: 'dist/index.js'\n" > fixture/actions/demo/action.yml
+
+      - name: Build Demo Action
+        id: build
+        uses: ./actions/release/build-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          path: fixture
+          build-dirs: actions/demo
+          build-command: mkdir -p dist && printf 'fresh\n' > dist/index.js
+          artifact-name: install-built-actions-e2e-${{ github.run_attempt }}
+
+  install-refusals:
+    name: Install And Refuse
+    needs: install-fixture-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read # to look the artifact record up with the job token
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Write A Committed Build
+        run: |
+          set -euo pipefail
+          mkdir -p fixture/actions/demo/dist
+          printf 'committed\n' > fixture/actions/demo/dist/index.js
+          printf 'stale\n' > fixture/actions/demo/dist/stale.js
+
+      - name: Install With A Wrong Manifest Hash
+        id: wrong-manifest
+        continue-on-error: true
+        uses: ./actions/release/install-built-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact-id: ${{ needs.install-fixture-build.outputs.artifact-id }}
+          expected-manifest-sha256: '0000000000000000000000000000000000000000000000000000000000000000'
+          path: fixture
+
+      - name: Install With A Wrong Artifact Digest
+        id: wrong-digest
+        continue-on-error: true
+        uses: ./actions/release/install-built-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact-id: ${{ needs.install-fixture-build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.install-fixture-build.outputs.manifest-sha256 }}
+          expected-artifact-digest: '0000000000000000000000000000000000000000000000000000000000000000'
+          github-token: ${{ github.token }}
+          path: fixture
+
+      - name: Assert The Checkout Is Untouched
+        env:
+          WRONG_MANIFEST: ${{ steps.wrong-manifest.outcome }}
+          WRONG_DIGEST: ${{ steps.wrong-digest.outcome }}
+        run: |
+          set -euo pipefail
+          [[ "$WRONG_MANIFEST" == 'failure' ]] || { echo "::error::a wrong manifest hash was accepted"; exit 1; }
+          [[ "$WRONG_DIGEST" == 'failure' ]] || { echo "::error::a wrong artifact digest was accepted"; exit 1; }
+          [[ "$(cat fixture/actions/demo/dist/index.js)" == 'committed' ]] || { echo "::error::a refused install changed the bundle"; exit 1; }
+          [[ -f fixture/actions/demo/dist/stale.js ]] || { echo "::error::a refused install cleared the bundle directory"; exit 1; }
+
+      - name: Install With The Artifact Record Checked
+        id: install
+        uses: ./actions/release/install-built-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact-id: ${{ needs.install-fixture-build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.install-fixture-build.outputs.manifest-sha256 }}
+          expected-artifact-digest: ${{ needs.install-fixture-build.outputs.artifact-digest }}
+          github-token: ${{ github.token }}
+          path: fixture
+
+      - name: Assert The Fresh Build Replaced The Committed One
+        run: |
+          set -euo pipefail
+          [[ "$(cat fixture/actions/demo/dist/index.js)" == 'fresh' ]] || { echo "::error::the installed bundle is not the built one"; exit 1; }
+          [[ ! -e fixture/actions/demo/dist/stale.js ]] || { echo "::error::a stale file survived replace: true"; exit 1; }
+
+  # <<< generated: summary (run 'bun run generate-ci-required' to update)
+  summary:
+    name: 'CI Summary: Release Install-built-actions'
+    if: ${{ always() }}
+    needs:
+      - install
+      - e2e
+      - install-fixture-build
+      - install-refusals
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Fail if any verify job did not succeed
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
+  # >>> generated: summary

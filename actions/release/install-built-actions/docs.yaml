@@ -1,0 +1,22 @@
+# What the README cannot learn from action.yaml. `bun run generate-docs` renders it into README.md.
+# The schema and the rules are in scripts/lib/action-docs/docs-file.ts.
+#
+# A download from this run authenticates with the runner's artifact token. github-token is only for
+# another run and for the artifact record check, and needs actions: read then.
+permissions:
+  - scope: actions
+    access: read
+    when: { input: github-token, set: true }
+    token: github-token
+egress:
+  - endpoint: '*.actions.githubusercontent.com:443'
+    for: the artifact download
+  - endpoint: '*.blob.core.windows.net:443'
+    for: the artifact download
+  - endpoint: api.github.com:443
+    for: the artifact record lookup, and a download from another run, when github-token is set
+examples:
+  - title: Run local actions on bundles built in this run
+    file: examples/install-before-uses.yaml
+  - title: Install into a second checkout, with the artifact record checked
+    file: examples/second-checkout.yaml

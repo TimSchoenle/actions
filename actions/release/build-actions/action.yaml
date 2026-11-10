@@ -1,0 +1,83 @@
+name: 'Release Build Actions'
+description: 'Builds JavaScript actions from source with a caller-supplied command, checks that every bundle their manifests name exists, and uploads the bundles with a manifest of their SHA-256 digests as one artifact for release/install-built-actions.'
+
+inputs:
+  build-dirs:
+    description: 'Directories of JavaScript actions to build, relative to path: a newline-separated list, or the JSON array release/resolve-actions outputs as build-dirs. . is a root action.'
+    required: true
+  build-command:
+    description: 'Shell command that builds, run with bash. Toolchain and dependencies must already be installed: this action installs nothing.'
+    required: true
+  per-directory:
+    description: 'true runs build-command once in each build directory, with BUILD_DIR set to it. false runs it once in path, with BUILD_DIRS set to the newline-separated list.'
+    required: false
+    default: 'true'
+  artifact-name:
+    description: 'Name of the uploaded artifact: 1 to 100 letters, digits, ., _ and -. Include github.run_attempt, since an artifact name cannot be reused within a run.'
+    required: true
+  retention-days:
+    description: 'Days the artifact is kept, 1 to 90.'
+    required: false
+    default: '1'
+  source-sha:
+    description: 'The commit the checkout holds, recorded in the manifest.'
+    required: false
+    default: ${{ github.sha }}
+  toolchain:
+    description: 'Free text recorded in the manifest, such as bun 1.4.4. At most 200 characters.'
+    required: false
+    default: ''
+  path:
+    description: 'Checkout root, relative to the workspace.'
+    required: false
+    default: '.'
+
+outputs:
+  artifact-id:
+    description: 'ID of the uploaded artifact. Pass it to release/install-built-actions: downloads go by ID, never by name.'
+    value: ${{ steps.upload.outputs.artifact-id }}
+  artifact-digest:
+    description: 'SHA-256 of the artifact archive, as the artifact service recorded it.'
+    value: ${{ steps.upload.outputs.artifact-digest }}
+  manifest-sha256:
+    description: 'SHA-256 of bundles.json. The value a consumer verifies the artifact against.'
+    value: ${{ steps.build.outputs.manifest_sha256 }}
+  bundles:
+    description: 'JSON array of {path, sha256, size} for every bundle, sorted by path.'
+    value: ${{ steps.build.outputs.bundles }}
+
+runs:
+  using: 'composite'
+  steps:
+    # Validates every input, runs the build, checks that each runs.pre/main/post of every listed
+    # action exists, and stages the bundles with bundles.json and bundles.sha256 under RUNNER_TEMP.
+    # The build command is the caller's code and runs with the job's permissions, nothing more.
+    - name: Build Actions
+      id: build
+      shell: bash
+      env:
+        INPUT_BUILD_DIRS: ${{ inputs.build-dirs }}
+        INPUT_BUILD_COMMAND: ${{ inputs.build-command }}
+        INPUT_PER_DIRECTORY: ${{ inputs.per-directory }}
+        INPUT_ARTIFACT_NAME: ${{ inputs.artifact-name }}
+        INPUT_RETENTION_DAYS: ${{ inputs.retention-days }}
+        INPUT_SOURCE_SHA: ${{ inputs.source-sha }}
+        INPUT_TOOLCHAIN: ${{ inputs.toolchain }}
+        INPUT_PATH: ${{ inputs.path }}
+      run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"
+
+    # overwrite: false, so a second upload under the same name fails instead of replacing the
+    # artifact a later job verifies against. include-hidden-files: true, because upload-artifact
+    # otherwise skips every path with a dot-prefixed segment, and a build directory such as
+    # .github/actions/x would lose its bundles while the manifest still lists them. The staging
+    # directory holds only the validated bundles and their manifests, so nothing else can be swept in.
+    - name: Upload Bundles
+      id: upload
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: ${{ steps.build.outputs.artifact_name }}
+        path: ${{ steps.build.outputs.directory }}
+        if-no-files-found: error
+        retention-days: ${{ steps.build.outputs.retention_days }}
+        overwrite: false
+        include-hidden-files: true

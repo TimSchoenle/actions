@@ -488,6 +488,48 @@
         "vitest": "5.1.0",
       },
     },
+    "actions/release/build-actions/helper": {
+      "name": "actions-release-build-actions-helper",
+      "version": "1.0.0",
+      "dependencies": {
+        "action-graph": "workspace:*",
+        "actions-util": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "26.6.6",
+        "@typescript/native": "npm:typescript@7.0.2",
+        "actions-e2e": "workspace:*",
+        "vitest": "5.1.0",
+      },
+    },
+    "actions/release/install-built-actions/helper": {
+      "name": "actions-release-install-built-actions-helper",
+      "version": "1.0.0",
+      "dependencies": {
+        "action-graph": "workspace:*",
+        "actions-util": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "26.6.6",
+        "@typescript/native": "npm:typescript@7.0.2",
+        "actions-e2e": "workspace:*",
+        "vitest": "5.1.0",
+      },
+    },
+    "actions/release/resolve-actions": {
+      "name": "actions-release-resolve-actions",
+      "version": "1.0.0",
+      "dependencies": {
+        "action-graph": "workspace:*",
+        "actions-util": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "26.6.6",
+        "@typescript/native": "npm:typescript@7.0.2",
+        "actions-e2e": "workspace:*",
+        "vitest": "5.1.0",
+      },
+    },
     "actions/rust/config-contract": {
       "name": "actions-rust-config-contract",
       "version": "1.0.0",
@@ -946,6 +988,12 @@
     "actions-maintenance-trigger-coderabbit-review": ["actions-maintenance-trigger-coderabbit-review@workspace:actions/maintenance/trigger-coderabbit-review"],
 
     "actions-maintenance-wipe-cache": ["actions-maintenance-wipe-cache@workspace:actions/maintenance/wipe-cache"],
+
+    "actions-release-build-actions-helper": ["actions-release-build-actions-helper@workspace:actions/release/build-actions/helper"],
+
+    "actions-release-install-built-actions-helper": ["actions-release-install-built-actions-helper@workspace:actions/release/install-built-actions/helper"],
+
+    "actions-release-resolve-actions": ["actions-release-resolve-actions@workspace:actions/release/resolve-actions"],
 
     "actions-rust-config-contract": ["actions-rust-config-contract@workspace:actions/rust/config-contract"],
 
