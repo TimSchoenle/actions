@@ -90,8 +90,9 @@ jobs:
         with:
           path: |
             node_modules
-            packages/*/node_modules
+            actions/*/*/*/node_modules
             actions/*/*/node_modules
+            packages/*/node_modules
           key: ${{ steps.key.outputs.value }}
 
       # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
@@ -140,8 +141,9 @@ jobs:
         with:
           path: |
             node_modules
-            packages/*/node_modules
+            actions/*/*/*/node_modules
             actions/*/*/node_modules
+            packages/*/node_modules
           key: ${{ needs.install.outputs.cache-key }}
           fail-on-cache-miss: true
 
@@ -214,8 +216,9 @@ jobs:
         with:
           path: |
             node_modules
-            packages/*/node_modules
+            actions/*/*/*/node_modules
             actions/*/*/node_modules
+            packages/*/node_modules
           key: ${{ needs.install.outputs.cache-key }}
           fail-on-cache-miss: true
 

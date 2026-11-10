@@ -1,7 +1,10 @@
+import fs from 'node:fs';
 import path from 'node:path';
 
+import { sortedUnique, workspacePackages } from 'action-graph';
+
 import { BUILD_ACTIONS, injectInstallSteps, installStepLines, SELF_REPOSITORY_COMMENT } from './e2e-fragment.js';
-import { scanSorted } from './utils.js';
+import { ROOT_DIR, scanSorted } from './utils.js';
 
 import type { Permission } from './action-docs/docs-file.js';
 import type { E2eBuildPlan } from './e2e-build-plan.js';
@@ -136,12 +139,46 @@ ${rendered}`;
  * version and returns a cache only when the key and that version both match, so `node_modules` and
  * `./node_modules` are two different caches under one key. `e2e-contract.test.ts` asserts the two
  * generated halves agree.
+ *
+ * Each package directory becomes its top-level directory, one `*` segment per remaining segment,
+ * then `node_modules`: `actions/docker/image-check/helper` yields three `*` segments after
+ * `actions`. The root `node_modules` comes first.
  */
-const WORKSPACE_MODULES: readonly string[] = ['node_modules', 'packages/*/node_modules', 'actions/*/*/node_modules'];
+export function workspaceModulePaths(packageDirectories: Iterable<string>): string[] {
+  const patterns = [...packageDirectories].map((directory) => {
+    const [top, ...rest] = directory.split('/');
+
+    return [top, ...rest.map(() => '*'), 'node_modules'].join('/');
+  });
+
+  return ['node_modules', ...sortedUnique(patterns)];
+}
+
+/**
+ * The directories of this repository's bun workspace members: every package under a top-level
+ * directory the root `workspaces` globs name. A `package.json` elsewhere (a tool under `.github/`)
+ * is installed on its own, not by the workspace install these caches hold.
+ */
+export function workspaceMemberDirectories(): string[] {
+  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8')) as { workspaces?: unknown };
+  const globs = Array.isArray(manifest.workspaces) ? manifest.workspaces.filter((g) => typeof g === 'string') : [];
+  const tops = new Set(globs.map((glob) => glob.split('/')[0]));
+
+  return [...workspacePackages(ROOT_DIR).values()].filter((directory) => tops.has(directory.split('/')[0]));
+}
+
+/**
+ * The cache paths of this repository. Derived from its workspace members rather than written out, so
+ * a package at a new depth (an action's `helper/`, say) is cached without anyone remembering to add
+ * a pattern; a missed depth only surfaces when the build job cannot resolve a dependency.
+ */
+let workspaceModules: readonly string[] | undefined;
 
 /** Renders the multi-line `path:` input both cache steps share, indented to sit under `with:`. */
 function cachePathsInput(): string {
-  return ['          path: |', ...WORKSPACE_MODULES.map((pattern) => `            ${pattern}`)].join('\n');
+  workspaceModules ??= workspaceModulePaths(workspaceMemberDirectories());
+
+  return ['          path: |', ...workspaceModules.map((pattern) => `            ${pattern}`)].join('\n');
 }
 
 /**
