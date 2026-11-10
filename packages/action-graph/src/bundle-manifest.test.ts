@@ -93,6 +93,26 @@ describe('stageBundles', () => {
     expectRejected(stage, /symbolic link/);
   });
 
+  it('rejects a bundle path that leaves the checkout before reading or writing anything', () => {
+    // Read from `<scratch>/outside.js`; staged one level deeper, the write would land in `<scratch>/deep`.
+    writeFiles(scratch, { 'outside.js': 'secret();\n' });
+    const deepStaging = path.join(scratch, 'deep', 'staging');
+
+    expectRejected(
+      () => stageBundles(checkout, ['actions/a'], ['actions/a/../../../outside.js'], deepStaging, METADATA),
+      /contains a '\.\.' segment/,
+    );
+    expect(fs.existsSync(path.join(scratch, 'deep', 'outside.js'))).toBe(false);
+    expect(fs.readdirSync(deepStaging)).toEqual([]);
+  });
+
+  it('rejects a bundle path that is not canonical', () => {
+    expectRejected(
+      () => stageBundles(checkout, ['actions/a'], ['actions/a/./dist/index.js'], staging, METADATA),
+      /not in canonical form/,
+    );
+  });
+
   it('refuses a staging directory that is not empty', () => {
     writeFiles(staging, { leftover: '' });
 
