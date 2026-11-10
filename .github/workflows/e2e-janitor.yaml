@@ -2,10 +2,10 @@ name: E2E Janitor
 
 # Per-run teardown in the e2e suites cannot survive a cancelled run: the verify workflows set
 # `cancel-in-progress: true`, so a superseded run is killed before its teardown executes and its
-# `test/**` branches and pull requests are stranded in the scratch repository. This job is the
-# unconditional backstop. Within the e2e namespace it judges purely by age, never by which run
-# created a ref, so it is safe to run at any time and converges on the same state however often it
-# runs. Nothing outside that namespace is ever a candidate: a pull request someone opened against
+# `test/**` branches, tags, releases and pull requests are stranded in the scratch repository. This
+# job is the unconditional backstop. Within the e2e namespace it judges purely by age, never by which
+# run created a ref, so it is safe to run at any time and converges on the same state however often
+# it runs. Nothing outside that namespace is ever a candidate: a pull request someone opened against
 # the scratch repository by hand, or one on a branch the harness did not create, is left alone.
 
 on:
@@ -37,10 +37,13 @@ env:
   TEST_OWNER: TimSchoenle
   TEST_REPO_NAME: actions-testing
   TEST_REPO: TimSchoenle/actions-testing
-  # Every ref the e2e suites create lives under this prefix; nothing else in the scratch repository
-  # is ever a deletion candidate. Pull requests are matched on the same namespace, as a branch name
+  # Every branch the e2e suites create lives under this prefix; nothing else in the scratch
+  # repository is ever a deletion candidate. Pull requests are matched on the same namespace, as a branch name
   # (`test/`) rather than a ref path.
   TEST_REF_PREFIX: heads/test/
+  # Tags the e2e suites create (release/publish-build-commit, release/plan-release-please) live under
+  # the same namespace, and so do the tag names of the releases they publish.
+  TEST_TAG_PREFIX: tags/test/
   # `inputs` is empty on `schedule`, so the dispatch defaults have to be restated as fallbacks here.
   MAX_AGE_HOURS: ${{ inputs.max-age-hours || '2' }}
   DRY_RUN: ${{ inputs.dry-run || false }}
@@ -261,6 +264,137 @@ jobs:
             exit 1
           fi
 
+      # Releases before tags: deleting a release leaves its tag for the next step, while deleting a tag
+      # first would leave the release behind on a missing tag. Matched on the tag name alone, so a
+      # release on any tag outside the test namespace is never a candidate.
+      - name: Delete Stale Test Releases
+        id: releases
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          CUTOFF: ${{ steps.cutoff.outputs.at }}
+        run: |
+          set -euo pipefail
+
+          export E2E_TAG_NAME_PREFIX="${TEST_TAG_PREFIX#tags/}"
+          # shellcheck disable=SC2016
+          listing="$(
+            gh api --paginate "repos/${TEST_REPO}/releases?per_page=100" \
+              --jq '.[]
+                | select((.tag_name | startswith($ENV.E2E_TAG_NAME_PREFIX)) and .created_at < $ENV.CUTOFF)
+                | [.id, .tag_name]
+                | @tsv'
+          )"
+          mapfile -t stale < <(printf '%s' "$listing")
+
+          deleted=0
+          failed=0
+
+          for candidate in "${stale[@]}"; do
+            IFS=$'\t' read -r id tag <<< "$candidate"
+
+            if [[ "$tag" != "${E2E_TAG_NAME_PREFIX}"?* ]]; then
+              echo "::warning::Refusing to touch a release outside the test namespace: ${tag}"
+              continue
+            fi
+
+            if [[ "$DRY_RUN" == "true" ]]; then
+              echo "Would delete release ${id} (${tag})."
+              deleted=$((deleted + 1))
+              continue
+            fi
+
+            if gh api -X DELETE "repos/${TEST_REPO}/releases/${id}" --silent; then
+              echo "Deleted release ${id} (${tag})."
+              deleted=$((deleted + 1))
+            elif gh api "repos/${TEST_REPO}/releases/${id}" --silent >/dev/null 2>&1; then
+              echo "::warning::Could not delete release ${id} (${tag})."
+              failed=$((failed + 1))
+            else
+              deleted=$((deleted + 1))
+            fi
+          done
+
+          {
+            echo "stale=${#stale[@]}"
+            echo "deleted=${deleted}"
+          } >> "$GITHUB_OUTPUT"
+
+          if [[ "$failed" -gt 0 ]]; then
+            echo "::error::${failed} stale test release(s) could not be deleted."
+            exit 1
+          fi
+
+      # Judged by the date of the commit a tag points at, as the branch sweep judges branches.
+      - name: Delete Stale Test Tags
+        id: tags
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          CUTOFF: ${{ steps.cutoff.outputs.at }}
+        run: |
+          set -euo pipefail
+
+          listing="$(
+            gh api --paginate "repos/${TEST_REPO}/git/matching-refs/${TEST_TAG_PREFIX}" \
+              --jq '.[] | [.ref, .object.sha, .object.type] | @tsv'
+          )"
+          mapfile -t candidates < <(printf '%s' "$listing")
+
+          stale=0
+          deleted=0
+          failed=0
+
+          for candidate in "${candidates[@]}"; do
+            IFS=$'\t' read -r ref sha type <<< "$candidate"
+
+            if [[ "$ref" != "refs/${TEST_TAG_PREFIX}"?* ]]; then
+              echo "::warning::Refusing to touch ref outside the test namespace: ${ref}"
+              continue
+            fi
+
+            if [[ "$type" == "tag" ]]; then
+              sha="$(gh api "repos/${TEST_REPO}/git/tags/${sha}" --jq '.object.sha' 2>/dev/null || true)"
+            fi
+            committed="$(gh api "repos/${TEST_REPO}/commits/${sha}" --jq '.commit.committer.date' 2>/dev/null || true)"
+            if [[ -z "$committed" ]]; then
+              echo "::warning::Could not read the commit date of ${ref}; leaving it in place."
+              failed=$((failed + 1))
+              continue
+            fi
+
+            if ! [[ "$committed" < "$CUTOFF" ]]; then
+              continue
+            fi
+            stale=$((stale + 1))
+
+            if [[ "$DRY_RUN" == "true" ]]; then
+              echo "Would delete ${ref} (commit ${committed})."
+              deleted=$((deleted + 1))
+              continue
+            fi
+
+            if gh api -X DELETE "repos/${TEST_REPO}/git/refs/${ref#refs/}" --silent; then
+              echo "Deleted ${ref} (commit ${committed})."
+              deleted=$((deleted + 1))
+            elif gh api "repos/${TEST_REPO}/git/ref/${ref#refs/}" --silent >/dev/null 2>&1; then
+              echo "::warning::Could not delete ${ref}."
+              failed=$((failed + 1))
+            else
+              deleted=$((deleted + 1))
+            fi
+          done
+
+          {
+            echo "stale=${stale}"
+            echo "deleted=${deleted}"
+          } >> "$GITHUB_OUTPUT"
+
+          if [[ "$failed" -gt 0 ]]; then
+            echo "::error::${failed} stale test tag(s) could not be deleted."
+            exit 1
+          fi
+
       - name: Report Sweep
         if: ${{ !cancelled() }}
         env:
@@ -269,6 +403,10 @@ jobs:
           PULLS_CLOSED: ${{ steps.pulls.outputs.closed }}
           BRANCHES_STALE: ${{ steps.branches.outputs.stale }}
           BRANCHES_DELETED: ${{ steps.branches.outputs.deleted }}
+          RELEASES_STALE: ${{ steps.releases.outputs.stale }}
+          RELEASES_DELETED: ${{ steps.releases.outputs.deleted }}
+          TAGS_STALE: ${{ steps.tags.outputs.stale }}
+          TAGS_DELETED: ${{ steps.tags.outputs.deleted }}
         run: |
           set -euo pipefail
 
@@ -291,4 +429,6 @@ jobs:
             echo '| --- | ---: | ---: |'
             echo "| Open e2e pull requests | ${PULLS_STALE:-0} | ${PULLS_CLOSED:-0} |"
             echo "| Refs under \`${TEST_REF_PREFIX}\` | ${BRANCHES_STALE:-0} | ${BRANCHES_DELETED:-0} |"
+            echo "| Releases on tags under \`${TEST_TAG_PREFIX#tags/}\` | ${RELEASES_STALE:-0} | ${RELEASES_DELETED:-0} |"
+            echo "| Refs under \`${TEST_TAG_PREFIX}\` | ${TAGS_STALE:-0} | ${TAGS_DELETED:-0} |"
           } >> "$GITHUB_STEP_SUMMARY"
