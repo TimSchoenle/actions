@@ -16,10 +16,9 @@ reviews:
       - 'automatic-release-manager'
 
   # Generated or tool-owned files. Review their sources instead; CI fails on drift for
-  # bundles, generated sources and docs.
+  # generated sources and docs. Action bundles are not committed: the release builds them.
   path_filters:
     - '!bun.lock'
-    - '!actions/**/dist/**' # bundled from src/ by build-action.ts, checked by check-action-dist
     - '!actions/**/src/generated/**' # from action.yaml, checked by check-action-sources
     - '!**/CHANGELOG.md'
     - '!.release-please-manifest.json'
@@ -35,8 +34,9 @@ reviews:
     - path: 'actions/**/action.yaml'
       instructions: |
         Each action is consumed by many downstream repositories and released as its own
-        release-please component (`actions-<category>-<name>-vX.Y.Z`). Inputs, outputs, defaults,
-        `required`, and observable behaviour are a public API. Flag:
+        release-please component (`src-actions-<category>-<name>`); consumers pin its consumer tag
+        `actions-<category>-<name>-vX.Y.Z` on the build commit the release publishes. Inputs,
+        outputs, defaults, `required`, and observable behaviour are a public API. Flag:
         - Removed or renamed inputs/outputs, changed defaults or semantics without a breaking-change
           marker (`!` / `BREAKING CHANGE:`) so the component's major is bumped.
         - Any `${{ inputs.* }}`, `${{ github.* }}` or step output interpolated directly into `run:`;
@@ -50,11 +50,12 @@ reviews:
           `::add-mask::` anything derived from a secret, and `persist-credentials: false` on checkout
           unless the action pushes.
         - New inputs without `description`, or descriptions that disagree with the implementation.
-        Changes here must be mirrored in `src/generated/` and `dist/` (enforced in CI); do not comment
-        on those files directly.
+        Changes here must be mirrored in `src/generated/` (enforced in CI); do not comment on those
+        files directly. `dist/` is not committed.
     - path: 'actions/**/src/**/*.ts'
       instructions: |
-        Runtime code of JavaScript actions, bundled into `dist/index.js`. `strict` TypeScript is on.
+        Runtime code of JavaScript actions, bundled into `dist/index.js` at release time. `strict`
+        TypeScript is on.
         Flag `any`, unchecked casts, non-null assertions without justification, floating promises,
         and swallowed errors; failures must surface via `core.setFailed`/typed errors from
         `actions-util` with an actionable message. Validate and normalise every input (paths must stay

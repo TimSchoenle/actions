@@ -43,13 +43,12 @@ const MODULE_PATH_BINDINGS: readonly ModulePathBinding[] = [
 /**
  * The bundler flags every Node action is built with, defined in exactly one place.
  *
- * GitHub runs the committed `dist/index.js`, and the bundle freshness check (`check-action-dist`)
- * rebuilds it and compares byte-for-byte. That comparison only holds if every action bundles with
- * the same flags, so they live here rather than in thirteen copies of a package.json string that
- * could drift apart unnoticed.
+ * The release builds every bundle twice, on separate runners, and publishes only when both builds are
+ * byte-for-byte identical. That only holds if every action bundles with the same flags, so they live
+ * here rather than in thirteen copies of a package.json string that could drift apart unnoticed.
  *
  * `--target node` matches the `node24` runtime GitHub provides. `--minify` is deterministic within a
- * Bun version — which is what the version guard below pins — and shrinks the committed artifact.
+ * Bun version — which is what the version guard below pins — and shrinks the published bundle.
  * The `--define`s keep the bundle independent of where it was built; see {@link MODULE_PATH_BINDINGS}.
  */
 const BUILD_FLAGS: readonly string[] = [
