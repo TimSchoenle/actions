@@ -130,20 +130,26 @@ describe('publish-build-commit', () => {
     expect(second.outputs.build_sha).toBe(build);
   });
 
-  // Hostile release entries are covered case by case in the unit tests; this one shows the shipped
-  // bundle refusing one under the runner's contract. It fails parsing the inputs, before any request:
-  // the API is unreachable, so a request would fail with a different error.
-  it('refuses a consumer tag that reads as an option, before any request', async () => {
+  // Hostile release entries, run through the shipped bundle under the runner's contract. Parsing the
+  // inputs fails before any request; the API is unreachable, so each case costs no request, and one
+  // made before the check would fail with a different error than the one asserted.
+  const nameRule = "releases[0]: 'releaseName' must be one line of 1 to 200 characters without control characters.";
+  const badTag = (tag: string): string => `releases[0]: 'consumerTag' ${JSON.stringify(tag)} is not a valid tag name.`;
+  it.each([
+    ['a consumer tag that reads as an option', { consumerTag: '--force' }, badTag('--force')],
+    ['a consumer tag with a bidi override', { consumerTag: 'v1.0.0\u202e' }, badTag('v1.0.0\u202e')],
+    ['an oversized consumer tag', { consumerTag: 't'.repeat(251) }, badTag('t'.repeat(251))],
+    ['an oversized release name', { releaseName: 'n'.repeat(201) }, nameRule],
+    ['a release name with an escape sequence', { releaseName: 'demo \u001b[31mred' }, nameRule],
+  ] as const)('refuses %s before any request', async (_name, entry, message) => {
     const staged = await stage();
     const notesFile = path.join(temp, 'hostile.md');
     await writeFile(notesFile, '* hostile\n');
-    const hostile = JSON.stringify([{ consumerTag: '--force', releaseName: 'demo: v1.0.0', notesFile }]);
+    const hostile = JSON.stringify([{ consumerTag: 'v1.0.0', releaseName: 'demo: v1.0.0', notesFile, ...entry }]);
 
-    const refused = await publish(staged, { releases: hostile }, 'failure', {
-      GITHUB_API_URL: UNREACHABLE_API_URL,
-    });
+    const refused = await publish(staged, { releases: hostile }, 'failure', { GITHUB_API_URL: UNREACHABLE_API_URL });
 
-    expect(refused.errors).toEqual([`releases[0]: 'consumerTag' "--force" is not a valid tag name.`]);
+    expect(refused.errors).toEqual([message]);
   });
 
   it('fails on a consumer tag created at another commit, before any write', async () => {

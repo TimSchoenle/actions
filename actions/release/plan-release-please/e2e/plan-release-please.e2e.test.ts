@@ -87,15 +87,24 @@ describe('plan-release-please', () => {
     expect(result.outputs).toMatchObject({ 'is-release': 'false', 'pull-request': '', releases: '[]' });
   });
 
-  // Hostile inputs are covered case by case in the unit tests; this one shows the shipped bundle
-  // refusing one under the runner's contract, before it spends a request: the API is unreachable, so a
-  // request made before the check would fail with a different error.
-  it('refuses an injection-style sha before calling the API', async () => {
-    const result = await plan({ mode: 'preflight', sha: '$(id)' }, 'failure', {
-      GITHUB_API_URL: UNREACHABLE_API_URL,
-    });
+  // Hostile inputs, run through the shipped bundle under the runner's contract. The API is
+  // unreachable, so each case costs no request, and one made before the check would fail with a
+  // different error than the one asserted.
+  const prefixRule =
+    "source-tag-prefix must be at most 100 letters, digits, '.', '_', '-' and '/', without '..' or '//'";
+  it.each([
+    ['an injection-style sha', { sha: '$(id)' }, 'sha must be a full lowercase commit id; got "$(id)".'],
+    ['a Unicode prefix', { 'source-tag-prefix': 'src-ü-' }, `${prefixRule}; got "src-ü-".`],
+    ['a traversal prefix', { 'source-tag-prefix': 'src/../' }, `${prefixRule}; got "src/../".`],
+    [
+      'an oversized prefix',
+      { 'source-tag-prefix': `${'s'.repeat(101)}-` },
+      `${prefixRule}; got ${JSON.stringify(`${'s'.repeat(101)}-`)}.`,
+    ],
+  ] as const)('refuses %s before calling the API', async (_name, inputs, message) => {
+    const result = await plan({ mode: 'preflight', ...inputs }, 'failure', { GITHUB_API_URL: UNREACHABLE_API_URL });
 
-    expect(result.errors).toEqual(['sha must be a full lowercase commit id; got "$(id)".']);
+    expect(result.errors).toEqual([message]);
   });
 
   it('fails on a commit that does not exist', async () => {
