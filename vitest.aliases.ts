@@ -71,6 +71,10 @@ export const workspaceAliases: Alias[] = [
     find: 'actions-e2e',
     replacement: fileURLToPath(new URL('./packages/e2e/src/index.ts', import.meta.url)),
   },
+  {
+    find: 'action-graph',
+    replacement: fileURLToPath(new URL('./packages/action-graph/src/index.ts', import.meta.url)),
+  },
 ];
 
 /** Cases that talk to a real repository, kept out of the unit suite and run by `bun run e2e`. */
