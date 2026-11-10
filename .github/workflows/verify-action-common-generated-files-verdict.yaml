@@ -186,7 +186,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # Replaces the committed bundles with the ones the build job built from this commit.
+      # Installs the bundles the build job built from this commit; dist/ is not committed.
       - name: Install Built Actions
         uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
         with:
@@ -268,7 +268,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # Replaces the committed bundles with the ones the build job built from this commit.
+      # Installs the bundles the build job built from this commit; dist/ is not committed.
       - name: Install Built Actions
         uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
         with:
@@ -310,7 +310,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # Replaces the committed bundles with the ones the build job built from this commit.
+      # Installs the bundles the build job built from this commit; dist/ is not committed.
       - name: Install Built Actions
         uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
         with:
@@ -352,7 +352,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # Replaces the committed bundles with the ones the build job built from this commit.
+      # Installs the bundles the build job built from this commit; dist/ is not committed.
       - name: Install Built Actions
         uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
         with:
@@ -392,7 +392,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # Replaces the committed bundles with the ones the build job built from this commit.
+      # Installs the bundles the build job built from this commit; dist/ is not committed.
       - name: Install Built Actions
         uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
         with:
@@ -436,7 +436,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # Replaces the committed bundles with the ones the build job built from this commit.
+      # Installs the bundles the build job built from this commit; dist/ is not committed.
       - name: Install Built Actions
         uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
         with:
@@ -480,7 +480,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # Replaces the committed bundles with the ones the build job built from this commit.
+      # Installs the bundles the build job built from this commit; dist/ is not committed.
       - name: Install Built Actions
         uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
         with:
@@ -551,7 +551,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # Replaces the committed bundles with the ones the build job built from this commit.
+      # Installs the bundles the build job built from this commit; dist/ is not committed.
       - name: Install Built Actions
         uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
         with:
@@ -615,7 +615,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # Replaces the committed bundles with the ones the build job built from this commit.
+      # Installs the bundles the build job built from this commit; dist/ is not committed.
       - name: Install Built Actions
         uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
         with:
@@ -695,7 +695,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # Replaces the committed bundles with the ones the build job built from this commit.
+      # Installs the bundles the build job built from this commit; dist/ is not committed.
       - name: Install Built Actions
         uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
         with:

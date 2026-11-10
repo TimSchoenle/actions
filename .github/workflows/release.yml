@@ -1,0 +1,564 @@
+name: Release
+
+# Builds every action bundle at release time and publishes it on a build commit, so main and pull
+# requests carry no dist/. docs/release-pipeline.md has the architecture, the runbook and recovery.
+#
+# release-please owns versions, changelogs and the release pull request, and creates no tag or
+# GitHub Release (skip-github-release). Its components carry the src- prefix, so it reads only the
+# source tags on main. When a push merges a release pull request (commit M):
+#
+#   plan → build + build-verify → attest → publish → generate-docs → commit-docs
+#
+# publish creates the build commit B (tree of M plus the bundles; parents: the releases branch head,
+# then M), fast-forwards the releases branch to it, tags B with the consumer tags consumers pin and
+# M with the source tags, publishes the Releases, and relabels the pull request autorelease: tagged.
+# Until it does, release-please opens no new release pull request.
+#
+# Every push to main, and M once publish has succeeded, then runs
+#
+#   source-tags → preflight → release-please
+#
+# source-tags creates any source tag no publish created (a package added and never released);
+# preflight refuses to run release-please while one is missing, since release-please would then
+# propose the whole history as unreleased.
+#
+# Every job checks out github.sha, the pushed commit. A publish that failed is finished by
+# re-running the failed jobs of the run on its merge commit, while the build artifacts are kept;
+# every publish step is idempotent. There is no dispatch input naming another commit to build.
+#
+# Jobs that run repository code (build, build-verify, generate-docs, the plan job of source-tags)
+# hold a read-only token and no secret. Jobs that hold a secret or id-token: write (attest, publish,
+# release-please, commit-docs, the apply job of source-tags) run only actions pinned by commit and
+# select artifacts by ID, never by name.
+
+on:
+  push:
+    branches:
+      - main
+
+# One run at a time, queued rather than cancelled, so a release is never skipped and a push never
+# reads main while a publish is still writing tags. Waiting costs nothing: release-please opens no
+# pull request while a merged one is pending anyway. The group has its own suffix, because inside the
+# called bootstrap-source-tags.yml github.workflow is this workflow's name.
+concurrency:
+  group: ${{ github.workflow }}-caller-${{ github.ref }}
+  queue: max
+
+permissions: {}
+
+jobs:
+  # Read-only. Decides whether this run publishes a release, and whether one is in flight.
+  plan:
+    name: Plan
+    # The release environment admits only main.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read # to read the config, the manifest and the changelogs at the commit
+      issues: read # to list merged pull requests by label
+      pull-requests: read # to find the pull request the commit merged
+    outputs:
+      is-release: ${{ steps.plan.outputs.is-release }}
+      pull-request: ${{ steps.plan.outputs.pull-request }}
+      paths: ${{ steps.paths.outputs.paths }}
+      release-pending: ${{ steps.pending.outputs.pending }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+
+      # is-release is true only when the commit is the merge commit of a merged release pull request
+      # from the release App that is still labelled autorelease: pending and changes the manifest.
+      - name: Plan Release
+        id: plan
+        uses: TimSchoenle/actions/actions/release/plan-release-please@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-plan-release-please-v1.1.0
+        with:
+          mode: plan
+          sha: ${{ github.sha }}
+          release-pr-author-id: '248313786' # automatic-release-manager[bot]
+          consumer-tag-pattern: '^(actions|configs)-[a-z0-9-]+-v\d+\.\d+\.\d+$'
+
+      - name: Released Paths
+        id: paths
+        env:
+          RELEASES: ${{ steps.plan.outputs.releases }}
+        run: echo "paths=$(jq -c '[.[].path]' <<<"$RELEASES")" >> "$GITHUB_OUTPUT"
+
+      # While a merged release pull request is still pending, release-please opens nothing and its
+      # source tags do not exist yet, so source-tags and preflight are skipped rather than failed: the
+      # run that merged it is the one that reports a failed publish. The issues API, not search, so a
+      # label removed a moment ago is not still listed.
+      - name: Check For A Release In Flight
+        id: pending
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          count="$(gh api --method GET "repos/${REPOSITORY}/issues" -f labels='autorelease: pending' -f state=closed \
+            --paginate --jq '.[] | select(.pull_request.merged_at != null) | .number' | wc -l)"
+          if [ "$count" -gt 0 ]; then
+            echo "::notice::${count} merged release pull request(s) still labelled autorelease: pending."
+            echo "pending=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "pending=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Two builds on separate runners from the same commit. publish refuses to continue unless their
+  # manifests, which list every bundle's SHA-256, are identical.
+  build:
+    name: Build
+    needs: plan
+    if: needs.plan.outputs.is-release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      artifact-id: ${{ steps.build.outputs.artifact-id }}
+      artifact-digest: ${{ steps.build.outputs.artifact-digest }}
+      manifest-sha256: ${{ steps.build.outputs.manifest-sha256 }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            registry.npmjs.org:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Setup Bun
+        id: bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: '.bun-version'
+
+      # No lifecycle scripts: the build needs none, and a compromised dependency could use one to run
+      # code before the build is even reached.
+      - name: Install Dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      # Every action of the repository; the template under scripts/templates is not one.
+      - name: Resolve Actions
+        id: resolve
+        uses: TimSchoenle/actions/actions/release/resolve-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-resolve-actions-v1.1.0
+        with:
+          exclude: scripts/templates
+
+      - name: Build Actions
+        id: build
+        uses: TimSchoenle/actions/actions/release/build-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-build-actions-v1.1.0
+        with:
+          build-dirs: ${{ steps.resolve.outputs.build-dirs }}
+          build-command: bun run build
+          artifact-name: release-bundles-${{ github.run_attempt }}
+          retention-days: '7'
+          source-sha: ${{ github.sha }}
+          toolchain: bun ${{ steps.bun.outputs.bun-version }}
+
+  build-verify:
+    name: Build (Verify)
+    needs: plan
+    if: needs.plan.outputs.is-release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      manifest-sha256: ${{ steps.build.outputs.manifest-sha256 }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            registry.npmjs.org:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Setup Bun
+        id: bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: '.bun-version'
+
+      # No lifecycle scripts: the build needs none, and a compromised dependency could use one to run
+      # code before the build is even reached.
+      - name: Install Dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Resolve Actions
+        id: resolve
+        uses: TimSchoenle/actions/actions/release/resolve-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-resolve-actions-v1.1.0
+        with:
+          exclude: scripts/templates
+
+      - name: Build Actions
+        id: build
+        uses: TimSchoenle/actions/actions/release/build-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-build-actions-v1.1.0
+        with:
+          build-dirs: ${{ steps.resolve.outputs.build-dirs }}
+          build-command: bun run build
+          artifact-name: release-bundles-verify-${{ github.run_attempt }}
+          retention-days: '7'
+          source-sha: ${{ github.sha }}
+          toolchain: bun ${{ steps.bun.outputs.bun-version }}
+
+  # SLSA build provenance for every bundle, signed with this workflow's identity. Runs no repository
+  # code: the bundles are verified against the build job's manifest hash by a pinned action, and the
+  # subjects come from the same immutable artifact, downloaded again by ID with its digest checked.
+  attest:
+    name: Attest
+    needs: [plan, build, build-verify]
+    if: needs.plan.outputs.is-release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read # to check the artifact record
+      attestations: write # to store the attestations
+      contents: read # to read the artifact
+      id-token: write # to sign the attestations with Sigstore
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+            fulcio.sigstore.dev:443
+            rekor.sigstore.dev:443
+            tuf-repo-cdn.sigstore.dev:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Fail When The Two Builds Disagree
+        if: needs.build.outputs.manifest-sha256 != needs.build-verify.outputs.manifest-sha256
+        env:
+          BUILD: ${{ needs.build.outputs.manifest-sha256 }}
+          VERIFY: ${{ needs.build-verify.outputs.manifest-sha256 }}
+        run: |
+          set -euo pipefail
+          echo "::error::The two builds produced different bundles: manifest ${BUILD} against ${VERIFY}."
+          exit 1
+
+      - name: Verify Bundles
+        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
+          expected-artifact-digest: ${{ needs.build.outputs.artifact-digest }}
+          github-token: ${{ github.token }}
+
+      - name: Download Checksums
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact-id }}
+          path: ${{ runner.temp }}/attest
+          digest-mismatch: error
+
+      # bundles.sha256 names each bundle by its repository path, so every subject is distinct.
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: ${{ runner.temp }}/attest/bundles.sha256
+
+  publish:
+    name: Publish
+    needs: [plan, build, build-verify, attest]
+    if: needs.plan.outputs.is-release == 'true'
+    environment:
+      name: release
+      deployment: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Shared with the apply job of bootstrap-source-tags.yml, so a hand-dispatched bootstrap never
+    # creates tags while a release publishes. A queue, so neither drops the other.
+    concurrency:
+      group: release-publish
+      queue: max
+    permissions:
+      actions: read # to check and download the build artifact
+      contents: read # for plan-release-please
+      pull-requests: read # for plan-release-please, which lists the commit's pull requests
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+            uploads.github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Generate Bot Token
+        id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          permission-contents: write # to create B, move the releases branch, tag and publish Releases
+          permission-issues: write # to relabel the release pull request
+          permission-pull-requests: write # to comment on the release pull request
+
+      # Planned again here, so the notes files publish reads exist in this job.
+      - name: Plan Release
+        id: plan
+        uses: TimSchoenle/actions/actions/release/plan-release-please@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-plan-release-please-v1.1.0
+        with:
+          mode: plan
+          sha: ${{ github.sha }}
+          release-pr-author-id: '248313786' # automatic-release-manager[bot]
+          consumer-tag-pattern: '^(actions|configs)-[a-z0-9-]+-v\d+\.\d+\.\d+$'
+
+      - name: Fail When The Plan Changed
+        if: steps.plan.outputs.is-release != 'true' || steps.plan.outputs.pull-request != needs.plan.outputs.pull-request
+        run: |
+          set -euo pipefail
+          echo "::error::The release plan changed between the plan job and publish; nothing was published."
+          exit 1
+
+      # main no longer commits bundles, so every bundle path must be new in M.
+      - name: Publish Build Commit
+        id: publish
+        uses: TimSchoenle/actions/actions/release/publish-build-commit@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-publish-build-commit-v1.1.0
+        with:
+          token: ${{ steps.token.outputs.token }}
+          github-token: ${{ github.token }}
+          source-sha: ${{ github.sha }}
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-artifact-digest: ${{ needs.build.outputs.artifact-digest }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
+          cross-check-manifest-sha256: ${{ needs.build-verify.outputs.manifest-sha256 }}
+          existing-files: fail
+          releases-branch: releases
+          releases: ${{ steps.plan.outputs.releases }}
+          release-assets: bundles
+          make-latest: legacy
+          pull-request: ${{ steps.plan.outputs.pull-request }}
+
+  # Creates the source tags no publish created. Skipped while a release is in flight, except in the
+  # run that published it.
+  source-tags:
+    name: Source Tags
+    needs: [plan, publish]
+    if: >-
+      !cancelled() && needs.plan.result == 'success' &&
+      ((needs.plan.outputs.is-release == 'true' && needs.publish.result == 'success') ||
+      (needs.plan.outputs.is-release != 'true' && needs.plan.outputs.release-pending != 'true'))
+    permissions:
+      contents: read # for the plan job, which reads the history and tags
+    uses: ./.github/workflows/bootstrap-source-tags.yml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
+
+  # Fails while any package lacks the source tag of its manifest version: release-please would
+  # otherwise walk the whole history for that package and propose every commit as unreleased.
+  preflight:
+    name: Preflight
+    needs: source-tags
+    if: ${{ !cancelled() && needs.source-tags.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read # to read the config, the manifest and the tags
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+
+      - name: Check Source Tags
+        uses: TimSchoenle/actions/actions/release/plan-release-please@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-plan-release-please-v1.1.0
+        with:
+          mode: preflight
+          consumer-tag-pattern: '^(actions|configs)-[a-z0-9-]+-v\d+\.\d+\.\d+$'
+
+  release-please:
+    name: Release Please
+    needs: preflight
+    if: ${{ !cancelled() && needs.preflight.result == 'success' }}
+    environment:
+      name: release
+      deployment: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Nothing here uses GITHUB_TOKEN: release-please and the token step authenticate with the App.
+    permissions: {}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+
+      # release-please commits to its branch, opens and updates its pull request, and labels it
+      # through the issues API.
+      - name: Generate Bot Token
+        id: generate_token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+
+      # skip-github-release: the publish job creates the tags and Releases. release-please-config.json
+      # sets it too, so a run without this input behaves the same.
+      - name: Run release-please
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+          skip-github-release: true
+
+  # The release pull request pins every README to tag names, because its tags do not exist until it
+  # is published. Once publish has created them, the docs generator resolves those pins to the build
+  # commit, and without this job the first `Update Files` run on every open pull request would commit
+  # that same diff to its branch. Regenerating once here and committing to main means a branch that
+  # merges main afterwards has nothing left to regenerate.
+  #
+  # Split like update-files.yml and update-files-commit.yml: this job runs the repository's scripts
+  # with a read-only token and no secrets, and only uploads a patch; commit-docs holds the release
+  # bot's key and runs nothing from the repository.
+  generate-docs:
+    name: Generate Docs
+    needs: [plan, publish]
+    if: needs.publish.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      has_changes: ${{ steps.patch.outputs.has_changes }}
+    permissions:
+      contents: read # to fetch code and tags
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ github.sha }}
+
+      # Commit Docs only commits onto this run's commit, so once main has moved on there is nothing
+      # this job could deliver.
+      - name: Check Main Has Not Moved
+        id: head
+        run: |
+          set -euo pipefail
+          head="$(git ls-remote origin "refs/heads/${GITHUB_REF_NAME}" | cut -f1)"
+          if [ "$head" = "$GITHUB_SHA" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::${GITHUB_REF_NAME} moved from ${GITHUB_SHA} to ${head}; pull requests will regenerate the docs."
+            echo "current=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Bun
+        if: steps.head.outputs.current == 'true'
+        uses: TimSchoenle/actions/actions/bun/setup-cached@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-bun-setup-cached-v2.0.0
+        with:
+          cache-mode: none
+
+      # publish has created every consumer tag through the API before it succeeds, but git can trail
+      # the API briefly. A tag git cannot see would leave its README pinned to the tag name, so this
+      # re-fetches until all of them are present and fails, naming them, if they are not.
+      - name: Wait For Release Tags
+        if: steps.head.outputs.current == 'true'
+        env:
+          RELEASED_PATHS: ${{ needs.plan.outputs.paths }}
+        run: bun run wait-release-tags
+
+      - name: Generate Docs
+        if: steps.head.outputs.current == 'true'
+        run: bun run generate-docs
+
+      - name: Create Patch
+        if: steps.head.outputs.current == 'true'
+        id: patch
+        uses: TimSchoenle/actions/actions/common/create-patch@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-create-patch-v1.1.2
+        with:
+          artifact_name: release-docs
+          paths: 'README.md SECURITY.md actions/*/*/README.md actions/*/*/examples/*.yaml actions/*/*/examples/*.yml'
+
+  # Commits straight to main, so the release bot must be on the bypass list of the Main ruleset. The
+  # commit is made on top of the commit this run was triggered for: if main has moved since,
+  # commit-patch skips it as branch_moved, and pull requests pick the docs up through Update Files.
+  commit-docs:
+    name: Commit Docs
+    needs: generate-docs
+    if: needs.generate-docs.outputs.has_changes == 'true'
+    environment:
+      name: release
+      deployment: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch the commit the patch applies to
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      # commit-patch reads only git objects, so the release commit is fetched without a checkout.
+      - name: Fetch The Release Commit
+        uses: TimSchoenle/actions/actions/common/fetch-head@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-fetch-head-v1.1.1
+        with:
+          sha: ${{ github.sha }}
+
+      - name: Generate Bot Token
+        id: generate_token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          permission-contents: write
+
+      # `docs` is a hidden changelog section, so the release-please run this commit starts opens no
+      # release pull request for it.
+      - name: Commit Patch
+        uses: TimSchoenle/actions/actions/common/commit-patch@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-commit-patch-v1.3.1
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+          branch: ${{ github.ref_name }}
+          expected_head_sha: ${{ github.sha }}
+          artifact_name: release-docs
+          allowed_paths: 'README.md SECURITY.md actions/*/*/README.md actions/*/*/examples/*.yaml actions/*/*/examples/*.yml'
+          commit_message: 'docs: auto-update documentation'

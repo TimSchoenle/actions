@@ -2,10 +2,9 @@
 
 ## Prerequisites
 
-[Bun](https://bun.sh) at the version in [.bun-version](.bun-version). CI pins that file rather than
-taking the latest release: the bundle check rebuilds every action and compares the result against the
-committed bytes, and Bun's minifier renames identifiers between releases, so a different Bun fails
-the check without any source having changed.
+[Bun](https://bun.sh) at the version in [.bun-version](.bun-version). CI and the release pin that file
+rather than taking the latest release: the release builds every bundle twice and publishes only when
+both builds are byte-for-byte identical, and Bun's minifier renames identifiers between releases.
 
 ```bash
 bun install --frozen-lockfile
@@ -24,7 +23,9 @@ bun run remove-action     # the same set, deleted together
 ```
 
 Adding a directory by hand leaves it out of `.release-please-manifest.json`, and an unversioned
-component is skipped by the docs generator and never released.
+component is skipped by the docs generator and never released. A new package needs no tag of its own:
+the release workflow creates its source tag on the first push to `main` after it lands (see
+[docs/release-pipeline.md](docs/release-pipeline.md#adding-a-package)).
 
 ## Generated files
 
@@ -34,17 +35,32 @@ because CI regenerates it and commits the result back to the branch.
 | Output                                   | Generated from                                                      | Command                           |
 | ---------------------------------------- | ------------------------------------------------------------------- | --------------------------------- |
 | `README.md`, `SECURITY.md`               | `scripts/templates/`, plus every `action.yaml` and `configs/*.json` | `bun run generate-docs`           |
-| `actions/*/*/dist/`                      | each action's `src/`                                                | `bun run build:workspaces`        |
 | `actions/*/*/src/generated/action-io.ts` | that action's `action.yaml`                                         | `bun run generate-action-sources` |
 | `.github/workflows/verify-action-*.yaml` | `scripts/lib/e2e-workflow.ts`                                       | `bun run generate-e2e-workflows`  |
 | `.github/workflows/ci-required.yaml`     | the workflow files themselves                                       | `bun run generate-ci-required`    |
 
-The pre-commit hook regenerates `action-io.ts` and checks the bundles for the staged files only. The
-rest are checked in CI and committed back to the branch when they drift.
+The pre-commit hook regenerates `action-io.ts` for the staged `action.yaml` files, and Scripts CI fails
+a pull request whose committed copies have drifted. The rest are checked in CI and committed back to
+the branch when they drift.
+
+## Action bundles
+
+`dist/` is not committed. GitHub runs an action's `runs.main` bundle, so the release builds every
+bundle from the merged commit and publishes it on a build commit that the release tags point at; see
+[docs/release-pipeline.md](docs/release-pipeline.md). To run an action from a checkout, build it
+first:
+
+```bash
+bun run build:actions --all                        # every action
+bun run build:actions actions/common/create-patch  # one action, with the actions it needs
+```
+
+The `verify-action-*` workflows build the bundles they run in a job of their own and install them
+before any step uses them; the end-to-end harness refuses a bundle that build did not produce.
 
 ## Dependencies of a Node action
 
-Every Node action commits its bundle, so each dependency is paid for in every release. The shared
+Every Node action ships its bundle in every release, so each dependency is paid for in each one. The shared
 library `actions-util` (`packages/ts-util`) provides what the GitHub Actions toolkit would:
 
 | Instead of             | Use                                                                   |
@@ -68,8 +84,9 @@ bun run typecheck
 bun run test
 ```
 
-Scripts CI runs those, plus `check-action-sources`, `check-action-dist` and `check-e2e-workflows`,
-each of which fails when a committed output no longer matches its source. `jactionlint` checks the
+Scripts CI runs those, plus `check-action-sources` and `check-e2e-workflows`, each of which fails when
+a committed output no longer matches its source, and `build:actions --all`, which fails when any
+bundle no longer builds. `jactionlint` checks the
 workflow files and composite actions in the Security workflow, with the settings in
 `.github/jactionlint.yaml`; CodeQL analyses the TypeScript in its own.
 
@@ -145,7 +162,11 @@ component whose directory the commit touches: `fix` a patch, `feat` a minor, a `
 Scope the commit to one component where you can. A commit spanning two directories bumps both.
 
 Commits must be signed. The default-branch ruleset rejects unsigned ones, and the release bot is the
-only identity permitted to create a release tag.
+only identity permitted to create a release tag or move the `releases` branch.
+
+Choose the type by what consumers get. A pull request that changes only workflows, tooling or
+generated files under component directories takes a type that releases nothing (`ci`, `chore`,
+`docs`, `test`); any other type releases every component whose directory it touches.
 
 ## Prose
 

@@ -157,7 +157,7 @@ from restoring entries saved by earlier releases, which wrote from every event.
 - [`.github/workflows/auto-format.yml`](../../../.github/workflows/auto-format.yml)
 - [`.github/workflows/ci-required.yaml`](../../../.github/workflows/ci-required.yaml)
 - [`.github/workflows/rate-limit-rerun.yml`](../../../.github/workflows/rate-limit-rerun.yml)
-- [`.github/workflows/release-please.yml`](../../../.github/workflows/release-please.yml)
+- [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
 - [`.github/workflows/scripts-ci.yml`](../../../.github/workflows/scripts-ci.yml)
 - [`.github/workflows/update-files.yml`](../../../.github/workflows/update-files.yml)
 - [`.github/workflows/verify-action-common-close-pull-request.yaml`](../../../.github/workflows/verify-action-common-close-pull-request.yaml)

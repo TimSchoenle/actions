@@ -160,7 +160,7 @@ describe('action-utils', () => {
 
       expect(JSON.parse(configWrite[1] as string).packages['actions/pkg/sub']).toEqual({
         'release-type': 'simple',
-        component: 'actions-pkg-sub',
+        component: 'src-actions-pkg-sub',
         'include-component-in-tag': true,
       });
       expect(JSON.parse(manifestWrite[1] as string)['actions/pkg/sub']).toBe('1.0.0');
@@ -179,7 +179,7 @@ describe('action-utils', () => {
         packages: {
           'actions/pkg/sub': {
             'release-type': 'simple',
-            component: 'actions-pkg-sub',
+            component: 'src-actions-pkg-sub',
             'include-component-in-tag': true,
           },
         },

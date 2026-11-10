@@ -2,6 +2,7 @@ import path from 'node:path';
 
 import { parse } from 'yaml';
 
+import { consumerTag } from '../../release-tags.js';
 import { ROOT_DIR, Sys } from '../../utils.js';
 import { getRepoInfo } from '../git-utils.js';
 import { getManifestVersions, getReleaseComponent, getTagCommitSha } from '../utils.js';
@@ -73,7 +74,7 @@ export class ActionParser implements Parser {
         const normalizedDir = dir.replaceAll('\\', '/');
         const shortVersion = manifestShortVersions[normalizedDir];
         if (shortVersion) {
-          version = `${component}-v${shortVersion}`;
+          version = consumerTag(component, shortVersion);
         }
       }
 

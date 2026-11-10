@@ -87,7 +87,6 @@ scripts/templates/action/verify-workflow.yaml text eol=lf linguist-language=GitH
 *.min.js -diff linguist-generated
 *.min.css -diff linguist-generated
 actions/**/dist/** -diff linguist-generated
-actions/**/dist/index.js -diff linguist-generated
 packages/**/dist/** -diff linguist-generated
 actions/**/src/generated/** linguist-generated
 dist/** -diff linguist-generated

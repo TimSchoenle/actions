@@ -1,0 +1,158 @@
+name: Bootstrap Source Tags
+
+# Creates the release-please source tags (src-<component>-v<version>) that no publish created: those
+# of packages released before the build-on-release cutover, and of packages added since and never
+# released. scripts/bootstrap-source-tags.ts decides where each goes; docs/release-pipeline.md
+# explains why release-please needs them.
+#
+# release.yml calls this before its preflight on every push to main, so a new package never blocks
+# release-please. Dispatch it by hand to see the plan (dry-run) or to repair tags after a failure.
+#
+# Split like update-files.yml: `plan` runs the repository's script with a read-only token and no
+# secrets; `apply` holds the release App's key, runs nothing from the repository, and re-checks
+# every tag name and commit it is handed before creating anything.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Only print the plan; create no tag.'
+        type: boolean
+        default: true
+  workflow_call:
+    inputs:
+      dry-run:
+        description: 'Only print the plan; create no tag.'
+        type: boolean
+        default: false
+
+# Its own group rather than one built from github.workflow, which inside a call from release.yml is
+# release.yml's name and would collide with that run's group.
+concurrency:
+  group: bootstrap-source-tags-${{ github.ref }}
+  queue: max
+
+permissions: {}
+
+jobs:
+  plan:
+    name: Plan Source Tags
+    # Source tags belong on the default branch's history, so only its own run may plan them.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch the history and tags
+    outputs:
+      tags: ${{ steps.plan.outputs.tags }}
+      count: ${{ steps.plan.outputs.count }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+
+      # The whole history and every tag: the plan resolves consumer tags and finds the commit that
+      # added each never-released package.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ github.sha }}
+
+      # The script imports nothing outside node: built-ins, so no dependency is installed.
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: '.bun-version'
+
+      - name: Plan
+        id: plan
+        run: |
+          set -euo pipefail
+          plan="${RUNNER_TEMP}/source-tags.json"
+          bun scripts/bootstrap-source-tags.ts --output "$plan"
+          echo "tags=$(jq -c . "$plan")" >> "$GITHUB_OUTPUT"
+          echo "count=$(jq length "$plan")" >> "$GITHUB_OUTPUT"
+
+  apply:
+    name: Create Source Tags
+    needs: plan
+    if: needs.plan.outputs.count != '0' && !inputs.dry-run
+    environment:
+      name: release
+      deployment: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Shares the publish job's queue, so a tag is never created while a release is publishing. A queue
+    # rather than cancel-in-progress: false, which would still drop a waiting publish for a newer job.
+    concurrency:
+      group: release-publish
+      queue: max
+    # Every call is made with the App token minted below.
+    permissions: {}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+
+      # The tag ruleset lets only the release App create tags.
+      - name: Generate Bot Token
+        id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          permission-contents: write
+
+      # The plan came from repository code, so nothing in it is trusted: each tag must be a source tag
+      # name and each commit a full id already in the default branch's history. An existing tag is
+      # accepted only on the same commit; none is ever moved.
+      - name: Create Tags
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          REPOSITORY: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          TAGS: ${{ needs.plan.outputs.tags }}
+        run: |
+          set -euo pipefail
+          [ -n "$DEFAULT_BRANCH" ] || { echo "::error::The event names no default branch."; exit 1; }
+          mapfile -t entries < <(jq -c '.[]' <<<"$TAGS")
+          [ "${#entries[@]}" -eq "$(jq length <<<"$TAGS")" ] || { echo "::error::The plan is not a JSON array."; exit 1; }
+          for entry in "${entries[@]}"; do
+            tag="$(jq -r '.tag' <<<"$entry")"
+            sha="$(jq -r '.sha' <<<"$entry")"
+            if ! [[ "$tag" =~ ^src-[a-z0-9][a-z0-9-]*-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Refusing tag name '${tag}'."
+              exit 1
+            fi
+            if ! [[ "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "::error::Refusing commit '${sha}' for ${tag}."
+              exit 1
+            fi
+            status="$(gh api "repos/${REPOSITORY}/compare/${sha}...${DEFAULT_BRANCH}" --jq '.status')"
+            if [ "$status" != "ahead" ] && [ "$status" != "identical" ]; then
+              echo "::error::${sha} is not in the history of ${DEFAULT_BRANCH} (${status}); not tagging ${tag}."
+              exit 1
+            fi
+            existing="$(gh api "repos/${REPOSITORY}/git/matching-refs/tags/${tag}" \
+              --jq "map(select(.ref == \"refs/tags/${tag}\")) | first | if . == null then \"\" else .object.type + \" \" + .object.sha end")"
+            if [ -z "$existing" ]; then
+              gh api --method POST "repos/${REPOSITORY}/git/refs" -f "ref=refs/tags/${tag}" -f "sha=${sha}" --silent
+              echo "Created ${tag} at ${sha}."
+            elif [ "$existing" = "commit ${sha}" ]; then
+              echo "${tag} already points at ${sha}."
+            else
+              echo "::error::${tag} already exists as ${existing}, not ${sha}; tags are never moved."
+              exit 1
+            fi
+          done

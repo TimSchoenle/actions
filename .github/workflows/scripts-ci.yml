@@ -38,9 +38,9 @@ jobs:
         with:
           persist-credentials: false
 
-      # The bundle check below compares committed bytes against a fresh build, so the Bun that builds
-      # here must be the Bun that built what was committed. An empty bun-version makes setup-bun fall
-      # through to bun-version-file; setup-cached defaults it to 'latest', which would win otherwise.
+      # The Bun that builds here must be the Bun the release builds with. An empty bun-version makes
+      # setup-bun fall through to bun-version-file; setup-cached defaults it to 'latest', which would
+      # win otherwise.
       - name: Setup Bun
         uses: TimSchoenle/actions/actions/bun/setup-cached@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-bun-setup-cached-v2.0.0
         with:
@@ -58,11 +58,10 @@ jobs:
       - name: Check Generated Action Sources
         run: bun run check-action-sources
 
-      # GitHub runs the committed bundle at runs.main, not these sources. Without this step a pull
-      # request that changes an action but does not rebuild its bundle passes every other check while
-      # shipping code that matches no source tree.
-      - name: Check Action Bundles
-        run: bun run check-action-dist
+      # Bundles are no longer committed: the release builds them from the merged commit. Building
+      # every one here keeps a change that breaks a build from merging and stalling the next release.
+      - name: Build Action Bundles
+        run: bun run build:actions --all
 
       # The verify-action-* workflows for actions with e2e cases are generated. A hand-edited one
       # would be silently overwritten on the next run of the generator, taking its edit with it.

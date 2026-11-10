@@ -34,9 +34,50 @@ export async function getReleaseComponent(dir: string): Promise<string | null> {
   return null;
 }
 
+/** A tag name this module will look up: no whitespace, no revision syntax, no option-like start. */
+const LOOKUP_TAG = /^[A-Za-z0-9][A-Za-z0-9._+-]*$/;
+const FULL_SHA = /^[\da-f]{40}$/i;
+
+/** The commit `tag` points at in the local repository, or null when it is not there. */
+async function localTagCommit(tag: string): Promise<string | null> {
+  try {
+    const sha = (await Sys.exec(`git rev-parse --verify --quiet refs/tags/${tag}^{commit}`)).trim();
+    return FULL_SHA.test(sha) ? sha : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The commit `tag` points at on `origin`, or null. `ls-remote` lists a lightweight tag as its commit
+ * and an annotated one twice, the second time peeled with `^{}`; the peeled line wins.
+ */
+async function remoteTagCommit(tag: string): Promise<string | null> {
+  try {
+    const output = await Sys.exec(`git ls-remote --tags origin refs/tags/${tag} refs/tags/${tag}^{}`);
+    const refs = new Map(
+      output
+        .split('\n')
+        .map((line) => line.trim().split(/\s+/))
+        .filter((fields) => fields.length === 2 && FULL_SHA.test(fields[0]))
+        .map(([sha, ref]) => [ref, sha] as const),
+    );
+    return refs.get(`refs/tags/${tag}^{}`) ?? refs.get(`refs/tags/${tag}`) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The commit a release tag points at, for pinning examples to it.
+ *
+ * Consumer tags point at build commits on the `releases` branch, which a checkout of `main` only has
+ * when it fetched tags. The local repository is asked first, since a tag is never moved; `origin` is
+ * asked when the tag is not there. Null when neither has it, and the caller pins the tag name.
+ */
 export async function getTagCommitSha(tag: string): Promise<string | null> {
   const trimmedTag = tag.trim();
-  if (!trimmedTag) {
+  if (!LOOKUP_TAG.test(trimmedTag)) {
     return null;
   }
 
@@ -45,17 +86,7 @@ export async function getTagCommitSha(tag: string): Promise<string | null> {
     return cached;
   }
 
-  try {
-    const sha = (await Sys.exec(`git rev-parse --verify --quiet ${trimmedTag}^{commit}`)).trim();
-    if (!/^[\da-f]{40}$/i.test(sha)) {
-      TAG_SHA_CACHE.set(trimmedTag, null);
-      return null;
-    }
-
-    TAG_SHA_CACHE.set(trimmedTag, sha);
-    return sha;
-  } catch {
-    TAG_SHA_CACHE.set(trimmedTag, null);
-    return null;
-  }
+  const sha = (await localTagCommit(trimmedTag)) ?? (await remoteTagCommit(trimmedTag));
+  TAG_SHA_CACHE.set(trimmedTag, sha);
+  return sha;
 }

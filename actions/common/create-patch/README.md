@@ -126,7 +126,7 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 <summary>Called from 10 files in this repository</summary>
 
 - [`.github/workflows/auto-format.yml`](../../../.github/workflows/auto-format.yml)
-- [`.github/workflows/release-please.yml`](../../../.github/workflows/release-please.yml)
+- [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
 - [`.github/workflows/update-files.yml`](../../../.github/workflows/update-files.yml)
 - [`.github/workflows/verify-action-common-commit-patch.yaml`](../../../.github/workflows/verify-action-common-commit-patch.yaml)
 - [`.github/workflows/verify-action-common-find-patch.yaml`](../../../.github/workflows/verify-action-common-find-patch.yaml)

@@ -5,6 +5,7 @@ import { parse } from 'yaml';
 
 import { workflowFileName } from '../e2e-workflow.js';
 import { getTagCommitSha } from '../readme/utils.js';
+import { consumerTag } from '../release-tags.js';
 import { ROOT_DIR, scanSorted } from '../utils.js';
 import { DOCS_FILE_NAME, validateDocsFile } from './docs-file.js';
 import { parseActionManifest } from './manifest.js';
@@ -110,7 +111,7 @@ async function releaseOf(io: DocsIo, index: ReleaseIndex, actionPath: string): P
   if (typeof entry?.component !== 'string' || typeof version !== 'string') {
     return undefined;
   }
-  const tag = `${entry.component}-v${version}`;
+  const tag = consumerTag(entry.component, version);
   return { tag, sha: await io.tagSha(tag) };
 }
 

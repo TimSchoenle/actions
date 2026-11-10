@@ -28,10 +28,16 @@ Each directory is its own release-please component, so `actions/rust/clippy` and
 it belongs to, as `actions-<path>-vX.Y.Z` or `configs-<path>-vX.Y.Z`. The tables below carry the
 current tag of every component and the `uses:` line that pins it.
 
+`main` holds sources only. Each release tag points at a build commit on the `releases` branch: the
+released source commit plus every action bundle, built from it in CI and attested. The
+`src-<component>-vX.Y.Z` tags mark the released source commits on `main` for release-please and are
+not meant to be pinned. [docs/release-pipeline.md](docs/release-pipeline.md) describes the pipeline,
+and [SECURITY.md](SECURITY.md#verifying-a-release) how to verify a release.
+
 ## Quick start
 
-Copy a `uses:` line from the tables below. It pins the released tag to the commit that tag points
-at, and repeats the tag in a trailing comment.
+Copy a `uses:` line from the tables below. It pins the released tag to the build commit that tag
+points at, and repeats the tag in a trailing comment.
 
 Then extend the shared Renovate preset in your `renovate.json`:
 
@@ -205,6 +211,7 @@ build tool's config directory at your copy of the ruleset directory.
 | [Default Branch: Default Protection Rules](./configs/github-rulesets/branch-default_default-rules.json) | Enforces standard protection rules on the default branch: requires squash-merged PRs with 1 approval that a new push dismisses, plus an extra approval for unattributed changes, signed commits, no force pushes, CodeQL code scanning, and the required status checks listed in scripts/lib/required-checks.ts. |
 | [Release Please Branches: Trusted Bots & Admins Only](./configs/github-rulesets/branch-release-please_only-allow-trusted-bots-and-admins.json) | Restricts access to release-please branches, allowing only trusted bots and admins to create, update, or delete them, while enforcing code quality, code scanning and signature requirements. |
 | [Release Tags: Only Allow Automatic Release Manager Bot](./configs/github-rulesets/release-tags_only-allow-automatic-release-manager-bot.json) | Enforces that only the Automatic Release Manager bot can create, update, or delete release tags. |
+| [Releases Branch: Only Allow Release Bot](./configs/github-rulesets/branch-releases_only-allow-release-bot.json) | Protects the releases branch that every build commit is chained on: nobody else can create, update, delete or rewind it, or push an unsigned commit to it. The Automatic Release Manager bot bypasses every rule here; release/publish-build-commit only ever fast-forwards it with signed commits. |
 | [Renovate Branches: Trusted Bots & Admins Only](./configs/github-rulesets/branch-renovate_only-allow-trusted-bots-and-admins.json) | Restricts access to Renovate branches, allowing only trusted bots (Renovate and the repository's GitHub Apps) and admins to manage them, while enforcing code quality, code scanning and signature requirements. |
 
 
@@ -341,13 +348,16 @@ dependencies {
 
 ## Documentation
 
-`docs/` holds the two writing standards every repository in this account is held to. Other
-repositories link them from their own `CONTRIBUTING.md` instead of keeping a copy.
+`docs/` holds the two writing standards every repository in this account is held to, which other
+repositories link from their own `CONTRIBUTING.md` instead of keeping a copy, and how this repository
+releases.
 
 | Document | Purpose |
 | --- | --- |
 | [docs/readme/README.md](docs/readme/README.md) | What a README contains and in what order, how its prose is written, the template it starts from and the CI job that keeps it rendered. |
 | [docs/doc-comments/README.md](docs/doc-comments/README.md) | What carries a doc comment and what it says, with an annex each for Rust, Java and TypeScript. |
+| [docs/release-pipeline.md](docs/release-pipeline.md) | How a release is built, attested and published on a build commit, the runbook for a failed release, the repository settings it needs and how to roll it back. |
+| [docs/adopting-build-on-release.md](docs/adopting-build-on-release.md) | Reference release workflows for another repository: a single action at the root, and a release-please monorepo. |
 
 ## Contributing
 

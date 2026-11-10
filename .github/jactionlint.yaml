@@ -44,6 +44,22 @@ ignores:
     file: actions/common/create-pull-request/action.yaml
     step: Commit Changes
     reason: known no-op, empty_commit does nothing until commit-changes supports empty commits
+  # dist/ is not committed. These verify jobs run the action from the workspace after their Install
+  # Built Actions step has put the bundles the build job built from this commit into it, which a
+  # static check of the checkout cannot see. Each entry names one workflow and one action, so the
+  # rule still applies to every other local action.
+  - rule: invalid-local-action
+    file: .github/workflows/verify-action-common-download-release-asset.yaml
+    uses: ./actions/common/download-release-asset
+    reason: dist/index.js is installed by the Install Built Actions step before this step runs
+  - rule: invalid-local-action
+    file: .github/workflows/verify-action-helper-verify-branch-name.yaml
+    uses: ./actions/helper/verify-branch-name
+    reason: dist/index.js is installed by the Install Built Actions step before this step runs
+  - rule: invalid-local-action
+    file: .github/workflows/verify-action-terrace-setup.yaml
+    uses: ./actions/terrace/setup
+    reason: dist/index.js is installed by the Install Built Actions step before this step runs
   # The point of this workflow: it runs the default branch's copy, which a pull request cannot
   # change, holds the App key there, and treats the pull_request run's patch as untrusted
   # (commit-patch's allowed_paths and expected_head_sha; the find job's same-repository guard).
