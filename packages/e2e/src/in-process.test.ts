@@ -1,4 +1,4 @@
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, existsSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
@@ -28,6 +28,61 @@ describe('runInProcess', () => {
 
     expect(result.exitCode).toBe(1);
     expect(process.exitCode).toBe(before);
+  });
+
+  it('returns the variables the body exported through GITHUB_ENV', async () => {
+    const result = await runInProcess({}, () => {
+      appendFileSync(process.env['GITHUB_ENV'] as string, 'EXPORTED<<EOF\nvalue\nEOF\n');
+    });
+
+    expect(result.exportedEnv).toEqual({ EXPORTED: 'value' });
+  });
+
+  it('calls back a write that passes a callback, with or without an encoding', async () => {
+    const result = await runInProcess({}, async () => {
+      await new Promise<void>((resolve) => process.stdout.write('one\n', () => resolve()));
+      await new Promise<void>((resolve) => process.stdout.write('two\n', 'utf8', () => resolve()));
+    });
+
+    expect(result.stdout).toBe('one\ntwo\n');
+  });
+
+  it('keeps a multi-byte character that arrives split across two writes', async () => {
+    const euro = Buffer.from('€\n', 'utf8');
+    const result = await runInProcess({}, () => {
+      process.stdout.write(euro.subarray(0, 1));
+      process.stdout.write(euro.subarray(1));
+    });
+
+    expect(result.stdout).toBe('€\n');
+  });
+
+  it('puts back the original stdout write after a run', async () => {
+    const before = process.stdout.write;
+    const hadOwnWrite = Object.hasOwn(process.stdout, 'write');
+    await runInProcess({}, () => {
+      process.stdout.write('captured\n');
+    });
+
+    expect(process.stdout.write).toBe(before);
+    expect(Object.hasOwn(process.stdout, 'write')).toBe(hadOwnWrite);
+  });
+
+  it('propagates an error the body throws and still restores everything', async () => {
+    const before = process.stdout.write;
+    let outputFile = '';
+
+    await expect(
+      runInProcess({ probe: 'x' }, () => {
+        outputFile = process.env['GITHUB_OUTPUT'] as string;
+        throw new Error('body failed');
+      }),
+    ).rejects.toThrow('body failed');
+
+    expect(process.stdout.write).toBe(before);
+    expect(process.env['INPUT_PROBE']).toBeUndefined();
+    expect(outputFile).not.toBe('');
+    expect(existsSync(outputFile)).toBe(false);
   });
 
   it('restores a variable it overrode', async () => {

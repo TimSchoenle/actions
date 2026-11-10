@@ -9,6 +9,7 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { StringDecoder } from 'node:string_decoder';
 
 import { parseFileCommands } from './github-file-commands.js';
 import { parseWorkflowCommands } from './workflow-commands.js';
@@ -60,20 +61,34 @@ export async function runInProcess(
   };
   const saved = new Map(Object.keys(variables).map((key) => [key, process.env[key]]));
   const savedExitCode = process.exitCode;
-  const write = process.stdout.write.bind(process.stdout);
+  // `write` normally lives on the stream's prototype; restoring the descriptor (or its absence) puts
+  // back exactly what was there, rather than leaving a bound copy on the instance.
+  const savedWrite = Object.getOwnPropertyDescriptor(process.stdout, 'write');
+  // One decoder for the whole run, so a multi-byte character split across two writes survives.
+  const decoder = new StringDecoder('utf8');
   const chunks: string[] = [];
 
   process.exitCode = 0;
   Object.assign(process.env, variables);
-  process.stdout.write = ((chunk: string | Uint8Array): boolean => {
-    chunks.push(typeof chunk === 'string' ? chunk : Buffer.from(chunk).toString('utf8'));
+  process.stdout.write = ((
+    chunk: string | Uint8Array,
+    encodingOrCallback?: BufferEncoding | ((error?: Error | null) => void),
+    callback?: (error?: Error | null) => void,
+  ): boolean => {
+    const encoding = typeof encodingOrCallback === 'string' ? encodingOrCallback : undefined;
+    const done = typeof encodingOrCallback === 'function' ? encodingOrCallback : callback;
+    chunks.push(decoder.write(typeof chunk === 'string' ? Buffer.from(chunk, encoding) : Buffer.from(chunk)));
+    // A stream calls back asynchronously once the chunk is handled; a body may await it.
+    if (done !== undefined) {
+      process.nextTick(done);
+    }
 
     return true;
   }) as typeof process.stdout.write;
 
   try {
     await body();
-    const stdout = chunks.join('');
+    const stdout = chunks.join('') + decoder.end();
 
     return {
       ...parseWorkflowCommands(stdout),
@@ -83,7 +98,11 @@ export async function runInProcess(
       stdout,
     };
   } finally {
-    process.stdout.write = write;
+    if (savedWrite === undefined) {
+      delete (process.stdout as { write?: unknown }).write;
+    } else {
+      Object.defineProperty(process.stdout, 'write', savedWrite);
+    }
     process.exitCode = savedExitCode;
     for (const [key, value] of saved) {
       if (value === undefined) {
