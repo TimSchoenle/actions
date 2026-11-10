@@ -126,20 +126,28 @@ pull request opens until this is resolved.
 1. Read the failed job's log. Nothing is published before the bundles are verified, and every publish
    step can be repeated.
 2. Within seven days, while the build artifacts are kept, **Re-run failed jobs** on that run.
-3. Otherwise, or when the fix needs a workflow change merged first, dispatch **Release** on `main`
-   with `source-sha` set to `M`. It rebuilds from `M` and publishes with the workflow on `main`. The
-   provenance of a release finished this way names the `main` commit the dispatch ran on as its source,
-   not `M`.
+3. Past seven days and within the 30 days GitHub allows re-runs, **Re-run all jobs** on that run: it
+   rebuilds from `M` with the workflow as it was at `M`.
+4. When the fix needs a workflow or source change, the run on `M` cannot pick it up: the workflow
+   builds only the commit that triggered it and takes no input naming another, so its jobs only ever
+   run code from that push. `M`'s versions are then skipped (see [Skipping a release](#skipping-a-release)).
 
 Once publish succeeds, the next push to `main` runs release-please again.
 
 ### The two builds disagree
 
 `attest` fails with both manifest hashes, and nothing is attested or published. The build is not
-deterministic for some input. Download both artifacts from the run, compare the bundles, fix the cause
-in a pull request, and dispatch **Release** with `source-sha` set to `M`. If the fix changes sources,
-it needs its own release instead: label the pending pull request `autorelease: tagged` by hand only
-after deciding that `M` will never be published, because release-please treats that as released.
+deterministic for some input. Download both artifacts from the run, compare the bundles and fix the
+cause in a pull request. A re-run of `M` would build the same inputs again, so `M`'s versions are
+skipped (see below) and the fix ships with the next release.
+
+### Skipping a release
+
+Only once it is decided that `M` will never be published. An admin, under a temporary bypass of the
+tag ruleset, creates `src-<component>-vX.Y.Z` on `M` for every version the pull request released, then
+labels the pull request `autorelease: tagged`. No consumer tag or Release exists for those versions,
+so no consumer can pin them, and release-please proposes the next versions from `M`. The bootstrap
+cannot create these tags itself: with no consumer tag it reports them as unresolved, by design.
 
 ### Preflight failed
 

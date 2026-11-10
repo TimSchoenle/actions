@@ -22,8 +22,9 @@ name: Release
 # preflight refuses to run release-please while one is missing, since release-please would then
 # propose the whole history as unreleased.
 #
-# A publish that failed is finished by dispatching this workflow on main with the merge commit of
-# the release pull request still labelled autorelease: pending. Every publish step is idempotent.
+# Every job checks out github.sha, the pushed commit. A publish that failed is finished by
+# re-running the failed jobs of the run on its merge commit, while the build artifacts are kept;
+# every publish step is idempotent. There is no dispatch input naming another commit to build.
 #
 # Jobs that run repository code (build, build-verify, generate-docs, the plan job of source-tags)
 # hold a read-only token and no secret. Jobs that hold a secret or id-token: write (attest, publish,
@@ -34,12 +35,6 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
-    inputs:
-      source-sha:
-        description: 'Merge commit of the release pull request still labelled autorelease: pending, to build and publish again.'
-        required: true
-        type: string
 
 # One run at a time, queued rather than cancelled, so a release is never skipped and a push never
 # reads main while a publish is still writing tags. Waiting costs nothing: release-please opens no
@@ -55,7 +50,7 @@ jobs:
   # Read-only. Decides whether this run publishes a release, and whether one is in flight.
   plan:
     name: Plan
-    # The release environment admits only main, and the dispatch input is trusted only from there.
+    # The release environment admits only main.
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -66,7 +61,6 @@ jobs:
     outputs:
       is-release: ${{ steps.plan.outputs.is-release }}
       pull-request: ${{ steps.plan.outputs.pull-request }}
-      source-sha: ${{ steps.source.outputs.sha }}
       paths: ${{ steps.paths.outputs.paths }}
       release-pending: ${{ steps.pending.outputs.pending }}
     steps:
@@ -77,19 +71,6 @@ jobs:
           allowed-endpoints: >
             api.github.com:443
 
-      - name: Resolve Source Commit
-        id: source
-        env:
-          DISPATCHED_SHA: ${{ inputs.source-sha }}
-        run: |
-          set -euo pipefail
-          sha="${DISPATCHED_SHA:-$GITHUB_SHA}"
-          if ! [[ "$sha" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "::error::source-sha must be a full lowercase commit id."
-            exit 1
-          fi
-          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
-
       # is-release is true only when the commit is the merge commit of a merged release pull request
       # from the release App that is still labelled autorelease: pending and changes the manifest.
       - name: Plan Release
@@ -97,18 +78,9 @@ jobs:
         uses: TimSchoenle/actions/actions/release/plan-release-please@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-plan-release-please-v1.1.0
         with:
           mode: plan
-          sha: ${{ steps.source.outputs.sha }}
+          sha: ${{ github.sha }}
           release-pr-author-id: '248313786' # automatic-release-manager[bot]
           consumer-tag-pattern: '^(actions|configs)-[a-z0-9-]+-v\d+\.\d+\.\d+$'
-
-      - name: Refuse A Dispatch That Releases Nothing
-        if: github.event_name == 'workflow_dispatch' && steps.plan.outputs.is-release != 'true'
-        env:
-          SOURCE_SHA: ${{ steps.source.outputs.sha }}
-        run: |
-          set -euo pipefail
-          echo "::error::${SOURCE_SHA} is not the merge commit of a release pull request labelled autorelease: pending."
-          exit 1
 
       - name: Released Paths
         id: paths
@@ -167,7 +139,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-          ref: ${{ needs.plan.outputs.source-sha }}
+          ref: ${{ github.sha }}
 
       - name: Setup Bun
         id: bun
@@ -195,7 +167,7 @@ jobs:
           build-command: bun run build
           artifact-name: release-bundles-${{ github.run_attempt }}
           retention-days: '7'
-          source-sha: ${{ needs.plan.outputs.source-sha }}
+          source-sha: ${{ github.sha }}
           toolchain: bun ${{ steps.bun.outputs.bun-version }}
 
   build-verify:
@@ -225,7 +197,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-          ref: ${{ needs.plan.outputs.source-sha }}
+          ref: ${{ github.sha }}
 
       - name: Setup Bun
         id: bun
@@ -252,7 +224,7 @@ jobs:
           build-command: bun run build
           artifact-name: release-bundles-verify-${{ github.run_attempt }}
           retention-days: '7'
-          source-sha: ${{ needs.plan.outputs.source-sha }}
+          source-sha: ${{ github.sha }}
           toolchain: bun ${{ steps.bun.outputs.bun-version }}
 
   # SLSA build provenance for every bundle, signed with this workflow's identity. Runs no repository
@@ -358,7 +330,7 @@ jobs:
         uses: TimSchoenle/actions/actions/release/plan-release-please@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-plan-release-please-v1.1.0
         with:
           mode: plan
-          sha: ${{ needs.plan.outputs.source-sha }}
+          sha: ${{ github.sha }}
           release-pr-author-id: '248313786' # automatic-release-manager[bot]
           consumer-tag-pattern: '^(actions|configs)-[a-z0-9-]+-v\d+\.\d+\.\d+$'
 
@@ -376,7 +348,7 @@ jobs:
         with:
           token: ${{ steps.token.outputs.token }}
           github-token: ${{ github.token }}
-          source-sha: ${{ needs.plan.outputs.source-sha }}
+          source-sha: ${{ github.sha }}
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-artifact-digest: ${{ needs.build.outputs.artifact-digest }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -394,7 +366,7 @@ jobs:
     name: Source Tags
     needs: [plan, publish]
     if: >-
-      !cancelled() && github.event_name == 'push' && needs.plan.result == 'success' &&
+      !cancelled() && needs.plan.result == 'success' &&
       ((needs.plan.outputs.is-release == 'true' && needs.publish.result == 'success') ||
       (needs.plan.outputs.is-release != 'true' && needs.plan.outputs.release-pending != 'true'))
     permissions:
@@ -477,7 +449,7 @@ jobs:
   generate-docs:
     name: Generate Docs
     needs: [plan, publish]
-    if: github.event_name == 'push' && needs.publish.result == 'success'
+    if: needs.publish.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:

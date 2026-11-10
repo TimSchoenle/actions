@@ -67,6 +67,7 @@ function needsOf(job: Job): string[] {
 const PINNED = /^[\w.-]+\/[\w.-]+(?:\/[\w./-]+)?@[0-9a-f]{40}$/;
 
 const RELEASE = workflow('release.yml');
+const RELEASE_TEXT = fs.readFileSync(path.join(ROOT_DIR, '.github', 'workflows', 'release.yml'), 'utf8');
 const BOOTSTRAP = workflow('bootstrap-source-tags.yml');
 const jobs = RELEASE.jobs;
 const updateFiles = workflow('update-files.yml').jobs;
@@ -82,9 +83,10 @@ describe('release workflow', () => {
     expect(fs.existsSync(path.join(ROOT_DIR, '.github', 'workflows', 'release-please.yml'))).toBe(false);
   });
 
-  it('runs on pushes to main and on a dispatch that names the commit to publish', () => {
+  it('runs only on pushes to main and builds only the pushed commit', () => {
+    expect(Object.keys(RELEASE.on)).toEqual(['push']);
     expect(RELEASE.on.push).toEqual({ branches: ['main'] });
-    expect(RELEASE.on.workflow_dispatch).toMatchObject({ inputs: { 'source-sha': { required: true } } });
+    expect(RELEASE_TEXT).not.toMatch(/inputs\.|workflow_dispatch|needs\.plan\.outputs\.source-sha/);
     expect(jobs.plan.if).toBe("github.ref == 'refs/heads/main'");
   });
 
@@ -133,9 +135,8 @@ describe('release workflow', () => {
     const preflight = stepUsing(jobs.preflight, 'release/plan-release-please').with;
 
     expect(plan?.mode).toBe('plan');
-    expect(plan?.sha).toBe('${{ steps.source.outputs.sha }}');
-    expect(replan?.sha).toBe('${{ needs.plan.outputs.source-sha }}');
-    expect({ ...replan, sha: undefined }).toEqual({ ...plan, sha: undefined });
+    expect(plan?.sha).toBe('${{ github.sha }}');
+    expect(replan).toEqual(plan);
     expect(plan?.['release-pr-author-id']).toBe('248313786');
     expect(preflight?.['consumer-tag-pattern']).toBe(plan?.['consumer-tag-pattern']);
   });
@@ -182,7 +183,7 @@ describe('release workflow', () => {
 
     expect({ ...verify, 'artifact-name': undefined }).toEqual({ ...build, 'artifact-name': undefined });
     expect(verify?.['artifact-name']).not.toBe(build?.['artifact-name']);
-    expect(build?.['source-sha']).toBe('${{ needs.plan.outputs.source-sha }}');
+    expect(build?.['source-sha']).toBe('${{ github.sha }}');
     expect(publish?.['source-sha']).toBe(build?.['source-sha']);
     expect(publish?.['artifact-id']).toBe('${{ needs.build.outputs.artifact-id }}');
     expect(publish?.['expected-artifact-digest']).toBe('${{ needs.build.outputs.artifact-digest }}');
@@ -278,7 +279,7 @@ describe('release docs commit', () => {
 
   it('runs the generator only after a push published a release', () => {
     expect(needsOf(generate)).toEqual(['plan', 'publish']);
-    expect(generate.if).toBe("github.event_name == 'push' && needs.publish.result == 'success'");
+    expect(generate.if).toBe("needs.publish.result == 'success'");
   });
 
   it('waits for the published tags before generating', () => {

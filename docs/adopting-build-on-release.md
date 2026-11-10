@@ -60,12 +60,6 @@ name: Release
 on:
   push:
     branches: [main]
-  workflow_dispatch:
-    inputs:
-      source-sha:
-        description: 'Merge commit of the release pull request still labelled autorelease: pending.'
-        required: true
-        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -83,22 +77,13 @@ jobs:
       pull-requests: read
     outputs:
       is-release: ${{ steps.plan.outputs.is-release }}
-      source-sha: ${{ steps.source.outputs.sha }}
       pending: ${{ steps.pending.outputs.pending }}
     steps:
-      - id: source
-        env:
-          DISPATCHED_SHA: ${{ inputs.source-sha }}
-        run: |
-          set -euo pipefail
-          sha="${DISPATCHED_SHA:-$GITHUB_SHA}"
-          [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::source-sha must be a full commit id."; exit 1; }
-          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
       - id: plan
         uses: TimSchoenle/actions/actions/release/plan-release-please@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-plan-release-please-v1.1.0
         with:
           mode: plan
-          sha: ${{ steps.source.outputs.sha }}
+          sha: ${{ github.sha }}
           release-pr-author-id: '<your release App bot user ID>'
       # Skips release-please while a merged release pull request is still pending.
       - id: pending
@@ -125,7 +110,7 @@ jobs:
       - uses: actions/checkout@<sha> # v7
         with:
           persist-credentials: false
-          ref: ${{ needs.plan.outputs.source-sha }}
+          ref: ${{ github.sha }}
       - uses: actions/setup-node@<sha> # v7
         with:
           node-version-file: '.nvmrc'
@@ -136,7 +121,7 @@ jobs:
           build-dirs: .
           build-command: npm run build
           artifact-name: release-bundles-${{ github.run_attempt }}
-          source-sha: ${{ needs.plan.outputs.source-sha }}
+          source-sha: ${{ github.sha }}
 
   build-verify:
     needs: plan
@@ -150,7 +135,7 @@ jobs:
       - uses: actions/checkout@<sha> # v7
         with:
           persist-credentials: false
-          ref: ${{ needs.plan.outputs.source-sha }}
+          ref: ${{ github.sha }}
       - uses: actions/setup-node@<sha> # v7
         with:
           node-version-file: '.nvmrc'
@@ -161,7 +146,7 @@ jobs:
           build-dirs: .
           build-command: npm run build
           artifact-name: release-bundles-verify-${{ github.run_attempt }}
-          source-sha: ${{ needs.plan.outputs.source-sha }}
+          source-sha: ${{ github.sha }}
 
   attest:
     needs: [plan, build, build-verify]
@@ -215,12 +200,12 @@ jobs:
         uses: TimSchoenle/actions/actions/release/plan-release-please@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-plan-release-please-v1.1.0
         with:
           mode: plan
-          sha: ${{ needs.plan.outputs.source-sha }}
+          sha: ${{ github.sha }}
           release-pr-author-id: '<your release App bot user ID>'
       - uses: TimSchoenle/actions/actions/release/publish-build-commit@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-publish-build-commit-v1.1.0
         with:
           token: ${{ steps.token.outputs.token }}
-          source-sha: ${{ needs.plan.outputs.source-sha }}
+          source-sha: ${{ github.sha }}
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-artifact-digest: ${{ needs.build.outputs.artifact-digest }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -233,7 +218,7 @@ jobs:
   preflight:
     needs: [plan, publish]
     if: >-
-      !cancelled() && github.event_name == 'push' && needs.plan.result == 'success' &&
+      !cancelled() && needs.plan.result == 'success' &&
       ((needs.plan.outputs.is-release == 'true' && needs.publish.result == 'success') ||
       (needs.plan.outputs.is-release != 'true' && needs.plan.outputs.pending != 'true'))
     runs-on: ubuntu-latest
@@ -287,7 +272,7 @@ differences, all of which this repository's own
       build-dirs: ${{ steps.resolve.outputs.build-dirs }}
       build-command: npm run build
       artifact-name: release-bundles-${{ github.run_attempt }}
-      source-sha: ${{ needs.plan.outputs.source-sha }}
+      source-sha: ${{ github.sha }}
   ```
 
   `build-command` runs once in each build directory. Pass `exclude` for template directories that hold
