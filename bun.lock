@@ -635,6 +635,7 @@
       "name": "actions-e2e",
       "version": "1.0.0",
       "dependencies": {
+        "action-graph": "workspace:*",
         "actions-util": "workspace:*",
         "yaml": "2.9.1",
       },
