@@ -32,7 +32,7 @@ import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 
 /** Redirect statuses that are followed. */
-const REDIRECT_STATUSES = new Set([300, 301, 302, 303, 307, 308]);
+export const REDIRECT_STATUSES: ReadonlySet<number> = new Set([300, 301, 302, 303, 307, 308]);
 
 /** Redirects followed before the redirect response itself is returned, as in `@actions/http-client`. */
 export const DEFAULT_MAX_REDIRECTS = 50;
@@ -61,7 +61,11 @@ export interface HttpRequestOptions {
   readonly timeoutMs?: number;
   /** Aborts the request. */
   readonly signal?: AbortSignal;
-  /** Redirects to follow; {@link DEFAULT_MAX_REDIRECTS} by default, `0` to follow none. */
+  /**
+   * Redirects to follow; {@link DEFAULT_MAX_REDIRECTS} by default, `0` to follow none. A fraction is
+   * rounded down, and a negative or non-finite value (`NaN`, `Infinity`) follows none, so an invalid
+   * limit can never lift the bound.
+   */
   readonly maxRedirects?: number;
   /** Where the proxy variables are read from; `process.env` by default. */
   readonly env?: ProxyEnvironment;
@@ -88,7 +92,7 @@ function defaultPort(protocol: string): number {
  * Opens a `CONNECT` tunnel to `host:port` through `proxy`, resolving with the raw socket once the
  * proxy has answered 200.
  */
-export function openTunnel(
+function openTunnel(
   proxy: ProxySettings,
   host: string,
   port: number,
@@ -244,6 +248,15 @@ function send(
   });
 }
 
+/** The redirects a request may follow, per {@link HttpRequestOptions.maxRedirects}. */
+function redirectLimit(maxRedirects: number | undefined): number {
+  if (maxRedirects === undefined) {
+    return DEFAULT_MAX_REDIRECTS;
+  }
+
+  return Number.isFinite(maxRedirects) && maxRedirects > 0 ? Math.floor(maxRedirects) : 0;
+}
+
 /**
  * Sends a request and resolves with its response once the headers arrive, following redirects.
  *
@@ -255,7 +268,7 @@ export async function httpRequest(url: string, options: HttpRequestOptions = {})
   let method = (options.method ?? 'GET').toUpperCase();
   let headers = normaliseHeaders(options.headers);
   let body = options.body;
-  let redirectsLeft = Math.max(options.maxRedirects ?? DEFAULT_MAX_REDIRECTS, 0);
+  let redirectsLeft = redirectLimit(options.maxRedirects);
 
   for (;;) {
     if (current.protocol !== 'http:' && current.protocol !== 'https:') {
