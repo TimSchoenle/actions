@@ -129,6 +129,19 @@ describe('publish-build-commit', () => {
     expect(second.outputs.build_sha).toBe(build);
   });
 
+  // Hostile release entries are covered case by case in the unit tests; this one shows the shipped
+  // bundle refusing one under the runner's contract. It fails parsing the inputs, before any request.
+  it('refuses a consumer tag that reads as an option, before any request', async () => {
+    const staged = await stage();
+    const notesFile = path.join(temp, 'hostile.md');
+    await writeFile(notesFile, '* hostile\n');
+    const hostile = JSON.stringify([{ consumerTag: '--force', releaseName: 'demo: v1.0.0', notesFile }]);
+
+    const refused = await publish(staged, { releases: hostile }, 'failure');
+
+    expect(refused.errors.join('\n')).toContain(`releases[0]: 'consumerTag' "--force" is not a valid tag name.`);
+  });
+
   it('fails on a consumer tag created at another commit, before any write', async () => {
     const staged = await stage('console.log("second");\n');
     const consumerTag = scratch.tag('blocked-v1.0.0');

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { toRepoPath } from 'action-graph';
+import { hasControlCharacter, toRepoPath } from 'action-graph';
 
 import type { ReleaseSpec } from './publish.js';
 
@@ -91,9 +91,9 @@ function parseEntry(entry: unknown, index: number): ReleaseSpec {
     typeof releaseName !== 'string' ||
     releaseName.trim() === '' ||
     releaseName.length > MAX_NAME_LENGTH ||
-    /[\r\n]/.test(releaseName)
+    hasControlCharacter(releaseName)
   ) {
-    fail(index, `'releaseName' must be one line of 1 to ${MAX_NAME_LENGTH} characters.`);
+    fail(index, `'releaseName' must be one line of 1 to ${MAX_NAME_LENGTH} characters without control characters.`);
   }
   const packagePath = optionalString(record, 'path', index);
 

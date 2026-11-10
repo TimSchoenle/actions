@@ -51,12 +51,39 @@ describe('isSafeRefName', () => {
     expect(isSafeRefName(name)).toBe(true);
   });
 
-  it.each(['', '-x', 'a..b', 'a/', '/a', 'a.lock', 'a.', 'a b', 'a~1', 'a^', 'a:b', 'a\\b', 'a/.hidden'])(
-    'rejects %j',
-    (name) => {
-      expect(isSafeRefName(name)).toBe(false);
-    },
-  );
+  it('accepts a name of 250 characters and refuses one of 251', () => {
+    expect(isSafeRefName('a'.repeat(250))).toBe(true);
+    expect(isSafeRefName('a'.repeat(251))).toBe(false);
+  });
+
+  // heads/x is a tag name like any other here: the action only ever writes it below refs/tags/.
+  it('accepts a tag name that looks like a branch ref, as it stays a tag', () => {
+    expect(isSafeRefName('heads/x')).toBe(true);
+  });
+
+  it.each([
+    '',
+    '-x',
+    '--force',
+    '../x',
+    'a..b',
+    'a/',
+    '/a',
+    'a.lock',
+    'a.',
+    'a b',
+    'a~1',
+    'a^',
+    'a:b',
+    'a\\b',
+    'a/.hidden',
+    'tag-é',
+    'v1.0.0\u202e',
+    'a\nb',
+    '$(id)',
+  ])('rejects %j', (name) => {
+    expect(isSafeRefName(name)).toBe(false);
+  });
 });
 
 describe('parseReleases', () => {
@@ -95,6 +122,13 @@ describe('parseReleases', () => {
     ]);
   });
 
+  it('accepts a Unicode release name of up to 200 characters', () => {
+    const releaseName = `Überprüfung: v1.0.0 🚀 ${'ü'.repeat(170)}`;
+
+    expect(releaseName.length).toBeLessThanOrEqual(200);
+    expect(parseReleases(JSON.stringify([entry({ releaseName })]))[0]?.releaseName).toBe(releaseName);
+  });
+
   it('accepts a release without a source tag or path', () => {
     expect(parseReleases(JSON.stringify([entry({ sourceTag: null })]))[0]).toMatchObject({
       sourceTag: undefined,
@@ -118,6 +152,23 @@ describe('parseReleases', () => {
       /'sourceTag'/,
     ],
     ['a multi-line name', JSON.stringify([entry({ releaseName: 'a\nb' })]), /'releaseName' must be one line/],
+    [
+      'a name with an escape sequence',
+      JSON.stringify([entry({ releaseName: 'a \u001b[31mred' })]),
+      /'releaseName' must be one line .* without control characters/,
+    ],
+    ['a name with a NUL', JSON.stringify([entry({ releaseName: 'a\u0000b' })]), /without control characters/],
+    ['an oversized name', JSON.stringify([entry({ releaseName: 'n'.repeat(201) })]), /1 to 200 characters/],
+    [
+      'a consumer tag that reads as an option',
+      JSON.stringify([entry({ consumerTag: '--force' })]),
+      /'consumerTag' "--force" is not a valid tag name/,
+    ],
+    [
+      'an oversized consumer tag',
+      JSON.stringify([entry({ consumerTag: 't'.repeat(251) })]),
+      /'consumerTag' .* is not a valid tag name/,
+    ],
     [
       'a relative notes file',
       JSON.stringify([entry({ notesFile: 'notes.md' })]),
