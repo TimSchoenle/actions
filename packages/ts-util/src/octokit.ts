@@ -117,8 +117,11 @@ export function restEndpoints(octokit: Octokit): { rest: RestEndpoints } {
   return { rest: rest as unknown as RestEndpoints };
 }
 
-/** The Octokit class with `octokit.rest` and pagination. */
-export const GitHub = Octokit.plugin(restEndpoints, paginateRest);
+/**
+ * The Octokit class with `octokit.rest` and pagination. Not exported: unlike `@actions/github`'s
+ * `GitHub`, it carries none of the defaults {@link getOctokit} applies.
+ */
+const GitHub = Octokit.plugin(restEndpoints, paginateRest);
 
 /** An Octokit client as {@link getOctokit} returns it. */
 export type GitHubClient = InstanceType<typeof GitHub>;

@@ -110,6 +110,12 @@ describe('prepareKeyValueMessage', () => {
     );
   });
 
+  it.each(['a\nb', 'a\rb', 'a\r\nb', '\nb'])('refuses the key %j, which contains a line break', (key) => {
+    expect(() => prepareKeyValueMessage(key, 'v', 'id')).toThrow(
+      'Unexpected input: name should not contain a line break',
+    );
+  });
+
   it('refuses a key containing the delimiter', () => {
     expect(() => prepareKeyValueMessage('ghadelimiter_id', 'v', 'id')).toThrow(
       'Unexpected input: name should not contain the delimiter "ghadelimiter_id"',

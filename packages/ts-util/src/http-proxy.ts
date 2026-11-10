@@ -5,13 +5,16 @@
  *
  *  * `https_proxy`, then `HTTPS_PROXY`, for an `https:` URL; `http_proxy`, then `HTTP_PROXY`, for
  *    anything else. The lower-case name wins when both are set.
- *  * A loopback host (`localhost`, `127.*`, `[::1]`) never goes through a proxy.
+ *  * A loopback host never goes through a proxy: `localhost`, an IPv4 literal in 127.0.0.0/8, or
+ *    `[::1]`. Stricter than `@actions/http-client`, which bypassed any host name starting with
+ *    `127.` — so `127.example.com`, a public name, went direct there and goes through the proxy here.
  *  * `no_proxy`, then `NO_PROXY`, is a comma-separated list of hosts, matched case-insensitively
  *    against the host and against `host:port` (the port defaulting from the scheme). `*` matches
  *    everything; an entry matches the host itself and every subdomain of it; a leading `.` matches
  *    subdomains only.
  *  * Credentials in the proxy URL are percent-decoded and sent as `Proxy-Authorization: Basic`.
  */
+import { isIPv4 } from 'node:net';
 
 /** The environment variables this module reads, injectable so tests need not touch `process.env`. */
 export type ProxyEnvironment = Readonly<Record<string, string | undefined>>;
@@ -30,9 +33,9 @@ function isLoopbackAddress(host: string): boolean {
 
   return (
     lower === 'localhost' ||
-    lower.startsWith('127.') ||
-    lower.startsWith('[::1]') ||
-    lower.startsWith('[0:0:0:0:0:0:0:1]')
+    (isIPv4(lower) && lower.startsWith('127.')) ||
+    lower === '[::1]' ||
+    lower === '[0:0:0:0:0:0:0:1]'
   );
 }
 

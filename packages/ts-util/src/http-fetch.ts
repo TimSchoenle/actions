@@ -11,7 +11,7 @@ import { pipeline, Readable } from 'node:stream';
 import zlib from 'node:zlib';
 
 import { getProxySettings } from './http-proxy.js';
-import { httpRequest } from './http-request.js';
+import { httpRequest, REDIRECT_STATUSES } from './http-request.js';
 
 import type { ProxyEnvironment } from './http-proxy.js';
 import type { IncomingMessage } from 'node:http';
@@ -25,8 +25,11 @@ const FETCH_MAX_REDIRECTS = 20;
  */
 const IDLE_TIMEOUT_MS = 300_000;
 
-/** Statuses whose response has no body, which the `Response` constructor refuses one for. */
-const NULL_BODY_STATUSES = new Set([101, 103, 204, 205, 304]);
+/**
+ * Statuses whose response has no body, which the `Response` constructor refuses one for. The 1xx
+ * statuses are absent: Node never surfaces one as the final response.
+ */
+const NULL_BODY_STATUSES = new Set([204, 205, 304]);
 
 /** The `fetch` signature, narrowed to what Octokit passes. */
 export type FetchFunction = (input: string | URL, init?: RequestInit) => Promise<Response>;
@@ -117,16 +120,29 @@ async function fetchThroughProxy(url: string, init: RequestInit, env: ProxyEnvir
     throw new TypeError(`fetch failed: ${url} redirected, and redirects were refused.`);
   }
 
+  // `httpRequest` returns the last redirect once the limit is reached; `fetch` fails the request instead.
+  if (redirect === 'follow' && REDIRECT_STATUSES.has(status) && message.headers.location !== undefined) {
+    message.resume();
+    throw new TypeError('fetch failed', { cause: new Error('redirect count exceeded') });
+  }
+
   const bodyless = method === 'HEAD' || NULL_BODY_STATUSES.has(status);
   if (bodyless) {
     message.resume();
   }
 
-  const response = new Response(bodyless ? null : (Readable.toWeb(decodedBody(message)) as ReadableStream), {
-    status,
-    statusText: message.statusMessage ?? '',
-    headers: responseHeaders(message),
-  });
+  let response: Response;
+  try {
+    response = new Response(bodyless ? null : (Readable.toWeb(decodedBody(message)) as ReadableStream), {
+      status,
+      statusText: message.statusMessage ?? '',
+      headers: responseHeaders(message),
+    });
+  } catch (error) {
+    // A status outside 200-599 or an invalid reason phrase; the unread body would hold the socket open.
+    message.destroy();
+    throw new TypeError('fetch failed', { cause: error });
+  }
 
   // A constructed Response has an empty, read-only `url`; Octokit reads it for the response it returns.
   Object.defineProperty(response, 'url', { value: finalUrl });
