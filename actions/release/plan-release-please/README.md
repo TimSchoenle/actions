@@ -9,7 +9,7 @@ outside the markers.
 
 Reads release-please state at a commit, read-only. preflight checks that every package has the source tag of its manifest version; plan reports whether the commit merges a pending release pull request and, if so, every release with its tags, name and notes.
 
-[actions-release-plan-release-please-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-plan-release-please-v1.0.0) · JavaScript action (node24)
+[actions-release-plan-release-please-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-plan-release-please-v1.1.0) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 Two read-only checks for a release pipeline in which release-please owns versions and changelogs but not tags or
@@ -44,7 +44,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: TimSchoenle/actions/actions/release/plan-release-please@actions-release-plan-release-please-v1.0.0 # tag=actions-release-plan-release-please-v1.0.0
+      - uses: TimSchoenle/actions/actions/release/plan-release-please@actions-release-plan-release-please-v1.1.0 # tag=actions-release-plan-release-please-v1.1.0
         with:
           mode: preflight
 
@@ -61,7 +61,7 @@ jobs:
       pull-request: ${{ steps.plan.outputs.pull-request }}
     steps:
       - id: plan
-        uses: TimSchoenle/actions/actions/release/plan-release-please@actions-release-plan-release-please-v1.0.0 # tag=actions-release-plan-release-please-v1.0.0
+        uses: TimSchoenle/actions/actions/release/plan-release-please@actions-release-plan-release-please-v1.1.0 # tag=actions-release-plan-release-please-v1.1.0
         with:
           mode: plan
           release-pr-author-id: '248313786' # the release App's bot user
@@ -140,6 +140,7 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 <!-- docs:generated reference -->
 ## Reference
 
+- Changelog: [CHANGELOG.md](./CHANGELOG.md)
 - End-to-end tests: [`.github/workflows/verify-action-release-plan-release-please.yaml`](../../../.github/workflows/verify-action-release-plan-release-please.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

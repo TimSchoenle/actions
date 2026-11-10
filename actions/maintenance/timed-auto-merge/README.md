@@ -9,7 +9,7 @@ outside the markers.
 
 Approve and enable auto-merge on aged pull requests whose head branch matches a pattern and whose commits are all signed by trusted authors.
 
-[actions-maintenance-timed-auto-merge-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-timed-auto-merge-v2.0.4) · JavaScript action (node24)
+[actions-maintenance-timed-auto-merge-v2.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-timed-auto-merge-v2.0.5) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 The pull requests must have been open for at least `time_elapsed`, and every commit must be signed and authored only by
@@ -58,7 +58,7 @@ jobs:
           permission-pull-requests: write
 
       - name: Approve and Auto-merge
-        uses: TimSchoenle/actions/actions/maintenance/timed-auto-merge@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-maintenance-timed-auto-merge-v2.0.4
+        uses: TimSchoenle/actions/actions/maintenance/timed-auto-merge@actions-maintenance-timed-auto-merge-v2.0.5 # tag=actions-maintenance-timed-auto-merge-v2.0.5
         with:
           token: ${{ steps.token.outputs.token }}
           # Database ID of the bot account that opens the release pull requests.

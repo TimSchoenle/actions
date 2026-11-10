@@ -9,7 +9,7 @@ outside the markers.
 
 Opens or updates a repository issue, updating the previous issue carrying the same identifier.
 
-[actions-common-upsert-issue-v2.0.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-upsert-issue-v2.0.3) · JavaScript action (node24)
+[actions-common-upsert-issue-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-upsert-issue-v2.0.4) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 A workflow that keeps one state card per repository, per environment or per manifest entry leaves one issue rather than
@@ -32,7 +32,7 @@ issue losing its identity.
 ### Keep one state card per repository
 
 ```yaml
-- uses: TimSchoenle/actions/actions/common/upsert-issue@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-upsert-issue-v2.0.3
+- uses: TimSchoenle/actions/actions/common/upsert-issue@actions-common-upsert-issue-v2.0.4 # tag=actions-common-upsert-issue-v2.0.4
   with:
     token: ${{ steps.token.outputs.token }}
     identifier: repo-state-TimSchoenle-TankoVault

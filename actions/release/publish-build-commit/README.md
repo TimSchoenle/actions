@@ -9,7 +9,7 @@ outside the markers.
 
 Publishes bundles built by release/build-actions: a build commit B with the source commit tree plus the bundles, a fast-forwarded releases branch, consumer tags on B, source tags on the source commit, and GitHub Releases with checksum assets. Every step is idempotent and no repository code runs.
 
-[actions-release-publish-build-commit-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-publish-build-commit-v1.0.0) · Composite action
+[actions-release-publish-build-commit-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-publish-build-commit-v1.1.0) · Composite action
 <!-- /docs:generated header -->
 
 The privileged end of a build-on-release pipeline. The default branch holds sources only; this action turns a source
@@ -68,11 +68,11 @@ jobs:
 
       # Re-derived here, so the notes files exist in this job.
       - id: plan
-        uses: TimSchoenle/actions/actions/release/plan-release-please@actions-release-plan-release-please-v1.0.0 # tag=actions-release-plan-release-please-v1.0.0
+        uses: TimSchoenle/actions/actions/release/plan-release-please@actions-release-plan-release-please-v1.1.0 # tag=actions-release-plan-release-please-v1.1.0
         with:
           mode: plan
 
-      - uses: TimSchoenle/actions/actions/release/publish-build-commit@actions-release-publish-build-commit-v1.0.0 # tag=actions-release-publish-build-commit-v1.0.0
+      - uses: TimSchoenle/actions/actions/release/publish-build-commit@actions-release-publish-build-commit-v1.1.0 # tag=actions-release-publish-build-commit-v1.1.0
         with:
           token: ${{ steps.token.outputs.token }}
           source-sha: ${{ github.sha }}
@@ -129,7 +129,7 @@ jobs:
           releases="$(jq -cn --arg tag "v${VERSION}" --arg notes "$notes" '[{consumerTag: $tag, releaseName: $tag, notesFile: $notes}]')"
           echo "releases=${releases}" >> "$GITHUB_OUTPUT"
 
-      - uses: TimSchoenle/actions/actions/release/publish-build-commit@actions-release-publish-build-commit-v1.0.0 # tag=actions-release-publish-build-commit-v1.0.0
+      - uses: TimSchoenle/actions/actions/release/publish-build-commit@actions-release-publish-build-commit-v1.1.0 # tag=actions-release-publish-build-commit-v1.1.0
         with:
           token: ${{ steps.token.outputs.token }}
           source-sha: ${{ github.sha }}
@@ -238,6 +238,7 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 <!-- docs:generated reference -->
 ## Reference
 
+- Changelog: [CHANGELOG.md](./CHANGELOG.md)
 - End-to-end tests: [`.github/workflows/verify-action-release-publish-build-commit.yaml`](../../../.github/workflows/verify-action-release-publish-build-commit.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

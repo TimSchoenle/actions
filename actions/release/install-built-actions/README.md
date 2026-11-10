@@ -9,7 +9,7 @@ outside the markers.
 
 Downloads a release/build-actions artifact by ID, verifies every file against the manifest hash the build job published, and copies the bundles into a checkout, so the actions there run on bundles built from that commit.
 
-[actions-release-install-built-actions-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-install-built-actions-v1.0.0) · Composite action
+[actions-release-install-built-actions-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-install-built-actions-v1.1.0) · Composite action
 <!-- /docs:generated header -->
 
 The second half of [`release/build-actions`](../build-actions): run it after the checkout and before any step that
@@ -42,7 +42,7 @@ jobs:
         with:
           persist-credentials: false
       # Before any step that runs a local action with a bundle.
-      - uses: TimSchoenle/actions/actions/release/install-built-actions@actions-release-install-built-actions-v1.0.0 # tag=actions-release-install-built-actions-v1.0.0
+      - uses: TimSchoenle/actions/actions/release/install-built-actions@actions-release-install-built-actions-v1.1.0 # tag=actions-release-install-built-actions-v1.1.0
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -77,7 +77,7 @@ jobs:
         with:
           path: tmp/actions-code
           persist-credentials: false
-      - uses: TimSchoenle/actions/actions/release/install-built-actions@actions-release-install-built-actions-v1.0.0 # tag=actions-release-install-built-actions-v1.0.0
+      - uses: TimSchoenle/actions/actions/release/install-built-actions@actions-release-install-built-actions-v1.1.0 # tag=actions-release-install-built-actions-v1.1.0
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -160,6 +160,7 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 <!-- docs:generated reference -->
 ## Reference
 
+- Changelog: [CHANGELOG.md](./CHANGELOG.md)
 - End-to-end tests: [`.github/workflows/verify-action-release-install-built-actions.yaml`](../../../.github/workflows/verify-action-release-install-built-actions.yaml)
 - Called from this repository by:
   - [`.github/workflows/verify-action-release-build-actions.yaml`](../../../.github/workflows/verify-action-release-build-actions.yaml)
