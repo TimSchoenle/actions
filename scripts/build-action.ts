@@ -101,8 +101,8 @@ export function warnOnBunVersionDrift(running: string, pinned: string | undefine
 
   console.warn(
     `⚠️ Bun ${running} does not match the pinned ${pinned} (${BUN_VERSION_FILE}). ` +
-      'The bundle you build may differ byte-for-byte from the one CI builds and commits. ' +
-      `Install the pinned Bun before committing a bundle (e.g. 'bun upgrade --to ${pinned}').`,
+      'The bundle you build may differ byte-for-byte from the one the release builds. ' +
+      `Install the pinned Bun before comparing bundles (e.g. 'bun upgrade --to ${pinned}').`,
   );
 
   return true;

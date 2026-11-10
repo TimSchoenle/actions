@@ -406,9 +406,8 @@ jobs:
       deployment: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    permissions:
-      contents: write # to create release commits
-      pull-requests: write # to manage release PRs
+    # Nothing here uses GITHUB_TOKEN: release-please and the token step authenticate with the App.
+    permissions: {}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -417,8 +416,8 @@ jobs:
           allowed-endpoints: >
             api.github.com:443
 
-      # release-please labels its pull request through the issues API, so `issues` is needed on top
-      # of the two permissions this job grants its own token.
+      # release-please commits to its branch, opens and updates its pull request, and labels it
+      # through the issues API.
       - name: Generate Bot Token
         id: generate_token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0

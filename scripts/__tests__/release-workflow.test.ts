@@ -129,6 +129,10 @@ describe('release workflow', () => {
     expect(step?.with?.['skip-github-release']).toBe(true);
   });
 
+  it('gives release-please no GITHUB_TOKEN scope, since it authenticates with the App', () => {
+    expect(jobs['release-please'].permissions).toEqual({});
+  });
+
   it('plans and publishes with the same options', () => {
     const plan = stepUsing(jobs.plan, 'release/plan-release-please').with;
     const replan = stepUsing(jobs.publish, 'release/plan-release-please').with;

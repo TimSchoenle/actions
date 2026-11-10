@@ -1,6 +1,6 @@
 {
   "name": "Releases Branch: Only Allow Release Bot",
-  "description": "Protects the releases branch that every build commit is chained on: it cannot be deleted or rewound, every commit must be signed, and only the Automatic Release Manager bot can create or update it. release/publish-build-commit only ever fast-forwards it.",
+  "description": "Protects the releases branch that every build commit is chained on: nobody else can create, update, delete or rewind it, or push an unsigned commit to it. The Automatic Release Manager bot bypasses every rule here; release/publish-build-commit only ever fast-forwards it with signed commits.",
   "target": "branch",
   "source_type": "Repository",
   "source": "TimSchoenle/actions",
