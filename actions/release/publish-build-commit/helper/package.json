@@ -1,0 +1,23 @@
+{
+  "name": "actions-release-publish-build-commit-helper",
+  "version": "1.0.0",
+  "description": "Internal helper of actions/release/publish-build-commit: verifies the bundles and publishes the build commit, tags and releases.",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "bun run ../../../../scripts/build-action.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "action-graph": "workspace:*",
+    "actions-util": "workspace:*"
+  },
+  "devDependencies": {
+    "actions-e2e": "workspace:*",
+    "@types/node": "26.6.6",
+    "@typescript/native": "npm:typescript@7.0.2",
+    "vitest": "5.1.0"
+  }
+}

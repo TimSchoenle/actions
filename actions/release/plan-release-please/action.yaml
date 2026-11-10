@@ -1,0 +1,53 @@
+name: 'Release Plan Release Please'
+description: 'Reads release-please state at a commit, read-only. preflight checks that every package has the source tag of its manifest version; plan reports whether the commit merges a pending release pull request and, if so, every release with its tags, name and notes.'
+
+inputs:
+  mode:
+    description: 'preflight or plan.'
+    required: true
+  token:
+    description: 'Token that reads the repository. Needs contents: read, and pull-requests: read in plan mode.'
+    required: false
+    default: ${{ github.token }}
+  sha:
+    description: 'The commit to evaluate: in plan mode, the candidate merge commit of a release pull request.'
+    required: false
+    default: ${{ github.sha }}
+  config-file:
+    description: 'release-please configuration, relative to the repository root.'
+    required: false
+    default: 'release-please-config.json'
+  manifest-file:
+    description: 'release-please manifest, relative to the repository root.'
+    required: false
+    default: '.release-please-manifest.json'
+  source-tag-prefix:
+    description: 'Prefix every release-please tag starts with. The consumer tag is the release-please tag with the prefix removed: src-actions-x-v1.2.3 is released as actions-x-v1.2.3.'
+    required: false
+    default: 'src-'
+  consumer-tag-pattern:
+    description: 'Regular expression every consumer tag must match, anchored by the caller.'
+    required: false
+    default: '^(?:[a-z0-9][a-z0-9-]*-)?v\d+\.\d+\.\d+$'
+  release-pr-author-id:
+    description: 'Numeric user ID that release pull requests must come from, such as the release App bot. A pending pull request from anyone else fails the step. Empty accepts any author.'
+    required: false
+    default: ''
+  pending-label:
+    description: 'Label release-please puts on a merged release pull request until it is released.'
+    required: false
+    default: 'autorelease: pending'
+
+outputs:
+  is-release:
+    description: 'plan mode: true when sha is the merge commit of a merged pull request into the default branch that carries pending-label, comes from release-pr-author-id when set, and changes the manifest.'
+  pull-request:
+    description: 'plan mode: number of that pull request, empty otherwise.'
+  releases:
+    description: 'plan mode: JSON array of {path, component, version, consumerTag, sourceTag, releaseName, notesFile}, sorted by consumerTag. [] when is-release is false.'
+  notes-dir:
+    description: 'plan mode: directory holding the release notes, one <consumerTag>.md per release, outside the checkout.'
+
+runs:
+  using: 'node24'
+  main: 'dist/index.js'

@@ -156,3 +156,161 @@ describe('ScratchRepo.commitFile', () => {
     await expect(scratch.commitFile('b', 'f.txt', 'x', 'm')).rejects.toThrow('Forbidden');
   });
 });
+
+describe('ScratchRepo tags', () => {
+  let octokit: OctokitMock & { paginate: ReturnType<typeof vi.fn>; request: ReturnType<typeof vi.fn> };
+  let scratch: ScratchRepo;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubEnv('E2E_GITHUB_TOKEN', 'ghs_test_token');
+    vi.stubEnv('E2E_TEST_REPOSITORY', 'owner/repo');
+    vi.stubEnv('GITHUB_RUN_ID', '9');
+    vi.stubEnv('GITHUB_RUN_ATTEMPT', '1');
+    octokit = Object.assign(mockOctokit(), { paginate: vi.fn(), request: vi.fn() });
+    vi.mocked(createOctokit).mockReturnValue(octokit as unknown as ReturnType<typeof createOctokit>);
+    scratch = ScratchRepo.fromEnvironment('unit');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('names a tag in the suite namespace', () => {
+    expect(scratch.tag('demo-v1.0.0')).toBe('test/unit/9-1/demo-v1.0.0');
+  });
+
+  it('deletes the releases on a reserved tag, then the tag, at teardown', async () => {
+    const tag = scratch.tag('demo-v1.0.0');
+    octokit.paginate.mockResolvedValue([
+      { id: 1, tag_name: tag, draft: false, name: 'demo', body: '', assets: [{ name: 'b' }, { name: 'a' }] },
+      { id: 2, tag_name: 'other', draft: false, name: 'x', body: '', assets: [] },
+    ]);
+    octokit.request.mockResolvedValue({});
+    octokit.rest.git.deleteRef.mockResolvedValue({});
+
+    expect(await scratch.releasesForTag(tag)).toEqual([
+      { id: 1, draft: false, name: 'demo', body: '', assets: ['a', 'b'] },
+    ]);
+    await scratch.teardown();
+
+    expect(octokit.request).toHaveBeenCalledWith('DELETE /repos/{owner}/{repo}/releases/{release_id}', {
+      owner: 'owner',
+      release_id: 1,
+      repo: 'repo',
+    });
+    expect(octokit.rest.git.deleteRef).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo', ref: `tags/${tag}` });
+  });
+
+  it('reads a tag once when no commit is expected', async () => {
+    octokit.rest.git.getRef.mockRejectedValue(httpError(404, 'Not Found'));
+
+    await expect(scratch.tagSha('demo')).resolves.toBeUndefined();
+    expect(octokit.rest.git.getRef).toHaveBeenCalledTimes(1);
+  });
+
+  it('polls a tag until it reaches the expected commit', async () => {
+    vi.useFakeTimers();
+    try {
+      octokit.rest.git.getRef
+        .mockRejectedValueOnce(httpError(404, 'Not Found'))
+        .mockResolvedValueOnce({ data: { object: { sha: 'old' } } })
+        .mockResolvedValue({ data: { object: { sha: 'new' } } });
+
+      const read = scratch.tagSha('demo', 'new');
+      await vi.runAllTimersAsync();
+
+      await expect(read).resolves.toBe('new');
+      expect(octokit.rest.git.getRef).toHaveBeenCalledTimes(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('returns what it last saw once polling for a tag runs out', async () => {
+    vi.useFakeTimers();
+    try {
+      octokit.rest.git.getRef.mockResolvedValue({ data: { object: { sha: 'other' } } });
+
+      const read = scratch.tagSha('demo', 'new');
+      await vi.runAllTimersAsync();
+
+      await expect(read).resolves.toBe('other');
+      expect(octokit.rest.git.getRef).toHaveBeenCalledTimes(5);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('waits after creating a tag until a read sees it at its commit', async () => {
+    vi.useFakeTimers();
+    try {
+      const createRef = vi.fn().mockResolvedValue({});
+      Object.assign(octokit.rest.git, { createRef });
+      octokit.rest.git.getRef
+        .mockRejectedValueOnce(httpError(404, 'Not Found'))
+        .mockResolvedValue({ data: { object: { sha: 'abc' } } });
+
+      const created = scratch.createTag('demo', 'abc');
+      await vi.runAllTimersAsync();
+
+      await expect(created).resolves.toBeUndefined();
+      expect(createRef).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo', ref: 'refs/tags/demo', sha: 'abc' });
+      expect(octokit.rest.git.getRef).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('deletes a tag again while a read still sees it after an "already deleted" answer', async () => {
+    vi.useFakeTimers();
+    try {
+      octokit.rest.git.deleteRef.mockRejectedValue(httpError(422, 'Reference does not exist'));
+      octokit.rest.git.getRef
+        .mockResolvedValueOnce({ data: { object: { sha: 'abc' } } })
+        .mockRejectedValue(httpError(404, 'Not Found'));
+
+      const deleted = scratch.deleteTag('demo');
+      await vi.runAllTimersAsync();
+
+      await expect(deleted).resolves.toBeUndefined();
+      expect(octokit.rest.git.deleteRef).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('reports a tag teardown left behind when a read keeps seeing it', async () => {
+    vi.useFakeTimers();
+    try {
+      const tag = scratch.tag('lingering');
+      octokit.paginate.mockResolvedValue([]);
+      octokit.rest.git.deleteRef.mockRejectedValue(httpError(422, 'Reference does not exist'));
+      octokit.rest.git.getRef.mockResolvedValue({ data: { object: { sha: 'abc' } } });
+
+      const teardown = scratch.teardown();
+      const settled = expect(teardown).rejects.toThrow(`tag ${tag}: still present after teardown`);
+      await vi.runAllTimersAsync();
+
+      await settled;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('treats a tag that was never created as deleted', async () => {
+    scratch.tag('never-created');
+    octokit.paginate.mockResolvedValue([]);
+    octokit.rest.git.deleteRef.mockRejectedValue(httpError(422, 'Reference does not exist'));
+
+    await expect(scratch.teardown()).resolves.toBeUndefined();
+  });
+
+  it('reports a tag teardown could not delete', async () => {
+    const tag = scratch.tag('stuck');
+    octokit.paginate.mockResolvedValue([]);
+    octokit.rest.git.deleteRef.mockRejectedValue(httpError(403, 'Forbidden'));
+
+    await expect(scratch.teardown()).rejects.toThrow(`tag ${tag}: Forbidden`);
+  });
+});

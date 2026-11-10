@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  # plan: release/plan-release-please in plan mode, outputs is-release
+  # build and build-verify: release/build-actions on two runners, outputs artifact-id,
+  #   artifact-digest and manifest-sha256
+
+  publish:
+    needs: [plan, build, build-verify]
+    if: needs.plan.outputs.is-release == 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    concurrency:
+      group: release-publish
+      cancel-in-progress: false
+    permissions:
+      actions: read # to check and download the build artifact
+      contents: read
+      pull-requests: read # for plan-release-please, which lists the commit's pull requests with this token
+    steps:
+      - id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+
+      # Re-derived here, so the notes files exist in this job.
+      - id: plan
+        uses: ./actions/release/plan-release-please
+        with:
+          mode: plan
+
+      - uses: ./actions/release/publish-build-commit
+        with:
+          token: ${{ steps.token.outputs.token }}
+          source-sha: ${{ github.sha }}
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-artifact-digest: ${{ needs.build.outputs.artifact-digest }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
+          cross-check-manifest-sha256: ${{ needs.build-verify.outputs.manifest-sha256 }}
+          releases: ${{ steps.plan.outputs.releases }}
+          pull-request: ${{ steps.plan.outputs.pull-request }}

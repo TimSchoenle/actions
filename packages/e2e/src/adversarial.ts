@@ -30,6 +30,15 @@ import type { Workspace, WorkspaceFiles } from './workspace.js';
 export const FORGERY_MARKER = 'e2e-forgery-8f3a';
 
 /**
+ * A REST API base URL no request can reach: fetch refuses port 1 as a bad port before connecting.
+ *
+ * Passed as `GITHUB_API_URL` to a case that expects an action to refuse its inputs before any
+ * request. A request made first would fail with `bad port` instead of the expected error, so
+ * asserting the exact error list proves the action spent no request.
+ */
+export const UNREACHABLE_API_URL = 'https://127.0.0.1:1';
+
+/**
  * The command names the runner acts on when it sees them at the start of a line of stdout.
  *
  * `set-env` and `add-path` are refused by default, but a caller that sets

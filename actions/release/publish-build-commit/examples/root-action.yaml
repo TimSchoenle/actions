@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, such as 1.2.3.'
+        required: true
+
+permissions: {}
+
+jobs:
+  # build: release/build-actions with build-dirs: . for the action.yml at the root, outputs
+  #   artifact-id, artifact-digest and manifest-sha256
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      actions: read # to check and download the build artifact
+      contents: read
+    steps:
+      - id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      # Hand-written releases: one consumer tag, no source tag, notes from the workflow input.
+      - id: releases
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::version must be X.Y.Z"; exit 1; }
+          notes="${RUNNER_TEMP}/notes.md"
+          printf 'Release %s\n' "$VERSION" > "$notes"
+          releases="$(jq -cn --arg tag "v${VERSION}" --arg notes "$notes" '[{consumerTag: $tag, releaseName: $tag, notesFile: $notes}]')"
+          echo "releases=${releases}" >> "$GITHUB_OUTPUT"
+
+      - uses: ./actions/release/publish-build-commit
+        with:
+          token: ${{ steps.token.outputs.token }}
+          source-sha: ${{ github.sha }}
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-artifact-digest: ${{ needs.build.outputs.artifact-digest }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
+          allowed-paths: dist/**
+          releases: ${{ steps.releases.outputs.releases }}
+          release-assets: bundles

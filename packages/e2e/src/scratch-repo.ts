@@ -58,6 +58,16 @@ export type CheckStatus = 'queued' | 'in_progress' | 'completed';
 /** The outcomes a completed check run can report. */
 export type CheckConclusion = 'success' | 'failure' | 'neutral' | 'cancelled' | 'skipped' | 'timed_out';
 
+/** A release in the scratch repository, as a case asserts on it. */
+export interface ScratchRelease {
+  id: number;
+  draft: boolean;
+  name: string;
+  body: string;
+  /** Asset names, sorted. */
+  assets: string[];
+}
+
 /** One comment on a pull request, with the identity that distinguishes it from an identical one. */
 export interface IssueCommentRecord {
   id: number;
@@ -132,6 +142,7 @@ export class ScratchRepo {
   private readonly branches = new Set<string>();
   private readonly pullRequests = new Set<number>();
   private readonly issues = new Set<number>();
+  private readonly tags = new Set<string>();
 
   private constructor(
     private readonly scope: string,
@@ -249,6 +260,127 @@ export class ScratchRepo {
     }
 
     return name;
+  }
+
+  /**
+   * Reserves a tag name for a case and schedules the tag, and every release on it, for teardown.
+   *
+   * Named under the same `test/<scope>/<run>/` namespace as {@link branch}, so the janitor sweeps a
+   * tag a cancelled run left behind.
+   */
+  tag(caseName: string): string {
+    const name = `${REF_PREFIX}/${this.scope}/${this.runId}/${caseName}`;
+
+    this.tags.add(name);
+
+    return name;
+  }
+
+  /**
+   * The commit a lightweight tag points at, or `undefined` when it does not exist.
+   *
+   * A read right after the tag was written can 404 or lag behind, as {@link headOf} describes. Pass
+   * the commit the caller is waiting for and the read polls until it converges; once the budget is
+   * spent it returns whatever it last saw, so the case's own assertion reports the mismatch. Without
+   * `expected` it reads once, which is what an assertion of absence wants.
+   *
+   * @param expected commit this tag is expected to converge on, when the caller knows it.
+   */
+  async tagSha(tag: string, expected?: string): Promise<string | undefined> {
+    const read = async (): Promise<string | undefined> => {
+      const response = await resolveOptional(
+        this.octokit.rest.git.getRef({ owner: this.owner, repo: this.repo, ref: `tags/${tag}` }),
+      );
+
+      return response?.data.object.sha;
+    };
+
+    let sha = await read();
+    for (const delayMs of CONVERGENCE_DELAYS_MS) {
+      if (expected === undefined || sha === expected) {
+        return sha;
+      }
+
+      await sleep(delayMs);
+      sha = await read();
+    }
+
+    return sha;
+  }
+
+  /**
+   * Creates a lightweight tag through the raw API, for a fixture, and waits until a read sees it, as
+   * {@link createBranch} does for a branch.
+   */
+  async createTag(tag: string, sha: string): Promise<void> {
+    await this.octokit.rest.git.createRef({ owner: this.owner, repo: this.repo, ref: `refs/tags/${tag}`, sha });
+    await this.tagSha(tag, sha);
+  }
+
+  /**
+   * Deletes a tag through the raw API and confirms it is gone; a tag that is already gone is not an
+   * error. The same converging delete as a branch's, see {@link deleteRef}.
+   */
+  async deleteTag(tag: string): Promise<void> {
+    const failure = await this.deleteRef('tags', tag);
+
+    if (failure !== undefined) {
+      throw new Error(`Failed to delete ${failure}`);
+    }
+  }
+
+  /** Every release on `tag`, drafts included, with the names of its assets. */
+  async releasesForTag(tag: string): Promise<ScratchRelease[]> {
+    const releases = await this.octokit.paginate('GET /repos/{owner}/{repo}/releases', {
+      owner: this.owner,
+      per_page: MAX_PAGE_SIZE,
+      repo: this.repo,
+    });
+
+    return releases
+      .filter((release) => release.tag_name === tag)
+      .map((release) => ({
+        id: release.id,
+        draft: release.draft,
+        name: release.name ?? '',
+        body: release.body ?? '',
+        assets: release.assets.map((asset) => asset.name).sort(),
+      }));
+  }
+
+  /** Creates a draft release through the raw API, for a fixture that stands in for an interrupted run. */
+  async createDraftRelease(tag: string, name: string): Promise<number> {
+    const { data } = await this.octokit.request('POST /repos/{owner}/{repo}/releases', {
+      draft: true,
+      name,
+      owner: this.owner,
+      repo: this.repo,
+      tag_name: tag,
+    });
+
+    return data.id;
+  }
+
+  /** The files a commit adds, modifies or removes relative to `base`, as `<status> <path>` lines. */
+  async changedFiles(base: string, head: string): Promise<string[]> {
+    const { data } = await this.octokit.request('GET /repos/{owner}/{repo}/compare/{basehead}', {
+      basehead: `${base}...${head}`,
+      owner: this.owner,
+      repo: this.repo,
+    });
+
+    return (data.files ?? []).map((file) => `${file.status} ${file.filename}`).sort();
+  }
+
+  /** The tree and parents of a commit. */
+  async commit(sha: string): Promise<{ tree: string; parents: string[] }> {
+    const { data } = await this.octokit.request('GET /repos/{owner}/{repo}/git/commits/{commit_sha}', {
+      commit_sha: sha,
+      owner: this.owner,
+      repo: this.repo,
+    });
+
+    return { tree: data.tree.sha, parents: data.parents.map((parent) => parent.sha) };
   }
 
   /** Schedules a pull request the action under test opened, so teardown closes it. */
@@ -686,17 +818,57 @@ export class ScratchRepo {
     return failures;
   }
 
-  /** Deletes every reserved branch, tolerating the ones that were never created. */
   /**
-   * Deletes one branch, and confirms it is gone rather than trusting the response.
+   * Deletes every release on a reserved tag, then the tag itself, tolerating what was never created.
+   *
+   * Releases first: deleting a tag leaves its release behind as a draft-like orphan, while deleting a
+   * release leaves the tag, which the second loop then removes.
+   */
+  private async deleteTags(): Promise<string[]> {
+    const failures: string[] = [];
+
+    for (const tag of this.tags) {
+      try {
+        for (const release of await this.releasesForTag(tag)) {
+          await resolveOptional(
+            this.octokit.request('DELETE /repos/{owner}/{repo}/releases/{release_id}', {
+              owner: this.owner,
+              release_id: release.id,
+              repo: this.repo,
+            }),
+          );
+        }
+        const failure = await this.deleteRef('tags', tag);
+        if (failure !== undefined) {
+          failures.push(failure);
+        }
+      } catch (error) {
+        failures.push(`tag ${tag}: ${errorMessage(error)}`);
+      }
+    }
+
+    return failures;
+  }
+
+  /** Deletes every reserved branch, tolerating the ones that were never created. */
+  /** Deletes one branch, and confirms it is gone; see {@link deleteRef}. */
+  private deleteBranch(branch: string): Promise<string | undefined> {
+    return this.deleteRef('heads', branch);
+  }
+
+  /**
+   * Deletes one branch or tag, and confirms it is gone rather than trusting the response.
    *
    * "Already deleted" cannot be taken at face value here. A ref written moments earlier is not yet
    * visible to every replica, so a delete issued straight after a case finishes can be answered
-   * "Reference does not exist" for a branch that then materialises seconds later — and a teardown
+   * "Reference does not exist" for a ref that then materialises seconds later — and a teardown
    * that reported success is the reason the scratch repository collects orphans. The delete is
    * therefore re-attempted for as long as a *read* can still see the ref.
+   *
+   * @returns `undefined` once the ref is gone, otherwise what went wrong, naming the ref
    */
-  private async deleteBranch(branch: string): Promise<string | undefined> {
+  private async deleteRef(kind: 'heads' | 'tags', name: string): Promise<string | undefined> {
+    const label = `${kind === 'heads' ? 'branch' : 'tag'} ${name}`;
     let lastError: unknown;
 
     for (const delayMs of [0, ...CONVERGENCE_DELAYS_MS]) {
@@ -706,25 +878,25 @@ export class ScratchRepo {
 
       try {
         await resolveOptional(
-          this.octokit.rest.git.deleteRef({ owner: this.owner, repo: this.repo, ref: `heads/${branch}` }),
+          this.octokit.rest.git.deleteRef({ owner: this.owner, repo: this.repo, ref: `${kind}/${name}` }),
         );
         lastError = undefined;
       } catch (error) {
         lastError = error;
 
         if (!isAlreadyDeleted(error)) {
-          return `branch ${branch}: ${errorMessage(error)}`;
+          return `${label}: ${errorMessage(error)}`;
         }
       }
 
       // The single-ref read, not the listing: the listing keeps reporting a ref for minutes after it
       // is gone, and polling that would turn every successful teardown into a timeout.
-      if ((await this.refSha(branch)) === undefined) {
+      if ((await (kind === 'heads' ? this.refSha(name) : this.tagSha(name))) === undefined) {
         return undefined;
       }
     }
 
-    return `branch ${branch}: still present after teardown${lastError === undefined ? '' : ` (${errorMessage(lastError)})`}`;
+    return `${label}: still present after teardown${lastError === undefined ? '' : ` (${errorMessage(lastError)})`}`;
   }
 
   private async deleteBranches(): Promise<string[]> {
@@ -752,11 +924,13 @@ export class ScratchRepo {
     const failures = [
       ...(await this.closePullRequests()),
       ...(await this.closeIssues()),
+      ...(await this.deleteTags()),
       ...(await this.deleteBranches()),
     ];
 
     this.pullRequests.clear();
     this.issues.clear();
+    this.tags.clear();
     this.branches.clear();
 
     if (failures.length > 0) {

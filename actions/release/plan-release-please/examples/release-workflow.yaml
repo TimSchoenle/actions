@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  # Fails before release-please runs when a package's source tag is missing, which would otherwise
+  # make release-please propose every commit in the history as unreleased.
+  preflight:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: ./actions/release/plan-release-please
+        with:
+          mode: preflight
+
+  # release-please, with skip-github-release: true, needs: preflight
+
+  plan:
+    needs: preflight
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      is-release: ${{ steps.plan.outputs.is-release }}
+      pull-request: ${{ steps.plan.outputs.pull-request }}
+    steps:
+      - id: plan
+        uses: ./actions/release/plan-release-please
+        with:
+          mode: plan
+          release-pr-author-id: '248313786' # the release App's bot user
+          consumer-tag-pattern: '^(actions|configs)-[a-z0-9-]+-v\d+\.\d+\.\d+$'
+
+  # build, attest and publish run when needs.plan.outputs.is-release == 'true'. The publish job
+  # re-runs plan mode itself, so the notes files it reads are its own.
