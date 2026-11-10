@@ -41,7 +41,7 @@ jobs:
       contents: read # to fetch code
     steps:
       - id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@actions-test-setup-e2e-v1.2.7 # tag=actions-test-setup-e2e-v1.2.7
+        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
         with:
           app_id: ${{ secrets.TEST_APP_ID }}
           private_key: ${{ secrets.TEST_APP_PRIVATE_KEY }}
