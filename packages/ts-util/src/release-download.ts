@@ -24,6 +24,7 @@ import { errorMessage } from './errors.js';
 import { httpRequest } from './http-request.js';
 
 import type { WriteStream } from 'node:fs';
+import type { IncomingMessage } from 'node:http';
 
 export * from './checksums.js';
 
@@ -407,6 +408,14 @@ async function openDestination(destination: string): Promise<Writable> {
 }
 
 /**
+ * A response's status. Node sets it on every client response; the type leaves it optional only
+ * because server-side requests share the class.
+ */
+function statusOf(message: IncomingMessage): number {
+  return message.statusCode ?? 0;
+}
+
+/**
  * The real network: `http-request.ts`, not Node's `fetch`, because `fetch` ignores `HTTPS_PROXY` and
  * a self-hosted runner behind a proxy would fail here while every other download succeeds.
  *
@@ -422,7 +431,7 @@ export function createHttpTransport(userAgent: string, timeouts: TransportTimeou
     async download(url, headers, destination) {
       try {
         const { message } = await get(url, headers);
-        const status = message.statusCode ?? 0;
+        const status = statusOf(message);
 
         if (status !== 200) {
           // The body of a failed response is not needed; draining it frees the connection.
@@ -457,7 +466,7 @@ export function createHttpTransport(userAgent: string, timeouts: TransportTimeou
 
       try {
         const { message } = await get(url, headers);
-        const status = message.statusCode ?? 0;
+        const status = statusOf(message);
 
         await pipeline(
           message,

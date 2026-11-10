@@ -336,6 +336,22 @@ describe('createHttpTransport', () => {
     await expect(transport.getJson(`${base}/text`, {})).rejects.toMatchObject({ retryable: false });
   });
 
+  it('reports a JSON request answered with a 5xx as retryable and a 404 as not', async () => {
+    const base = await serve((request, response) => {
+      response.statusCode = request.url === '/missing' ? 404 : 503;
+      response.end('{"message":"error"}');
+    });
+
+    await expect(transport.getJson(`${base}/busy`, {})).rejects.toMatchObject({
+      httpStatusCode: 503,
+      retryable: true,
+    });
+    await expect(transport.getJson(`${base}/missing`, {})).rejects.toMatchObject({
+      httpStatusCode: 404,
+      retryable: false,
+    });
+  });
+
   it('drops the Authorization header when a redirect leaves the host', async () => {
     const seen: (string | undefined)[] = [];
     const base = await serve((request, response) => {
