@@ -1,0 +1,304 @@
+# GENERATED — do not edit by hand. Run `bun run generate-e2e-workflows` to rebuild this file
+# from the actions that have an `e2e/` directory. The drift test in CI fails if it is out of date.
+#
+# The cases live in `actions/release/build-actions/e2e/` and are ordinary vitest files. This
+# workflow supplies only what they cannot get on a laptop: a token scoped to the scratch repository.
+name: Verify Release Build-actions
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/release/build-actions'
+    paths:
+      - 'actions/release/build-actions/**'
+      - '!actions/release/build-actions/CHANGELOG.md'
+      - '!actions/release/build-actions/README.md'
+      - 'packages/e2e/**'
+      - '.github/workflows/verify-action-release-build-actions.yaml'
+  pull_request:
+    paths:
+      - 'actions/release/build-actions/**'
+      - '!actions/release/build-actions/CHANGELOG.md'
+      - '!actions/release/build-actions/README.md'
+      - 'packages/e2e/**'
+      - '.github/workflows/verify-action-release-build-actions.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  install:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      cache-key: ${{ steps.key.outputs.value }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            objects.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            registry.npmjs.org:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Compute Cache Key
+        id: key
+        env:
+          CACHE_KEY: e2e-workspace-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+        run: echo "value=$CACHE_KEY" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Workspace Dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            actions/*/*/node_modules
+          key: ${{ steps.key.outputs.value }}
+
+      # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
+      # it to 'latest', which would win otherwise. It reinstalls on every run whatever the cache did,
+      # which is what validates the restored tree against the lockfile before the next job trusts it.
+      - name: Setup Bun And Install
+        uses: TimSchoenle/actions/actions/bun/setup-cached@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-bun-setup-cached-v2.0.0
+        with:
+          bun-version: ''
+          bun-version-file: '.bun-version'
+
+  e2e:
+    needs: install
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: End-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            objects.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            api.github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # setup-bun rather than setup-cached: the cached wrapper runs `bun install` on every job, cache
+      # hit or not, and this job is the one that must have no route to a package registry at all.
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: '.bun-version'
+
+      # The harness runs a node24 bundle with the first node on PATH and refuses any other major,
+      # and the image's default node is not 24. A major alone resolves from the runner's tool
+      # cache, so this reaches no endpoint the allowlist above does not already carry.
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+
+      # Restored, never installed, and never saved. `fail-on-cache-miss` is what keeps that honest:
+      # without it a miss would leave the suite to fail later on a missing import, several confusing
+      # minutes further on.
+      - name: Restore Dependencies
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            actions/*/*/node_modules
+          key: ${{ needs.install.outputs.cache-key }}
+          fail-on-cache-miss: true
+
+      # The cases run `dist/index.js`, the bundle GitHub itself would run, so nothing is built here.
+      - name: Generate Token
+        id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: TimSchoenle
+          repositories: actions-testing
+          permission-metadata: read
+
+      - name: Run End-to-end Cases
+        env:
+          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          # An installation token cannot call `GET /user`, so the suite resolves its own account by
+          # app slug instead. Without this a case matching commit authors fails only in CI.
+          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
+          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+        run: bun run e2e actions/release/build-actions
+
+  round-trip-build:
+    name: Round Trip Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      artifact-id: ${{ steps.build.outputs.artifact-id }}
+      manifest-sha256: ${{ steps.build.outputs.manifest-sha256 }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Write Demo Actions
+        run: |
+          set -euo pipefail
+          mkdir -p round-trip/actions/demo round-trip/actions/second
+          printf "runs:\n  using: 'node24'\n  main: 'dist/index.js'\n" > round-trip/actions/demo/action.yml
+          printf "runs:\n  using: 'node24'\n  main: 'dist/index.js'\n" > round-trip/actions/second/action.yml
+
+      - name: Build Demo Actions
+        id: build
+        uses: ./actions/release/build-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          path: round-trip
+          build-dirs: |
+            actions/demo
+            actions/second
+          build-command: |
+            mkdir -p dist
+            printf 'process.getBuiltinModule("fs").appendFileSync(process.env.GITHUB_OUTPUT, "built-from=%s\\n");\n' "$BUILD_DIR" > dist/index.js
+          artifact-name: build-actions-e2e-${{ github.run_attempt }}
+          toolchain: bash
+
+      # A second upload under the same name must fail rather than replace the artifact a later job
+      # verifies against.
+      - name: Upload Under The Same Name Again
+        id: duplicate
+        continue-on-error: true
+        uses: ./actions/release/build-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          path: round-trip
+          build-dirs: actions/demo
+          build-command: 'true'
+          artifact-name: build-actions-e2e-${{ github.run_attempt }}
+
+      - name: Assert Build Outputs
+        env:
+          ARTIFACT_ID: ${{ steps.build.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.build.outputs.artifact-digest }}
+          MANIFEST_SHA256: ${{ steps.build.outputs.manifest-sha256 }}
+          BUNDLES: ${{ steps.build.outputs.bundles }}
+          DUPLICATE_OUTCOME: ${{ steps.duplicate.outcome }}
+        run: |
+          set -euo pipefail
+          [[ "$ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]] || { echo "::error::artifact-id is '$ARTIFACT_ID'"; exit 1; }
+          [[ "$ARTIFACT_DIGEST" =~ ^(sha256:)?[0-9a-f]{64}$ ]] || { echo "::error::artifact-digest is '$ARTIFACT_DIGEST'"; exit 1; }
+          [[ "$MANIFEST_SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "::error::manifest-sha256 is '$MANIFEST_SHA256'"; exit 1; }
+          paths="$(jq -r '[.[].path] | join(",")' <<< "$BUNDLES")"
+          [[ "$paths" == 'actions/demo/dist/index.js,actions/second/dist/index.js' ]] || { echo "::error::bundles are $paths"; exit 1; }
+          [[ "$DUPLICATE_OUTCOME" == 'failure' ]] || { echo "::error::a second upload under the same name was not refused"; exit 1; }
+
+  round-trip-install:
+    name: Round Trip Install
+    needs: round-trip-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The manifests only: the bundles they name arrive through the install below.
+      - name: Write Demo Actions
+        run: |
+          set -euo pipefail
+          mkdir -p round-trip/actions/demo round-trip/actions/second
+          printf "runs:\n  using: 'node24'\n  main: 'dist/index.js'\n" > round-trip/actions/demo/action.yml
+          printf "runs:\n  using: 'node24'\n  main: 'dist/index.js'\n" > round-trip/actions/second/action.yml
+
+      - name: Install Built Actions
+        id: install
+        uses: ./actions/release/install-built-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact-id: ${{ needs.round-trip-build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.round-trip-build.outputs.manifest-sha256 }}
+          path: round-trip
+
+      - name: Run The Installed Demo Action
+        id: demo
+        uses: ./round-trip/actions/demo # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+
+      - name: Assert Installed Bundles
+        env:
+          BUILT_FROM: ${{ steps.demo.outputs.built-from }}
+          INSTALLED: ${{ steps.install.outputs.bundles }}
+          MANIFEST_PATH: ${{ steps.install.outputs.manifest-path }}
+          EXPECTED_SHA256: ${{ needs.round-trip-build.outputs.manifest-sha256 }}
+        run: |
+          set -euo pipefail
+          [[ "$BUILT_FROM" == 'actions/demo' ]] || { echo "::error::the demo action reported '$BUILT_FROM'"; exit 1; }
+          [[ "$INSTALLED" == '["actions/demo/dist/index.js","actions/second/dist/index.js"]' ]] || { echo "::error::installed $INSTALLED"; exit 1; }
+          [[ "$BUILT_ACTIONS_MANIFEST" == "$MANIFEST_PATH" ]] || { echo "::error::BUILT_ACTIONS_MANIFEST is '$BUILT_ACTIONS_MANIFEST'"; exit 1; }
+          actual="$(sha256sum "$MANIFEST_PATH" | cut -d' ' -f1)"
+          [[ "$actual" == "$EXPECTED_SHA256" ]] || { echo "::error::bundles.json hashes to $actual"; exit 1; }
+
+  # <<< generated: summary (run 'bun run generate-ci-required' to update)
+  summary:
+    name: 'CI Summary: Release Build-actions'
+    if: ${{ always() }}
+    needs:
+      - install
+      - e2e
+      - round-trip-build
+      - round-trip-install
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Fail if any verify job did not succeed
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
+  # >>> generated: summary

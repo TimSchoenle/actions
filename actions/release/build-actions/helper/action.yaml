@@ -1,0 +1,48 @@
+name: 'Release Build Actions Helper'
+description: 'Internal to actions/release/build-actions, which runs this bundle with node before uploading the artifact. Not a public action: its inputs and outputs change without notice.'
+
+inputs:
+  build_dirs:
+    description: 'Directories of JavaScript actions to build: a newline-separated list or a JSON array.'
+    required: true
+  build_command:
+    description: 'Shell command that builds, run with bash.'
+    required: true
+  per_directory:
+    description: 'true runs the command in each build directory; false runs it once in path.'
+    required: false
+    default: 'true'
+  artifact_name:
+    description: 'Name of the artifact, validated here.'
+    required: true
+  retention_days:
+    description: 'Days the artifact is kept, validated here.'
+    required: false
+    default: '1'
+  source_sha:
+    description: 'The commit the checkout holds.'
+    required: true
+  toolchain:
+    description: 'Free text recorded in the manifest.'
+    required: false
+    default: ''
+  path:
+    description: 'Checkout root, relative to the workspace.'
+    required: false
+    default: '.'
+
+outputs:
+  directory:
+    description: 'Directory holding the staged bundles, bundles.json and bundles.sha256, for upload-artifact.'
+  artifact_name:
+    description: 'The validated artifact name.'
+  retention_days:
+    description: 'The validated retention.'
+  manifest_sha256:
+    description: 'SHA-256 of bundles.json.'
+  bundles:
+    description: 'JSON array of {path, sha256, size}.'
+
+runs:
+  using: 'node24'
+  main: 'dist/index.js'

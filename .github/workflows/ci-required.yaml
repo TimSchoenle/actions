@@ -115,6 +115,9 @@ on:
       - Verify Maintenance Timed-auto-merge
       - Verify Maintenance Trigger-coderabbit-review
       - Verify Maintenance Wipe-cache
+      - Verify Release Build-actions
+      - Verify Release Install-built-actions
+      - Verify Release Resolve-actions
       - Verify Rust Auto-format
       - Verify Rust Config-contract
       - Verify Rust Coverage-codecov

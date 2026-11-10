@@ -1,0 +1,16 @@
+# What the README cannot learn from action.yaml. `bun run generate-docs` renders it into README.md.
+# The schema and the rules are in scripts/lib/action-docs/docs-file.ts.
+#
+# The upload authenticates with the runner's artifact token, so the action needs no token scope.
+# The build command's own reach (a registry, a toolchain download) is the caller's to allow.
+permissions: []
+egress:
+  - endpoint: '*.actions.githubusercontent.com:443'
+    for: the artifact upload
+  - endpoint: '*.blob.core.windows.net:443'
+    for: the artifact upload
+examples:
+  - title: Build and test in separate jobs
+    file: examples/build-then-test.yaml
+  - title: Build a single action at the repository root
+    file: examples/root-action.yaml

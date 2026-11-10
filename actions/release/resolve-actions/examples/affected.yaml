@@ -1,0 +1,53 @@
+name: Build Affected Actions
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      build-dirs: ${{ steps.resolve.outputs.build-dirs }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - id: changed
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          {
+            echo 'files<<CHANGED_FILES_EOF'
+            git diff --name-only "$BASE_SHA" HEAD
+            echo 'CHANGED_FILES_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - id: resolve
+        uses: ./actions/release/resolve-actions
+        with:
+          mode: affected
+          changed-files: ${{ steps.changed.outputs.files }}
+          exclude: scripts/templates
+
+  build:
+    needs: resolve
+    if: needs.resolve.outputs.build-dirs != '[]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # set up the toolchain and install dependencies here
+      - uses: ./actions/release/build-actions
+        with:
+          build-dirs: ${{ needs.resolve.outputs.build-dirs }}
+          build-command: npm run build
+          artifact-name: built-actions-${{ github.run_attempt }}

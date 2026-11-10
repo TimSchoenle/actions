@@ -280,6 +280,21 @@
       "release-type": "simple",
       "component": "actions-common-fetch-head",
       "include-component-in-tag": true
+    },
+    "actions/release/resolve-actions": {
+      "release-type": "simple",
+      "component": "actions-release-resolve-actions",
+      "include-component-in-tag": true
+    },
+    "actions/release/build-actions": {
+      "release-type": "simple",
+      "component": "actions-release-build-actions",
+      "include-component-in-tag": true
+    },
+    "actions/release/install-built-actions": {
+      "release-type": "simple",
+      "component": "actions-release-install-built-actions",
+      "include-component-in-tag": true
     }
   },
   "changelog-sections": [

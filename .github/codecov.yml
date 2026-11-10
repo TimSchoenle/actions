@@ -161,6 +161,15 @@ component_management:
     - component_id: maintenance-wipe-cache
       name: maintenance/wipe-cache
       paths: ['actions/maintenance/wipe-cache/**']
+    - component_id: release-build-actions
+      name: release/build-actions
+      paths: ['actions/release/build-actions/**']
+    - component_id: release-install-built-actions
+      name: release/install-built-actions
+      paths: ['actions/release/install-built-actions/**']
+    - component_id: release-resolve-actions
+      name: release/resolve-actions
+      paths: ['actions/release/resolve-actions/**']
     - component_id: rust-config-contract
       name: rust/config-contract
       paths: ['actions/rust/config-contract/**']
