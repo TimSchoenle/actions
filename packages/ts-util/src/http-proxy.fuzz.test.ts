@@ -3,7 +3,8 @@ import { describe, expect } from 'vitest';
 
 import { checkBypass, getProxySettings } from './http-proxy.js';
 
-const label = fc.stringMatching(/^[a-z][a-z\d-]{0,10}$/);
+// An `xn--` label must be valid Punycode, or `new URL` refuses the host; such labels are left out.
+const label = fc.stringMatching(/^[a-z][a-z\d-]{0,10}$/).filter((value) => !value.startsWith('xn--'));
 const domain = fc.array(label, { minLength: 2, maxLength: 4 }).map((labels) => labels.join('.'));
 const scheme = fc.constantFrom('http', 'https');
 
