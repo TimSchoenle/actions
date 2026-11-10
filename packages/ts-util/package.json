@@ -19,6 +19,10 @@
       "types": "./dist/octokit.d.ts",
       "import": "./dist/octokit.js"
     },
+    "./yaml": {
+      "types": "./dist/yaml-index.d.ts",
+      "import": "./dist/yaml-index.js"
+    },
     "./branches": {
       "types": "./dist/github-branches.d.ts",
       "import": "./dist/github-branches.js"

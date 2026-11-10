@@ -24,6 +24,10 @@ export const workspaceAliases: Alias[] = [
     replacement: fileURLToPath(new URL('./packages/ts-util/src/octokit.ts', import.meta.url)),
   },
   {
+    find: 'actions-util/yaml',
+    replacement: fileURLToPath(new URL('./packages/ts-util/src/yaml-index.ts', import.meta.url)),
+  },
+  {
     find: 'actions-util/branches',
     replacement: fileURLToPath(new URL('./packages/ts-util/src/github-branches.ts', import.meta.url)),
   },
