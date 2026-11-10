@@ -34,7 +34,7 @@ jobs:
       contents: read # to fetch code
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -106,7 +106,7 @@ jobs:
 
       - name: Find The Stale Patch
         id: find
-        uses: TimSchoenle/actions/actions/common/find-patch@7b20a67f0b18a6e64c30e5f47c92636729f6ad41 # tag=actions-common-find-patch-v1.1.0
+        uses: TimSchoenle/actions/actions/common/find-patch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-find-patch-v1.1.2
         with:
           artifact_name: ${{ steps.stale.outputs.artifact_name }}
 
