@@ -1,4 +1,4 @@
-- uses: TimSchoenle/actions/actions/maintenance/wipe-cache@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-maintenance-wipe-cache-v3.0.3
+- uses: TimSchoenle/actions/actions/maintenance/wipe-cache@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-maintenance-wipe-cache-v3.0.4
   with:
     token: ${{ github.token }}
     branch: ${{ inputs.branch }}

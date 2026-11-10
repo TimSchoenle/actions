@@ -44,7 +44,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: TimSchoenle/actions/actions/release/plan-release-please@actions-release-plan-release-please-v1.1.0 # tag=actions-release-plan-release-please-v1.1.0
+      - uses: TimSchoenle/actions/actions/release/plan-release-please@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-plan-release-please-v1.1.0
         with:
           mode: preflight
 
@@ -61,7 +61,7 @@ jobs:
       pull-request: ${{ steps.plan.outputs.pull-request }}
     steps:
       - id: plan
-        uses: TimSchoenle/actions/actions/release/plan-release-please@actions-release-plan-release-please-v1.1.0 # tag=actions-release-plan-release-please-v1.1.0
+        uses: TimSchoenle/actions/actions/release/plan-release-please@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-plan-release-please-v1.1.0
         with:
           mode: plan
           release-pr-author-id: '248313786' # the release App's bot user

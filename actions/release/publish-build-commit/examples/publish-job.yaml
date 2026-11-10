@@ -35,11 +35,11 @@ jobs:
 
       # Re-derived here, so the notes files exist in this job.
       - id: plan
-        uses: ./actions/release/plan-release-please
+        uses: TimSchoenle/actions/actions/release/plan-release-please@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-plan-release-please-v1.1.0
         with:
           mode: plan
 
-      - uses: ./actions/release/publish-build-commit
+      - uses: TimSchoenle/actions/actions/release/publish-build-commit@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-publish-build-commit-v1.1.0
         with:
           token: ${{ steps.token.outputs.token }}
           source-sha: ${{ github.sha }}
