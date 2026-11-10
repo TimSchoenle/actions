@@ -116,7 +116,7 @@ export function createPublishApi(token: string, repository: RepositoryCoordinate
   const octokit = createOctokit(token);
   const { owner, repo } = repository;
 
-  return {
+  const api: PublishApi = {
     async getCommit(sha) {
       const { data } = await octokit.request('GET /repos/{owner}/{repo}/git/commits/{commit_sha}', {
         commit_sha: sha,
@@ -206,7 +206,8 @@ export function createPublishApi(token: string, repository: RepositoryCoordinate
 
         return 'created';
       } catch (error) {
-        if (hasStatus(error, UNPROCESSABLE)) {
+        // 422 also answers an unknown object or an invalid ref name: only a ref that is there exists.
+        if (hasStatus(error, UNPROCESSABLE) && (await api.resolveRef(ref)) !== undefined) {
           return 'exists';
         }
         throw error;
@@ -347,6 +348,8 @@ export function createPublishApi(token: string, repository: RepositoryCoordinate
       });
     },
   };
+
+  return api;
 }
 
 /** Reads an artifact record with `token`, which needs `actions: read`. */
