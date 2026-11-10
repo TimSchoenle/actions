@@ -1,6 +1,6 @@
-import * as core from '@actions/core';
 import { runAction } from 'actions-util';
 import { createCommitApi } from 'actions-util/commit-on-branch';
+import * as core from 'actions-util/core';
 
 import { commitChanges } from './commit.js';
 import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';

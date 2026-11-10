@@ -7,7 +7,7 @@ import {
   loadYaml,
   splitKeyPath,
   YamlKeyNotFoundError,
-} from 'actions-util';
+} from 'actions-util/yaml';
 
 /**
  * A node's span in the source. Typed structurally because the exact CST node types are awkward to

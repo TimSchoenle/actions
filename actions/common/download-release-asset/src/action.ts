@@ -1,8 +1,8 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import path from 'node:path';
 
-import * as core from '@actions/core';
 import { errorMessage, quoteForLog, runAction } from 'actions-util';
+import * as core from 'actions-util/core';
 import {
   assertReleaseAssetRef,
   checksumFiles,

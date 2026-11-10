@@ -1,5 +1,5 @@
-import * as core from '@actions/core';
 import { parsePullRequestUrl, quoteForLog, quoteUrlForLog, runAction, workspaceRoot } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import { resolveBody } from './body.js';
 import { ActionInput, ActionOutput, getBooleanInput, getInput, setOutput } from './generated/action-io.js';

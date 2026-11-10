@@ -1,5 +1,5 @@
-import * as core from '@actions/core';
 import { parseRepository, quoteForLog, quoteUrlForLog, runAction, workspaceRoot } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import { resolveBody } from './body.js';
 import {

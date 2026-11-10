@@ -1,7 +1,7 @@
 import path from 'node:path';
 
-import * as core from '@actions/core';
 import { quoteForLog, resolveRealWithinWorkspace, runAction, workspaceRoot } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import { buildDocsIndex } from './docs.js';
 import { getInput, setOutput } from './generated/action-io.js';

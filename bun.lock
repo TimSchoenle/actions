@@ -51,8 +51,6 @@
       "name": "actions-common-close-pull-request",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -68,9 +66,7 @@
       "name": "actions-common-commit-changes",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "@actions/exec": "3.0.0",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -86,8 +82,6 @@
       "name": "actions-common-commit-patch-helper",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -103,8 +97,6 @@
       "name": "actions-common-create-branch",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -120,7 +112,6 @@
       "name": "actions-common-create-patch-helper",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -134,8 +125,6 @@
       "name": "actions-common-delete-branch",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -151,7 +140,6 @@
       "name": "actions-common-download-release-asset",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -165,7 +153,6 @@
       "name": "actions-common-fetch-head",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -179,7 +166,6 @@
       "name": "actions-common-find-patch-helper",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -193,7 +179,6 @@
       "name": "actions-common-generated-files-verdict-helper",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -207,8 +192,6 @@
       "name": "actions-common-get-app-git-identity",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -224,7 +207,6 @@
       "name": "actions-common-modify-yaml",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -241,7 +223,6 @@
       "name": "actions-common-read-yaml",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
         "yaml": "2.9.1",
       },
@@ -258,7 +239,6 @@
       "name": "actions-common-readme-variables",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
         "yaml": "2.9.1",
       },
@@ -275,7 +255,6 @@
       "name": "actions-common-render-template",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "actions-util": "workspace:*",
         "handlebars": "4.7.10",
       },
@@ -292,9 +271,7 @@
       "name": "actions-common-setup-app-git-identity",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
         "@actions/exec": "3.0.0",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -308,8 +285,6 @@
       "name": "actions-common-upsert-issue",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {
@@ -325,8 +300,6 @@
       "name": "actions-common-upsert-pr-comment",
       "version": "1.0.0",
       "dependencies": {
-        "@actions/core": "3.0.1",
-        "@actions/github": "9.1.1",
         "actions-util": "workspace:*",
       },
       "devDependencies": {

@@ -11,9 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "actions-util": "workspace:*",
-    "@actions/core": "3.0.1",
-    "@actions/github": "9.1.1"
+    "actions-util": "workspace:*"
   },
   "devDependencies": {
     "actions-e2e": "workspace:*",

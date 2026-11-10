@@ -4,7 +4,7 @@ import { parse, stringify } from 'yaml';
 
 import { readYaml } from './read.js';
 
-import type { YamlFileReader } from 'actions-util';
+import type { YamlFileReader } from 'actions-util/yaml';
 
 const FILE = 'fuzz.yaml';
 
