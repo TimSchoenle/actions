@@ -28,10 +28,16 @@ Each directory is its own release-please component, so `actions/rust/clippy` and
 it belongs to, as `actions-<path>-vX.Y.Z` or `configs-<path>-vX.Y.Z`. The tables below carry the
 current tag of every component and the `uses:` line that pins it.
 
+`main` holds sources only. Each release tag points at a build commit on the `releases` branch: the
+released source commit plus every action bundle, built from it in CI and attested. The
+`src-<component>-vX.Y.Z` tags mark the released source commits on `main` for release-please and are
+not meant to be pinned. [docs/release-pipeline.md](docs/release-pipeline.md) describes the pipeline,
+and [SECURITY.md](SECURITY.md#verifying-a-release) how to verify a release.
+
 ## Quick start
 
-Copy a `uses:` line from the tables below. It pins the released tag to the commit that tag points
-at, and repeats the tag in a trailing comment.
+Copy a `uses:` line from the tables below. It pins the released tag to the build commit that tag
+points at, and repeats the tag in a trailing comment.
 
 Then extend the shared Renovate preset in your `renovate.json`:
 
@@ -342,13 +348,16 @@ dependencies {
 
 ## Documentation
 
-`docs/` holds the two writing standards every repository in this account is held to. Other
-repositories link them from their own `CONTRIBUTING.md` instead of keeping a copy.
+`docs/` holds the two writing standards every repository in this account is held to, which other
+repositories link from their own `CONTRIBUTING.md` instead of keeping a copy, and how this repository
+releases.
 
 | Document | Purpose |
 | --- | --- |
 | [docs/readme/README.md](docs/readme/README.md) | What a README contains and in what order, how its prose is written, the template it starts from and the CI job that keeps it rendered. |
 | [docs/doc-comments/README.md](docs/doc-comments/README.md) | What carries a doc comment and what it says, with an annex each for Rust, Java and TypeScript. |
+| [docs/release-pipeline.md](docs/release-pipeline.md) | How a release is built, attested and published on a build commit, the runbook for a failed release, the repository settings it needs and how to roll it back. |
+| [docs/adopting-build-on-release.md](docs/adopting-build-on-release.md) | Reference release workflows for another repository: a single action at the root, and a release-please monorepo. |
 
 ## Contributing
 

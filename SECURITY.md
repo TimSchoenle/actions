@@ -161,10 +161,51 @@ the required checks green.
 
 ## Supply Chain Security
 
-Release tags are immutable and a repository ruleset restricts who may create them to the release bot,
-so a tag cannot be moved to a different commit after a consumer has pinned it. Every action here is
-published with its bundle committed, and CI rebuilds that bundle and compares it byte for byte
-against what the branch carries.
+A repository ruleset restricts who may create, move or delete a tag to the release bot, and the
+release pipeline never moves one, so a tag cannot point at a different commit after a consumer has
+pinned it. A second ruleset lets only the release bot advance the `releases` branch, by fast-forward.
+
+`main` holds no build output. When a release pull request merges, the release workflow builds every
+action bundle from the merge commit `M` twice, on separate runners, and stops unless both builds are
+byte for byte identical. It signs SLSA build provenance for every bundle with GitHub artifact
+attestations, then creates the build commit `B`: the tree of `M` plus the bundles, with nothing
+removed or changed, and `M` as its second parent. The release tag goes on `B`, the source tag
+`src-<tag>` on `M`, and each GitHub Release carries a `bundles.sha256` checksum file and the bundles.
+The job that holds the release bot's key runs only actions pinned by commit, never code from the
+repository. [docs/release-pipeline.md](docs/release-pipeline.md) has the details.
+
+### Verifying a release
+
+Every check below reads only public data. Set the tag you pin, for example:
+
+```bash
+tag=actions-common-read-yaml-v2.0.5
+repo=TimSchoenle/actions
+
+git clone --quiet --filter=blob:none --no-checkout "https://github.com/${repo}.git" verify && cd verify
+build="$(git rev-parse "refs/tags/${tag}^{commit}")"
+source="$(git rev-parse "refs/tags/src-${tag}^{commit}")"
+
+# B is on the releases branch, M on main, and M is B's second parent.
+git merge-base --is-ancestor "$build" origin/releases
+git merge-base --is-ancestor "$source" origin/main
+test "$(git rev-parse "${build}^2")" = "$source"
+
+# B adds bundles under actions/**/dist/ and changes nothing else. Prints any other change and fails.
+git diff --no-renames --name-status "$source" "$build" \
+  | awk '$1 != "A" || $2 !~ /^actions\/.+\/dist\// { print; bad = 1 } END { exit bad }'
+
+# Each bundle was built and signed by this repository's release workflow on main.
+path=actions/common/read-yaml/dist/index.js
+git show "${build}:${path}" > index.js
+gh attestation verify index.js --repo "$repo" \
+  --signer-workflow "${repo}/.github/workflows/release.yml" --source-ref refs/heads/main
+```
+
+A composite action with no bundle of its own has nothing to attest; the diff check still shows that
+its files at `B` are exactly those at `M`, the commit its release notes describe. These checks apply
+to releases published by the release workflow. Tags created before it point at a commit on `main` that
+carries its bundles, and have no `src-` tag.
 
 ## Accepted Risks
 
