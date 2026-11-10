@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 
-import { runAction, ScratchRepo } from 'actions-e2e';
+import { runAction, ScratchRepo, UNREACHABLE_API_URL } from 'actions-e2e';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import type { ActionInput, ActionOutput } from '../src/generated/action-io.js';
@@ -54,10 +54,11 @@ describe('plan-release-please', () => {
   function plan(
     inputs: ProvidedInputs<ActionInput>,
     expected: ExpectedOutcome = 'success',
+    env: Readonly<Record<string, string>> = {},
   ): Promise<ActionRunResult<ActionOutput>> {
     return runAction<ActionInput, ActionOutput>({
       actionDirectory: ACTION_DIRECTORY,
-      env: { GITHUB_REPOSITORY: scratch.repository },
+      env: { GITHUB_REPOSITORY: scratch.repository, ...env },
       expect: expected,
       inputs: {
         sha: fixture,
@@ -87,11 +88,14 @@ describe('plan-release-please', () => {
   });
 
   // Hostile inputs are covered case by case in the unit tests; this one shows the shipped bundle
-  // refusing one under the runner's contract, before it spends a request.
+  // refusing one under the runner's contract, before it spends a request: the API is unreachable, so a
+  // request made before the check would fail with a different error.
   it('refuses an injection-style sha before calling the API', async () => {
-    const result = await plan({ mode: 'preflight', sha: '$(id)' }, 'failure');
+    const result = await plan({ mode: 'preflight', sha: '$(id)' }, 'failure', {
+      GITHUB_API_URL: UNREACHABLE_API_URL,
+    });
 
-    expect(result.errors.join('\n')).toContain('sha must be a full lowercase commit id; got "$(id)".');
+    expect(result.errors).toEqual(['sha must be a full lowercase commit id; got "$(id)".']);
   });
 
   it('fails on a commit that does not exist', async () => {

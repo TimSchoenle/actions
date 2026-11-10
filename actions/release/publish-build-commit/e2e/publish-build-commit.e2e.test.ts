@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { stageBundles } from 'action-graph';
-import { runAction, ScratchRepo } from 'actions-e2e';
+import { runAction, ScratchRepo, UNREACHABLE_API_URL } from 'actions-e2e';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import type { ActionInput, ActionOutput } from '../helper/src/generated/action-io.js';
@@ -75,10 +75,11 @@ describe('publish-build-commit', () => {
     staged: StagedBundles,
     inputs: ProvidedInputs<ActionInput>,
     expected: ExpectedOutcome = 'success',
+    env: Readonly<Record<string, string>> = {},
   ): Promise<ActionRunResult<ActionOutput>> {
     return runAction<ActionInput, ActionOutput>({
       actionDirectory: HELPER_DIRECTORY,
-      env: { RUNNER_TEMP: temp },
+      env: { RUNNER_TEMP: temp, ...env },
       expect: expected,
       inputs: {
         mode: 'publish',
@@ -130,16 +131,19 @@ describe('publish-build-commit', () => {
   });
 
   // Hostile release entries are covered case by case in the unit tests; this one shows the shipped
-  // bundle refusing one under the runner's contract. It fails parsing the inputs, before any request.
+  // bundle refusing one under the runner's contract. It fails parsing the inputs, before any request:
+  // the API is unreachable, so a request would fail with a different error.
   it('refuses a consumer tag that reads as an option, before any request', async () => {
     const staged = await stage();
     const notesFile = path.join(temp, 'hostile.md');
     await writeFile(notesFile, '* hostile\n');
     const hostile = JSON.stringify([{ consumerTag: '--force', releaseName: 'demo: v1.0.0', notesFile }]);
 
-    const refused = await publish(staged, { releases: hostile }, 'failure');
+    const refused = await publish(staged, { releases: hostile }, 'failure', {
+      GITHUB_API_URL: UNREACHABLE_API_URL,
+    });
 
-    expect(refused.errors.join('\n')).toContain(`releases[0]: 'consumerTag' "--force" is not a valid tag name.`);
+    expect(refused.errors).toEqual([`releases[0]: 'consumerTag' "--force" is not a valid tag name.`]);
   });
 
   it('fails on a consumer tag created at another commit, before any write', async () => {
