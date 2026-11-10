@@ -156,7 +156,8 @@ export function getUserAgentWithOrchestrationId(
 /**
  * Creates an authenticated client, as `@actions/github`'s `getOctokit` does: `token` (or an `auth`
  * option, never both), the `GITHUB_API_URL` base URL, and the runner's proxy settings. `options`
- * override those defaults; `additionalPlugins` are applied on top.
+ * override those defaults, except that `request.fetch` replaces the proxy-aware fetch only when it is
+ * a function; `additionalPlugins` are applied on top.
  */
 export function getOctokit(
   token: string,
@@ -181,10 +182,12 @@ export function getOctokit(
   }
 
   const Client = GitHub.plugin(...additionalPlugins);
+  // Only a fetch actually given replaces the proxy-aware one; an explicit `fetch: undefined` does not.
+  const fetch: unknown = opts.request?.fetch;
 
   return new Client({
     baseUrl: getApiBaseUrl(),
     ...opts,
-    request: { fetch: createProxyAwareFetch(), ...opts.request },
+    request: { ...opts.request, fetch: typeof fetch === 'function' ? fetch : createProxyAwareFetch() },
   });
 }

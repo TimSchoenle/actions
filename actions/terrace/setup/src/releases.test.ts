@@ -4,7 +4,7 @@ import { httpRequest } from 'actions-util';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ReleaseNotFoundError } from './errors.js';
-import { fetchJson, listReleases } from './releases.js';
+import { fetchJson, listReleases, MAX_PAGE_BYTES } from './releases.js';
 
 import type { HttpResponse } from 'actions-util';
 
@@ -82,9 +82,31 @@ describe('fetchJson', () => {
     expect(sentHeaders()).not.toHaveProperty('Authorization');
   });
 
-  it('reports an HTTP failure', async () => {
+  it('reports an HTTP failure, closing the response unread', async () => {
     answer(403, '{}', 'Forbidden');
 
     await expect(fetchJson('https://api.github.com/x', '')).rejects.toThrow(/403 Forbidden/);
+    const { message } = await vi.mocked(httpRequest).mock.results[0]!.value;
+    expect(message.destroyed).toBe(true);
+  });
+
+  it('stops reading a page past the size limit', async () => {
+    const chunk = Buffer.alloc(1024 * 1024, 0x20);
+    const endless = Readable.from(
+      (function* () {
+        for (;;) {
+          yield chunk;
+        }
+      })(),
+    );
+    vi.mocked(httpRequest).mockResolvedValue({
+      url: 'https://api.github.com/x',
+      message: Object.assign(endless, { statusCode: 200, statusMessage: 'OK' }),
+    } as unknown as HttpResponse);
+
+    await expect(fetchJson('https://api.github.com/x', '')).rejects.toThrow(
+      `The response body is larger than the limit of ${MAX_PAGE_BYTES} bytes.`,
+    );
+    expect(endless.destroyed).toBe(true);
   });
 });

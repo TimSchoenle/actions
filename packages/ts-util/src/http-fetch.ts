@@ -7,7 +7,7 @@
  * `http-proxy.ts` routes through a proxy is carried by `http-request.ts` instead, which tunnels it
  * with a plain `CONNECT` and answers with a standard `Response`.
  */
-import { pipeline, Readable } from 'node:stream';
+import { pipeline, Readable, Transform } from 'node:stream';
 import zlib from 'node:zlib';
 
 import { getProxySettings } from './http-proxy.js';
@@ -31,6 +31,12 @@ const IDLE_TIMEOUT_MS = 300_000;
  */
 const NULL_BODY_STATUSES = new Set([204, 205, 304]);
 
+/** The encodings the proxied path asks for when the caller names none; all of them are decoded. */
+const ACCEPT_ENCODING = 'gzip, deflate, br';
+
+/** Decoder options that let a body cut short at a flush point decode what arrived, as `fetch` does. */
+const ZLIB_OPTIONS: zlib.ZlibOptions = { flush: zlib.constants.Z_SYNC_FLUSH, finishFlush: zlib.constants.Z_SYNC_FLUSH };
+
 /** The `fetch` signature, narrowed to what Octokit passes. */
 export type FetchFunction = (input: string | URL, init?: RequestInit) => Promise<Response>;
 
@@ -51,15 +57,75 @@ function toBody(body: RequestInit['body']): string | Uint8Array | undefined {
   throw new TypeError('The proxied fetch only sends string and byte bodies.');
 }
 
+/**
+ * Decodes `Content-Encoding: deflate`, which servers send either zlib-wrapped, as the specification
+ * says, or as a raw deflate stream. The first byte decides, as in `fetch`: a zlib header names the
+ * deflate method (8) in its low four bits.
+ */
+class InflateStream extends Transform {
+  #inflate: zlib.Inflate | zlib.InflateRaw | undefined;
+
+  override _transform(chunk: Buffer, _encoding: BufferEncoding, callback: (error?: Error | null) => void): void {
+    if (chunk.length === 0) {
+      callback();
+
+      return;
+    }
+
+    this.#inflate ??= this.#start(
+      (chunk[0] & 0x0f) === 0x08 ? zlib.createInflate(ZLIB_OPTIONS) : zlib.createInflateRaw(ZLIB_OPTIONS),
+    );
+
+    if (this.#inflate.write(chunk)) {
+      callback();
+    } else {
+      this.#inflate.once('drain', () => callback());
+    }
+  }
+
+  override _flush(callback: (error?: Error | null) => void): void {
+    if (this.#inflate === undefined) {
+      callback();
+
+      return;
+    }
+
+    this.#inflate.once('end', () => callback());
+    this.#inflate.end();
+  }
+
+  override _read(size: number): void {
+    this.#inflate?.resume();
+    super._read(size);
+  }
+
+  override _destroy(error: Error | null, callback: (error?: Error | null) => void): void {
+    this.#inflate?.destroy();
+    callback(error);
+  }
+
+  /** Forwards the decoder's output, pausing it while this stream's reader is not keeping up. */
+  #start(inflate: zlib.Inflate | zlib.InflateRaw): zlib.Inflate | zlib.InflateRaw {
+    inflate.on('data', (data: Buffer) => {
+      if (!this.push(data)) {
+        inflate.pause();
+      }
+    });
+    inflate.once('error', (error) => this.destroy(error));
+
+    return inflate;
+  }
+}
+
 /** The decoder for a `Content-Encoding`, or `undefined` for one that is passed through as is. */
 function decoder(encoding: string | undefined): NodeJS.ReadWriteStream | undefined {
   switch (encoding?.trim().toLowerCase()) {
     case 'gzip':
     case 'x-gzip': {
-      return zlib.createGunzip({ flush: zlib.constants.Z_SYNC_FLUSH, finishFlush: zlib.constants.Z_SYNC_FLUSH });
+      return zlib.createGunzip(ZLIB_OPTIONS);
     }
     case 'deflate': {
-      return zlib.createInflate({ flush: zlib.constants.Z_SYNC_FLUSH, finishFlush: zlib.constants.Z_SYNC_FLUSH });
+      return new InflateStream();
     }
     case 'br': {
       return zlib.createBrotliDecompress();
@@ -97,10 +163,17 @@ function responseHeaders(message: IncomingMessage): Headers {
 
 /** Carries one request through `http-request.ts` and answers it as `fetch` would. */
 async function fetchThroughProxy(url: string, init: RequestInit, env: ProxyEnvironment): Promise<Response> {
+  const parsed = new URL(url);
+  if (parsed.username !== '' || parsed.password !== '') {
+    throw new TypeError(`Request cannot be constructed from a URL that includes credentials: ${parsed.host}`);
+  }
+
+  // `Headers` lower-cases every name.
   const headers: Record<string, string> = {};
   new Headers(init.headers).forEach((value, name) => {
     headers[name] = value;
   });
+  headers['accept-encoding'] ??= ACCEPT_ENCODING;
 
   const method = (init.method ?? 'GET').toUpperCase();
   const redirect = init.redirect ?? 'follow';
@@ -115,14 +188,15 @@ async function fetchThroughProxy(url: string, init: RequestInit, env: ProxyEnvir
   });
   const status = message.statusCode ?? 0;
 
+  // In both refusals below the redirect's body goes unread, and the connection is never reused: close it.
   if (redirect === 'error' && status >= 300 && status < 400 && message.headers.location !== undefined) {
-    message.resume();
+    message.destroy();
     throw new TypeError(`fetch failed: ${url} redirected, and redirects were refused.`);
   }
 
   // `httpRequest` returns the last redirect once the limit is reached; `fetch` fails the request instead.
   if (redirect === 'follow' && REDIRECT_STATUSES.has(status) && message.headers.location !== undefined) {
-    message.resume();
+    message.destroy();
     throw new TypeError('fetch failed', { cause: new Error('redirect count exceeded') });
   }
 
@@ -146,7 +220,7 @@ async function fetchThroughProxy(url: string, init: RequestInit, env: ProxyEnvir
 
   // A constructed Response has an empty, read-only `url`; Octokit reads it for the response it returns.
   Object.defineProperty(response, 'url', { value: finalUrl });
-  Object.defineProperty(response, 'redirected', { value: finalUrl !== new URL(url).href });
+  Object.defineProperty(response, 'redirected', { value: finalUrl !== parsed.href });
 
   return response;
 }
