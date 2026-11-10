@@ -1,4 +1,5 @@
 import { appendFileSync, existsSync } from 'node:fs';
+import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
@@ -70,19 +71,42 @@ describe('runInProcess', () => {
 
   it('propagates an error the body throws and still restores everything', async () => {
     const before = process.stdout.write;
+    const outer = { output: process.env['GITHUB_OUTPUT'], env: process.env['GITHUB_ENV'], exitCode: process.exitCode };
+    // One variable unset and one set beforehand, so both ways of restoring are exercised.
+    delete process.env['GITHUB_OUTPUT'];
+    process.env['GITHUB_ENV'] = 'outer-env-file';
+    process.exitCode = 0;
     let outputFile = '';
 
-    await expect(
-      runInProcess({ probe: 'x' }, () => {
-        outputFile = process.env['GITHUB_OUTPUT'] as string;
-        throw new Error('body failed');
-      }),
-    ).rejects.toThrow('body failed');
+    try {
+      await expect(
+        runInProcess({ probe: 'x' }, () => {
+          outputFile = process.env['GITHUB_OUTPUT'] as string;
+          process.exitCode = 1;
+          throw new Error('body failed');
+        }),
+      ).rejects.toThrow('body failed');
 
-    expect(process.stdout.write).toBe(before);
-    expect(process.env['INPUT_PROBE']).toBeUndefined();
-    expect(outputFile).not.toBe('');
-    expect(existsSync(outputFile)).toBe(false);
+      expect(process.stdout.write).toBe(before);
+      expect(process.env['INPUT_PROBE']).toBeUndefined();
+      expect(process.env['GITHUB_OUTPUT']).toBeUndefined();
+      expect(process.env['GITHUB_ENV']).toBe('outer-env-file');
+      expect(process.exitCode).toBe(0);
+      expect(outputFile).not.toBe('');
+      expect(existsSync(path.dirname(outputFile))).toBe(false);
+    } finally {
+      for (const [key, value] of [
+        ['GITHUB_OUTPUT', outer.output],
+        ['GITHUB_ENV', outer.env],
+      ] as const) {
+        if (value === undefined) {
+          delete process.env[key];
+        } else {
+          process.env[key] = value;
+        }
+      }
+      process.exitCode = outer.exitCode;
+    }
   });
 
   it('restores a variable it overrode', async () => {
