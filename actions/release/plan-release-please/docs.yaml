@@ -1,0 +1,17 @@
+# What the README cannot learn from action.yaml. `bun run generate-docs` renders it into README.md.
+# The schema and the rules are in scripts/lib/action-docs/docs-file.ts.
+permissions:
+  - scope: contents
+    access: read
+    when: always
+    token: token
+  - scope: pull-requests
+    access: read
+    when: { input: mode, equals: plan }
+    token: token
+egress:
+  - endpoint: api.github.com:443
+    for: reading the configuration, the manifest, changelogs, tags and pull requests
+examples:
+  - title: Gate release-please and plan the publish
+    file: examples/release-workflow.yaml

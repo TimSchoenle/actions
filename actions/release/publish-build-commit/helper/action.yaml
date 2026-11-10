@@ -1,0 +1,95 @@
+name: 'Release Publish Build Commit Helper'
+description: 'Internal to actions/release/publish-build-commit, which runs this bundle with node once before and once after downloading the artifact. Not a public action: its inputs and outputs change without notice.'
+
+inputs:
+  mode:
+    description: 'prepare validates the inputs and checks the artifact record; publish verifies the download and publishes.'
+    required: true
+  token:
+    description: 'Token that writes the repository.'
+    required: true
+  github_token:
+    description: 'Token that reads the artifact record. Read in prepare mode.'
+    required: false
+    default: ''
+  repository:
+    description: 'owner/repo to publish to.'
+    required: true
+  source_sha:
+    description: 'The source commit.'
+    required: true
+  artifact_id:
+    description: 'ID of the artifact.'
+    required: true
+  expected_artifact_digest:
+    description: 'Digest the artifact record must carry. Read in prepare mode.'
+    required: false
+    default: ''
+  expected_manifest_sha256:
+    description: 'SHA-256 of bundles.json.'
+    required: true
+  cross_check_manifest_sha256:
+    description: 'SHA-256 of bundles.json from a second build; must be equal when set.'
+    required: false
+    default: ''
+  allowed_paths:
+    description: 'Globs every bundle path must match.'
+    required: true
+  existing_files:
+    description: 'fail or require-identical.'
+    required: true
+  releases_branch:
+    description: 'Branch B is chained on; empty for none.'
+    required: false
+    default: ''
+  releases:
+    description: 'JSON array of releases.'
+    required: true
+  release_assets:
+    description: 'none, checksums or bundles.'
+    required: true
+  make_latest:
+    description: 'true, false or legacy.'
+    required: true
+  pull_request:
+    description: 'Release pull request number; empty for none.'
+    required: false
+    default: ''
+  pending_label:
+    description: 'Label removed from the pull request.'
+    required: false
+    default: 'autorelease: pending'
+  tagged_label:
+    description: 'Label added to the pull request.'
+    required: false
+    default: 'autorelease: tagged'
+  dry_run:
+    description: 'true writes nothing.'
+    required: false
+    default: 'false'
+  directory:
+    description: 'Directory the artifact was downloaded to. Read in publish mode.'
+    required: false
+    default: ''
+  run_url:
+    description: 'URL of the run attempt, recorded in the commit message of B. Read in publish mode.'
+    required: false
+    default: ''
+
+outputs:
+  artifact_id:
+    description: 'The validated artifact ID. Set in prepare mode.'
+  directory:
+    description: 'The empty directory to download into. Set in prepare mode.'
+  build_sha:
+    description: 'The build commit. Set in publish mode.'
+  tree_sha:
+    description: 'The tree of the build commit. Set in publish mode.'
+  created:
+    description: 'JSON array of what was created or changed. Set in publish mode.'
+  releases:
+    description: 'JSON array of {tag, id, url}. Set in publish mode.'
+
+runs:
+  using: 'node24'
+  main: 'dist/index.js'

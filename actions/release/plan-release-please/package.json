@@ -1,0 +1,22 @@
+{
+  "name": "actions-release-plan-release-please",
+  "version": "1.0.0",
+  "description": "Reads release-please state at a commit: source tag preflight, and the releases a release merge makes",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "bun run ../../../scripts/build-action.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "action-graph": "workspace:*",
+    "actions-util": "workspace:*"
+  },
+  "devDependencies": {
+    "actions-e2e": "workspace:*",
+    "@types/node": "26.6.6",
+    "@typescript/native": "npm:typescript@7.0.2",
+    "vitest": "5.1.0"
+  }
+}

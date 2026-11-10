@@ -88,6 +88,22 @@ export const INSTALL_ALLOWED_ENDPOINTS: readonly string[] = [...BASE_ENDPOINTS, 
  */
 export const E2E_ALLOWED_ENDPOINTS: readonly string[] = [...BASE_ENDPOINTS, 'api.github.com:443'];
 
+/**
+ * Endpoints one action's end-to-end job needs beyond {@link E2E_ALLOWED_ENDPOINTS}, each with why.
+ *
+ * Kept per action so the allowlist of every other suite stays as narrow as it is. Never a package
+ * registry: the job holds the scratch-repository token.
+ */
+export const EXTRA_E2E_ENDPOINTS: Readonly<Record<string, readonly string[]>> = {
+  // The cases upload release assets, which the Releases API takes on its uploads host.
+  'actions/release/publish-build-commit': ['uploads.github.com:443'],
+};
+
+/** The allowlist of one action's end-to-end job. */
+export function e2eEndpoints(action: E2eAction): readonly string[] {
+  return [...E2E_ALLOWED_ENDPOINTS, ...(EXTRA_E2E_ENDPOINTS[action.actionPath] ?? [])];
+}
+
 /** Renders a harden-runner step with the allowlist for one job, indented to sit under `steps:`. */
 function hardenRunnerStep(endpoints: readonly string[]): string {
   const rendered = endpoints.map((endpoint) => `            ${endpoint}`).join('\n');
@@ -210,6 +226,10 @@ const TOKEN_PERMISSIONS: Readonly<Record<string, TokenPermissions>> = {
   'actions/maintenance/timed-auto-merge': { contents: 'write', 'pull-requests': 'write' },
   // The fixture opens a pull request; the action itself is refused before it writes anything.
   'actions/maintenance/trigger-coderabbit-review': { contents: 'write', 'pull-requests': 'write' },
+  // The fixtures commit the release-please files and create tags; plan mode reads pull requests.
+  'actions/release/plan-release-please': { contents: 'write', 'pull-requests': 'read' },
+  // Blobs, trees, commits, the releases branch, tags, releases and their assets.
+  'actions/release/publish-build-commit': { contents: 'write' },
 };
 
 /**
@@ -488,7 +508,7 @@ ${installJob()}
     permissions:
       contents: read # to fetch code
     steps:
-${hardenRunnerStep(E2E_ALLOWED_ENDPOINTS)}
+${hardenRunnerStep(e2eEndpoints(action))}
 
       - name: Checkout
         uses: ${PINNED.checkout}

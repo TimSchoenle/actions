@@ -167,6 +167,12 @@ component_management:
     - component_id: release-install-built-actions
       name: release/install-built-actions
       paths: ['actions/release/install-built-actions/**']
+    - component_id: release-plan-release-please
+      name: release/plan-release-please
+      paths: ['actions/release/plan-release-please/**']
+    - component_id: release-publish-build-commit
+      name: release/publish-build-commit
+      paths: ['actions/release/publish-build-commit/**']
     - component_id: release-resolve-actions
       name: release/resolve-actions
       paths: ['actions/release/resolve-actions/**']

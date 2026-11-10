@@ -95,6 +95,8 @@ is not, including older versions of a component whose neighbours have since rele
 | --- | --- | --- |
 | [Release Build Actions](./actions/release/build-actions) | [actions-release-build-actions-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-build-actions-v1.0.0) | :white_check_mark: |
 | [Release Install Built Actions](./actions/release/install-built-actions) | [actions-release-install-built-actions-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-install-built-actions-v1.0.0) | :white_check_mark: |
+| [Release Plan Release Please](./actions/release/plan-release-please) | [actions-release-plan-release-please-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-plan-release-please-v1.0.0) | :white_check_mark: |
+| [Release Publish Build Commit](./actions/release/publish-build-commit) | [actions-release-publish-build-commit-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-publish-build-commit-v1.0.0) | :white_check_mark: |
 | [Release Resolve Actions](./actions/release/resolve-actions) | [actions-release-resolve-actions-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-resolve-actions-v1.0.0) | :white_check_mark: |
 
 #### Rust

@@ -117,6 +117,8 @@ on:
       - Verify Maintenance Wipe-cache
       - Verify Release Build-actions
       - Verify Release Install-built-actions
+      - Verify Release Plan-release-please
+      - Verify Release Publish-build-commit
       - Verify Release Resolve-actions
       - Verify Rust Auto-format
       - Verify Rust Config-contract
