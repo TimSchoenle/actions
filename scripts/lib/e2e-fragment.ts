@@ -102,7 +102,7 @@ function jobLocalRefs(job: string, steps: readonly unknown[]): FragmentLocalRef[
  */
 export function installStepLines(indent: string, prefix: string, uses: string): string[] {
   return [
-    `${indent}# Replaces the committed bundles with the ones the build job built from this commit.`,
+    `${indent}# Installs the bundles the build job built from this commit; dist/ is not committed.`,
     `${indent}- name: Install Built Actions`,
     `${indent}  uses: ${uses}`,
     `${indent}  with:`,
