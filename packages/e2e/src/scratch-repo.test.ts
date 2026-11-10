@@ -242,6 +242,62 @@ describe('ScratchRepo tags', () => {
     }
   });
 
+  it('waits after creating a tag until a read sees it at its commit', async () => {
+    vi.useFakeTimers();
+    try {
+      const createRef = vi.fn().mockResolvedValue({});
+      Object.assign(octokit.rest.git, { createRef });
+      octokit.rest.git.getRef
+        .mockRejectedValueOnce(httpError(404, 'Not Found'))
+        .mockResolvedValue({ data: { object: { sha: 'abc' } } });
+
+      const created = scratch.createTag('demo', 'abc');
+      await vi.runAllTimersAsync();
+
+      await expect(created).resolves.toBeUndefined();
+      expect(createRef).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo', ref: 'refs/tags/demo', sha: 'abc' });
+      expect(octokit.rest.git.getRef).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('deletes a tag again while a read still sees it after an "already deleted" answer', async () => {
+    vi.useFakeTimers();
+    try {
+      octokit.rest.git.deleteRef.mockRejectedValue(httpError(422, 'Reference does not exist'));
+      octokit.rest.git.getRef
+        .mockResolvedValueOnce({ data: { object: { sha: 'abc' } } })
+        .mockRejectedValue(httpError(404, 'Not Found'));
+
+      const deleted = scratch.deleteTag('demo');
+      await vi.runAllTimersAsync();
+
+      await expect(deleted).resolves.toBeUndefined();
+      expect(octokit.rest.git.deleteRef).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('reports a tag teardown left behind when a read keeps seeing it', async () => {
+    vi.useFakeTimers();
+    try {
+      const tag = scratch.tag('lingering');
+      octokit.paginate.mockResolvedValue([]);
+      octokit.rest.git.deleteRef.mockRejectedValue(httpError(422, 'Reference does not exist'));
+      octokit.rest.git.getRef.mockResolvedValue({ data: { object: { sha: 'abc' } } });
+
+      const teardown = scratch.teardown();
+      const settled = expect(teardown).rejects.toThrow(`tag ${tag}: still present after teardown`);
+      await vi.runAllTimersAsync();
+
+      await settled;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('treats a tag that was never created as deleted', async () => {
     scratch.tag('never-created');
     octokit.paginate.mockResolvedValue([]);

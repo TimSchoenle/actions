@@ -308,21 +308,24 @@ export class ScratchRepo {
     return sha;
   }
 
-  /** Creates a lightweight tag through the raw API, for a fixture. */
+  /**
+   * Creates a lightweight tag through the raw API, for a fixture, and waits until a read sees it, as
+   * {@link createBranch} does for a branch.
+   */
   async createTag(tag: string, sha: string): Promise<void> {
     await this.octokit.rest.git.createRef({ owner: this.owner, repo: this.repo, ref: `refs/tags/${tag}`, sha });
+    await this.tagSha(tag, sha);
   }
 
-  /** Deletes a tag through the raw API; a tag that is already gone is not an error. */
+  /**
+   * Deletes a tag through the raw API and confirms it is gone; a tag that is already gone is not an
+   * error. The same converging delete as a branch's, see {@link deleteRef}.
+   */
   async deleteTag(tag: string): Promise<void> {
-    try {
-      await resolveOptional(
-        this.octokit.rest.git.deleteRef({ owner: this.owner, repo: this.repo, ref: `tags/${tag}` }),
-      );
-    } catch (error) {
-      if (!isAlreadyDeleted(error)) {
-        throw error;
-      }
+    const failure = await this.deleteRef('tags', tag);
+
+    if (failure !== undefined) {
+      throw new Error(`Failed to delete ${failure}`);
     }
   }
 
@@ -835,11 +838,12 @@ export class ScratchRepo {
             }),
           );
         }
-        await this.deleteTag(tag);
-      } catch (error) {
-        if (!isAlreadyDeleted(error)) {
-          failures.push(`tag ${tag}: ${errorMessage(error)}`);
+        const failure = await this.deleteRef('tags', tag);
+        if (failure !== undefined) {
+          failures.push(failure);
         }
+      } catch (error) {
+        failures.push(`tag ${tag}: ${errorMessage(error)}`);
       }
     }
 
@@ -847,16 +851,24 @@ export class ScratchRepo {
   }
 
   /** Deletes every reserved branch, tolerating the ones that were never created. */
+  /** Deletes one branch, and confirms it is gone; see {@link deleteRef}. */
+  private deleteBranch(branch: string): Promise<string | undefined> {
+    return this.deleteRef('heads', branch);
+  }
+
   /**
-   * Deletes one branch, and confirms it is gone rather than trusting the response.
+   * Deletes one branch or tag, and confirms it is gone rather than trusting the response.
    *
    * "Already deleted" cannot be taken at face value here. A ref written moments earlier is not yet
    * visible to every replica, so a delete issued straight after a case finishes can be answered
-   * "Reference does not exist" for a branch that then materialises seconds later — and a teardown
+   * "Reference does not exist" for a ref that then materialises seconds later — and a teardown
    * that reported success is the reason the scratch repository collects orphans. The delete is
    * therefore re-attempted for as long as a *read* can still see the ref.
+   *
+   * @returns `undefined` once the ref is gone, otherwise what went wrong, naming the ref
    */
-  private async deleteBranch(branch: string): Promise<string | undefined> {
+  private async deleteRef(kind: 'heads' | 'tags', name: string): Promise<string | undefined> {
+    const label = `${kind === 'heads' ? 'branch' : 'tag'} ${name}`;
     let lastError: unknown;
 
     for (const delayMs of [0, ...CONVERGENCE_DELAYS_MS]) {
@@ -866,25 +878,25 @@ export class ScratchRepo {
 
       try {
         await resolveOptional(
-          this.octokit.rest.git.deleteRef({ owner: this.owner, repo: this.repo, ref: `heads/${branch}` }),
+          this.octokit.rest.git.deleteRef({ owner: this.owner, repo: this.repo, ref: `${kind}/${name}` }),
         );
         lastError = undefined;
       } catch (error) {
         lastError = error;
 
         if (!isAlreadyDeleted(error)) {
-          return `branch ${branch}: ${errorMessage(error)}`;
+          return `${label}: ${errorMessage(error)}`;
         }
       }
 
       // The single-ref read, not the listing: the listing keeps reporting a ref for minutes after it
       // is gone, and polling that would turn every successful teardown into a timeout.
-      if ((await this.refSha(branch)) === undefined) {
+      if ((await (kind === 'heads' ? this.refSha(name) : this.tagSha(name))) === undefined) {
         return undefined;
       }
     }
 
-    return `branch ${branch}: still present after teardown${lastError === undefined ? '' : ` (${errorMessage(lastError)})`}`;
+    return `${label}: still present after teardown${lastError === undefined ? '' : ` (${errorMessage(lastError)})`}`;
   }
 
   private async deleteBranches(): Promise<string[]> {
