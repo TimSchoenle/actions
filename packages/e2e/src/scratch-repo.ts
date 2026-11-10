@@ -276,13 +276,36 @@ export class ScratchRepo {
     return name;
   }
 
-  /** The commit a lightweight tag points at, or `undefined` when it does not exist. */
-  async tagSha(tag: string): Promise<string | undefined> {
-    const response = await resolveOptional(
-      this.octokit.rest.git.getRef({ owner: this.owner, repo: this.repo, ref: `tags/${tag}` }),
-    );
+  /**
+   * The commit a lightweight tag points at, or `undefined` when it does not exist.
+   *
+   * A read right after the tag was written can 404 or lag behind, as {@link headOf} describes. Pass
+   * the commit the caller is waiting for and the read polls until it converges; once the budget is
+   * spent it returns whatever it last saw, so the case's own assertion reports the mismatch. Without
+   * `expected` it reads once, which is what an assertion of absence wants.
+   *
+   * @param expected commit this tag is expected to converge on, when the caller knows it.
+   */
+  async tagSha(tag: string, expected?: string): Promise<string | undefined> {
+    const read = async (): Promise<string | undefined> => {
+      const response = await resolveOptional(
+        this.octokit.rest.git.getRef({ owner: this.owner, repo: this.repo, ref: `tags/${tag}` }),
+      );
 
-    return response?.data.object.sha;
+      return response?.data.object.sha;
+    };
+
+    let sha = await read();
+    for (const delayMs of CONVERGENCE_DELAYS_MS) {
+      if (expected === undefined || sha === expected) {
+        return sha;
+      }
+
+      await sleep(delayMs);
+      sha = await read();
+    }
+
+    return sha;
   }
 
   /** Creates a lightweight tag through the raw API, for a fixture. */

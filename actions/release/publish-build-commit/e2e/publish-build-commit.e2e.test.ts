@@ -118,8 +118,8 @@ describe('publish-build-commit', () => {
     expect(await scratch.commit(build)).toEqual({ tree: dry.outputs.tree_sha, parents: [source] });
     expect(await scratch.changedFiles(source, build)).toEqual([`added ${BUNDLE}`]);
     expect(await scratch.headOf(releasesBranch, build)).toBe(build);
-    expect(await scratch.tagSha(consumerTag)).toBe(build);
-    expect(await scratch.tagSha(sourceTag)).toBe(source);
+    expect(await scratch.tagSha(consumerTag, build)).toBe(build);
+    expect(await scratch.tagSha(sourceTag, source)).toBe(source);
     expect(await scratch.releasesForTag(consumerTag)).toEqual([
       expect.objectContaining({ draft: false, name: 'demo: v1.0.0', assets: ['bundles.sha256'] }),
     ]);
@@ -160,7 +160,7 @@ describe('publish-build-commit', () => {
     expect(interrupted.errors.join('\n')).toMatch(/exists at .*, expected/);
     const head = await scratch.refSha(releasesBranch);
     expect(head).toBeDefined();
-    expect(await scratch.tagSha(consumerTag)).toBe(head);
+    expect(await scratch.tagSha(consumerTag, head)).toBe(head);
     await scratch.createDraftRelease(consumerTag, 'left by an interrupted run');
     // Removing the wrong source tag is what an operator does before re-running failed jobs.
     await scratch.deleteTag(sourceTag);

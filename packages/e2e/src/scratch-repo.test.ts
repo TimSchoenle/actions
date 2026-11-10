@@ -202,6 +202,46 @@ describe('ScratchRepo tags', () => {
     expect(octokit.rest.git.deleteRef).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo', ref: `tags/${tag}` });
   });
 
+  it('reads a tag once when no commit is expected', async () => {
+    octokit.rest.git.getRef.mockRejectedValue(httpError(404, 'Not Found'));
+
+    await expect(scratch.tagSha('demo')).resolves.toBeUndefined();
+    expect(octokit.rest.git.getRef).toHaveBeenCalledTimes(1);
+  });
+
+  it('polls a tag until it reaches the expected commit', async () => {
+    vi.useFakeTimers();
+    try {
+      octokit.rest.git.getRef
+        .mockRejectedValueOnce(httpError(404, 'Not Found'))
+        .mockResolvedValueOnce({ data: { object: { sha: 'old' } } })
+        .mockResolvedValue({ data: { object: { sha: 'new' } } });
+
+      const read = scratch.tagSha('demo', 'new');
+      await vi.runAllTimersAsync();
+
+      await expect(read).resolves.toBe('new');
+      expect(octokit.rest.git.getRef).toHaveBeenCalledTimes(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('returns what it last saw once polling for a tag runs out', async () => {
+    vi.useFakeTimers();
+    try {
+      octokit.rest.git.getRef.mockResolvedValue({ data: { object: { sha: 'other' } } });
+
+      const read = scratch.tagSha('demo', 'new');
+      await vi.runAllTimersAsync();
+
+      await expect(read).resolves.toBe('other');
+      expect(octokit.rest.git.getRef).toHaveBeenCalledTimes(5);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('treats a tag that was never created as deleted', async () => {
     scratch.tag('never-created');
     octokit.paginate.mockResolvedValue([]);
