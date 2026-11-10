@@ -91,3 +91,41 @@ describe('createPublishApi createRef', () => {
     );
   });
 });
+
+describe('createPublishApi updateRef', () => {
+  /** Answers the branch update with `status` and `message`. */
+  function updating(status: number, message: string): void {
+    handler = (request, response) => {
+      const url = decodeURIComponent(request.url ?? '');
+      if (request.method === 'PATCH' && url === '/repos/o/r/git/refs/heads/releases') {
+        reply(response, status, status === 200 ? { ref: 'refs/heads/releases', object: { sha: SHA } } : { message });
+      } else {
+        reply(response, 500, { message: `unexpected ${request.method} ${url}` });
+      }
+    };
+  }
+
+  it('reports a fast-forward as updated', async () => {
+    updating(200, '');
+
+    await expect(createPublishApi('token', { owner: 'o', repo: 'r' }).updateRef('heads/releases', SHA)).resolves.toBe(
+      'updated',
+    );
+  });
+
+  it('reports the 422 GitHub sends for a non-fast-forward as such', async () => {
+    updating(422, 'Update is not a fast forward');
+
+    await expect(createPublishApi('token', { owner: 'o', repo: 'r' }).updateRef('heads/releases', SHA)).resolves.toBe(
+      'not-fast-forward',
+    );
+  });
+
+  it.each(['Object does not exist', 'Reference does not exist'])('rethrows any other 422: %s', async (message) => {
+    updating(422, message);
+
+    await expect(
+      createPublishApi('token', { owner: 'o', repo: 'r' }).updateRef('heads/releases', SHA),
+    ).rejects.toMatchObject({ status: 422, message: expect.stringContaining(message) });
+  });
+});

@@ -1,5 +1,6 @@
 import { hasStatus } from 'actions-util';
 import { createOctokit } from 'actions-util/client';
+import { getApiBaseUrl } from 'actions-util/octokit';
 
 import type { ArtifactRecord } from 'action-graph';
 import type { RepositoryCoordinates } from 'actions-util';
@@ -79,6 +80,14 @@ const PER_PAGE = 100;
 /** GitHub's answer to a write it refused as invalid: an existing ref, a non-fast-forward update. */
 const UNPROCESSABLE = 422;
 
+/** The message of the 422 GitHub sends for a ref update that is not a fast-forward. */
+const NOT_FAST_FORWARD = /\bnot a fast[- ]forward\b/i;
+
+/** Whether `error` is GitHub refusing a ref update because it is not a fast-forward. */
+function isNotFastForward(error: unknown): boolean {
+  return hasStatus(error, UNPROCESSABLE) && error instanceof Error && NOT_FAST_FORWARD.test(error.message);
+}
+
 function toRelease(data: {
   id: number;
   tag_name: string;
@@ -98,13 +107,41 @@ function toRelease(data: {
 }
 
 /**
- * The upload endpoint of a release, taken from its `upload_url` and checked to name exactly this
- * release of this repository over HTTPS, so a tampered response cannot redirect the upload.
+ * The hosts a release upload may go to: `uploads.github.com`, the API host itself (GitHub Enterprise
+ * Server serves uploads at `https://<host>/api/uploads/...`), and the `uploads.` sibling of an `api.`
+ * host (github.com, and GHE.com with data residency).
  */
-export function uploadEndpoint(release: Release, repository: RepositoryCoordinates): URL {
+function uploadHosts(apiBaseUrl: string): Set<string> {
+  const apiHost = new URL(apiBaseUrl).hostname;
+  const hosts = new Set(['uploads.github.com', apiHost]);
+  if (apiHost.startsWith('api.')) {
+    hosts.add(`uploads.${apiHost.slice('api.'.length)}`);
+  }
+
+  return hosts;
+}
+
+/**
+ * The upload endpoint of a release, taken from its `upload_url` and checked to name exactly this
+ * release of this repository over HTTPS on a GitHub upload host, so a tampered response cannot
+ * redirect the upload.
+ *
+ * @param apiBaseUrl - the REST API base URL, `GITHUB_API_URL` by default
+ */
+export function uploadEndpoint(
+  release: Release,
+  repository: RepositoryCoordinates,
+  apiBaseUrl: string = getApiBaseUrl(),
+): URL {
   const url = new URL(release.uploadUrl.replace(/\{[^}]*\}$/, ''));
   const suffix = `/repos/${repository.owner}/${repository.repo}/releases/${release.id}/assets`;
-  if (url.protocol !== 'https:' || !url.pathname.endsWith(suffix) || url.search !== '' || url.username !== '') {
+  if (
+    url.protocol !== 'https:' ||
+    !uploadHosts(apiBaseUrl).has(url.hostname) ||
+    !url.pathname.endsWith(suffix) ||
+    url.search !== '' ||
+    url.username !== ''
+  ) {
     throw new Error(`Release ${release.id} has an unexpected upload URL: ${release.uploadUrl}`);
   }
 
@@ -235,7 +272,8 @@ export function createPublishApi(token: string, repository: RepositoryCoordinate
 
         return 'updated';
       } catch (error) {
-        if (hasStatus(error, UNPROCESSABLE)) {
+        // 422 also answers an unknown object or a missing ref; only a real non-fast-forward may be retried.
+        if (isNotFastForward(error)) {
           return 'not-fast-forward';
         }
         throw error;

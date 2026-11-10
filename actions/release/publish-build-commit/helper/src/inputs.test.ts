@@ -149,13 +149,27 @@ describe('uploadEndpoint', () => {
     assets: [],
   });
 
+  const DOTCOM = 'https://api.github.com';
+
   it('strips the URI template from a well-formed upload URL', () => {
     expect(
-      uploadEndpoint(release('https://uploads.github.com/repos/o/r/releases/5/assets{?name,label}'), {
-        owner: 'o',
-        repo: 'r',
-      }).toString(),
+      uploadEndpoint(
+        release('https://uploads.github.com/repos/o/r/releases/5/assets{?name,label}'),
+        { owner: 'o', repo: 'r' },
+        DOTCOM,
+      ).toString(),
     ).toBe('https://uploads.github.com/repos/o/r/releases/5/assets');
+  });
+
+  it.each([
+    // GitHub Enterprise Server serves uploads on the API host, under /api/uploads.
+    ['https://ghes.example/api/v3', 'https://ghes.example/api/uploads/repos/o/r/releases/5/assets{?name,label}'],
+    // GHE.com with data residency puts them on the uploads. sibling of its api. host.
+    ['https://api.octo.ghe.com', 'https://uploads.octo.ghe.com/repos/o/r/releases/5/assets{?name,label}'],
+  ])('accepts the upload host that belongs to the API at %s', (apiBaseUrl, url) => {
+    expect(uploadEndpoint(release(url), { owner: 'o', repo: 'r' }, apiBaseUrl).toString()).toBe(
+      url.replace('{?name,label}', ''),
+    );
   });
 
   it.each([
@@ -163,7 +177,10 @@ describe('uploadEndpoint', () => {
     'https://uploads.github.com/repos/o/other/releases/5/assets{?name,label}',
     'https://uploads.github.com/repos/o/r/releases/6/assets{?name,label}',
     'https://uploads.github.com/repos/o/r/releases/5/assets?x=1',
+    'https://attacker.example/repos/o/r/releases/5/assets{?name,label}',
+    'https://uploads.github.com.attacker.example/repos/o/r/releases/5/assets{?name,label}',
+    'https://ghes.example/api/uploads/repos/o/r/releases/5/assets{?name,label}',
   ])('refuses %s', (url) => {
-    expect(() => uploadEndpoint(release(url), { owner: 'o', repo: 'r' })).toThrow(/unexpected upload URL/);
+    expect(() => uploadEndpoint(release(url), { owner: 'o', repo: 'r' }, DOTCOM)).toThrow(/unexpected upload URL/);
   });
 });
