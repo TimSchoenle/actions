@@ -69,6 +69,11 @@ const NARROWER_TOKEN_SUITES: Record<string, { missing: string[]; reason: string 
     reason:
       'only the jobs fallback reads actions, and it needs GITHUB_RUN_ID, which the harness does not pass, so every case reads check runs alone',
   },
+  'actions/release/install-built-actions': {
+    missing: ['actions: read (input github-token)'],
+    reason:
+      'the cases drive the helper over a staged directory; the artifact record lookup runs in the Install And Refuse extra job, with the job token and actions: read',
+  },
   'actions/maintenance/wipe-cache': {
     missing: ['actions: read (input token)', 'actions: write (input token)'],
     reason: 'every case stops before the cache API, so the suite runs on metadata: read and never deletes a cache',
@@ -251,7 +256,7 @@ describe('end-to-end contract', () => {
    *
    * The set also has to cover more than the root: a bun workspace leaves each package's own
    * dependencies in its own `node_modules`, so a cache of the root alone restores a tree that is
-   * missing `@actions/core` — which fails as a module resolution error inside a package, long past
+   * missing `@octokit/core` — which fails as a module resolution error inside a package, long past
    * anything that would name the cache as the cause.
    */
   it('saves and restores the same dependency paths, covering every workspace', async () => {

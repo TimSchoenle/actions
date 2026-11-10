@@ -42,6 +42,23 @@ because CI regenerates it and commits the result back to the branch.
 The pre-commit hook regenerates `action-io.ts` and checks the bundles for the staged files only. The
 rest are checked in CI and committed back to the branch when they drift.
 
+## Dependencies of a Node action
+
+Every Node action commits its bundle, so each dependency is paid for in every release. The shared
+library `actions-util` (`packages/ts-util`) provides what the GitHub Actions toolkit would:
+
+| Instead of             | Use                                                                   |
+| ---------------------- | --------------------------------------------------------------------- |
+| `@actions/core`        | `actions-util/core` (same names and output)                           |
+| `@actions/github`      | `createOctokit` from `actions-util/client`                            |
+| `@actions/http-client` | `httpRequest` from `actions-util`, or `actions-util/release-download` |
+
+The toolkit packages bundle undici, over 400 KB per action, and ESLint refuses their imports. Both
+replacements honour `HTTPS_PROXY`, `HTTP_PROXY` and `NO_PROXY` as the toolkit did. `octokit.rest`
+exposes the endpoints listed in `REST_ROUTES` (`packages/ts-util/src/octokit.ts`); add a route there
+to call another one. YAML helpers live behind `actions-util/yaml`, so actions that never parse YAML
+do not bundle the parser.
+
 ## Before opening a pull request
 
 ```bash

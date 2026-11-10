@@ -11,7 +11,7 @@ import type { ActionInput, ActionOutput } from '../src/generated/action-io.js';
  *
  * `github-actions` is used as the subject because it is a bot that exists on every installation and
  * whose numeric id is stable. Its inputs are hyphenated, so these cases also cover the `INPUT_APP-SLUG`
- * spelling — the one place `@actions/core`'s name mapping is easy to get wrong.
+ * spelling — the one place `actions-util/core`'s name mapping is easy to get wrong.
  */
 
 const ACTION_DIRECTORY = fileURLToPath(new URL('..', import.meta.url));

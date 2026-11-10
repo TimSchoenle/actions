@@ -62,3 +62,12 @@ ignores:
   - rule: cache-poisoning
     file: .github/workflows/verify-action-common-download-release-asset.yaml
     reason: the generated feature/<action path> push filter contains "release"; this workflow publishes nothing
+  - rule: cache-poisoning
+    file: .github/workflows/verify-action-release-build-actions.yaml
+    reason: the generated feature/<action path> push filter contains "release"; this workflow publishes nothing
+  - rule: cache-poisoning
+    file: .github/workflows/verify-action-release-install-built-actions.yaml
+    reason: the generated feature/<action path> push filter contains "release"; this workflow publishes nothing
+  - rule: cache-poisoning
+    file: .github/workflows/verify-action-release-resolve-actions.yaml
+    reason: the generated feature/<action path> push filter contains "release"; this workflow publishes nothing

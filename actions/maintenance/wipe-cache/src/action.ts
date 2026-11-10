@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 
-import * as core from '@actions/core';
 import { errorMessage, parseRepository, quoteForLog, runAction } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import { resolveBranch } from './branch.js';
 import { ActionInput, ActionOutput, getBooleanInput, getInput, setOutput } from './generated/action-io.js';

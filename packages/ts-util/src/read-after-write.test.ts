@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_READ_AFTER_WRITE_POLICY, readAfterWrite, type ReadAfterWritePolicy } from './read-after-write.js';
 
-vi.mock('@actions/core');
+vi.mock('./core.js');
 
 const POLICY: ReadAfterWritePolicy = { maxRetries: 3, baseDelayMs: 500 };
 

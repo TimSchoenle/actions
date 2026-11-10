@@ -1,0 +1,33 @@
+name: Verify Against A Test Repository
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  # build: release/build-actions, publishing artifact-id, artifact-digest and manifest-sha256
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read # to look the artifact record up
+      contents: read # to fetch code
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: my-org/test-repository
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: tmp/actions-code
+          persist-credentials: false
+      - uses: ./actions/release/install-built-actions
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
+          expected-artifact-digest: ${{ needs.build.outputs.artifact-digest }}
+          github-token: ${{ github.token }}
+          path: tmp/actions-code
+      - uses: ./tmp/actions-code/actions/my/action

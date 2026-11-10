@@ -18,8 +18,8 @@ import {
 
 import type { ArtifactApi, ArtifactSummary } from './find.js';
 
-vi.mock('@actions/core', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@actions/core')>()),
+vi.mock('actions-util/core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('actions-util/core')>()),
   info: vi.fn(),
 }));
 

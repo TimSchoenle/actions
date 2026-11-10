@@ -1,5 +1,5 @@
-import * as core from '@actions/core';
 import { resolveRealWithinWorkspace, runAction, workspaceRoot } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import { authorizationHeader, basicCredentials, fetchHead } from './fetch-head.js';
 import { getInput, setOutput } from './generated/action-io.js';

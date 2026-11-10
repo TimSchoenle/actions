@@ -103,7 +103,7 @@ ${rendered}`;
 /**
  * Every directory `bun install` populates, and so everything the test job needs restored.
  *
- * A bun workspace does not hoist all dependencies to the root. `@actions/core` lives in
+ * A bun workspace does not hoist all dependencies to the root. `@octokit/core` lives in
  * `packages/ts-util/node_modules`, and each action under `actions/` keeps its own tree the same way;
  * the root holds only what is shared. `setup-cached` caches `<working-directory>/node_modules` and
  * nothing else, which is enough to make an install faster — it installs afterwards regardless — but

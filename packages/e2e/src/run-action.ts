@@ -88,7 +88,7 @@ export interface RunActionOptions<TInput extends string> {
  *
  * The parsed views above answer "what did the action publish"; these answer "what did it write",
  * which is a different question as soon as a value is hostile. A value carrying the heredoc
- * delimiter, or a bare `key=value` line, is only visible before parsing — and `@actions/core`
+ * delimiter, or a bare `key=value` line, is only visible before parsing — and `actions-util/core`
  * refusing to write it is precisely the property worth asserting.
  */
 export type RawCommandFiles = Readonly<Record<'GITHUB_OUTPUT' | 'GITHUB_ENV' | 'GITHUB_STATE', string>>;
@@ -188,7 +188,7 @@ function inheritedEnv(): Record<string, string> {
   return inherited;
 }
 
-/** The command files the runner creates for a step, and which `@actions/core` appends to. */
+/** The command files the runner creates for a step, and which `actions-util/core` appends to. */
 const COMMAND_FILES = ['GITHUB_OUTPUT', 'GITHUB_ENV', 'GITHUB_STATE', 'GITHUB_PATH', 'GITHUB_STEP_SUMMARY'] as const;
 
 async function prepareCommandFiles(directory: string): Promise<Record<string, string>> {
@@ -197,7 +197,7 @@ async function prepareCommandFiles(directory: string): Promise<Record<string, st
   for (const variable of COMMAND_FILES) {
     const file = path.join(directory, `${variable.toLowerCase()}.txt`);
 
-    // `@actions/core` throws rather than creating the file, exactly as the runner would.
+    // `actions-util/core` throws rather than creating the file, exactly as the runner would.
     await writeFile(file, '', 'utf8');
     paths[variable] = file;
   }

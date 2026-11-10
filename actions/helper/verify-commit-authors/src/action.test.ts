@@ -1,4 +1,4 @@
-import * as core from '@actions/core';
+import * as core from 'actions-util/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { run } from './action.js';
@@ -6,7 +6,7 @@ import { run } from './action.js';
 import type { CommitRecord } from 'actions-util';
 import type { PullRequestCommits } from 'actions-util/commits';
 
-vi.mock('@actions/core');
+vi.mock('actions-util/core');
 
 type Inputs = Record<string, string>;
 

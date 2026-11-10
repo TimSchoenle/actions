@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "build:workspaces": "bun run generate-action-sources && bun run --filter '*' build",
+    "build:actions": "bun scripts/build-actions.ts",
     "create-action": "bun scripts/create-action.ts",
     "remove-action": "bun scripts/remove-action.ts",
     "generate-maven-central-signing-key": "bun scripts/generate-maven-central-signing-key.ts",
@@ -67,6 +68,7 @@
   },
   "dependencies": {
     "@noble/ciphers": "2.4.0",
+    "action-graph": "workspace:*",
     "actions-util": "workspace:*",
     "chalk": "6",
     "inquirer": "14.2.5",

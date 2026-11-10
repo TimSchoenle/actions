@@ -1,5 +1,5 @@
-import * as core from '@actions/core';
 import { quoteForLog, runAction } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import { buildConfig, excludedPaths, renderConfig } from './config.js';
 import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';

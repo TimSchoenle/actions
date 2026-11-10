@@ -1,4 +1,4 @@
-import * as core from '@actions/core';
+import * as core from 'actions-util/core';
 import { readPatchArtifact } from 'actions-util/patch-reader';
 
 import type { RepositoryCoordinates } from 'actions-util';

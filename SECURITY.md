@@ -89,6 +89,14 @@ is not, including older versions of a component whose neighbours have since rele
 | [Maintenance Trigger-coderabbit-review](./actions/maintenance/trigger-coderabbit-review) | [actions-maintenance-trigger-coderabbit-review-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-trigger-coderabbit-review-v2.0.0) | :white_check_mark: |
 | [Maintenance Wipe-cache](./actions/maintenance/wipe-cache) | [actions-maintenance-wipe-cache-v3.0.3](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-wipe-cache-v3.0.3) | :white_check_mark: |
 
+#### Release
+
+| Component | Version | Supported |
+| --- | --- | --- |
+| [Release Build Actions](./actions/release/build-actions) | [actions-release-build-actions-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-build-actions-v1.0.0) | :white_check_mark: |
+| [Release Install Built Actions](./actions/release/install-built-actions) | [actions-release-install-built-actions-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-install-built-actions-v1.0.0) | :white_check_mark: |
+| [Release Resolve Actions](./actions/release/resolve-actions) | [actions-release-resolve-actions-v1.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-resolve-actions-v1.0.0) | :white_check_mark: |
+
 #### Rust
 
 | Component | Version | Supported |

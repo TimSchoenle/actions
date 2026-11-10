@@ -1,5 +1,5 @@
-import * as core from '@actions/core';
 import { quoteForLog, runAction } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import { sanitizeChangelog } from './changelog.js';
 import { assertChartFilesContained, readChartVersion, resolveChartFiles } from './chart-files.js';

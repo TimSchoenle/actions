@@ -1,4 +1,4 @@
-import * as core from '@actions/core';
+import * as core from 'actions-util/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { run } from './action.js';
@@ -6,7 +6,7 @@ import { run } from './action.js';
 import type { AutoApproveApi, PullRequestInfo } from './github-api.js';
 import type { CommitRecord } from 'actions-util';
 
-vi.mock('@actions/core', async (importOriginal) => ({
+vi.mock('actions-util/core', async (importOriginal) => ({
   ...(await importOriginal<typeof core>()),
   info: vi.fn(),
   setFailed: vi.fn(),

@@ -1,6 +1,6 @@
-import * as core from '@actions/core';
 import { quoteForLog, runAction } from 'actions-util';
 import { createBranchApi } from 'actions-util/branches';
+import * as core from 'actions-util/core';
 
 import { createOrResetBranch } from './create-branch.js';
 import { ActionInput, ActionOutput, getBooleanInput, getInput, setOutput } from './generated/action-io.js';

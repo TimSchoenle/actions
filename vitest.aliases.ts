@@ -16,6 +16,18 @@ import type { Alias } from 'vite';
  */
 export const workspaceAliases: Alias[] = [
   {
+    find: 'actions-util/core',
+    replacement: fileURLToPath(new URL('./packages/ts-util/src/core.ts', import.meta.url)),
+  },
+  {
+    find: 'actions-util/octokit',
+    replacement: fileURLToPath(new URL('./packages/ts-util/src/octokit.ts', import.meta.url)),
+  },
+  {
+    find: 'actions-util/yaml',
+    replacement: fileURLToPath(new URL('./packages/ts-util/src/yaml-index.ts', import.meta.url)),
+  },
+  {
     find: 'actions-util/branches',
     replacement: fileURLToPath(new URL('./packages/ts-util/src/github-branches.ts', import.meta.url)),
   },
@@ -58,6 +70,10 @@ export const workspaceAliases: Alias[] = [
   {
     find: 'actions-e2e',
     replacement: fileURLToPath(new URL('./packages/e2e/src/index.ts', import.meta.url)),
+  },
+  {
+    find: 'action-graph',
+    replacement: fileURLToPath(new URL('./packages/action-graph/src/index.ts', import.meta.url)),
   },
 ];
 

@@ -90,7 +90,7 @@ export const RUNNER_LINE_BREAKS: ReadonlyArray<{ name: string; value: RunnerLine
 /**
  * A value shaped like the file format `GITHUB_OUTPUT` uses, to forge a second output.
  *
- * `@actions/core` writes `key<<delimiter`, the value, then the delimiter on its own line. A value
+ * `actions-util/core` writes `key<<delimiter`, the value, then the delimiter on its own line. A value
  * containing a plausible delimiter line followed by `key=value` appends an output its caller never
  * declared — which for `GITHUB_ENV` is an environment variable in every later step of the job.
  * `core` defends against exactly this by refusing a value containing its own random delimiter, and
@@ -427,7 +427,7 @@ export function expectCleanRejection(result: ActionRunResult<string>, expectedMe
 const BUILT_IN_ERROR_HEAD = /^(?:Aggregate|Eval|Range|Reference|Syntax|Type|URI)Error: /;
 
 /**
- * The one built-in that is a deliberate refusal: `@actions/core`'s `getBooleanInput` rejects
+ * The one built-in that is a deliberate refusal: `actions-util/core`'s `getBooleanInput` rejects
  * anything outside `true`/`True`/`TRUE`/`false`/`False`/`FALSE` by throwing a bare `TypeError`
  * whose message names the input and lists the accepted spellings. The annotation already says
  * everything a caller needs, so it is a rejection, not a crash, whatever its class.
@@ -462,7 +462,7 @@ const STACK_FRAME = /^ {4}at /m;
  * from a different place a crash shows up:
  *
  * - **stderr**, where node prints an uncaught error and its stack. Every action reports through
- *   `@actions/core`, which writes to stdout, so a stack frame on stderr was thrown past it.
+ *   `actions-util/core`, which writes to stdout, so a stack frame on stderr was thrown past it.
  * - **The head of the failure chain**, which `runAction` in `actions-util` writes to the debug
  *   channel as the full stack. Its first line names the error type; see {@link BUILT_IN_ERROR_HEAD}.
  * - **The annotation**, which for the same crash reads `Cannot read properties of undefined` — said

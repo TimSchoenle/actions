@@ -1,5 +1,4 @@
-import * as core from '@actions/core';
-
+import * as core from './core.js';
 import { errorMessage } from './errors.js';
 
 /** Reported when a step fails with a value that carries no message at all. */

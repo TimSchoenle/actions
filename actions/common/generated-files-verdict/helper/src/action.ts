@@ -2,8 +2,8 @@ import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import * as core from '@actions/core';
 import { runAction } from 'actions-util';
+import * as core from 'actions-util/core';
 import { parseByteLimit, validateArtifactName } from 'actions-util/patch';
 
 import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';

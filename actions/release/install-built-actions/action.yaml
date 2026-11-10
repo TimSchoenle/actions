@@ -1,0 +1,84 @@
+name: 'Release Install Built Actions'
+description: 'Downloads a release/build-actions artifact by ID, verifies every file against the manifest hash the build job published, and copies the bundles into a checkout, so the actions there run on bundles built from that commit.'
+
+inputs:
+  artifact-id:
+    description: 'artifact-id output of release/build-actions. The artifact is downloaded by this ID, never by name.'
+    required: true
+  expected-manifest-sha256:
+    description: 'manifest-sha256 output of release/build-actions. Every file is verified against the manifest with this SHA-256 before anything is copied.'
+    required: true
+  expected-artifact-digest:
+    description: 'artifact-digest output of release/build-actions. When set, the artifact record is looked up first and its digest, run and expiry checked; that needs github-token with actions: read. Empty skips the lookup.'
+    required: false
+    default: ''
+  path:
+    description: 'Checkout root to install into, relative to the workspace, such as tmp/actions-code.'
+    required: false
+    default: '.'
+  replace:
+    description: 'true clears each bundle output directory before copying, so no file from a committed or earlier build survives next to the installed one. false only overwrites the listed files.'
+    required: false
+    default: 'true'
+  run-id:
+    description: 'Workflow run that uploaded the artifact. Empty is this run. Another run needs github-token.'
+    required: false
+    default: ''
+  github-token:
+    description: 'Token with actions: read on this repository, for another run or for expected-artifact-digest. Empty downloads from this run with the runtime token.'
+    required: false
+    default: ''
+
+outputs:
+  manifest-path:
+    description: 'Absolute path of the verified bundles.json, outside the checkout. Also exported as BUILT_ACTIONS_MANIFEST for later steps.'
+    value: ${{ steps.install.outputs.manifest_path }}
+  bundles:
+    description: 'JSON array of the installed bundle paths, relative to path.'
+    value: ${{ steps.install.outputs.bundles }}
+
+runs:
+  using: 'composite'
+  steps:
+    # Validates every input and, when expected-artifact-digest is set, checks the artifact record
+    # over the REST API. Creates an empty directory under RUNNER_TEMP for the download.
+    - name: Prepare Download
+      id: prepare
+      shell: bash
+      env:
+        INPUT_MODE: prepare
+        INPUT_ARTIFACT_ID: ${{ inputs.artifact-id }}
+        INPUT_EXPECTED_MANIFEST_SHA256: ${{ inputs.expected-manifest-sha256 }}
+        INPUT_EXPECTED_ARTIFACT_DIGEST: ${{ inputs.expected-artifact-digest }}
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_REPLACE: ${{ inputs.replace }}
+        INPUT_RUN_ID: ${{ inputs.run-id }}
+        INPUT_TOKEN: ${{ inputs.github-token }}
+        INPUT_REPOSITORY: ${{ github.repository }}
+      run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"
+
+    # digest-mismatch: error makes the download fail when the archive differs from the digest the
+    # artifact service recorded at upload.
+    - name: Download Bundles
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        artifact-ids: ${{ steps.prepare.outputs.artifact_id }}
+        path: ${{ steps.prepare.outputs.directory }}
+        github-token: ${{ inputs.github-token }}
+        repository: ${{ github.repository }}
+        run-id: ${{ steps.prepare.outputs.run_id }}
+        digest-mismatch: error
+
+    # Verifies the download against the manifest hash and copies only after every check passed.
+    - name: Install Bundles
+      id: install
+      shell: bash
+      env:
+        INPUT_MODE: install
+        INPUT_ARTIFACT_ID: ${{ inputs.artifact-id }}
+        INPUT_EXPECTED_MANIFEST_SHA256: ${{ inputs.expected-manifest-sha256 }}
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_REPLACE: ${{ inputs.replace }}
+        INPUT_DIRECTORY: ${{ steps.prepare.outputs.directory }}
+        INPUT_REPOSITORY: ${{ github.repository }}
+      run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"

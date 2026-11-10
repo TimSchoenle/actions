@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import * as core from '@actions/core';
+import * as core from 'actions-util/core';
 import { UnsafePathError } from 'actions-util';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,11 +11,11 @@ import type { ActionDependencies } from './action.js';
 import type { CommandResult } from './command.js';
 
 /**
- * Only the reporting side of `@actions/core` is mocked. Input reading stays real, so these exercise
+ * Only the reporting side of `actions-util/core` is mocked. Input reading stays real, so these exercise
  * the actual `getInput` semantics — the trimming a runner's callers rely on, and the manifest's own
  * defaults reaching the code that reads them — rather than a hand-written stand-in.
  */
-vi.mock('@actions/core', async (importOriginal) => ({
+vi.mock('actions-util/core', async (importOriginal) => ({
   ...(await importOriginal<typeof core>()),
   error: vi.fn(),
   info: vi.fn(),

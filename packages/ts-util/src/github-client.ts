@@ -1,7 +1,6 @@
-import * as core from '@actions/core';
-import * as github from '@actions/github';
-
+import * as core from './core.js';
 import { errorMessage } from './errors.js';
+import * as github from './octokit.js';
 
 /**
  * How the shared Octokit rides out a request GitHub rejected for rate limiting.

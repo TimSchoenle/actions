@@ -1,9 +1,9 @@
-import * as github from '@actions/github';
+import * as github from './octokit.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createBranchApi } from './github-branches.js';
 
-vi.mock('@actions/github');
+vi.mock('./octokit.js');
 
 const repository = { owner: 'owner', repo: 'repo' };
 

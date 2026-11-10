@@ -1,5 +1,5 @@
-import * as core from '@actions/core';
 import { errorMessage, parseRepository, parseUserIds, quoteForLog, runAction } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import { createBranchMatcher, parsePatternMode } from './branch-pattern.js';
 import { resolveMinimumOpenTime } from './duration.js';
