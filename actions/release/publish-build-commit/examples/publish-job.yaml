@@ -22,6 +22,7 @@ jobs:
     permissions:
       actions: read # to check and download the build artifact
       contents: read
+      pull-requests: read # for plan-release-please, which lists the commit's pull requests with this token
     steps:
       - id: token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
