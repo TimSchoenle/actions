@@ -1,10 +1,10 @@
-import * as github from '@actions/github';
+import * as github from 'actions-util/octokit';
 import { fetchPullRequestCommits } from 'actions-util/commits';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createAutoApproveApi } from './github-api.js';
 
-vi.mock('@actions/github');
+vi.mock('actions-util/octokit');
 vi.mock('actions-util/commits', () => ({ fetchPullRequestCommits: vi.fn() }));
 
 interface OctokitMock {

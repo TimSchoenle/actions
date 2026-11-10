@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import * as core from '@actions/core';
+import * as core from 'actions-util/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { readEventContext, run } from './action.js';
@@ -12,10 +12,10 @@ import type { EventContext } from './action.js';
 import type { CacheApi, CacheEntry } from './github-api.js';
 
 /**
- * Only the reporting side of `@actions/core` is mocked. Input reading stays real so the tests
+ * Only the reporting side of `actions-util/core` is mocked. Input reading stays real so the tests
  * exercise the actual `getInput` semantics, including `required` and boolean parsing.
  */
-vi.mock('@actions/core', async (importOriginal) => ({
+vi.mock('actions-util/core', async (importOriginal) => ({
   ...(await importOriginal<typeof core>()),
   info: vi.fn(),
   notice: vi.fn(),

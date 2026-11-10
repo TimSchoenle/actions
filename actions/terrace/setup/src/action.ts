@@ -1,10 +1,9 @@
 import { chmod, mkdtemp, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import * as core from '@actions/core';
 import { getExecOutput } from '@actions/exec';
-import * as toolCache from '@actions/tool-cache';
 import { resolveWithinWorkspace, runAction, workspaceRoot } from 'actions-util';
+import * as core from 'actions-util/core';
 import { createReleaseDownloadPorts, ReleaseDownloader, sha256File } from 'actions-util/release-download';
 
 import { InvalidInputError, ReleaseNotFoundError } from './errors.js';
@@ -12,6 +11,7 @@ import { getInput, setOutput } from './generated/action-io.js';
 import { installCosign, installOras, installTerrace } from './installer.js';
 import { fetchJson, listReleases } from './releases.js';
 import { readCliPin, REPO_CONFIG_FILE } from './repo-config.js';
+import * as toolCache from './tool-cache.js';
 import { formatVersion, isExact, parseVersionRequest, selectRelease } from './version.js';
 
 import type { InstallPorts, Runner } from './installer.js';

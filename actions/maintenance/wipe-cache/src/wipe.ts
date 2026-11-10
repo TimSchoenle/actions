@@ -1,5 +1,5 @@
-import * as core from '@actions/core';
 import { errorMessage, quoteForLog } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import type { BranchTarget } from './branch.js';
 import type { CacheApi, CacheEntry } from './github-api.js';

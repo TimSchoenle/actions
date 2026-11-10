@@ -1,4 +1,4 @@
-import * as core from '@actions/core';
+import * as core from 'actions-util/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MAX_ROUNDS, wipeBranchCaches } from './wipe.js';
@@ -6,7 +6,7 @@ import { MAX_ROUNDS, wipeBranchCaches } from './wipe.js';
 import type { CacheApi, CacheEntry, DeleteOutcome } from './github-api.js';
 import type { WipeOptions } from './wipe.js';
 
-vi.mock('@actions/core', async (importOriginal) => ({
+vi.mock('actions-util/core', async (importOriginal) => ({
   ...(await importOriginal<typeof core>()),
   info: vi.fn(),
   warning: vi.fn(),

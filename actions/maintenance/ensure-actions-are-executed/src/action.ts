@@ -1,5 +1,5 @@
-import * as core from '@actions/core';
 import { parseRepository, quoteAllForLog, quoteForLog, runAction } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import { collectCheckRuns, latestCheckRuns } from './checks.js';
 import { ActionInput, ActionOutput, getBooleanInput, getInput, setOutput } from './generated/action-io.js';

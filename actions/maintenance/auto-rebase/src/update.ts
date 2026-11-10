@@ -1,5 +1,5 @@
-import * as core from '@actions/core';
 import { errorMessage, hasStatus, quoteForLog } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import type { PullRequestDetail, UpdateBranchApi } from './github-api.js';
 import type { RepositoryCoordinates } from 'actions-util';

@@ -12,7 +12,7 @@
  */
 import { writeFile } from 'node:fs/promises';
 
-import { formatValue, generateYamlString, loadYaml, splitKeyPath } from 'actions-util';
+import { formatValue, generateYamlString, loadYaml, splitKeyPath } from 'actions-util/yaml';
 import { isScalar } from 'yaml';
 
 import type { Document } from 'yaml';

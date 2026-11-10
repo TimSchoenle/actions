@@ -1,8 +1,8 @@
 import { readFile, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 
-import * as core from '@actions/core';
 import { quoteForLog, resolveWithinWorkspace, runAction, workspaceRoot } from 'actions-util';
+import * as core from 'actions-util/core';
 
 import { createCommandRunner, measureImageSize } from './docker.js';
 import { GateError, InvalidInputError, PlanError } from './errors.js';

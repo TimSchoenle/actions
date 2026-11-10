@@ -1,18 +1,17 @@
-import { HttpClient } from '@actions/http-client';
+import { Readable } from 'node:stream';
+
+import { httpRequest } from 'actions-util';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ReleaseNotFoundError } from './errors.js';
-import { fetchJson, listReleases } from './releases.js';
+import { fetchJson, listReleases, MAX_PAGE_BYTES } from './releases.js';
 
-import type { HttpClientResponse } from '@actions/http-client';
+import type { HttpResponse } from 'actions-util';
 
-vi.mock('@actions/http-client', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@actions/http-client')>();
-
-  actual.HttpClient.prototype.get = vi.fn();
-
-  return actual;
-});
+vi.mock('actions-util', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('actions-util')>()),
+  httpRequest: vi.fn(),
+}));
 
 describe('listReleases', () => {
   it('keeps only published terrace-contract releases', async () => {
@@ -52,33 +51,62 @@ describe('listReleases', () => {
 
 describe('fetchJson', () => {
   function answer(status: number, body: string, statusMessage = ''): void {
-    vi.mocked(HttpClient.prototype.get).mockResolvedValue({
-      message: { statusCode: status, statusMessage },
-      readBody: () => Promise.resolve(body),
-    } as unknown as HttpClientResponse);
+    vi.mocked(httpRequest).mockImplementation((url) =>
+      Promise.resolve({
+        url,
+        message: Object.assign(Readable.from([Buffer.from(body)]), { statusCode: status, statusMessage }),
+      } as unknown as HttpResponse),
+    );
+  }
+
+  /** The headers of the first request sent. */
+  function sentHeaders(): Readonly<Record<string, string>> | undefined {
+    return vi.mocked(httpRequest).mock.calls[0]?.[1]?.headers;
   }
 
   afterEach(() => {
-    vi.mocked(HttpClient.prototype.get).mockReset();
+    vi.mocked(httpRequest).mockReset();
   });
 
   it('sends the token as a bearer credential and parses the body', async () => {
     answer(200, '[]');
 
     expect(await fetchJson('https://api.github.com/x', 'secret')).toEqual([]);
-    expect(vi.mocked(HttpClient.prototype.get).mock.calls[0]?.[1]).toMatchObject({ Authorization: 'Bearer secret' });
+    expect(sentHeaders()).toMatchObject({ Authorization: 'Bearer secret', 'User-Agent': 'terrace-setup' });
   });
 
   it('sends no credential without a token', async () => {
     answer(200, '[]');
 
     await fetchJson('https://api.github.com/x', '');
-    expect(vi.mocked(HttpClient.prototype.get).mock.calls[0]?.[1]).not.toHaveProperty('Authorization');
+    expect(sentHeaders()).not.toHaveProperty('Authorization');
   });
 
-  it('reports an HTTP failure', async () => {
+  it('reports an HTTP failure, closing the response unread', async () => {
     answer(403, '{}', 'Forbidden');
 
     await expect(fetchJson('https://api.github.com/x', '')).rejects.toThrow(/403 Forbidden/);
+    const { message } = await vi.mocked(httpRequest).mock.results[0]!.value;
+    expect(message.destroyed).toBe(true);
+  });
+
+  it('stops reading a page past the size limit', async () => {
+    const chunk = Buffer.alloc(1024 * 1024, 0x20);
+    const endless = Readable.from(
+      (function* () {
+        for (;;) {
+          yield chunk;
+        }
+      })(),
+    );
+    vi.mocked(httpRequest).mockResolvedValue({
+      url: 'https://api.github.com/x',
+      message: Object.assign(endless, { statusCode: 200, statusMessage: 'OK' }),
+    } as unknown as HttpResponse);
+
+    await expect(fetchJson('https://api.github.com/x', '')).rejects.toThrow(
+      `The response body is larger than the limit of ${MAX_PAGE_BYTES} bytes.`,
+    );
+    expect(endless.destroyed).toBe(true);
   });
 });

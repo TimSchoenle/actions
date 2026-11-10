@@ -1,4 +1,4 @@
-import * as core from '@actions/core';
+import * as core from 'actions-util/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { hasLabel, updateLabelledPullRequests } from './update.js';
@@ -6,7 +6,7 @@ import { hasLabel, updateLabelledPullRequests } from './update.js';
 import type { PullRequestDetail, PullRequestSummary, UpdateBranchApi } from './github-api.js';
 import type { UpdateOptions } from './update.js';
 
-vi.mock('@actions/core', async (importOriginal) => ({
+vi.mock('actions-util/core', async (importOriginal) => ({
   ...(await importOriginal<typeof core>()),
   debug: vi.fn(),
   error: vi.fn(),
