@@ -41,7 +41,7 @@ jobs:
       contents: read # to fetch code
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -79,7 +79,7 @@ jobs:
 
       - name: Create Patch
         id: patch
-        uses: TimSchoenle/actions/actions/common/create-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-patch-v1.1.1
+        uses: TimSchoenle/actions/actions/common/create-patch@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-create-patch-v1.1.2
         with:
           artifact_name: update-files-builds
           paths: 'actions/**/dist/**/* actions/**/src/generated/**/*'
@@ -101,7 +101,7 @@ jobs:
       contents: read # to fetch code
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
 
@@ -131,7 +131,7 @@ jobs:
 
       - name: Create Patch
         id: patch
-        uses: TimSchoenle/actions/actions/common/create-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-patch-v1.1.1
+        uses: TimSchoenle/actions/actions/common/create-patch@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-create-patch-v1.1.2
         with:
           artifact_name: update-files-workflows
           paths: '.github/workflows/verify-action-*.yaml .github/workflows/ci-required.yaml .github/codecov.yml'
@@ -148,7 +148,7 @@ jobs:
       contents: read # to fetch code and tags
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
 
@@ -173,7 +173,7 @@ jobs:
 
       - name: Create Patch
         id: patch
-        uses: TimSchoenle/actions/actions/common/create-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-patch-v1.1.1
+        uses: TimSchoenle/actions/actions/common/create-patch@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-create-patch-v1.1.2
         with:
           artifact_name: update-files-docs
           paths: 'README.md SECURITY.md actions/*/*/README.md actions/*/*/examples/*.yaml actions/*/*/examples/*.yml'
