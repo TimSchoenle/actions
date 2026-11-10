@@ -112,7 +112,10 @@ describe('release workflow', () => {
     expect(jobs['source-tags-plan'].if).toContain("needs.publish.result == 'success'");
     expect(jobs['source-tags-plan'].if).toContain("needs.plan.outputs.release-pending != 'true'");
     expect(needsOf(jobs['source-tags'])).toEqual(['source-tags-plan']);
-    expect(jobs['source-tags'].if).toBe("needs.source-tags-plan.outputs.count != '0'");
+    expect(jobs['source-tags'].if).toBe(
+      "${{ !cancelled() && needs.source-tags-plan.result == 'success' && " +
+        "needs.source-tags-plan.outputs.count != '0' }}",
+    );
     expect(needsOf(jobs.preflight)).toEqual(['source-tags-plan', 'source-tags']);
     expect(jobs.preflight.if).toBe(
       "${{ !cancelled() && needs.source-tags-plan.result == 'success' && " +

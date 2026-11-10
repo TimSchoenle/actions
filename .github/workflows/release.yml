@@ -414,7 +414,11 @@ jobs:
   source-tags:
     name: Create Source Tags
     needs: source-tags-plan
-    if: needs.source-tags-plan.outputs.count != '0'
+    # Without a status function the condition gets an implicit success(), which also needs every job
+    # source-tags-plan depends on to have succeeded; publish is skipped on every non-release push.
+    if: >-
+      ${{ !cancelled() && needs.source-tags-plan.result == 'success' &&
+      needs.source-tags-plan.outputs.count != '0' }}
     environment:
       name: release
       deployment: false
