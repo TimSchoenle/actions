@@ -455,6 +455,16 @@ jobs:
         run: |
           set -euo pipefail
           [ -n "$DEFAULT_BRANCH" ] || { echo "::error::The event names no default branch."; exit 1; }
+          # gh reports only the message of a failed call; name the call too. On stderr, because most
+          # calls run inside a command substitution.
+          api() {
+            local out
+            if ! out="$(gh api "$@" 2>&1)"; then
+              echo "::error::gh api $* failed: ${out}" >&2
+              return 1
+            fi
+            printf '%s' "$out"
+          }
           mapfile -t entries < <(jq -c '.[]' <<<"$TAGS")
           [ "${#entries[@]}" -eq "$(jq length <<<"$TAGS")" ] || { echo "::error::The plan is not a JSON array."; exit 1; }
           for entry in "${entries[@]}"; do
@@ -468,15 +478,15 @@ jobs:
               echo "::error::Refusing commit '${sha}' for ${tag}."
               exit 1
             fi
-            status="$(gh api "repos/${REPOSITORY}/compare/${sha}...${DEFAULT_BRANCH}" --jq '.status')"
+            status="$(api "repos/${REPOSITORY}/compare/${sha}...${DEFAULT_BRANCH}" --jq '.status')"
             if [ "$status" != "ahead" ] && [ "$status" != "identical" ]; then
               echo "::error::${sha} is not in the history of ${DEFAULT_BRANCH} (${status}); not tagging ${tag}."
               exit 1
             fi
-            existing="$(gh api "repos/${REPOSITORY}/git/matching-refs/tags/${tag}" \
+            existing="$(api "repos/${REPOSITORY}/git/matching-refs/tags/${tag}" \
               --jq "map(select(.ref == \"refs/tags/${tag}\")) | first | if . == null then \"\" else .object.type + \" \" + .object.sha end")"
             if [ -z "$existing" ]; then
-              gh api --method POST "repos/${REPOSITORY}/git/refs" -f "ref=refs/tags/${tag}" -f "sha=${sha}" --silent
+              api --method POST "repos/${REPOSITORY}/git/refs" -f "ref=refs/tags/${tag}" -f "sha=${sha}" --silent
               echo "Created ${tag} at ${sha}."
             elif [ "$existing" = "commit ${sha}" ]; then
               echo "${tag} already points at ${sha}."
