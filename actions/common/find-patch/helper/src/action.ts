@@ -6,11 +6,17 @@ import * as core from '@actions/core';
 import { parseRepository, runAction } from 'actions-util';
 import { isCommitSha, parseByteLimit, validateArtifactName } from 'actions-util/patch';
 
-import { assertArchiveSize, findArtifacts, inspectArtifact } from './find.js';
+import {
+  assertArchiveSize,
+  CURRENT_RUN_LISTING_DELAYS_MS,
+  findArtifactsWithin,
+  inspectArtifact,
+  realSleep,
+} from './find.js';
 import { ActionInput, ActionOutput, getInput, setOutput } from './generated/action-io.js';
 import { createArtifactApi } from './github-api.js';
 
-import type { ArtifactApi } from './find.js';
+import type { ArtifactApi, Sleep } from './find.js';
 import type { RepositoryCoordinates } from 'actions-util';
 
 /** The process-level facts this helper reads, gathered in one place so tests can supply them. */
@@ -32,6 +38,8 @@ function readRunnerContext(): RunnerContext {
 /** Injection seam for tests; defaults to the real GitHub API. */
 export interface FindPatchOverrides {
   api: ArtifactApi;
+  /** Waits between listings of this run's artifacts; defaults to a real timer. */
+  sleep: Sleep;
 }
 
 /** A positive decimal workflow run ID. */
@@ -97,7 +105,17 @@ function readRequest(): Request {
 async function lookup(context: RunnerContext, request: Request, overrides: Partial<FindPatchOverrides>): Promise<void> {
   const runId = resolveRunId(context);
   const api = overrides.api ?? createArtifactApi(getInput(ActionInput.token, { required: true }));
-  const artifacts = await findArtifacts(api, request.repository, runId, request.artifactName);
+  // Only this run can hold an upload so recent that the listing does not show it yet; another run's
+  // listing is taken at face value, so a workflow_run job never waits on a producer that was skipped.
+  const delaysMs = String(runId) === context.runId ? CURRENT_RUN_LISTING_DELAYS_MS : [];
+  const artifacts = await findArtifactsWithin(
+    api,
+    request.repository,
+    runId,
+    request.artifactName,
+    delaysMs,
+    overrides.sleep ?? realSleep,
+  );
   const [newest] = artifacts;
 
   setOutput(ActionOutput.found, String(newest !== undefined));

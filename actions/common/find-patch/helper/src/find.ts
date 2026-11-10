@@ -1,3 +1,4 @@
+import * as core from '@actions/core';
 import { readPatchArtifact } from 'actions-util/patch-reader';
 
 import type { RepositoryCoordinates } from 'actions-util';
@@ -54,6 +55,60 @@ export async function findArtifacts(
   return (await api.listArtifacts(repository, runId, name))
     .filter((artifact) => artifact.name === name && !artifact.expired)
     .toSorted((left, right) => right.id - left.id);
+}
+
+/**
+ * The waits between listings of this run's own artifacts, in milliseconds: 10 s in total over at most
+ * five listings, and none at all when the first listing already holds the artifact.
+ *
+ * GitHub's artifact listing is eventually consistent with upload finalization: an artifact a job of this
+ * run finalized a second ago can still be absent from the listing. Only this run can have an upload that
+ * recent, so only a lookup in this run waits. The bound keeps the API calls few, since the token may be an
+ * App installation's with a tight hourly budget.
+ */
+export const CURRENT_RUN_LISTING_DELAYS_MS: readonly number[] = [1000, 2000, 3000, 4000];
+
+/** Waits `milliseconds`; replaced in tests so they need no real timers. */
+export type Sleep = (milliseconds: number) => Promise<void>;
+
+/** Waits on a real timer. */
+export const realSleep: Sleep = (milliseconds) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+
+/**
+ * {@link findArtifacts}, repeated after each of `delaysMs` while it finds nothing.
+ *
+ * An empty result is taken at face value once the delays are spent, so a run whose producing job did not
+ * run still settles as missing. Errors are never retried here: a missing run or a refused request fails
+ * the lookup on the first attempt.
+ *
+ * @param delaysMs the waits before each repeated listing; empty lists exactly once.
+ */
+export async function findArtifactsWithin(
+  api: ArtifactApi,
+  repository: RepositoryCoordinates,
+  runId: number,
+  name: string,
+  delaysMs: readonly number[],
+  sleep: Sleep = realSleep,
+): Promise<ArtifactSummary[]> {
+  let artifacts = await findArtifacts(api, repository, runId, name);
+
+  for (const [index, delayMs] of delaysMs.entries()) {
+    if (artifacts.length > 0) {
+      break;
+    }
+    core.info(
+      `Workflow run ${runId} lists no unexpired artifact named ${name} yet; GitHub can list an upload a few ` +
+        `seconds after it finished. Listing again in ${delayMs}ms (retry ${index + 1} of ${delaysMs.length}).`,
+    );
+    await sleep(delayMs);
+    artifacts = await findArtifacts(api, repository, runId, name);
+  }
+
+  return artifacts;
 }
 
 /**
