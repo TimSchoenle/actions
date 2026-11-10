@@ -70,6 +70,17 @@ describe('run', () => {
     expect(fs.readFileSync(path.join(directory, MANIFEST_FILE), 'utf8')).toBe(verified.manifestText);
   });
 
+  it('stages the bundle of a build directory under a dot-prefixed directory', async () => {
+    write('.github/actions/x/action.yaml', NODE_ACTION);
+    const result = await build({ build_dirs: '.github/actions/x' });
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.outputs['bundles'])).toEqual([
+      { path: '.github/actions/x/dist/index.js', sha256: sha256Hex('.github/actions/x'), size: 17 },
+    ]);
+    expect(fs.existsSync(path.join(result.outputs['directory'], '.github/actions/x/dist/index.js'))).toBe(true);
+  });
+
   it('accepts the JSON array resolve-actions outputs', async () => {
     const result = await build({ build_dirs: '["actions/b","actions/a"]' });
 

@@ -36,18 +36,20 @@ round-trip-build:
     - name: Write Demo Actions
       run: |
         set -euo pipefail
-        mkdir -p round-trip/actions/demo round-trip/actions/second
+        mkdir -p round-trip/actions/demo round-trip/.github/actions/second
         printf "runs:\n  using: 'node24'\n  main: 'dist/index.js'\n" > round-trip/actions/demo/action.yml
-        printf "runs:\n  using: 'node24'\n  main: 'dist/index.js'\n" > round-trip/actions/second/action.yml
+        printf "runs:\n  using: 'node24'\n  main: 'dist/index.js'\n" > round-trip/.github/actions/second/action.yml
 
     - name: Build Demo Actions
       id: build
       uses: ./actions/release/build-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
       with:
         path: round-trip
+        # .github/actions/second sits under a dot-prefixed directory, which upload-artifact skips
+        # unless hidden files are included.
         build-dirs: |
           actions/demo
-          actions/second
+          .github/actions/second
         build-command: |
           mkdir -p dist
           printf 'process.getBuiltinModule("fs").appendFileSync(process.env.GITHUB_OUTPUT, "built-from=%s\\n");\n' "$BUILD_DIR" > dist/index.js
@@ -79,7 +81,7 @@ round-trip-build:
         [[ "$ARTIFACT_DIGEST" =~ ^(sha256:)?[0-9a-f]{64}$ ]] || { echo "::error::artifact-digest is '$ARTIFACT_DIGEST'"; exit 1; }
         [[ "$MANIFEST_SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "::error::manifest-sha256 is '$MANIFEST_SHA256'"; exit 1; }
         paths="$(jq -r '[.[].path] | join(",")' <<< "$BUNDLES")"
-        [[ "$paths" == 'actions/demo/dist/index.js,actions/second/dist/index.js' ]] || { echo "::error::bundles are $paths"; exit 1; }
+        [[ "$paths" == '.github/actions/second/dist/index.js,actions/demo/dist/index.js' ]] || { echo "::error::bundles are $paths"; exit 1; }
         [[ "$DUPLICATE_OUTCOME" == 'failure' ]] || { echo "::error::a second upload under the same name was not refused"; exit 1; }
 
 round-trip-install:
@@ -108,9 +110,9 @@ round-trip-install:
     - name: Write Demo Actions
       run: |
         set -euo pipefail
-        mkdir -p round-trip/actions/demo round-trip/actions/second
+        mkdir -p round-trip/actions/demo round-trip/.github/actions/second
         printf "runs:\n  using: 'node24'\n  main: 'dist/index.js'\n" > round-trip/actions/demo/action.yml
-        printf "runs:\n  using: 'node24'\n  main: 'dist/index.js'\n" > round-trip/actions/second/action.yml
+        printf "runs:\n  using: 'node24'\n  main: 'dist/index.js'\n" > round-trip/.github/actions/second/action.yml
 
     - name: Install Built Actions
       id: install
@@ -124,16 +126,22 @@ round-trip-install:
       id: demo
       uses: ./round-trip/actions/demo # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
 
+    - name: Run The Installed Action Under A Dot Directory
+      id: hidden
+      uses: ./round-trip/.github/actions/second # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+
     - name: Assert Installed Bundles
       env:
         BUILT_FROM: ${{ steps.demo.outputs.built-from }}
+        HIDDEN_BUILT_FROM: ${{ steps.hidden.outputs.built-from }}
         INSTALLED: ${{ steps.install.outputs.bundles }}
         MANIFEST_PATH: ${{ steps.install.outputs.manifest-path }}
         EXPECTED_SHA256: ${{ needs.round-trip-build.outputs.manifest-sha256 }}
       run: |
         set -euo pipefail
         [[ "$BUILT_FROM" == 'actions/demo' ]] || { echo "::error::the demo action reported '$BUILT_FROM'"; exit 1; }
-        [[ "$INSTALLED" == '["actions/demo/dist/index.js","actions/second/dist/index.js"]' ]] || { echo "::error::installed $INSTALLED"; exit 1; }
+        [[ "$HIDDEN_BUILT_FROM" == '.github/actions/second' ]] || { echo "::error::the action under .github reported '$HIDDEN_BUILT_FROM'"; exit 1; }
+        [[ "$INSTALLED" == '[".github/actions/second/dist/index.js","actions/demo/dist/index.js"]' ]] || { echo "::error::installed $INSTALLED"; exit 1; }
         [[ "$BUILT_ACTIONS_MANIFEST" == "$MANIFEST_PATH" ]] || { echo "::error::BUILT_ACTIONS_MANIFEST is '$BUILT_ACTIONS_MANIFEST'"; exit 1; }
         actual="$(sha256sum "$MANIFEST_PATH" | cut -d' ' -f1)"
         [[ "$actual" == "$EXPECTED_SHA256" ]] || { echo "::error::bundles.json hashes to $actual"; exit 1; }

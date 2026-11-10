@@ -67,7 +67,10 @@ runs:
       run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"
 
     # overwrite: false, so a second upload under the same name fails instead of replacing the
-    # artifact a later job verifies against.
+    # artifact a later job verifies against. include-hidden-files: true, because upload-artifact
+    # otherwise skips every path with a dot-prefixed segment, and a build directory such as
+    # .github/actions/x would lose its bundles while the manifest still lists them. The staging
+    # directory holds only the validated bundles and their manifests, so nothing else can be swept in.
     - name: Upload Bundles
       id: upload
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -77,4 +80,4 @@ runs:
         if-no-files-found: error
         retention-days: ${{ steps.build.outputs.retention_days }}
         overwrite: false
-        include-hidden-files: false
+        include-hidden-files: true
