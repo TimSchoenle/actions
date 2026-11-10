@@ -623,6 +623,9 @@
         "@actions/core": "3.0.1",
         "@actions/github": "9.1.1",
         "@actions/http-client": "4.0.1",
+        "@octokit/core": "7.0.8",
+        "@octokit/plugin-paginate-rest": "14.0.0",
+        "@octokit/plugin-rest-endpoint-methods": "17.0.0",
         "yaml": "2.9.1",
       },
       "devDependencies": {

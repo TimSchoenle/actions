@@ -12,6 +12,7 @@ export * from './branch-verification.js';
 export * from './commit-verification.js';
 export * from './errors.js';
 export * from './github.js';
+export * from './http-request.js';
 export * from './identity.js';
 export * from './log.js';
 export * from './posix-regex.js';
