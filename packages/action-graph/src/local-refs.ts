@@ -6,7 +6,7 @@
 import { parse } from 'yaml';
 
 import { localUsesPath } from './manifest.js';
-import { joinRepoPath, ROOT, sortedUnique, toRepoPath } from './paths.js';
+import { isWithin, joinRepoPath, ROOT, sortedUnique, toRepoPath } from './paths.js';
 
 /** One `uses: ./<path>` step of a workflow. */
 export interface WorkflowLocalRef {
@@ -29,14 +29,21 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Strips the longest matching checkout prefix, so `tmp/actions-code/actions/x` becomes `actions/x`. */
+/**
+ * Strips the longest matching checkout prefix, so `tmp/actions-code/actions/x` becomes `actions/x`, and
+ * `tmp/actions-code` itself, the root action of that checkout, becomes `.`.
+ */
 function splitPrefix(local: string, prefixes: readonly string[]): { prefix: string; action: string } {
   const matching = prefixes
-    .filter((prefix) => prefix !== ROOT && local.startsWith(`${prefix}/`))
+    .filter((prefix) => prefix !== ROOT && isWithin(prefix, local))
     .sort((a, b) => b.length - a.length);
   const prefix = matching[0];
 
-  return prefix === undefined ? { prefix: ROOT, action: local } : { prefix, action: local.slice(prefix.length + 1) };
+  if (prefix === undefined) {
+    return { prefix: ROOT, action: local };
+  }
+
+  return { prefix, action: local === prefix ? ROOT : local.slice(prefix.length + 1) };
 }
 
 /**

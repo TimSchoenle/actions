@@ -60,6 +60,15 @@ jobs:
     ]);
   });
 
+  it('resolves a reference to the checkout prefix itself to the root action of that checkout', () => {
+    const rootAction = 'jobs:\n  j:\n    steps:\n      - uses: ./tmp/actions-code\n      - uses: ./tmp/actions-codex\n';
+
+    expect(workflowLocalRefs(rootAction, ['tmp/actions-code'])).toEqual([
+      { job: 'j', step: 0, uses: './tmp/actions-code', prefix: 'tmp/actions-code', action: '.' },
+      { job: 'j', step: 1, uses: './tmp/actions-codex', prefix: '.', action: 'tmp/actions-codex' },
+    ]);
+  });
+
   it('returns nothing for a document without jobs', () => {
     expect(workflowLocalRefs('name: x\n')).toEqual([]);
   });
