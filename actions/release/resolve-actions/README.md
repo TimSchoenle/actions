@@ -62,7 +62,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - id: resolve
-        uses: TimSchoenle/actions/actions/release/resolve-actions@actions-release-resolve-actions-v1.1.0 # tag=actions-release-resolve-actions-v1.1.0
+        uses: TimSchoenle/actions/actions/release/resolve-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-resolve-actions-v1.1.0
         with:
           mode: affected
           changed-files: ${{ steps.changed.outputs.files }}
@@ -79,7 +79,7 @@ jobs:
         with:
           persist-credentials: false
       # set up the toolchain and install dependencies here
-      - uses: TimSchoenle/actions/actions/release/build-actions@actions-release-build-actions-v1.1.0 # tag=actions-release-build-actions-v1.1.0
+      - uses: TimSchoenle/actions/actions/release/build-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-build-actions-v1.1.0
         with:
           build-dirs: ${{ needs.resolve.outputs.build-dirs }}
           build-command: npm run build

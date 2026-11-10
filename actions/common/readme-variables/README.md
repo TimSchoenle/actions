@@ -28,10 +28,10 @@ suggestion.
 ```yaml
 - name: Collect the README payload
   id: variables
-  uses: TimSchoenle/actions/actions/common/readme-variables@actions-common-readme-variables-v2.1.4 # tag=actions-common-readme-variables-v2.1.4
+  uses: TimSchoenle/actions/actions/common/readme-variables@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-readme-variables-v2.1.4
 
 - name: Render the README
-  uses: TimSchoenle/actions/actions/common/render-template@actions-common-render-template-v3.0.4 # tag=actions-common-render-template-v3.0.4
+  uses: TimSchoenle/actions/actions/common/render-template@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-render-template-v3.0.4
   with:
     template: .github/templates/README.md.hbs
     output: README.md
@@ -52,7 +52,7 @@ suggestion.
 
 - name: Collect the README payload
   id: variables
-  uses: TimSchoenle/actions/actions/common/readme-variables@actions-common-readme-variables-v2.1.4 # tag=actions-common-readme-variables-v2.1.4
+  uses: TimSchoenle/actions/actions/common/readme-variables@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-readme-variables-v2.1.4
   with:
     extra: ${{ steps.config.outputs.json }}
 ```

@@ -50,7 +50,7 @@ jobs:
           bun-version-file: '.bun-version'
       - run: bun install --frozen-lockfile
       - id: build
-        uses: TimSchoenle/actions/actions/release/build-actions@actions-release-build-actions-v1.1.0 # tag=actions-release-build-actions-v1.1.0
+        uses: TimSchoenle/actions/actions/release/build-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-build-actions-v1.1.0
         with:
           build-dirs: |
             actions/my/action
@@ -67,7 +67,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: TimSchoenle/actions/actions/release/install-built-actions@actions-release-install-built-actions-v1.1.0 # tag=actions-release-install-built-actions-v1.1.0
+      - uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -98,7 +98,7 @@ jobs:
           node-version-file: '.nvmrc'
       - run: npm ci
       # action.yml at the root runs dist/index.js; the build writes it.
-      - uses: TimSchoenle/actions/actions/release/build-actions@actions-release-build-actions-v1.1.0 # tag=actions-release-build-actions-v1.1.0
+      - uses: TimSchoenle/actions/actions/release/build-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-build-actions-v1.1.0
         with:
           build-dirs: .
           build-command: npm run build

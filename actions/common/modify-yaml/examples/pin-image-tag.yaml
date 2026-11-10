@@ -1,7 +1,7 @@
 # Edits the file in the workspace only. Comments and quoting elsewhere in values.yaml survive.
 # Committing the change is a separate step.
 - id: tag
-  uses: TimSchoenle/actions/actions/common/modify-yaml@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-modify-yaml-v2.0.3
+  uses: TimSchoenle/actions/actions/common/modify-yaml@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-modify-yaml-v2.0.4
   with:
     file: charts/api/values.yaml
     key: image.tag

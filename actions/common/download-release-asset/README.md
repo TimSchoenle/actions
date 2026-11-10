@@ -37,7 +37,7 @@ ID. A 404 is not retried that way: the asset does not exist. Both routes feed th
     } >> "$GITHUB_OUTPUT"
 
 - id: download
-  uses: TimSchoenle/actions/actions/common/download-release-asset@actions-common-download-release-asset-v1.1.3 # tag=actions-common-download-release-asset-v1.1.3
+  uses: TimSchoenle/actions/actions/common/download-release-asset@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-download-release-asset-v1.1.3
   with:
     repository: jdx/jactionlint
     tag: ${{ steps.release.outputs.tag }}
@@ -66,7 +66,7 @@ ID. A 404 is not retried that way: the asset does not exist. Both routes feed th
     } >> "$GITHUB_OUTPUT"
 
 - id: download
-  uses: TimSchoenle/actions/actions/common/download-release-asset@actions-common-download-release-asset-v1.1.3 # tag=actions-common-download-release-asset-v1.1.3
+  uses: TimSchoenle/actions/actions/common/download-release-asset@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-download-release-asset-v1.1.3
   with:
     repository: jdx/jactionlint
     tag: ${{ steps.release.outputs.tag }}

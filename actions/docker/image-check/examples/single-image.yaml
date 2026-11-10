@@ -9,6 +9,6 @@ steps:
   # the same way.
   - run: docker build --tag app:test .
 
-  - uses: TimSchoenle/actions/actions/docker/image-check@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-docker-image-check-v1.1.13
+  - uses: TimSchoenle/actions/actions/docker/image-check@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-docker-image-check-v1.1.14
     with:
       image: app:test

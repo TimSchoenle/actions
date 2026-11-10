@@ -42,7 +42,7 @@ jobs:
         with:
           persist-credentials: false
       # Before any step that runs a local action with a bundle.
-      - uses: TimSchoenle/actions/actions/release/install-built-actions@actions-release-install-built-actions-v1.1.0 # tag=actions-release-install-built-actions-v1.1.0
+      - uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -77,7 +77,7 @@ jobs:
         with:
           path: tmp/actions-code
           persist-credentials: false
-      - uses: TimSchoenle/actions/actions/release/install-built-actions@actions-release-install-built-actions-v1.1.0 # tag=actions-release-install-built-actions-v1.1.0
+      - uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -164,7 +164,7 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 - End-to-end tests: [`.github/workflows/verify-action-release-install-built-actions.yaml`](../../../.github/workflows/verify-action-release-install-built-actions.yaml)
 
 <details>
-<summary>Called from 38 files in this repository</summary>
+<summary>Called from 40 files in this repository</summary>
 
 - [`.github/workflows/verify-action-common-close-pull-request.yaml`](../../../.github/workflows/verify-action-common-close-pull-request.yaml)
 - [`.github/workflows/verify-action-common-commit-changes.yaml`](../../../.github/workflows/verify-action-common-commit-changes.yaml)
@@ -190,6 +190,7 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 - [`.github/workflows/verify-action-helper-resolve-base-branch.yaml`](../../../.github/workflows/verify-action-helper-resolve-base-branch.yaml)
 - [`.github/workflows/verify-action-helper-verify-branch-name.yaml`](../../../.github/workflows/verify-action-helper-verify-branch-name.yaml)
 - [`.github/workflows/verify-action-helper-verify-commit-authors.yaml`](../../../.github/workflows/verify-action-helper-verify-commit-authors.yaml)
+- [`.github/workflows/verify-action-java-gradle-auto-spotless.yaml`](../../../.github/workflows/verify-action-java-gradle-auto-spotless.yaml)
 - [`.github/workflows/verify-action-maintenance-auto-approve-pr.yaml`](../../../.github/workflows/verify-action-maintenance-auto-approve-pr.yaml)
 - [`.github/workflows/verify-action-maintenance-auto-rebase.yaml`](../../../.github/workflows/verify-action-maintenance-auto-rebase.yaml)
 - [`.github/workflows/verify-action-maintenance-ensure-actions-are-executed.yaml`](../../../.github/workflows/verify-action-maintenance-ensure-actions-are-executed.yaml)
@@ -200,6 +201,7 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 - [`.github/workflows/verify-action-release-plan-release-please.yaml`](../../../.github/workflows/verify-action-release-plan-release-please.yaml)
 - [`.github/workflows/verify-action-release-publish-build-commit.yaml`](../../../.github/workflows/verify-action-release-publish-build-commit.yaml)
 - [`.github/workflows/verify-action-release-resolve-actions.yaml`](../../../.github/workflows/verify-action-release-resolve-actions.yaml)
+- [`.github/workflows/verify-action-rust-auto-format.yaml`](../../../.github/workflows/verify-action-rust-auto-format.yaml)
 - [`.github/workflows/verify-action-rust-config-contract.yaml`](../../../.github/workflows/verify-action-rust-config-contract.yaml)
 - [`.github/workflows/verify-action-security-codeql.yaml`](../../../.github/workflows/verify-action-security-codeql.yaml)
 - [`.github/workflows/verify-action-security-zizmor.yaml`](../../../.github/workflows/verify-action-security-zizmor.yaml)

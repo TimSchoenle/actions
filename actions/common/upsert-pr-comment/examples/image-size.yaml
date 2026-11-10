@@ -5,7 +5,7 @@
     set -euo pipefail
     echo "bytes=$(docker image inspect api:${{ github.sha }} --format '{{ .Size }}')" >> "$GITHUB_OUTPUT"
 
-- uses: TimSchoenle/actions/actions/common/upsert-pr-comment@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-upsert-pr-comment-v2.0.3
+- uses: TimSchoenle/actions/actions/common/upsert-pr-comment@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-upsert-pr-comment-v2.0.4
   with:
     token: ${{ steps.token.outputs.token }}
     identifier: docker-image-size

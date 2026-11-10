@@ -1,6 +1,6 @@
 # Fails the step when the key is missing, so a later step never sees an empty version.
 - id: chart
-  uses: TimSchoenle/actions/actions/common/read-yaml@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-read-yaml-v2.0.3
+  uses: TimSchoenle/actions/actions/common/read-yaml@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-read-yaml-v2.0.4
   with:
     file: charts/api/Chart.yaml
     key: version

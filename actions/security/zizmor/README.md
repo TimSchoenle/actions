@@ -46,7 +46,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: TimSchoenle/actions/actions/security/zizmor@actions-security-zizmor-v2.0.5 # tag=actions-security-zizmor-v2.0.5
+      - uses: TimSchoenle/actions/actions/security/zizmor@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-security-zizmor-v2.0.5
 ```
 <!-- /docs:generated usage -->
 

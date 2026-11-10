@@ -1,7 +1,7 @@
 # An empty branch_name resolves the repository's default branch. The step fails when the branch
 # does not exist, so the checkout never runs against a missing ref.
 - id: base
-  uses: TimSchoenle/actions/actions/helper/resolve-base-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-helper-resolve-base-branch-v2.0.3
+  uses: TimSchoenle/actions/actions/helper/resolve-base-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-helper-resolve-base-branch-v2.0.4
   with:
     token: ${{ steps.token.outputs.token }}
     repository: acme/helm-charts
