@@ -444,7 +444,7 @@ export function createHttpTransport(userAgent: string, timeouts: TransportTimeou
         try {
           sink = await openDestination(destination);
         } catch (error) {
-          message.resume();
+          message.destroy();
           throw error;
         }
 
