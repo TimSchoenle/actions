@@ -9,14 +9,14 @@ outside the markers.
 
 Fetches one commit into an empty repository and points HEAD at it without checking anything out, for steps that read only git objects.
 
-[actions-common-fetch-head-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-fetch-head-v2.0.0) · JavaScript action (node24)
+[actions-common-fetch-head-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-fetch-head-v2.0.1) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
 ## Usage
 
 ```yaml
-- uses: TimSchoenle/actions/actions/common/fetch-head@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-fetch-head-v2.0.0
+- uses: TimSchoenle/actions/actions/common/fetch-head@actions-common-fetch-head-v2.0.1 # tag=actions-common-fetch-head-v2.0.1
   with:
     sha: # required, see Inputs
 ```
