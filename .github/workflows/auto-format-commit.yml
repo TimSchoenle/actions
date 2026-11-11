@@ -90,7 +90,7 @@ jobs:
       # commit-patch reads only git objects, so the head is fetched without a checkout and none of
       # the pull request's files reach the runner.
       - name: Fetch The Pull Request Head
-        uses: TimSchoenle/actions/actions/common/fetch-head@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-fetch-head-v1.1.1
+        uses: TimSchoenle/actions/actions/common/fetch-head@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-fetch-head-v2.0.1
         with:
           sha: ${{ github.event.workflow_run.head_sha }}
 
