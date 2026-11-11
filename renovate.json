@@ -15,9 +15,9 @@
   },
   "customManagers": [
     {
-      "description": "Internal action refs pinned inside the end-to-end workflow generator. scripts/lib/e2e-workflow.ts is the source of truth for every generated verify-action-*.yaml, and is matched by no built-in manager because it is TypeScript rather than YAML. Without this, Renovate bumps only the generated copies and the drift check fails; with it, one branch carries both, because Renovate updates every occurrence of the same dependency at the same version together. A contract test in scripts/__tests__ fails any pin these managers would not match.",
+      "description": "Internal action refs pinned inside the Verify workflow generator. scripts/lib/verify/pins.ts is the source of truth for every pin the generated .github/workflows/verify*.yaml files share, and is matched by no built-in manager because it is TypeScript rather than YAML. Without this, Renovate bumps only the generated copies and the drift check fails; with it, one branch carries both, because Renovate updates every occurrence of the same dependency at the same version together. A contract test in scripts/__tests__ fails any pin these managers would not match.",
       "customType": "regex",
-      "managerFilePatterns": ["/^scripts/lib/e2e-workflow\\.ts$/"],
+      "managerFilePatterns": ["/^scripts/lib/verify/pins\\.ts$/"],
       "matchStrings": [
         "'(?<depName>TimSchoenle\\/actions(?:\\/[^@'\\s#]+)?)@(?<currentDigest>[a-fA-F0-9]{40}) # tag=(?<currentValue>actions-[^'\\s#]+)'"
       ],
@@ -29,7 +29,7 @@
     {
       "description": "Third-party actions pinned inside the end-to-end workflow generator, addressed by a subdirectory of their repository. These need depName and packageName to differ \u2014 the tags live on actions/cache, not on actions/cache/restore \u2014 which a single generic pattern cannot express, so each is listed explicitly and the contract test fails a new one that is not.",
       "customType": "regex",
-      "managerFilePatterns": ["/^scripts/lib/e2e-workflow\\.ts$/"],
+      "managerFilePatterns": ["/^scripts/lib/verify/pins\\.ts$/"],
       "matchStrings": [
         "'(?<depName>actions\\/cache\\/restore)@(?<currentDigest>[a-fA-F0-9]{40}) # (?<currentValue>v[^'\\s#]+)'"
       ],
@@ -39,7 +39,7 @@
     {
       "description": "Third-party actions pinned inside the end-to-end workflow generator, addressed by repository. Anchored on the opening quote of the TypeScript string literal, which is what keeps it from also matching the subdirectory and internal forms above without needing a lookahead \u2014 re2, which Renovate uses, has none.",
       "customType": "regex",
-      "managerFilePatterns": ["/^scripts/lib/e2e-workflow\\.ts$/"],
+      "managerFilePatterns": ["/^scripts/lib/verify/pins\\.ts$/"],
       "matchStrings": [
         "'(?<depName>[\\w.-]+\\/[\\w.-]+)@(?<currentDigest>[a-fA-F0-9]{40}) # (?<currentValue>v[^'\\s#]+)'"
       ],
@@ -131,14 +131,14 @@
       "automerge": false
     },
     {
-      "description": "scripts/lib/e2e-workflow.ts is the source of the generated .github/workflows/verify-action-*.yaml, so its pins must land on the same branch as the generated copies, which the shared preset types as ci and groups as ci dependencies. Without this, an update splits across two branches and each fails the e2e workflow drift check. The type and the group mirror the preset's .github/** rules and must change with them.",
-      "matchFileNames": ["scripts/lib/e2e-workflow.ts"],
+      "description": "scripts/lib/verify/pins.ts is the source of the pins in the generated .github/workflows/verify*.yaml, so its pins must land on the same branch as the generated copies, which the shared preset types as ci and groups as ci dependencies. Without this, an update splits across two branches and each fails the Verify drift check. The type and the group mirror the preset's .github/** rules and must change with them.",
+      "matchFileNames": ["scripts/lib/verify/pins.ts"],
       "semanticCommitType": "ci",
       "separateMinorPatch": false
     },
     {
       "description": "The group half of the rule above.",
-      "matchFileNames": ["scripts/lib/e2e-workflow.ts"],
+      "matchFileNames": ["scripts/lib/verify/pins.ts"],
       "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
       "groupName": "ci dependencies",
       "groupSlug": "ci"

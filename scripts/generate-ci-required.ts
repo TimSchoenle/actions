@@ -7,6 +7,7 @@ import {
   ANCHOR_WORKFLOW_FILES,
   applyGeneratedList,
   applySummaryBlock,
+  hasGeneratedSummary,
   isVerifyWorkflowFile,
   parseWorkflow,
 } from './lib/ci-required.js';
@@ -25,7 +26,7 @@ function workflowNameOf(file: string): string {
 }
 
 // Rebuilds the `workflow_run.workflows` watch list in ci-required.yaml from the
-// verify-action-*.yaml and verify-config-*.yaml workflows on disk so a new verify workflow is picked up
+// verify.yaml, verify-action-*.yaml and verify-config-*.yaml workflows on disk so a new verify workflow is picked up
 // without hand-editing the aggregate gate. The ci-required drift test fails CI
 // if this output is ever stale.
 export function collectVerifyWorkflowNames(): string[] {
@@ -40,7 +41,7 @@ export function collectWatchedWorkflowNames(): string[] {
 // Rewrites each verify workflow's trailing `summary` job so its `needs` list
 // always covers every other job in that workflow. Returns how many files changed.
 export function syncSummaryBlocks(): number {
-  const files = fs.readdirSync(WORKFLOWS_DIR).filter(isVerifyWorkflowFile);
+  const files = fs.readdirSync(WORKFLOWS_DIR).filter(hasGeneratedSummary);
 
   let updated = 0;
   for (const file of files) {

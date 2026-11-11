@@ -3,7 +3,8 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { EXTRA_JOBS_FILE, PINNED, resolvePins } from '../lib/e2e-workflow.js';
+import { PINNED, resolvePins } from '../lib/verify/pins.js';
+import { SOURCES_DIR } from '../lib/verify/source.js';
 import { ROOT_DIR, scanSorted } from '../lib/utils.js';
 
 /**
@@ -27,7 +28,7 @@ interface CustomManager {
   datasourceTemplate?: string;
 }
 
-const GENERATOR_FILE = 'scripts/lib/e2e-workflow.ts';
+const GENERATOR_FILE = 'scripts/lib/verify/pins.ts';
 
 function customManagers(): CustomManager[] {
   const config = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'renovate.json'), 'utf8')) as {
@@ -125,7 +126,7 @@ describe('Renovate coverage of the workflow generator', () => {
   it('keeps every pin present in the generated workflows, so one branch updates both', () => {
     const workflows = fs
       .readdirSync(path.join(ROOT_DIR, '.github', 'workflows'))
-      .filter((file) => file.startsWith('verify-action-'))
+      .filter((file) => /^verify(?:-[a-z0-9-]+)?\.yaml$/.test(file))
       .map((file) => fs.readFileSync(path.join(ROOT_DIR, '.github', 'workflows', file), 'utf8'))
       .join('\n');
 
@@ -136,23 +137,25 @@ describe('Renovate coverage of the workflow generator', () => {
 });
 
 /**
- * Contract between an extra-jobs fragment and the same managers.
+ * Contract between a Verify source and the same managers.
  *
- * A fragment is copied into its generated workflow verbatim, and lives under `actions/`, which no
+ * A source is copied into its generated workflow verbatim, and lives under `.github/verify/`, which no
  * manager in `renovate.json` reads. A ref written out in full there is therefore a pin Renovate
- * updates in the generated copy and nowhere else — and the drift check then fails on every pull
- * request until someone reverts the bump by hand, because the regenerate job's answer to drift is to
- * rewrite the workflow from the fragment. That is how `harden-runner` sat two minor versions behind
- * in `verify-action-helper-verify-branch-name.yaml` while every other job in it moved.
+ * updates in the generated copy and nowhere else, and the drift check then fails on every pull request
+ * until someone reverts the bump by hand, because the regenerate job's answer to drift is to rewrite
+ * the workflow from the source. That is how `harden-runner` once sat two minor versions behind in one
+ * generated workflow while every other job in it moved.
  *
- * So fragments name a `PINNED` key instead, and that is what is enforced here.
+ * So sources name a `PINNED` key instead, and that is what is enforced here.
  */
-describe('Renovate coverage of the extra-jobs fragments', () => {
-  /** `uses:` values a fragment states, with the line they are on for the failure message. */
-  function usesIn(fragment: string): { line: number; value: string }[] {
+describe('Renovate coverage of the Verify sources', () => {
+  const sourcePattern = `${SOURCES_DIR}/*.yaml`;
+
+  /** `uses:` values a source states, with the line they are on for the failure message. */
+  function usesIn(source: string): { line: number; value: string }[] {
     const uses: { line: number; value: string }[] = [];
 
-    fragment.split(/\r?\n/).forEach((line, index) => {
+    source.split(/\r?\n/).forEach((line, index) => {
       const match = /^\s*(?:-\s*)?uses:\s*(\S+)/.exec(line);
 
       if (match) {
@@ -163,16 +166,16 @@ describe('Renovate coverage of the extra-jobs fragments', () => {
     return uses;
   }
 
-  it('finds the fragments this suite is meant to cover', async () => {
+  it('finds the sources this suite is meant to cover', async () => {
     // A glob that silently matched nothing would make every assertion below vacuously true.
-    expect(await scanSorted(`actions/*/*/e2e/${EXTRA_JOBS_FILE}`)).not.toEqual([]);
+    expect(await scanSorted(sourcePattern)).not.toEqual([]);
   });
 
-  it('lets no fragment pin an action itself', async () => {
-    for (const fragmentPath of await scanSorted(`actions/*/*/e2e/${EXTRA_JOBS_FILE}`)) {
-      const fragment = fs.readFileSync(path.join(ROOT_DIR, fragmentPath), 'utf8');
+  it('lets no source pin an action itself', async () => {
+    for (const sourcePath of await scanSorted(sourcePattern)) {
+      const source = fs.readFileSync(path.join(ROOT_DIR, sourcePath), 'utf8');
 
-      for (const { line, value } of usesIn(fragment)) {
+      for (const { line, value } of usesIn(source)) {
         // A local action carries no version, so there is nothing for Renovate to update.
         if (value.startsWith('./')) {
           continue;
@@ -180,24 +183,22 @@ describe('Renovate coverage of the extra-jobs fragments', () => {
 
         expect(
           value,
-          `${fragmentPath}:${line} pins an action Renovate cannot see here. Write 'uses: pinned:<key>' ` +
-            'and add the ref to PINNED in scripts/lib/e2e-workflow.ts, where the customManagers read it.',
+          `${sourcePath}:${line} pins an action Renovate cannot see here. Write 'uses: pinned:<key>' ` +
+            'and add the ref to PINNED in scripts/lib/verify/pins.ts, where the customManagers read it.',
         ).toMatch(/^pinned:\w+$/);
       }
     }
   });
 
-  it('resolves every placeholder a fragment names', async () => {
-    for (const fragmentPath of await scanSorted(`actions/*/*/e2e/${EXTRA_JOBS_FILE}`)) {
-      const fragment = fs.readFileSync(path.join(ROOT_DIR, fragmentPath), 'utf8');
+  it('resolves every placeholder a source names', async () => {
+    for (const sourcePath of await scanSorted(sourcePattern)) {
+      const source = fs.readFileSync(path.join(ROOT_DIR, sourcePath), 'utf8');
 
-      expect(() => resolvePins(fragment), `${fragmentPath} names a pin that PINNED does not hold`).not.toThrow();
+      expect(() => resolvePins(source), `${sourcePath} names a pin that PINNED does not hold`).not.toThrow();
 
-      // Only the `uses:` values: the fragment's own header explains the convention, and matching on
-      // the whole text would fail on the explanation rather than on an unsubstituted step.
-      const unresolved = usesIn(resolvePins(fragment)).filter(({ value }) => value.startsWith('pinned:'));
+      const unresolved = usesIn(resolvePins(source)).filter(({ value }) => value.startsWith('pinned:'));
 
-      expect(unresolved, `${fragmentPath} left a placeholder unsubstituted`).toEqual([]);
+      expect(unresolved, `${sourcePath} left a placeholder unsubstituted`).toEqual([]);
     }
   });
 });
