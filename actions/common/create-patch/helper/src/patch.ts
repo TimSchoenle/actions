@@ -69,11 +69,11 @@ const DIFF_FLAGS = [
   '--dst-prefix=b/',
 ];
 
-/** The empty tree's object name, keyed by the length of an object name in that hash. */
-const EMPTY_TREE_BY_NAME_LENGTH: ReadonlyMap<number, string> = new Map([
-  [40, '4b825dc642cb6eb9a060e54bf8d69288fbee4904'],
-  [64, '6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321'],
-]);
+/** The empty tree's object name in a SHA-1 repository. */
+const EMPTY_TREE_SHA1 = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
+
+/** The empty tree's object name in a SHA-256 repository, whose object names are 64 digits. */
+const EMPTY_TREE_SHA256 = '6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321';
 
 /**
  * The global flag that makes the diff read attributes from the empty tree instead of `.gitattributes`.
@@ -84,12 +84,7 @@ const EMPTY_TREE_BY_NAME_LENGTH: ReadonlyMap<number, string> = new Map([
  * bytes are, which is the same test `commit-patch` applies to the result.
  */
 function attrSourceFlag(baseSha: string): string {
-  const emptyTree = EMPTY_TREE_BY_NAME_LENGTH.get(baseSha.length);
-  if (emptyTree === undefined) {
-    throw new Error(`Unrecognised object name length ${baseSha.length} for base ${baseSha}.`);
-  }
-
-  return `--attr-source=${emptyTree}`;
+  return `--attr-source=${baseSha.length === EMPTY_TREE_SHA256.length ? EMPTY_TREE_SHA256 : EMPTY_TREE_SHA1}`;
 }
 
 /**
