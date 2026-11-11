@@ -42,7 +42,7 @@ describe('resolve-actions', () => {
   });
 
   it('adds the local actions a workflow runs', async () => {
-    const result = await resolve({ workflows: '.github/workflows/verify-action-common-find-patch.yaml' });
+    const result = await resolve({ workflows: '.github/workflows/verify-common.yaml' });
 
     expect(list(result, 'build-dirs')).toEqual(
       expect.arrayContaining(['actions/common/create-patch/helper', 'actions/common/find-patch/helper']),
