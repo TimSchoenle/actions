@@ -141,7 +141,7 @@ new head commit appears shortly after the step has finished.
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-maintenance-auto-rebase.yaml`](../../../.github/workflows/verify-action-maintenance-auto-rebase.yaml)
+- End-to-end tests: [`.github/verify/maintenance-auto-rebase.yaml`](../../../.github/verify/maintenance-auto-rebase.yaml)
 - Called from this repository by:
   - [`.github/workflows/renovate-auto-rebase.yml`](../../../.github/workflows/renovate-auto-rebase.yml)
 <!-- /docs:generated reference -->

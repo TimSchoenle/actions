@@ -188,7 +188,7 @@ rather than as it resolved.
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-readme-variables.yaml`](../../../.github/workflows/verify-action-common-readme-variables.yaml)
+- End-to-end tests: [`.github/verify/common-readme-variables.yaml`](../../../.github/verify/common-readme-variables.yaml)
 - Called from this repository by:
   - [`actions/common/render-readme/action.yaml`](../../../actions/common/render-readme/action.yaml)
 <!-- /docs:generated reference -->

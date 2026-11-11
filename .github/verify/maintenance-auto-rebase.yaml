@@ -1,0 +1,6 @@
+target: maintenance/auto-rebase
+e2e:
+  token-permissions:
+    contents: write
+    issues: write
+    pull-requests: write

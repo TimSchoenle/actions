@@ -1,0 +1,4 @@
+target: docker/image-check-summary
+e2e:
+  token-permissions:
+    metadata: read

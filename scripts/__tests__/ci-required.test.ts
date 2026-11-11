@@ -10,7 +10,9 @@ import {
   applyGeneratedList,
   applySummaryBlock,
   extractGeneratedList,
+  hasGeneratedSummary,
   isVerifyWorkflowFile,
+  VERIFY_PIPELINE_FILE,
   parseWorkflow,
   sortWorkflowNames,
   summaryJobOf,
@@ -58,7 +60,17 @@ describe('ci-required aggregate gate', () => {
     expect(applyGeneratedList(ciRequired, watchedNames)).toEqual(ciRequired);
   });
 
-  describe.each(verifyFiles)('%s', (file) => {
+  it('watches the generated Verify workflow, whose one summary job is generated with it', () => {
+    const workflow = parseWorkflow(readWorkflow(VERIFY_PIPELINE_FILE));
+
+    expect(verifyFiles).toContain(VERIFY_PIPELINE_FILE);
+    expect(workflow.jobs.filter((job) => job.name?.startsWith(SUMMARY_CHECK_PREFIX)).map((job) => job.name)).toEqual([
+      `${SUMMARY_CHECK_PREFIX} Verify`,
+    ]);
+    expect(hasGeneratedSummary(VERIFY_PIPELINE_FILE)).toBe(false);
+  });
+
+  describe.each(verifyFiles.filter(hasGeneratedSummary))('%s', (file) => {
     const workflow = parseWorkflow(readWorkflow(file));
 
     it('has a Verify-prefixed workflow name', () => {

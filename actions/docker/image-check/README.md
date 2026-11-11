@@ -224,6 +224,6 @@ Without a platform, the image reference names the image instead. The link is omi
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-docker-image-check.yaml`](../../../.github/workflows/verify-action-docker-image-check.yaml)
+- End-to-end tests: [`.github/verify/docker-image-check.yaml`](../../../.github/verify/docker-image-check.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

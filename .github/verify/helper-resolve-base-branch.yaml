@@ -1,0 +1,4 @@
+target: helper/resolve-base-branch
+e2e:
+  token-permissions:
+    contents: write

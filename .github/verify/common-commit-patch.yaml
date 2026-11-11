@@ -1,0 +1,153 @@
+# Jobs of this target beyond its end-to-end cases.
+#
+# The end-to-end cases drive both helper bundles directly. This job runs what only the runner can: the
+# two composites, with upload-artifact and download-artifact between them, over this repository's own
+# checkout. It holds no credential beyond the job token, which reads this run's artifacts for the run_id
+# case. Every commit-patch run here stops before its first commit API call: an
+# empty patch ends as no_changes, and a refused one fails on the policy, so the token it is handed is a
+# placeholder that is never sent anywhere.
+
+target: common/commit-patch
+e2e:
+  # The refused-workflow case never writes, so the token needs no workflows scope.
+  token-permissions:
+    contents: write
+
+jobs:
+  commit-patch-composite:
+    name: Round Trip Through The Runner
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read # to download the patch by run ID through the REST API
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: pinned:hardenRunner
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: pinned:checkout
+        with:
+          persist-credentials: false
+
+      # Installs the bundles the build job built from this commit; dist/ is not committed.
+      - name: Install Built Actions
+        uses: pinned:installBuiltActions
+        with:
+          artifact-id: ${{ inputs.artifact-id }}
+          expected-manifest-sha256: ${{ inputs.manifest-sha256 }}
+
+      - name: Create Empty Patch
+        id: empty
+        uses: ./actions/common/create-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact_name: commit-patch-e2e-empty-${{ github.run_attempt }}
+          paths: README.md
+
+      - name: Change The Tree
+        run: |
+          set -euo pipefail
+          printf '\nappended by the round trip\n' >> README.md
+          printf 'untracked\n' > round-trip.txt
+
+      - name: Create Patch
+        id: changed
+        uses: ./actions/common/create-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact_name: commit-patch-e2e-changed-${{ github.run_attempt }}
+
+      - name: Assert Create Patch Outputs
+        env:
+          EMPTY_HAS_CHANGES: ${{ steps.empty.outputs.has_changes }}
+          EMPTY_BASE: ${{ steps.empty.outputs.base_sha }}
+          CHANGED_HAS_CHANGES: ${{ steps.changed.outputs.has_changes }}
+          CHANGED_BASE: ${{ steps.changed.outputs.base_sha }}
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+
+          [ "$EMPTY_HAS_CHANGES" = "false" ] || { echo "::error::has_changes '$EMPTY_HAS_CHANGES' for an unchanged path"; exit 1; }
+          [ "$CHANGED_HAS_CHANGES" = "true" ] || { echo "::error::has_changes '$CHANGED_HAS_CHANGES' after a change"; exit 1; }
+          [ "$EMPTY_BASE" = "$head" ] || { echo "::error::base_sha '$EMPTY_BASE' is not HEAD '$head'"; exit 1; }
+          [ "$CHANGED_BASE" = "$head" ] || { echo "::error::base_sha '$CHANGED_BASE' is not HEAD '$head'"; exit 1; }
+
+          echo "Both patches were computed against HEAD, and only the second has changes"
+
+      - name: Commit Empty Patch
+        id: commit-empty
+        uses: ./actions/common/commit-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          token: placeholder-never-sent
+          artifact_name: ${{ steps.empty.outputs.artifact_name }}
+          allowed_paths: README.md
+          commit_message: 'test: never committed'
+          branch: round-trip-never-written
+          expected_head_sha: ${{ steps.empty.outputs.base_sha }}
+
+      # The same empty patch again, through the run_id download step. This run's own ID stands in for the
+      # pull_request run a workflow_run job names; the step lists the run's artifacts over the REST API
+      # either way.
+      - name: Commit Empty Patch By Run ID
+        id: commit-empty-by-run
+        uses: ./actions/common/commit-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          token: placeholder-never-sent
+          run_id: ${{ github.run_id }}
+          artifact_name: ${{ steps.empty.outputs.artifact_name }}
+          allowed_paths: README.md
+          commit_message: 'test: never committed'
+          branch: round-trip-never-written
+          expected_head_sha: ${{ steps.empty.outputs.base_sha }}
+
+      # The same artifact name under a run that does not hold it. Were run_id ignored, the download would
+      # fall back to this run, find the artifact and succeed; failing here shows the run ID is what selects
+      # the run.
+      - name: Commit Empty Patch From Another Run
+        id: commit-other-run
+        continue-on-error: true
+        uses: ./actions/common/commit-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          token: placeholder-never-sent
+          run_id: '1'
+          artifact_name: ${{ steps.empty.outputs.artifact_name }}
+          allowed_paths: README.md
+          commit_message: 'test: never committed'
+          branch: round-trip-never-written
+          expected_head_sha: ${{ steps.empty.outputs.base_sha }}
+
+      - name: Commit Refused Patch
+        id: commit-refused
+        continue-on-error: true
+        uses: ./actions/common/commit-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          token: placeholder-never-sent
+          artifact_name: ${{ steps.changed.outputs.artifact_name }}
+          allowed_paths: README.md
+          commit_message: 'test: never committed'
+          branch: round-trip-never-written
+          expected_head_sha: ${{ steps.changed.outputs.base_sha }}
+
+      - name: Assert Commit Patch Outcomes
+        env:
+          EMPTY_OUTCOME: ${{ steps.commit-empty.outputs.outcome }}
+          EMPTY_COMMITTED: ${{ steps.commit-empty.outputs.changes_committed }}
+          BY_RUN_OUTCOME: ${{ steps.commit-empty-by-run.outputs.outcome }}
+          OTHER_RUN_OUTCOME: ${{ steps.commit-other-run.outcome }}
+          REFUSED_OUTCOME: ${{ steps.commit-refused.outcome }}
+        run: |
+          set -euo pipefail
+
+          [ "$EMPTY_OUTCOME" = "no_changes" ] || { echo "::error::outcome '$EMPTY_OUTCOME' for an empty patch"; exit 1; }
+          [ "$EMPTY_COMMITTED" = "false" ] || { echo "::error::changes_committed '$EMPTY_COMMITTED' for an empty patch"; exit 1; }
+          [ "$BY_RUN_OUTCOME" = "no_changes" ] || { echo "::error::outcome '$BY_RUN_OUTCOME' for the empty patch downloaded by run ID"; exit 1; }
+          [ "$OTHER_RUN_OUTCOME" = "failure" ] || { echo "::error::a download from a run without the artifact did not fail ($OTHER_RUN_OUTCOME), so run_id did not select the run"; exit 1; }
+          [ "$REFUSED_OUTCOME" = "failure" ] || { echo "::error::a patch adding round-trip.txt outside allowed_paths was not refused ($REFUSED_OUTCOME)"; exit 1; }
+
+          echo "The empty patch ended as no_changes from both download steps, run_id selected the run, and the out-of-policy patch failed, all before any commit API call"

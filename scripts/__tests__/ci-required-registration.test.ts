@@ -306,12 +306,16 @@ describe('the verify workflows on disk', () => {
       runs: [],
     });
 
-    expect(registration.applicable).toEqual(['.github/workflows/verify-action-bun-setup-cached.yaml']);
+    // Verify runs on every pull request and selects its own targets, so the barrier always waits for it.
+    expect(registration.applicable).toEqual([
+      '.github/workflows/verify-action-bun-setup-cached.yaml',
+      '.github/workflows/verify.yaml',
+    ]);
   });
 
   // The bundled release-please pull request rewrites every action's changelog, and the docs generator
   // then repins the examples in every action's README. Neither file is read by an action.
-  it('applies none of them to a release pull request', () => {
+  it('applies none of the path-filtered ones to a release pull request', () => {
     const actionsDir = path.join(ROOT_DIR, 'actions');
     const actionPaths = fs
       .readdirSync(actionsDir)
@@ -332,7 +336,8 @@ describe('the verify workflows on disk', () => {
     });
 
     expect(actionPaths.length).toBeGreaterThan(0);
-    expect(registration.applicable).toEqual([]);
+    // Only Verify, which runs on every pull request; its plan selects no target for these files.
+    expect(registration.applicable).toEqual(['.github/workflows/verify.yaml']);
   });
 });
 

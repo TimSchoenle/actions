@@ -5,10 +5,19 @@ import { parse } from 'yaml';
 // (which runs under Node) can exercise the exact logic the generator uses.
 
 /**
- * Matches the verify workflow filenames this repo gates on: one per action (`verify-action-*`) and
- * one per shared config that ships to consumers (`verify-config-*`).
+ * Matches the hand-written verify workflows still outside the generated Verify workflow: one per
+ * action (`verify-action-*`) and one per shared config that ships to consumers (`verify-config-*`).
+ * Each ends with a `summary` job this module generates.
  */
 export const VERIFY_WORKFLOW_PATTERN = /^verify-(?:action|config)-.+\.ya?ml$/;
+
+/**
+ * The generated Verify workflow (scripts/generate-verify.ts). ci-required watches it and waits for
+ * its runs like any verify workflow, but never rewrites it: its `CI Summary: Verify` job is
+ * generated with it. The reusable shard workflows it calls (`verify-<category>.yaml`) are not
+ * matched: their jobs run inside the Verify run, which has no separate workflow run of its own.
+ */
+export const VERIFY_PIPELINE_FILE = 'verify.yaml';
 
 /**
  * Workflows ci-required watches in addition to the verify workflows, by file name under
@@ -45,7 +54,13 @@ export interface ParsedWorkflow {
   jobs: WorkflowJob[];
 }
 
+/** Whether ci-required watches and waits for the workflow in `fileName`. */
 export function isVerifyWorkflowFile(fileName: string): boolean {
+  return fileName === VERIFY_PIPELINE_FILE || VERIFY_WORKFLOW_PATTERN.test(fileName);
+}
+
+/** Whether `generate-ci-required` owns the trailing summary job of the workflow in `fileName`. */
+export function hasGeneratedSummary(fileName: string): boolean {
   return VERIFY_WORKFLOW_PATTERN.test(fileName);
 }
 

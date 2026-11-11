@@ -1,0 +1,4 @@
+target: common/delete-branch
+e2e:
+  token-permissions:
+    contents: write

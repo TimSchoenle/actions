@@ -55,10 +55,6 @@ const STRICT_SHELL_EXEMPTIONS: Readonly<Record<string, StrictShellExemption>> = 
     known: 4,
     reason: 'Shell assertions awaiting the TypeScript e2e port.',
   },
-  'verify-action-helper-verify-branch-name.yaml': {
-    known: 1,
-    reason: 'Shell assertions awaiting the TypeScript e2e port.',
-  },
   'verify-action-java-gradle-setup-base-environment.yaml': {
     known: 5,
     reason: 'Shell assertions awaiting the TypeScript e2e port.',

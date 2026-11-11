@@ -56,7 +56,7 @@ export function assertBuiltBundle(
     if (env['CI'] !== undefined) {
       throw new BuiltBundleError(
         `${BUILT_ACTIONS_MANIFEST_ENV} is not set, so bundle ${relative} cannot be checked against this run's build. ` +
-          'The verify workflow must install its bundles with release/install-built-actions; run `bun run generate-e2e-workflows`.',
+          'The verify workflow must install its bundles with release/install-built-actions; run `bun run generate-verify`.',
       );
     }
     return;
@@ -66,7 +66,7 @@ export function assertBuiltBundle(
   const listed = manifest.files.find((file) => file.path === relative);
   if (listed === undefined) {
     throw new BuiltBundleError(
-      `Bundle ${relative} is not in this run's build set; run \`bun run generate-e2e-workflows\`. ` +
+      `Bundle ${relative} is not in this run's build set; run \`bun run generate-verify\`. ` +
         'A case must reach another action through a literal new URL(..., import.meta.url) for the generator to see it.',
     );
   }

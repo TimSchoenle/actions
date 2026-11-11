@@ -64,6 +64,6 @@ Reaches no endpoint beyond those the runner itself needs.
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-read-yaml.yaml`](../../../.github/workflows/verify-action-common-read-yaml.yaml)
+- End-to-end tests: [`.github/verify/common-read-yaml.yaml`](../../../.github/verify/common-read-yaml.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

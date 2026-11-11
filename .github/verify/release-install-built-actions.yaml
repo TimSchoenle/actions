@@ -1,0 +1,145 @@
+# Jobs of this target beyond its end-to-end cases.
+#
+# The end-to-end cases drive the helper bundle over a directory staged on disk. These jobs run what
+# only the runner can: download-artifact fetching a build-actions artifact by ID, the artifact record
+# looked up over the REST API with the job token, and each refusal leaving the checkout untouched.
+# The action being built is written into the workspace by a step, so it is not a manifest of this
+# repository.
+
+target: release/install-built-actions
+e2e:
+  token-permissions:
+    metadata: read
+
+jobs:
+  install-fixture-build:
+    name: Build The Fixture
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      artifact-id: ${{ steps.build.outputs.artifact-id }}
+      artifact-digest: ${{ steps.build.outputs.artifact-digest }}
+      manifest-sha256: ${{ steps.build.outputs.manifest-sha256 }}
+    steps:
+      - name: Harden Runner
+        uses: pinned:hardenRunner
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: pinned:checkout
+        with:
+          persist-credentials: false
+
+      # Installs the bundles the build job built from this commit; dist/ is not committed.
+      - name: Install Built Actions
+        uses: pinned:installBuiltActions
+        with:
+          artifact-id: ${{ inputs.artifact-id }}
+          expected-manifest-sha256: ${{ inputs.manifest-sha256 }}
+
+      - name: Write Demo Action
+        run: |
+          set -euo pipefail
+          mkdir -p fixture/actions/demo
+          printf "runs:\n  using: 'node24'\n  main: 'dist/index.js'\n" > fixture/actions/demo/action.yml
+
+      - name: Build Demo Action
+        id: build
+        uses: ./actions/release/build-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          path: fixture
+          build-dirs: actions/demo
+          build-command: mkdir -p dist && printf 'fresh\n' > dist/index.js
+          artifact-name: install-built-actions-e2e-${{ github.run_attempt }}
+
+  install-refusals:
+    name: Install And Refuse
+    needs: install-fixture-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read # to look the artifact record up with the job token
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: pinned:hardenRunner
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: pinned:checkout
+        with:
+          persist-credentials: false
+
+      # Installs the bundles the build job built from this commit; dist/ is not committed.
+      - name: Install Built Actions
+        uses: pinned:installBuiltActions
+        with:
+          artifact-id: ${{ inputs.artifact-id }}
+          expected-manifest-sha256: ${{ inputs.manifest-sha256 }}
+
+      - name: Write A Committed Build
+        run: |
+          set -euo pipefail
+          mkdir -p fixture/actions/demo/dist
+          printf 'committed\n' > fixture/actions/demo/dist/index.js
+          printf 'stale\n' > fixture/actions/demo/dist/stale.js
+
+      - name: Install With A Wrong Manifest Hash
+        id: wrong-manifest
+        continue-on-error: true
+        uses: ./actions/release/install-built-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact-id: ${{ needs.install-fixture-build.outputs.artifact-id }}
+          expected-manifest-sha256: '0000000000000000000000000000000000000000000000000000000000000000'
+          path: fixture
+
+      - name: Install With A Wrong Artifact Digest
+        id: wrong-digest
+        continue-on-error: true
+        uses: ./actions/release/install-built-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact-id: ${{ needs.install-fixture-build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.install-fixture-build.outputs.manifest-sha256 }}
+          expected-artifact-digest: '0000000000000000000000000000000000000000000000000000000000000000'
+          github-token: ${{ github.token }}
+          path: fixture
+
+      - name: Assert The Checkout Is Untouched
+        env:
+          WRONG_MANIFEST: ${{ steps.wrong-manifest.outcome }}
+          WRONG_DIGEST: ${{ steps.wrong-digest.outcome }}
+        run: |
+          set -euo pipefail
+          [[ "$WRONG_MANIFEST" == 'failure' ]] || { echo "::error::a wrong manifest hash was accepted"; exit 1; }
+          [[ "$WRONG_DIGEST" == 'failure' ]] || { echo "::error::a wrong artifact digest was accepted"; exit 1; }
+          [[ "$(cat fixture/actions/demo/dist/index.js)" == 'committed' ]] || { echo "::error::a refused install changed the bundle"; exit 1; }
+          [[ -f fixture/actions/demo/dist/stale.js ]] || { echo "::error::a refused install cleared the bundle directory"; exit 1; }
+
+      - name: Install With The Artifact Record Checked
+        id: install
+        uses: ./actions/release/install-built-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact-id: ${{ needs.install-fixture-build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.install-fixture-build.outputs.manifest-sha256 }}
+          expected-artifact-digest: ${{ needs.install-fixture-build.outputs.artifact-digest }}
+          github-token: ${{ github.token }}
+          path: fixture
+
+      - name: Assert The Fresh Build Replaced The Committed One
+        run: |
+          set -euo pipefail
+          [[ "$(cat fixture/actions/demo/dist/index.js)" == 'fresh' ]] || { echo "::error::the installed bundle is not the built one"; exit 1; }
+          [[ ! -e fixture/actions/demo/dist/stale.js ]] || { echo "::error::a stale file survived replace: true"; exit 1; }

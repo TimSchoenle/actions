@@ -1,0 +1,6 @@
+target: release/plan-release-please
+e2e:
+  # The fixtures commit the release-please files and create tags; plan mode reads pull requests.
+  token-permissions:
+    contents: write
+    pull-requests: read

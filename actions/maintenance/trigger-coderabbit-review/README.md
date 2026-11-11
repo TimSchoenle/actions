@@ -260,7 +260,7 @@ The step fails without posting anything when:
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-maintenance-trigger-coderabbit-review.yaml`](../../../.github/workflows/verify-action-maintenance-trigger-coderabbit-review.yaml)
+- End-to-end tests: [`.github/verify/maintenance-trigger-coderabbit-review.yaml`](../../../.github/verify/maintenance-trigger-coderabbit-review.yaml)
 - Called from this repository by:
   - [`.github/workflows/coderabbit-review.yml`](../../../.github/workflows/coderabbit-review.yml)
 <!-- /docs:generated reference -->

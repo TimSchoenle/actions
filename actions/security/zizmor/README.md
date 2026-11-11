@@ -141,6 +141,6 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-security-zizmor.yaml`](../../../.github/workflows/verify-action-security-zizmor.yaml)
+- End-to-end tests: [`.github/verify/security-zizmor.yaml`](../../../.github/verify/security-zizmor.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

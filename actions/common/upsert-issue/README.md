@@ -165,6 +165,6 @@ running this action against it. `search_state: all` on such a repository can tak
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-upsert-issue.yaml`](../../../.github/workflows/verify-action-common-upsert-issue.yaml)
+- End-to-end tests: [`.github/verify/common-upsert-issue.yaml`](../../../.github/verify/common-upsert-issue.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

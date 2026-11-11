@@ -1,0 +1,4 @@
+target: common/create-patch
+e2e:
+  token-permissions:
+    metadata: read

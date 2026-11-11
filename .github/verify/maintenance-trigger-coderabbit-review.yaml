@@ -1,0 +1,6 @@
+target: maintenance/trigger-coderabbit-review
+e2e:
+  # The fixture opens a pull request; the action itself is refused before it writes anything.
+  token-permissions:
+    contents: write
+    pull-requests: write

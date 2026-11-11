@@ -1,0 +1,4 @@
+target: common/readme-variables
+e2e:
+  token-permissions:
+    metadata: read

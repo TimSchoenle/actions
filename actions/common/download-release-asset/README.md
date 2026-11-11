@@ -141,7 +141,7 @@ Requests honour `HTTPS_PROXY` and `NO_PROXY` (or their lower-case forms) on self
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-download-release-asset.yaml`](../../../.github/workflows/verify-action-common-download-release-asset.yaml)
+- End-to-end tests: [`.github/verify/common-download-release-asset.yaml`](../../../.github/verify/common-download-release-asset.yaml)
 - Called from this repository by:
   - [`actions/security/jactionlint/action.yaml`](../../../actions/security/jactionlint/action.yaml)
 <!-- /docs:generated reference -->

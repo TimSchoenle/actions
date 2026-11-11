@@ -1,0 +1,5 @@
+target: maintenance/ensure-actions-are-executed
+e2e:
+  token-permissions:
+    checks: write
+    contents: write

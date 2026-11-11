@@ -1,0 +1,5 @@
+target: common/upsert-pr-comment
+e2e:
+  token-permissions:
+    contents: write
+    pull-requests: write

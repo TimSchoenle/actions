@@ -63,10 +63,10 @@ jobs:
       - name: Build Action Bundles
         run: bun run build:actions --all
 
-      # The verify-action-* workflows for actions with e2e cases are generated. A hand-edited one
-      # would be silently overwritten on the next run of the generator, taking its edit with it.
-      - name: Check Generated E2E Workflows
-        run: bun run check-e2e-workflows
+      # The Verify workflows and their plan file are generated from .github/verify/. A hand-edited
+      # one would be silently overwritten on the next run of the generator, taking its edit with it.
+      - name: Check Generated Verify Workflows
+        run: bun run check-verify
 
       - name: Typecheck
         run: bun run typecheck
