@@ -266,6 +266,7 @@ jobs:
           MISMATCH_VERIFIED: ${{ steps.mismatch.outputs.verified }}
           MISMATCH_BRANCH: ${{ steps.mismatch.outputs.branch_pattern_verified }}
         run: |
+          set -euo pipefail
           FAILED=0
 
           if [ "$RESOLVED_VERIFIED" != "true" ]; then
