@@ -88,7 +88,7 @@ Reaches no endpoint beyond those the runner itself needs.
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-helm-apply-chart-updates.yaml`](../../../.github/workflows/verify-action-helm-apply-chart-updates.yaml)
+- End-to-end tests: [`.github/verify/helm-apply-chart-updates.yaml`](../../../.github/verify/helm-apply-chart-updates.yaml)
 - Called from this repository by:
   - [`actions/helm/update-chart-version/action.yaml`](../../../actions/helm/update-chart-version/action.yaml)
 <!-- /docs:generated reference -->

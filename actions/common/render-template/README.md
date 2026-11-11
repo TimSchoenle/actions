@@ -215,7 +215,7 @@ a different machine look like a change.
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-render-template.yaml`](../../../.github/workflows/verify-action-common-render-template.yaml)
+- End-to-end tests: [`.github/verify/common-render-template.yaml`](../../../.github/verify/common-render-template.yaml)
 - Called from this repository by:
   - [`actions/common/render-readme/action.yaml`](../../../actions/common/render-readme/action.yaml)
   - [`actions/common/render-template-and-commit/action.yaml`](../../../actions/common/render-template-and-commit/action.yaml)

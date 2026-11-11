@@ -70,9 +70,17 @@ describe('parseSource', () => {
       ['target: common/find-patch', 'e2e:', '  token-permissions:', '    contents: admin'],
       /read or write/,
     ],
-    ['a path that climbs out', ['target: common/find-patch', "extra-inputs: ['../x']", 'e2e:', '  token-permissions:', '    metadata: read'], /plain repository-relative/],
+    [
+      'a path that climbs out',
+      ['target: common/find-patch', "extra-inputs: ['../x']", 'e2e:', '  token-permissions:', '    metadata: read'],
+      /plain repository-relative/,
+    ],
     ['jobs that are not a mapping', ['target: common/find-patch', 'jobs: [a]'], /mapping of job ids/],
-    ['an invalid job id', ['target: common/find-patch', 'jobs:', "  '1a':", '    permissions: {}'], /not a valid job id/],
+    [
+      'an invalid job id',
+      ['target: common/find-patch', 'jobs:', "  '1a':", '    permissions: {}'],
+      /not a valid job id/,
+    ],
     ['invalid YAML', ['target: [common'], /not valid YAML/],
   ])('refuses %s', (_case, lines, message) => {
     expect(() => parseSource(FILE, source(lines))).toThrow(message);

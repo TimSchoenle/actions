@@ -14,7 +14,7 @@ interface Step {
 describe('release/build-actions upload step', () => {
   // upload-artifact skips every path with a dot-prefixed segment unless hidden files are included, so
   // the bundles of a build directory such as .github/actions/x would be dropped while the manifest
-  // still lists them. The runner round trip in e2e/extra-jobs.yaml exercises this; this test keeps
+  // still lists them. The runner round trip in `.github/verify/release-build-actions.yaml` exercises this; this test keeps
   // the setting from regressing where that job does not run.
   it('uploads files under dot-prefixed directories', () => {
     const manifest = parse(fs.readFileSync(ACTION_FILE, 'utf8')) as { runs: { steps: Step[] } };

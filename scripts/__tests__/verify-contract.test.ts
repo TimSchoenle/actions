@@ -143,7 +143,9 @@ function tokenScopeGaps(): Record<string, string[]> {
     const missing = docs === undefined ? [] : missingTokenInputScopes(actionTokenPermissions(source), docs.permissions);
 
     if (missing.length > 0) {
-      gaps[actionPath] = missing.map((permission) => `${permission.scope}: ${permission.access} (input ${permission.token})`);
+      gaps[actionPath] = missing.map(
+        (permission) => `${permission.scope}: ${permission.access} (input ${permission.token})`,
+      );
     }
   }
 
@@ -159,8 +161,9 @@ function runtimeOf(actionPath: string): string {
 
 /** The parsed jobs of a generated workflow on disk. */
 function jobsOf(file: string): Record<string, Record<string, unknown>> {
-  return (parse(fs.readFileSync(path.join(ROOT_DIR, file), 'utf8')) as { jobs: Record<string, Record<string, unknown>> })
-    .jobs;
+  return (
+    parse(fs.readFileSync(path.join(ROOT_DIR, file), 'utf8')) as { jobs: Record<string, Record<string, unknown>> }
+  ).jobs;
 }
 
 /** The text of one job of a generated workflow, as YAML. */
@@ -193,7 +196,9 @@ describe('end-to-end contract', () => {
 
     expect(Object.keys(E2E_EXEMPTIONS).filter((actionPath) => withCases.has(actionPath))).toEqual([]);
     expect(
-      Object.keys(E2E_EXEMPTIONS).filter((actionPath) => !fs.existsSync(path.join(ROOT_DIR, actionPath, 'action.yaml'))),
+      Object.keys(E2E_EXEMPTIONS).filter(
+        (actionPath) => !fs.existsSync(path.join(ROOT_DIR, actionPath, 'action.yaml')),
+      ),
     ).toEqual([]);
   });
 
@@ -201,7 +206,7 @@ describe('end-to-end contract', () => {
     const withCases = await actionsWithCases();
     const withBlock = SOURCES.filter((source) => source.e2e !== undefined).map((source) => `actions/${source.target}`);
 
-    expect(withBlock, 'add an e2e block to the action\'s source in .github/verify/, or remove it').toEqual(withCases);
+    expect(withBlock, "add an e2e block to the action's source in .github/verify/, or remove it").toEqual(withCases);
     for (const actionPath of withBlock) {
       expect(hasE2eCases(ROOT_DIR, actionPath)).toBe(true);
     }
@@ -221,9 +226,9 @@ describe('end-to-end contract', () => {
 
   it('widens an e2e allowlist never to a package registry', () => {
     for (const source of SOURCES) {
-      expect((source.e2e?.extraEndpoints ?? []).filter((endpoint) => /registry|npmjs|pypi|crates/.test(endpoint))).toEqual(
-        [],
-      );
+      expect(
+        (source.e2e?.extraEndpoints ?? []).filter((endpoint) => /registry|npmjs|pypi|crates/.test(endpoint)),
+      ).toEqual([]);
     }
   });
 });
@@ -242,7 +247,9 @@ describe('generated Verify workflows', () => {
 
   it(`keep every generated file under ${MAX_WORKFLOW_BYTES} bytes, below GitHub's 500 KB limit`, () => {
     for (const [file, content] of GENERATED.files) {
-      expect(Buffer.byteLength(content), `${file} is too large; lower SHARD_SIZE_BUDGET`).toBeLessThan(MAX_WORKFLOW_BYTES);
+      expect(Buffer.byteLength(content), `${file} is too large; lower SHARD_SIZE_BUDGET`).toBeLessThan(
+        MAX_WORKFLOW_BYTES,
+      );
     }
   });
 
@@ -300,8 +307,9 @@ describe('generated Verify workflows', () => {
    */
   it('save and restore the same dependency paths, covering every workspace', () => {
     const pathsOf = (job: Record<string, unknown>): string | undefined =>
-      (job['steps'] as { uses?: string; with?: { path?: string } }[]).find((step) => step.uses?.startsWith('actions/cache'))
-        ?.with?.path;
+      (job['steps'] as { uses?: string; with?: { path?: string } }[]).find((step) =>
+        step.uses?.startsWith('actions/cache'),
+      )?.with?.path;
     const saved = pathsOf(jobsOf(VERIFY_WORKFLOW)['install']);
 
     expect(saved).toBeDefined();
@@ -323,7 +331,9 @@ describe('affected-target detection against this repository', () => {
   const select = (files: string[]) => selectTargets(plan, pr, files).targets;
 
   it('runs every target that builds or tests with packages/ts-util for a change to it', () => {
-    const expected = plan.targets.filter((target) => target.inputs.includes('packages/ts-util')).map((target) => target.id);
+    const expected = plan.targets
+      .filter((target) => target.inputs.includes('packages/ts-util'))
+      .map((target) => target.id);
 
     expect(expected.length).toBeGreaterThan(30);
     expect(select(['packages/ts-util/src/index.ts'])).toEqual(expected.sort());
@@ -335,7 +345,7 @@ describe('affected-target detection against this repository', () => {
     expect(select(['bun.lock'])).toEqual(expect.arrayContaining(withCases));
   });
 
-  it('runs a single action\'s target, and the targets that run it, for a change to that action', () => {
+  it("runs a single action's target, and the targets that run it, for a change to that action", () => {
     expect(select(['actions/common/find-patch/helper/src/find.ts'])).toEqual([
       'common/find-patch',
       'common/generated-files-verdict',

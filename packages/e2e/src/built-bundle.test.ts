@@ -49,7 +49,7 @@ describe('assertBuiltBundle', () => {
     const other = path.join(root, 'actions/b/dist/index.js');
 
     expect(() => assertBuiltBundle(other, { BUILT_ACTIONS_MANIFEST: manifest }, root)).toThrow(
-      /actions\/b\/dist\/index\.js is not in this run's build set; run `bun run generate-e2e-workflows`/,
+      /actions\/b\/dist\/index\.js is not in this run's build set; run `bun run generate-verify`/,
     );
   });
 

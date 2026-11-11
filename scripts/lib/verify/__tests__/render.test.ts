@@ -20,7 +20,10 @@ import { parseSource } from '../source.js';
 import type { RenderedTarget } from '../render.js';
 
 function sourceOf(target: string, lines: string[]) {
-  return parseSource(`.github/verify/${target.replace('/', '-')}.yaml`, `${[`target: ${target}`, ...lines].join('\n')}\n`);
+  return parseSource(
+    `.github/verify/${target.replace('/', '-')}.yaml`,
+    `${[`target: ${target}`, ...lines].join('\n')}\n`,
+  );
 }
 
 const PERMISSIONS = ['    permissions:', '      contents: read'];
@@ -56,17 +59,26 @@ describe('renderTarget', () => {
     expect(jobs['second']['if']).toBe(`\${{ ${targetGate('common/x')} && (always()) }}`);
     // Comments and block scalars are copied as written.
     expect(rendered.text).toContain('  # A comment that travels with the job.\n');
-    expect(rendered.text).toContain('          allowed-endpoints: >\n            github.com:443\n            api.github.com:443\n');
+    expect(rendered.text).toContain(
+      '          allowed-endpoints: >\n            github.com:443\n            api.github.com:443\n',
+    );
   });
 
   it('puts the generated end-to-end job first', () => {
-    const source = sourceOf('common/x', ['e2e:', '  token-permissions:', '    metadata: read', 'jobs:', '  extra:', ...PERMISSIONS]);
+    const source = sourceOf('common/x', [
+      'e2e:',
+      '  token-permissions:',
+      '    metadata: read',
+      'jobs:',
+      '  extra:',
+      ...PERMISSIONS,
+    ]);
 
     expect(renderTarget(source, true, ['node_modules']).jobIds).toEqual(['e2e-common-x', 'extra']);
   });
 
   it('quotes a display name that holds a quote', () => {
-    const source = sourceOf('common/x', ['jobs:', '  a:', "    name: \"It's\"", ...PERMISSIONS]);
+    const source = sourceOf('common/x', ['jobs:', '  a:', '    name: "It\'s"', ...PERMISSIONS]);
     const jobs = (parse(`jobs:\n${renderTarget(source, false, []).text}`) as { jobs: Record<string, { name: string }> })
       .jobs;
 
@@ -75,7 +87,7 @@ describe('renderTarget', () => {
 
   it('refuses a condition written as a block scalar or as several expressions', () => {
     const block = sourceOf('common/x', ['jobs:', '  a:', '    if: >-', '      always()', ...PERMISSIONS]);
-    const split = sourceOf('common/x', ['jobs:', '  a:', "    if: ${{ a }} && ${{ b }}", ...PERMISSIONS]);
+    const split = sourceOf('common/x', ['jobs:', '  a:', '    if: ${{ a }} && ${{ b }}', ...PERMISSIONS]);
 
     expect(() => renderTarget(block, false, [])).toThrow(/on one line/);
     expect(() => renderTarget(split, false, [])).toThrow(/one expression/);
@@ -84,7 +96,10 @@ describe('renderTarget', () => {
 
 describe('jobsBlock', () => {
   it('stops at the next top-level key and drops trailing blank lines', () => {
-    expect(jobsBlock('target: a/b\njobs:\n  x:\n    permissions: {}\n\nrules: {}\n')).toEqual(['  x:', '    permissions: {}']);
+    expect(jobsBlock('target: a/b\njobs:\n  x:\n    permissions: {}\n\nrules: {}\n')).toEqual([
+      '  x:',
+      '    permissions: {}',
+    ]);
   });
 });
 
@@ -111,11 +126,21 @@ describe('assignShards', () => {
 describe('shardPermissions and shardSecrets', () => {
   it('grants the caller the widest access any job of the shard asks for', () => {
     const a = renderTarget(
-      sourceOf('docker/a', ['jobs:', '  a:', '    permissions:', '      contents: read', '      security-events: write']),
+      sourceOf('docker/a', [
+        'jobs:',
+        '  a:',
+        '    permissions:',
+        '      contents: read',
+        '      security-events: write',
+      ]),
       false,
       [],
     );
-    const b = renderTarget(sourceOf('docker/b', ['jobs:', '  b:', '    permissions:', '      contents: write']), false, []);
+    const b = renderTarget(
+      sourceOf('docker/b', ['jobs:', '  b:', '    permissions:', '      contents: write']),
+      false,
+      [],
+    );
 
     expect(shardPermissions({ id: 'verify-docker', title: 'Docker', targets: [a, b] })).toEqual({
       contents: 'write',
@@ -160,8 +185,16 @@ describe('renderShard and renderVerifyWorkflow', () => {
       jobs: Record<string, { steps: { uses?: string }[] }>;
     };
 
-    expect(Object.keys(workflow.on.workflow_call.inputs)).toEqual(['targets', 'cache-key', 'artifact-id', 'manifest-sha256']);
-    expect(Object.keys(workflow.on.workflow_call.secrets)).toEqual(['ACTIONS_TEST_BOT_APP_ID', 'ACTIONS_TEST_BOT_PRIVATE_KEY']);
+    expect(Object.keys(workflow.on.workflow_call.inputs)).toEqual([
+      'targets',
+      'cache-key',
+      'artifact-id',
+      'manifest-sha256',
+    ]);
+    expect(Object.keys(workflow.on.workflow_call.secrets)).toEqual([
+      'ACTIONS_TEST_BOT_APP_ID',
+      'ACTIONS_TEST_BOT_PRIVATE_KEY',
+    ]);
     expect(workflow.jobs['x-job'].steps[0].uses).toBe(PINNED.checkout.split(' ')[0]);
   });
 

@@ -20,7 +20,9 @@ describe('changedFiles', () => {
       return args[0] === 'merge-base' ? `${SHA_A}\n` : 'a.ts\nb/c.ts\n';
     };
 
-    expect(changedFiles(git, { kind: 'merge-base', base: SHA_B, head: SHA_A })).toEqual({ changed: ['a.ts', 'b/c.ts'] });
+    expect(changedFiles(git, { kind: 'merge-base', base: SHA_B, head: SHA_A })).toEqual({
+      changed: ['a.ts', 'b/c.ts'],
+    });
     expect(calls).toEqual([
       ['merge-base', SHA_B, SHA_A],
       ['diff', '--name-only', '--no-renames', SHA_A, SHA_A],

@@ -255,6 +255,6 @@ to say which region belongs to which contract. A matrix answers both, in a form 
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-rust-config-contract.yaml`](../../../.github/workflows/verify-action-rust-config-contract.yaml)
+- End-to-end tests: [`.github/verify/rust-config-contract.yaml`](../../../.github/verify/rust-config-contract.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

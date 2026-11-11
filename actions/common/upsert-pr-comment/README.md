@@ -199,7 +199,7 @@ of the body, so it survives the cut.
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-upsert-pr-comment.yaml`](../../../.github/workflows/verify-action-common-upsert-pr-comment.yaml)
+- End-to-end tests: [`.github/verify/common-upsert-pr-comment.yaml`](../../../.github/verify/common-upsert-pr-comment.yaml)
 - Called from this repository by:
   - [`.github/workflows/auto-format-commit.yml`](../../../.github/workflows/auto-format-commit.yml)
   - [`.github/workflows/update-files-commit.yml`](../../../.github/workflows/update-files-commit.yml)

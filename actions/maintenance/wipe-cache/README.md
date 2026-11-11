@@ -146,7 +146,7 @@ Listing or default-branch lookup failures, such as a token without `actions: rea
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-maintenance-wipe-cache.yaml`](../../../.github/workflows/verify-action-maintenance-wipe-cache.yaml)
+- End-to-end tests: [`.github/verify/maintenance-wipe-cache.yaml`](../../../.github/verify/maintenance-wipe-cache.yaml)
 - Called from this repository by:
   - [`.github/workflows/branch-cleanup.yaml`](../../../.github/workflows/branch-cleanup.yaml)
 <!-- /docs:generated reference -->

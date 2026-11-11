@@ -32,9 +32,13 @@ const PLAN: PlanFile = {
   global: ['.github/workflows/verify.yaml'],
   ignore: IGNORED_FILES,
   targets: [
-    target('common/find-patch', ['actions/common/create-patch', 'actions/common/find-patch', 'packages/ts-util', 'bun.lock'], {
-      buildDirs: ['actions/common/create-patch/helper', 'actions/common/find-patch/helper'],
-    }),
+    target(
+      'common/find-patch',
+      ['actions/common/create-patch', 'actions/common/find-patch', 'packages/ts-util', 'bun.lock'],
+      {
+        buildDirs: ['actions/common/create-patch/helper', 'actions/common/find-patch/helper'],
+      },
+    ),
     target('common/create-patch', ['actions/common/create-patch', 'packages/ts-util', 'bun.lock'], {
       buildDirs: ['actions/common/create-patch/helper'],
     }),
@@ -133,9 +137,7 @@ describe('selectTargets', () => {
 
 describe('readEvent', () => {
   it('diffs a pull request from the merge base of its base and head', () => {
-    expect(
-      readEvent({ EVENT_NAME: 'pull_request', BASE_REF: 'main', BASE_SHA: SHA_A, HEAD_SHA: SHA_B }),
-    ).toEqual({
+    expect(readEvent({ EVENT_NAME: 'pull_request', BASE_REF: 'main', BASE_SHA: SHA_A, HEAD_SHA: SHA_B })).toEqual({
       event: { name: 'pull_request', baseRef: 'main' },
       diff: { kind: 'merge-base', base: SHA_A, head: SHA_B },
     });

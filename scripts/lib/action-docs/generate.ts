@@ -7,7 +7,7 @@ import { getTagCommitSha } from '../readme/utils.js';
 import { consumerTag } from '../release-tags.js';
 import { ROOT_DIR, scanSorted } from '../utils.js';
 import { GENERATED_HEADER } from '../verify/render.js';
-import { SOURCES_DIR, sourceFileName } from '../verify/source.js';
+import { sourceFileName, SOURCES_DIR } from '../verify/source.js';
 import { DOCS_FILE_NAME, validateDocsFile } from './docs-file.js';
 import { parseActionManifest } from './manifest.js';
 import { findRegions, MarkerError, newReadme, spliceRegions } from './markers.js';

@@ -170,7 +170,7 @@ without `fail-on-cache-miss`.
 Every generated workflow declares explicit `permission-*` inputs on `create-github-app-token`.
 Without at least one, that action hands over the installation's **entire** permission set — a suite
 that only reads a YAML file would be given a token that can rewrite branches. The scopes live in
-`TOKEN_PERMISSIONS` in `scripts/lib/e2e-workflow.ts` and are the union of what an action's fixtures
+the `e2e.token-permissions` of the action's source in `.github/verify/` and are the union of what an action's fixtures
 need and what the action itself needs; a contract test fails any workflow that mints an unscoped
 token.
 
@@ -224,5 +224,5 @@ What this does **not** cover, and still needs a workflow:
 - `post:` steps, matrix expansion, `if:` conditions and step outputs feeding a later step.
 - Composite actions — seven verify workflows remain hand-written for exactly this reason.
 - An `action.yaml` default that is a `${{ }}` expression. `verify-branch-name` keeps one job in YAML
-  to cover its payload fallback; see `actions/helper/verify-branch-name/e2e/extra-jobs.yaml`, whose
+  to cover its payload fallback; see `.github/verify/helper-verify-branch-name.yaml`, whose
   contents the generator appends to the generated workflow.

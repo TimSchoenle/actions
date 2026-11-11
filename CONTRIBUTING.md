@@ -32,12 +32,12 @@ the release workflow creates its source tag on the first push to `main` after it
 Several files in this repository are outputs. Editing one is reverted on the next pull request,
 because CI regenerates it and commits the result back to the branch.
 
-| Output                                   | Generated from                                                      | Command                           |
-| ---------------------------------------- | ------------------------------------------------------------------- | --------------------------------- |
-| `README.md`, `SECURITY.md`               | `scripts/templates/`, plus every `action.yaml` and `configs/*.json` | `bun run generate-docs`           |
-| `actions/*/*/src/generated/action-io.ts` | that action's `action.yaml`                                         | `bun run generate-action-sources` |
-| `.github/workflows/verify-action-*.yaml` | `scripts/lib/e2e-workflow.ts`                                       | `bun run generate-e2e-workflows`  |
-| `.github/workflows/ci-required.yaml`     | the workflow files themselves                                       | `bun run generate-ci-required`    |
+| Output                                                       | Generated from                                                      | Command                           |
+| ------------------------------------------------------------ | ------------------------------------------------------------------- | --------------------------------- |
+| `README.md`, `SECURITY.md`                                   | `scripts/templates/`, plus every `action.yaml` and `configs/*.json` | `bun run generate-docs`           |
+| `actions/*/*/src/generated/action-io.ts`                     | that action's `action.yaml`                                         | `bun run generate-action-sources` |
+| `.github/workflows/verify*.yaml`, `.github/verify/plan.json` | `.github/verify/*.yaml`, `scripts/lib/verify/`                      | `bun run generate-verify`         |
+| `.github/workflows/ci-required.yaml`                         | the workflow files themselves                                       | `bun run generate-ci-required`    |
 
 The pre-commit hook regenerates `action-io.ts` for the staged `action.yaml` files, and Scripts CI fails
 a pull request whose committed copies have drifted. The rest are checked in CI and committed back to
@@ -55,8 +55,8 @@ bun run build:actions --all                        # every action
 bun run build:actions actions/common/create-patch  # one action, with the actions it needs
 ```
 
-The `verify-action-*` workflows build the bundles they run in a job of their own and install them
-before any step uses them; the end-to-end harness refuses a bundle that build did not produce.
+The Verify workflow builds the bundles its selected targets run once, in its `build` job, and every
+job installs them before any step uses them (see [docs/verify-pipeline.md](docs/verify-pipeline.md)); the end-to-end harness refuses a bundle that build did not produce.
 
 ## Dependencies of a Node action
 
@@ -84,7 +84,7 @@ bun run typecheck
 bun run test
 ```
 
-Scripts CI runs those, plus `check-action-sources` and `check-e2e-workflows`, each of which fails when
+Scripts CI runs those, plus `check-action-sources` and `check-verify`, each of which fails when
 a committed output no longer matches its source, and `build:actions --all`, which fails when any
 bundle no longer builds. `jactionlint` checks the
 workflow files and composite actions in the Security workflow, with the settings in

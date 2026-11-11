@@ -215,7 +215,7 @@ is reported under `failed`.
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-maintenance-timed-auto-merge.yaml`](../../../.github/workflows/verify-action-maintenance-timed-auto-merge.yaml)
+- End-to-end tests: [`.github/verify/maintenance-timed-auto-merge.yaml`](../../../.github/verify/maintenance-timed-auto-merge.yaml)
 - Called from this repository by:
   - [`.github/workflows/auto-merge-release-please.yml`](../../../.github/workflows/auto-merge-release-please.yml)
 <!-- /docs:generated reference -->

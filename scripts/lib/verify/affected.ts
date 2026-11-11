@@ -141,7 +141,9 @@ export function selectTargets(plan: PlanFile, event: PlanEvent, changed: Changed
     relevant === 'all' || relevant.some((file) => inputs.some((input) => isWithin(input, file)));
   const everything = runsRegardlessOfChanges(event) || touches(plan.global);
 
-  const selected = plan.targets.filter((target) => eventAllows(target, event) && (everything || touches(target.inputs)));
+  const selected = plan.targets.filter(
+    (target) => eventAllows(target, event) && (everything || touches(target.inputs)),
+  );
 
   return {
     targets: sortedUnique(selected.map((target) => target.id)),
@@ -245,7 +247,9 @@ export function formatSummary(result: PlanResult, changed: ChangedFiles, note?: 
     lines.push(`> ${note}`, '');
   }
   lines.push(
-    changed === 'all' ? 'Changed files: not compared; every target the event allows runs.' : `Changed files: ${changed.length}`,
+    changed === 'all'
+      ? 'Changed files: not compared; every target the event allows runs.'
+      : `Changed files: ${changed.length}`,
     '',
     `Targets (${result.targets.length}):`,
     '',

@@ -155,11 +155,11 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-find-patch.yaml`](../../../.github/workflows/verify-action-common-find-patch.yaml)
+- End-to-end tests: [`.github/verify/common-find-patch.yaml`](../../../.github/verify/common-find-patch.yaml)
 - Called from this repository by:
+  - [`.github/verify/common-generated-files-verdict.yaml`](../../../.github/verify/common-generated-files-verdict.yaml)
   - [`.github/workflows/auto-format-commit.yml`](../../../.github/workflows/auto-format-commit.yml)
   - [`.github/workflows/update-files-commit.yml`](../../../.github/workflows/update-files-commit.yml)
-  - [`.github/workflows/verify-action-common-generated-files-verdict.yaml`](../../../.github/workflows/verify-action-common-generated-files-verdict.yaml)
   - [`.github/workflows/verify-action-common-render-readme.yaml`](../../../.github/workflows/verify-action-common-render-readme.yaml)
   - [`actions/common/commit-generated-files/action.yaml`](../../../actions/common/commit-generated-files/action.yaml)
 <!-- /docs:generated reference -->

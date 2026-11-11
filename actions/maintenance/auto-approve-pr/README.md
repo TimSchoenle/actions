@@ -92,7 +92,7 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-maintenance-auto-approve-pr.yaml`](../../../.github/workflows/verify-action-maintenance-auto-approve-pr.yaml)
+- End-to-end tests: [`.github/verify/maintenance-auto-approve-pr.yaml`](../../../.github/verify/maintenance-auto-approve-pr.yaml)
 - Called from this repository by:
   - [`.github/workflows/renovate-auto-approve.yml`](../../../.github/workflows/renovate-auto-approve.yml)
 <!-- /docs:generated reference -->

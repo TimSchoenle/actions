@@ -3,9 +3,9 @@ import path from 'node:path';
 import { input, search } from '@inquirer/prompts';
 import chalk from 'chalk';
 
-import { PINNED } from './verify/pins.js';
 import { sourceComponentFor } from './release-tags.js';
 import { ACTIONS_DIR, capitalize, createFromTemplate, ROOT_DIR, START_VERSION, Sys } from './utils.js';
+import { PINNED } from './verify/pins.js';
 
 // Naming Conventions Helpers
 /** The action's directory relative to the repository root, which is also its release-please package key. */

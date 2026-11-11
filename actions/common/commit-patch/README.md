@@ -235,7 +235,7 @@ The policy judges git's view of the result: the patch is applied to a throwaway 
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-commit-patch.yaml`](../../../.github/workflows/verify-action-common-commit-patch.yaml)
+- End-to-end tests: [`.github/verify/common-commit-patch.yaml`](../../../.github/verify/common-commit-patch.yaml)
 - Called from this repository by:
   - [`.github/workflows/auto-format-commit.yml`](../../../.github/workflows/auto-format-commit.yml)
   - [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)

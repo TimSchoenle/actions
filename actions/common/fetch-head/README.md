@@ -64,7 +64,7 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-fetch-head.yaml`](../../../.github/workflows/verify-action-common-fetch-head.yaml)
+- End-to-end tests: [`.github/verify/common-fetch-head.yaml`](../../../.github/verify/common-fetch-head.yaml)
 - Called from this repository by:
   - [`.github/workflows/auto-format-commit.yml`](../../../.github/workflows/auto-format-commit.yml)
   - [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
