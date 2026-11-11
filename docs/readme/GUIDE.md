@@ -205,13 +205,13 @@ jobs:
 
       - name: Collect the README payload
         id: variables
-        uses: TimSchoenle/actions/actions/common/readme-variables@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-readme-variables-v2.1.1
+        uses: TimSchoenle/actions/actions/common/readme-variables@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-readme-variables-v2.1.4
         with:
           branch: ${{ github.event.repository.default_branch }}
           extra: ${{ steps.config.outputs.json }}
 
       - name: Render README.md
-        uses: TimSchoenle/actions/actions/common/render-template@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-render-template-v3.0.1
+        uses: TimSchoenle/actions/actions/common/render-template@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-render-template-v3.0.4
         with:
           template: .github/templates/README.md.hbs
           output: README.md
@@ -295,13 +295,13 @@ jobs:
 
       - name: Collect the README payload
         id: variables
-        uses: TimSchoenle/actions/actions/common/readme-variables@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-readme-variables-v2.1.1
+        uses: TimSchoenle/actions/actions/common/readme-variables@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-readme-variables-v2.1.4
         with:
           branch: ${{ github.event.repository.default_branch }}
           extra: ${{ steps.config.outputs.json }}
 
       - name: Verify README.md is current
-        uses: TimSchoenle/actions/actions/common/render-template@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-render-template-v3.0.1
+        uses: TimSchoenle/actions/actions/common/render-template@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-render-template-v3.0.4
         with:
           template: .github/templates/README.md.hbs
           output: README.md
