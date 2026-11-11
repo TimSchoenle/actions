@@ -40,7 +40,7 @@ steps:
 # unless a download fails. oras is what terrace-contract pull fetches contracts from a registry with.
 - uses: TimSchoenle/actions/actions/terrace/setup@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-terrace-setup-v3.1.3
   with:
-    version: '0.12.0'
+    version: '0.13.1'
     oras: 'true'
 ```
 <!-- /docs:generated usage -->

@@ -186,7 +186,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Bun
-        uses: TimSchoenle/actions/actions/bun/setup-cached@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-bun-setup-cached-v2.0.0
+        uses: TimSchoenle/actions/actions/bun/setup-cached@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-bun-setup-cached-v3.1.0
 
       # A verify workflow whose summary job has not started yet has no `CI Summary:`
       # check run, which the aggregation below cannot tell apart from a workflow the
@@ -204,7 +204,7 @@ jobs:
 
       - name: Aggregate verify checks
         id: verify
-        uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-maintenance-ensure-actions-are-executed-v2.0.3
+        uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-maintenance-ensure-actions-are-executed-v2.0.4
         with:
           token: ${{ github.token }}
           ref: ${{ steps.target.outputs.sha }}

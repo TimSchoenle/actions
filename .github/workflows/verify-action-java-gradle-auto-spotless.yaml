@@ -81,7 +81,7 @@ jobs:
 
       # An empty bun-version makes setup-bun fall through to bun-version-file.
       - name: Setup Bun And Install
-        uses: TimSchoenle/actions/actions/bun/setup-cached@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-bun-setup-cached-v2.0.0
+        uses: TimSchoenle/actions/actions/bun/setup-cached@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-bun-setup-cached-v3.1.0
         with:
           bun-version: ''
           bun-version-file: '.bun-version'
@@ -131,7 +131,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
+        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -150,7 +150,7 @@ jobs:
 
       - name: Create Test Branch
         id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-create-branch-v2.0.3
+        uses: TimSchoenle/actions/actions/common/create-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-create-branch-v2.0.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -342,7 +342,7 @@ jobs:
           echo "✅ File is properly formatted"
 
       - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
-        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
+        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -353,7 +353,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
+        uses: TimSchoenle/actions/actions/common/delete-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-delete-branch-v2.0.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}

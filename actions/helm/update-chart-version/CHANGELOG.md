@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.7.5](https://github.com/TimSchoenle/actions/compare/src-actions-helm-update-chart-version-v1.7.4...src-actions-helm-update-chart-version-v1.7.5) (2026-11-11)
+
+
+### Dependencies
+
+* **deps:** update timschoenle/actions/actions/helm/apply-chart-updates to vactions-helm-apply-chart-updates-v2.0.4 ([#2089](https://github.com/TimSchoenle/actions/issues/2089)) ([aadc625](https://github.com/TimSchoenle/actions/commit/aadc6257ec155ef8ba584c4b5bd66f6c4c4808dc))
+* **deps:** update timschoenle/actions/actions/helper/resolve-base-branch to vactions-helper-resolve-base-branch-v2.0.4 ([#2090](https://github.com/TimSchoenle/actions/issues/2090)) ([dd42b2a](https://github.com/TimSchoenle/actions/commit/dd42b2a78536dc46e25d339024d97b3773774ff6))
+* **deps:** update timschoenle/actions/actions/terrace/setup to vactions-terrace-setup-v3.1.3 ([#2091](https://github.com/TimSchoenle/actions/issues/2091)) ([f6ef4bf](https://github.com/TimSchoenle/actions/commit/f6ef4bfffd8250e6f4de76eafefd39bd1bd5f192))
+
 ## [1.7.4](https://github.com/TimSchoenle/actions/compare/actions-helm-update-chart-version-v1.7.3...actions-helm-update-chart-version-v1.7.4) (2026-11-09)
 
 

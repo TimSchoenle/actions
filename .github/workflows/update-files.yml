@@ -62,7 +62,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Bun
-        uses: TimSchoenle/actions/actions/bun/setup-cached@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-bun-setup-cached-v2.0.0
+        uses: TimSchoenle/actions/actions/bun/setup-cached@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-bun-setup-cached-v3.1.0
         with:
           bun-version: ''
           bun-version-file: '.bun-version'
@@ -80,7 +80,7 @@ jobs:
 
       - name: Create Patch
         id: patch
-        uses: TimSchoenle/actions/actions/common/create-patch@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-create-patch-v1.1.2
+        uses: TimSchoenle/actions/actions/common/create-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-create-patch-v2.0.1
         with:
           artifact_name: update-files-workflows
           paths: '.github/workflows/verify-action-*.yaml .github/workflows/ci-required.yaml .github/codecov.yml'
@@ -110,7 +110,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Bun
-        uses: TimSchoenle/actions/actions/bun/setup-cached@9d5cb31939ace7a3d3d7f452052724337c65f153 # tag=actions-bun-setup-cached-v2.0.0
+        uses: TimSchoenle/actions/actions/bun/setup-cached@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-bun-setup-cached-v3.1.0
         with:
           cache-mode: none
 
@@ -122,7 +122,7 @@ jobs:
 
       - name: Create Patch
         id: patch
-        uses: TimSchoenle/actions/actions/common/create-patch@b37134ffa35b3ce98437447e3b4c76933eb65c04 # tag=actions-common-create-patch-v1.1.2
+        uses: TimSchoenle/actions/actions/common/create-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-create-patch-v2.0.1
         with:
           artifact_name: update-files-docs
           paths: 'README.md SECURITY.md actions/*/*/README.md actions/*/*/examples/*.yaml actions/*/*/examples/*.yml'

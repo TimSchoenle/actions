@@ -1,5 +1,6 @@
 import http from 'node:http';
 import net from 'node:net';
+import { pipeline } from 'node:stream';
 import { brotliCompressSync, deflateRawSync, deflateSync, gzipSync } from 'node:zlib';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -59,8 +60,10 @@ async function connectProxy(targetPort: number): Promise<string> {
     const upstream = net.connect(targetPort, '127.0.0.1', () => {
       socket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
       upstream.write(head);
-      upstream.pipe(socket);
-      socket.pipe(upstream);
+      // `pipeline`, not `.pipe()`: a relayed write that lands after the client hung up raises EPIPE,
+      // and without the error listener `pipeline` attaches, Vitest fails the run on an unhandled error.
+      pipeline(upstream, socket, () => {});
+      pipeline(socket, upstream, () => {});
     });
     sockets.push(socket, upstream);
   });
@@ -172,6 +175,8 @@ describe('createProxyAwareFetch', () => {
     let closed = false;
     const origin = net.createServer((socket) => {
       sockets.push(socket);
+      // The interval below can write after the proxy closes this socket; that EPIPE is expected.
+      socket.on('error', () => {});
       socket.once('data', () => {
         // A gzip body that never ends.
         socket.write('HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nTransfer-Encoding: chunked\r\n\r\n');

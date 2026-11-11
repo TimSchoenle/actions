@@ -9,7 +9,7 @@ outside the markers.
 
 Holds a service image to the configuration contract its build produced, in any language: the document against the specification, the committed document against its generator, the Dockerfile label block against the document, and the built image itself, read through oras. Optionally attaches the document to the image digest and signs it.
 
-[actions-terrace-image-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-image-v1.1.2) · Composite action
+[actions-terrace-image-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-image-v1.1.3) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -20,7 +20,7 @@ Holds a service image to the configuration contract its build produced, in any l
 ```yaml
 # No image: the committed document is held to what the configuration types print, to the
 # specification, and to the label block of the Dockerfile.
-- uses: TimSchoenle/actions/actions/terrace/image@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-terrace-image-v1.1.2
+- uses: TimSchoenle/actions/actions/terrace/image@actions-terrace-image-v1.1.3 # tag=actions-terrace-image-v1.1.3
   with:
     contract: config/contract.json
     generate: cargo run -q --example contract -- --format contract
@@ -35,7 +35,7 @@ Holds a service image to the configuration contract its build produced, in any l
     docker build --tag app:check .
     docker save app:check --output image.tar
 
-- uses: TimSchoenle/actions/actions/terrace/image@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-terrace-image-v1.1.2
+- uses: TimSchoenle/actions/actions/terrace/image@actions-terrace-image-v1.1.3 # tag=actions-terrace-image-v1.1.3
   with:
     contract: config/contract.json
     dockerfile: Dockerfile
@@ -56,7 +56,7 @@ permissions:
 
 steps:
   # ... build, log in and push, with the digest as steps.push.outputs.digest ...
-  - uses: TimSchoenle/actions/actions/terrace/image@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-terrace-image-v1.1.2
+  - uses: TimSchoenle/actions/actions/terrace/image@actions-terrace-image-v1.1.3 # tag=actions-terrace-image-v1.1.3
     with:
       contract: config/contract.json
       image: ghcr.io/${{ github.repository }}@${{ steps.push.outputs.digest }}

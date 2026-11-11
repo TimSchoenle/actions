@@ -95,7 +95,7 @@ runs:
     - name: Find The Merged Patch
       id: find
       if: steps.event.outputs.proceed == 'true' && (steps.event.outputs.fork != 'true' || steps.fork.outputs.proceed == 'true')
-      uses: TimSchoenle/actions/actions/common/find-patch@7b20a67f0b18a6e64c30e5f47c92636729f6ad41 # tag=actions-common-find-patch-v1.1.0
+      uses: TimSchoenle/actions/actions/common/find-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-find-patch-v1.1.3
       with:
         run_id: ${{ github.event.workflow_run.id }}
         artifact_name: ${{ inputs.artifact_name }}
@@ -106,7 +106,7 @@ runs:
     # the head is fetched without a checkout and none of the branch's files reach the workspace.
     - name: Fetch The Pull Request Head
       if: steps.find.outputs.has_changes == 'true'
-      uses: TimSchoenle/actions/actions/common/fetch-head@3f47ad15da6762f9e07c5e6c70df81f37ddf2454 # tag=actions-common-fetch-head-v1.1.0
+      uses: TimSchoenle/actions/actions/common/fetch-head@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-fetch-head-v2.0.1
       with:
         sha: ${{ github.event.workflow_run.head_sha }}
 
@@ -122,7 +122,7 @@ runs:
     - name: Commit The Generated Files
       id: commit
       if: steps.find.outputs.has_changes == 'true'
-      uses: TimSchoenle/actions/actions/common/commit-patch@7b20a67f0b18a6e64c30e5f47c92636729f6ad41 # tag=actions-common-commit-patch-v1.3.0
+      uses: TimSchoenle/actions/actions/common/commit-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-commit-patch-v2.0.1
       with:
         token: ${{ steps.token.outputs.token }}
         run_id: ${{ github.event.workflow_run.id }}

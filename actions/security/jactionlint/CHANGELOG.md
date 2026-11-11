@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/TimSchoenle/actions/compare/src-actions-security-jactionlint-v1.1.2...src-actions-security-jactionlint-v1.1.3) (2026-11-11)
+
+
+### Dependencies
+
+* **deps:** update timschoenle/actions/actions/common/download-release-asset to vactions-common-download-release-asset-v1.1.3 ([#2083](https://github.com/TimSchoenle/actions/issues/2083)) ([3635ecd](https://github.com/TimSchoenle/actions/commit/3635ecd68c9cd4ef939bca6422c834221b856dd6))
+
 ## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-security-jactionlint-v1.1.1...actions-security-jactionlint-v1.1.2) (2026-11-09)
 
 

@@ -48,7 +48,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
+        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -161,7 +161,7 @@ jobs:
       # would report a second, misleading failure on top of the real result.
       - name: Cleanup Test Pull Request
         if: always() && steps.create-pr.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-close-pull-request-v2.0.3
+        uses: TimSchoenle/actions/actions/common/close-pull-request@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-close-pull-request-v2.0.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -169,7 +169,7 @@ jobs:
 
       - name: Cleanup Test Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
+        uses: TimSchoenle/actions/actions/common/delete-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-delete-branch-v2.0.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -190,7 +190,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
+        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -233,7 +233,7 @@ jobs:
       # would report a second, misleading failure on top of the real result.
       - name: Cleanup Test Pull Request
         if: always() && steps.create-pr.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-close-pull-request-v2.0.3
+        uses: TimSchoenle/actions/actions/common/close-pull-request@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-close-pull-request-v2.0.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -241,7 +241,7 @@ jobs:
 
       - name: Cleanup Test Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
+        uses: TimSchoenle/actions/actions/common/delete-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-delete-branch-v2.0.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -262,7 +262,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
+        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -307,7 +307,7 @@ jobs:
       # would report a second, misleading failure on top of the real result.
       - name: Cleanup Test Pull Request
         if: always() && steps.create-pr.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-close-pull-request-v2.0.3
+        uses: TimSchoenle/actions/actions/common/close-pull-request@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-close-pull-request-v2.0.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -315,7 +315,7 @@ jobs:
 
       - name: Cleanup Test Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
+        uses: TimSchoenle/actions/actions/common/delete-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-delete-branch-v2.0.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -336,7 +336,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-test-setup-e2e-v1.2.6
+        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -462,7 +462,7 @@ jobs:
       # would report a second, misleading failure on top of the real result.
       - name: Cleanup Test Pull Request
         if: always() && steps.create-pr-reset.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-close-pull-request-v2.0.3
+        uses: TimSchoenle/actions/actions/common/close-pull-request@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-close-pull-request-v2.0.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -470,7 +470,7 @@ jobs:
 
       - name: Cleanup Test Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-common-delete-branch-v2.0.3
+        uses: TimSchoenle/actions/actions/common/delete-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-delete-branch-v2.0.4
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}

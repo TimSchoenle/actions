@@ -9,7 +9,7 @@ outside the markers.
 
 Uploads the working-tree changes as a binary git patch against HEAD, for common/commit-patch to commit from a job that runs no repository code.
 
-[actions-common-create-patch-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-patch-v2.0.1) · Composite action
+[actions-common-create-patch-v2.0.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-patch-v2.0.2) · Composite action
 <!-- /docs:generated header -->
 
 Records what a formatter or generator changed in the checkout as a binary `git` patch against `HEAD`, and uploads it
@@ -45,7 +45,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - run: bun install --frozen-lockfile && bun run format
       - id: patch
-        uses: TimSchoenle/actions/actions/common/create-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-create-patch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/create-patch@actions-common-create-patch-v2.0.2 # tag=actions-common-create-patch-v2.0.2
         with:
           artifact_name: format-patch
 
