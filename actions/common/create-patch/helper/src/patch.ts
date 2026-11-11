@@ -52,6 +52,8 @@ export class PatchTooLargeError extends Error {
  *   that would replace or decorate the patch text.
  * - Explicit prefixes override `diff.noprefix` and `diff.mnemonicPrefix`; `git apply` strips one
  *   leading directory and needs it to be there.
+ *
+ * `.gitattributes` is neutralised separately, by {@link attrSourceFlag}.
  */
 const DIFF_FLAGS = [
   'diff',
@@ -66,6 +68,29 @@ const DIFF_FLAGS = [
   '--src-prefix=a/',
   '--dst-prefix=b/',
 ];
+
+/** The empty tree's object name, keyed by the length of an object name in that hash. */
+const EMPTY_TREE_BY_NAME_LENGTH: ReadonlyMap<number, string> = new Map([
+  [40, '4b825dc642cb6eb9a060e54bf8d69288fbee4904'],
+  [64, '6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321'],
+]);
+
+/**
+ * The global flag that makes the diff read attributes from the empty tree instead of `.gitattributes`.
+ *
+ * A text file marked `-diff` or `binary` (a lockfile hidden from review diffs, say) would otherwise
+ * be written as a `GIT binary patch`, and `commit-patch` refuses that as binary content. With no
+ * attributes, git falls back to its content check, so a file is binary in the patch exactly when its
+ * bytes are, which is the same test `commit-patch` applies to the result.
+ */
+function attrSourceFlag(baseSha: string): string {
+  const emptyTree = EMPTY_TREE_BY_NAME_LENGTH.get(baseSha.length);
+  if (emptyTree === undefined) {
+    throw new Error(`Unrecognised object name length ${baseSha.length} for base ${baseSha}.`);
+  }
+
+  return `--attr-source=${emptyTree}`;
+}
 
 /**
  * Computes the patch of the working tree against `HEAD` and writes it, with its metadata, to
@@ -100,7 +125,7 @@ export async function createPatch(request: CreatePatchRequest): Promise<PatchMet
     await runGit(['-c', 'core.fileMode=false', 'add', '--all'], { cwd: workspace, env });
 
     const { specs, useFilter } = buildPathspecs(request.paths);
-    const args = [...DIFF_FLAGS, baseSha, '--', ...(useFilter ? specs : [])];
+    const args = [attrSourceFlag(baseSha), ...DIFF_FLAGS, baseSha, '--', ...(useFilter ? specs : [])];
 
     patch = await runGit(args, { cwd: workspace, env, maxOutputBytes: maxPatchBytes });
   } catch (error) {

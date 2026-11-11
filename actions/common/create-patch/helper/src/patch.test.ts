@@ -167,6 +167,37 @@ describe('createPatch', () => {
     expect((await readFile(path.join(clone, 'image.bin'))).equals(bytes)).toBe(true);
   });
 
+  /**
+   * A text file marked `-diff` in `.gitattributes` used to be written as a `GIT binary patch`, which
+   * commit-patch refuses as binary content: a Renovate lockfile regeneration was refused this way.
+   */
+  it('writes a text hunk for a text file that .gitattributes marks -diff or binary', async () => {
+    const base = await seed({
+      '.gitattributes': 'package-lock.json -diff\nnotes.txt binary\n',
+      'notes.txt': 'one\n',
+      'package-lock.json': '{"version":"1"}\n',
+    });
+    await write({ 'notes.txt': 'two\n', 'package-lock.json': '{"version":"2"}\n' });
+
+    await createPatch(request());
+
+    const text = await patchText();
+    expect(text).not.toContain('GIT binary patch');
+    expect(text).toContain('+{"version":"2"}');
+    expect(text).toContain('+two');
+    const { status } = await applyToClone(base);
+    expect(status.split('\n').sort()).toEqual([' M notes.txt', ' M package-lock.json']);
+  });
+
+  it('still encodes NUL-bearing content as binary when .gitattributes marks it text', async () => {
+    await seed({ '.gitattributes': '*.bin text diff\n' });
+    await write({ 'image.bin': Buffer.from([0, 1, 2, 255, 0, 10]) });
+
+    await createPatch(request());
+
+    expect(await patchText()).toContain('GIT binary patch');
+  });
+
   it('ignores an executable-bit flip, and records a new executable as a regular file', async () => {
     await seed({ 'script.sh': 'echo\n' });
     await chmod(path.join(repo, 'script.sh'), 0o755);
