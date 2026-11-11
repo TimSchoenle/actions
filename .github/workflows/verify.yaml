@@ -182,7 +182,7 @@ jobs:
     # Runs once the shared build succeeded, or was skipped because none of the selected targets
     # runs a bundle.
     if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-common') }}
-    uses: ./.github/workflows/verify-common.yaml
+    uses: ./.github/workflows/verify-common.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       actions: read
       contents: read
@@ -201,7 +201,7 @@ jobs:
     # Runs once the shared build succeeded, or was skipped because none of the selected targets
     # runs a bundle.
     if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-docker') }}
-    uses: ./.github/workflows/verify-docker.yaml
+    uses: ./.github/workflows/verify-docker.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read
       pull-requests: write
@@ -221,7 +221,7 @@ jobs:
     # Runs once the shared build succeeded, or was skipped because none of the selected targets
     # runs a bundle.
     if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-helm') }}
-    uses: ./.github/workflows/verify-helm.yaml
+    uses: ./.github/workflows/verify-helm.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read
     with:
@@ -239,7 +239,7 @@ jobs:
     # Runs once the shared build succeeded, or was skipped because none of the selected targets
     # runs a bundle.
     if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-helper') }}
-    uses: ./.github/workflows/verify-helper.yaml
+    uses: ./.github/workflows/verify-helper.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read
     with:
@@ -257,7 +257,7 @@ jobs:
     # Runs once the shared build succeeded, or was skipped because none of the selected targets
     # runs a bundle.
     if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-maintenance') }}
-    uses: ./.github/workflows/verify-maintenance.yaml
+    uses: ./.github/workflows/verify-maintenance.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read
     with:
@@ -277,7 +277,7 @@ jobs:
     # Runs once the shared build succeeded, or was skipped because none of the selected targets
     # runs a bundle.
     if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-release') }}
-    uses: ./.github/workflows/verify-release.yaml
+    uses: ./.github/workflows/verify-release.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       actions: read
       contents: read
@@ -296,7 +296,7 @@ jobs:
     # Runs once the shared build succeeded, or was skipped because none of the selected targets
     # runs a bundle.
     if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-rust') }}
-    uses: ./.github/workflows/verify-rust.yaml
+    uses: ./.github/workflows/verify-rust.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read
     with:
@@ -314,7 +314,7 @@ jobs:
     # Runs once the shared build succeeded, or was skipped because none of the selected targets
     # runs a bundle.
     if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-security') }}
-    uses: ./.github/workflows/verify-security.yaml
+    uses: ./.github/workflows/verify-security.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read
     with:
@@ -332,7 +332,7 @@ jobs:
     # Runs once the shared build succeeded, or was skipped because none of the selected targets
     # runs a bundle.
     if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-terrace') }}
-    uses: ./.github/workflows/verify-terrace.yaml
+    uses: ./.github/workflows/verify-terrace.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read
     with:
