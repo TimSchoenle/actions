@@ -9,7 +9,7 @@ outside the markers.
 
 Reports how the vendored configuration contracts changed against a base revision and what each change costs the charts, with terrace-contract diff. The report goes to the job summary and, given a token, into one pull request comment that later runs update. Never fails on differences.
 
-[actions-terrace-helm-diff-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-diff-v1.1.2) · Composite action
+[actions-terrace-helm-diff-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-diff-v1.1.3) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -39,7 +39,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: TimSchoenle/actions/actions/terrace/helm-diff@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-terrace-helm-diff-v1.1.2
+      - uses: TimSchoenle/actions/actions/terrace/helm-diff@actions-terrace-helm-diff-v1.1.3 # tag=actions-terrace-helm-diff-v1.1.3
         with:
           token: ${{ github.token }}
           # Only the comment this token posted is updated.
