@@ -188,6 +188,32 @@ function targetRules(file: string, target: string, value: unknown): TargetRules 
   };
 }
 
+/** The `jobs:` mapping of a source and its ids, checked to be a mapping of job mappings. */
+function sourceJobs(file: string, document: Document): { jobs: YAMLMap; jobIds: string[] } {
+  const node = document.get('jobs', true);
+  if (node !== undefined && !isMap(node)) {
+    fail(file, 'jobs must be a mapping of job ids to jobs');
+  }
+  const jobs = (node ?? document.createNode({})) as YAMLMap;
+  const jobIds: string[] = [];
+  for (const pair of jobs.items) {
+    const id = isScalar(pair.key) ? String(pair.key.value) : '';
+    if (!JOB_ID_PATTERN.test(id)) {
+      fail(file, `job id '${id}' is not a valid job id`);
+    }
+    if (!isMap(pair.value)) {
+      fail(file, `job ${id} must be a mapping`);
+    }
+    const steps = pair.value.get('steps', true);
+    if (steps !== undefined && !isSeq(steps)) {
+      fail(file, `job ${id} has steps that are not a list`);
+    }
+    jobIds.push(id);
+  }
+
+  return { jobs, jobIds };
+}
+
 /**
  * Parses and validates one source file.
  *
@@ -217,29 +243,9 @@ export function parseSource(file: string, content: string): VerifySource {
     fail(file, 'title must be a single-line string without single quotes');
   }
 
-  const jobsNode = document.get('jobs', true);
-  const jobs = jobsNode === undefined ? undefined : jobsNode;
-  if (jobs !== undefined && !isMap(jobs)) {
-    fail(file, 'jobs must be a mapping of job ids to jobs');
-  }
-  const jobMap = (jobs ?? document.createNode({})) as YAMLMap;
-  const jobIds = jobMap.items.map((pair) => (isScalar(pair.key) ? String(pair.key.value) : ''));
-  for (const id of jobIds) {
-    if (!JOB_ID_PATTERN.test(id)) {
-      fail(file, `job id '${id}' is not a valid job id`);
-    }
-  }
+  const { jobs: jobMap, jobIds } = sourceJobs(file, document);
   if (value['e2e'] === undefined && jobIds.length === 0) {
     fail(file, 'a source needs jobs, an e2e block, or both');
-  }
-  for (const pair of jobMap.items) {
-    if (!isMap(pair.value)) {
-      fail(file, `job ${String((pair.key as { value?: unknown }).value)} must be a mapping`);
-    }
-    const steps = pair.value.get('steps', true);
-    if (steps !== undefined && !isSeq(steps)) {
-      fail(file, `job ${String((pair.key as { value?: unknown }).value)} has steps that are not a list`);
-    }
   }
 
   return {

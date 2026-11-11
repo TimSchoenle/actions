@@ -54,7 +54,7 @@ const PIN_BY_KEY: ReadonlyMap<string, string> = new Map(Object.entries(PINNED));
  * regenerate job would revert the bump, so the update could never land. Naming a key instead keeps
  * one pin per action, in the one place Renovate looks.
  */
-const PIN_PLACEHOLDER = /^(\s*(?:-\s+)?uses:[ \t]*)pinned:(\w+)[ \t]*$/gm;
+const PIN_PLACEHOLDER = /^([ \t]*-?[ \t]*uses:[ \t]*)pinned:(\w+)[ \t]*$/gm;
 
 /**
  * Substitutes the `pinned:<key>` placeholders of a rendered workflow with the refs from {@link PINNED}.

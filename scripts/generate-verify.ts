@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 
-import { findDrift, writeGenerated } from './lib/verify/generate.js';
 import { ROOT_DIR } from './lib/utils.js';
+import { findDrift, writeGenerated } from './lib/verify/generate.js';
 
 /**
  * Generates `.github/workflows/verify.yaml`, its shard workflows and `.github/verify/plan.json` from

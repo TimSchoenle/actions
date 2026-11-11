@@ -3,9 +3,8 @@ import { parseDocument } from 'yaml';
 
 import { ARTIFACT_ENDPOINTS, buildJob, e2eJob, e2eJobId, installJob, planJob } from './jobs.js';
 import { PINNED, resolvePins } from './pins.js';
-import { CHECKOUT_PREFIXES } from './target-inputs.js';
-
 import { jobValue } from './source.js';
+import { CHECKOUT_PREFIXES } from './target-inputs.js';
 
 import type { VerifySource } from './source.js';
 
@@ -97,7 +96,8 @@ function singleQuoted(value: string): string {
   return `'${value.replaceAll("'", "''")}'`;
 }
 
-const JOB_HEADER = /^ {2}([A-Za-z_][\w-]*):\s*(?:#.*)?$/;
+/** A job key line: two spaces, the id, a colon, then nothing but an optional comment. */
+const JOB_HEADER = /^ {2}([A-Za-z_][\w-]*):(?:[ \t]+#.*|[ \t]*)$/;
 
 /**
  * The text of the `jobs:` block of a source, without the `jobs:` line: every line after it up to the
@@ -106,7 +106,7 @@ const JOB_HEADER = /^ {2}([A-Za-z_][\w-]*):\s*(?:#.*)?$/;
  */
 export function jobsBlock(text: string): string[] {
   const lines = text.replaceAll('\r\n', '\n').split('\n');
-  const start = lines.findIndex((line) => /^jobs:\s*(?:#.*)?$/.test(line));
+  const start = lines.findIndex((line) => /^jobs:(?:[ \t]+#.*|[ \t]*)$/.test(line));
   if (start === -1) {
     return [];
   }
@@ -142,7 +142,12 @@ function keyLine(job: readonly string[], key: string): number {
  * Line based, so every other line of the job, comments and block scalars included, is copied as
  * written. The caller re-parses the result and checks both values.
  */
-function gateAndName(job: readonly string[], id: string, value: Record<string, unknown>, source: VerifySource): string[] {
+function gateAndName(
+  job: readonly string[],
+  id: string,
+  value: Record<string, unknown>,
+  source: VerifySource,
+): string[] {
   const where = `${source.file} job ${id}`;
   const name = value['name'];
   const displayName = `${source.title}: ${typeof name === 'string' ? name : id}`;
@@ -189,8 +194,9 @@ export function renderTarget(source: VerifySource, builds: boolean, modulePaths:
   const generated = source.e2e === undefined ? [] : e2eJob(source, builds, modulePaths).trimEnd().split('\n');
   const sourceLines = jobsBlock(source.text);
   const block = [...generated, ...(generated.length > 0 && sourceLines.length > 0 ? [''] : []), ...sourceLines];
-  const parsedSource = (parseDocument(`jobs:\n${block.join('\n')}\n`).toJS() as { jobs?: Record<string, Record<string, unknown>> })
-    .jobs ?? {};
+  const parsedSource =
+    (parseDocument(`jobs:\n${block.join('\n')}\n`).toJS() as { jobs?: Record<string, Record<string, unknown>> }).jobs ??
+    {};
 
   const ranges = jobRanges(block);
   const output: string[] = [];
@@ -203,17 +209,23 @@ export function renderTarget(source: VerifySource, builds: boolean, modulePaths:
   output.push(...block.slice(cursor));
   const text = `${output.join('\n')}\n`;
 
-  const parsed = (parseDocument(`jobs:\n${text}`).toJS() as { jobs?: Record<string, Record<string, unknown>> }).jobs ?? {};
+  const parsed =
+    (parseDocument(`jobs:\n${text}`).toJS() as { jobs?: Record<string, Record<string, unknown>> }).jobs ?? {};
   const jobIds = ranges.map((range) => range.id);
   const expectedIds = [...(source.e2e === undefined ? [] : [e2eJobId(source.target)]), ...source.jobIds];
-  if (JSON.stringify(Object.keys(parsed)) !== JSON.stringify(expectedIds) || JSON.stringify(jobIds) !== JSON.stringify(expectedIds)) {
+  if (
+    JSON.stringify(Object.keys(parsed)) !== JSON.stringify(expectedIds) ||
+    JSON.stringify(jobIds) !== JSON.stringify(expectedIds)
+  ) {
     throw new Error(`${source.file}: the jobs block could not be split into its jobs; keep job keys at two spaces.`);
   }
+  const withoutEdits = (job: Record<string, unknown>): string =>
+    JSON.stringify(Object.entries(job).filter(([key]) => key !== 'name' && key !== 'if'));
   for (const id of jobIds) {
-    const { name: _name, if: _if, ...rest } = parsed[id];
-    const { name: _sourceName, if: _sourceIf, ...sourceRest } = parsedSource[id];
-    if (JSON.stringify(rest) !== JSON.stringify(sourceRest) || typeof parsed[id]['if'] !== 'string') {
-      throw new Error(`${source.file} job ${id}: rendering changed more than its name and if; keep job keys at four spaces.`);
+    if (withoutEdits(parsed[id]) !== withoutEdits(parsedSource[id]) || typeof parsed[id]['if'] !== 'string') {
+      throw new Error(
+        `${source.file} job ${id}: rendering changed more than its name and if; keep job keys at four spaces.`,
+      );
     }
   }
 
@@ -225,6 +237,13 @@ function titleCase(segment: string): string {
   return segment.charAt(0).toUpperCase() + segment.slice(1);
 }
 
+/** The id and title of the `number`th shard of a category: `verify-common`, then `verify-common-2`. */
+function shardNames(category: string, number: number): { id: string; title: string } {
+  return number === 1
+    ? { id: `${SHARD_PREFIX}${category}`, title: titleCase(category) }
+    : { id: `${SHARD_PREFIX}${category}-${number}`, title: `${titleCase(category)} ${number}` };
+}
+
 /**
  * Groups targets into shards: one per category, split into `-2`, `-3`… in target order once a shard's
  * jobs pass `budget` bytes.
@@ -232,7 +251,7 @@ function titleCase(segment: string): string {
  * @throws an `Error` for a single target whose jobs alone exceed the budget
  */
 export function assignShards(targets: readonly RenderedTarget[], budget = SHARD_SIZE_BUDGET): Shard[] {
-  const shards: { id: string; title: string; targets: RenderedTarget[]; size: number }[] = [];
+  const shards: { id: string; title: string; category: string; targets: RenderedTarget[]; size: number }[] = [];
   const sorted = [...targets].sort((a, b) => a.source.target.localeCompare(b.source.target));
 
   for (const target of sorted) {
@@ -243,20 +262,14 @@ export function assignShards(targets: readonly RenderedTarget[], budget = SHARD_
       );
     }
     const category = target.source.target.split('/')[0];
-    const own = shards.filter((shard) => shard.id === `${SHARD_PREFIX}${category}` || shard.id.startsWith(`${SHARD_PREFIX}${category}-`));
+    const own = shards.filter((shard) => shard.category === category);
     const current = own.at(-1);
     if (current !== undefined && current.size + target.size <= budget) {
       current.targets.push(target);
       current.size += target.size;
-      continue;
+    } else {
+      shards.push({ ...shardNames(category, own.length + 1), category, targets: [target], size: target.size });
     }
-    const number = own.length + 1;
-    shards.push({
-      id: number === 1 ? `${SHARD_PREFIX}${category}` : `${SHARD_PREFIX}${category}-${number}`,
-      title: number === 1 ? titleCase(category) : `${titleCase(category)} ${number}`,
-      targets: [target],
-      size: target.size,
-    });
   }
 
   return shards.map(({ id, title, targets: members }) => ({ id, title, targets: members }));
@@ -265,27 +278,33 @@ export function assignShards(targets: readonly RenderedTarget[], budget = SHARD_
 type Access = 'read' | 'write' | 'none';
 const ACCESS_RANK: Readonly<Record<Access, number>> = { none: 0, read: 1, write: 2 };
 
+/** The scopes one job grants, checked to be a mapping of valid access levels. */
+function jobGrants(where: string, job: Record<string, unknown>): [string, Access][] {
+  const block = job['permissions'];
+  if (!isRecord(block)) {
+    throw new Error(`${where} must declare its permissions as a mapping.`);
+  }
+
+  return Object.entries(block).map(([scope, access]) => {
+    if (access !== 'read' && access !== 'write' && access !== 'none') {
+      throw new Error(`${where}: permission ${scope} is ${String(access)}.`);
+    }
+    return [scope, access];
+  });
+}
+
 /**
  * The union of the job permissions of a shard. A called workflow's token can only be narrowed, never
  * widened, so its caller job has to grant everything any of its jobs asks for.
  */
 export function shardPermissions(shard: Shard): Record<string, Access> {
   const union: Record<string, Access> = {};
-  for (const target of shard.targets) {
-    for (const [index, job] of target.jobs.entries()) {
-      const where = `${target.source.file} job ${target.jobIds[index]}`;
-      const block = job['permissions'];
-      if (!isRecord(block)) {
-        throw new Error(`${where} must declare its permissions as a mapping.`);
-      }
-      for (const [scope, access] of Object.entries(block)) {
-        if (access !== 'read' && access !== 'write' && access !== 'none') {
-          throw new Error(`${where}: permission ${scope} is ${String(access)}.`);
-        }
-        if (ACCESS_RANK[access] > ACCESS_RANK[union[scope] ?? 'none']) {
-          union[scope] = access;
-        }
-      }
+  const grants = shard.targets.flatMap((target) =>
+    target.jobs.flatMap((job, index) => jobGrants(`${target.source.file} job ${target.jobIds[index]}`, job)),
+  );
+  for (const [scope, access] of grants) {
+    if (ACCESS_RANK[access] > ACCESS_RANK[union[scope] ?? 'none']) {
+      union[scope] = access;
     }
   }
 
@@ -378,7 +397,9 @@ export function renderVerifyWorkflow(
 `;
     })
     .join('\n');
-  const needs = ['plan', 'install', 'build', ...shards.map((shard) => shard.id)].map((id) => `      - ${id}`).join('\n');
+  const needs = ['plan', 'install', 'build', ...shards.map((shard) => shard.id)]
+    .map((id) => `      - ${id}`)
+    .join('\n');
 
   return `${GENERATED_HEADER}
 # Run 'bun run generate-verify' to rebuild it from the sources in .github/verify/; the drift check in
@@ -444,6 +465,98 @@ function localAction(uses: string): string | undefined {
 /** The variables of the generated workflows that a source may not reach around. */
 const RESERVED_NEEDS = /\bneeds\.(?:plan|install|build)(?![\w-])/;
 
+/** Whether an action, or anything in its build set, ships a bundle; memoised per action. */
+function bundleCheck(root: string): (action: string) => boolean {
+  const known = new Map<string, boolean>();
+
+  return (action) => {
+    let result = known.get(action);
+    if (result === undefined) {
+      try {
+        result = buildSet(root, [action]).bundles.length > 0;
+      } catch {
+        // Not an action of this repository; validating its reference is jactionlint's job.
+        result = false;
+      }
+      known.set(action, result);
+    }
+    return result;
+  };
+}
+
+/** Problems with the job ids of one source, given the ids every earlier source claimed. */
+function idProblems(source: VerifySource, ids: readonly string[], owners: Map<string, string>): string[] {
+  const problems: string[] = [];
+  for (const id of ids) {
+    if (RESERVED_JOB_IDS.includes(id)) {
+      problems.push(`${source.file}: job id ${id} is reserved for verify.yaml.`);
+    }
+    const owner = owners.get(id);
+    if (owner !== undefined) {
+      problems.push(`${source.file}: job id ${id} is also used by ${owner}; job ids must be unique across targets.`);
+    }
+    owners.set(id, source.file);
+  }
+
+  return problems;
+}
+
+/** Problems with how a job depends on other jobs and on the shared build. */
+function dependencyProblems(
+  where: string,
+  job: Record<string, unknown>,
+  ids: readonly string[],
+  target: string,
+): string[] {
+  const problems: string[] = [];
+  const raw = job['needs'];
+  const needs = typeof raw === 'string' ? [raw] : Array.isArray(raw) ? raw.map(String) : [];
+  for (const need of needs.filter((candidate) => !ids.includes(candidate))) {
+    problems.push(`${where}: needs ${need}, which is not a job of ${target}.`);
+  }
+  if (!isRecord(job['permissions'])) {
+    problems.push(`${where}: declare permissions as a mapping; a called workflow has no default to inherit.`);
+  }
+  if (RESERVED_NEEDS.test(JSON.stringify(job))) {
+    problems.push(
+      `${where}: read the shared build through inputs.artifact-id, inputs.manifest-sha256 and inputs.cache-key.`,
+    );
+  }
+
+  return problems;
+}
+
+/** Problems with how a job installs the shared build before running a bundled local action. */
+function installProblems(
+  where: string,
+  job: Record<string, unknown>,
+  hasBundle: (action: string) => boolean,
+): string[] {
+  const steps = Array.isArray(job['steps']) ? (job['steps'] as unknown[]).filter(isRecord) : [];
+  const uses = steps.map((step) => (typeof step['uses'] === 'string' ? step['uses'] : ''));
+  const firstInstall = uses.findIndex(isInstallStep);
+  const firstBundled = uses.findIndex((value) => {
+    const action = localAction(value);
+    return action?.startsWith('actions/') === true && hasBundle(action);
+  });
+  const problems: string[] = [];
+  if (firstBundled !== -1 && (firstInstall === -1 || firstInstall > firstBundled)) {
+    problems.push(`${where}: runs ${uses[firstBundled]} without installing the built actions first.`);
+  }
+  const allowlist = steps
+    .map((step) => (isRecord(step['with']) ? step['with']['allowed-endpoints'] : undefined))
+    .find((value): value is string => typeof value === 'string');
+  const missing =
+    firstInstall === -1 || allowlist === undefined
+      ? []
+      : ARTIFACT_ENDPOINTS.filter((host) => !allowlist.includes(host));
+  if (missing.length > 0) {
+    problems.push(`${where}: installs the built actions but its allowlist lacks ${missing.join(', ')}.`);
+  }
+
+  return problems;
+}
+
 /**
  * Checks the rules every source job follows, across all targets, so a mistake fails the generator
  * rather than a runner:
@@ -459,75 +572,24 @@ const RESERVED_NEEDS = /\bneeds\.(?:plan|install|build)(?![\w-])/;
  * @throws an `Error` listing every problem found
  */
 export function validateSources(root: string, sources: readonly VerifySource[]): void {
-  const problems: string[] = [];
   const owners = new Map<string, string>();
-  const bundled = new Map<string, boolean>();
-  const hasBundle = (action: string): boolean => {
-    if (!bundled.has(action)) {
-      let result = false;
-      try {
-        result = buildSet(root, [action]).bundles.length > 0;
-      } catch {
-        result = false;
-      }
-      bundled.set(action, result);
-    }
-    return bundled.get(action) === true;
-  };
-
-  for (const source of sources) {
+  const hasBundle = bundleCheck(root);
+  const problems = sources.flatMap((source) => {
     const ids = [...(source.e2e === undefined ? [] : [e2eJobId(source.target)]), ...source.jobIds];
-    for (const id of ids) {
-      if (RESERVED_JOB_IDS.includes(id)) {
-        problems.push(`${source.file}: job id ${id} is reserved for verify.yaml.`);
-      }
-      const owner = owners.get(id);
-      if (owner !== undefined) {
-        problems.push(`${source.file}: job id ${id} is also used by ${owner}; job ids must be unique across targets.`);
-      }
-      owners.set(id, source.file);
-    }
 
-    for (const id of source.jobIds) {
-      const where = `${source.file} job ${id}`;
-      const job = jobValue(source, id);
-      const needs = typeof job['needs'] === 'string' ? [job['needs']] : Array.isArray(job['needs']) ? job['needs'] : [];
-      for (const need of needs) {
-        if (!ids.includes(String(need))) {
-          problems.push(`${where}: needs ${String(need)}, which is not a job of ${source.target}.`);
-        }
-      }
-      if (!isRecord(job['permissions'])) {
-        problems.push(`${where}: declare permissions as a mapping; a called workflow has no default to inherit.`);
-      }
-      const text = JSON.stringify(job);
-      if (RESERVED_NEEDS.test(text)) {
-        problems.push(`${where}: read the shared build through inputs.artifact-id, inputs.manifest-sha256 and inputs.cache-key.`);
-      }
-
-      const steps = Array.isArray(job['steps']) ? (job['steps'] as unknown[]) : [];
-      const uses = steps.map((step) => (isRecord(step) && typeof step['uses'] === 'string' ? step['uses'] : ''));
-      const firstInstall = uses.findIndex(isInstallStep);
-      const firstBundled = uses.findIndex((value) => {
-        const action = localAction(value);
-        return action !== undefined && action.startsWith('actions/') && hasBundle(action);
-      });
-      if (firstBundled !== -1 && (firstInstall === -1 || firstInstall > firstBundled)) {
-        problems.push(`${where}: runs ${uses[firstBundled]} without installing the built actions first.`);
-      }
-      if (firstInstall !== -1) {
-        const allowlist = steps
-          .map((step) => (isRecord(step) && isRecord(step['with']) ? step['with']['allowed-endpoints'] : undefined))
-          .find((value): value is string => typeof value === 'string');
-        const missing = allowlist === undefined ? [] : ARTIFACT_ENDPOINTS.filter((host) => !allowlist.includes(host));
-        if (missing.length > 0) {
-          problems.push(`${where}: installs the built actions but its allowlist lacks ${missing.join(', ')}.`);
-        }
-      }
-    }
-  }
+    return [
+      ...idProblems(source, ids, owners),
+      ...source.jobIds.flatMap((id) => {
+        const where = `${source.file} job ${id}`;
+        const job = jobValue(source, id);
+        return [...dependencyProblems(where, job, ids, source.target), ...installProblems(where, job, hasBundle)];
+      }),
+    ];
+  });
 
   if (problems.length > 0) {
-    throw new Error(`The Verify sources break the contract:\n${problems.map((problem) => `  - ${problem}`).join('\n')}`);
+    throw new Error(
+      `The Verify sources break the contract:\n${problems.map((problem) => `  - ${problem}`).join('\n')}`,
+    );
   }
 }
