@@ -218,7 +218,7 @@ jobs:
           variables: ${{ steps.variables.outputs.variables }}
 
       - name: Create Patch
-        uses: TimSchoenle/actions/actions/common/create-patch@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-common-create-patch-v1.1.1
+        uses: TimSchoenle/actions/actions/common/create-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-create-patch-v2.0.1
         with:
           artifact_name: readme
           paths: README.md
