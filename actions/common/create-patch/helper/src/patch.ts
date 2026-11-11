@@ -1,6 +1,7 @@
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import * as core from 'actions-util/core';
 import {
   buildPathspecs,
   describePatch,
@@ -52,6 +53,8 @@ export class PatchTooLargeError extends Error {
  *   that would replace or decorate the patch text.
  * - Explicit prefixes override `diff.noprefix` and `diff.mnemonicPrefix`; `git apply` strips one
  *   leading directory and needs it to be there.
+ *
+ * `.gitattributes` is neutralised separately, by {@link attrSourceFlag}.
  */
 const DIFF_FLAGS = [
   'diff',
@@ -66,6 +69,64 @@ const DIFF_FLAGS = [
   '--src-prefix=a/',
   '--dst-prefix=b/',
 ];
+
+/** The empty tree's object name in a SHA-1 repository. */
+const EMPTY_TREE_SHA1 = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
+
+/** The empty tree's object name in a SHA-256 repository, whose object names are 64 digits. */
+const EMPTY_TREE_SHA256 = '6ef19b41225c5369f1c104d45d8d85efa9b057b53b14b4b9b939dd74decc5321';
+
+/**
+ * The global flag that makes the diff read attributes from the empty tree instead of `.gitattributes`.
+ *
+ * A text file marked `-diff` or `binary` (a lockfile hidden from review diffs, say) would otherwise
+ * be written as a `GIT binary patch`, and `commit-patch` refuses that as binary content. With no
+ * attributes, git falls back to its content check, so a file is binary in the patch exactly when its
+ * bytes are, which is the same test `commit-patch` applies to the result.
+ */
+function attrSourceFlag(baseSha: string): string {
+  return `--attr-source=${baseSha.length === EMPTY_TREE_SHA256.length ? EMPTY_TREE_SHA256 : EMPTY_TREE_SHA1}`;
+}
+
+/** The first git release with the global `--attr-source` option, as `[major, minor]`. */
+const ATTR_SOURCE_SINCE: readonly [number, number] = [2, 42];
+
+/** Whether a `git version` line names a release that has `--attr-source`. */
+export function supportsAttrSource(versionLine: string): boolean {
+  const match = /(\d+)\.(\d+)/.exec(versionLine);
+  if (match === null) {
+    return false;
+  }
+  const [major, minor] = [Number(match[1]), Number(match[2])];
+
+  return major > ATTR_SOURCE_SINCE[0] || (major === ATTR_SOURCE_SINCE[0] && minor >= ATTR_SOURCE_SINCE[1]);
+}
+
+/** A pathspec with `attr` magic, e.g. `:(attr:generated)` or `:(glob,attr:-vendored)src/**`. */
+const ATTR_MAGIC = /^:\([^)]*\battr:/;
+
+/**
+ * The paths the diff selects, resolved against the repository's own `.gitattributes`.
+ *
+ * Run only when a pathspec uses `attr` magic: the patch diff reads attributes from the empty tree, so
+ * such a pathspec would match nothing there and silently drop the changes it names.
+ */
+async function resolveAttrSelection(
+  baseSha: string,
+  specs: readonly string[],
+  options: { cwd: string; env: Record<string, string> },
+): Promise<string[]> {
+  const names = await runGit(
+    ['diff', '--cached', '--name-only', '-z', '--no-renames', baseSha, '--', ...specs],
+    options,
+  );
+
+  return names
+    .toString('utf8')
+    .split('\0')
+    .filter((name) => name !== '')
+    .map((name) => `:(top,literal)${name}`);
+}
 
 /**
  * Computes the patch of the working tree against `HEAD` and writes it, with its metadata, to
@@ -100,9 +161,29 @@ export async function createPatch(request: CreatePatchRequest): Promise<PatchMet
     await runGit(['-c', 'core.fileMode=false', 'add', '--all'], { cwd: workspace, env });
 
     const { specs, useFilter } = buildPathspecs(request.paths);
-    const args = [...DIFF_FLAGS, baseSha, '--', ...(useFilter ? specs : [])];
+    const attrSource = supportsAttrSource(await runGitText(['version'], { cwd: workspace }));
+    if (!attrSource) {
+      core.warning(
+        'git is older than 2.42, so the patch follows .gitattributes: a text file marked -diff or binary is ' +
+          'written as a binary patch, which commit-patch refuses unless allow_binary is set. Upgrade git on ' +
+          'the runner to lift this.',
+      );
+    }
 
-    patch = await runGit(args, { cwd: workspace, env, maxOutputBytes: maxPatchBytes });
+    let selection = useFilter ? specs : [];
+    if (attrSource && selection.some((spec) => ATTR_MAGIC.test(spec))) {
+      selection = await resolveAttrSelection(baseSha, selection, { cwd: workspace, env });
+    }
+
+    // An attr-magic selection that matched nothing must not fall through to an unscoped diff.
+    patch =
+      useFilter && selection.length === 0
+        ? Buffer.alloc(0)
+        : await runGit([...(attrSource ? [attrSourceFlag(baseSha)] : []), ...DIFF_FLAGS, baseSha, '--', ...selection], {
+            cwd: workspace,
+            env,
+            maxOutputBytes: maxPatchBytes,
+          });
   } catch (error) {
     if (error instanceof GitCommandError && error.outputLimitExceeded) {
       throw new PatchTooLargeError(maxPatchBytes);

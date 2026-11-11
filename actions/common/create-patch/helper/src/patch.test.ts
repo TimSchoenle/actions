@@ -13,7 +13,7 @@ import {
 } from 'actions-util/patch';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { createPatch, PatchTooLargeError } from './patch.js';
+import { createPatch, PatchTooLargeError, supportsAttrSource } from './patch.js';
 
 import type { CreatePatchRequest } from './patch.js';
 
@@ -167,6 +167,69 @@ describe('createPatch', () => {
     expect((await readFile(path.join(clone, 'image.bin'))).equals(bytes)).toBe(true);
   });
 
+  /**
+   * A text file marked `-diff` in `.gitattributes` used to be written as a `GIT binary patch`, which
+   * commit-patch refuses as binary content: a Renovate lockfile regeneration was refused this way.
+   */
+  it('writes a text hunk for a text file that .gitattributes marks -diff or binary', async () => {
+    const base = await seed({
+      '.gitattributes': 'package-lock.json -diff\nnotes.txt binary\n',
+      'notes.txt': 'one\n',
+      'package-lock.json': '{"version":"1"}\n',
+    });
+    await write({ 'notes.txt': 'two\n', 'package-lock.json': '{"version":"2"}\n' });
+
+    await createPatch(request());
+
+    const text = await patchText();
+    expect(text).not.toContain('GIT binary patch');
+    expect(text).toContain('+{"version":"2"}');
+    expect(text).toContain('+two');
+    const { status } = await applyToClone(base);
+    expect(status.split('\n').sort()).toEqual([' M notes.txt', ' M package-lock.json']);
+  });
+
+  /**
+   * The patch diff reads attributes from the empty tree, so an `attr` pathspec matched nothing there
+   * and the changes it selected were silently left out of the patch.
+   */
+  it('selects attr pathspecs against the repository .gitattributes', async () => {
+    const base = await seed({
+      '.gitattributes': 'gen/* generated -diff\n',
+      'gen/lock.json': '{"v":1}\n',
+      'other.txt': 'one\n',
+    });
+    await write({ 'gen/lock.json': '{"v":2}\n', 'other.txt': 'two\n' });
+
+    const metadata = await createPatch(request({ paths: ':(attr:generated)' }));
+
+    expect(metadata.hasChanges).toBe(true);
+    const text = await patchText();
+    expect(text).toContain('+{"v":2}');
+    expect(text).not.toContain('other.txt');
+    expect(text).not.toContain('GIT binary patch');
+    expect((await applyToClone(base)).status).toBe(' M gen/lock.json');
+  });
+
+  it('writes an empty patch when an attr pathspec matches no change', async () => {
+    await seed({ '.gitattributes': 'gen/* generated\n', 'other.txt': 'one\n' });
+    await write({ 'other.txt': 'two\n' });
+
+    const metadata = await createPatch(request({ paths: ':(attr:generated)' }));
+
+    expect(metadata.hasChanges).toBe(false);
+    expect(await patchText()).toBe('');
+  });
+
+  it('still encodes NUL-bearing content as binary when .gitattributes marks it text', async () => {
+    await seed({ '.gitattributes': '*.bin text diff\n' });
+    await write({ 'image.bin': Buffer.from([0, 1, 2, 255, 0, 10]) });
+
+    await createPatch(request());
+
+    expect(await patchText()).toContain('GIT binary patch');
+  });
+
   it('ignores an executable-bit flip, and records a new executable as a regular file', async () => {
     await seed({ 'script.sh': 'echo\n' });
     await chmod(path.join(repo, 'script.sh'), 0o755);
@@ -244,5 +307,19 @@ describe('createPatch', () => {
     await createPatch(request());
 
     expect((await readdir(root)).sort()).toEqual(['out', 'repo']);
+  });
+});
+
+describe('supportsAttrSource', () => {
+  it.each([
+    ['git version 2.42.0', true],
+    ['git version 2.45.1.windows.1', true],
+    ['git version 3.0.0', true],
+    ['git version 2.41.9', false],
+    ['git version 2.39.3 (Apple Git-145)', false],
+    ['git version 1.99.0', false],
+    ['not a version', false],
+  ])('%s -> %s', (line, expected) => {
+    expect(supportsAttrSource(line)).toBe(expected);
   });
 });
