@@ -60,6 +60,23 @@ describe('builtActionsViolations', () => {
     expect(builtActionsViolations(content, ROOT_DIR)).toEqual([]);
   });
 
+  it('accepts an install from the shared build a Verify shard receives as an input', () => {
+    const content = `on: workflow_call
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@x
+      - uses: ${INSTALL_USES}
+        with:
+          artifact-id: \${{ inputs.artifact-id }}
+          expected-manifest-sha256: \${{ inputs.manifest-sha256 }}
+      - uses: ./actions/common/create-patch
+`;
+
+    expect(builtActionsViolations(content, ROOT_DIR)).toEqual([]);
+  });
+
   it('reports an install step run from the checkout, which runs the bundle it is meant to replace', () => {
     const local = INSTALL.replace(INSTALL_USES, './actions/release/install-built-actions');
     const content = workflow(

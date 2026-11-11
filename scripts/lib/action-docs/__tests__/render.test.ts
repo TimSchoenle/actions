@@ -26,7 +26,7 @@ function model(overrides: Partial<ReadmeModel> = {}): ReadmeModel {
     docs: { permissions: [], egress: [], requires: [], examples: [] },
     examples: [],
     hasChangelog: true,
-    e2eWorkflow: undefined,
+    verifySource: undefined,
     callers: [],
     ...overrides,
   };
@@ -206,16 +206,16 @@ describe('renderRegions', () => {
     );
   });
 
-  it('links the changelog, the e2e workflow and a short list of callers', () => {
+  it('links the changelog, the verify source and a short list of callers', () => {
     const reference = renderRegions(
-      model({ e2eWorkflow: 'verify-action-security-zizmor.yaml', callers: ['.github/workflows/security.yml'] }),
+      model({ verifySource: '.github/verify/security-zizmor.yaml', callers: ['.github/workflows/security.yml'] }),
     ).reference;
     expect(reference).toBe(
       [
         '## Reference',
         '',
         '- Changelog: [CHANGELOG.md](./CHANGELOG.md)',
-        '- End-to-end tests: [`.github/workflows/verify-action-security-zizmor.yaml`](../../../.github/workflows/verify-action-security-zizmor.yaml)',
+        '- End-to-end tests: [`.github/verify/security-zizmor.yaml`](../../../.github/verify/security-zizmor.yaml)',
         '- Called from this repository by:',
         '  - [`.github/workflows/security.yml`](../../../.github/workflows/security.yml)',
       ].join('\n'),

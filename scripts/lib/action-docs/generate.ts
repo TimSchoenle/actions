@@ -3,10 +3,11 @@ import path from 'node:path';
 
 import { parse } from 'yaml';
 
-import { workflowFileName } from '../e2e-workflow.js';
 import { getTagCommitSha } from '../readme/utils.js';
 import { consumerTag } from '../release-tags.js';
 import { ROOT_DIR, scanSorted } from '../utils.js';
+import { GENERATED_HEADER } from '../verify/render.js';
+import { SOURCES_DIR, sourceFileName } from '../verify/source.js';
 import { DOCS_FILE_NAME, validateDocsFile } from './docs-file.js';
 import { parseActionManifest } from './manifest.js';
 import { findRegions, MarkerError, newReadme, spliceRegions } from './markers.js';
@@ -47,6 +48,7 @@ const ACTION_PATTERNS = ['actions/*/*/action.yaml', 'actions/*/*/action.yml'];
 const CALLER_PATTERNS = [
   '.github/workflows/*.yaml',
   '.github/workflows/*.yml',
+  `${SOURCES_DIR}/*.yaml`,
   ...ACTION_PATTERNS,
   'actions/*/*/*/action.yaml',
   'actions/*/*/*/action.yml',
@@ -90,6 +92,10 @@ async function collectCallers(io: DocsIo, repoId: string): Promise<Map<string, s
   const callers = new Map<string, string[]>();
   for (const file of await listAll(io, CALLER_PATTERNS)) {
     const content = (await io.read(file)) ?? '';
+    // A generated Verify workflow repeats what its sources say; the sources are what a reader edits.
+    if (content.startsWith(GENERATED_HEADER)) {
+      continue;
+    }
     for (const action of referencedActions(content, repoId)) {
       if (file.startsWith(`${action}/`)) {
         continue;
@@ -248,6 +254,24 @@ function descriptionProblems(file: string, manifest: ActionManifest): string[] {
   ];
 }
 
+/**
+ * The file that holds an action's verify jobs: its source under `.github/verify/`, or, until every
+ * target has moved there, its hand-written `verify-action-*` workflow.
+ */
+async function verifySourceOf(io: DocsIo, category: string, name: string): Promise<string | undefined> {
+  const candidates = [
+    `${SOURCES_DIR}/${sourceFileName(`${category}/${name}`)}`,
+    `.github/workflows/verify-action-${category}-${name}.yaml`,
+  ];
+  for (const candidate of candidates) {
+    if ((await io.read(candidate)) !== undefined) {
+      return candidate;
+    }
+  }
+
+  return undefined;
+}
+
 /** Generates one README into `report`. Writes nothing for an action that has an error. */
 async function generateOne(
   io: DocsIo,
@@ -289,8 +313,7 @@ async function generateOne(
     return;
   }
 
-  const e2eWorkflow = workflowFileName({ category, name, actionPath });
-  const e2ePath = `.github/workflows/${e2eWorkflow}`;
+  const verifySource = await verifySourceOf(io, category, name);
   const regions = renderRegions({
     repoId,
     actionPath,
@@ -299,9 +322,9 @@ async function generateOne(
     docs,
     examples: loaded.examples,
     hasChangelog: (await io.read(`${actionPath}/CHANGELOG.md`)) !== undefined,
-    e2eWorkflow: (await io.read(e2ePath)) === undefined ? undefined : e2eWorkflow,
-    // The action's own end-to-end workflow is linked on its own line, not counted as a caller.
-    callers: (callers.get(actionPath) ?? []).filter((caller) => caller !== e2ePath),
+    verifySource,
+    // The action's own verify source is linked on its own line, not counted as a caller.
+    callers: (callers.get(actionPath) ?? []).filter((caller) => caller !== verifySource),
   });
 
   const readmeFile = `${actionPath}/README.md`;

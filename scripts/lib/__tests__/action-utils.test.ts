@@ -28,7 +28,7 @@ vi.mock('@inquirer/prompts', () => ({
 
 import { search, input } from '@inquirer/prompts';
 import { createFromTemplate } from '../utils';
-import { PINNED } from '../e2e-workflow';
+import { PINNED } from '../verify/pins';
 
 describe('action-utils', () => {
   beforeEach(() => {

@@ -3,7 +3,7 @@ import path from 'node:path';
 import { input, search } from '@inquirer/prompts';
 import chalk from 'chalk';
 
-import { PINNED } from './e2e-workflow.js';
+import { PINNED } from './verify/pins.js';
 import { sourceComponentFor } from './release-tags.js';
 import { ACTIONS_DIR, capitalize, createFromTemplate, ROOT_DIR, START_VERSION, Sys } from './utils.js';
 

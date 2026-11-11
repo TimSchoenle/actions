@@ -1,74 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  actionTokenPermissions,
-  missingTokenInputScopes,
-  PINNED,
-  resolvePins,
-  SECONDARY_TOKEN_PERMISSIONS,
-  tokenPermissions,
-  workspaceModulePaths,
-} from '../e2e-workflow.js';
+import { actionTokenPermissions, e2eJob, e2eJobId, missingTokenInputScopes, workspaceModulePaths } from '../jobs.js';
+import { parseSource } from '../source.js';
 
-import type { Permission } from '../action-docs/docs-file.js';
-
-/**
- * The substitution that keeps an extra-jobs fragment from carrying its own copy of a pin.
- *
- * The repository-wide contract — that no fragment on disk writes a ref out in full — lives in
- * `scripts/__tests__/renovate-managers.test.ts`. What is checked here is the mechanism itself: that
- * it rewrites what it should, leaves everything else alone, and refuses a name it cannot resolve
- * rather than emitting a workflow that fails only once a runner reaches the job.
- */
-describe('resolvePins', () => {
-  it('substitutes a placeholder with the pin it names', () => {
-    expect(resolvePins('    - name: Harden Runner\n      uses: pinned:hardenRunner\n')).toBe(
-      `    - name: Harden Runner\n      uses: ${PINNED.hardenRunner}\n`,
-    );
-  });
-
-  it('substitutes every placeholder in a fragment, not just the first', () => {
-    const resolved = resolvePins('      uses: pinned:checkout\n      uses: pinned:hardenRunner\n');
-
-    expect(resolved).toContain(PINNED.checkout);
-    expect(resolved).toContain(PINNED.hardenRunner);
-  });
-
-  it('preserves the indentation the placeholder sat at', () => {
-    // The fragment is indented again on the way into the workflow, so a substitution that
-    // normalised whitespace would put the step at a depth YAML reads as a different key.
-    expect(resolvePins('        uses: pinned:checkout')).toBe(`        uses: ${PINNED.checkout}`);
-  });
-
-  it('leaves a local action reference alone', () => {
-    const fragment = '      uses: ./actions/helper/verify-branch-name';
-
-    expect(resolvePins(fragment)).toBe(fragment);
-  });
-
-  it('leaves a ref written out in full alone', () => {
-    // Not this function's job to reject one — `renovate-managers.test.ts` is what fails it, with an
-    // explanation. Rewriting it here would hide the pin the contract exists to surface.
-    const fragment = `      uses: ${PINNED.checkout}`;
-
-    expect(resolvePins(fragment)).toBe(fragment);
-  });
-
-  it('ignores a placeholder that is not the value of a uses key', () => {
-    const fragment = '      run: echo pinned:checkout';
-
-    expect(resolvePins(fragment)).toBe(fragment);
-  });
-
-  it('returns an empty fragment unchanged', () => {
-    expect(resolvePins('')).toBe('');
-  });
-
-  it('names the unknown key and the keys that exist when it cannot resolve one', () => {
-    expect(() => resolvePins('      uses: pinned:notAPin')).toThrow(/pinned:notAPin/);
-    expect(() => resolvePins('      uses: pinned:notAPin')).toThrow(/hardenRunner/);
-  });
-});
+import type { Permission } from '../../action-docs/docs-file.js';
 
 describe('missingTokenInputScopes', () => {
   const onToken = (scope: Permission['scope'], access: Permission['access']): Permission => ({
@@ -150,20 +85,67 @@ describe('missingTokenInputScopes on mixed entries', () => {
 
 describe('actionTokenPermissions', () => {
   it('gives an ordinary suite its primary token scopes', () => {
-    const action = { category: 'common', name: 'upsert-issue', actionPath: 'actions/common/upsert-issue' };
+    const source = parseSource(
+      '.github/verify/common-upsert-issue.yaml',
+      'target: common/upsert-issue\ne2e:\n  token-permissions:\n    issues: write\n',
+    );
 
-    expect(actionTokenPermissions(action)).toEqual(tokenPermissions(action));
+    expect(actionTokenPermissions(source)).toEqual({ issues: 'write' });
   });
 
   it('gives a suite that runs the action as the second identity the secondary token scopes', () => {
-    const action = {
-      category: 'maintenance',
-      name: 'auto-approve-pr',
-      actionPath: 'actions/maintenance/auto-approve-pr',
-    };
+    const source = parseSource(
+      '.github/verify/maintenance-auto-approve-pr.yaml',
+      [
+        'target: maintenance/auto-approve-pr',
+        'e2e:',
+        '  token-permissions:',
+        '    contents: write',
+        '  secondary-token-permissions:',
+        '    pull-requests: write',
+        '',
+      ].join('\n'),
+    );
 
-    expect(actionTokenPermissions(action)).toEqual(SECONDARY_TOKEN_PERMISSIONS);
-    expect(actionTokenPermissions(action)).not.toEqual(tokenPermissions(action));
+    expect(actionTokenPermissions(source)).toEqual({ 'pull-requests': 'write' });
+  });
+});
+
+describe('e2eJob', () => {
+  const source = parseSource(
+    '.github/verify/release-publish-build-commit.yaml',
+    [
+      'target: release/publish-build-commit',
+      'e2e:',
+      '  token-permissions:',
+      '    contents: write',
+      '  extra-endpoints:',
+      "    - 'uploads.github.com:443'",
+      '',
+    ].join('\n'),
+  );
+
+  it('names the job after the target and runs its cases', () => {
+    const job = e2eJob(source, true, ['node_modules']);
+
+    expect(e2eJobId('release/publish-build-commit')).toBe('e2e-release-publish-build-commit');
+    expect(job).toContain('  e2e-release-publish-build-commit:\n');
+    expect(job).toContain('run: bun run e2e actions/release/publish-build-commit');
+  });
+
+  it('scopes the token explicitly and allows the extra endpoint, never a registry', () => {
+    const job = e2eJob(source, true, ['node_modules']);
+
+    expect(job).toContain('permission-contents: write');
+    expect(job).toContain('uploads.github.com:443');
+    expect(job).not.toContain('registry.npmjs.org');
+    expect(job).not.toContain('bun/setup-cached@');
+    expect(job).toContain('fail-on-cache-miss: true');
+  });
+
+  it('installs the shared build through the shard inputs only when the target builds', () => {
+    expect(e2eJob(source, true, ['node_modules'])).toContain('artifact-id: ${{ inputs.artifact-id }}');
+    expect(e2eJob(source, false, ['node_modules'])).not.toContain('Install Built Actions');
   });
 });
 

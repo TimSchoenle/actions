@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 
 import { VERIFY_WORKFLOW_TEMPLATE, verifyWorkflowReplacements } from '../lib/action-utils.js';
-import { PINNED } from '../lib/e2e-workflow.js';
+import { PINNED } from '../lib/verify/pins.js';
 import { ROOT_DIR, replaceTemplateVariables } from '../lib/utils.js';
 
 /**

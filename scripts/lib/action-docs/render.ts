@@ -30,8 +30,8 @@ export interface ReadmeModel {
   docs: ActionDocs;
   examples: LoadedExample[];
   hasChangelog: boolean;
-  /** File name of the action's end-to-end workflow under `.github/workflows`, if it has one. */
-  e2eWorkflow: string | undefined;
+  /** Repository-relative path of the file holding the action's verify jobs, if it has one. */
+  verifySource: string | undefined;
   /** Repository-relative files that call this action, sorted. */
   callers: string[];
 }
@@ -187,8 +187,8 @@ function renderReference(model: ReadmeModel): string {
   if (model.hasChangelog) {
     lines.push('- Changelog: [CHANGELOG.md](./CHANGELOG.md)');
   }
-  if (model.e2eWorkflow) {
-    lines.push(`- End-to-end tests: ${link(`.github/workflows/${model.e2eWorkflow}`)}`);
+  if (model.verifySource) {
+    lines.push(`- End-to-end tests: ${link(model.verifySource)}`);
   }
   if (model.callers.length === 0) {
     lines.push('- Not called from anywhere else in this repository.');

@@ -1,14 +1,27 @@
 import { buildSet, localUsesPath, parsePathList, toRepoPath } from 'action-graph';
 import { parse } from 'yaml';
 
-import { BUILD_ACTIONS, INSTALL_BUILT_ACTIONS } from './e2e-fragment.js';
+/** The action this repository's build step is, relative to a checkout of the repository. */
+export const BUILD_ACTIONS = 'actions/release/build-actions';
+
+/** The action this repository's install step is, relative to a checkout of the repository. */
+export const INSTALL_BUILT_ACTIONS = 'actions/release/install-built-actions';
+
+/**
+ * The input a Verify shard reads the shared build's artifact from. The build runs in the calling
+ * workflow, `verify.yaml`, over the union of the build directories of the selected targets, which the
+ * generator derives from the same graph as {@link buildSet}; so an install from it covers every
+ * bundle a job of a selected target runs.
+ */
+const SHARED_BUILD_INPUT = /^\$\{\{\s*inputs\.artifact-id\s*\}\}$/;
 
 /**
  * The contract every workflow that runs this repository's actions from a checkout must keep: a step
  * that runs a local action with a bundle comes after an install of that bundle, built from the same
  * commit, in the same job.
  *
- * Generated verify workflows keep it by construction. The check exists for the hand-written ones,
+ * The generated Verify workflows keep it by construction: their jobs install the artifact of the
+ * shared build in `verify.yaml`, read through `inputs.artifact-id`. The check exists for the hand-written ones,
  * where a new `uses: ./actions/x` would otherwise run whatever bundle happens to be committed, or,
  * once bundles are no longer committed, none at all.
  */
@@ -138,6 +151,9 @@ export function builtActionsViolations(content: string, root: string): ContractV
         .filter((earlier) => typeof earlier['uses'] === 'string' && namesAction(earlier['uses'], INSTALL_BUILT_ACTIONS))
         .filter((earlier) => toRepoPath(input(earlier, 'path') || '.', 'install path') === prefix);
       const covered = installs.some((install) => {
+        if (SHARED_BUILD_INPUT.test(input(install, 'artifact-id') ?? '')) {
+          return true;
+        }
         const source = sourceJob(install);
         const built = source === undefined || !needs.has(source) ? undefined : builds.get(source);
 
