@@ -152,11 +152,10 @@ from restoring entries saved by earlier releases, which wrote from every event.
 - End-to-end tests: [`.github/workflows/verify-action-bun-setup-cached.yaml`](../../../.github/workflows/verify-action-bun-setup-cached.yaml)
 
 <details>
-<summary>Called from 48 files in this repository</summary>
+<summary>Called from 47 files in this repository</summary>
 
 - [`.github/workflows/auto-format.yml`](../../../.github/workflows/auto-format.yml)
 - [`.github/workflows/ci-required.yaml`](../../../.github/workflows/ci-required.yaml)
-- [`.github/workflows/rate-limit-rerun.yml`](../../../.github/workflows/rate-limit-rerun.yml)
 - [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
 - [`.github/workflows/scripts-ci.yml`](../../../.github/workflows/scripts-ci.yml)
 - [`.github/workflows/update-files.yml`](../../../.github/workflows/update-files.yml)

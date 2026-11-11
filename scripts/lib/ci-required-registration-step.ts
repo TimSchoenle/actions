@@ -62,7 +62,10 @@ function requireEnvironment(name: string): string {
   return value;
 }
 
-/** A read-only REST client over `fetch`, for the same reason as in scripts/rerun-rate-limited.ts. */
+/**
+ * A read-only REST client over `fetch`. Deliberately not Octokit: a maintenance script making a
+ * handful of reads has no use for a full API client and its bundle.
+ */
 export function restApi(token: string, timeoutMs = REQUEST_TIMEOUT_MS): RegistrationApi {
   return {
     async get<T>(endpoint: string): Promise<T> {

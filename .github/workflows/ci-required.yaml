@@ -137,10 +137,18 @@ on:
       - completed
 
 concurrency:
-  # Collapse every evaluation for the same head commit so only the most recent one
-  # posts the final status.
+  # One evaluation runs per head commit at a time, and at most one waits behind it.
+  # A newer arrival replaces the waiting one before it starts, so a burst of verify
+  # completions costs two or three evaluations instead of one per completion. The
+  # waiting evaluation starts only after the running one has finished, so the last
+  # status posted for a commit is always from the most recent evaluation.
+  #
+  # Not cancel-in-progress: cancelling a running evaluation does not refund the API
+  # calls it has already made, and every new arrival would start immediately and
+  # spend its own. With ~40 verify workflows completing per commit that alone was
+  # enough to exhaust the repository's hourly GITHUB_TOKEN budget.
   group: ci-required-${{ github.event.workflow_run.head_sha }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions: {}
 
@@ -202,8 +210,17 @@ jobs:
           HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
         run: bun run ci-required-registration
 
+      # Skipped when the registration step already decided the outcome: the publish
+      # step reports `failure` for `unresolved` and `pending` while a verify workflow
+      # is missing or unfinished, before it reads the aggregation outputs. Listing
+      # every check run on the commit is the costliest read in this job, and paying
+      # for it only to discard the result is what drained the rate limit.
       - name: Aggregate verify checks
         id: verify
+        if: >-
+          steps.registration.outputs.scope != 'unresolved' &&
+          steps.registration.outputs.missing == '0' &&
+          steps.registration.outputs.unfinished == '0'
         uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-maintenance-ensure-actions-are-executed-v2.0.4
         with:
           token: ${{ github.token }}
