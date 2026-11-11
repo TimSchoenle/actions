@@ -42,7 +42,11 @@ describe('resolve-actions', () => {
   });
 
   it('adds the local actions a workflow runs', async () => {
-    const result = await resolve({ workflows: '.github/workflows/verify-common.yaml' });
+    // fetch-head's job checks this repository out to source/ and runs ./source/actions/... from it.
+    const result = await resolve({
+      workflows: '.github/workflows/verify-common.yaml',
+      'checkout-prefixes': 'source\ntmp/actions-code',
+    });
 
     expect(list(result, 'build-dirs')).toEqual(
       expect.arrayContaining(['actions/common/create-patch/helper', 'actions/common/find-patch/helper']),
