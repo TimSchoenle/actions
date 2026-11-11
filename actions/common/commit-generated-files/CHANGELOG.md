@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.4](https://github.com/TimSchoenle/actions/compare/src-actions-common-commit-generated-files-v1.2.3...src-actions-common-commit-generated-files-v1.2.4) (2026-11-11)
+
+
+### Dependencies
+
+* **deps:** update timschoenle/actions/actions/common/find-patch to vactions-common-find-patch-v1.1.3 ([#2085](https://github.com/TimSchoenle/actions/issues/2085)) ([b78d739](https://github.com/TimSchoenle/actions/commit/b78d7397fb686d50135d0935884989d08184a6fa))
+
 ## [1.2.3](https://github.com/TimSchoenle/actions/compare/actions-common-commit-generated-files-v1.2.2...actions-common-commit-generated-files-v1.2.3) (2026-11-09)
 
 

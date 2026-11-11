@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.3](https://github.com/TimSchoenle/actions/compare/src-actions-terrace-helm-sync-v1.1.2...src-actions-terrace-helm-sync-v1.1.3) (2026-11-11)
+
+
+### Dependencies
+
+* **deps:** update timschoenle/actions/actions/common/commit-changes to vactions-common-commit-changes-v3.0.4 ([#2079](https://github.com/TimSchoenle/actions/issues/2079)) ([d998e81](https://github.com/TimSchoenle/actions/commit/d998e81b6db4e6d09b72dacf9ec5d100627b389d))
+* **deps:** update timschoenle/actions/actions/terrace/setup to vactions-terrace-setup-v3.1.3 ([#2091](https://github.com/TimSchoenle/actions/issues/2091)) ([f6ef4bf](https://github.com/TimSchoenle/actions/commit/f6ef4bfffd8250e6f4de76eafefd39bd1bd5f192))
+
 ## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-terrace-helm-sync-v1.1.1...actions-terrace-helm-sync-v1.1.2) (2026-11-09)
 
 
