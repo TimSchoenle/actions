@@ -49,7 +49,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: TimSchoenle/actions/actions/security/jactionlint@actions-security-jactionlint-v1.1.3 # tag=actions-security-jactionlint-v1.1.3
+      - uses: TimSchoenle/actions/actions/security/jactionlint@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-security-jactionlint-v1.1.3
 ```
 
 ### Online checks on a schedule and on pushes to the default branch
@@ -74,7 +74,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: TimSchoenle/actions/actions/security/jactionlint@actions-security-jactionlint-v1.1.3 # tag=actions-security-jactionlint-v1.1.3
+      - uses: TimSchoenle/actions/actions/security/jactionlint@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-security-jactionlint-v1.1.3
         with:
           online: 'strict'
 ```

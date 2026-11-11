@@ -34,7 +34,7 @@ steps:
   # the same way.
   - run: docker build --tag app:test .
 
-  - uses: TimSchoenle/actions/actions/docker/image-check@actions-docker-image-check-v1.1.15 # tag=actions-docker-image-check-v1.1.15
+  - uses: TimSchoenle/actions/actions/docker/image-check@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-docker-image-check-v1.1.15
     with:
       image: app:test
 ```
@@ -48,7 +48,7 @@ strategy:
   matrix:
     platform: [linux/amd64, linux/arm64]
 steps:
-  - uses: TimSchoenle/actions/actions/docker/image-check@actions-docker-image-check-v1.1.15 # tag=actions-docker-image-check-v1.1.15
+  - uses: TimSchoenle/actions/actions/docker/image-check@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-docker-image-check-v1.1.15
     with:
       image: app:test
       platform: ${{ matrix.platform }}
@@ -67,7 +67,7 @@ jobs:
         platform: [linux/amd64, linux/arm64]
     steps:
       # ... build and load ...
-      - uses: TimSchoenle/actions/actions/docker/image-check@actions-docker-image-check-v1.1.15 # tag=actions-docker-image-check-v1.1.15
+      - uses: TimSchoenle/actions/actions/docker/image-check@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-docker-image-check-v1.1.15
         with:
           image: app:test
           platform: ${{ matrix.platform }}
@@ -80,7 +80,7 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - uses: TimSchoenle/actions/actions/docker/image-check-summary@actions-docker-image-check-summary-v2.0.5 # tag=actions-docker-image-check-summary-v2.0.5
+      - uses: TimSchoenle/actions/actions/docker/image-check-summary@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-docker-image-check-summary-v2.0.5
 ```
 <!-- /docs:generated usage -->
 

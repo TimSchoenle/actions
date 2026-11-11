@@ -38,7 +38,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: TimSchoenle/actions/actions/terrace/helm-check@actions-terrace-helm-check-v1.1.3 # tag=actions-terrace-helm-check-v1.1.3
+      - uses: TimSchoenle/actions/actions/terrace/helm-check@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-terrace-helm-check-v1.1.3
 ```
 <!-- /docs:generated usage -->
 
