@@ -9,8 +9,7 @@ import * as github from './octokit.js';
  * it, and a limit whose reset lies further out is treated as un-waitable. `maxTotalDelayMs` bounds
  * what the attempts may cost *together*. Either one being reached is a decision to stop waiting and
  * fail — an exhausted hourly installation budget can be most of an hour from its reset, and parking a
- * runner on that is worse than failing and letting the deferred re-run sweep pick the work up once
- * the window has actually reopened.
+ * runner on that is worse than failing fast with an annotation that says why.
  */
 export interface RetryPolicy {
   /** How many times a rate-limited request is retried before its error is surfaced. */
@@ -88,8 +87,8 @@ const DICTATED_SPREAD_MS = 5_000;
 /**
  * The `title` on the annotation written when a rate limit outlives the retries.
  *
- * A stable key, unlike the message text, so tooling that reacts to these failures — the deferred
- * re-run sweep in `scripts/rerun-rate-limited.ts` — can recognise one without matching on prose.
+ * A stable key, unlike the message text, so tooling or a reader filtering annotations can recognise
+ * one without matching on prose.
  */
 export const RATE_LIMIT_ANNOTATION_TITLE = 'GitHub API rate limit';
 
@@ -313,7 +312,8 @@ type RetryDecision = { delayMs: number } | { giveUp: string };
  *
  * Three separate bounds can stop a retry, and an operator can only act on the one that actually
  * bit — "still refused after 3 retries" calls for cutting call volume, while "exceeds the total wait
- * budget" calls for a deferred re-run instead of a longer wait. The raw error names none of them.
+ * budget" calls for re-running once the window reopens instead of a longer wait. The raw error names
+ * none of them.
  */
 function decideRetry(
   error: unknown,
@@ -344,8 +344,8 @@ function decideRetry(
  *
  * The raw error says only that GitHub refused the request; it never says that the refusal was ridden
  * out to the end of the policy, which is the part an operator can act on — a GraphQL refusal least of
- * all, since it reads as an ordinary response error. The title is what lets the deferred re-run sweep
- * tell this failure apart from every other way a job can go red, without matching on prose.
+ * all, since it reads as an ordinary response error. The title is what tells this failure apart from
+ * every other way a job can go red, without matching on prose.
  */
 function reportUnretried(error: unknown, reason: string): void {
   core.error(`GitHub API rate limit hit and not ridden out — ${reason}: ${errorMessage(error)}`, {
