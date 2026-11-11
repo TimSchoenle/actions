@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.2](https://github.com/TimSchoenle/actions/compare/src-actions-common-create-patch-v2.0.1...src-actions-common-create-patch-v2.0.2) (2026-11-11)
+
+
+### Bug Fixes
+
+* **create-patch:** ignore .gitattributes when writing the patch ([#2099](https://github.com/TimSchoenle/actions/issues/2099)) ([45f1572](https://github.com/TimSchoenle/actions/commit/45f1572fb25addae9043cc97b9d9fa86b64c2a0c))
+
 ## [2.0.1](https://github.com/TimSchoenle/actions/compare/actions-common-create-patch-v2.0.0...actions-common-create-patch-v2.0.1) (2026-11-10)
 
 

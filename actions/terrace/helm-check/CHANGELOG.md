@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/TimSchoenle/actions/compare/src-actions-terrace-helm-check-v1.1.2...src-actions-terrace-helm-check-v1.1.3) (2026-11-11)
+
+
+### Dependencies
+
+* **deps:** update timschoenle/actions/actions/terrace/setup to vactions-terrace-setup-v3.1.3 ([#2091](https://github.com/TimSchoenle/actions/issues/2091)) ([f6ef4bf](https://github.com/TimSchoenle/actions/commit/f6ef4bfffd8250e6f4de76eafefd39bd1bd5f192))
+
 ## [1.1.2](https://github.com/TimSchoenle/actions/compare/actions-terrace-helm-check-v1.1.1...actions-terrace-helm-check-v1.1.2) (2026-11-09)
 
 
