@@ -1,0 +1,4 @@
+target: common/commit-changes
+e2e:
+  token-permissions:
+    contents: write

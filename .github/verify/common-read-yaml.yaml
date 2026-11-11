@@ -1,0 +1,4 @@
+target: common/read-yaml
+e2e:
+  token-permissions:
+    metadata: read

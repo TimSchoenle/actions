@@ -1,0 +1,4 @@
+target: common/render-template
+e2e:
+  token-permissions:
+    metadata: read

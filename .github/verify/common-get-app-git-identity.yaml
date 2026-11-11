@@ -1,0 +1,4 @@
+target: common/get-app-git-identity
+e2e:
+  token-permissions:
+    metadata: read

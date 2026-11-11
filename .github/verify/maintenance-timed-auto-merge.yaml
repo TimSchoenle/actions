@@ -1,0 +1,5 @@
+target: maintenance/timed-auto-merge
+e2e:
+  token-permissions:
+    contents: write
+    pull-requests: write

@@ -1,0 +1,164 @@
+# Jobs of this target beyond its end-to-end cases.
+#
+# The end-to-end cases drive the helper bundle directly. These jobs run what only the runner can: the
+# composite, uploading its artifact with upload-artifact, and install-built-actions downloading it by
+# ID in another job, then the runner executing the installed bundle through uses:. The action being
+# built is written into the workspace by a step, so it is not a manifest of this repository. They hold
+# no credential beyond the runner's artifact token.
+
+target: release/build-actions
+e2e:
+  token-permissions:
+    metadata: read
+
+jobs:
+  round-trip-build:
+    name: Round Trip Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    outputs:
+      artifact-id: ${{ steps.build.outputs.artifact-id }}
+      manifest-sha256: ${{ steps.build.outputs.manifest-sha256 }}
+    steps:
+      - name: Harden Runner
+        uses: pinned:hardenRunner
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: pinned:checkout
+        with:
+          persist-credentials: false
+
+      # Installs the bundles the build job built from this commit; dist/ is not committed.
+      - name: Install Built Actions
+        uses: pinned:installBuiltActions
+        with:
+          artifact-id: ${{ inputs.artifact-id }}
+          expected-manifest-sha256: ${{ inputs.manifest-sha256 }}
+
+      - name: Write Demo Actions
+        run: |
+          set -euo pipefail
+          mkdir -p round-trip/actions/demo round-trip/.github/actions/second
+          printf "runs:\n  using: 'node24'\n  main: 'dist/index.js'\n" > round-trip/actions/demo/action.yml
+          printf "runs:\n  using: 'node24'\n  main: 'dist/index.js'\n" > round-trip/.github/actions/second/action.yml
+
+      - name: Build Demo Actions
+        id: build
+        uses: ./actions/release/build-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          path: round-trip
+          # .github/actions/second sits under a dot-prefixed directory, which upload-artifact skips
+          # unless hidden files are included.
+          build-dirs: |
+            actions/demo
+            .github/actions/second
+          build-command: |
+            mkdir -p dist
+            printf 'process.getBuiltinModule("fs").appendFileSync(process.env.GITHUB_OUTPUT, "built-from=%s\\n");\n' "$BUILD_DIR" > dist/index.js
+          artifact-name: build-actions-e2e-${{ github.run_attempt }}
+          toolchain: bash
+
+      # A second upload under the same name must fail rather than replace the artifact a later job
+      # verifies against.
+      - name: Upload Under The Same Name Again
+        id: duplicate
+        continue-on-error: true
+        uses: ./actions/release/build-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          path: round-trip
+          build-dirs: actions/demo
+          build-command: 'true'
+          artifact-name: build-actions-e2e-${{ github.run_attempt }}
+
+      - name: Assert Build Outputs
+        env:
+          ARTIFACT_ID: ${{ steps.build.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.build.outputs.artifact-digest }}
+          MANIFEST_SHA256: ${{ steps.build.outputs.manifest-sha256 }}
+          BUNDLES: ${{ steps.build.outputs.bundles }}
+          DUPLICATE_OUTCOME: ${{ steps.duplicate.outcome }}
+        run: |
+          set -euo pipefail
+          [[ "$ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]] || { echo "::error::artifact-id is '$ARTIFACT_ID'"; exit 1; }
+          [[ "$ARTIFACT_DIGEST" =~ ^(sha256:)?[0-9a-f]{64}$ ]] || { echo "::error::artifact-digest is '$ARTIFACT_DIGEST'"; exit 1; }
+          [[ "$MANIFEST_SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "::error::manifest-sha256 is '$MANIFEST_SHA256'"; exit 1; }
+          paths="$(jq -r '[.[].path] | join(",")' <<< "$BUNDLES")"
+          [[ "$paths" == '.github/actions/second/dist/index.js,actions/demo/dist/index.js' ]] || { echo "::error::bundles are $paths"; exit 1; }
+          [[ "$DUPLICATE_OUTCOME" == 'failure' ]] || { echo "::error::a second upload under the same name was not refused"; exit 1; }
+
+  round-trip-install:
+    name: Round Trip Install
+    needs: round-trip-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: pinned:hardenRunner
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: pinned:checkout
+        with:
+          persist-credentials: false
+
+      # Installs the bundles the build job built from this commit; dist/ is not committed.
+      - name: Install Built Actions
+        uses: pinned:installBuiltActions
+        with:
+          artifact-id: ${{ inputs.artifact-id }}
+          expected-manifest-sha256: ${{ inputs.manifest-sha256 }}
+
+      # The manifests only: the bundles they name arrive through the install below.
+      - name: Write Demo Actions
+        run: |
+          set -euo pipefail
+          mkdir -p round-trip/actions/demo round-trip/.github/actions/second
+          printf "runs:\n  using: 'node24'\n  main: 'dist/index.js'\n" > round-trip/actions/demo/action.yml
+          printf "runs:\n  using: 'node24'\n  main: 'dist/index.js'\n" > round-trip/.github/actions/second/action.yml
+
+      - name: Install Demo Actions
+        id: install
+        uses: ./actions/release/install-built-actions # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          artifact-id: ${{ needs.round-trip-build.outputs.artifact-id }}
+          expected-manifest-sha256: ${{ needs.round-trip-build.outputs.manifest-sha256 }}
+          path: round-trip
+
+      - name: Run The Installed Demo Action
+        id: demo
+        uses: ./round-trip/actions/demo # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+
+      - name: Run The Installed Action Under A Dot Directory
+        id: hidden
+        uses: ./round-trip/.github/actions/second # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+
+      - name: Assert Installed Bundles
+        env:
+          BUILT_FROM: ${{ steps.demo.outputs.built-from }}
+          HIDDEN_BUILT_FROM: ${{ steps.hidden.outputs.built-from }}
+          INSTALLED: ${{ steps.install.outputs.bundles }}
+          MANIFEST_PATH: ${{ steps.install.outputs.manifest-path }}
+          EXPECTED_SHA256: ${{ needs.round-trip-build.outputs.manifest-sha256 }}
+        run: |
+          set -euo pipefail
+          [[ "$BUILT_FROM" == 'actions/demo' ]] || { echo "::error::the demo action reported '$BUILT_FROM'"; exit 1; }
+          [[ "$HIDDEN_BUILT_FROM" == '.github/actions/second' ]] || { echo "::error::the action under .github reported '$HIDDEN_BUILT_FROM'"; exit 1; }
+          [[ "$INSTALLED" == '[".github/actions/second/dist/index.js","actions/demo/dist/index.js"]' ]] || { echo "::error::installed $INSTALLED"; exit 1; }
+          [[ "$BUILT_ACTIONS_MANIFEST" == "$MANIFEST_PATH" ]] || { echo "::error::BUILT_ACTIONS_MANIFEST is '$BUILT_ACTIONS_MANIFEST'"; exit 1; }
+          actual="$(sha256sum "$MANIFEST_PATH" | cut -d' ' -f1)"
+          [[ "$actual" == "$EXPECTED_SHA256" ]] || { echo "::error::bundles.json hashes to $actual"; exit 1; }

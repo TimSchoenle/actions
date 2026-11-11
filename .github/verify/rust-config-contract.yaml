@@ -1,0 +1,4 @@
+target: rust/config-contract
+e2e:
+  token-permissions:
+    metadata: read

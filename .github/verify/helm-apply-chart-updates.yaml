@@ -1,0 +1,4 @@
+target: helm/apply-chart-updates
+e2e:
+  token-permissions:
+    metadata: read

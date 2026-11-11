@@ -1,0 +1,4 @@
+target: release/resolve-actions
+e2e:
+  token-permissions:
+    metadata: read
