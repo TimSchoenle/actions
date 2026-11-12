@@ -82,6 +82,10 @@ describe('modify-yaml under hostile input', () => {
       { name: 'a tag directive', value: '!!str v1.0.0' },
       { name: 'a nested map', value: '{tag: v1, replicas: 999}' },
       { name: 'a comment that swallows the rest of the line', value: 'v1.0.0 # replicas: 999' },
+      // K1: these were written as the numbers 1.1, 123 and 1, so the image that deployed was not the one named.
+      { name: 'a version with a trailing zero', value: '1.10' },
+      { name: 'a version with a leading zero', value: '0123' },
+      { name: 'a version that reads as a whole number', value: '1.0' },
     ])('writes $name as a scalar rather than as structure', async ({ value }) => {
       const result = await modify(value);
 
