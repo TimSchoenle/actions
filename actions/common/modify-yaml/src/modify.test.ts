@@ -199,10 +199,25 @@ level1:
     });
   });
 
+  // K1: new-value echoed the input, so it claimed `.inf` or `+Infinity` reached the file verbatim. It is
+  // read back from the written file and formatted like old-value, so the two compare like for like.
+  it.each([
+    ['1.10', '1.10'],
+    ['42', '42'],
+    ['+Infinity', 'Infinity'],
+    ['.inf', 'Infinity'],
+    ['.nan', 'NaN'],
+    ['null', 'null'],
+  ])('reports %s as written: %s', async (input, written) => {
+    await fs.writeFile(tmpFile, 'tag: 1.0.0\n');
+
+    await expect(modifyYaml(tmpFile, 'tag', input)).resolves.toEqual({ oldValue: '1.0.0', newValue: written });
+  });
+
   it('should modify a simple key', async () => {
     await fs.writeFile(tmpFile, 'key: old_value\n');
-    const old = await modifyYaml(tmpFile, 'key', 'new_value');
-    expect(old).toBe('old_value');
+    const result = await modifyYaml(tmpFile, 'key', 'new_value');
+    expect(result).toEqual({ oldValue: 'old_value', newValue: 'new_value' });
     const content = await fs.readFile(tmpFile, 'utf-8');
     expect(content).toContain('key: new_value');
   });
