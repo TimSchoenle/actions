@@ -45,23 +45,27 @@ issue losing its identity.
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input              | Required | Default                    | Description                                                                                                                                                                                                                                                                                       |
-| ------------------ | -------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `token`            | yes      |                            | GitHub token with issues: write on the target repository.                                                                                                                                                                                                                                         |
-| `repository`       | no       | `${{ github.repository }}` | Repository to open or update the issue on, as "owner/repo". Unlike a pull request reference, the default is populated regardless of the triggering event, so most callers pass nothing.                                                                                                           |
-| `identifier`       | yes      |                            | Stable key naming this issue, e.g. "repo-state-Name". One to 64 letters, digits, ".", "_" and "-", starting with a letter or digit; anything else fails the step. It is written into the issue body as a hidden marker, which is how a later run finds the issue to update. See identifier below. |
-| `title`            | yes      |                            | Issue title. Rewritten every run that finds the issue by marker -- the marker, not the title, is the identity, so the title may change between runs without losing it.                                                                                                                            |
-| `body`             | no       |                            | Markdown body of the issue. Exactly one of body and body_file must be non-empty; setting both fails the step rather than picking one.                                                                                                                                                             |
-| `body_file`        | no       |                            | Path, relative to the workspace, of a file holding the markdown body. Exactly one of body and body_file must be non-empty; setting both fails the step rather than picking one.                                                                                                                   |
-| `labels`           | no       |                            | Multiline list of labels the issue must carry. Enforced on every run: a label present here and missing from the issue is added, and one absent here but present on the issue is removed. A label that does not yet exist on the repository is created. See labels below.                          |
-| `update_existing`  | no       | `true`                     | Update the previous issue carrying the identifier instead of opening one. When false, every run opens a new issue.                                                                                                                                                                                |
-| `search_state`     | no       | `all`                      | "open" or "all". Scope of the issue listing searched for the marker. "all" also finds a manually closed issue so it can be reopened; "open" is cheaper on a repository with many closed issues. See Why not the Search API below.                                                                 |
-| `reopen_if_closed` | no       | `true`                     | Reopen a closed issue carrying the marker. When false, a closed matching issue is updated in place and left closed rather than reopened.                                                                                                                                                          |
-| `author`           | no       |                            | Only match an issue opened by this login (e.g. "my-app[bot]"). Empty accepts any author: anyone who can open an issue can then paste the marker, and the run fails when GitHub refuses to edit their issue. Set it on a repository that takes issues from untrusted contributors.                 |
+| Input              | Required | Default                    | Description                                                                                                                                                                                                                                                                                                 |
+| ------------------ | -------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `token`            | yes      |                            | GitHub token with issues: write on the target repository.                                                                                                                                                                                                                                                   |
+| `repository`       | no       | `${{ github.repository }}` | Repository to open or update the issue on, as "owner/repo". Unlike a pull request reference, the default is populated regardless of the triggering event, so most callers pass nothing.                                                                                                                     |
+| `identifier`       | yes      |                            | Stable key naming this issue, e.g. "repo-state-Name". One to 64 letters, digits, ".", "_" and "-", starting with a letter or digit; anything else fails the step. It is written into the issue body as a hidden marker, which is how a later run finds the issue to update. See identifier below.           |
+| `title`            | yes      |                            | Issue title. Rewritten every run that finds the issue by marker -- the marker, not the title, is the identity, so the title may change between runs without losing it.                                                                                                                                      |
+| `body`             | no       |                            | Markdown body of the issue. Exactly one of body and body_file must be non-empty; setting both fails the step rather than picking one.                                                                                                                                                                       |
+| `body_file`        | no       |                            | Path, relative to the workspace, of a file holding the markdown body. Exactly one of body and body_file must be non-empty; setting both fails the step rather than picking one.                                                                                                                             |
+| `labels`           | no       |                            | Multiline list of labels the issue must carry. Enforced on every run: a label present here and missing from the issue is added, and one absent here but present on the issue is removed. A label that does not yet exist on the repository is created. See labels below.                                    |
+| `update_existing`  | no       | `true`                     | Update the previous issue carrying the identifier instead of opening one. When false, every run opens a new issue.                                                                                                                                                                                          |
+| `search_state`     | no       | `all`                      | "open" or "all". Scope of the issue listing searched for the marker. "all" also finds a manually closed issue so it can be reopened; "open" is cheaper on a repository with many closed issues. See Why not the Search API below.                                                                           |
+| `reopen_if_closed` | no       | `true`                     | Reopen a closed issue carrying the marker. When false, a closed matching issue is updated in place and left closed rather than reopened.                                                                                                                                                                    |
+| `author`           | no       |                            | Only match an issue opened by this login (e.g. "my-app[bot]"). Empty accepts only an issue a GitHub App opened, which covers GITHUB_TOKEN and App installation tokens. A personal access token posts as its owner, so a workflow using one has to set author to that login, or every run opens a new issue. |
 <!-- /docs:generated inputs -->
 
 Prefer `body_file` for anything a build step generated. A report routed through a `${{ }}` expression has to survive
 the runner's own quoting first.
+
+A body carrying a marker of this action on a line of its own fails the step, whichever input it came from. A run finds
+its issue by a marker on any line, so a planted `<!-- timschoenle/actions:issue:other -->` would let the next run for
+`other` find this issue and overwrite it. A marker inside a line of prose is not matched and is allowed.
 
 ### `identifier`
 
@@ -124,10 +128,15 @@ The `unchanged` case is not only an optimisation: rewriting an issue with its ow
 An issue deleted between the scan and the write becomes a new issue rather than a failed step. Deleting last month's
 card must not stop this month's from being posted.
 
-A refusal to edit somebody else's issue does **not** fall back. Anyone who can open an issue on the repository can
-paste the marker, and falling back there would add an issue on every run forever: the pasted issue is still the one
-this action's scan finds, so the next run finds it and is refused again. The step fails once instead. Set `author` to
-the login the workflow posts as to skip such an issue outright.
+Anyone who can open an issue on the repository can paste the marker. With `author` empty, a run therefore only adopts
+an issue a GitHub App opened, which is what `GITHUB_TOKEN` and an App installation token post as. A pasted issue from a
+person is skipped, and the run updates the App's own issue or opens one. A token that posts as a person, such as a
+personal access token, needs `author` set to that person's login; without it, no earlier issue qualifies and every run
+opens a new one. Set `author` to the App's login as well where another App also opens issues on the repository.
+
+A refusal to edit an issue that passed that check does **not** fall back. Falling back would add an issue on every run
+forever: the refused issue is still the one this action's scan finds, so the next run finds it and is refused again.
+The step fails once instead.
 
 `listForRepo`, the endpoint this action scans, returns pull requests alongside issues — GitHub models a pull request
 as an issue with a branch. A pull request is never matched, even one carrying a forged marker in its body: this

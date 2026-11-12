@@ -17,7 +17,8 @@ const MAX_PAGE_SIZE = 100;
  * but may not edit somebody else's. Falling back on it would open a fresh issue on every single run:
  * the issue that provoked the refusal is still the one this action's scan keeps finding, so the next
  * run finds it, is refused again, and adds another. Failing instead says exactly once that the marker was
- * found on an issue this identity does not own, which the `author` input is there to prevent. A rate
+ * found on an issue this identity does not own. With `author` empty only an App's issues are candidates,
+and with it set only that login's, so the refusal is left for the case of another App's issue. A rate
  * limit reports as 403 too, which is a second reason not to read that status as "deleted".
  */
 const UNAVAILABLE_STATUSES = [404, 410];
@@ -97,6 +98,7 @@ export function createIssueApi(token: string): IssueApi {
             body: issue.body ?? '',
             labels: labelNames(issue.labels),
             number: issue.number,
+            postedByApp: issue.user?.type === 'Bot' || Boolean(issue.performed_via_github_app),
             state: issue.state === 'closed' ? 'closed' : 'open',
             title: issue.title,
             url: issue.html_url,
