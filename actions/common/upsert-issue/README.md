@@ -132,7 +132,12 @@ Anyone who can open an issue on the repository can paste the marker. With `autho
 an issue a GitHub App opened, which is what `GITHUB_TOKEN` and an App installation token post as. A pasted issue from a
 person is skipped, and the run updates the App's own issue or opens one. A token that posts as a person, such as a
 personal access token, needs `author` set to that person's login; without it, no earlier issue qualifies and every run
-opens a new one. Set `author` to the App's login as well where another App also opens issues on the repository.
+opens a new one. Set `author` to the App's login as well where another App also opens issues on the repository. With
+`author` set, GitHub filters the listing by that login before paging, so the scan never reads anybody else's issues or
+pull requests.
+
+On an update, only the labels the issue does not already carry are created first; a label already on the issue exists
+in the repository.
 
 A refusal to edit an issue that passed that check does **not** fall back. Falling back would add an issue on every run
 forever: the refused issue is still the one this action's scan finds, so the next run finds it and is refused again.

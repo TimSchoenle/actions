@@ -62,14 +62,23 @@ export interface IssueApi {
    * repository with a long history is the difference between one request and hundreds. Never yields
    * a pull request -- GitHub models one as an issue with a branch, and this action's scope is plain
    * issues only.
+   *
+   * @param creator - when not empty, only the issues this login opened, filtered by GitHub
    */
-  issues(target: RepositoryCoordinates, state: IssueSearchState): AsyncIterable<ExistingIssue>;
+  issues(target: RepositoryCoordinates, state: IssueSearchState, creator?: string): AsyncIterable<ExistingIssue>;
   /** Opens a new issue. */
   createIssue(target: RepositoryCoordinates, title: string, body: string, labels: string[]): Promise<IssueRef>;
   /**
    * Applies the given changes to an existing issue.
    *
+   * @param existingLabels - the labels the issue carries now, which therefore exist in the repository
+   * and need not be created
    * @throws {@link IssueUnavailableError} if the issue can no longer be edited.
    */
-  updateIssue(target: RepositoryCoordinates, issueNumber: number, changes: IssueWrite): Promise<IssueRef>;
+  updateIssue(
+    target: RepositoryCoordinates,
+    issueNumber: number,
+    changes: IssueWrite,
+    existingLabels?: readonly string[],
+  ): Promise<IssueRef>;
 }
