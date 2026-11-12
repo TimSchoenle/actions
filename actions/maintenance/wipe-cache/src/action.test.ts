@@ -107,6 +107,18 @@ describe('wipe-cache action', () => {
     expect(api.listCaches).toHaveBeenCalledWith(expect.anything(), 'refs/heads/feature/x');
   });
 
+  // The pull_request closed event carries no branch to delete; the job passes the merge ref.
+  it('wipes a pull request merge ref passed from a closed pull request event', async () => {
+    setInputs({ branch: 'refs/pull/12/merge' });
+    const api = fakeApi([entry(1, 'refs/pull/12/merge')]);
+
+    await run(api, { eventName: 'pull_request', ref: undefined, refType: undefined });
+
+    expect(api.listCaches).toHaveBeenCalledWith(expect.anything(), 'refs/pull/12/merge');
+    expect(api.getDefaultBranch).not.toHaveBeenCalled();
+    expect(core.setFailed).not.toHaveBeenCalled();
+  });
+
   // `core.summary` is a module singleton that caches the first GITHUB_STEP_SUMMARY it reads, and on a
   // runner that variable is already set for the whole test process. The write is therefore stubbed
   // and the rendered markdown read from the call, rather than from whichever file the cache points at.

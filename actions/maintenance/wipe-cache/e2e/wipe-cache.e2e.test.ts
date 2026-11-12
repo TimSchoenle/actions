@@ -91,7 +91,7 @@ describe('wipe-cache', () => {
   it('refuses a ref that is not a branch', async () => {
     const result = await run({ branch: 'refs/tags/v1.0.0' }, 'failure');
 
-    expectCleanRejection(result, /only branches can be wiped/);
+    expectCleanRejection(result, /only branches and pull request merge refs can be wiped/);
   });
 
   // The delete event fires for tags too, and its ref would otherwise be read as a branch name.
