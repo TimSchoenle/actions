@@ -42,9 +42,6 @@ jobs:
   e2e-helm-apply-chart-updates:
     name: 'Helm Apply-chart-updates: End-to-end'
     if: ${{ contains(fromJSON(inputs.targets), 'helm/apply-chart-updates') }}
-    environment:
-      name: ci-e2e
-      deployment: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -59,7 +56,6 @@ jobs:
             objects.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
-            api.github.com:443
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -101,25 +97,9 @@ jobs:
           key: ${{ inputs.cache-key }}
           fail-on-cache-miss: true
 
-      # The cases run `dist/index.js`, the bundle GitHub itself would run: the one the install step
-      # above put there, which the harness checks against BUILT_ACTIONS_MANIFEST before it runs it.
-      - name: Generate Token
-        id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          owner: TimSchoenle
-          repositories: actions-testing
-          permission-metadata: read
-
       - name: Run End-to-end Cases
         env:
-          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
-          # An installation token cannot call `GET /user`, so the suite resolves its own account by
-          # app slug instead. Without this a case matching commit authors fails only in CI.
-          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
-          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+          E2E_TOKENLESS: '1'
         run: bun run e2e actions/helm/apply-chart-updates
 
   test-full-update:

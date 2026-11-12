@@ -28,11 +28,15 @@ export type TokenPermissions = Readonly<Record<string, 'read' | 'write'>>;
 /** What the generated end-to-end job of a target needs beyond the defaults. */
 export interface E2eSettings {
   /**
-   * Scopes of the App token the cases run with. Always explicit: `create-github-app-token` grants the
-   * installation's entire permission set when no `permission-*` input is given.
+   * Scopes of the App token the cases run with. Always explicit when present: `create-github-app-token`
+   * grants the installation's entire permission set when no `permission-*` input is given.
+   *
+   * Absent for a suite that never reaches GitHub: its job then holds no App key, mints no token, uses
+   * no environment and cannot reach the API. A job that holds the key while running code under test
+   * exposes the key, not just a one-hour token.
    */
-  readonly tokenPermissions: TokenPermissions;
-  /** Scopes of a second identity's token, for an action that must act as someone else. */
+  readonly tokenPermissions?: TokenPermissions;
+  /** Scopes of a second identity's token, for an action that must act as someone else. Needs a primary. */
   readonly secondaryTokenPermissions?: TokenPermissions;
   /** Endpoints the job may reach beyond the GitHub API. Never a package registry. */
   readonly extraEndpoints: readonly string[];
@@ -151,8 +155,17 @@ function e2eSettings(file: string, value: unknown): E2eSettings {
   }
   unknownKeys(file, 'e2e', value, E2E_KEYS);
 
+  if (value['token-permissions'] === undefined && value['secondary-token-permissions'] !== undefined) {
+    fail(
+      file,
+      'e2e.secondary-token-permissions needs token-permissions: the second identity is minted beside the first',
+    );
+  }
+
   return {
-    tokenPermissions: tokenPermissions(file, 'e2e.token-permissions', value['token-permissions']),
+    ...(value['token-permissions'] === undefined
+      ? {}
+      : { tokenPermissions: tokenPermissions(file, 'e2e.token-permissions', value['token-permissions']) }),
     ...(value['secondary-token-permissions'] === undefined
       ? {}
       : {

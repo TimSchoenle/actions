@@ -35,6 +35,22 @@ describe('parseSource', () => {
     expect(parsed.extraInputs).toEqual([]);
   });
 
+  // C1: a target whose cases never reach GitHub gets no token, so the job holds no key.
+  it('reads an e2e block without token-permissions as a tokenless suite', () => {
+    const parsed = parseSource(FILE, source(['target: common/find-patch', 'e2e: {}']));
+
+    expect(parsed.e2e).toEqual({ extraEndpoints: [] });
+  });
+
+  it('refuses a secondary token without a primary one', () => {
+    expect(() =>
+      parseSource(
+        FILE,
+        source(['target: common/find-patch', 'e2e:', '  secondary-token-permissions:', '    issues: write']),
+      ),
+    ).toThrow(/secondary-token-permissions needs token-permissions/);
+  });
+
   it('reads the rules, the explicit build needs, the extra inputs and a title', () => {
     const parsed = parseSource(
       '.github/verify/configs-renovate.yaml',

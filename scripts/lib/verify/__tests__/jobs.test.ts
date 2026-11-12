@@ -149,6 +149,24 @@ describe('e2eJob', () => {
   });
 });
 
+describe('e2eJob without a token', () => {
+  const source = parseSource('.github/verify/common-read-yaml.yaml', 'target: common/read-yaml\ne2e: {}\n');
+  const job = e2eJob(source, true, ['node_modules']);
+
+  it('holds no key, no environment and no route to the GitHub API', () => {
+    expect(job).not.toContain('secrets.');
+    expect(job).not.toContain('Generate Token');
+    expect(job).not.toContain('environment:');
+    expect(job).not.toContain('api.github.com');
+    expect(job).not.toContain('E2E_GITHUB_TOKEN');
+  });
+
+  it('tells the suite it runs without credentials, and still runs the cases', () => {
+    expect(job).toContain("E2E_TOKENLESS: '1'");
+    expect(job).toContain('run: bun run e2e actions/common/read-yaml');
+  });
+});
+
 describe('workspaceModulePaths', () => {
   it('maps each member to its top-level directory, one wildcard per remaining segment, root first', () => {
     expect(
