@@ -12,9 +12,9 @@ egress:
   - endpoint: registry.npmjs.org:443
     for: bun install, with the default registry
   - endpoint: '*.actions.githubusercontent.com:443'
-    for: the Actions cache service
+    for: the Actions cache service, except with cache-mode none
   - endpoint: '*.blob.core.windows.net:443'
-    for: cache entry downloads and uploads
+    for: cache entry downloads and uploads, except with cache-mode none
 
 examples:
   - title: Default
