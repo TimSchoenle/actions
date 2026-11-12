@@ -152,6 +152,11 @@ missing all its partials.
 Every helper is deterministic. There is deliberately no `now`, `random`, `uuid` or environment access: a file regenerated
 from unchanged inputs has to come out byte-identical.
 
+Handlebars' built-in `log` helper is removed. It wrote its arguments to the step log, where a template or partial from a
+pull request could emit workflow commands such as `::add-mask::` or a forged `::error::` annotation. `{{log ...}}` now
+fails the render as a missing helper, and `{{ log }}` reads a variable named `log` like any other name. The other
+built-ins (`if`, `unless`, `each`, `with`, `lookup`) are unchanged.
+
 ### Markdown
 
 | Helper             | Result                                                                                          |

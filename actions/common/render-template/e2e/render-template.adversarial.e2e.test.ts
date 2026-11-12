@@ -244,6 +244,32 @@ describe('render-template under hostile input', () => {
       expectNoInjection(result);
     });
 
+    // Handlebars' built-in log helper wrote its arguments to the step log, each on a line of its own,
+    // so a template or partial from a pull request could emit any workflow command through it.
+    it.each([
+      { name: 'the template', files: { [TEMPLATE]: '{{log PAYLOAD}}' }, inputs: {} },
+      {
+        name: 'a partial',
+        files: { [TEMPLATE]: '{{> forged }}', 'partials/forged.hbs': '{{log PAYLOAD}}' },
+        inputs: { 'partials-dir': 'partials' },
+      },
+    ])('forges nothing through the log helper in $name', async ({ files, inputs }) => {
+      workspace = await Workspace.create(
+        Object.fromEntries(
+          Object.entries(files).map(([file, text]) => [
+            file,
+            text.replace('PAYLOAD', JSON.stringify(commandInjectionPayload())),
+          ]),
+        ),
+      );
+
+      const result = await render(inputs, 'failure');
+
+      expectCleanRejection(result, /log/);
+      expectNoInjection(result);
+      await expect(workspace.exists(OUTPUT)).resolves.toBe(false);
+    });
+
     it('forges nothing through the paths it names in a failure', async () => {
       workspace = await Workspace.create({});
 
