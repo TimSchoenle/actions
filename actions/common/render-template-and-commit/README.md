@@ -85,7 +85,8 @@ resolution. Every rendering input behaves exactly as it does there.
 ### `file_pattern`
 
 By default only the rendered file is committed, not the whole workspace. That is the difference that matters when a
-build step left artefacts behind: a documentation commit stays a documentation commit.
+build step left artefacts behind: a documentation commit stays a documentation commit. The rendered path is passed to
+`commit-changes` as one literal path, so an output path with spaces or glob characters is committed as named.
 
 Override it to commit more, using the same pathspec syntax `commit-changes` accepts:
 
