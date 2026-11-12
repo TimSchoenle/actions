@@ -9,6 +9,10 @@ inputs:
     description: 'Space- or newline-separated paths or globs scoping the patch. Empty or . takes the whole tree.'
     required: false
     default: '.'
+  empty_base_sha:
+    description: 'Write an empty patch recorded against this full commit SHA, without reading a checkout. Empty diffs the checkout.'
+    required: false
+    default: ''
   max_patch_bytes:
     description: 'Largest patch, in bytes, before the step fails.'
     required: false
