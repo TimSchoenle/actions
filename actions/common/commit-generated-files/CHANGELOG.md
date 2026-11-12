@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/TimSchoenle/actions/compare/src-actions-common-commit-generated-files-v1.3.0...src-actions-common-commit-generated-files-v1.3.1) (2026-11-12)
+
+
+### Performance Improvements
+
+* **commit-generated-files:** commit the patch find-patch already downloaded ([#2288](https://github.com/TimSchoenle/actions/issues/2288)) ([003cef4](https://github.com/TimSchoenle/actions/commit/003cef4ced50b647035862864524ff7eec903e22))
+
 ## [1.3.0](https://github.com/TimSchoenle/actions/compare/src-actions-common-commit-generated-files-v1.2.4...src-actions-common-commit-generated-files-v1.3.0) (2026-11-12)
 
 

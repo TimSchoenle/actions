@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.22](https://github.com/TimSchoenle/actions/compare/src-actions-common-render-template-and-commit-v1.1.21...src-actions-common-render-template-and-commit-v1.1.22) (2026-11-12)
+
+
+### Bug Fixes
+
+* **render-template-and-commit:** commit the rendered path as one literal path ([#2286](https://github.com/TimSchoenle/actions/issues/2286)) ([2e56686](https://github.com/TimSchoenle/actions/commit/2e56686b90af1bb48666e14d9bdfc2a3799e737f))
+
 ## [1.1.21](https://github.com/TimSchoenle/actions/compare/src-actions-common-render-template-and-commit-v1.1.20...src-actions-common-render-template-and-commit-v1.1.21) (2026-11-11)
 
 

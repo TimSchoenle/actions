@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.6](https://github.com/TimSchoenle/actions/compare/src-actions-common-delete-branch-v2.0.5...src-actions-common-delete-branch-v2.0.6) (2026-11-12)
+
+
+### Bug Fixes
+
+* **create-pull-request:** leave the branch untouched until the commit exists ([#2290](https://github.com/TimSchoenle/actions/issues/2290)) ([9342e71](https://github.com/TimSchoenle/actions/commit/9342e71fadc596410b4852c2316615c82886e424))
+
 ## [2.0.5](https://github.com/TimSchoenle/actions/compare/src-actions-common-delete-branch-v2.0.4...src-actions-common-delete-branch-v2.0.5) (2026-11-12)
 
 
