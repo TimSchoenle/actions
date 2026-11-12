@@ -144,8 +144,20 @@ describe('verify-branch-name action', () => {
     expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('Invalid branch pattern'));
   });
 
-  it('auto-passes the pattern check when no pattern is configured', () => {
-    setInputs({ branch_pattern: '', head_ref: 'anything' });
+  // The input is declared required, and an empty value used to pass every branch: a workflow that
+  // lost its pattern to a typo in an expression approved whatever came in. Accepting any branch now
+  // takes an explicit `.*`.
+  it.each(['', '   '])('fails on an empty pattern (%j) and publishes nothing', (pattern) => {
+    setInputs({ branch_pattern: pattern, head_ref: 'anything' });
+
+    run();
+
+    expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining("branch_pattern is empty. Pass '.*'"));
+    expect(outputs()).toEqual({});
+  });
+
+  it("accepts any branch with the explicit '.*'", () => {
+    setInputs({ branch_pattern: '.*', head_ref: 'anything' });
 
     run();
 
