@@ -83,11 +83,11 @@ export const REQUIRED_CHECKS: readonly RequiredCheck[] = [
       'Always-running gate over the "Format" and "Commit Format" jobs, both of which are skipped on release-please branches and so cannot be required themselves.',
   },
   {
-    context: 'ci-required',
-    workflow: 'ci-required.yaml',
-    kind: 'status',
+    context: 'Verify',
+    workflow: 'verify.yaml',
+    kind: 'job',
     reason:
-      'Aggregate of the path-filtered verify workflows, posted only by the workflow_run evaluation, which runs the default-branch copy of ci-required.yaml; the workflow has no pull_request trigger, so no copy a pull request controls ever publishes it. The "Aggregate verify checks" job name must NOT be required in its place: its workflow_run check runs land on the default branch, never on the pull request head.',
+      'The final job of the generated Verify workflow. It runs on every pull request without a path filter, needs plan, install, build and every shard call, and fails when any of them failed or was cancelled, so it reports a verdict whether the change selects no target or all of them. The shard jobs themselves must NOT be required: they report as "<shard> / <job>" while they run and only under the bare shard name while skipped.',
   },
 ];
 
@@ -99,8 +99,12 @@ export const REQUIRED_CHECKS: readonly RequiredCheck[] = [
  * still gates nothing, so those are named outright.
  */
 export const FORBIDDEN_REQUIRED_CHECKS: Readonly<Record<string, string>> = {
+  'ci-required':
+    'The commit status the CI Required workflow posted before the Verify workflow replaced it. That workflow is gone, so nothing posts the context any more and a ruleset still requiring it would hold every pull request for ever. Require the Verify job instead.',
   'Aggregate verify checks':
-    "The job name behind ci-required. It only runs on workflow_run, on the default branch, so its check runs never reach the pull request head and the context would wait for ever. Require the 'ci-required' commit status instead.",
+    'The job of the deleted CI Required workflow. It only ever ran on workflow_run, on the default branch, so its check runs never reached a pull request head. Require the Verify job instead.',
+  'CI Summary: Verify':
+    "The Verify job's name while CI Required still aggregated it. The job is named Verify now, so the old context never reports again.",
   'Auto Format / Auto Format':
     "The nested name of the reusable-workflow call auto-format.yml used to make, which disappeared whenever the call was skipped. Require 'Auto Format Gate' instead.",
   'Auto Approve Renovate / Auto-approve PR':
@@ -291,8 +295,8 @@ function unguardedNeed(
 function triggerProblems(check: RequiredCheck, triggers: ParsedWorkflow['triggers'], defaultBranch: string): string[] {
   const problems: string[] = [];
   // A commit status is POSTed to an explicit SHA, so a workflow_run evaluation can report it onto the
-  // pull request head as well as a pull_request run can. That it does so for every pull request is
-  // ci-required's anchor contract, which ci-required.test.ts holds; a job context has no such route.
+  // pull request head as well as a pull_request run can, provided something triggers it for every
+  // pull request; a job context has no such route.
   const reachesPullRequest = triggers.onPullRequest || (check.kind === 'status' && triggers.onWorkflowRun);
   if (!reachesPullRequest) {
     problems.push(

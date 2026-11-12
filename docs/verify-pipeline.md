@@ -39,9 +39,10 @@ Scripts CI fails while a generated file differs from what the generator writes.
 | `verify-<category>` | the shard holds a selected target | calls the shard; each of its jobs runs only when its target is selected                    |
 | `verify`            | always                            | fails when any job above failed or was cancelled                                           |
 
-The `verify` job, named `CI Summary: Verify` while CI Required still publishes the required status,
-is the check branch protection requires. The pull request's own copy of the
-workflow decides it, as it does for `Lint & Test`.
+The `verify` job reports as `Verify`, the one verify context branch protection requires
+(`scripts/lib/required-checks.ts`). The pull request's own copy of the workflow decides it, as it
+does for `Lint & Test`. Never require a shard call or a job inside a shard: those report under nested
+names while they run, and not at all when their target is not selected.
 
 A shard receives `targets`, `cache-key`, `artifact-id` and `manifest-sha256` as inputs, and only the
 secrets its jobs read. Its caller job grants the union of its jobs' permissions: a called workflow
