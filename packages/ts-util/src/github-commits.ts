@@ -51,6 +51,7 @@ const PULL_REQUEST_COMMITS_QUERY = `query PullRequestCommits($prUrl: URI!, $curs
         nodes {
           commit {
             oid
+            committedDate
             authors(first: ${MAX_PAGE_SIZE}) {
               totalCount
               pageInfo {
@@ -139,6 +140,7 @@ interface SignatureFields {
 /** The commit fields the query selects. */
 interface CommitFields {
   oid: string;
+  committedDate: string | null;
   authors: AuthorConnection;
   committer: { user: { databaseId: number | null } | null } | null;
   signature: SignatureFields | null;
@@ -274,7 +276,7 @@ async function toCommitRecord(
 ): Promise<CommitRecord> {
   const commit = node?.commit;
 
-  if (!commit?.oid) {
+  if (!commit?.oid || !commit.committedDate) {
     throw new Error(`Incomplete commit data returned for commit #${index + 1}. Refusing to verify.`);
   }
 
@@ -282,6 +284,7 @@ async function toCommitRecord(
 
   return {
     authorIds: await collectAuthorIds(graphql, nameWithOwner, commit),
+    committedDate: commit.committedDate,
     committerId: committer?.user?.databaseId ?? null,
     oid: commit.oid,
     signatureState: signature?.state ?? null,

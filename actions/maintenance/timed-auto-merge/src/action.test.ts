@@ -78,6 +78,7 @@ function fakeApi(pullRequests: OpenPullRequest[]): TimedAutoMergeApi {
       commits: [
         {
           authorIds: [1001],
+          committedDate: '2026-11-01T00:00:00Z',
           committerId: 1001,
           oid: HEAD,
           signatureState: 'VALID',

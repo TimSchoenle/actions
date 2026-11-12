@@ -47,6 +47,7 @@ interface SignatureFixture {
 
 interface CommitFixture {
   oid?: string;
+  committedDate?: string | null;
   authorsConnection?: unknown;
   committer?: unknown;
   signature?: SignatureFixture | null;
@@ -55,11 +56,12 @@ interface CommitFixture {
 /** A commit node; by default made and signed locally by account 12345. */
 function commitNode({
   oid = 'abc1234',
+  committedDate = '2026-11-01T00:00:00Z',
   authorsConnection = authors(),
   committer = { user: { databaseId: 12345 } },
   signature = { isValid: true, signer: { databaseId: 12345 }, state: 'VALID', wasSignedByGitHub: false },
 }: CommitFixture = {}): unknown {
-  return { commit: { authors: authorsConnection, committer, oid, signature } };
+  return { commit: { authors: authorsConnection, committedDate, committer, oid, signature } };
 }
 
 interface CommitsPageFixture {
@@ -153,6 +155,7 @@ describe('fetchPullRequestCommits', () => {
       commits: [
         {
           authorIds: [12345, 67890],
+          committedDate: '2026-11-01T00:00:00Z',
           committerId: 12345,
           oid: 'sha1',
           signatureState: 'VALID',
@@ -238,6 +241,7 @@ describe('fetchPullRequestCommits', () => {
     const query = graphqlMock.mock.calls[0][0] as string;
     expect(query).toContain('headRefOid');
     expect(query).toContain('isCrossRepository');
+    expect(query).toMatch(/oid\s*committedDate/);
     expect(query).toMatch(/headRepository \{\s*nameWithOwner/);
     expect(query).toMatch(/committer \{\s*user \{\s*databaseId/);
     expect(query).toMatch(/wasSignedByGitHub\s*signer \{\s*databaseId/);
@@ -421,6 +425,14 @@ describe('fetchPullRequestCommits', () => {
 
   it('throws on a null commit node instead of skipping it', async () => {
     mockGraphql([commitsPage({ nodes: [commitNode(), null], totalCount: 2 })]);
+
+    await expect(fetchPullRequestCommits('token', PR_URL)).rejects.toThrow('Incomplete commit data');
+  });
+
+  // timed-auto-merge measures a pull request's age from its newest commit, so a missing date must
+  // not read as "no commit yet".
+  it('throws when a commit has no committed date', async () => {
+    mockGraphql([commitsPage({ nodes: [commitNode({ committedDate: null })] })]);
 
     await expect(fetchPullRequestCommits('token', PR_URL)).rejects.toThrow('Incomplete commit data');
   });
