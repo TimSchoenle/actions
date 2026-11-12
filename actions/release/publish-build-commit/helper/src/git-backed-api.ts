@@ -10,7 +10,15 @@ import fs from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import type { CompareStatus, GitTreeItem, PublishApi, Release, ReleaseAsset } from './github.js';
+import type {
+  CompareStatus,
+  GitTreeItem,
+  PublishApi,
+  RecursiveTree,
+  RefEntry,
+  Release,
+  ReleaseAsset,
+} from './github.js';
 
 /** A release as the fake stores it, with asset contents. */
 export interface StoredRelease extends Omit<Release, 'draft' | 'assets'> {
@@ -28,6 +36,12 @@ export class GitBackedApi implements PublishApi {
   readonly comments = new Map<number, string[]>();
   /** Every write, in order, for assertions on what a run did. */
   readonly writes: string[] = [];
+  /** Every read that costs an API request, in order, for assertions on what a run read. */
+  readonly reads: string[] = [];
+  /** Makes every recursive tree listing report itself truncated, as GitHub does past its size limit. */
+  truncateRecursiveTrees = false;
+  /** The creation time the next release gets; tests move it to place releases in time. */
+  now = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
   /** Called before a ref update, so a test can move the branch underneath the publisher. */
   beforeUpdateRef: ((ref: string) => void) | undefined;
   private nextId = 1;
@@ -88,11 +102,28 @@ export class GitBackedApi implements PublishApi {
       sha,
       tree: (lines.find((line) => line.startsWith('tree ')) ?? '').slice(5),
       parents: lines.filter((line) => line.startsWith('parent ')).map((line) => line.slice(7)),
+      committedAt: this.git(['show', '-s', '--format=%cI', sha]),
     };
   }
 
   async getTree(sha: string): Promise<GitTreeItem[]> {
-    const output = this.git(['ls-tree', sha]);
+    this.reads.push(`tree:${sha}`);
+
+    return this.lsTree([sha]);
+  }
+
+  async getTreeRecursive(sha: string): Promise<RecursiveTree> {
+    this.reads.push(`tree-recursive:${sha}`);
+    const items = this.lsTree(['-r', '-t', sha]);
+
+    // A truncated listing keeps only some entries; the first half stands in for GitHub's cut.
+    return this.truncateRecursiveTrees
+      ? { items: items.slice(0, Math.floor(items.length / 2)), truncated: true }
+      : { items, truncated: false };
+  }
+
+  private lsTree(args: string[]): GitTreeItem[] {
+    const output = this.git(['ls-tree', ...args]);
 
     return output === ''
       ? []
@@ -104,7 +135,29 @@ export class GitBackedApi implements PublishApi {
         });
   }
 
+  async matchingRefs(prefix: string): Promise<RefEntry[]> {
+    this.reads.push(`matching-refs:${prefix}`);
+    const output = this.git(['for-each-ref', '--format=%(refname) %(objectname) %(objecttype)']);
+
+    return output === ''
+      ? []
+      : output
+          .split('\n')
+          .map((line) => {
+            const [ref, sha, type] = line.split(' ');
+            return { ref: ref.slice('refs/'.length), sha, type };
+          })
+          .filter((entry) => entry.ref.startsWith(prefix));
+  }
+
   async resolveRef(ref: string): Promise<string | undefined> {
+    this.reads.push(`ref:${ref}`);
+
+    return this.revParse(ref);
+  }
+
+  /** The commit `refs/<ref>` names, without recording a read: GitHub does this inside its own writes. */
+  private revParse(ref: string): string | undefined {
     try {
       return this.git(['rev-parse', '--verify', '--quiet', `refs/${ref}^{commit}`]);
     } catch {
@@ -137,7 +190,7 @@ export class GitBackedApi implements PublishApi {
   }
 
   async createRef(ref: string, sha: string): Promise<'created' | 'exists'> {
-    if ((await this.resolveRef(ref)) !== undefined) {
+    if (this.revParse(ref) !== undefined) {
       return 'exists';
     }
     this.writes.push(`ref:${ref}`);
@@ -148,7 +201,7 @@ export class GitBackedApi implements PublishApi {
 
   async updateRef(ref: string, sha: string): Promise<'updated' | 'not-fast-forward'> {
     this.beforeUpdateRef?.(ref);
-    const current = await this.resolveRef(ref);
+    const current = this.revParse(ref);
     if (current === undefined) {
       throw new Error(`refs/${ref} does not exist`);
     }
@@ -179,8 +232,19 @@ export class GitBackedApi implements PublishApi {
     return mergeBase === head ? 'behind' : 'diverged';
   }
 
-  async listReleases(): Promise<Release[]> {
-    return this.releases.map((release) => ({ ...release, assets: [...release.assets] }));
+  async getReleaseByTag(tag: string): Promise<Release | undefined> {
+    this.reads.push(`release-by-tag:${tag}`);
+    const release = this.releases.find((candidate) => !candidate.draft && candidate.tagName === tag);
+
+    return release === undefined ? undefined : { ...release, assets: [...release.assets] };
+  }
+
+  async listReleasesSince(since: string): Promise<Release[]> {
+    this.reads.push(`releases-since:${since}`);
+
+    return this.releases
+      .filter((release) => release.createdAt >= since)
+      .map((release) => ({ ...release, assets: [...release.assets] }));
   }
 
   async createDraftRelease(tagName: string, name: string, body: string): Promise<Release> {
@@ -192,6 +256,7 @@ export class GitBackedApi implements PublishApi {
       draft: true,
       htmlUrl: `https://github.com/o/r/releases/${id}`,
       uploadUrl: `https://uploads.github.com/repos/o/r/releases/${id}/assets{?name,label}`,
+      createdAt: this.now,
       assets: [],
       name,
       body,
