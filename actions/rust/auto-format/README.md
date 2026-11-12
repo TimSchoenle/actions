@@ -148,11 +148,11 @@ The commit job's permissions are listed in [`common/commit-patch`](../../common/
 
 A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
 
-| Endpoint                              | For                                               |
-| ------------------------------------- | ------------------------------------------------- |
-| `static.rust-lang.org:443`            | the toolchain and the rustfmt component           |
-| `*.actions.githubusercontent.com:443` | the patch artifact upload and the toolchain cache |
-| `*.blob.core.windows.net:443`         | the patch artifact upload and the toolchain cache |
+| Endpoint                              | For                                     |
+| ------------------------------------- | --------------------------------------- |
+| `static.rust-lang.org:443`            | the toolchain and the rustfmt component |
+| `*.actions.githubusercontent.com:443` | the patch artifact upload               |
+| `*.blob.core.windows.net:443`         | the patch artifact upload               |
 <!-- /docs:generated egress -->
 
 ## Behaviour
