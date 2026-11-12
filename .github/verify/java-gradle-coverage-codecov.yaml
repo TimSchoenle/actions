@@ -43,8 +43,15 @@ jobs:
         shell: bash
         env:
           COVERAGE_FILES: ${{ steps.coverage.outputs.coverage_files }}
+          CACHE: ${{ steps.coverage.outputs.cache }}
         run: |
           set -euo pipefail
+          # No OIDC, no token and no id-token permission: auto keeps the cache.
+          if [[ "${CACHE}" != 'true' ]]; then
+            echo "::error::cache resolved to '${CACHE}' for a job without credentials, expected 'true'"
+            exit 1
+          fi
+
           python3 - <<'EOF'
           import os
           import sys
@@ -205,6 +212,75 @@ jobs:
             exit 1
           fi
 
+  # A job that may upload with OIDC or a token gets no restored plugins, dependencies or build
+  # output. Each case runs the whole measurement, so the reports show the action still works
+  # without the cache.
+  java-coverage-verify-cache-off:
+    name: Verify Coverage-codecov (cache off, ${{ matrix.case }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - case: auto with OIDC
+            use_oidc: 'true'
+            cache: auto
+          - case: explicit false
+            use_oidc: 'false'
+            cache: 'false'
+    permissions:
+      contents: read # to fetch code
+    env:
+      FIXTURE: actions/java-gradle/coverage-codecov/fixture
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            api.adoptium.net:443
+            services.gradle.org:443
+            downloads.gradle.org:443
+            repo.maven.apache.org:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Test coverage-codecov
+        id: coverage
+        uses: ./actions/java-gradle/coverage-codecov # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          source_directory: ${{ env.FIXTURE }}
+          java_version: '21'
+          use_oidc: ${{ matrix.use_oidc }}
+          cache: ${{ matrix.cache }}
+          dry_run: 'true'
+
+      - name: Verify the cache stayed off
+        shell: bash
+        env:
+          CACHE: ${{ steps.coverage.outputs.cache }}
+          COVERAGE_FILES: ${{ steps.coverage.outputs.coverage_files }}
+        run: |
+          set -euo pipefail
+          if [[ "${CACHE}" != 'false' ]]; then
+            echo "::error::cache resolved to '${CACHE}', expected 'false'"
+            exit 1
+          fi
+
+          if [[ -z "${COVERAGE_FILES}" ]]; then
+            echo "::error::No coverage report was written"
+            exit 1
+          fi
+
   java-coverage-verify-rejects-inputs:
     name: Verify Coverage-codecov (rejects ${{ matrix.case }})
     runs-on: ubuntu-latest
@@ -219,6 +295,10 @@ jobs:
           - case: non-boolean
             java_version: '21'
             use_oidc: 'yes'
+          - case: unknown cache mode
+            java_version: '21'
+            use_oidc: 'false'
+            cache: 'yes'
     permissions:
       contents: read # to fetch code
     env:
@@ -242,6 +322,7 @@ jobs:
           source_directory: ${{ env.FIXTURE }}
           java_version: ${{ matrix.java_version }}
           use_oidc: ${{ matrix.use_oidc }}
+          cache: ${{ matrix.cache || 'auto' }}
           dry_run: 'true'
 
       # The output directory is checked as well as the outcome: a failure from a later step would
