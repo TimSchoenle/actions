@@ -86,6 +86,15 @@ describe('resolveWithinWorkspace', () => {
     expect(() => resolveIn(value)).toThrow(UnsafePathError);
   });
 
+  // The trailing-character strip runs on every segment of workflow input, so it must stay linear.
+  it('checks a segment holding a long run of spaces in linear time', () => {
+    const started = performance.now();
+
+    expect(resolveIn(`a${' '.repeat(100_000)}b/file`)).toBe(path.resolve(WORKSPACE, `a${' '.repeat(100_000)}b/file`));
+    expect(() => resolveIn(`.git${' .'.repeat(100_000)}/config`)).toThrow(UnsafePathError);
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
+
   it('says why a path into .git is refused, naming the input', () => {
     expect(() => resolveIn('.git/config')).toThrow(/^output must not reach into a \.git directory/);
   });
