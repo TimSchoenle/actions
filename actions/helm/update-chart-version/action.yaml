@@ -17,7 +17,7 @@ inputs:
     required: false
     default: ''
   chart-path:
-    description: 'Path of the chart inside the repo (e.g. charts/my-app)'
+    description: 'Path of the chart inside the repo (e.g. charts/my-app). Letters, digits, ".", "_", "-" and "/" only.'
     required: true
   images:
     description: 'JSON object mapping a dot-notation key in values.yaml to that image''s own variables,
@@ -113,23 +113,27 @@ runs:
       run: |
         set -euo pipefail
 
+        # Every input is checked before anything is written: a line break in a value written to
+        # GITHUB_OUTPUT would start a second output, and owner and repo choose where the token is minted.
         if ! [[ "$HELM_REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
           echo "::error::helm-repo must be owner/repo, got '$HELM_REPO'"
           exit 1
         fi
-
-        # Extract chart name from path (basename)
-        CHART_NAME=$(basename "$CHART_PATH")
-        {
-          echo "chart-name=$CHART_NAME"
-          echo "owner=${HELM_REPO%%/*}"
-          echo "repo=${HELM_REPO#*/}"
-        } >> "$GITHUB_OUTPUT"
-
+        if ! [[ "$CHART_PATH" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+          echo "::error::chart-path may hold only letters, digits, '.', '_', '-' and '/'"
+          exit 1
+        fi
         case "$PULL_CONTRACTS" in
           true | false) ;;
           *) echo "::error::pull-contracts must be true or false, got '$PULL_CONTRACTS'"; exit 1 ;;
         esac
+
+        CHART_NAME=$(basename "$CHART_PATH")
+        {
+          echo "owner=${HELM_REPO%%/*}"
+          echo "repo=${HELM_REPO#*/}"
+          echo "chart-name=$CHART_NAME"
+        } >> "$GITHUB_OUTPUT"
 
     - name: Generate Bot Token
       id: generate_token
