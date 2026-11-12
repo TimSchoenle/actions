@@ -79,7 +79,7 @@ from the body alone.
 | `footer`          | no       |                                             | Markdown placed below the surviving body_lines, separated by one blank line. Only valid with body_lines.                                                                                                                                                                                                                                                   |
 | `update_existing` | no       | `true`                                      | Update the previous comment carrying the identifier instead of adding one. When false, every run posts a new comment.                                                                                                                                                                                                                                      |
 | `create_new`      | no       | `true`                                      | Post a new comment when no comment carries the identifier. When false, the run only updates the existing comment, and when there is none it posts nothing and operation is "skipped". Use it to correct an earlier report without starting a new one where there was none, e.g. a "no longer applies" note. Cannot be false together with update_existing. |
-| `author`          | no       |                                             | Only update a comment posted by this login (e.g. "my-app[bot]"). Empty accepts any author: anyone who can comment can then paste the marker, and the run fails when GitHub refuses to edit their comment. Set it on a repository that takes pull requests from untrusted contributors.                                                                     |
+| `author`          | no       |                                             | Only update a comment posted by this login (e.g. "my-app[bot]"). Empty accepts only a comment a GitHub App posted, which covers GITHUB_TOKEN and App installation tokens. A personal access token posts as its owner, so a workflow using one has to set author to that login, or every run posts a new comment.                                           |
 <!-- /docs:generated inputs -->
 
 Exactly one of `body`, `body_file` and `body_lines` must be non-empty; setting two fails the step rather than picking
@@ -178,10 +178,15 @@ The `unchanged` case is not only an optimisation: rewriting a comment with its o
 A comment that was deleted between the scan and the write becomes a new comment rather than a failed step. A reviewer
 tidying up last week's report must not stop this week's from being posted.
 
-A refusal to edit somebody else's comment does **not** fall back. Anyone who can comment on the pull request can paste
-the marker, and falling back there would add a comment on every run forever: the pasted comment is still the oldest one
-carrying the marker, so the next run finds it and is refused again. The step fails once instead. Set `author` to the
-login the workflow posts as to skip such a comment outright.
+Anyone who can comment on the pull request can paste the marker. With `author` empty, a run therefore only adopts a
+comment a GitHub App posted, which is what `GITHUB_TOKEN` and an App installation token post as. A pasted comment from a
+person is skipped, and the run updates the App's own comment or posts one. A token that posts as a person, such as a
+personal access token, needs `author` set to that person's login; without it, no earlier comment qualifies and every run
+posts a new one. Set `author` to the App's login as well where another App also comments on the pull request.
+
+A refusal to edit a comment that passed that check does **not** fall back. Falling back would add a comment on every run
+forever: the refused comment is still the oldest one carrying the marker, so the next run finds it and is refused again.
+The step fails once instead.
 
 ## Concurrency
 

@@ -17,7 +17,9 @@ const MAX_PAGE_SIZE = 100;
  * may not edit somebody else's comment. Falling back on it would post a fresh comment on every single
  * run: the comment that provoked the refusal is still the oldest one carrying the marker, so the next
  * run finds it, is refused again, and adds another. Failing instead says exactly once that the marker
- * was found on a comment this identity does not own, which the `author` input is there to prevent.
+ * was found on a comment this identity may not edit. Only a token without write access to the
+ * pull request is refused; with `pull-requests: write` GitHub lets it edit anyone's comment, which is
+ * why `upsert.ts` adopts only app-posted comments unless `author` names one.
  * A rate limit reports as 403 too, which is a second reason not to read that status as "deleted".
  */
 const UNAVAILABLE_STATUSES = [404, 410];
@@ -50,7 +52,13 @@ export function createCommentApi(token: string): CommentApi {
 
       for await (const { data } of pages) {
         for (const comment of data) {
-          yield { author: comment.user?.login ?? '', body: comment.body ?? '', id: comment.id, url: comment.html_url };
+          yield {
+            author: comment.user?.login ?? '',
+            body: comment.body ?? '',
+            id: comment.id,
+            postedByApp: comment.user?.type === 'Bot' || Boolean(comment.performed_via_github_app),
+            url: comment.html_url,
+          };
         }
       }
     },
