@@ -30,11 +30,11 @@ ignores:
     reason: checked out by TimSchoenle/actions/actions/test/setup-e2e
   # The fixture project has no lockfile until this step creates one; that is what the test needs.
   - rule: unlocked-install
-    file: .github/workflows/verify-action-bun-setup-cached.yaml
+    file: .github/workflows/verify-bun.yaml
     step: Install Dependencies (Generate Lockfile)
     reason: generates the fixture's lockfile on purpose
   - rule: unlocked-install
-    file: .github/workflows/verify-action-bun-setup-cached.yaml
+    file: .github/workflows/verify-bun.yaml
     step: Generate Lockfile & Clean
     reason: generates the fixture's lockfile on purpose
   # commit-changes has never had an `empty` input, so create-pull-request's empty_commit input is a

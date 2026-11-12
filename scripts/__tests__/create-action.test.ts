@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import path from 'node:path';
 import * as createAction from '../create-action';
 import { ACTIONS_DIR, Sys, createFromTemplate } from '../lib/utils';
-import { selectPackage, registerActionInReleasePlease, createVerifyWorkflow } from '../lib/action-utils';
+import { selectPackage, registerActionInReleasePlease, createVerifySource } from '../lib/action-utils';
 import { input } from '@inquirer/prompts';
 import { main as generateDocs } from '../generate-docs';
-import { main as generateCiRequired } from '../generate-ci-required';
+import { writeGenerated as generateVerify } from '../lib/verify/generate';
 import { main as generateCodecovComponents } from '../generate-codecov-components';
 
 // Mock dependencies
@@ -25,7 +25,7 @@ vi.mock('../lib/utils', async () => {
 vi.mock('../lib/action-utils', () => ({
   selectPackage: vi.fn(),
   registerActionInReleasePlease: vi.fn(),
-  createVerifyWorkflow: vi.fn(),
+  createVerifySource: vi.fn(),
 }));
 
 vi.mock('@inquirer/prompts', () => ({
@@ -36,8 +36,8 @@ vi.mock('../generate-docs', () => ({
   main: vi.fn(),
 }));
 
-vi.mock('../generate-ci-required', () => ({
-  main: vi.fn(),
+vi.mock('../lib/verify/generate', () => ({
+  writeGenerated: vi.fn(),
 }));
 
 vi.mock('../generate-codecov-components', () => ({
@@ -83,10 +83,10 @@ describe('create-action', () => {
     );
 
     // Verify Config Updates
-    expect(createVerifyWorkflow).toHaveBeenCalledWith('existing-pkg', 'new-sub');
+    expect(createVerifySource).toHaveBeenCalledWith('existing-pkg', 'new-sub');
     expect(registerActionInReleasePlease).toHaveBeenCalledWith('existing-pkg', 'new-sub');
     expect(generateDocs).toHaveBeenCalled();
-    expect(generateCiRequired).toHaveBeenCalled();
+    expect(generateVerify).toHaveBeenCalled();
     expect(generateCodecovComponents).toHaveBeenCalled();
   });
 

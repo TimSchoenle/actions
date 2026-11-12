@@ -3,12 +3,12 @@ import path from 'node:path';
 import { input } from '@inquirer/prompts';
 import chalk from 'chalk';
 
-import { main as generateCiRequired } from './generate-ci-required.js';
 import { main as generateCodecovComponents } from './generate-codecov-components.js';
 import { main as generateDocs } from './generate-docs.js';
 import { DOCS_FILE_NAME } from './lib/action-docs/docs-file.js';
-import { createVerifyWorkflow, registerActionInReleasePlease, selectPackage } from './lib/action-utils.js';
-import { ACTIONS_DIR, capitalize, createFromTemplate, Sys } from './lib/utils.js';
+import { createVerifySource, registerActionInReleasePlease, selectPackage } from './lib/action-utils.js';
+import { ACTIONS_DIR, capitalize, createFromTemplate, ROOT_DIR, Sys } from './lib/utils.js';
+import { writeGenerated as generateVerify } from './lib/verify/generate.js';
 
 export async function main() {
   console.log(chalk.blue('🚀 Shared CI Action Generator'));
@@ -51,12 +51,10 @@ export async function main() {
   await createFromTemplate('action/action.yaml', path.join(actionPath, 'action.yaml'), replacements);
   await createFromTemplate('action/docs.yaml', path.join(actionPath, DOCS_FILE_NAME), replacements);
 
-  // 4. Create Verification Workflow
-  await createVerifyWorkflow(packageName, subAction);
-
-  // Sync the ci-required aggregate gate to watch the new verify workflow, and give the action a
-  // Codecov component once it has TypeScript sources.
-  generateCiRequired();
+  // 4. Create the verify source and regenerate the Verify workflows that run it, and give the
+  // action a Codecov component once it has TypeScript sources.
+  await createVerifySource(packageName, subAction);
+  generateVerify(ROOT_DIR);
   generateCodecovComponents();
 
   // 5. Update Release Please Config
