@@ -9,7 +9,7 @@ outside the markers.
 
 Action that runs cargo check to verify Rust code compiles without errors.
 
-[actions-rust-cargo-check-v1.1.8](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.1.8) · Composite action
+[actions-rust-cargo-check-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v2.0.0) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -35,7 +35,7 @@ jobs:
     permissions:
       contents: read # to fetch code
     steps:
-      - uses: TimSchoenle/actions/actions/rust/cargo-check@be7a69175612d9de514acc14bf55dda8e7ad2e57 # tag=actions-rust-cargo-check-v1.1.8
+      - uses: TimSchoenle/actions/actions/rust/cargo-check@actions-rust-cargo-check-v2.0.0 # tag=actions-rust-cargo-check-v2.0.0
 ```
 <!-- /docs:generated usage -->
 

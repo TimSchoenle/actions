@@ -9,7 +9,7 @@ outside the markers.
 
 Verify the head branch of a pull request matches a pattern and check whether it comes from a fork
 
-[actions-helper-verify-branch-name-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-branch-name-v2.0.4) · JavaScript action (node24)
+[actions-helper-verify-branch-name-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-branch-name-v3.0.0) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -36,7 +36,7 @@ jobs:
       # Reads the branch and both repositories from the pull_request payload, so it needs no checkout.
       # A fork's branch fails the check even when its name matches.
       - id: branch
-        uses: TimSchoenle/actions/actions/helper/verify-branch-name@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-helper-verify-branch-name-v2.0.4
+        uses: TimSchoenle/actions/actions/helper/verify-branch-name@actions-helper-verify-branch-name-v3.0.0 # tag=actions-helper-verify-branch-name-v3.0.0
         with:
           branch_pattern: '^release-please--branches--.*$'
 

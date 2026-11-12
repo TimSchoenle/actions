@@ -9,7 +9,7 @@ outside the markers.
 
 A action to read a value from a YAML file using dot notation
 
-[actions-common-read-yaml-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-read-yaml-v2.0.4) · JavaScript action (node24)
+[actions-common-read-yaml-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-read-yaml-v3.0.0) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -20,7 +20,7 @@ A action to read a value from a YAML file using dot notation
 ```yaml
 # Fails the step when the key is missing, so a later step never sees an empty version.
 - id: chart
-  uses: TimSchoenle/actions/actions/common/read-yaml@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-read-yaml-v2.0.4
+  uses: TimSchoenle/actions/actions/common/read-yaml@actions-common-read-yaml-v3.0.0 # tag=actions-common-read-yaml-v3.0.0
   with:
     file: charts/api/Chart.yaml
     key: version
