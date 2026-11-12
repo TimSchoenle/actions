@@ -96,6 +96,11 @@ export interface PlanResult {
   readonly buildDirs: readonly string[];
   /** Whether any selected target reads the install job's dependency tree. */
   readonly install: boolean;
+  /**
+   * Whether the install job runs although no selected target reads its tree, so the dependency cache
+   * pull requests restore is saved for a new lockfile.
+   */
+  readonly seedCache: boolean;
 }
 
 /** Whether `child` is `ancestor` or lies below it, on whole path segments. */
@@ -209,6 +214,7 @@ export function selectTargets(
     shards: sortedUnique(selected.map((target) => target.shard)),
     buildDirs: sortedUnique(selected.flatMap((target) => target.buildDirs)),
     install: selected.some((target) => target.install),
+    seedCache: false,
   };
 }
 
@@ -293,6 +299,7 @@ export function formatOutputs(result: PlanResult): string {
     `targets=${JSON.stringify(result.targets)}`,
     `shards=${JSON.stringify(result.shards)}`,
     `install=${result.install ? 'true' : 'false'}`,
+    `seed-cache=${result.seedCache ? 'true' : 'false'}`,
     `build=${result.buildDirs.length > 0 ? 'true' : 'false'}`,
     'build-dirs<<VERIFY_PLAN_EOF',
     ...result.buildDirs,
@@ -321,6 +328,9 @@ export function formatSummary(result: PlanResult, changed: ChangedFiles, note?: 
     ...(result.buildDirs.length === 0 ? ['- none'] : result.buildDirs.map((dir) => `- \`${dir}\``)),
     '',
   );
+  if (result.seedCache) {
+    lines.push('The install job runs to save the dependency cache for the new lockfile.', '');
+  }
 
   return lines.join('\n');
 }
