@@ -114,10 +114,22 @@ jobs:
       contents: read # Required to checkout the code
       id-token: write # Required to authenticate the Codecov upload with OIDC
     steps:
+      # Blocked: this job holds id-token: write. github.com for the checkout, the artifact hosts for the
+      # report download and the OIDC token, the four Codecov hosts as actions/rust/coverage-codecov
+      # lists them (CLI download, its verification key, the upload and the storage it hands off to).
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            cli.codecov.io:443
+            keybase.io:443
+            ingest.codecov.io:443
+            storage.googleapis.com:443
 
       # The Codecov CLI lists the repository's files to map report paths onto them, so the tree has
       # to be present. It is only read: no step below runs anything from it, and the uploads pass
