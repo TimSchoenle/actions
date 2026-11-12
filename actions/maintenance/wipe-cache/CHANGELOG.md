@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.0](https://github.com/TimSchoenle/actions/compare/src-actions-maintenance-wipe-cache-v3.0.5...src-actions-maintenance-wipe-cache-v3.1.0) (2026-11-12)
+
+
+### Features
+
+* **wipe-cache:** accept a pull request merge ref ([#2277](https://github.com/TimSchoenle/actions/issues/2277)) ([50a40ba](https://github.com/TimSchoenle/actions/commit/50a40ba0099312d4bb7740e2de4bef970029bb70))
+
 ## [3.0.5](https://github.com/TimSchoenle/actions/compare/src-actions-maintenance-wipe-cache-v3.0.4...src-actions-maintenance-wipe-cache-v3.0.5) (2026-11-12)
 
 
