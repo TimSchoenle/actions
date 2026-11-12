@@ -82,10 +82,13 @@ runs:
     - name: Commit Rendered File
       id: commit
       if: steps.render.outputs.changed == 'true'
-      uses: TimSchoenle/actions/actions/common/commit-changes@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-commit-changes-v3.0.4
+      uses: TimSchoenle/actions/actions/common/commit-changes@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-common-commit-changes-v3.1.0
       with:
         token: ${{ inputs.token }}
         commit_message: ${{ inputs.commit_message }}
         repository: ${{ inputs.repository }}
         branch: ${{ inputs.branch }}
-        file_pattern: ${{ inputs.file_pattern || steps.render.outputs.output-path }}
+        # The rendered path goes in as one literal pathspec: as a file_pattern it would be split on
+        # whitespace, so an output path with a space committed nothing and raised no error.
+        file_pattern: ${{ inputs.file_pattern }}
+        literal_paths: ${{ inputs.file_pattern == '' && steps.render.outputs.output-path || '' }}

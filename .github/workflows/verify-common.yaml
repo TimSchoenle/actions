@@ -894,6 +894,145 @@ jobs:
           repository: ${{ env.TEST_REPO }}
           branch_name: 'test/create-pr-branch-reset/${{ env.TEST_ID }}'
 
+  # A reset is built on a temporary branch and moved onto the target only once the commit exists. A
+  # commit GitHub refuses, here a workflow file the App token has no `workflows` permission for, must
+  # leave the target branch and its open pull request exactly as they were, and remove the temporary
+  # branch.
+  test-failed-commit-keeps-branch:
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: 'Common Create Pull Request: Test Failed Commit Leaves The Branch Untouched'
+    if: ${{ contains(fromJSON(inputs.targets), 'common/create-pull-request') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: create-pr-test-${{ github.run_number }}-${{ github.run_attempt }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Initial Test File
+        env:
+          TEST_ID: ${{ env.TEST_ID }}
+        run: |
+          set -euo pipefail
+          mkdir -p test-failed-commit
+          echo "Initial content for $TEST_ID" > test-failed-commit/initial.txt
+
+      - name: Create The Pull Request
+        id: create-pr
+        uses: ./tmp/actions-code/actions/common/create-pull-request # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/create-pr-failed-commit/${{ env.TEST_ID }}
+          title: '[TEST-CREATE-PR] Failed Commit - ${{ env.TEST_ID }}'
+          commit_message: 'test: initial commit for failed commit test (${{ env.TEST_ID }})'
+          file_pattern: 'test-failed-commit/initial.txt'
+
+      - name: Record The Branch Head
+        id: before
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          PR_NUMBER: ${{ steps.create-pr.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          [ -n "$PR_NUMBER" ] || { echo "::error::the first run opened no pull request"; exit 1; }
+          head="$(gh api "repos/$TEST_REPO/pulls/$PR_NUMBER" --jq '.head.sha')"
+          echo "sha=$head" >> "$GITHUB_OUTPUT"
+
+      - name: Add A Workflow File The Token Cannot Commit
+        run: |
+          set -euo pipefail
+          mkdir -p .github/workflows
+          printf 'on: workflow_dispatch\njobs: {}\n' > .github/workflows/create-pr-refused.yml
+
+      - name: Run create-pull-request (commit refused)
+        id: refused
+        continue-on-error: true
+        uses: ./tmp/actions-code/actions/common/create-pull-request # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/create-pr-failed-commit/${{ env.TEST_ID }}
+          title: '[TEST-CREATE-PR] Failed Commit - ${{ env.TEST_ID }}'
+          commit_message: 'test: this commit must be refused (${{ env.TEST_ID }})'
+          file_pattern: '.github/workflows/create-pr-refused.yml'
+          reset_branch: 'true'
+
+      - name: Verify The Branch Was Left As It Was
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          OUTCOME: ${{ steps.refused.outcome }}
+          PR_NUMBER: ${{ steps.create-pr.outputs.pr_number }}
+          BEFORE: ${{ steps.before.outputs.sha }}
+          BRANCH: test/create-pr-failed-commit/${{ env.TEST_ID }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          [ "$OUTCOME" = "failure" ] || fail "the refused commit's run ended '$OUTCOME', expected failure"
+
+          after="$(gh api "repos/$TEST_REPO/pulls/$PR_NUMBER" --jq '.head.sha')"
+          [ "$after" = "$BEFORE" ] || fail "the branch moved from $BEFORE to $after after a failed commit"
+          state="$(gh api "repos/$TEST_REPO/pulls/$PR_NUMBER" --jq '.state')"
+          [ "$state" = "open" ] || fail "the pull request is '$state' after a failed commit"
+
+          # The temporary branch is named after the target, so a prefix lookup finds any left behind.
+          encoded="$(jq -rn --arg prefix "$BRANCH-create-pull-request-" '$prefix | @uri')"
+          left="$(gh api "repos/$TEST_REPO/git/matching-refs/heads/$encoded" --jq 'length')"
+          [ "$left" = "0" ] || fail "$left temporary branch(es) left behind"
+          echo "The branch, its pull request and the repository's refs are unchanged"
+
+      # Guarded, not just `always()`: a run that opened no pull request — because it failed early, or
+      # because skipping was the very thing under test — has no number to close, and closing "nothing"
+      # would report a second, misleading failure on top of the real result.
+      - name: Cleanup Test Pull Request
+        if: always() && steps.create-pr.outputs.pr_number != ''
+        uses: TimSchoenle/actions/actions/common/close-pull-request@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-close-pull-request-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          pull_request_id: ${{ steps.create-pr.outputs.pr_number }}
+
+      - name: Cleanup Test Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-delete-branch-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: 'test/create-pr-failed-commit/${{ env.TEST_ID }}'
+
   download-direct:
     name: 'Common Download-release-asset: Download and verify (${{ matrix.os }})'
     if: ${{ contains(fromJSON(inputs.targets), 'common/download-release-asset') }}
@@ -1877,6 +2016,13 @@ jobs:
             echo 'NEEDS_EOF'
           } >> "$GITHUB_OUTPUT"
 
+      # With nothing pending the verdict checks nothing out. An untracked file that survives it shows
+      # the workspace was left alone; a checkout would have cleaned it away.
+      - name: Leave A Marker In The Workspace
+        run: |
+          set -euo pipefail
+          echo marker > verdict-clean-marker
+
       - name: Run The Verdict
         id: verdict
         uses: ./actions/common/generated-files-verdict # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
@@ -1884,13 +2030,7 @@ jobs:
           needs: ${{ steps.needs.outputs.json }}
           artifact_name: verdict-e2e-merged-${{ github.run_attempt }}
 
-      # The verdict's own checkout cleaned the workspace, and the gitignored bundles with it.
-      - name: Reinstall Built Actions
-        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
-        with:
-          artifact-id: ${{ inputs.artifact-id }}
-          expected-manifest-sha256: ${{ inputs.manifest-sha256 }}
-
+      # No reinstall: the bundles installed above are still in the workspace.
       - name: Find The Merged Patch
         id: merged
         uses: ./actions/common/find-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
@@ -1908,7 +2048,8 @@ jobs:
           [ "$PASSED" = "true" ] || fail "passed '$PASSED' with nothing pending"
           [ "$HAS_CHANGES" = "false" ] || fail "has_changes '$HAS_CHANGES' with nothing pending"
           [ "$MERGED_OUTCOME" = "no_changes" ] || fail "outcome '$MERGED_OUTCOME' for the merged patch with nothing pending"
-          echo "The verdict passed and uploaded an empty merged patch"
+          [ -f verdict-clean-marker ] || fail "the workspace was checked out again with nothing pending"
+          echo "The verdict passed and uploaded an empty merged patch without a checkout"
 
   # The verdict's wording decides what a contributor does next, and a fork's pull request is never
   # committed to, so every branch of verdict.sh is driven here with the inputs the step receives.
@@ -2120,7 +2261,7 @@ jobs:
         uses: ./tmp/actions-code/actions/common/render-template-and-commit # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
           template: render-test/README.hbs
-          output: render-test/out/README.md
+          output: render-test/out dir/READ ME.md
           partials-dir: render-test/partials
           variables: '{"repo":"acme/actions","actions":[{"name":"read-yaml","description":"Read a|value"},{"name":"clippy","description":"Lint Rust"}]}'
           token: ${{ steps.setup.outputs.token }}
@@ -2140,12 +2281,12 @@ jobs:
           set -euo pipefail
           [ "$CHANGED" = "true" ] || { echo "::error::changed was '$CHANGED', expected true"; exit 1; }
           [ "$CHANGES_DETECTED" = "true" ] || { echo "::error::changes_detected was '$CHANGES_DETECTED'"; exit 1; }
-          [ "$OUTPUT_PATH" = "render-test/out/README.md" ] || { echo "::error::output-path was '$OUTPUT_PATH'"; exit 1; }
+          [ "$OUTPUT_PATH" = "render-test/out dir/READ ME.md" ] || { echo "::error::output-path was '$OUTPUT_PATH'"; exit 1; }
           [ -n "$COMMIT_SHA" ] || { echo "::error::commit_hash is empty"; exit 1; }
           [ -n "$COMMIT_URL" ] || { echo "::error::commit_url is empty"; exit 1; }
 
           # The checksum must describe the bytes actually written, not the bytes intended.
-          ACTUAL=$(sha256sum render-test/out/README.md | cut -d' ' -f1)
+          ACTUAL=$(sha256sum "render-test/out dir/READ ME.md" | cut -d' ' -f1)
           [ "$CHECKSUM" = "$ACTUAL" ] || { echo "::error::checksum '$CHECKSUM' does not match the file's '$ACTUAL'"; exit 1; }
           echo "✅ All outputs correct"
 
@@ -2159,7 +2300,7 @@ jobs:
           COMMIT_SHA: ${{ steps.run.outputs.commit_hash }}
         run: |
           set -euo pipefail
-          gh api "/repos/$TEST_REPO/contents/render-test/out/README.md?ref=$COMMIT_SHA" \
+          gh api "/repos/$TEST_REPO/contents/render-test/out%20dir/READ%20ME.md?ref=$COMMIT_SHA" \
             --jq '.content' | base64 -d > committed.md
 
           cat <<'EOF' > expected.md
@@ -2193,7 +2334,7 @@ jobs:
           echo "Files in commit:"
           echo "$FILES"
 
-          if [ "$FILES" != "render-test/out/README.md" ]; then
+          if [ "$FILES" != "render-test/out dir/READ ME.md" ]; then
             echo "::error::Expected exactly the rendered file, got: $FILES"
             exit 1
           fi

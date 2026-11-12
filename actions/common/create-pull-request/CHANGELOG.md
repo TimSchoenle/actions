@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.31](https://github.com/TimSchoenle/actions/compare/src-actions-common-create-pull-request-v1.0.30...src-actions-common-create-pull-request-v1.0.31) (2026-11-12)
+
+
+### Bug Fixes
+
+* **create-pull-request:** leave the branch untouched until the commit exists ([#2290](https://github.com/TimSchoenle/actions/issues/2290)) ([9342e71](https://github.com/TimSchoenle/actions/commit/9342e71fadc596410b4852c2316615c82886e424))
+
 ## [1.0.30](https://github.com/TimSchoenle/actions/compare/src-actions-common-create-pull-request-v1.0.29...src-actions-common-create-pull-request-v1.0.30) (2026-11-12)
 
 

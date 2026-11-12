@@ -9,7 +9,7 @@ outside the markers.
 
 Fails a pull request while a generator job failed or left changes uncommitted, and merges every pending generator patch into one artifact for common/commit-patch.
 
-[actions-common-generated-files-verdict-v1.2.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-generated-files-verdict-v1.2.4) · Composite action
+[actions-common-generated-files-verdict-v1.2.5](https://github.com/TimSchoenle/actions/releases/tag/actions-common-generated-files-verdict-v1.2.5) · Composite action
 <!-- /docs:generated header -->
 
 The required check of a repository's Generate workflow. It fails a pull request while any generator job failed or
@@ -52,7 +52,7 @@ jobs:
           persist-credentials: false
       - run: ./scripts/render-docs.sh
       - id: patch
-        uses: TimSchoenle/actions/actions/common/create-patch@actions-common-create-patch-v2.1.0 # tag=actions-common-create-patch-v2.1.0
+        uses: TimSchoenle/actions/actions/common/create-patch@e75e9ab1e1e9fa573051a901347e39ba23a45710 # tag=actions-common-create-patch-v2.1.0
         with:
           artifact_name: docs
           paths: README.md docs
@@ -68,7 +68,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: TimSchoenle/actions/actions/common/generated-files-verdict@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-common-generated-files-verdict-v1.2.4
+      - uses: TimSchoenle/actions/actions/common/generated-files-verdict@actions-common-generated-files-verdict-v1.2.5 # tag=actions-common-generated-files-verdict-v1.2.5
         with:
           needs: ${{ toJSON(needs) }}
 ```
@@ -148,8 +148,9 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
   filter of its own. Where the fork does not allow it, the error names the remedy (regenerate locally, or apply this
   run's merged patch) instead of a commit that will not come; where it does, the error names that remedy as the
   fallback.
-- **The merged patch is uploaded on every run**: empty when nothing is pending, and empty, from a clean checkout of
-  the head, when the merge itself failed. Artifacts belong to the run, not to the attempt, so a re-run that uploaded
+- **The merged patch is uploaded on every run**: empty when nothing is pending, and empty when the merge itself
+  failed. Both empty patches name the pull request head and are written without a checkout; with nothing pending,
+  the workspace is left as it was. Artifacts belong to the run, not to the attempt, so a re-run that uploaded
   nothing would leave an earlier attempt's patch for the commit job to commit.
 - **No generator artifact may have the merged patch's name**, pending or not; the step fails instead.
 - **Each generator patch is read with commit-patch's strict reader**: exactly `changes.patch` and `metadata.json`,

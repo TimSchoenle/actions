@@ -9,7 +9,7 @@ outside the markers.
 
 Updates a Helm chart's image tags, version and appVersion, then opens a Pull Request. Every image carries its own version and digest, so one call can move a chart with many services. This action requires a bot account with access to the charts repo.
 
-[actions-helm-update-chart-version-v1.7.6](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.7.6) · Composite action
+[actions-helm-update-chart-version-v1.8.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.8.0) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -48,7 +48,7 @@ jobs:
     steps:
       # The action checks the charts repository out over the workspace, so it needs no checkout of
       # its own and anything already in the workspace is replaced.
-      - uses: TimSchoenle/actions/actions/helm/update-chart-version@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-helm-update-chart-version-v1.7.6
+      - uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.8.0 # tag=actions-helm-update-chart-version-v1.8.0
         with:
           app-id: ${{ vars.CHARTS_BOT_APP_ID }}
           private-key: ${{ secrets.charts-bot-private-key }}
@@ -67,7 +67,7 @@ jobs:
 # With pull-contracts, the charts repository needs a terrace.yaml at its root and the images must be
 # pullable without credentials.
 - id: chart
-  uses: TimSchoenle/actions/actions/helm/update-chart-version@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-helm-update-chart-version-v1.7.6
+  uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.8.0 # tag=actions-helm-update-chart-version-v1.8.0
   with:
     app-id: ${{ vars.CHARTS_BOT_APP_ID }}
     private-key: ${{ secrets.CHARTS_BOT_PRIVATE_KEY }}
@@ -82,7 +82,9 @@ jobs:
     version-bump: minor
     pull-contracts: 'true'
 
-- run: echo "Opened $PR_URL for chart version $VERSION"
+# A re-run with every image already at its target opens no pull request and reports changed false.
+- if: steps.chart.outputs.changed == 'true'
+  run: echo "Opened $PR_URL for chart version $VERSION"
   env:
     PR_URL: ${{ steps.chart.outputs.pr-url }}
     VERSION: ${{ steps.chart.outputs.chart-version }}
@@ -116,14 +118,15 @@ jobs:
 <!-- docs:generated outputs -->
 ## Outputs
 
-| Output                   | Description                                                               |
-| ------------------------ | ------------------------------------------------------------------------- |
-| `pr-url`                 | The URL of the created Pull Request                                       |
-| `pr_number`              | The id of the created Pull Request                                        |
-| `chart-version`          | The chart version written to Chart.yaml                                   |
-| `previous-chart-version` | The chart version that was in Chart.yaml before the update                |
-| `updated-count`          | Number of image keys updated in values.yaml                               |
-| `changes`                | JSON array of {key, old, new} for every image key updated, in input order |
+| Output                   | Description                                                                                                                                                                                                                                          |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `changed`                | true when an image or the app version moved and a pull request was opened or updated. false when everything was already at its target: nothing is written, the chart version is kept, no pull request is opened, and pr-url and pr_number are empty. |
+| `pr-url`                 | The URL of the created Pull Request                                                                                                                                                                                                                  |
+| `pr_number`              | The id of the created Pull Request                                                                                                                                                                                                                   |
+| `chart-version`          | The chart version written to Chart.yaml                                                                                                                                                                                                              |
+| `previous-chart-version` | The chart version that was in Chart.yaml before the update                                                                                                                                                                                           |
+| `updated-count`          | Number of image keys updated in values.yaml                                                                                                                                                                                                          |
+| `changes`                | JSON array of {key, old, new} for every image key updated, in input order                                                                                                                                                                            |
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->

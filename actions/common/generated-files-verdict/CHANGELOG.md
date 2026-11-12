@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.5](https://github.com/TimSchoenle/actions/compare/src-actions-common-generated-files-verdict-v1.2.4...src-actions-common-generated-files-verdict-v1.2.5) (2026-11-12)
+
+
+### Performance Improvements
+
+* **generated-files-verdict:** write the empty merged patch without a checkout ([#2289](https://github.com/TimSchoenle/actions/issues/2289)) ([6d6c34f](https://github.com/TimSchoenle/actions/commit/6d6c34f1260cb43e1178f8df6efc176ebc31003c))
+
 ## [1.2.4](https://github.com/TimSchoenle/actions/compare/src-actions-common-generated-files-verdict-v1.2.3...src-actions-common-generated-files-verdict-v1.2.4) (2026-11-12)
 
 

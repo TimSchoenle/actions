@@ -499,6 +499,13 @@ jobs:
             echo 'NEEDS_EOF'
           } >> "$GITHUB_OUTPUT"
 
+      # With nothing pending the verdict checks nothing out. An untracked file that survives it shows
+      # the workspace was left alone; a checkout would have cleaned it away.
+      - name: Leave A Marker In The Workspace
+        run: |
+          set -euo pipefail
+          echo marker > verdict-clean-marker
+
       - name: Run The Verdict
         id: verdict
         uses: ./actions/common/generated-files-verdict # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
@@ -506,13 +513,7 @@ jobs:
           needs: ${{ steps.needs.outputs.json }}
           artifact_name: verdict-e2e-merged-${{ github.run_attempt }}
 
-      # The verdict's own checkout cleaned the workspace, and the gitignored bundles with it.
-      - name: Reinstall Built Actions
-        uses: pinned:installBuiltActions
-        with:
-          artifact-id: ${{ inputs.artifact-id }}
-          expected-manifest-sha256: ${{ inputs.manifest-sha256 }}
-
+      # No reinstall: the bundles installed above are still in the workspace.
       - name: Find The Merged Patch
         id: merged
         uses: ./actions/common/find-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
@@ -530,7 +531,8 @@ jobs:
           [ "$PASSED" = "true" ] || fail "passed '$PASSED' with nothing pending"
           [ "$HAS_CHANGES" = "false" ] || fail "has_changes '$HAS_CHANGES' with nothing pending"
           [ "$MERGED_OUTCOME" = "no_changes" ] || fail "outcome '$MERGED_OUTCOME' for the merged patch with nothing pending"
-          echo "The verdict passed and uploaded an empty merged patch"
+          [ -f verdict-clean-marker ] || fail "the workspace was checked out again with nothing pending"
+          echo "The verdict passed and uploaded an empty merged patch without a checkout"
 
   # The verdict's wording decides what a contributor does next, and a fork's pull request is never
   # committed to, so every branch of verdict.sh is driven here with the inputs the step receives.

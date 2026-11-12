@@ -993,7 +993,7 @@ jobs:
           cat <<EOF > charts/idem-app/values.yaml
           image:
             repository: ghcr.io/example/idem-app
-            tag: "v0.0.1@sha256:init"
+            tag: "v0.0.1@sha256:1111111111111111111111111111111111111111111111111111111111111111"
           EOF
 
       - name: Commit Initial Chart Files
@@ -1083,6 +1083,44 @@ jobs:
           fi
           echo "✅ Branch was correctly reset; second run digest is present"
 
+      # The base branch still pins the seeded image, so asking for exactly that image and app version
+      # moves nothing: no file is written, the chart version is kept, and no pull request is opened.
+      - name: Third Run (nothing to move, should open no PR)
+        id: third-run
+        uses: ./tmp/actions-code/actions/helm/update-chart-version # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          helm-repo: ${{ env.TEST_REPO }}
+          base_branch: ${{ steps.base-branch.outputs.branch }}
+          chart-path: charts/idem-app
+          images: '{"image.tag": {"tag": "v0.0.1", "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"}}'
+          app-version: v0.0.1
+          pr-branch-prefix: test/idem/${{ env.TEST_ID }}
+
+      # Same reason as after the runs above.
+      - name: Restore Workspace For The Post Action
+        if: always()
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          path: tmp/actions-code
+
+      - name: Verify Third Run Changed Nothing
+        shell: bash
+        env:
+          CHANGED: ${{ steps.third-run.outputs.changed }}
+          PR_NUMBER: ${{ steps.third-run.outputs.pr_number }}
+          CHART_VERSION: ${{ steps.third-run.outputs.chart-version }}
+          UPDATED_COUNT: ${{ steps.third-run.outputs.updated-count }}
+        run: |
+          set -euo pipefail
+          [ "$CHANGED" = "false" ] || { echo "::error::changed was '$CHANGED', expected false"; exit 1; }
+          [ -z "$PR_NUMBER" ] || { echo "::error::a pull request was opened: #$PR_NUMBER"; exit 1; }
+          [ "$CHART_VERSION" = "1.0.0" ] || { echo "::error::chart-version was '$CHART_VERSION', expected the kept 1.0.0"; exit 1; }
+          [ "$UPDATED_COUNT" = "0" ] || { echo "::error::updated-count was '$UPDATED_COUNT', expected 0"; exit 1; }
+          echo "✅ Nothing moved and no pull request was opened"
+
       # Runs before the base branch is deleted, for the same reason as in the jobs above.
       - name: Cleanup PR
         if: always() && steps.second-run.outputs.pr_number != ''
@@ -1110,10 +1148,10 @@ jobs:
 
   # pull-contracts against a real, signed image: the fixture chart from .github/testdata/terrace-helm,
   # seeded with a contract that is behind the one its image carries, so the pull has to rewrite it and
-  # the rewrite has to reach the pull request. The seeded values.yaml pins FIXTURE_IMAGE, the image the
-  # vendored contract was pulled from, whatever digest Renovate has since moved the fixture to; the
-  # image is then "updated" to that same digest, which keeps the expected contract the vendored one
-  # and leaves values.yaml as it was.
+  # the rewrite has to reach the pull request. The seeded values.yaml pins FIXTURE_IMAGE's tag at a
+  # placeholder digest, whatever digest Renovate has since moved the fixture to; the image is then
+  # updated to FIXTURE_IMAGE, the image the vendored contract was pulled from, which keeps the expected
+  # contract the vendored one. The digest has to move: an update that moves nothing opens no PR.
   test-pull-contracts:
     environment:
       name: ci-e2e
@@ -1135,7 +1173,8 @@ jobs:
       contents: read
     steps:
       # The fixture image is on Docker Hub, so cosign verifying it needs the registry, its token
-      # service and the CDN that serves the signature layers.
+      # service and the CDNs that serve the signature layers. Docker Hub redirects a blob to either
+      # CDN; a blocked one makes cosign report "no signatures found", not a network error.
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
@@ -1155,6 +1194,7 @@ jobs:
             registry-1.docker.io:443
             auth.docker.io:443
             production.cloudflare.docker.com:443
+            production.cloudfront.docker.com:443
 
       - name: Setup E2E Test Environment
         id: setup
@@ -1176,8 +1216,8 @@ jobs:
           branch_name: test/test-pull-contracts/base/${{ env.TEST_ID }}
           reset_branch: 'true'
 
-      # The image tag is rewritten to FIXTURE_IMAGE in place, one line, so the rest of values.yaml keeps
-      # its bytes. The contract is made stale by dropping its producer block: still a valid file, but not
+      # The image tag is rewritten in place, one line, so the rest of values.yaml keeps its bytes.
+      # The placeholder digest differs from FIXTURE_IMAGE's, so the update has an image to move. The contract is made stale by dropping its producer block: still a valid file, but not
       # the bytes the image publishes, so only a pull that ran restores it.
       - name: Create Test Chart Files
         run: |
@@ -1187,7 +1227,7 @@ jobs:
           cp -r "${FIXTURE}/${CHART}" "${CHART}"
 
           values="${CHART}/values.yaml"
-          pinned="$(jq -er '."image.tag" | "\(.tag)@\(.digest)"' <<< "$FIXTURE_IMAGE")"
+          pinned="$(jq -er '."image.tag" | "\(.tag)@sha256:\("0" * 64)"' <<< "$FIXTURE_IMAGE")"
           image_tag_line='^  tag: [^@[:space:]]+@sha256:[0-9a-f]{64}$'
           if [[ "$(grep -cE "$image_tag_line" "$values")" != "1" ]]; then
             echo "::error::${values} does not have exactly one digest-pinned image tag line to seed"
@@ -1247,11 +1287,10 @@ jobs:
           files="$(gh pr view "$PR_NUMBER" --repo "$TEST_REPO" --json files --jq '.files[].path')"
           echo "Changed files:"
           echo "$files"
-          # values.yaml is not among them: the image is moved to the digest it already pins, so the
-          # update writes the same bytes and only the version bump and the pulled contract differ.
-          expected="$(printf '%s\n' "${CHART}/Chart.yaml" "${CHART}/contracts/viewer.json")"
+          # The version bump, the moved digest and the pulled contract, and nothing else.
+          expected="$(printf '%s\n' "${CHART}/Chart.yaml" "${CHART}/contracts/viewer.json" "${CHART}/values.yaml" | LC_ALL=C sort)"
           if [[ "$(LC_ALL=C sort <<< "$files")" != "$expected" ]]; then
-            echo "::error::the pull request should change exactly Chart.yaml and the contract"
+            echo "::error::the pull request should change exactly Chart.yaml, values.yaml and the contract"
             exit 1
           fi
 

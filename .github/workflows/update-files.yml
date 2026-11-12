@@ -71,12 +71,15 @@ jobs:
           filter: blob:none
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
+      # Restores the dependency cache but never saves one: this job holds no secret and only
+      # `contents: read`, so a restored entry cannot reach a credential, and a pull request run cannot
+      # decide what a later job restores. Saves the uncached install on every pull request push.
       - name: Setup Bun
-        uses: TimSchoenle/actions/actions/bun/setup-cached@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-bun-setup-cached-v3.1.0
+        uses: TimSchoenle/actions/actions/bun/setup-cached@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-bun-setup-cached-v4.0.0
         with:
           bun-version: ''
           bun-version-file: '.bun-version'
-          cache-mode: none
+          cache-mode: read-only
 
       # The Codecov component list is generated from the same actions/ tree as the Verify plan, so it
       # is rebuilt in the same pass.
