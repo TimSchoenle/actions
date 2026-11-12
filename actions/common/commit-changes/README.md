@@ -103,6 +103,14 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 | `api.github.com:443` | the branch head lookup and the GraphQL commit |
 <!-- /docs:generated egress -->
 
+## What is committed
+
+Every path `git status` reports under `file_pattern` is committed with its bytes from the working tree, or deleted
+when it is gone. The commit API records regular files only, so the step fails on a changed path that is a symbolic
+link, a directory or any other entry, and on a regular file reached through a linked directory that leaves the
+working tree. Before this, a link was followed and its target committed as a file: a generator that left
+`generated/env.txt` pointing at `/proc/self/environ` committed the step's environment, `INPUT_TOKEN` included.
+
 <!-- docs:generated reference -->
 ## Reference
 
