@@ -64,9 +64,18 @@ export function authorizationHeader(token: string): string {
   return `AUTHORIZATION: basic ${basicCredentials(token)}`;
 }
 
+/** One configuration entry handed to git through `GIT_CONFIG_KEY_<n>` and `GIT_CONFIG_VALUE_<n>`. */
+export type ConfigEntry = readonly [key: string, value: string];
+
+/**
+ * Configuration every command gets. No hook runs: `reference-transaction` fires on the fetch and on
+ * `update-ref`, and a hook would run with the token in its environment.
+ */
+const PINNED_CONFIG: readonly ConfigEntry[] = [['core.hooksPath', '/dev/null']];
+
 /**
  * Environment that pins every git command to the repository in `directory` and to no configuration
- * but its own.
+ * but its own, plus `config`.
  *
  * An earlier step can export `GIT_DIR` and its relatives through `GITHUB_ENV`, and git would follow
  * them to another repository while `path` stayed empty. Each is set here explicitly instead.
@@ -75,43 +84,49 @@ export function authorizationHeader(token: string): string {
  * dropped too: any of them can carry an `http.extraHeader` or a credential helper, which would turn
  * an anonymous fetch into an authenticated one, or send a second credential beside the token.
  * `/dev/null` is the empty file git itself documents for this, and Git for Windows maps it too.
+ * `GIT_TEMPLATE_DIR` is emptied for the same reason: a template's hooks and config would be copied
+ * into the new repository.
+ *
+ * `GIT_CONFIG_COUNT` configuration lives in the environment of the one command it is given to: unlike
+ * `git -c`, it is not visible in the process list, and unlike `git config`, nothing is written to the
+ * repository, so no later step can read it back.
  */
-export function repositoryEnvironment(directory: string): Record<string, string> {
+export function repositoryEnvironment(directory: string, config: readonly ConfigEntry[] = []): Record<string, string> {
   const gitDirectory = path.join(directory, '.git');
+  const entries = [...PINNED_CONFIG, ...config];
 
   return {
     GIT_ALTERNATE_OBJECT_DIRECTORIES: '',
     GIT_COMMON_DIR: gitDirectory,
-    GIT_CONFIG_COUNT: '0',
+    GIT_CONFIG_COUNT: String(entries.length),
+    ...Object.fromEntries(
+      entries.flatMap(([key, value], index) => [
+        [`GIT_CONFIG_KEY_${index}`, key],
+        [`GIT_CONFIG_VALUE_${index}`, value],
+      ]),
+    ),
     GIT_CONFIG_GLOBAL: '/dev/null',
     GIT_CONFIG_NOSYSTEM: '1',
     GIT_CONFIG_PARAMETERS: '',
     GIT_DIR: gitDirectory,
     GIT_INDEX_FILE: path.join(gitDirectory, 'index'),
     GIT_OBJECT_DIRECTORY: path.join(gitDirectory, 'objects'),
+    GIT_TEMPLATE_DIR: '',
     GIT_WORK_TREE: directory,
   };
 }
 
 /**
- * Environment that makes git send the token to `serverUrl`, and only there.
- *
- * `GIT_CONFIG_COUNT` configuration lives in the environment of the one command it is given to: unlike
- * `git -c`, it is not visible in the process list, and unlike `git config`, nothing is written to the
- * repository, so no later step can read the token back. Empty for an anonymous fetch, and for a
- * `file:` server, which no header reaches.
+ * Configuration that makes git send the token to `serverUrl`, and only there. Empty for an anonymous
+ * fetch, and for a `file:` server, which no header reaches.
  */
-export function authEnvironment(serverUrl: string, token: string): Record<string, string> {
+export function authConfig(serverUrl: string, token: string): ConfigEntry[] {
   const url = new URL(serverUrl);
   if (token === '' || !HTTP_SCHEMES.has(url.protocol)) {
-    return {};
+    return [];
   }
 
-  return {
-    GIT_CONFIG_COUNT: '1',
-    GIT_CONFIG_KEY_0: `http.${url.origin}/.extraheader`,
-    GIT_CONFIG_VALUE_0: authorizationHeader(token),
-  };
+  return [[`http.${url.origin}/.extraheader`, authorizationHeader(token)]];
 }
 
 /** The URL git fetches from: the repository's clone URL on `serverUrl`. */
@@ -198,8 +213,9 @@ export async function fetchHead(request: FetchHeadRequest, git: GitRunner = runG
   const { directory, repository, serverUrl, sha, token } = request;
   const pinned = repositoryEnvironment(directory);
   try {
-    // The SHA input is SHA-1, so the repository is too, whatever default the runner's git has.
-    await git(['init', '--quiet', '--object-format=sha1'], directory, pinned);
+    // The SHA input is SHA-1, so the repository is too, whatever default the runner's git has. An
+    // empty --template copies no template, whatever GIT_TEMPLATE_DIR or the compiled default says.
+    await git(['init', '--quiet', '--object-format=sha1', '--template='], directory, pinned);
     await git(
       [
         'fetch',
@@ -211,7 +227,7 @@ export async function fetchHead(request: FetchHeadRequest, git: GitRunner = runG
         sha,
       ],
       directory,
-      { ...pinned, ...authEnvironment(serverUrl, token) },
+      repositoryEnvironment(directory, authConfig(serverUrl, token)),
     );
     await git(['update-ref', '--no-deref', 'HEAD', sha], directory, pinned);
 
