@@ -31,12 +31,23 @@ export interface PlannedTarget {
   readonly pushBranches: readonly string[];
   /** Whether the weekly schedule runs the target. */
   readonly schedule: boolean;
+  /**
+   * SHA-256 of the target's rendered jobs, pins resolved. Compared with the base commit's plan, it
+   * selects the target when its own jobs changed, without making its shard file an input: the shard
+   * file changes whenever any shard-mate's jobs do.
+   */
+  readonly jobsSha256: string;
 }
 
 /** The plan file. */
 export interface PlanFile {
   /** Paths whose change selects every target. */
   readonly global: readonly string[];
+  /**
+   * SHA-256 of the plan, install and build jobs of `verify.yaml`. A change selects every target that
+   * installs or builds, the targets those jobs serve.
+   */
+  readonly sharedJobsSha256: string;
   /** Glob patterns of changed files that select nothing: `*` is one segment, `**` any number. */
   readonly ignore: readonly string[];
   readonly targets: readonly PlannedTarget[];
@@ -145,22 +156,52 @@ function runsRegardlessOfChanges(event: PlanEvent): boolean {
   return event.name === 'schedule' || event.name === 'workflow_dispatch';
 }
 
+/** Targets whose jobs changed, or `all` when that cannot be known. */
+export type JobChanges = ReadonlySet<string> | 'all';
+
+/**
+ * The targets whose generated jobs differ between the base commit's plan and this one: a changed or
+ * new {@link PlannedTarget.jobsSha256}, and every target that installs or builds when
+ * {@link PlanFile.sharedJobsSha256} changed. Without a base plan every target counts as changed.
+ */
+export function jobChanges(current: PlanFile, base: PlanFile | undefined): JobChanges {
+  if (base === undefined) {
+    return 'all';
+  }
+
+  const before = new Map(base.targets.map((target) => [target.id, target.jobsSha256]));
+  const sharedChanged = current.sharedJobsSha256 !== base.sharedJobsSha256;
+
+  return new Set(
+    current.targets
+      .filter((target) => before.get(target.id) !== target.jobsSha256 || (sharedChanged && target.install))
+      .map((target) => target.id),
+  );
+}
+
 /**
  * Selects the targets a run executes.
  *
- * A target runs when the event allows it and a changed file, outside {@link PlanFile.ignore}, lies in
- * one of its inputs or in a global input. `schedule` runs the scheduled targets and
- * `workflow_dispatch` every target, whatever changed; so does `all` changed files.
+ * A target runs when the event allows it and either a changed file, outside {@link PlanFile.ignore},
+ * lies in one of its inputs or in a global input, or its jobs changed ({@link jobChanges}).
+ * `schedule` runs the scheduled targets and `workflow_dispatch` every target, whatever changed; so do
+ * `all` changed files and `all` job changes.
  */
-export function selectTargets(plan: PlanFile, event: PlanEvent, changed: ChangedFiles): PlanResult {
+export function selectTargets(
+  plan: PlanFile,
+  event: PlanEvent,
+  changed: ChangedFiles,
+  changedJobs: JobChanges = new Set(),
+): PlanResult {
   const relevant =
     changed === 'all' ? 'all' : changed.filter((file) => !plan.ignore.some((pattern) => matchesGlob(pattern, file)));
   const touches = (inputs: readonly string[]): boolean =>
     relevant === 'all' || relevant.some((file) => inputs.some((input) => isWithin(input, file)));
+  const jobsChanged = (id: string): boolean => changedJobs === 'all' || changedJobs.has(id);
   const everything = runsRegardlessOfChanges(event) || touches(plan.global);
 
   const selected = plan.targets.filter(
-    (target) => eventAllows(target, event) && (everything || touches(target.inputs)),
+    (target) => eventAllows(target, event) && (everything || jobsChanged(target.id) || touches(target.inputs)),
   );
 
   return {
@@ -297,6 +338,9 @@ export function parsePlanFile(text: string): PlanFile {
   if (value === null || typeof value !== 'object' || !isStrings(value.global) || !isStrings(value.ignore)) {
     throw new Error('The plan file must hold string lists global and ignore.');
   }
+  if (typeof value.sharedJobsSha256 !== 'string') {
+    throw new Error('The plan file must hold the string sharedJobsSha256.');
+  }
   if (!Array.isArray(value.targets) || value.targets.length === 0) {
     throw new Error('The plan file lists no targets.');
   }
@@ -309,7 +353,8 @@ export function parsePlanFile(text: string): PlanFile {
       typeof target.install === 'boolean' &&
       (target.pullRequestBranches === null || isStrings(target.pullRequestBranches)) &&
       isStrings(target.pushBranches) &&
-      typeof target.schedule === 'boolean';
+      typeof target.schedule === 'boolean' &&
+      typeof target.jobsSha256 === 'string';
     if (!valid) {
       throw new Error(`The plan file entry ${JSON.stringify(target.id)} is malformed.`);
     }
