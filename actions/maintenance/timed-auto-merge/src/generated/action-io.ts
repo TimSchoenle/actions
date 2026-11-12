@@ -18,6 +18,8 @@ export const ActionInput = {
   trusted_authors: 'trusted_authors',
   branch_pattern: 'branch_pattern',
   pattern_mode: 'pattern_mode',
+  pr_author_ids: 'pr_author_ids',
+  base_branch: 'base_branch',
   time_elapsed: 'time_elapsed',
   minimum_age: 'minimum_age',
   merge_method: 'merge_method',

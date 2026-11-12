@@ -18,6 +18,8 @@ function pullRequest(overrides: Partial<OpenPullRequest> = {}): OpenPullRequest 
   const number = overrides.number ?? 7;
 
   return {
+    authorId: TRUSTED,
+    baseRef: 'main',
     baseRepoFullName: 'owner/repo',
     createdAt: new Date(NOW - 2 * DAY).toISOString(),
     draft: false,
@@ -34,7 +36,7 @@ function pullRequest(overrides: Partial<OpenPullRequest> = {}): OpenPullRequest 
 function commit(oid: string, overrides: Partial<CommitRecord> = {}): CommitRecord {
   return {
     authorIds: [TRUSTED],
-    committedDate: '2026-11-01T00:00:00Z',
+    committedDate: new Date(NOW - 2 * DAY).toISOString(),
     committerId: TRUSTED,
     oid,
     signatureState: 'VALID',
@@ -86,10 +88,12 @@ function fakeApi(
 function request(overrides: Partial<TimedAutoMergeRequest> = {}): TimedAutoMergeRequest {
   return {
     approveMessage: 'ok',
+    baseBranch: '',
     matcher: createBranchMatcher('release-please--branches--%', 'legacy'),
     mergeMethod: 'squash',
     minimumOpenMs: DAY,
     nowMs: NOW,
+    prAuthorIds: [TRUSTED],
     repository: { owner: 'owner', repo: 'repo' },
     trustedAuthorIds: [TRUSTED],
     ...overrides,
@@ -162,6 +166,111 @@ describe('processPullRequests', () => {
     const { outcomes } = await processPullRequests(api, request());
 
     expect(outcomes).toEqual([expect.objectContaining({ detail: 'open for 0m, needs 24h', reason: 'too-young' })]);
+  });
+
+  // Renovate and release-please push a fresh head onto an open pull request. The wait is a soak window
+  // for that head, so an old pull request with a new commit waits again.
+  it('skips an old pull request whose newest commit is younger than the minimum', async () => {
+    const api = fakeApi([pullRequest()], {
+      'https://github.com/owner/repo/pull/7': [
+        commit(OLDER),
+        commit(HEAD, { committedDate: new Date(NOW - 5 * 60_000).toISOString() }),
+      ],
+    });
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({ detail: 'newest commit is 5m old, needs 24h', reason: 'too-young', status: 'skipped' }),
+    ]);
+    expect(api.approve).not.toHaveBeenCalled();
+  });
+
+  it('measures from the newest commit whatever order the commits are listed in', async () => {
+    const api = fakeApi([pullRequest()], {
+      'https://github.com/owner/repo/pull/7': [
+        commit(OLDER, { committedDate: new Date(NOW - 60 * 60_000).toISOString() }),
+        commit(HEAD, { committedDate: new Date(NOW - 3 * DAY).toISOString() }),
+      ],
+    });
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes).toEqual([expect.objectContaining({ detail: 'newest commit is 60m old, needs 24h' })]);
+  });
+
+  it('approves when the newest commit is exactly the minimum age', async () => {
+    const api = fakeApi([pullRequest()], {
+      'https://github.com/owner/repo/pull/7': [
+        commit(OLDER),
+        commit(HEAD, { committedDate: new Date(NOW - DAY).toISOString() }),
+      ],
+    });
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes[0].status).toBe('approved');
+  });
+
+  it('records an unreadable commit date as a failure, not as old enough', async () => {
+    const api = fakeApi([pullRequest()], {
+      'https://github.com/owner/repo/pull/7': [commit(HEAD, { committedDate: 'yesterday' })],
+    });
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({ message: expect.stringContaining('"yesterday"'), status: 'failed' }),
+    ]);
+    expect(api.approve).not.toHaveBeenCalled();
+  });
+
+  it('skips a pull request opened by an account outside pr_author_ids, without fetching its commits', async () => {
+    const api = fakeApi([pullRequest({ authorId: STRANGER })]);
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({ detail: `opened by ${STRANGER}`, reason: 'author-untrusted', status: 'skipped' }),
+    ]);
+    expect(api.fetchCommits).not.toHaveBeenCalled();
+  });
+
+  it('skips a pull request whose author account was deleted', async () => {
+    const api = fakeApi([pullRequest({ authorId: null })]);
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({ detail: 'opened by a deleted account', reason: 'author-untrusted' }),
+    ]);
+  });
+
+  it('accepts an author in pr_author_ids that is not among the commit authors', async () => {
+    const api = fakeApi([pullRequest({ authorId: STRANGER })]);
+
+    const { outcomes } = await processPullRequests(api, request({ prAuthorIds: [STRANGER] }));
+
+    expect(outcomes[0].status).toBe('approved');
+  });
+
+  it('skips a pull request into another base branch when base_branch is set', async () => {
+    const api = fakeApi([pullRequest({ baseRef: 'release/1.x' })]);
+
+    const { outcomes } = await processPullRequests(api, request({ baseBranch: 'main' }));
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({ detail: 'targets release/1.x, not main', reason: 'base-mismatch', status: 'skipped' }),
+    ]);
+    expect(api.fetchCommits).not.toHaveBeenCalled();
+  });
+
+  it('accepts any base branch when base_branch is empty', async () => {
+    const api = fakeApi([pullRequest({ baseRef: 'release/1.x' })]);
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes[0].status).toBe('approved');
   });
 
   it('skips a pull request from a fork even when its branch name matches', async () => {
