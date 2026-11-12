@@ -215,6 +215,7 @@ describe('apply-chart-updates', () => {
     );
 
     expect(result.outputs).toEqual({
+      changed: 'true',
       'chart-version': '1.2.4',
       'previous-chart-version': '1.2.3',
       'updated-count': '4',
@@ -237,6 +238,35 @@ describe('apply-chart-updates', () => {
       'changelog-markdown': '',
       files: `${MULTI_PATH}/Chart.yaml ${MULTI_PATH}/values.yaml`,
     });
+  });
+
+  // A re-run of the same release must not publish a new chart version that ships nothing new.
+  it('writes nothing and keeps the chart version when a re-run finds every image at its target', async () => {
+    workspace = await Workspace.create({
+      [`${MULTI_PATH}/Chart.yaml`]: MULTI_CHART,
+      [`${MULTI_PATH}/values.yaml`]: MULTI_VALUES,
+    });
+    const inputs = {
+      'chart-path': MULTI_PATH,
+      images: JSON.stringify({ 'services.api.image.tag': { tag: 'v1.0.0', digest: DIGEST_API } }),
+    };
+
+    await apply(inputs);
+    const chart = await workspace.read(`${MULTI_PATH}/Chart.yaml`);
+    const values = await workspace.read(`${MULTI_PATH}/values.yaml`);
+
+    const rerun = await apply(inputs);
+
+    expect(rerun.outputs).toMatchObject({
+      changed: 'false',
+      'chart-version': '1.2.4',
+      'previous-chart-version': '1.2.4',
+      'updated-count': '0',
+      changes: '[]',
+      files: '',
+    });
+    await expect(workspace.read(`${MULTI_PATH}/Chart.yaml`)).resolves.toBe(chart);
+    await expect(workspace.read(`${MULTI_PATH}/values.yaml`)).resolves.toBe(values);
   });
 
   it.each(REJECTION_CASES)('rejects $name without touching the chart', async ({ images, template }) => {

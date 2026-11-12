@@ -342,6 +342,7 @@ describe('apply-chart-updates under hostile input', () => {
       const result = await apply({ changelog: fileCommandInjectionPayload() });
 
       expect(Object.keys(result.outputs).sort()).toEqual([
+        'changed',
         'changelog-markdown',
         'changes',
         'chart-version',

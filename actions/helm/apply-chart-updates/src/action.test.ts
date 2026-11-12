@@ -89,6 +89,7 @@ describe('apply-chart-updates action', () => {
     expect(published['chart-version']).toBe('1.2.4');
     expect(published['previous-chart-version']).toBe('1.2.3');
     expect(published['updated-count']).toBe('2');
+    expect(published.changed).toBe('true');
     expect(published.files).toBe(`${CHART_PATH}/Chart.yaml ${CHART_PATH}/values.yaml`);
     expect(JSON.parse(published.changes)).toHaveLength(2);
     expect(published['summary-markdown']).toContain('services.worker.image.tag');
@@ -149,6 +150,25 @@ describe('apply-chart-updates action', () => {
     expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('services.absent.image.tag'));
     expect(await readFile(join(workspace, CHART_PATH, 'values.yaml'), 'utf8')).toBe(VALUES);
     expect(await readFile(join(workspace, CHART_PATH, 'Chart.yaml'), 'utf8')).toBe(CHART);
+  });
+
+  it('publishes changed false and keeps the chart version when a re-run finds nothing to update', async () => {
+    setInputs();
+    await run();
+    vi.mocked(core.setOutput).mockClear();
+    const chart = await readFile(join(workspace, CHART_PATH, 'Chart.yaml'), 'utf8');
+
+    await run();
+
+    expect(core.setFailed).not.toHaveBeenCalled();
+    expect(outputs()).toMatchObject({
+      changed: 'false',
+      'updated-count': '0',
+      changes: '[]',
+      files: '',
+    });
+    expect(outputs()['chart-version']).toBe(outputs()['previous-chart-version']);
+    expect(await readFile(join(workspace, CHART_PATH, 'Chart.yaml'), 'utf8')).toBe(chart);
   });
 
   it('fails on a chart-path with a space, before writing or publishing anything', async () => {

@@ -31,7 +31,11 @@ export interface UpdateRequest {
 
 /** What the update changed. */
 export interface UpdateResult {
+  /** False when every image and the app version were already at their targets, and nothing was written. */
+  readonly changed: boolean;
+  /** The image keys whose value changed. */
   readonly imageEdits: readonly AppliedEdit[];
+  /** The `Chart.yaml` keys whose value changed. Empty when {@link changed} is false. */
   readonly chartEdits: readonly AppliedEdit[];
 }
 
@@ -72,13 +76,21 @@ function planChartEdits(request: UpdateRequest): PlannedEdit[] {
  *
  * Both plans are built first: a `values.yaml` that names a key the chart does not have must not
  * leave a bumped `Chart.yaml` behind.
+ *
+ * When no image and not the app version would change, nothing is written: the chart version is a
+ * release of what the chart ships, and a re-run of the same update ships nothing new.
  */
 export async function applyUpdate(request: UpdateRequest): Promise<UpdateResult> {
   const valuesPlan = await planYamlEdits(request.valuesFile, planImageEdits(request));
   const chartPlan = await planYamlEdits(request.chartFile, planChartEdits(request));
+  const appVersionMoves = chartPlan.applied.some((edit) => edit.key === 'appVersion');
+
+  if (valuesPlan.applied.length === 0 && !appVersionMoves) {
+    return { changed: false, imageEdits: [], chartEdits: [] };
+  }
 
   await writeEditPlan(chartPlan);
   await writeEditPlan(valuesPlan);
 
-  return { imageEdits: valuesPlan.applied, chartEdits: chartPlan.applied };
+  return { changed: true, imageEdits: valuesPlan.applied, chartEdits: chartPlan.applied };
 }
