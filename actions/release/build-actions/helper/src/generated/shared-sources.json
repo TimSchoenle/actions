@@ -47,7 +47,7 @@
         "src/patch-reader.ts": "8a239222491d2b19fff2ba15061b9e93122d6acec150be7c1ddc1e8468a73311",
         "src/patch.ts": "fdc824d17679899e902c1d6d33ee36b6acdf64e7f01838de9ed0fae08bf62dea",
         "src/pathspec.ts": "ac0629934dfa3d9f915d0a7c683f7c9d4b5f592a8a2ca78aac9015d823a33133",
-        "src/posix-regex.ts": "33c68b244be0aae3c473d994ea05a172a088048a2c17f12e19b544ab8227721b",
+        "src/posix-regex.ts": "bdd5eb6e40b3be454448b1151c3d812f23f6daee74e3b809c55cf4fc10ca9342",
         "src/pull-request-url.ts": "d9aae03d20219fac55b2e293d0f7175024a05319a1228eb1a212e0bf3d8b50ff",
         "src/read-after-write.ts": "e2adea3a3ec5c088ea96c7af0c02d55585f0d7c0f397763f2bc31c3662b2d852",
         "src/release-download.ts": "6e45f0df87dea5b52d29fd74bc8c2174c521af5eec307b81fee25318614ef06e",
