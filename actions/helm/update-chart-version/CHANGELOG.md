@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/TimSchoenle/actions/compare/src-actions-helm-update-chart-version-v1.7.6...src-actions-helm-update-chart-version-v1.8.0) (2026-11-12)
+
+
+### Features
+
+* **update-chart-version:** open no pull request when nothing moved ([#2287](https://github.com/TimSchoenle/actions/issues/2287)) ([bd66c31](https://github.com/TimSchoenle/actions/commit/bd66c31ed63d6e2b19705ab5d583cc9ff2236334))
+
 ## [1.7.6](https://github.com/TimSchoenle/actions/compare/src-actions-helm-update-chart-version-v1.7.5...src-actions-helm-update-chart-version-v1.7.6) (2026-11-12)
 
 
