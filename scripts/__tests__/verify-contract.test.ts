@@ -130,6 +130,27 @@ function docsOf(actionPath: string): ActionDocs | undefined {
   return result.docs;
 }
 
+/**
+ * Sources whose jobs run harden-runner in audit mode, with how many such steps each has. They moved
+ * from hand-written workflows that already audited. THIS LIST MAY ONLY SHRINK: lower a count when a
+ * job starts blocking, and delete the entry at zero.
+ */
+const AUDITING_SOURCES: Readonly<Record<string, number>> = {
+  '.github/verify/bun-setup-cached.yaml': 3,
+  '.github/verify/common-create-pull-request.yaml': 4,
+  '.github/verify/common-render-template-and-commit.yaml': 4,
+  '.github/verify/configs-checkstyle.yaml': 1,
+  '.github/verify/configs-renovate.yaml': 1,
+  '.github/verify/helm-update-chart-version.yaml': 7,
+  '.github/verify/java-gradle-auto-spotless.yaml': 1,
+  '.github/verify/java-gradle-coverage-codecov.yaml': 4,
+  '.github/verify/java-gradle-setup-base-environment.yaml': 1,
+  '.github/verify/rust-auto-format.yaml': 1,
+  '.github/verify/rust-coverage-codecov.yaml': 3,
+  '.github/verify/terrace-helm-sync.yaml': 1,
+  '.github/verify/test-setup-e2e.yaml': 1,
+};
+
 const SOURCES = readSources(ROOT_DIR);
 const GENERATED = generate(ROOT_DIR);
 
@@ -268,15 +289,37 @@ describe('generated Verify workflows', () => {
     expect(summary?.['needs']).toEqual(Object.keys(jobs).filter((id) => jobs[id] !== summary));
   });
 
-  it('block egress in every generated job that has an allowlist, never merely audit it', () => {
+  // The jobs the generator writes hold the scratch-repository token, so they block. A source job may
+  // still audit, where it installs toolchains from hosts nobody has listed yet; AUDITING_SOURCES
+  // records those, and may only shrink.
+  it('block egress in every job the generator writes, and audit only where a source is recorded', () => {
     for (const file of GENERATED.files.keys()) {
       if (!file.endsWith('.yaml')) {
         continue;
       }
-      const content = fs.readFileSync(path.join(ROOT_DIR, file), 'utf8');
-
-      expect(content, `${file} must not fall back to auditing`).not.toContain('egress-policy: audit');
+      const jobs = jobsOf(file);
+      for (const shard of GENERATED.shards.filter((candidate) => shardFile(candidate.id) === file)) {
+        for (const target of shard.targets.filter((candidate) => candidate.source.e2e !== undefined)) {
+          expect(JSON.stringify(jobs[e2eJobId(target.source.target)]), `${file}: the e2e job must block`).toContain(
+            '"egress-policy":"block"',
+          );
+        }
+      }
+      if (file === VERIFY_WORKFLOW) {
+        expect(fs.readFileSync(path.join(ROOT_DIR, file), 'utf8')).not.toContain('egress-policy: audit');
+      }
     }
+
+    const auditing = Object.fromEntries(
+      SOURCES.map((source) => [source.file, source.text.split('egress-policy: audit').length - 1]).filter(
+        ([, count]) => (count as number) > 0,
+      ),
+    );
+
+    expect(
+      auditing,
+      'a source audits egress where AUDITING_SOURCES does not record it; block, or lower the count',
+    ).toEqual(AUDITING_SOURCES);
   });
 
   // The whole reason the install is a separate job: harden-runner sets one policy per job, so the

@@ -6,7 +6,6 @@ rules:
   # Only pushes to main ran this workflow before it moved into Verify.
   push-branches: []
 jobs:
-
   test-spotless-formats-and-commits:
     environment:
       name: ci-e2e
