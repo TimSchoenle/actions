@@ -86,7 +86,7 @@ jobs:
           permission-pull-requests: write # only for the comment below
 
       - id: commit
-        uses: TimSchoenle/actions/actions/common/commit-patch@actions-common-commit-patch-v3.1.0 # tag=actions-common-commit-patch-v3.1.0
+        uses: TimSchoenle/actions/actions/common/commit-patch@e75e9ab1e1e9fa573051a901347e39ba23a45710 # tag=actions-common-commit-patch-v3.1.0
         with:
           token: ${{ steps.token.outputs.token }}
           artifact_name: auto-spotless
