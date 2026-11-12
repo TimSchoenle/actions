@@ -17,7 +17,7 @@ inputs:
     default: ''
   working-directory:
     description: 'Directory holding package.json and bun.lock. bun install runs there, node_modules is cached from
-      there, and the Bun version lookup starts there.'
+      there, and the Bun version lookup starts there. The step fails when bun.lock is missing.'
     required: false
     default: '.'
   cache-mode:
@@ -156,6 +156,25 @@ runs:
 
         echo "Bun ${version}, from ${source}."
         echo "value=${version}" >> "$GITHUB_OUTPUT"
+
+    # The cache key hashes bun.lock, and without one hashFiles returns '' and every project shares one
+    # key. bun install --frozen-lockfile also exits 0 when there is no lockfile, so nothing would pin
+    # the installed versions either. Checked before anything is downloaded.
+    - name: Check Lockfile
+      shell: bash
+      env:
+        WORKING_DIRECTORY: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+
+        if [[ ! -f "${WORKING_DIRECTORY}/bun.lock" ]]; then
+          if [[ -f "${WORKING_DIRECTORY}/bun.lockb" ]]; then
+            echo "::error::${WORKING_DIRECTORY} has only the binary bun.lockb. Run bun install --save-text-lockfile and commit bun.lock: the cache key and the frozen install both need it."
+          else
+            echo "::error::${WORKING_DIRECTORY} has no bun.lock. Commit one: without it the cache key is the same for every project and bun install --frozen-lockfile pins nothing."
+          fi
+          exit 1
+        fi
 
     # setup-bun keeps its own Actions cache of the Bun executable and runs whatever it restores, so
     # cache-mode has to govern that cache too: without no-cache, a job in "none" ran a Bun binary
