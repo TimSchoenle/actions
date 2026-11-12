@@ -40,7 +40,7 @@
         "src/http-request.ts": "6164b6de7d19ef0648461767f38985f94150adc53956345b058734c38935f82e",
         "src/identity.ts": "d0d16eb0a33d566f9ba9b43fb354acc66919598082516945a975400a5d384e2a",
         "src/index.ts": "9b9158115f0a2ccd5bf9d9b5354e104a71685dadb5db717724c3ee42abd5d83b",
-        "src/log.ts": "5228f96f9b0d538d383396648d6a309a57a8603940d0bcff8243f9141d8796fd",
+        "src/log.ts": "1699e05129c5ce0c50841023ba27940721248295d174aa45717e943990214761",
         "src/octokit.ts": "bbb86114e18ddf90e74903dd6a0da2e445e6a831597602d7211a8a0a2dac4f42",
         "src/patch-artifact-reader.ts": "da1d5cc4c493ec7b38ae59f0e6133e244e6de88a1801716ffb7c69df655bac07",
         "src/patch-artifact.ts": "dced957d65f24cc8a265ca6b760d511defc2e1582a3d11d1204c9d5c114318d4",
