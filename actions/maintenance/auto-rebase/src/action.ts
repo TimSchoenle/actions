@@ -9,6 +9,24 @@ import { updateLabelledPullRequests } from './update.js';
 import type { UpdateBranchApi } from './github-api.js';
 import type { UpdateResult } from './update.js';
 
+/** A positive whole number in plain decimal, with no sign, exponent or leading zero. */
+const POSITIVE_INTEGER = /^[1-9]\d{0,8}$/;
+
+/** Parses the `limit` input: empty means no limit, anything else must be a positive whole number. */
+export function parseLimit(value: string): number | undefined {
+  const trimmed = value.trim();
+
+  if (trimmed === '') {
+    return undefined;
+  }
+
+  if (!POSITIVE_INTEGER.test(trimmed)) {
+    throw new Error(`Input limit must be a positive whole number or empty, got ${quoteForLog(value)}.`);
+  }
+
+  return Number(trimmed);
+}
+
 /** Appends to the job summary when the runner provides one; outside a runner there is nowhere to write. */
 async function writeSummary(markdown: string): Promise<void> {
   if ((process.env['GITHUB_STEP_SUMMARY'] ?? '') === '') {
@@ -25,8 +43,8 @@ function publish(result: UpdateResult): void {
 }
 
 /**
- * Reads the action inputs, requests an update for every open pull request carrying the label and
- * publishes the three lists.
+ * Reads the action inputs, requests an update for the open pull requests carrying the label that
+ * qualify, oldest first, and publishes the three lists.
  *
  * A rejected update (a 422: a conflict, a moved head) is a warning: the label marks pull requests to
  * keep current, and one that conflicts needs a person, not a red maintenance job. Any other failure
@@ -42,12 +60,16 @@ export function run(api?: UpdateBranchApi): Promise<void> {
     const repositoryInput = getInput(ActionInput.repository, { required: true });
     const repository = parseRepository(repositoryInput);
     const skipDrafts = getBooleanInput(ActionInput.skip_drafts);
+    const onlyAutoMerge = getBooleanInput(ActionInput.only_auto_merge);
+    const limit = parseLimit(getInput(ActionInput.limit));
     const failOnError = getBooleanInput(ActionInput.fail_on_error);
 
     core.info(`Updating open pull requests labelled ${quoteForLog(label)} in ${quoteForLog(repositoryInput)}.`);
 
     const result = await updateLabelledPullRequests(api ?? createUpdateBranchApi(token), {
       label,
+      limit,
+      onlyAutoMerge,
       repository,
       skipDrafts,
     });

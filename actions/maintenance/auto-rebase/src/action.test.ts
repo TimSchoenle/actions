@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { run } from './action.js';
 import { createUpdateBranchApi } from './github-api.js';
 
-import type { PullRequestDetail, UpdateBranchApi } from './github-api.js';
+import type { PullRequestDetail, PullRequestSummary, UpdateBranchApi } from './github-api.js';
 
 /**
  * Only the reporting side of `actions-util/core` is mocked. Input reading stays real so the tests
@@ -31,6 +31,8 @@ type Inputs = Record<string, string>;
 const defaultInputs: Inputs = {
   fail_on_error: 'true',
   label: 'dependencies',
+  limit: '',
+  only_auto_merge: 'false',
   repository: 'owner/repo',
   skip_drafts: 'false',
   token: 'ghs_test_token',
@@ -57,17 +59,28 @@ function detail(number: number, overrides: Partial<PullRequestDetail> = {}): Pul
   };
 }
 
-/** Pull requests 1 to 4 carry the label; 4 is a draft. Pull request 9 does not. */
+function summary(number: number, labels: string[]): PullRequestSummary {
+  return {
+    autoMergeEnabled: number === 3,
+    draft: number === 4,
+    headSha: `sha-${number}`,
+    labels,
+    mergeStateStatus: 'UNKNOWN',
+    number,
+  };
+}
+
+/** Pull requests 1 to 4 carry the label; 3 auto-merges and 4 is a draft. Pull request 9 does not. */
 function fakeApi(): UpdateBranchApi {
   return {
     commitsBehindBase: vi.fn(async (_repository, _base, headSha: string) => (headSha === 'sha-2' ? 0 : 1)),
     getPullRequest: vi.fn(async (_repository, number: number) => detail(number, { draft: number === 4 })),
     listOpenPullRequests: vi.fn(async () => [
-      { labels: ['dependencies'], number: 1 },
-      { labels: ['dependencies'], number: 2 },
-      { labels: ['dependencies'], number: 3 },
-      { labels: ['dependencies'], number: 4 },
-      { labels: ['bug'], number: 9 },
+      summary(1, ['dependencies']),
+      summary(2, ['dependencies']),
+      summary(3, ['dependencies']),
+      summary(4, ['dependencies']),
+      summary(9, ['bug']),
     ]),
     updateBranch: vi.fn(async () => {}),
   };
@@ -118,6 +131,33 @@ describe('auto-rebase action', () => {
     await run(fakeApi());
 
     expect(outputs()).toEqual({ failed: '[]', skipped: '[2,4]', updated: '[1,3]' });
+  });
+
+  it('updates only auto-merging pull requests when only_auto_merge is true', async () => {
+    setInputs({ only_auto_merge: 'true' });
+
+    await run(fakeApi());
+
+    expect(outputs()).toEqual({ failed: '[]', skipped: '[1,2,4]', updated: '[3]' });
+  });
+
+  it('stops after limit pull requests that took a slot', async () => {
+    setInputs({ limit: '2' });
+
+    await run(fakeApi());
+
+    // 1 is updated, 2 is already up to date: both take a slot, so 3 and 4 wait.
+    expect(outputs()).toEqual({ failed: '[]', skipped: '[2,3,4]', updated: '[1]' });
+  });
+
+  it.each(['0', '-1', '1.5', '01', 'one', '1e3'])('fails on the limit %j', async (limit) => {
+    setInputs({ limit });
+    const api = fakeApi();
+
+    await run(api);
+
+    expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('Input limit must be a positive whole number'));
+    expect(api.listOpenPullRequests).not.toHaveBeenCalled();
   });
 
   it('publishes empty arrays and a notice when nothing carries the label', async () => {
