@@ -23,6 +23,22 @@ export const VALUES_FILE_NAME = 'values.yaml';
  */
 export { UnsafePathError } from 'actions-util';
 
+/**
+ * Raised when `chart-path` contains whitespace.
+ *
+ * The `files` output is a space-separated file pattern for the commit step, so a path with a space in
+ * it would reach that step as two patterns that stage the wrong paths or none.
+ */
+export class WhitespaceInChartPathError extends Error {
+  constructor(readonly chartPath: string) {
+    super(
+      `chart-path must not contain whitespace, got ${JSON.stringify(chartPath)}: the files output is a ` +
+        'space-separated file pattern, so the commit step would stage the wrong paths. Rename the chart directory.',
+    );
+    this.name = 'WhitespaceInChartPathError';
+  }
+}
+
 /** The files of one chart, as absolute paths, plus the repository-relative paths to report. */
 export interface ChartFiles {
   readonly chartFile: string;
@@ -39,11 +55,16 @@ export interface ChartFiles {
  * also needed relative to the repository root for the commit step's file pattern.
  *
  * @throws {UnsafePathError} if `chart-path` is empty, absolute, or leaves the workspace.
+ * @throws {WhitespaceInChartPathError} if the chart directory's path contains whitespace.
  */
 export function resolveChartFiles(chartPath: string, workspace: string): ChartFiles {
   const root = resolve(workspace);
   const chartDir = resolveWithinWorkspace(chartPath, root, 'chart-path');
   const fromRoot = relative(root, chartDir);
+
+  if (/\s/.test(fromRoot)) {
+    throw new WhitespaceInChartPathError(chartPath);
+  }
 
   const prefix = fromRoot === '' ? '' : `${fromRoot.split('\\').join('/')}/`;
 
