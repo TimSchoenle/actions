@@ -37,6 +37,10 @@ inputs:
     description: 'Name of the merged patch artifact, as given to common/generated-files-verdict.'
     required: false
     default: 'generated-files'
+  excluded_branches:
+    description: 'Whitespace-separated shell patterns of this repository''s branches never to commit to, e.g. "release/* develop". * also matches "/". List every protected branch the App can push to: a pull request may name any branch of this repository as its head. A fork''s branches are not matched.'
+    required: false
+    default: ''
   max_patch_bytes:
     description: 'Largest patch, in bytes. Keep it equal to max_patch_bytes on common/generated-files-verdict.'
     required: false
@@ -68,6 +72,7 @@ runs:
         REPOSITORY: ${{ github.repository }}
         DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         HEAD_AUTHOR_EMAIL: ${{ github.event.workflow_run.head_commit.author.email }}
+        EXCLUDED_BRANCHES: ${{ inputs.excluded_branches }}
       run: bash "$GITHUB_ACTION_PATH/check-event.sh"
 
     # A fork's branch only while its pull request allows edits by maintainers, which is what lets
