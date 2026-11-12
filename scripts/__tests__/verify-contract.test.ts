@@ -560,7 +560,26 @@ describe('affected-target detection against this repository', () => {
     }
   });
 
-  it('runs a target for a change to its own source file', () => {
-    expect(select(['.github/verify/common-find-patch.yaml'])).toEqual(['common/find-patch']);
+  // P1: a real pull request that edits a source also regenerates its shard file, which used to be an
+  // input of every shard-mate. Both files together must still select the edited target alone.
+  it('runs only the edited target for a source edit together with its regenerated shard file', () => {
+    const findPatch = plan.targets.find((target) => target.id === 'common/find-patch');
+
+    expect(findPatch).toBeDefined();
+    expect(select(['.github/verify/common-find-patch.yaml', shardFile(findPatch?.shard ?? '')])).toEqual([
+      'common/find-patch',
+    ]);
+  });
+
+  it('lists no generated workflow among any target inputs', () => {
+    expect(
+      plan.targets.flatMap((target) => target.inputs.filter((input) => input.startsWith('.github/workflows/'))),
+    ).toEqual([]);
+  });
+
+  it('keeps verify.yaml out of the global inputs; its shared jobs select by hash', () => {
+    expect(plan.global).not.toContain('.github/workflows/verify.yaml');
+    expect(plan.sharedJobsSha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(plan.targets.every((target) => /^[0-9a-f]{64}$/.test(target.jobsSha256))).toBe(true);
   });
 });

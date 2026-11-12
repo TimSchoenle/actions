@@ -22,6 +22,7 @@ describe('changedFiles', () => {
 
     expect(changedFiles(git, { kind: 'merge-base', base: SHA_B, head: SHA_A })).toEqual({
       changed: ['a.ts', 'b/c.ts'],
+      base: SHA_A,
     });
     expect(calls).toEqual([
       ['merge-base', SHA_B, SHA_A],
@@ -68,8 +69,9 @@ describe('plan against a real repository', () => {
     directories.push(root);
     const git = gitIn(root);
     const planFile: PlanFile = {
-      global: ['.github/workflows/verify.yaml'],
+      global: ['scripts/verify-plan.ts'],
       ignore: ['**/CHANGELOG.md'],
+      sharedJobsSha256: 'shared',
       targets: [
         {
           id: 'common/a',
@@ -80,6 +82,18 @@ describe('plan against a real repository', () => {
           pullRequestBranches: null,
           pushBranches: ['feature/common/a'],
           schedule: false,
+          jobsSha256: 'a1',
+        },
+        {
+          id: 'common/b',
+          shard: 'verify-common',
+          inputs: ['actions/common/b'],
+          buildDirs: [],
+          install: false,
+          pullRequestBranches: null,
+          pushBranches: ['feature/common/b'],
+          schedule: false,
+          jobsSha256: 'b1',
         },
       ],
     };
@@ -142,6 +156,48 @@ describe('plan against a real repository', () => {
     expect(
       plan({ EVENT_NAME: 'push', REF: 'refs/heads/main', BEFORE: after, AFTER: third }, root).result.targets,
     ).toEqual(['common/a']);
+  });
+
+  /** Commits a plan in which common/b's jobs changed, and nothing else. Returns the new HEAD. */
+  function commitJobChange(root: string): string {
+    const git = gitIn(root);
+    const current = JSON.parse(fs.readFileSync(path.join(root, PLAN_FILE), 'utf8')) as PlanFile;
+    const next: PlanFile = {
+      ...current,
+      targets: current.targets.map((entry) => (entry.id === 'common/b' ? { ...entry, jobsSha256: 'b2' } : entry)),
+    };
+    fs.writeFileSync(path.join(root, PLAN_FILE), JSON.stringify(next));
+    git(['-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-qam', 'jobs']);
+
+    return git(['rev-parse', 'HEAD']).trim();
+  }
+
+  // P1: the plan file changed, and only common/b's jobs in it, so only common/b runs.
+  it('selects the target whose jobs changed, read from the base commit plan', () => {
+    const { root, after } = repository();
+    const head = commitJobChange(root);
+
+    expect(
+      plan({ EVENT_NAME: 'push', REF: 'refs/heads/main', BEFORE: after, AFTER: head }, root).result.targets,
+    ).toEqual(['common/b']);
+  });
+
+  it('selects every target, with a note, when the base commit has no plan', () => {
+    const { root, before, after } = repository();
+    const git = gitIn(root);
+    git(['-c', 'user.name=t', '-c', 'user.email=t@example.com', 'rm', '-q', PLAN_FILE]);
+    git(['-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-qm', 'drop plan']);
+    const dropped = git(['rev-parse', 'HEAD']).trim();
+    fs.mkdirSync(path.join(root, '.github', 'verify'), { recursive: true });
+    git(['checkout', '-q', after, '--', PLAN_FILE]);
+    git(['-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-qm', 'restore plan']);
+    const restored = git(['rev-parse', 'HEAD']).trim();
+
+    const planned = plan({ EVENT_NAME: 'push', REF: 'refs/heads/main', BEFORE: dropped, AFTER: restored }, root);
+
+    expect(planned.result.targets).toEqual(['common/a', 'common/b']);
+    expect(planned.note).toMatch(/base plan/);
+    expect(before).not.toBe(after);
   });
 
   it('runs git without a pager', () => {

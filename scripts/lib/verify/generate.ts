@@ -1,11 +1,13 @@
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
 import { workspacePackages } from 'action-graph';
 
 import { IGNORED_FILES } from './affected.js';
-import { workspaceMemberDirectories, workspaceModulePaths } from './jobs.js';
+import { buildJob, installJob, planJob, workspaceMemberDirectories, workspaceModulePaths } from './jobs.js';
+import { resolvePins } from './pins.js';
 import { PLAN_FILE } from './plan-step.js';
 import {
   assignShards,
@@ -22,14 +24,23 @@ import { readSources } from './source.js';
 import { deriveTargetInputs } from './target-inputs.js';
 
 import type { PlanFile, PlannedTarget } from './affected.js';
-import type { Shard } from './render.js';
-import type { VerifySource } from './source.js';
+import type { RenderedTarget, Shard } from './render.js';
 
 /**
- * The code that decides which targets run. A change to it can change every selection, including the
- * one for the pull request that makes it, so it selects every target, as `verify.yaml` does.
+ * The code that decides which targets run and from which inputs. A change to it can change every
+ * selection, including the one for the pull request that makes it, so it selects every target. The
+ * rest of the generator only changes generated jobs, which select their own targets by hash.
  */
-export const PLANNER_INPUTS: readonly string[] = ['scripts/lib/verify', 'scripts/verify-plan.ts'];
+export const PLANNER_INPUTS: readonly string[] = [
+  'scripts/lib/verify/affected.ts',
+  'scripts/lib/verify/plan-step.ts',
+  'scripts/lib/verify/target-inputs.ts',
+  'scripts/verify-plan.ts',
+];
+
+function sha256(text: string): string {
+  return createHash('sha256').update(text).digest('hex');
+}
 
 /**
  * Everything `bun run generate-verify` writes, computed in memory so the write and the drift check
@@ -58,11 +69,12 @@ function format(root: string, file: string, text: string): string {
 /** The plan entry of one target. */
 function plannedTarget(
   root: string,
-  source: VerifySource,
+  target: RenderedTarget,
   shard: Shard,
   packages: ReadonlyMap<string, string>,
 ): PlannedTarget {
-  const derived = deriveTargetInputs(root, source, shardFile(shard.id), packages);
+  const { source } = target;
+  const derived = deriveTargetInputs(root, source, packages);
 
   return {
     id: source.target,
@@ -73,6 +85,7 @@ function plannedTarget(
     pullRequestBranches: source.rules.pullRequestBranches ?? null,
     pushBranches: source.rules.pushBranches,
     schedule: source.rules.schedule,
+    jobsSha256: sha256(resolvePins(target.text)),
   };
 }
 
@@ -86,9 +99,8 @@ export function generate(root: string): { files: GeneratedFiles; shards: readonl
 
   const packages = workspacePackages(root);
   const modulePaths = workspaceModulePaths(workspaceMemberDirectories(root));
-  // Whether a target builds does not depend on its shard, so the shard file is a placeholder here.
   const rendered = sources.map((source) =>
-    renderTarget(source, deriveTargetInputs(root, source, '', packages).buildDirs.length > 0, modulePaths),
+    renderTarget(source, deriveTargetInputs(root, source, packages).buildDirs.length > 0, modulePaths),
   );
   const shards = assignShards(rendered);
 
@@ -102,11 +114,10 @@ export function generate(root: string): { files: GeneratedFiles; shards: readonl
   files.set(VERIFY_WORKFLOW, format(root, VERIFY_WORKFLOW, renderVerifyWorkflow(shards, modulePaths, secretsByShard)));
 
   const plan: PlanFile = {
-    global: [VERIFY_WORKFLOW, ...PLANNER_INPUTS],
+    global: PLANNER_INPUTS,
     ignore: IGNORED_FILES,
-    targets: shards.flatMap((shard) =>
-      shard.targets.map((target) => plannedTarget(root, target.source, shard, packages)),
-    ),
+    sharedJobsSha256: sha256(planJob() + installJob(modulePaths) + buildJob(modulePaths)),
+    targets: shards.flatMap((shard) => shard.targets.map((target) => plannedTarget(root, target, shard, packages))),
   };
   const planText = JSON.stringify(
     { $comment: `${GENERATED_HEADER.slice(2)} Run 'bun run generate-verify' to rebuild it.`, ...plan },
