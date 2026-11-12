@@ -69,6 +69,7 @@ describe('plan against a real repository', () => {
           shard: 'verify-common',
           inputs: ['actions/common/a'],
           buildDirs: ['actions/common/a'],
+          install: true,
           pullRequestBranches: null,
           pushBranches: ['feature/common/a'],
           schedule: false,
@@ -98,6 +99,7 @@ describe('plan against a real repository', () => {
       targets: ['common/a'],
       shards: ['verify-common'],
       buildDirs: ['actions/common/a'],
+      install: true,
     });
   });
 

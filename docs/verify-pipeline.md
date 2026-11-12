@@ -31,13 +31,18 @@ Scripts CI fails while a generated file differs from what the generator writes.
 
 ## Jobs
 
-| Job                 | Runs when                         | Does                                                                                       |
-| ------------------- | --------------------------------- | ------------------------------------------------------------------------------------------ |
-| `plan`              | always                            | diffs with git, selects the affected targets, the shards to call and the build list        |
-| `install`           | a target is selected              | installs the workspace once and saves the dependency cache; the only job with the registry |
-| `build`             | a selected target runs a bundle   | builds the union of the selected targets' build directories with `release/build-actions`   |
-| `verify-<category>` | the shard holds a selected target | calls the shard; each of its jobs runs only when its target is selected                    |
-| `verify`            | always                            | fails when any job above failed or was cancelled                                           |
+| Job                 | Runs when                                         | Does                                                                                       |
+| ------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `plan`              | always                                            | diffs with git, selects the affected targets, the shards to call and the build list        |
+| `install`           | a selected target has end-to-end cases or a build | installs the workspace once and saves the dependency cache; the only job with the registry |
+| `build`             | a selected target runs a bundle                   | builds the union of the selected targets' build directories with `release/build-actions`   |
+| `verify-<category>` | the shard holds a selected target                 | calls the shard; each of its jobs runs only when its target is selected                    |
+| `verify`            | always                                            | fails when any job above failed or was cancelled                                           |
+
+A shard call waits on `install` and `build` and accepts either as skipped. A target with neither
+end-to-end cases nor build directories runs only hand-written jobs that set themselves up, so a run
+that selects only such targets skips `install` instead of waiting on it; the plan sets `install`
+whenever any selected target reads the tree.
 
 The `verify` job reports as `Verify`, the one verify context branch protection requires
 (`scripts/lib/required-checks.ts`). The pull request's own copy of the workflow decides it, as it

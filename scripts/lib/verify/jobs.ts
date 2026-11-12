@@ -141,6 +141,7 @@ export function planJob(): string {
     outputs:
       targets: \${{ steps.plan.outputs.targets }}
       shards: \${{ steps.plan.outputs.shards }}
+      install: \${{ steps.plan.outputs.install }}
       build: \${{ steps.plan.outputs.build }}
       build-dirs: \${{ steps.plan.outputs.build-dirs }}
     steps:
@@ -184,7 +185,9 @@ export function installJob(modulePaths: readonly string[]): string {
   return `  install:
     name: Install Dependencies
     needs: plan
-    if: \${{ needs.plan.outputs.targets != '[]' }}
+    # Only when a selected target reads the tree: one with end-to-end cases or a build. A run whose
+    # targets are all hand-written jobs that set themselves up skips it rather than waiting on it.
+    if: \${{ needs.plan.outputs.install == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

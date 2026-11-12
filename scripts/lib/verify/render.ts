@@ -380,9 +380,10 @@ export function renderVerifyWorkflow(
       return `  ${shard.id}:
     name: ${shard.title}
     needs: [plan, install, build]
-    # Runs once the shared build succeeded, or was skipped because none of the selected targets
-    # runs a bundle.
-    if: \${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), '${shard.id}') }}
+    # Runs once the shared install and build succeeded, or were skipped because none of the
+    # selected targets reads the dependency tree or runs a bundle. A skipped install never strands
+    # a target that needs it: the plan sets install whenever any selected target does.
+    if: \${{ !cancelled() && (needs.install.result == 'success' || needs.install.result == 'skipped') && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), '${shard.id}') }}
     uses: ./${shardFile(shard.id)} # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:${permissionLines.length === 0 ? ' {}' : `\n${permissionLines.join('\n')}`}
     with:

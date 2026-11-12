@@ -63,6 +63,7 @@ function plannedTarget(
     shard: shard.id,
     inputs: derived.inputs,
     buildDirs: derived.buildDirs,
+    install: source.e2e !== undefined || derived.buildDirs.length > 0,
     pullRequestBranches: source.rules.pullRequestBranches ?? null,
     pushBranches: source.rules.pushBranches,
     schedule: source.rules.schedule,

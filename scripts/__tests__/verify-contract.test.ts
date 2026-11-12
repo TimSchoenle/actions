@@ -269,6 +269,18 @@ describe('generated Verify workflows', () => {
     expect(findDrift(ROOT_DIR), "run 'bun run generate-verify' and commit the result").toEqual([]);
   });
 
+  // A target the plan marks as needing no install may run while the install job is skipped, when
+  // inputs.cache-key is empty and the dependency cache does not exist for this commit.
+  it('reads the dependency cache only in targets the plan marks as needing the install job', () => {
+    const noInstall = new Set(GENERATED.plan.targets.filter((target) => !target.install).map((target) => target.id));
+    expect(noInstall.size).toBeGreaterThan(0);
+    for (const source of SOURCES.filter((candidate) => noInstall.has(candidate.target))) {
+      expect(source.text, `${source.file} reads inputs.cache-key but its target skips install`).not.toMatch(
+        /inputs\.cache-key/,
+      );
+    }
+  });
+
   it(`stay within ${MAX_SHARDS} reusable workflows, so a run never reaches GitHub's limit of 50`, () => {
     expect(
       GENERATED.shards.length,

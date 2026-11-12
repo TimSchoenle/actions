@@ -21,6 +21,7 @@ function target(id: string, inputs: string[], overrides: Partial<PlannedTarget> 
     shard: `verify-${id.split('/')[0]}`,
     inputs,
     buildDirs: [],
+    install: (overrides.buildDirs?.length ?? 0) > 0,
     pullRequestBranches: null,
     pushBranches: [`feature/${id}`],
     schedule: false,
@@ -68,7 +69,22 @@ describe('selectTargets', () => {
       targets: ['common/create-patch', 'common/find-patch'],
       shards: ['verify-common'],
       buildDirs: ['actions/common/create-patch/helper', 'actions/common/find-patch/helper'],
+      install: true,
     });
+  });
+
+  it('asks for the install job only when a selected target reads the dependency tree', () => {
+    expect(selectTargets(PLAN, PR, ['actions/bun/setup-cached/action.yaml']).install).toBe(false);
+    expect(selectTargets(PLAN, PR, ['actions/common/create-patch/action.yaml']).install).toBe(true);
+    expect(
+      selectTargets(PLAN, PR, ['actions/bun/setup-cached/action.yaml', 'actions/common/create-patch/action.yaml'])
+        .install,
+    ).toBe(true);
+    const e2eOnly: PlanFile = {
+      ...PLAN,
+      targets: [target('common/read-yaml', ['actions/common/read-yaml'], { install: true })],
+    };
+    expect(selectTargets(e2eOnly, PR, ['actions/common/read-yaml/action.yaml']).install).toBe(true);
   });
 
   it('selects only the target of a single-action change', () => {
@@ -81,7 +97,7 @@ describe('selectTargets', () => {
       'actions/common/create-patch/CHANGELOG.md',
     ]);
 
-    expect(result).toEqual({ targets: [], shards: [], buildDirs: [] });
+    expect(result).toEqual({ targets: [], shards: [], buildDirs: [], install: false });
   });
 
   it('still selects a target for a README below the action root, which the action may read', () => {
@@ -175,13 +191,19 @@ describe('readEvent', () => {
 
 describe('formatOutputs', () => {
   it('writes JSON lists and a heredoc of build directories', () => {
-    expect(formatOutputs({ targets: ['a/b'], shards: ['verify-a'], buildDirs: ['x', 'y'] })).toBe(
-      'targets=["a/b"]\nshards=["verify-a"]\nbuild=true\nbuild-dirs<<VERIFY_PLAN_EOF\nx\ny\nVERIFY_PLAN_EOF\n',
+    expect(formatOutputs({ targets: ['a/b'], shards: ['verify-a'], buildDirs: ['x', 'y'], install: true })).toBe(
+      'targets=["a/b"]\nshards=["verify-a"]\ninstall=true\nbuild=true\nbuild-dirs<<VERIFY_PLAN_EOF\nx\ny\nVERIFY_PLAN_EOF\n',
     );
   });
 
   it('reports no build when nothing is built', () => {
-    expect(formatOutputs({ targets: [], shards: [], buildDirs: [] })).toContain('build=false\n');
+    expect(formatOutputs({ targets: [], shards: [], buildDirs: [], install: false })).toContain('build=false\n');
+  });
+
+  it('reports no install when no selected target reads the dependency tree', () => {
+    expect(formatOutputs({ targets: ['a/b'], shards: ['verify-a'], buildDirs: [], install: false })).toContain(
+      'install=false\n',
+    );
   });
 });
 
@@ -193,6 +215,8 @@ describe('parsePlanFile', () => {
   it('refuses a plan without targets or with a malformed entry', () => {
     expect(() => parsePlanFile(JSON.stringify({ ...PLAN, targets: [] }))).toThrow(/no targets/);
     expect(() => parsePlanFile(JSON.stringify({ ...PLAN, targets: [{ id: 'a/b' }] }))).toThrow(/malformed/);
+    const { install: _install, ...withoutInstall } = target('a/b', ['a']);
+    expect(() => parsePlanFile(JSON.stringify({ ...PLAN, targets: [withoutInstall] }))).toThrow(/malformed/);
     expect(() => parsePlanFile('null')).toThrow(/global and ignore/);
   });
 });
