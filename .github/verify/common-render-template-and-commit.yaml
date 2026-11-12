@@ -79,7 +79,7 @@ jobs:
         uses: ./tmp/actions-code/actions/common/render-template-and-commit # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
         with:
           template: render-test/README.hbs
-          output: render-test/out/README.md
+          output: render-test/out dir/READ ME.md
           partials-dir: render-test/partials
           variables: '{"repo":"acme/actions","actions":[{"name":"read-yaml","description":"Read a|value"},{"name":"clippy","description":"Lint Rust"}]}'
           token: ${{ steps.setup.outputs.token }}
@@ -99,12 +99,12 @@ jobs:
           set -euo pipefail
           [ "$CHANGED" = "true" ] || { echo "::error::changed was '$CHANGED', expected true"; exit 1; }
           [ "$CHANGES_DETECTED" = "true" ] || { echo "::error::changes_detected was '$CHANGES_DETECTED'"; exit 1; }
-          [ "$OUTPUT_PATH" = "render-test/out/README.md" ] || { echo "::error::output-path was '$OUTPUT_PATH'"; exit 1; }
+          [ "$OUTPUT_PATH" = "render-test/out dir/READ ME.md" ] || { echo "::error::output-path was '$OUTPUT_PATH'"; exit 1; }
           [ -n "$COMMIT_SHA" ] || { echo "::error::commit_hash is empty"; exit 1; }
           [ -n "$COMMIT_URL" ] || { echo "::error::commit_url is empty"; exit 1; }
 
           # The checksum must describe the bytes actually written, not the bytes intended.
-          ACTUAL=$(sha256sum render-test/out/README.md | cut -d' ' -f1)
+          ACTUAL=$(sha256sum "render-test/out dir/READ ME.md" | cut -d' ' -f1)
           [ "$CHECKSUM" = "$ACTUAL" ] || { echo "::error::checksum '$CHECKSUM' does not match the file's '$ACTUAL'"; exit 1; }
           echo "✅ All outputs correct"
 
@@ -118,7 +118,7 @@ jobs:
           COMMIT_SHA: ${{ steps.run.outputs.commit_hash }}
         run: |
           set -euo pipefail
-          gh api "/repos/$TEST_REPO/contents/render-test/out/README.md?ref=$COMMIT_SHA" \
+          gh api "/repos/$TEST_REPO/contents/render-test/out%20dir/READ%20ME.md?ref=$COMMIT_SHA" \
             --jq '.content' | base64 -d > committed.md
 
           cat <<'EOF' > expected.md
@@ -152,7 +152,7 @@ jobs:
           echo "Files in commit:"
           echo "$FILES"
 
-          if [ "$FILES" != "render-test/out/README.md" ]; then
+          if [ "$FILES" != "render-test/out dir/READ ME.md" ]; then
             echo "::error::Expected exactly the rendered file, got: $FILES"
             exit 1
           fi
