@@ -1,17 +1,20 @@
-import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { chmod, mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
-  authEnvironment,
+  authConfig,
   authorizationHeader,
   basicCredentials,
   fetchHead,
   FetchHeadInputError,
   prepareDirectory,
   repositoryEnvironment,
+  runGit,
   repositoryUrl,
   validateRequest,
 } from './fetch-head.js';
@@ -68,21 +71,19 @@ describe('validateRequest', () => {
   });
 });
 
-describe('authEnvironment', () => {
+describe('authConfig', () => {
   it('is empty without a token', () => {
-    expect(authEnvironment('https://github.com', '')).toEqual({});
+    expect(authConfig('https://github.com', '')).toEqual([]);
   });
 
   it('scopes the header to the server origin', () => {
-    expect(authEnvironment('https://ghe.example.com/', 'secret')).toEqual({
-      GIT_CONFIG_COUNT: '1',
-      GIT_CONFIG_KEY_0: 'http.https://ghe.example.com/.extraheader',
-      GIT_CONFIG_VALUE_0: authorizationHeader('secret'),
-    });
+    expect(authConfig('https://ghe.example.com/', 'secret')).toEqual([
+      ['http.https://ghe.example.com/.extraheader', authorizationHeader('secret')],
+    ]);
   });
 
   it('gives a file server no token, since no header reaches it', () => {
-    expect(authEnvironment('file:///srv/git', 'secret')).toEqual({});
+    expect(authConfig('file:///srv/git', 'secret')).toEqual([]);
   });
 
   it('sends the token as the basic password, as actions/checkout does', () => {
@@ -99,14 +100,26 @@ describe('repositoryEnvironment', () => {
     expect(repositoryEnvironment(directory)).toEqual({
       GIT_ALTERNATE_OBJECT_DIRECTORIES: '',
       GIT_COMMON_DIR: gitDirectory,
-      GIT_CONFIG_COUNT: '0',
+      GIT_CONFIG_COUNT: '1',
+      GIT_CONFIG_KEY_0: 'core.hooksPath',
+      GIT_CONFIG_VALUE_0: '/dev/null',
       GIT_CONFIG_GLOBAL: '/dev/null',
       GIT_CONFIG_NOSYSTEM: '1',
       GIT_CONFIG_PARAMETERS: '',
       GIT_DIR: gitDirectory,
       GIT_INDEX_FILE: path.join(gitDirectory, 'index'),
       GIT_OBJECT_DIRECTORY: path.join(gitDirectory, 'objects'),
+      GIT_TEMPLATE_DIR: '',
       GIT_WORK_TREE: directory,
+    });
+  });
+
+  it('appends further configuration after the pinned entries', () => {
+    expect(repositoryEnvironment(path.join(tmpdir(), 'repo'), [['http.extraheader', 'x']])).toMatchObject({
+      GIT_CONFIG_COUNT: '2',
+      GIT_CONFIG_KEY_0: 'core.hooksPath',
+      GIT_CONFIG_KEY_1: 'http.extraheader',
+      GIT_CONFIG_VALUE_1: 'x',
     });
   });
 });
@@ -218,9 +231,12 @@ describe('fetchHead', () => {
 
     await fetchHead(request(), git);
 
-    const withToken = calls.filter((call) => 'GIT_CONFIG_KEY_0' in call.env).map((call) => call.args[0]);
+    const withToken = calls
+      .filter((call) => Object.values(call.env).includes(authorizationHeader('secret')))
+      .map((call) => call.args[0]);
     expect(withToken).toEqual(['fetch']);
-    expect(calls.filter((call) => call.env['GIT_CONFIG_COUNT'] === '1').map((call) => call.args[0])).toEqual(['fetch']);
+    expect(calls.filter((call) => call.env['GIT_CONFIG_COUNT'] === '2').map((call) => call.args[0])).toEqual(['fetch']);
+    expect(calls.every((call) => call.env['GIT_CONFIG_VALUE_0'] === '/dev/null')).toBe(true);
   });
 
   it('creates a SHA-1 repository whatever the default object format is', async () => {
@@ -228,7 +244,7 @@ describe('fetchHead', () => {
 
     await fetchHead(request(), git);
 
-    expect(calls[0]?.args).toEqual(['init', '--quiet', '--object-format=sha1']);
+    expect(calls[0]?.args).toEqual(['init', '--quiet', '--object-format=sha1', '--template=']);
   });
 
   it('pins every command to the new repository', async () => {
@@ -258,13 +274,57 @@ describe('fetchHead', () => {
 
     await fetchHead(request({ token: '' }), git);
 
-    expect(calls.every((call) => call.env['GIT_CONFIG_COUNT'] === '0')).toBe(true);
+    expect(calls.every((call) => call.env['GIT_CONFIG_COUNT'] === '1')).toBe(true);
   });
 
   it('fails when HEAD does not resolve to the commit', async () => {
     const { git } = recorder('b'.repeat(40));
 
     await expect(fetchHead(request(), git)).rejects.toThrow(/HEAD resolves to/);
+  });
+
+  // S16b: git copies a template directory into every new repository, and GIT_TEMPLATE_DIR can come from
+  // an earlier step through GITHUB_ENV. A hook in it then ran inside the fetched repository.
+  it('copies no template and runs no hook from GIT_TEMPLATE_DIR or the repository config', async () => {
+    const server = path.join(root, 'server');
+    const source = path.join(server, 'owner', 'repo.git');
+    const template = path.join(root, 'template');
+    const marker = path.join(root, 'hook-ran');
+    const checkout = path.join(root, 'checkout');
+    const env = { ...process.env, GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null' };
+    const id = ['-c', 'user.name=t', '-c', 'user.email=t@example.com'];
+    execFileSync('git', ['init', '-q', '--bare', '--template=', source], { env });
+    const work = path.join(root, 'work');
+    execFileSync('git', ['init', '-q', '--template=', work], { env });
+    execFileSync('git', [...id, 'commit', '-q', '--allow-empty', '-m', 'one'], { cwd: work, env });
+    execFileSync('git', ['push', '-q', source, 'HEAD:refs/heads/main'], { cwd: work, env });
+    const sha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: work, env, encoding: 'utf8' }).trim();
+    await mkdir(path.join(template, 'hooks'), { recursive: true });
+    for (const hook of ['reference-transaction', 'post-checkout']) {
+      const file = path.join(template, 'hooks', hook);
+      await writeFile(file, `#!/bin/sh\ntouch '${marker}'\n`);
+      await chmod(file, 0o755);
+    }
+
+    const previous = process.env['GIT_TEMPLATE_DIR'];
+    process.env['GIT_TEMPLATE_DIR'] = template;
+    try {
+      await expect(
+        fetchHead(
+          { directory: checkout, repository: 'owner/repo', serverUrl: `file://${server}`, sha, token: '' },
+          runGit,
+        ),
+      ).resolves.toBe(sha);
+    } finally {
+      if (previous === undefined) {
+        delete process.env['GIT_TEMPLATE_DIR'];
+      } else {
+        process.env['GIT_TEMPLATE_DIR'] = previous;
+      }
+    }
+
+    expect(existsSync(path.join(checkout, '.git', 'hooks'))).toBe(false);
+    expect(existsSync(marker)).toBe(false);
   });
 
   it('runs no git command for a refused input', async () => {
