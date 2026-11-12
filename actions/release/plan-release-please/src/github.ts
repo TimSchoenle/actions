@@ -21,12 +21,27 @@ export interface ReleaseStateApi {
   /** A file's text at a commit, or `undefined` when it does not exist there. */
   fileAt(path: string, ref: string): Promise<string | undefined>;
   pullRequestsForCommit(sha: string): Promise<AssociatedPullRequest[]>;
-  /** Every tag name that starts with `prefix`. */
-  tagsWithPrefix(prefix: string): Promise<Set<string>>;
+  /** Which of `names` exist as tags. */
+  existingTags(names: readonly string[]): Promise<Set<string>>;
 }
 
 /** GitHub's largest page size. */
 const PER_PAGE = 100;
+
+/** How many tags one GraphQL query looks up, which keeps each query far below GitHub's node limit. */
+const TAGS_PER_QUERY = 100;
+
+/**
+ * A query that looks up `count` tags by name, one aliased `ref(qualifiedName:)` each. The names travel
+ * as variables `$t0` and up, never inside the query text.
+ */
+function existingTagsQuery(count: number): string {
+  const indexes = Array.from({ length: count }, (_, index) => index);
+  const variables = indexes.map((index) => `$t${index}: String!`).join(', ');
+  const lookups = indexes.map((index) => `t${index}: ref(qualifiedName: $t${index}) { name }`).join('\n    ');
+
+  return `query($owner: String!, $repo: String!, ${variables}) {\n  repository(owner: $owner, name: $repo) {\n    ${lookups}\n  }\n}`;
+}
 
 /** Binds {@link ReleaseStateApi} to the REST API. */
 export function createReleaseStateApi(token: string, repository: RepositoryCoordinates): ReleaseStateApi {
@@ -96,14 +111,23 @@ export function createReleaseStateApi(token: string, repository: RepositoryCoord
       }));
     },
 
-    async tagsWithPrefix(prefix) {
-      // The endpoint's generated types leave the paginated item untyped; each item is a git ref.
-      const refs: ReadonlyArray<{ ref: string }> = await octokit.paginate(
-        'GET /repos/{owner}/{repo}/git/matching-refs/{ref}',
-        { owner, per_page: PER_PAGE, ref: `tags/${prefix}`, repo },
-      );
+    async existingTags(names) {
+      const found = new Set<string>();
+      for (let start = 0; start < names.length; start += TAGS_PER_QUERY) {
+        const batch = names.slice(start, start + TAGS_PER_QUERY);
+        const lookups = Object.fromEntries(batch.map((name, index) => [`t${index}`, `refs/tags/${name}`]));
+        const { repository } = await octokit.graphql<{ repository: Record<string, { name: string } | null> }>(
+          existingTagsQuery(batch.length),
+          { owner, repo, ...lookups },
+        );
+        batch.forEach((name, index) => {
+          if (repository[`t${index}`] !== null && repository[`t${index}`] !== undefined) {
+            found.add(name);
+          }
+        });
+      }
 
-      return new Set(refs.map((ref) => ref.ref.slice('refs/tags/'.length)));
+      return found;
     },
   };
 }

@@ -93,8 +93,6 @@ async function readRequired(api: ReleaseStateApi, file: string, ref: string): Pr
 export async function preflight(api: ReleaseStateApi, options: PlanOptions): Promise<string[]> {
   const packages = parseReleaseConfig(await readRequired(api, options.configFile, options.sha), options.configFile);
   const versions = parseManifest(await readRequired(api, options.manifestFile, options.sha), options.manifestFile);
-  const tags = await api.tagsWithPrefix(options.sourceTagPrefix);
-
   const expected = packages.map((settings) => {
     const version = versions.get(settings.path);
     if (version === undefined) {
@@ -105,6 +103,8 @@ export async function preflight(api: ReleaseStateApi, options: PlanOptions): Pro
 
     return tag;
   });
+  // One lookup per package by name, so the cost follows the number of packages, not of tags.
+  const tags = await api.existingTags(expected);
   const missing = expected.filter((tag) => !tags.has(tag));
   if (missing.length > 0) {
     throw new Error(`Missing source tags (${missing.length}): ${missing.join(', ')}.`);
