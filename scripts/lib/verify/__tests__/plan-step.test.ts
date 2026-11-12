@@ -17,7 +17,7 @@ describe('changedFiles', () => {
     const calls: string[][] = [];
     const git = (args: readonly string[]): string => {
       calls.push([...args]);
-      return args[0] === 'merge-base' ? `${SHA_A}\n` : 'a.ts\nb/c.ts\n';
+      return args[0] === 'merge-base' ? `${SHA_A}\n` : 'a.ts\0b/c.ts\0';
     };
 
     expect(changedFiles(git, { kind: 'merge-base', base: SHA_B, head: SHA_A })).toEqual({
@@ -25,8 +25,15 @@ describe('changedFiles', () => {
     });
     expect(calls).toEqual([
       ['merge-base', SHA_B, SHA_A],
-      ['diff', '--name-only', '--no-renames', SHA_A, SHA_A],
+      ['diff', '--name-only', '-z', '--no-renames', SHA_A, SHA_A],
     ]);
+  });
+
+  // C3e: without -z git quotes such a name, "docs/\303\244.md", which then matches no input.
+  it('keeps a non-ASCII or space-padded name exactly as committed', () => {
+    const git = (): string => 'docs/ä.md\0 lead.txt\0';
+
+    expect(changedFiles(git, { kind: 'range', from: SHA_A, to: SHA_B }).changed).toEqual(['docs/ä.md', ' lead.txt']);
   });
 
   it('selects everything, with a note, when git cannot compute the diff', () => {
@@ -122,6 +129,19 @@ describe('plan against a real repository', () => {
 
     expect(fs.readFileSync(output, 'utf8')).toContain('targets=["common/a"]\n');
     expect(fs.readFileSync(summary, 'utf8')).toContain('- `common/a`');
+  });
+
+  it('selects the target for a changed file with a non-ASCII name', () => {
+    const { root, after } = repository();
+    const git = gitIn(root);
+    fs.writeFileSync(path.join(root, 'actions', 'common', 'a', 'übersicht.ts'), 'export {};\n');
+    git(['-c', 'user.name=t', '-c', 'user.email=t@example.com', 'add', '.']);
+    git(['-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-qm', 'three']);
+    const third = git(['rev-parse', 'HEAD']).trim();
+
+    expect(
+      plan({ EVENT_NAME: 'push', REF: 'refs/heads/main', BEFORE: after, AFTER: third }, root).result.targets,
+    ).toEqual(['common/a']);
   });
 
   it('runs git without a pager', () => {

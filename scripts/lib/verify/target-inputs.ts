@@ -38,6 +38,90 @@ export const HARNESS_PACKAGE = 'packages/e2e';
  */
 export const CHECKOUT_PREFIXES: readonly string[] = ['tmp/actions-code', 'source'];
 
+/**
+ * Root files the end-to-end run reads before any case loads: the vitest configuration, its setup and
+ * aliases, and the root `package.json` whose `e2e` script starts it. A change to any of them changes
+ * every end-to-end run.
+ */
+export const E2E_RUNNER_FILES: readonly string[] = [
+  'package.json',
+  'vitest.aliases.ts',
+  'vitest.e2e.config.ts',
+  'vitest.e2e.setup.ts',
+];
+
+/** Matches the module specifier of a static `import`/`export ... from`, or a side-effect `import`. */
+const IMPORT_SPECIFIER = /(?:\bfrom\s+|\bimport\s+)['"]([^'"]+)['"]/g;
+
+/**
+ * A script and every file it reaches through relative imports, plus the directory of every workspace
+ * package it imports by name, transitively. A specifier that resolves to no file is skipped: the
+ * scanner also sees imports inside the code templates a script writes out.
+ *
+ * @param entry - repository-relative path of the script
+ */
+export function scriptImportClosure(root: string, entry: string, packages: ReadonlyMap<string, string>): string[] {
+  const found = new Set<string>();
+  const pending = [entry];
+
+  while (pending.length > 0) {
+    const file = pending.pop() as string;
+    if (!found.has(file)) {
+      found.add(file);
+      const { modules, packageDirectories } = importsOf(root, file, packages);
+      pending.push(...modules);
+      for (const directory of packageDirectories) {
+        found.add(directory);
+      }
+    }
+  }
+
+  return sortedUnique(found);
+}
+
+/** The source files one file imports relatively, and the directories of the workspace packages it imports. */
+function importsOf(
+  root: string,
+  file: string,
+  packages: ReadonlyMap<string, string>,
+): { modules: string[]; packageDirectories: string[] } {
+  const modules: string[] = [];
+  const packageDirectories: string[] = [];
+
+  for (const [, specifier = ''] of fs.readFileSync(toAbsolute(root, file), 'utf8').matchAll(IMPORT_SPECIFIER)) {
+    const resolved = specifier.startsWith('.')
+      ? resolveRelativeModule(root, path.posix.join(path.posix.dirname(file), specifier))
+      : undefined;
+    const directory = specifier.startsWith('.') ? undefined : packages.get(packageName(specifier));
+
+    if (resolved !== undefined) {
+      modules.push(resolved);
+    }
+    if (directory !== undefined) {
+      packageDirectories.push(directory);
+    }
+  }
+
+  return { modules, packageDirectories };
+}
+
+/** The package a bare specifier names: `@scope/name/sub` is `@scope/name`, `name/sub` is `name`. */
+function packageName(specifier: string): string {
+  const parts = specifier.split('/');
+
+  return specifier.startsWith('@') ? parts.slice(0, 2).join('/') : (parts[0] ?? specifier);
+}
+
+/** The source file a relative specifier names, trying the TypeScript file behind a `.js` import. */
+function resolveRelativeModule(root: string, target: string): string | undefined {
+  const candidates = [target, target.replace(/\.js$/, '.ts'), `${target}.ts`, `${target}/index.ts`];
+
+  return candidates.find((candidate) => {
+    const absolute = toAbsolute(root, candidate);
+    return fs.existsSync(absolute) && fs.statSync(absolute).isFile();
+  });
+}
+
 /** The derived facts of one target. */
 export interface TargetInputs {
   /** Action directories whose bundles the target runs: where the shared build has to run. */
@@ -159,7 +243,8 @@ export function deriveTargetInputs(
       ...(own === undefined ? [] : [own]),
       ...(builds ? sourceInputs(root, set.buildDirs, packages) : []),
       ...(source.e2e === undefined ? [] : sourceInputs(root, [HARNESS_PACKAGE], packages)),
-      ...(builds || source.e2e !== undefined ? [SHARED_BUILD_SCRIPT] : []),
+      ...(builds || source.e2e !== undefined ? scriptImportClosure(root, SHARED_BUILD_SCRIPT, packages) : []),
+      ...(source.e2e === undefined ? [] : E2E_RUNNER_FILES),
       source.file,
       workflowFile,
       ...source.extraInputs,
