@@ -40,6 +40,15 @@ function lines(output: string): string[] {
 }
 
 /**
+ * Splits `git -z` output on NUL. Each name is kept exactly as committed: without `-z` git quotes a
+ * name with a non-ASCII byte (`"docs/\\303\\244.md"`), which then matches no input, and trimming would
+ * change a name that starts or ends with a space.
+ */
+function nulSeparated(output: string): string[] {
+  return output.split('\0').filter((name) => name !== '');
+}
+
+/**
  * The files a diff request covers.
  *
  * A diff git cannot compute (a `before` a force-push discarded, a base the checkout lacks) selects
@@ -62,7 +71,7 @@ export function changedFiles(git: Git, diff: DiffRequest): { changed: ChangedFil
         if (from === undefined) {
           throw new Error('git merge-base printed nothing');
         }
-        return { changed: lines(git(['diff', '--name-only', '--no-renames', from, to])) };
+        return { changed: nulSeparated(git(['diff', '--name-only', '-z', '--no-renames', from, to])) };
       } catch (error) {
         return {
           changed: 'all',
