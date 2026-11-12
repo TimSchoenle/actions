@@ -42,12 +42,12 @@ jobs:
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input              | Required | Default                                       | Description                                                                     |
-| ------------------ | -------- | --------------------------------------------- | ------------------------------------------------------------------------------- |
-| `repository`       | no       | `${{ github.repository }}`                    | Target repository in the format owner/repo. Defaults to the current repository. |
-| `branch`           | no       | `${{ github.head_ref \|\| github.ref_name }}` | Target branch to checkout. Defaults to the current branch.                      |
-| `source_directory` | no       | `.`                                           | Directory containing the Rust project                                           |
-| `check_arguments`  | no       | `--all-targets --all-features`                | Additional arguments to pass to cargo check                                     |
+| Input              | Required | Default                        | Description                                                                                                                                        |
+| ------------------ | -------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `repository`       | no       | `${{ github.repository }}`     | Target repository in the format owner/repo. Defaults to the current repository.                                                                    |
+| `branch`           | no       |                                | Branch, tag or SHA to check out. Empty checks out the commit of the triggering event: the merge commit on pull_request, the pushed commit on push. |
+| `source_directory` | no       | `.`                            | Directory containing the Rust project                                                                                                              |
+| `check_arguments`  | no       | `--all-targets --all-features` | Additional arguments to pass to cargo check                                                                                                        |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
@@ -83,5 +83,6 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
+- End-to-end tests: [`.github/verify/rust-cargo-check.yaml`](../../../.github/verify/rust-cargo-check.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->
