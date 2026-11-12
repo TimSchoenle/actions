@@ -376,3 +376,76 @@ jobs:
             echo "::error::Expected a missing bun-version-file to fail the step, got '$MISSING_VERSION'"
             exit 1
           fi
+
+  # Without bun.lock the cache key is the same for every project and bun install --frozen-lockfile
+  # exits 0, so the action has to refuse the directory itself. The Bun download stays allowed: the
+  # fixture's one dependency is a local directory, so without the check the no-lockfile case would
+  # install and pass, and only the check can fail it.
+  verify-no-lockfile:
+    name: Verify Missing Lockfile Fails (${{ matrix.case }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - case: no lockfile
+            remove: bun.lock
+            create: ''
+          - case: binary lockfile only
+            remove: bun.lock
+            create: bun.lockb
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Remove The Lockfile
+        env:
+          REMOVE: ${{ matrix.remove }}
+          CREATE: ${{ matrix.create }}
+        run: |
+          set -euo pipefail
+          rm ".github/testdata/bun-setup-cached/${REMOVE}"
+          if [ -n "$CREATE" ]; then
+            : > ".github/testdata/bun-setup-cached/${CREATE}"
+          fi
+
+      - name: Run Setup Cached
+        id: setup
+        continue-on-error: true
+        uses: ./actions/bun/setup-cached # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working-directory: .github/testdata/bun-setup-cached
+          bun-version-file: .bun-version
+          cache-mode: none
+
+      # The cache key is computed after the check, so an empty one shows the step stopped there.
+      - name: Verify The Step Failed At The Lockfile Check
+        env:
+          OUTCOME: ${{ steps.setup.outcome }}
+          CACHE_KEY: ${{ steps.setup.outputs.cache-key }}
+        run: |
+          set -euo pipefail
+
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "::error::Expected the missing lockfile to fail the step, got '$OUTCOME'"
+            exit 1
+          fi
+
+          if [ -n "$CACHE_KEY" ]; then
+            echo "::error::The step computed cache key '$CACHE_KEY', so it got past the lockfile check"
+            exit 1
+          fi
