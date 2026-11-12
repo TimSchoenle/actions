@@ -76,24 +76,6 @@ on:
     workflows:
       - Scripts CI
       - Verify
-      - Verify Action Common Render Template And Commit
-      - Verify Bun Setup Cached
-      - Verify Common Commit-generated-files
-      - Verify Common Create Pull Request
-      - Verify Common Render-readme
-      - Verify Config Renovate
-      - Verify Helm Update Chart Version
-      - Verify Java-gradle Auto-spotless
-      - Verify Java-gradle Coverage-codecov
-      - Verify Java-gradle Setup-base-environment
-      - Verify Rust Auto-format
-      - Verify Rust Coverage-codecov
-      - Verify Security Jactionlint
-      - Verify Terrace Helm Check
-      - Verify Terrace Helm Diff
-      - Verify Terrace Helm Sync
-      - Verify Terrace Image
-      - Verify Test Setup-e2e
     # >>> generated: verify-workflows
     types:
       - completed

@@ -176,6 +176,21 @@ jobs:
           artifact-name: built-actions-${{ github.run_attempt }}
           toolchain: bun ${{ steps.bun.outputs.bun-version }}
 
+  verify-bun:
+    name: Bun
+    needs: [plan, install, build]
+    # Runs once the shared build succeeded, or was skipped because none of the selected targets
+    # runs a bundle.
+    if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-bun') }}
+    uses: ./.github/workflows/verify-bun.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
+    permissions:
+      contents: read
+    with:
+      targets: ${{ needs.plan.outputs.targets }}
+      cache-key: ${{ needs.install.outputs.cache-key }}
+      artifact-id: ${{ needs.build.outputs.artifact-id }}
+      manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
+
   verify-common:
     name: Common
     needs: [plan, install, build]
@@ -194,6 +209,21 @@ jobs:
     secrets:
       ACTIONS_TEST_BOT_APP_ID: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
       ACTIONS_TEST_BOT_PRIVATE_KEY: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+
+  verify-configs:
+    name: Configs
+    needs: [plan, install, build]
+    # Runs once the shared build succeeded, or was skipped because none of the selected targets
+    # runs a bundle.
+    if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-configs') }}
+    uses: ./.github/workflows/verify-configs.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
+    permissions:
+      contents: read
+    with:
+      targets: ${{ needs.plan.outputs.targets }}
+      cache-key: ${{ needs.install.outputs.cache-key }}
+      artifact-id: ${{ needs.build.outputs.artifact-id }}
+      manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
 
   verify-docker:
     name: Docker
@@ -240,6 +270,24 @@ jobs:
     # runs a bundle.
     if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-helper') }}
     uses: ./.github/workflows/verify-helper.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
+    permissions:
+      contents: read
+    with:
+      targets: ${{ needs.plan.outputs.targets }}
+      cache-key: ${{ needs.install.outputs.cache-key }}
+      artifact-id: ${{ needs.build.outputs.artifact-id }}
+      manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
+    secrets:
+      ACTIONS_TEST_BOT_APP_ID: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+      ACTIONS_TEST_BOT_PRIVATE_KEY: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+
+  verify-java-gradle:
+    name: Java-gradle
+    needs: [plan, install, build]
+    # Runs once the shared build succeeded, or was skipped because none of the selected targets
+    # runs a bundle.
+    if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-java-gradle') }}
+    uses: ./.github/workflows/verify-java-gradle.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read
     with:
@@ -344,6 +392,24 @@ jobs:
       ACTIONS_TEST_BOT_APP_ID: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
       ACTIONS_TEST_BOT_PRIVATE_KEY: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
 
+  verify-test:
+    name: Test
+    needs: [plan, install, build]
+    # Runs once the shared build succeeded, or was skipped because none of the selected targets
+    # runs a bundle.
+    if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-test') }}
+    uses: ./.github/workflows/verify-test.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
+    permissions:
+      contents: read
+    with:
+      targets: ${{ needs.plan.outputs.targets }}
+      cache-key: ${{ needs.install.outputs.cache-key }}
+      artifact-id: ${{ needs.build.outputs.artifact-id }}
+      manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
+    secrets:
+      ACTIONS_TEST_BOT_APP_ID: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+      ACTIONS_TEST_BOT_PRIVATE_KEY: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+
   verify:
     name: 'CI Summary: Verify'
     if: ${{ always() }}
@@ -351,15 +417,19 @@ jobs:
       - plan
       - install
       - build
+      - verify-bun
       - verify-common
+      - verify-configs
       - verify-docker
       - verify-helm
       - verify-helper
+      - verify-java-gradle
       - verify-maintenance
       - verify-release
       - verify-rust
       - verify-security
       - verify-terrace
+      - verify-test
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

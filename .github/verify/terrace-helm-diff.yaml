@@ -1,36 +1,10 @@
-name: Verify Terrace Helm Diff
-
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'actions/terrace/helm-diff/**'
-      - '!actions/terrace/helm-diff/CHANGELOG.md'
-      - '!actions/terrace/helm-diff/README.md'
-      - '.github/testdata/terrace-helm/**'
-      - '.github/workflows/verify-action-terrace-helm-diff.yaml'
-  pull_request:
-    paths:
-      - 'actions/terrace/helm-diff/**'
-      - '!actions/terrace/helm-diff/CHANGELOG.md'
-      - '!actions/terrace/helm-diff/README.md'
-      - '.github/testdata/terrace-helm/**'
-      - '.github/workflows/verify-action-terrace-helm-diff.yaml'
-  workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions: {}
-
-# The fixture is a chart repository of its own inside this one, so the CLI is pointed at its
-# terrace.yaml rather than finding one at the Git root, as it would in an adopting repository.
-env:
-  FIXTURE: .github/testdata/terrace-helm
-  TERRACE_CONFIG: ${{ github.workspace }}/.github/testdata/terrace-helm/terrace.yaml
-
+target: terrace/helm-diff
+title: Terrace Helm Diff
+extra-inputs:
+  - '.github/testdata/terrace-helm'
+rules:
+  # Only pushes to main ran this workflow before it moved into Verify.
+  push-branches: []
 jobs:
   diff:
     name: 'Test: a removed key is reported, and an unchanged tree is not'
@@ -38,6 +12,9 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read # to fetch code, and to list terrace-contract releases
+    env:
+      FIXTURE: .github/testdata/terrace-helm
+      TERRACE_CONFIG: ${{ github.workspace }}/.github/testdata/terrace-helm/terrace.yaml
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -106,18 +83,3 @@ jobs:
           grep -F "$KEY" "$REPORT" | grep -q major || { echo "::error::the removed key is not reported as major"; exit 1; }
           grep -q 'impact: major' "$REPORT" || { echo "::error::the chart's impact is not major"; exit 1; }
           test "$UNCHANGED" = false || { echo "::error::an unchanged tree was reported as changed"; exit 1; }
-
-  # <<< generated: summary (run 'bun run generate-ci-required' to update)
-  summary:
-    name: 'CI Summary: Terrace Helm Diff'
-    if: ${{ always() }}
-    needs:
-      - diff
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions: {}
-    steps:
-      - name: Fail if any verify job did not succeed
-        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
-        run: exit 1
-  # >>> generated: summary

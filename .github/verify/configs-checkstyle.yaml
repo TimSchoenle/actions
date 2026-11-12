@@ -1,34 +1,13 @@
-name: Verify Checkstyle Configs
-
-# Not routed through actions/java-gradle/setup-base-environment: that composite action's own
-# `chmod +x ./gradlew` step always runs against GITHUB_WORKSPACE root, but this build's gradlew
-# lives at configs/checkstyle/gradlew (a nested Gradle root, not the repo root), so it is set up
-# inline here instead.
-
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'configs/checkstyle/**'
-      - '!configs/checkstyle/*/CHANGELOG.md'
-      - 'jitpack.yml'
-      - '.github/workflows/verify-checkstyle-configs.yaml'
-  pull_request:
-    paths:
-      - 'configs/checkstyle/**'
-      - '!configs/checkstyle/*/CHANGELOG.md'
-      - 'jitpack.yml'
-      - '.github/workflows/verify-checkstyle-configs.yaml'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions: {}
-
+target: configs/checkstyle
+title: Checkstyle Configs
+extra-inputs:
+  - 'configs/checkstyle'
+  - 'jitpack.yml'
+rules:
+  # Only pushes to main ran this workflow before it moved into Verify.
+  push-branches: []
 jobs:
-  verify:
+  checkstyle-verify:
     name: Verify Checkstyle Configs
     runs-on: ubuntu-latest
     timeout-minutes: 20

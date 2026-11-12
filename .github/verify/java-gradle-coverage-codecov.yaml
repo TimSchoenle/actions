@@ -1,39 +1,9 @@
-name: Verify Java-gradle Coverage-codecov
-
-# Runs the action against the fixture build in `actions/java-gradle/coverage-codecov/fixture` with
-# `dry_run`, so everything up to the upload is exercised and the two codecov-action steps are
-# skipped. This repository is not a Codecov project, and Codecov refuses even the CLI's own dry
-# run from a protected branch without a token. The fixture is committed rather than generated in
-# a step, because the action checks the repository out again and that checkout would delete an
-# untracked fixture.
-
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'actions/java-gradle/coverage-codecov/**'
-      - '!actions/java-gradle/coverage-codecov/CHANGELOG.md'
-      - '!actions/java-gradle/coverage-codecov/README.md'
-      - '.github/workflows/verify-action-java-gradle-coverage-codecov.yaml'
-  pull_request:
-    paths:
-      - 'actions/java-gradle/coverage-codecov/**'
-      - '!actions/java-gradle/coverage-codecov/CHANGELOG.md'
-      - '!actions/java-gradle/coverage-codecov/README.md'
-      - '.github/workflows/verify-action-java-gradle-coverage-codecov.yaml'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions: {}
-
-env:
-  FIXTURE: actions/java-gradle/coverage-codecov/fixture
-
+target: java-gradle/coverage-codecov
+rules:
+  # Only pushes to main ran this workflow before it moved into Verify.
+  push-branches: []
 jobs:
-  verify:
+  java-coverage-verify:
     name: Verify Coverage-codecov (Java ${{ matrix.java-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -43,6 +13,8 @@ jobs:
         java-version: ['21', '25']
     permissions:
       contents: read # to fetch code
+    env:
+      FIXTURE: actions/java-gradle/coverage-codecov/fixture
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -131,12 +103,14 @@ jobs:
 
   # A failing test must fail the action and still leave its JUnit report, because the test-results
   # upload exists for exactly that run. The other project's tests keep running under --continue.
-  verify-failing-tests:
+  java-coverage-verify-failing-tests:
     name: Verify Coverage-codecov (failing tests)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
       contents: read # to fetch code
+    env:
+      FIXTURE: actions/java-gradle/coverage-codecov/fixture
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -190,6 +164,8 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read # to fetch code
+    env:
+      FIXTURE: actions/java-gradle/coverage-codecov/fixture
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -229,7 +205,7 @@ jobs:
             exit 1
           fi
 
-  verify-rejects-inputs:
+  java-coverage-verify-rejects-inputs:
     name: Verify Coverage-codecov (rejects ${{ matrix.case }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -245,6 +221,8 @@ jobs:
             use_oidc: 'yes'
     permissions:
       contents: read # to fetch code
+    env:
+      FIXTURE: actions/java-gradle/coverage-codecov/fixture
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -284,21 +262,3 @@ jobs:
             echo "::error::${OUT_DIR} exists, so the action ran Gradle before refusing"
             exit 1
           fi
-
-  # <<< generated: summary (run 'bun run generate-ci-required' to update)
-  summary:
-    name: 'CI Summary: Java-gradle Coverage-codecov'
-    if: ${{ always() }}
-    needs:
-      - verify
-      - verify-failing-tests
-      - verify-no-report
-      - verify-rejects-inputs
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions: {}
-    steps:
-      - name: Fail if any verify job did not succeed
-        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
-        run: exit 1
-  # >>> generated: summary

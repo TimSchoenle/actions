@@ -6,9 +6,11 @@
 # Targets:
 #   common/close-pull-request (.github/verify/common-close-pull-request.yaml)
 #   common/commit-changes (.github/verify/common-commit-changes.yaml)
+#   common/commit-generated-files (.github/verify/common-commit-generated-files.yaml)
 #   common/commit-patch (.github/verify/common-commit-patch.yaml)
 #   common/create-branch (.github/verify/common-create-branch.yaml)
 #   common/create-patch (.github/verify/common-create-patch.yaml)
+#   common/create-pull-request (.github/verify/common-create-pull-request.yaml)
 #   common/delete-branch (.github/verify/common-delete-branch.yaml)
 #   common/download-release-asset (.github/verify/common-download-release-asset.yaml)
 #   common/fetch-head (.github/verify/common-fetch-head.yaml)
@@ -18,7 +20,9 @@
 #   common/modify-yaml (.github/verify/common-modify-yaml.yaml)
 #   common/read-yaml (.github/verify/common-read-yaml.yaml)
 #   common/readme-variables (.github/verify/common-readme-variables.yaml)
+#   common/render-readme (.github/verify/common-render-readme.yaml)
 #   common/render-template (.github/verify/common-render-template.yaml)
+#   common/render-template-and-commit (.github/verify/common-render-template-and-commit.yaml)
 #   common/setup-app-git-identity (.github/verify/common-setup-app-git-identity.yaml)
 #   common/upsert-issue (.github/verify/common-upsert-issue.yaml)
 #   common/upsert-pr-comment (.github/verify/common-upsert-pr-comment.yaml)
@@ -221,6 +225,144 @@ jobs:
           E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
           E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
         run: bun run e2e actions/common/commit-changes
+
+  # The action commits only from a workflow_run job, which runs the default branch's copy of the
+  # workflow. Started by anything else it must stop before it looks for a patch or touches the App
+  # key, so the inputs here are placeholders that are never read.
+  commit-generated-files-verify:
+    name: 'Common Commit-generated-files: Test Commit Generated Files: refuses a non-workflow_run event'
+    if: ${{ contains(fromJSON(inputs.targets), 'common/commit-generated-files') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run commit-generated-files
+        id: run
+        continue-on-error: true
+        uses: ./actions/common/commit-generated-files # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          client_id: placeholder-never-read
+          private_key: placeholder-never-read
+          allowed_paths: README.md
+
+      - name: Assert The Step Failed Before Doing Anything
+        env:
+          OUTCOME: ${{ steps.run.outcome }}
+          RESULT: ${{ steps.run.outputs.outcome }}
+          COMMIT_SHA: ${{ steps.run.outputs.commit_sha }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          [ "$OUTCOME" = "failure" ] || fail "the step ended '$OUTCOME' outside a workflow_run job"
+          [ -z "$RESULT" ] || fail "outcome '$RESULT' set by a step that should have stopped first"
+          [ -z "$COMMIT_SHA" ] || fail "commit_sha '$COMMIT_SHA' set outside a workflow_run job"
+          echo "Refused a ${GITHUB_EVENT_NAME} event without looking for a patch"
+
+  # The event filter decides whether the App key is used at all, so every branch of it is driven
+  # here with the fields a workflow_run event carries.
+  check-event:
+    name: 'Common Commit-generated-files: Test Commit Generated Files: event filter'
+    if: ${{ contains(fromJSON(inputs.targets), 'common/commit-generated-files') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Drive Every Branch
+        run: bash actions/common/commit-generated-files/check-event-test.sh actions/common/commit-generated-files/check-event.sh
+
+  # Whether a fork's branch is committed to rests on the pull request allowing edits by
+  # maintainers, so every branch of that decision is driven here with fixture responses.
+  check-fork:
+    name: 'Common Commit-generated-files: Test Commit Generated Files: fork check'
+    if: ${{ contains(fromJSON(inputs.targets), 'common/commit-generated-files') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Drive Every Branch
+        run: bash actions/common/commit-generated-files/check-fork-test.sh actions/common/commit-generated-files/check-fork.sh
+
+      # The list endpoint leaves out maintainer_can_modify, so the reader has to fetch each pull
+      # request in full. A stand-in gh serves both shapes.
+      - name: Drive The Reader
+        run: bash actions/common/commit-generated-files/read-pulls-test.sh actions/common/commit-generated-files/read-pulls.sh actions/common/commit-generated-files/check-fork.sh
+
+  # The fork check reads the open pull requests with the job token of a caller that grants only
+  # actions: read and contents: read. This makes the same request with the same grant against this
+  # public repository, so a GitHub change that started requiring pull-requests: read fails here
+  # instead of silently skipping every fork.
+  fork-read:
+    name: 'Common Commit-generated-files: Test Commit Generated Files: open pull requests are readable'
+    if: ${{ contains(fromJSON(inputs.targets), 'common/commit-generated-files') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read # the grant a caller's commit job has
+      contents: read # the grant a caller's commit job has
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+
+      - name: Read The Open Pull Requests
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # The same requests the action sends: the list filtered by head owner and branch, then one
+          # pull request in full, which has to carry maintainer_can_modify.
+          count="$(gh api -X GET "repos/${REPOSITORY}/pulls" -f state=open -f head="${REPOSITORY%%/*}:main" -f per_page=100 --jq 'length')"
+          echo "Read ${count} open pull request(s) without a pull-requests permission."
+          number="$(gh api -X GET "repos/${REPOSITORY}/pulls" -f state=all -f per_page=1 --jq '.[0].number')"
+          has_flag="$(gh api "repos/${REPOSITORY}/pulls/${number}" --jq 'has("maintainer_can_modify")')"
+          if [ "${has_flag}" != "true" ]; then
+            echo "::error::Pull request ${number} read in full carries no maintainer_can_modify."
+            exit 1
+          fi
+          echo "Pull request ${number} read in full carries maintainer_can_modify."
 
   e2e-common-commit-patch:
     name: 'Common Commit-patch: End-to-end'
@@ -609,6 +751,481 @@ jobs:
           E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
           E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
         run: bun run e2e actions/common/create-patch
+
+  test-with-changes:
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: 'Common Create Pull Request: Test PR Creation with Changes'
+    if: ${{ contains(fromJSON(inputs.targets), 'common/create-pull-request') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: create-pr-test-${{ github.run_number }}-${{ github.run_attempt }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test File
+        env:
+          TEST_ID: ${{ env.TEST_ID }}
+        run: |
+          mkdir -p test-pr-output
+          echo "Test content for $TEST_ID" > test-pr-output/test-file.txt
+          echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> test-pr-output/test-file.txt
+
+      - name: Run create-pull-request (with changes)
+        id: create-pr
+        uses: ./tmp/actions-code/actions/common/create-pull-request # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/create-pr-with-changes/${{ env.TEST_ID }}
+          title: '[TEST-CREATE-PR] With Changes - ${{ env.TEST_ID }}'
+          body: |
+            **Test PR: Create with Changes**
+
+            This is a test PR created by the create-pull-request action verification workflow.
+
+            - **Test ID**: `${{ env.TEST_ID }}`
+            - **Run Number**: `${{ github.run_number }}`
+            - **Commit**: `${{ github.sha }}`
+            - **Scenario**: Testing PR creation with file changes
+          commit_message: 'test: verify create-pull-request action with changes (${{ env.TEST_ID }})'
+          file_pattern: 'test-pr-output/test-file.txt'
+
+      - name: Verify PR Created and Content
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          PR_URL: ${{ steps.create-pr.outputs.pr_url }}
+          PR_NUMBER: ${{ steps.create-pr.outputs.pr_number }}
+          EXPECTED_TITLE: '[TEST-CREATE-PR] With Changes - ${{ env.TEST_ID }}'
+          TEST_ID: ${{ env.TEST_ID }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+        run: |
+          if [ -z "$PR_URL" ]; then
+            echo "::error::PR URL was not set"
+            exit 1
+          fi
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "::error::PR number was not set"
+            exit 1
+          fi
+
+          echo "✅ PR created successfully: $PR_URL"
+          echo "PR Number: $PR_NUMBER"
+
+          # Fetch PR details
+          PR_DATA=$(gh pr view "$PR_NUMBER" --repo "$TEST_REPO" --json title,body,headRefName,baseRefName,files)
+
+          # Verify title
+          ACTUAL_TITLE=$(echo "$PR_DATA" | jq -r '.title')
+          if [ "$ACTUAL_TITLE" != "$EXPECTED_TITLE" ]; then
+            echo "::error::PR title mismatch. Expected: '$EXPECTED_TITLE', Got: '$ACTUAL_TITLE'"
+            exit 1
+          fi
+          echo "✅ Title verified: $ACTUAL_TITLE"
+
+          # Verify body contains test ID
+          BODY=$(echo "$PR_DATA" | jq -r '.body')
+          if ! echo "$BODY" | grep -q "$TEST_ID"; then
+            echo "::error::PR body does not contain test ID: $TEST_ID"
+            exit 1
+          fi
+          echo "✅ Body contains test ID"
+
+          # Verify branch names
+          HEAD_BRANCH=$(echo "$PR_DATA" | jq -r '.headRefName')
+          BASE_BRANCH=$(echo "$PR_DATA" | jq -r '.baseRefName')
+          EXPECTED_HEAD="test/create-pr-with-changes/$TEST_ID"
+          if [ "$HEAD_BRANCH" != "$EXPECTED_HEAD" ]; then
+            echo "::error::Head branch mismatch. Expected: '$EXPECTED_HEAD', Got: '$HEAD_BRANCH'"
+            exit 1
+          fi
+          echo "✅ Head branch verified: $HEAD_BRANCH"
+          echo "✅ Base branch: $BASE_BRANCH"
+
+          # Verify file changes
+          FILES=$(echo "$PR_DATA" | jq -r '.files[].path')
+          if ! echo "$FILES" | grep -q "test-pr-output/test-file.txt"; then
+            echo "::error::Expected file 'test-pr-output/test-file.txt' not found in PR"
+            echo "Files in PR: $FILES"
+            exit 1
+          fi
+          echo "✅ File changes verified"
+
+          # Verify file content
+          FILE_CONTENT=$(gh api "/repos/$TEST_REPO/contents/test-pr-output/test-file.txt?ref=$HEAD_BRANCH" --jq '.content' | base64 -d)
+          if ! echo "$FILE_CONTENT" | grep -q "$TEST_ID"; then
+            echo "::error::File content does not contain test ID"
+            exit 1
+          fi
+          echo "✅ File content verified"
+
+      # Guarded, not just `always()`: a run that opened no pull request — because it failed early, or
+      # because skipping was the very thing under test — has no number to close, and closing "nothing"
+      # would report a second, misleading failure on top of the real result.
+      - name: Cleanup Test Pull Request
+        if: always() && steps.create-pr.outputs.pr_number != ''
+        uses: TimSchoenle/actions/actions/common/close-pull-request@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-close-pull-request-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          pull_request_id: ${{ steps.create-pr.outputs.pr_number }}
+
+      - name: Cleanup Test Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-delete-branch-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: 'test/create-pr-with-changes/${{ env.TEST_ID }}'
+
+  test-without-changes:
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: 'Common Create Pull Request: Test PR Skip with Identical Branches'
+    if: ${{ contains(fromJSON(inputs.targets), 'common/create-pull-request') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: create-pr-test-${{ github.run_number }}-${{ github.run_attempt }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Run create-pull-request (no changes)
+        id: create-pr
+        uses: ./tmp/actions-code/actions/common/create-pull-request # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/create-pr-no-changes/${{ env.TEST_ID }}
+          title: '[TEST-CREATE-PR] No Changes - ${{ env.TEST_ID }}'
+          body: |
+            **Test PR: Skip with No Changes**
+
+            This PR should NOT be created because branches are identical.
+
+            - **Test ID**: `${{ env.TEST_ID }}`
+          commit_changes: 'false'
+
+      - name: Verify PR Not Created
+        shell: bash
+        env:
+          PR_URL: ${{ steps.create-pr.outputs.pr_url }}
+        run: |
+          if [ -n "$PR_URL" ]; then
+            echo "::error::PR should not have been created for identical branches"
+            exit 1
+          fi
+
+          echo "✅ PR correctly skipped (branches are identical)"
+
+      # Guarded, not just `always()`: a run that opened no pull request — because it failed early, or
+      # because skipping was the very thing under test — has no number to close, and closing "nothing"
+      # would report a second, misleading failure on top of the real result.
+      - name: Cleanup Test Pull Request
+        if: always() && steps.create-pr.outputs.pr_number != ''
+        uses: TimSchoenle/actions/actions/common/close-pull-request@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-close-pull-request-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          pull_request_id: ${{ steps.create-pr.outputs.pr_number }}
+
+      - name: Cleanup Test Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-delete-branch-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: 'test/create-pr-no-changes/${{ env.TEST_ID }}'
+
+  test-commit-skip:
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: 'Common Create Pull Request: Test Commit Skip with No Changes'
+    if: ${{ contains(fromJSON(inputs.targets), 'common/create-pull-request') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: create-pr-test-${{ github.run_number }}-${{ github.run_attempt }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Run create-pull-request (commit should be skipped)
+        id: create-pr
+        uses: ./tmp/actions-code/actions/common/create-pull-request # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/create-pr-commit-skip/${{ env.TEST_ID }}
+          title: '[TEST-CREATE-PR] Commit Skip - ${{ env.TEST_ID }}'
+          body: |
+            **Test PR: Commit Skip**
+
+            This PR should NOT be created because there are no changes to commit.
+
+            - **Test ID**: `${{ env.TEST_ID }}`
+          commit_message: 'test: this commit should not be created (${{ env.TEST_ID }})'
+          commit_changes: 'true'
+          empty_commit: 'false'
+
+      - name: Verify No PR Created
+        shell: bash
+        env:
+          PR_URL: ${{ steps.create-pr.outputs.pr_url }}
+        run: |
+          if [ -n "$PR_URL" ]; then
+            echo "::error::PR should not have been created (no commit, no changes)"
+            exit 1
+          fi
+
+          echo "✅ Commit and PR correctly skipped (no local changes)"
+
+      # Guarded, not just `always()`: a run that opened no pull request — because it failed early, or
+      # because skipping was the very thing under test — has no number to close, and closing "nothing"
+      # would report a second, misleading failure on top of the real result.
+      - name: Cleanup Test Pull Request
+        if: always() && steps.create-pr.outputs.pr_number != ''
+        uses: TimSchoenle/actions/actions/common/close-pull-request@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-close-pull-request-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          pull_request_id: ${{ steps.create-pr.outputs.pr_number }}
+
+      - name: Cleanup Test Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-delete-branch-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: 'test/create-pr-commit-skip/${{ env.TEST_ID }}'
+
+  test-branch-reset:
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: 'Common Create Pull Request: Test Branch Reset Behavior'
+    if: ${{ contains(fromJSON(inputs.targets), 'common/create-pull-request') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: create-pr-test-${{ github.run_number }}-${{ github.run_attempt }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Initial Test File
+        env:
+          TEST_ID: ${{ env.TEST_ID }}
+        run: |
+          mkdir -p test-branch-reset
+          echo "Initial content for $TEST_ID" > test-branch-reset/initial.txt
+
+      - name: Create First PR (establish branch history)
+        id: create-pr-initial
+        uses: ./tmp/actions-code/actions/common/create-pull-request # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/create-pr-branch-reset/${{ env.TEST_ID }}
+          title: '[TEST-CREATE-PR] Branch Reset Initial - ${{ env.TEST_ID }}'
+          body: |
+            **Test PR: Branch Reset (Initial)**
+
+            This is the initial PR to establish branch history.
+
+            - **Test ID**: `${{ env.TEST_ID }}`
+          commit_message: 'test: initial commit for branch reset test (${{ env.TEST_ID }})'
+          file_pattern: 'test-branch-reset/initial.txt'
+
+      - name: Close Initial PR (Keep Branch)
+        if: steps.create-pr-initial.outputs.pr_number
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          PR_NUMBER: ${{ steps.create-pr-initial.outputs.pr_number }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+        run: |
+          gh pr close "$PR_NUMBER" --repo "$TEST_REPO" --comment "Closing initial PR, keeping branch for reset test"
+
+      - name: Add More Content to Test File
+        run: |
+          echo "Second content line" >> test-branch-reset/initial.txt
+          echo "This should be reset away" >> test-branch-reset/initial.txt
+
+      - name: Create Second PR with Branch Reset
+        id: create-pr-reset
+        uses: ./tmp/actions-code/actions/common/create-pull-request # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/create-pr-branch-reset/${{ env.TEST_ID }}
+          title: '[TEST-CREATE-PR] Branch Reset Test - ${{ env.TEST_ID }}'
+          body: |
+            **Test PR: Branch Reset**
+
+            This PR tests that the branch was reset to the base branch.
+            The previous commits on this branch should have been discarded.
+
+            - **Test ID**: `${{ env.TEST_ID }}`
+            - **Scenario**: Testing branch reset with reset_branch=true (default)
+          commit_message: 'test: commit after branch reset (${{ env.TEST_ID }})'
+          file_pattern: 'test-branch-reset/initial.txt'
+          reset_branch: 'true'
+
+      - name: Verify Branch Was Reset
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          PR_NUMBER: ${{ steps.create-pr-reset.outputs.pr_number }}
+          TEST_ID: ${{ env.TEST_ID }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+        run: |
+          if [ -z "$PR_NUMBER" ]; then
+            echo "::error::PR was not created after branch reset"
+            exit 1
+          fi
+
+          echo "✅ PR created after branch reset: $PR_NUMBER"
+
+          # Get the branch name
+          BRANCH_NAME="test/create-pr-branch-reset/$TEST_ID"
+
+          # Verify the file content matches what we expect AFTER reset
+          FILE_CONTENT=$(gh api "/repos/$TEST_REPO/contents/test-branch-reset/initial.txt?ref=$BRANCH_NAME" --jq '.content' | base64 -d)
+
+          # Count lines in the file - after reset and new commit, should have exactly 3 lines
+          LINE_COUNT=$(echo "$FILE_CONTENT" | wc -l)
+
+          if [ "$LINE_COUNT" -ne "3" ]; then
+            echo "::error::Expected 3 lines after reset, got $LINE_COUNT"
+            echo "File content:"
+            echo "$FILE_CONTENT"
+            exit 1
+          fi
+
+          # Verify content
+          if ! echo "$FILE_CONTENT" | grep -q "Second content line"; then
+            echo "::error::File should contain updated content after reset"
+            exit 1
+          fi
+
+          echo "✅ Branch was properly reset - file content verified"
+
+          # Check commit history - should only have commits from base + our new commit
+          COMMITS=$(gh api "/repos/$TEST_REPO/pulls/$PR_NUMBER/commits" --jq '.[].commit.message')
+          echo "Commits in PR:"
+          echo "$COMMITS"
+
+          # Should contain our new commit message
+          if ! echo "$COMMITS" | grep -q "commit after branch reset"; then
+            echo "::error::New commit not found in PR"
+            exit 1
+          fi
+
+          echo "✅ Branch reset behavior verified successfully"
+
+      # Guarded, not just `always()`: a run that opened no pull request — because it failed early, or
+      # because skipping was the very thing under test — has no number to close, and closing "nothing"
+      # would report a second, misleading failure on top of the real result.
+      - name: Cleanup Test Pull Request
+        if: always() && steps.create-pr-reset.outputs.pr_number != ''
+        uses: TimSchoenle/actions/actions/common/close-pull-request@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-close-pull-request-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          pull_request_id: ${{ steps.create-pr-reset.outputs.pr_number }}
+
+      - name: Cleanup Test Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-delete-branch-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: 'test/create-pr-branch-reset/${{ env.TEST_ID }}'
 
   e2e-common-delete-branch:
     name: 'Common Delete-branch: End-to-end'
@@ -2398,6 +3015,116 @@ jobs:
           E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
         run: bun run e2e actions/common/readme-variables
 
+  # The fixture's committed output matches its template: check mode passes and render mode uploads
+  # an empty patch. Then the template changes and both modes see it.
+  render-readme-verify:
+    name: 'Common Render-readme: Test Render README: render and check modes'
+    if: ${{ contains(fromJSON(inputs.targets), 'common/render-readme') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read # for find-patch to read this run's artifacts
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check A Current README
+        uses: ./actions/common/render-readme # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          template: actions/common/render-readme/test/README.md.hbs
+          output: actions/common/render-readme/test/README.md
+          extra: '{"greeting":"hello"}'
+          check: 'true'
+
+      # Padded and upper-case still selects check mode in both the render and the patch step.
+      - name: Check With A Padded Flag
+        id: padded
+        uses: ./actions/common/render-readme # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          template: actions/common/render-readme/test/README.md.hbs
+          output: actions/common/render-readme/test/README.md
+          extra: '{"greeting":"hello"}'
+          check: ' TRUE '
+
+      - name: Reject An Invalid Flag
+        id: invalid
+        continue-on-error: true
+        uses: ./actions/common/render-readme # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          template: actions/common/render-readme/test/README.md.hbs
+          output: actions/common/render-readme/test/README.md
+          extra: '{"greeting":"hello"}'
+          check: 'yes'
+
+      - name: Render A Current README
+        id: current
+        uses: ./actions/common/render-readme # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          template: actions/common/render-readme/test/README.md.hbs
+          output: actions/common/render-readme/test/README.md
+          extra: '{"greeting":"hello"}'
+          artifact_name: render-readme-current-${{ github.run_attempt }}
+
+      - name: Check A Stale README
+        id: stale-check
+        continue-on-error: true
+        uses: ./actions/common/render-readme # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          template: actions/common/render-readme/test/README.md.hbs
+          output: actions/common/render-readme/test/README.md
+          extra: '{"greeting":"changed"}'
+          check: 'true'
+
+      - name: Render A Stale README
+        id: stale
+        uses: ./actions/common/render-readme # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          template: actions/common/render-readme/test/README.md.hbs
+          output: actions/common/render-readme/test/README.md
+          extra: '{"greeting":"changed"}'
+          artifact_name: render-readme-stale-${{ github.run_attempt }}
+
+      - name: Find The Stale Patch
+        id: find
+        uses: TimSchoenle/actions/actions/common/find-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-find-patch-v1.1.3
+        with:
+          artifact_name: ${{ steps.stale.outputs.artifact_name }}
+
+      - name: Assert The Outputs
+        env:
+          PADDED_CHANGES: ${{ steps.padded.outputs.has_changes }}
+          PADDED_ARTIFACT: ${{ steps.padded.outputs.artifact_name }}
+          INVALID: ${{ steps.invalid.outcome }}
+          CURRENT_CHANGES: ${{ steps.current.outputs.has_changes }}
+          STALE_CHECK: ${{ steps.stale-check.outcome }}
+          STALE_CHANGES: ${{ steps.stale.outputs.has_changes }}
+          STALE_ARTIFACT: ${{ steps.stale.outputs.artifact_name }}
+          PATCH_DIRECTORY: ${{ steps.find.outputs.directory }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          [ -z "$PADDED_CHANGES$PADDED_ARTIFACT" ] || fail "a padded check flag created a patch"
+          [ "$INVALID" = "failure" ] || fail "check 'yes' ended '$INVALID' instead of failing"
+          [ "$CURRENT_CHANGES" = "false" ] || fail "has_changes '$CURRENT_CHANGES' for a current README"
+          [ "$STALE_CHECK" = "failure" ] || fail "check mode ended '$STALE_CHECK' on a stale README"
+          [ "$STALE_CHANGES" = "true" ] || fail "has_changes '$STALE_CHANGES' for a stale README"
+          [ "$STALE_ARTIFACT" = "render-readme-stale-${GITHUB_RUN_ATTEMPT}" ] || fail "artifact_name '$STALE_ARTIFACT'"
+          grep -q '^+# changed$' "$PATCH_DIRECTORY/changes.patch" || fail "the patch lacks the re-rendered heading"
+          echo "Check and render modes reported current and stale READMEs as expected"
+
   e2e-common-render-template:
     name: 'Common Render-template: End-to-end'
     if: ${{ contains(fromJSON(inputs.targets), 'common/render-template') }}
@@ -2480,6 +3207,519 @@ jobs:
           E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
           E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
         run: bun run e2e actions/common/render-template
+
+  # The whole point of the action: a template plus variables becomes a signed commit containing
+  # exactly the rendered file. Partials are in the payload because a generated README is the case
+  # this exists for, and a re-indented partial is the failure that is invisible to a grep.
+  test-renders-and-commits:
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: 'Common Render Template And Commit: Test Render And Commit: happy path'
+    if: ${{ contains(fromJSON(inputs.targets), 'common/render-template-and-commit') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: render-template-and-commit-test-${{ github.run_number }}-${{ github.run_attempt }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-create-branch-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/render-commit/happy-path/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Create Template And Partials
+        run: |
+          mkdir -p render-test/partials/tables
+          cat <<'EOF' > render-test/README.hbs
+          # {{ repo }}
+
+          {{> tables/actions }}
+
+          {{> footer }}
+          EOF
+          cat <<'EOF' > render-test/partials/tables/actions.hbs
+          | Action | Description |
+          | --- | --- |
+          {{#each (sortBy actions "name")}}| `{{ name }}` | {{ mdCell description }} |
+          {{/each}}
+          EOF
+          printf -- '---\nGenerated.\n' > render-test/partials/footer.hbs
+
+      - name: Run render-template-and-commit
+        id: run
+        uses: ./tmp/actions-code/actions/common/render-template-and-commit # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          template: render-test/README.hbs
+          output: render-test/out/README.md
+          partials-dir: render-test/partials
+          variables: '{"repo":"acme/actions","actions":[{"name":"read-yaml","description":"Read a|value"},{"name":"clippy","description":"Lint Rust"}]}'
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'docs: render happy path ${{ env.TEST_ID }}'
+
+      - name: Verify Outputs
+        env:
+          CHANGED: ${{ steps.run.outputs.changed }}
+          CHECKSUM: ${{ steps.run.outputs.checksum }}
+          OUTPUT_PATH: ${{ steps.run.outputs.output-path }}
+          COMMIT_SHA: ${{ steps.run.outputs.commit_hash }}
+          COMMIT_URL: ${{ steps.run.outputs.commit_url }}
+          CHANGES_DETECTED: ${{ steps.run.outputs.changes_detected }}
+        run: |
+          set -euo pipefail
+          [ "$CHANGED" = "true" ] || { echo "::error::changed was '$CHANGED', expected true"; exit 1; }
+          [ "$CHANGES_DETECTED" = "true" ] || { echo "::error::changes_detected was '$CHANGES_DETECTED'"; exit 1; }
+          [ "$OUTPUT_PATH" = "render-test/out/README.md" ] || { echo "::error::output-path was '$OUTPUT_PATH'"; exit 1; }
+          [ -n "$COMMIT_SHA" ] || { echo "::error::commit_hash is empty"; exit 1; }
+          [ -n "$COMMIT_URL" ] || { echo "::error::commit_url is empty"; exit 1; }
+
+          # The checksum must describe the bytes actually written, not the bytes intended.
+          ACTUAL=$(sha256sum render-test/out/README.md | cut -d' ' -f1)
+          [ "$CHECKSUM" = "$ACTUAL" ] || { echo "::error::checksum '$CHECKSUM' does not match the file's '$ACTUAL'"; exit 1; }
+          echo "✅ All outputs correct"
+
+      # Comparing the committed bytes rather than grepping them is what catches the failures that
+      # matter for a generated file: a partial indented into a code block, a mangled table cell, a
+      # lost trailing newline.
+      - name: Verify Committed Bytes
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          COMMIT_SHA: ${{ steps.run.outputs.commit_hash }}
+        run: |
+          set -euo pipefail
+          gh api "/repos/$TEST_REPO/contents/render-test/out/README.md?ref=$COMMIT_SHA" \
+            --jq '.content' | base64 -d > committed.md
+
+          cat <<'EOF' > expected.md
+          # acme/actions
+
+          | Action | Description |
+          | --- | --- |
+          | `clippy` | Lint Rust |
+          | `read-yaml` | Read a\|value |
+
+          ---
+          Generated.
+          EOF
+
+          if ! diff -u expected.md committed.md; then
+            echo "::error::Committed content does not match the expected bytes."
+            exit 1
+          fi
+          echo "✅ Committed content matches exactly"
+
+      # The default file_pattern is the rendered path alone. An unrelated dirty file in the
+      # workspace must not ride along in a documentation commit.
+      - name: Verify Commit Contains Only The Rendered File
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          COMMIT_SHA: ${{ steps.run.outputs.commit_hash }}
+        run: |
+          set -euo pipefail
+          FILES=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files[].filename' | sort)
+          echo "Files in commit:"
+          echo "$FILES"
+
+          if [ "$FILES" != "render-test/out/README.md" ]; then
+            echo "::error::Expected exactly the rendered file, got: $FILES"
+            exit 1
+          fi
+          echo "✅ Only the rendered file was committed"
+
+      # commit-changes commits through the GraphQL mutation so GitHub signs the commit. Composing it
+      # must not lose that property — an unverified documentation commit fails branch protection.
+      - name: Verify Commit Is Signed
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          COMMIT_SHA: ${{ steps.run.outputs.commit_hash }}
+        run: |
+          set -euo pipefail
+          VERIFICATION=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.commit.verification')
+          VERIFIED=$(echo "$VERIFICATION" | jq -r '.verified')
+          REASON=$(echo "$VERIFICATION" | jq -r '.reason')
+
+          [ "$VERIFIED" = "true" ] || { echo "::error::Commit is not verified (reason: $REASON)"; exit 1; }
+          [ "$REASON" = "valid" ] || { echo "::error::Expected reason 'valid', got '$REASON'"; exit 1; }
+          echo "✅ Commit is signed by GitHub and marked as verified"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-delete-branch-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
+
+  # Rendering is deterministic, so a second run over unchanged inputs must leave the branch exactly
+  # where it was. This is the property a scheduled regeneration depends on: without it every run
+  # manufactures a commit.
+  test-skips-commit-when-unchanged:
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: 'Common Render Template And Commit: Test Skip: unchanged render makes no commit'
+    if: ${{ contains(fromJSON(inputs.targets), 'common/render-template-and-commit') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: render-template-and-commit-test-${{ github.run_number }}-${{ github.run_attempt }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-create-branch-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/render-commit/unchanged/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Create Template
+        run: |
+          mkdir -p render-test
+          printf '{{#each (sort tags)}}- {{ this }}\n{{/each}}' > render-test/README.hbs
+
+      - name: First Run
+        id: first
+        uses: ./tmp/actions-code/actions/common/render-template-and-commit # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          template: render-test/README.hbs
+          output: render-test/out/README.md
+          variables: '{"tags":["docs","ci","rust"]}'
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'docs: first render ${{ env.TEST_ID }}'
+
+      - name: Second Run With The Same Inputs
+        id: second
+        uses: ./tmp/actions-code/actions/common/render-template-and-commit # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          template: render-test/README.hbs
+          output: render-test/out/README.md
+          variables: '{"tags":["docs","ci","rust"]}'
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'docs: second render ${{ env.TEST_ID }}'
+
+      # The same set in a different order must render identically, or a reshuffled payload commits a
+      # diff that is not a real change.
+      - name: Third Run With The Variables Reordered
+        id: third
+        uses: ./tmp/actions-code/actions/common/render-template-and-commit # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          template: render-test/README.hbs
+          output: render-test/out/README.md
+          variables: '{"tags":["rust","docs","ci"]}'
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'docs: third render ${{ env.TEST_ID }}'
+
+      - name: Verify Only The First Run Committed
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+          FIRST_SHA: ${{ steps.first.outputs.commit_hash }}
+          FIRST_CHANGED: ${{ steps.first.outputs.changed }}
+          SECOND_CHANGED: ${{ steps.second.outputs.changed }}
+          SECOND_SHA: ${{ steps.second.outputs.commit_hash }}
+          SECOND_DETECTED: ${{ steps.second.outputs.changes_detected }}
+          THIRD_CHANGED: ${{ steps.third.outputs.changed }}
+          THIRD_SHA: ${{ steps.third.outputs.commit_hash }}
+          THIRD_DETECTED: ${{ steps.third.outputs.changes_detected }}
+        run: |
+          set -euo pipefail
+          [ "$FIRST_CHANGED" = "true" ] || { echo "::error::first run reported changed=$FIRST_CHANGED"; exit 1; }
+          [ -n "$FIRST_SHA" ] || { echo "::error::first run made no commit"; exit 1; }
+
+          [ "$SECOND_CHANGED" = "false" ] || { echo "::error::re-rendering identical inputs reported changed=$SECOND_CHANGED"; exit 1; }
+          [ "$THIRD_CHANGED" = "false" ] || { echo "::error::reordered inputs reported changed=$THIRD_CHANGED"; exit 1; }
+
+          # A skipped commit step leaves its outputs empty; the action must still report a usable
+          # boolean, and must not invent a commit SHA.
+          [ "$SECOND_DETECTED" = "false" ] || { echo "::error::second run reported changes_detected='$SECOND_DETECTED', expected 'false'"; exit 1; }
+          [ "$THIRD_DETECTED" = "false" ] || { echo "::error::third run reported changes_detected='$THIRD_DETECTED', expected 'false'"; exit 1; }
+          [ -z "$SECOND_SHA" ] || { echo "::error::second run reported commit_hash '$SECOND_SHA'"; exit 1; }
+          [ -z "$THIRD_SHA" ] || { echo "::error::third run reported commit_hash '$THIRD_SHA'"; exit 1; }
+
+          # The branch itself is the evidence: still the first commit, and only one of ours on it.
+          TIP=$(gh api "/repos/$TEST_REPO/commits/$BRANCH_NAME" --jq '.sha')
+          [ "$TIP" = "$FIRST_SHA" ] || { echo "::error::branch tip is $TIP, expected $FIRST_SHA"; exit 1; }
+          echo "✅ Unchanged renders left the branch untouched"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-delete-branch-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
+
+  # An explicit file_pattern replaces the default rather than extending it, and must reach files the
+  # render never touched.
+  test-file-pattern-override:
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: 'Common Render Template And Commit: Test Pattern: explicit file_pattern'
+    if: ${{ contains(fromJSON(inputs.targets), 'common/render-template-and-commit') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: render-template-and-commit-test-${{ github.run_number }}-${{ github.run_attempt }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-create-branch-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/render-commit/file-pattern/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Create Template And A Sidecar File
+        env:
+          TEST_ID: ${{ env.TEST_ID }}
+        run: |
+          mkdir -p render-test/out
+          printf '# {{ title }}\n' > render-test/README.hbs
+          echo "sidecar $TEST_ID" > render-test/out/sidecar.txt
+          echo "unrelated $TEST_ID" > render-test/unrelated.txt
+
+      - name: Run render-template-and-commit
+        id: run
+        uses: ./tmp/actions-code/actions/common/render-template-and-commit # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          template: render-test/README.hbs
+          output: render-test/out/README.md
+          variables: '{"title":"Actions"}'
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'docs: render with pattern ${{ env.TEST_ID }}'
+          file_pattern: 'render-test/out/**/*'
+
+      - name: Verify The Pattern Decided What Was Committed
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          COMMIT_SHA: ${{ steps.run.outputs.commit_hash }}
+        run: |
+          set -euo pipefail
+          [ -n "$COMMIT_SHA" ] || { echo "::error::no commit was made"; exit 1; }
+
+          FILES=$(gh api "/repos/$TEST_REPO/commits/$COMMIT_SHA" --jq '.files[].filename' | sort)
+          echo "Files in commit:"
+          echo "$FILES"
+
+          EXPECTED=$(printf 'render-test/out/README.md\nrender-test/out/sidecar.txt\n' | sort)
+          if [ "$FILES" != "$EXPECTED" ]; then
+            echo "::error::Commit does not contain exactly the pattern's matches"
+            diff <(echo "$EXPECTED") <(echo "$FILES") || true
+            exit 1
+          fi
+          echo "✅ The explicit pattern decided the commit contents"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-delete-branch-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
+
+  # A render that fails must stop before the commit. Committing a half-rendered or missing file is
+  # the one outcome worse than failing the workflow.
+  test-render-failure-commits-nothing:
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: 'Common Render Template And Commit: Test Failure: ${{ matrix.name }}'
+    if: ${{ contains(fromJSON(inputs.targets), 'common/render-template-and-commit') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: undefined-reference
+            template: '{{#each actions}}row{{/each}}'
+            variables: '{"other":1}'
+
+          - name: variables-are-not-json
+            template: 'x'
+            variables: 'title: Actions'
+
+          - name: malformed-template
+            template: '{{#each items}}unclosed'
+            variables: '{"items":[]}'
+
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: render-template-and-commit-test-${{ github.run_number }}-${{ github.run_attempt }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-create-branch-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/render-commit/failure/${{ matrix.name }}/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Record Branch Tip Before The Run
+        id: before
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+        run: echo "sha=$(gh api "/repos/$TEST_REPO/commits/$BRANCH_NAME" --jq '.sha')" >> "$GITHUB_OUTPUT"
+
+      - name: Create Template
+        env:
+          TEMPLATE: ${{ matrix.template }}
+        run: |
+          mkdir -p render-test
+          printf '%s' "$TEMPLATE" > render-test/README.hbs
+
+      - name: Run render-template-and-commit (expect failure)
+        id: run
+        continue-on-error: true
+        uses: ./tmp/actions-code/actions/common/render-template-and-commit # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          template: render-test/README.hbs
+          output: render-test/out/README.md
+          variables: ${{ matrix.variables }}
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'docs: must not be committed ${{ env.TEST_ID }}'
+
+      # The output path sits under a directory the checkout does not create, so its absence is
+      # evidence the render wrote nothing rather than an artefact of the workspace.
+      - name: Verify Nothing Was Written Or Committed
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+          OUTCOME: ${{ steps.run.outcome }}
+          BEFORE_SHA: ${{ steps.before.outputs.sha }}
+          COMMIT_SHA: ${{ steps.run.outputs.commit_hash }}
+        run: |
+          set -euo pipefail
+          [ "$OUTCOME" = "failure" ] || { echo "::error::Expected the step to fail, got '$OUTCOME'"; exit 1; }
+          [ -z "$COMMIT_SHA" ] || { echo "::error::A failed render reported commit_hash '$COMMIT_SHA'"; exit 1; }
+
+          if [ -e render-test/out/README.md ]; then
+            echo "::error::A failed render left an output file behind."
+            cat render-test/out/README.md
+            exit 1
+          fi
+
+          TIP=$(gh api "/repos/$TEST_REPO/commits/$BRANCH_NAME" --jq '.sha')
+          [ "$TIP" = "$BEFORE_SHA" ] || { echo "::error::branch moved from $BEFORE_SHA to $TIP"; exit 1; }
+          echo "✅ Failed before committing, leaving the branch untouched"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-delete-branch-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}
 
   e2e-common-setup-app-git-identity:
     name: 'Common Setup-app-git-identity: End-to-end'

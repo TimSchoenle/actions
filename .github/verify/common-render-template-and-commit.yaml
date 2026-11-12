@@ -1,37 +1,9 @@
-name: Verify Action Common Render Template And Commit
-
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'actions/common/render-template-and-commit/**'
-      - '!actions/common/render-template-and-commit/CHANGELOG.md'
-      - '!actions/common/render-template-and-commit/README.md'
-      - '.github/workflows/verify-action-common-render-template-and-commit.yaml'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'actions/common/render-template-and-commit/**'
-      - '!actions/common/render-template-and-commit/CHANGELOG.md'
-      - '!actions/common/render-template-and-commit/README.md'
-      - '.github/workflows/verify-action-common-render-template-and-commit.yaml'
-  workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read # to read content
-
-env:
-  TEST_OWNER: TimSchoenle
-  TEST_REPO_NAME: actions-testing
-  TEST_REPO: TimSchoenle/actions-testing
-  TEST_ID: render-template-and-commit-test-${{ github.run_number }}-${{ github.run_attempt }}
-
+target: common/render-template-and-commit
+title: Common Render Template And Commit
+rules:
+  pull-request-branches: [main]
+  # Only pushes to main ran this workflow before it moved into Verify.
+  push-branches: []
 jobs:
   # The whole point of the action: a template plus variables becomes a signed commit containing
   # exactly the rendered file. Partials are in the payload because a generated README is the case
@@ -43,6 +15,13 @@ jobs:
     name: 'Test Render And Commit: happy path'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: render-template-and-commit-test-${{ github.run_number }}-${{ github.run_attempt }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -206,6 +185,13 @@ jobs:
     name: 'Test Skip: unchanged render makes no commit'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: render-template-and-commit-test-${{ github.run_number }}-${{ github.run_attempt }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -325,6 +311,13 @@ jobs:
     name: 'Test Pattern: explicit file_pattern'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: render-template-and-commit-test-${{ github.run_number }}-${{ github.run_attempt }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -427,6 +420,13 @@ jobs:
             template: '{{#each items}}unclosed'
             variables: '{"items":[]}'
 
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: render-template-and-commit-test-${{ github.run_number }}-${{ github.run_attempt }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -513,21 +513,3 @@ jobs:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           branch_name: ${{ steps.branch.outputs.branch }}
-
-  # <<< generated: summary (run 'bun run generate-ci-required' to update)
-  summary:
-    name: 'CI Summary: Action Common Render Template And Commit'
-    if: ${{ always() }}
-    needs:
-      - test-renders-and-commits
-      - test-skips-commit-when-unchanged
-      - test-file-pattern-override
-      - test-render-failure-commits-nothing
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions: {}
-    steps:
-      - name: Fail if any verify job did not succeed
-        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
-        run: exit 1
-  # >>> generated: summary

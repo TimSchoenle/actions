@@ -4,6 +4,10 @@
 #
 # Called by .github/workflows/verify.yaml. Every job runs only when its target is in inputs.targets.
 # Targets:
+#   terrace/helm-check (.github/verify/terrace-helm-check.yaml)
+#   terrace/helm-diff (.github/verify/terrace-helm-diff.yaml)
+#   terrace/helm-sync (.github/verify/terrace-helm-sync.yaml)
+#   terrace/image (.github/verify/terrace-image.yaml)
 #   terrace/setup (.github/verify/terrace-setup.yaml)
 name: Verify Terrace
 
@@ -38,6 +42,486 @@ on:
 permissions: {}
 
 jobs:
+  helm-check-clean:
+    name: 'Terrace Helm Check: Test: a current tree passes every gate'
+    if: ${{ contains(fromJSON(inputs.targets), 'terrace/helm-check') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # to fetch code, and to list terrace-contract releases
+    env:
+      FIXTURE: .github/testdata/terrace-helm
+      TERRACE_CONFIG: ${{ github.workspace }}/.github/testdata/terrace-helm/terrace.yaml
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            tuf-repo-cdn.sigstore.dev:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Check
+        id: check
+        uses: ./actions/terrace/helm-check # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          since: ''
+
+      - name: Verify the version came from the fixture's pin
+        env:
+          VERSION: ${{ steps.check.outputs.version }}
+        run: |
+          set -euo pipefail
+          case "$VERSION" in 0.11.*) ;; *) echo "::error::$VERSION is not on the fixture's 0.11 line"; exit 1;; esac
+
+  helm-check-drift:
+    name: 'Terrace Helm Check: Test: a stale value schema and an unknown chart fail the step'
+    if: ${{ contains(fromJSON(inputs.targets), 'terrace/helm-check') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # to fetch code, and to list terrace-contract releases
+    env:
+      FIXTURE: .github/testdata/terrace-helm
+      TERRACE_CONFIG: ${{ github.workspace }}/.github/testdata/terrace-helm/terrace.yaml
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            tuf-repo-cdn.sigstore.dev:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # The first value projected from the contract gets the wrong type in its generated `@schema`
+      # block: the drift `shapes --check` exists to catch, where the contract says one thing and the
+      # chart's schema another.
+      - name: Make a value schema stale
+        run: |
+          set -euo pipefail
+          values="${FIXTURE}/charts/mp-stats-legacy-viewer/values.yaml"
+          marker="$(grep -n '@config projection' "$values" | head -n 1 | cut -d: -f1)"
+          test -n "$marker" || { echo "::error::no projected value to break"; exit 1; }
+          line=$((marker + 1))
+          grep -q 'type: string' <(sed -n "${line}p" "$values") || { echo "::error::line ${line} is not its type"; exit 1; }
+          sed -i "${line}s/type: string/type: object/" "$values"
+          git diff --stat
+
+      - name: Check
+        id: stale
+        continue-on-error: true
+        uses: ./actions/terrace/helm-check # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          since: ''
+
+      - name: Check a chart the tree does not hold
+        id: unknown
+        continue-on-error: true
+        uses: ./actions/terrace/helm-check # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          charts: no-such-chart
+
+      - name: Verify both runs failed
+        env:
+          STALE: ${{ steps.stale.outcome }}
+          UNKNOWN: ${{ steps.unknown.outcome }}
+        run: |
+          set -euo pipefail
+          test "$STALE" = failure || { echo "::error::a stale schema passed the gates"; exit 1; }
+          test "$UNKNOWN" = failure || { echo "::error::an unknown chart name passed"; exit 1; }
+
+  diff:
+    name: 'Terrace Helm Diff: Test: a removed key is reported, and an unchanged tree is not'
+    if: ${{ contains(fromJSON(inputs.targets), 'terrace/helm-diff') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # to fetch code, and to list terrace-contract releases
+    env:
+      FIXTURE: .github/testdata/terrace-helm
+      TERRACE_CONFIG: ${{ github.workspace }}/.github/testdata/terrace-helm/terrace.yaml
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            tuf-repo-cdn.sigstore.dev:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # A local commit that drops the contract's last key: the change an image release makes when it
+      # stops reading a setting, and the one the report must call major.
+      - name: Commit a contract that lost a key
+        id: change
+        run: |
+          set -euo pipefail
+          contract="${FIXTURE}/charts/mp-stats-legacy-viewer/contracts/viewer.json"
+          key="$(python3 -I - "$contract" <<'PY'
+          import json, sys
+          path = sys.argv[1]
+          with open(path, encoding="utf-8") as handle:
+              document = json.load(handle)
+          dropped = document["contract"]["schema"]["keys"].pop()
+          with open(path, "w", encoding="utf-8") as handle:
+              json.dump(document, handle, indent=2)
+              handle.write("\n")
+          print(dropped["path"])
+          PY
+          )"
+          git -c user.name=ci -c user.email=ci@example.invalid -c commit.gpgsign=false \
+            commit --quiet --all --message "test: drop a contract key"
+          echo "key=${key}" >> "$GITHUB_OUTPUT"
+
+      - name: Diff against the commit before
+        id: changed
+        uses: ./actions/terrace/helm-diff # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          since: HEAD~1
+
+      - name: Diff against itself
+        id: unchanged
+        uses: ./actions/terrace/helm-diff # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          since: HEAD
+
+      - name: Verify both reports
+        env:
+          CHANGED: ${{ steps.changed.outputs.changed }}
+          REPORT: ${{ steps.changed.outputs.report }}
+          KEY: ${{ steps.change.outputs.key }}
+          UNCHANGED: ${{ steps.unchanged.outputs.changed }}
+        run: |
+          set -euo pipefail
+          test -n "$KEY" || { echo "::error::the setup step names no removed key"; exit 1; }
+          test "$CHANGED" = true || { echo "::error::a removed key was not reported as a change"; exit 1; }
+          grep -F "$KEY" "$REPORT" | grep -q major || { echo "::error::the removed key is not reported as major"; exit 1; }
+          grep -q 'impact: major' "$REPORT" || { echo "::error::the chart's impact is not major"; exit 1; }
+          test "$UNCHANGED" = false || { echo "::error::an unchanged tree was reported as changed"; exit 1; }
+
+  sync-offline:
+    name: 'Terrace Helm Sync: Test: a stale value schema is rewritten from the vendored contract'
+    if: ${{ contains(fromJSON(inputs.targets), 'terrace/helm-sync') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # to fetch code, and to list terrace-contract releases
+    env:
+      FIXTURE: .github/testdata/terrace-helm
+      TERRACE_CONFIG: ${{ github.workspace }}/.github/testdata/terrace-helm/terrace.yaml
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            tuf-repo-cdn.sigstore.dev:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # Committed, so that `changed` measures what the sync wrote and not the breakage itself.
+      - name: Commit a stale value schema
+        run: |
+          set -euo pipefail
+          values="${FIXTURE}/charts/mp-stats-legacy-viewer/values.yaml"
+          marker="$(grep -n '@config projection' "$values" | head -n 1 | cut -d: -f1)"
+          test -n "$marker" || { echo "::error::no projected value to break"; exit 1; }
+          line=$((marker + 1))
+          grep -q 'type: string' <(sed -n "${line}p" "$values") || { echo "::error::line ${line} is not its type"; exit 1; }
+          sed -i "${line}s/type: string/type: object/" "$values"
+          git -c user.name=ci -c user.email=ci@example.invalid -c commit.gpgsign=false \
+            commit --quiet --all --message "test: break a value schema"
+
+      - name: Sync without pulling
+        id: sync
+        uses: ./actions/terrace/helm-sync # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          pull: 'false'
+
+      - name: Verify the schema was restored and nothing was committed
+        env:
+          CHANGED: ${{ steps.sync.outputs.changed }}
+          COMMIT: ${{ steps.sync.outputs.commit_hash }}
+        run: |
+          set -euo pipefail
+          test "$CHANGED" = true || { echo "::error::the stale schema was not rewritten"; exit 1; }
+          test -z "$COMMIT" || { echo "::error::a run without a token committed"; exit 1; }
+          git diff --exit-code HEAD~1 -- "$FIXTURE" || { echo "::error::the rewrite is not the original file"; exit 1; }
+
+      # A file an earlier step left in the tree is not the sync's change: a second sync, with nothing
+      # left to rewrite, must report nothing even though the tree is dirty.
+      - name: Leave an unrelated file in the tree
+        run: echo 'not the sync' > "${FIXTURE}/unrelated.txt"
+
+      - name: Sync again over a dirty tree
+        id: again
+        uses: ./actions/terrace/helm-sync # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          pull: 'false'
+
+      - name: Verify the dirty tree was not reported as a change
+        env:
+          CHANGED: ${{ steps.again.outputs.changed }}
+        run: |
+          set -euo pipefail
+          test "$CHANGED" = false || { echo "::error::a file the sync did not write was reported as its change"; exit 1; }
+
+  # The network half: the fixture pins a real, signed image, so a pull verifies its signature and
+  # fetches the contract it carries, which must be the one already vendored. Audit rather than block,
+  # because the registry redirects through hosts that are not stable enough to list.
+  sync-pull:
+    name: 'Terrace Helm Sync: Test: pulling a current contract from the registry changes nothing'
+    if: ${{ contains(fromJSON(inputs.targets), 'terrace/helm-sync') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # to fetch code, and to list terrace-contract releases
+    env:
+      FIXTURE: .github/testdata/terrace-helm
+      TERRACE_CONFIG: ${{ github.workspace }}/.github/testdata/terrace-helm/terrace.yaml
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Sync
+        id: sync
+        uses: ./actions/terrace/helm-sync # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+
+      - name: Verify nothing changed
+        env:
+          CHANGED: ${{ steps.sync.outputs.changed }}
+        run: |
+          set -euo pipefail
+          git status --porcelain
+          test "$CHANGED" = false || { echo "::error::the vendored contract is not the one its image carries"; exit 1; }
+
+  image-check-clean:
+    name: 'Terrace Image: Test: a built image that carries its document passes every check'
+    if: ${{ contains(fromJSON(inputs.targets), 'terrace/image') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # to fetch code, and to list terrace-contract releases
+    env:
+      FIXTURE: .github/testdata/terrace-image
+      TERRACE_CONFIG: ${{ github.workspace }}/.github/testdata/terrace-image/terrace.yaml
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            tuf-repo-cdn.sigstore.dev:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # `docker save` writes an OCI layout tarball on Docker 25 and newer, the shape a build
+      # produces before it pushes; `attach` needs the same layout unpacked into a directory.
+      - name: Build the image
+        working-directory: ${{ env.FIXTURE }}
+        run: |
+          set -euo pipefail
+          docker build --tag terrace-image-fixture:v1 .
+          docker save terrace-image-fixture:v1 --output image.tar
+          mkdir layout
+          tar -xf image.tar -C layout
+
+      - name: Check the built image
+        id: check
+        uses: ./actions/terrace/image # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          contract: contract.json
+          generate: cat contract.json
+          tier: '3'
+          dockerfile: Dockerfile
+          image: image.tar:v1
+          oci_layout: 'true'
+
+      - name: Attach the document
+        id: attach
+        uses: ./actions/terrace/image # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          contract: contract.json
+          image: layout:v1
+          oci_layout: 'true'
+          attach: 'true'
+
+      - name: Attach it again
+        id: again
+        uses: ./actions/terrace/image # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          contract: contract.json
+          image: layout:v1
+          oci_layout: 'true'
+          attach: 'true'
+
+      - name: Verify the outputs
+        env:
+          VERSION: ${{ steps.check.outputs.version }}
+          REFERRER: ${{ steps.attach.outputs.referrer }}
+          AGAIN: ${{ steps.again.outputs.referrer }}
+        run: |
+          set -euo pipefail
+          case "$VERSION" in 0.12.*) ;; *) echo "::error::$VERSION is not on the fixture's 0.12 line"; exit 1;; esac
+          [[ "$REFERRER" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "::error::'$REFERRER' is not a referrer digest"; exit 1; }
+          test "$AGAIN" = "$REFERRER" || { echo "::error::a second attach wrote $AGAIN beside $REFERRER"; exit 1; }
+
+  image-check-drift:
+    name: 'Terrace Image: Test: a stale contract, label block or image fails the step'
+    if: ${{ contains(fromJSON(inputs.targets), 'terrace/image') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # to fetch code, and to list terrace-contract releases
+    env:
+      FIXTURE: .github/testdata/terrace-image
+      TERRACE_CONFIG: ${{ github.workspace }}/.github/testdata/terrace-image/terrace.yaml
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            tuf-repo-cdn.sigstore.dev:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # The image is built from the committed document, then the document is changed by one byte:
+      # what a build that copies one file and checks another produces. The same change makes the
+      # committed document disagree with a generator that prints the original.
+      - name: Build the image, then change the document
+        working-directory: ${{ env.FIXTURE }}
+        run: |
+          set -euo pipefail
+          docker build --tag terrace-image-fixture:v1 .
+          docker save terrace-image-fixture:v1 --output image.tar
+          cp contract.json original.json
+          printf '\n' >> contract.json
+
+      - name: Check an image built from another document
+        id: image
+        continue-on-error: true
+        uses: ./actions/terrace/image # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          contract: contract.json
+          image: image.tar:v1
+          oci_layout: 'true'
+
+      - name: Check a committed document its generator no longer prints
+        id: generate
+        continue-on-error: true
+        uses: ./actions/terrace/image # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          contract: contract.json
+          generate: cat original.json
+
+      - name: Make the label block stale
+        working-directory: ${{ env.FIXTURE }}
+        run: |
+          set -euo pipefail
+          cp original.json contract.json
+          grep -q 'dev.terrace.config.prefix="ORDERS_"' Dockerfile || { echo "::error::no prefix label to break"; exit 1; }
+          sed -i 's/dev.terrace.config.prefix="ORDERS_"/dev.terrace.config.prefix="OTHER_"/' Dockerfile
+
+      - name: Check a stale label block
+        id: dockerfile
+        continue-on-error: true
+        uses: ./actions/terrace/image # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          contract: contract.json
+          dockerfile: Dockerfile
+
+      - name: Check a signature on an OCI layout
+        id: layout
+        continue-on-error: true
+        uses: ./actions/terrace/image # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          contract: contract.json
+          image: image.tar:v1
+          oci_layout: 'true'
+          signer: https://github.com/TimSchoenle/.*
+
+      - name: Verify every run failed
+        env:
+          IMAGE: ${{ steps.image.outcome }}
+          GENERATE: ${{ steps.generate.outcome }}
+          DOCKERFILE: ${{ steps.dockerfile.outcome }}
+          LAYOUT: ${{ steps.layout.outcome }}
+        run: |
+          set -euo pipefail
+          test "$IMAGE" = failure || { echo "::error::an image carrying another document passed"; exit 1; }
+          test "$GENERATE" = failure || { echo "::error::a stale committed document passed"; exit 1; }
+          test "$DOCKERFILE" = failure || { echo "::error::a stale label block passed"; exit 1; }
+          test "$LAYOUT" = failure || { echo "::error::a signature was accepted on an OCI layout"; exit 1; }
+
   e2e-terrace-setup:
     name: 'Terrace Setup: End-to-end'
     if: ${{ contains(fromJSON(inputs.targets), 'terrace/setup') }}

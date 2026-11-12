@@ -5,6 +5,7 @@
 # Called by .github/workflows/verify.yaml. Every job runs only when its target is in inputs.targets.
 # Targets:
 #   security/codeql (.github/verify/security-codeql.yaml)
+#   security/jactionlint (.github/verify/security-jactionlint.yaml)
 #   security/zizmor (.github/verify/security-zizmor.yaml)
 name: Verify Security
 
@@ -224,6 +225,286 @@ jobs:
           [ -z "$SARIF_OUTPUT" ] || { echo "::error::CodeQL ran after the inputs were refused"; exit 1; }
 
           echo "✅ The negated pattern failed before CodeQL started"
+
+  jactionlint-install:
+    name: 'Security Jactionlint: Install and check a clean file (${{ matrix.os }})'
+    if: ${{ contains(fromJSON(inputs.targets), 'security/jactionlint') }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Run Test (Clean)
+        id: clean
+        uses: ./actions/security/jactionlint # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          config-file: actions/security/jactionlint/test/empty.yaml
+          files: actions/security/jactionlint/test/clean.yml
+          upload: 'false'
+
+      - name: Assert Clean
+        shell: bash
+        env:
+          VERSION: ${{ steps.clean.outputs.version }}
+          EXECUTABLE: ${{ steps.clean.outputs.executable }}
+          EXIT_CODE: ${{ steps.clean.outputs.exit-code }}
+          FINDINGS: ${{ steps.clean.outputs.findings }}
+          SARIF_FILE: ${{ steps.clean.outputs.sarif-file }}
+          SARIF_ID: ${{ steps.clean.outputs.sarif-id }}
+        run: |
+          set -euo pipefail
+
+          [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::version '$VERSION' is not vMAJOR.MINOR.PATCH"; exit 1; }
+          "$EXECUTABLE" --version | grep -qF "${VERSION#v}" || { echo "::error::$EXECUTABLE is not jactionlint $VERSION"; exit 1; }
+          [ "$EXIT_CODE" = "0" ] || { echo "::error::exit-code '$EXIT_CODE' on the clean fixture, expected 0"; exit 1; }
+          [ "$FINDINGS" = "0" ] || { echo "::error::findings '$FINDINGS' on the clean fixture, expected 0"; exit 1; }
+          [ -z "$SARIF_ID" ] || { echo "::error::upload: false uploaded a SARIF ($SARIF_ID)"; exit 1; }
+          case "$SARIF_FILE" in
+            "$RUNNER_TEMP"/*) ;;
+            *) echo "::error::sarif-file '$SARIF_FILE' is not under RUNNER_TEMP"; exit 1 ;;
+          esac
+          jq -e '.version == "2.1.0" and ([.runs[].results[]] | length) == 0' "$SARIF_FILE" > /dev/null \
+            || { echo "::error::sarif-file is not an empty SARIF 2.1.0 log"; exit 1; }
+
+          echo "✅ $VERSION installed and checked the clean fixture with an empty SARIF"
+
+  # github.com is pointed at a closed port after checkout, so both release downloads fail and the
+  # install has to go through the REST API asset endpoint.
+  fallback:
+    name: 'Security Jactionlint: Install through the REST API when the release download fails (${{ matrix.os }})'
+    if: ${{ contains(fromJSON(inputs.targets), 'security/jactionlint') }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Block github.com
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '127.0.0.1 github.com' | sudo tee -a /etc/hosts > /dev/null
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            sudo dscacheutil -flushcache
+            sudo killall -HUP mDNSResponder
+          fi
+          if curl -fsS --max-time 10 -o /dev/null https://github.com/; then
+            echo "::error::github.com is still reachable"
+            exit 1
+          fi
+
+      - name: Run Test (Fallback)
+        id: fallback
+        uses: ./actions/security/jactionlint # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          config-file: actions/security/jactionlint/test/empty.yaml
+          files: actions/security/jactionlint/test/clean.yml
+          upload: 'false'
+
+      - name: Assert Fallback
+        shell: bash
+        env:
+          VERSION: ${{ steps.fallback.outputs.version }}
+          EXECUTABLE: ${{ steps.fallback.outputs.executable }}
+          EXIT_CODE: ${{ steps.fallback.outputs.exit-code }}
+        run: |
+          set -euo pipefail
+
+          "$EXECUTABLE" --version | grep -qF "${VERSION#v}" || { echo "::error::$EXECUTABLE is not jactionlint $VERSION"; exit 1; }
+          [ "$EXIT_CODE" = "0" ] || { echo "::error::exit-code '$EXIT_CODE' on the clean fixture, expected 0"; exit 1; }
+
+          echo "✅ $VERSION installed through the REST API with github.com unreachable"
+
+  cases:
+    name: 'Security Jactionlint: Findings, configuration and input validation'
+    if: ${{ contains(fromJSON(inputs.targets), 'security/jactionlint') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Run Test (Finding, Fails)
+        id: finding
+        continue-on-error: true
+        uses: ./actions/security/jactionlint # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          config-file: actions/security/jactionlint/test/empty.yaml
+          files: actions/security/jactionlint/test/finding.yml
+          upload: 'false'
+
+      - name: Run Test (Finding, Report Only)
+        id: report
+        uses: ./actions/security/jactionlint # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          config-file: actions/security/jactionlint/test/empty.yaml
+          files: |
+            # Comments and blank lines are skipped.
+
+            actions/security/jactionlint/test/finding.yml
+          fail-on-findings: 'false'
+          upload: 'false'
+
+      - name: Assert Finding
+        shell: bash
+        env:
+          OUTCOME: ${{ steps.finding.outcome }}
+          EXIT_CODE: ${{ steps.report.outputs.exit-code }}
+          FINDINGS: ${{ steps.report.outputs.findings }}
+          SARIF_FILE: ${{ steps.report.outputs.sarif-file }}
+        run: |
+          set -euo pipefail
+
+          [ "$OUTCOME" = "failure" ] || { echo "::error::the finding fixture ended '$OUTCOME', expected failure"; exit 1; }
+          [ "$EXIT_CODE" = "1" ] || { echo "::error::exit-code '$EXIT_CODE', expected 1"; exit 1; }
+          [ "$FINDINGS" = "1" ] || { echo "::error::findings '$FINDINGS', expected 1"; exit 1; }
+          jq -e '[.runs[].results[].ruleId] == ["missing-timeout"]' "$SARIF_FILE" > /dev/null \
+            || { echo "::error::the SARIF does not hold exactly the missing-timeout finding"; exit 1; }
+
+          echo "✅ The finding failed the job by default and was reported without failing when asked"
+
+      - name: Run Test (Configuration File)
+        id: config
+        uses: ./actions/security/jactionlint # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          files: actions/security/jactionlint/test/finding.yml
+          config-file: actions/security/jactionlint/test/jactionlint.yaml
+          upload: 'false'
+
+      - name: Assert Configuration File
+        shell: bash
+        env:
+          EXIT_CODE: ${{ steps.config.outputs.exit-code }}
+          FINDINGS: ${{ steps.config.outputs.findings }}
+        run: |
+          set -euo pipefail
+
+          [ "$EXIT_CODE" = "0" ] && [ "$FINDINGS" = "0" ] \
+            || { echo "::error::config-file did not turn the finding off (exit-code '$EXIT_CODE', findings '$FINDINGS')"; exit 1; }
+
+          echo "✅ config-file was read"
+
+      - name: Run Test (Default Profile Is Pedantic)
+        id: pedantic
+        uses: ./actions/security/jactionlint # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          config-file: actions/security/jactionlint/test/empty.yaml
+          files: actions/security/jactionlint/test/pedantic.yml
+          fail-on-findings: 'false'
+          upload: 'false'
+
+      - name: Run Test (Profile Default)
+        id: profile-default
+        uses: ./actions/security/jactionlint # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          config-file: actions/security/jactionlint/test/empty.yaml
+          files: actions/security/jactionlint/test/pedantic.yml
+          profile: default
+          upload: 'false'
+
+      - name: Assert Profiles
+        shell: bash
+        env:
+          PEDANTIC_EXIT_CODE: ${{ steps.pedantic.outputs.exit-code }}
+          PEDANTIC_SARIF: ${{ steps.pedantic.outputs.sarif-file }}
+          DEFAULT_EXIT_CODE: ${{ steps.profile-default.outputs.exit-code }}
+        run: |
+          set -euo pipefail
+
+          [ "$PEDANTIC_EXIT_CODE" = "1" ] || { echo "::error::without a profile input, exit-code '$PEDANTIC_EXIT_CODE', expected 1 from the pedantic profile"; exit 1; }
+          jq -e '[.runs[].results[].ruleId] == ["require-shell"]' "$PEDANTIC_SARIF" > /dev/null \
+            || { echo "::error::the pedantic run does not hold exactly the require-shell finding"; exit 1; }
+          [ "$DEFAULT_EXIT_CODE" = "0" ] || { echo "::error::profile: default reported findings (exit-code '$DEFAULT_EXIT_CODE')"; exit 1; }
+
+          echo "✅ The default profile is pedantic, and the profile input overrides it"
+
+      - name: Run Test (Invalid Profile)
+        id: invalid
+        continue-on-error: true
+        uses: ./actions/security/jactionlint # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          files: actions/security/jactionlint/test/clean.yml
+          profile: strict
+          upload: 'false'
+
+      - name: Run Test (Leading Dash)
+        id: dash
+        continue-on-error: true
+        uses: ./actions/security/jactionlint # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          files: --help
+          upload: 'false'
+
+      - name: Assert Refusals
+        shell: bash
+        env:
+          INVALID_OUTCOME: ${{ steps.invalid.outcome }}
+          INVALID_EXIT_CODE: ${{ steps.invalid.outputs.exit-code }}
+          DASH_OUTCOME: ${{ steps.dash.outcome }}
+          DASH_EXIT_CODE: ${{ steps.dash.outputs.exit-code }}
+        run: |
+          set -euo pipefail
+
+          [ "$INVALID_OUTCOME" = "failure" ] && [ -z "$INVALID_EXIT_CODE" ] \
+            || { echo "::error::profile 'strict' was not refused before jactionlint ran"; exit 1; }
+          [ "$DASH_OUTCOME" = "failure" ] && [ -z "$DASH_EXIT_CODE" ] \
+            || { echo "::error::a files line starting with - was not refused"; exit 1; }
+
+          echo "✅ Invalid inputs were refused before jactionlint ran"
 
   e2e-security-zizmor:
     name: 'Security Zizmor: End-to-end'
