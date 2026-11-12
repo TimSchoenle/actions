@@ -70,7 +70,13 @@ function fakeApi(
     fetchCommits: vi.fn<TimedAutoMergeApi['fetchCommits']>(async (url) => {
       const commits = commitsByUrl[url] ?? [commit(OLDER), commit(HEAD)];
 
-      return { commits, headOid: headOidByUrl[url] ?? HEAD, totalCount: commits.length };
+      return {
+        commits,
+        headOid: headOidByUrl[url] ?? HEAD,
+        headRepository: 'owner/repo',
+        isCrossRepository: false,
+        totalCount: commits.length,
+      };
     }),
     listOpenPullRequests: vi.fn<TimedAutoMergeApi['listOpenPullRequests']>(async () => pullRequests),
   };

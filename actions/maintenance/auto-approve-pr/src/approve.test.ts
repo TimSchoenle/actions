@@ -37,7 +37,13 @@ function signedCommit(overrides: Partial<CommitRecord> = {}): CommitRecord {
 }
 
 function commits(records: CommitRecord[] = [signedCommit()], headOid = HEAD): PullRequestCommits {
-  return { commits: records, headOid, totalCount: records.length };
+  return {
+    commits: records,
+    headOid,
+    headRepository: 'owner/repo',
+    isCrossRepository: false,
+    totalCount: records.length,
+  };
 }
 
 interface FakeApi extends AutoApproveApi {

@@ -161,7 +161,13 @@ describe('createTimedAutoMergeApi', () => {
   });
 
   it('fetches commits through the shared paginated query', async () => {
-    vi.mocked(fetchPullRequestCommits).mockResolvedValue({ commits: [], headOid: 'a'.repeat(40), totalCount: 0 });
+    vi.mocked(fetchPullRequestCommits).mockResolvedValue({
+      commits: [],
+      headOid: 'a'.repeat(40),
+      headRepository: 'owner/repo',
+      isCrossRepository: false,
+      totalCount: 0,
+    });
 
     await createTimedAutoMergeApi('ghs_token').fetchCommits('https://github.com/owner/repo/pull/7');
 

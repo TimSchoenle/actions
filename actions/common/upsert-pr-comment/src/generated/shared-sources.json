@@ -15,7 +15,7 @@
         "src/github-branches.ts": "8214c922c3055673b0c47981f7093c08e82edb0d742ef3821db3b59f96eedb48",
         "src/github-client.ts": "7e792d5452d7dd1a3a03139d26b99df150ca3eec30f9674fc3199e6e8d4ee079",
         "src/github-commit-on-branch.ts": "ca7d26932c38b1cd391b789d5abd0754b5dea6fc820394175d08857e7ea499b2",
-        "src/github-commits.ts": "8259b6e22197de7286531fd4ed5c493e84a44b38f3e9089b22af2ab9d441e085",
+        "src/github-commits.ts": "e1b3841842b1000ab2cceeef5404cc6c4a7025e69884f3340c5c6811c94c01ee",
         "src/github-identity.ts": "c205083bbc659c09744d2c83bef81c1d2b26ce7bff70e0c7cf2a62e29f35b0be",
         "src/github.ts": "d4e20f3fc2197edbc0c71b2181af7b78967f895bb4e05b1ab5dae9379f2ca48a",
         "src/http-fetch.ts": "f2aa12222553d327b8cd37c43ac5f892189aea3456a2ddeaf40eaad973c35fa6",
