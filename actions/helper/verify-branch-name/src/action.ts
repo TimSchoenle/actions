@@ -32,6 +32,13 @@ function reportFailure(result: BranchVerificationResult): void {
 export function run(): void {
   runAction(() => {
     const branchPattern = getInput('branch_pattern');
+
+    // Declared required, but a composite caller's typo in an expression still arrives as ''. Passing
+    // every branch on that would turn a lost pattern into an open gate.
+    if (branchPattern.trim() === '') {
+      throw new Error("branch_pattern is empty. Pass '.*' to accept any branch name.");
+    }
+
     const rejectForks = getBooleanInput('reject_forks');
     const errorOnFailure = getBooleanInput('error_on_failure');
     const headRef = getInput('head_ref');
@@ -43,11 +50,7 @@ export function run(): void {
     core.info(`Head branch: ${quoteForLog(headRef)}`);
     core.info(`Head repository: ${quoteForLog(headRepoFullName)}`);
     core.info(`Base repository: ${quoteForLog(baseRepoFullName)}`);
-    core.info(
-      branchPattern === ''
-        ? 'No branch pattern specified. Skipping pattern check (auto-pass).'
-        : `Branch pattern: ${quoteForLog(branchPattern)}`,
-    );
+    core.info(`Branch pattern: ${quoteForLog(branchPattern)}`);
 
     const result = verifyBranch({
       baseRepoFullName,

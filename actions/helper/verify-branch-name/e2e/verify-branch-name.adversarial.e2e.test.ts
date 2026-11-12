@@ -147,11 +147,11 @@ describe('verify-branch-name under hostile input', () => {
       expect(result.outputs['branch_pattern_verified']).toBe('true');
     });
 
-    it('skips the check on an empty pattern, and says so', async () => {
-      const result = await verify({ branch_pattern: '', head_ref: 'anything' });
+    it('refuses an empty pattern instead of passing every branch', async () => {
+      const result = await verify({ branch_pattern: '', head_ref: 'anything' }, 'failure');
 
-      expect(result.outputs['branch_pattern_verified']).toBe('true');
-      expect(result.stdout).toContain('Skipping pattern check');
+      expect(result.errors.join('\n')).toContain("branch_pattern is empty. Pass '.*'");
+      expect(result.outputs).toEqual({});
     });
 
     it('handles a ref far longer than git would ever allow', async () => {

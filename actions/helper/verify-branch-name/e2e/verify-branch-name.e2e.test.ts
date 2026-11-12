@@ -272,9 +272,9 @@ const PATTERN_CASES: Case[] = [
     outputs: { verified: 'true', branch_pattern_verified: 'true', fork_verified: 'true' },
   },
   {
-    name: 'No pattern provided (auto-pass)',
+    name: "Match-anything pattern '.*' accepts any branch",
     inputs: {
-      branch_pattern: '',
+      branch_pattern: '.*',
       head_ref: 'any-branch-name',
       head_repo_full_name: 'owner/repo',
       base_repo_full_name: 'owner/repo',
@@ -573,9 +573,9 @@ const COMBINED_CASES: Case[] = [
     outputs: { verified: 'false', branch_pattern_verified: 'false', fork_verified: 'false' },
   },
   {
-    name: 'No pattern + same repo (both auto-pass)',
+    name: 'Match-anything pattern + same repo (both pass)',
     inputs: {
-      branch_pattern: '',
+      branch_pattern: '.*',
       head_ref: 'any-branch',
       head_repo_full_name: 'owner/repo',
       base_repo_full_name: 'owner/repo',
@@ -585,9 +585,9 @@ const COMBINED_CASES: Case[] = [
     outputs: { verified: 'true', branch_pattern_verified: 'true', fork_verified: 'true' },
   },
   {
-    name: 'No pattern + fork allowed',
+    name: 'Match-anything pattern + fork allowed',
     inputs: {
-      branch_pattern: '',
+      branch_pattern: '.*',
       head_ref: 'any-branch',
       head_repo_full_name: 'forker/repo',
       base_repo_full_name: 'owner/repo',
@@ -597,9 +597,9 @@ const COMBINED_CASES: Case[] = [
     outputs: { verified: 'true', branch_pattern_verified: 'true', fork_verified: 'true' },
   },
   {
-    name: 'No pattern + fork rejected',
+    name: 'Match-anything pattern + fork rejected',
     inputs: {
-      branch_pattern: '',
+      branch_pattern: '.*',
       head_ref: 'any-branch',
       head_repo_full_name: 'forker/repo',
       base_repo_full_name: 'owner/repo',
