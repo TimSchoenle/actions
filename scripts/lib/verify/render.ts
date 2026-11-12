@@ -432,8 +432,12 @@ ${planJob()}
 ${installJob(modulePaths)}
 ${buildJob(modulePaths)}
 ${callers}
+  # Reports as the required check '${SUMMARY_JOB_NAME}' only on pull_request. A push run attaches its own
+  # check to the commit, the pull request head included when it is a feature/** branch; under the
+  # same name, a push that selects no target would report a vacuous success on that head, and
+  # re-running it after a failed pull_request run would put a newer success there.
   ${SUMMARY_JOB_ID}:
-    name: '${SUMMARY_JOB_NAME}'
+    name: \${{ github.event_name == 'pull_request' && '${SUMMARY_JOB_NAME}' || format('${SUMMARY_JOB_NAME} ({0})', github.event_name) }}
     if: \${{ always() }}
     needs:
 ${needs}
