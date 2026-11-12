@@ -6,9 +6,8 @@
 # commit, and the same head anonymously. It holds no credential beyond the job token.
 
 target: common/fetch-head
-e2e:
-  token-permissions:
-    metadata: read
+# The cases never reach GitHub, so the job holds no token and no App key.
+e2e: {}
 
 jobs:
   verify-github-fetch:

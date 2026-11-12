@@ -61,10 +61,10 @@ can narrow its token, never widen it.
 ```yaml
 target: common/find-patch # <category>/<name>; the file is common-find-patch.yaml
 title: Common Find-patch # optional; derived from the target
-e2e: # present when actions/<target>/e2e/ has cases
-  token-permissions: { metadata: read } # always explicit
-  secondary-token-permissions: {} # optional: a second App identity
-  extra-endpoints: [] # optional: hosts beyond api.github.com; never a registry
+e2e: # present when actions/<target>/e2e/ has cases; e2e: {} for none of the keys below
+  token-permissions: { metadata: read } # only when the cases use ScratchRepo; always explicit
+  secondary-token-permissions: {} # optional: a second App identity; needs token-permissions
+  extra-endpoints: [] # optional: hosts beyond the base allowlist; never a registry
 build: [] # optional: action directories to build beyond those derived
 extra-inputs: [] # optional: paths the graph cannot see, e.g. test data
 rules: # optional
@@ -76,7 +76,15 @@ jobs: # ordinary workflow jobs
 ```
 
 With an `e2e` block the generator adds a job `e2e-<category>-<name>` that runs
-`bun run e2e actions/<target>` with a token scoped to the scratch repository.
+`bun run e2e actions/<target>`.
+
+With `token-permissions`, the job runs in the `ci-e2e` environment, mints a token scoped to the scratch
+repository and may reach `api.github.com`. Without it, the job holds no App key, uses no environment,
+cannot reach the GitHub API, and runs with `E2E_TOKENLESS=1`, which lets the suite start without
+credentials. A job that mints a token holds the App's private key while it runs code under test, so a
+suite gets a token if and only if its cases reference `ScratchRepo` or `E2E_GITHUB_TOKEN`, and
+`scripts/__tests__/verify-contract.test.ts` enforces that both ways. A case that starts using
+`ScratchRepo` in a tokenless suite fails at once, because `ScratchRepo` still insists on credentials.
 
 The generator changes a source job in two ways only: it prefixes the display name with the title,
 and it prepends `contains(fromJSON(inputs.targets), '<target>')` to the `if:`, keeping an existing

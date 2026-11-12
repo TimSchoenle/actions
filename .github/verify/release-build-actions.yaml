@@ -7,9 +7,8 @@
 # no credential beyond the runner's artifact token.
 
 target: release/build-actions
-e2e:
-  token-permissions:
-    metadata: read
+# The cases never reach GitHub, so the job holds no token and no App key.
+e2e: {}
 
 jobs:
   round-trip-build:

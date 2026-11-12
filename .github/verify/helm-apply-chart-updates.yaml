@@ -1,4 +1,3 @@
 target: helm/apply-chart-updates
-e2e:
-  token-permissions:
-    metadata: read
+# The cases never reach GitHub, so the job holds no token and no App key.
+e2e: {}

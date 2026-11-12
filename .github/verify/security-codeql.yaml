@@ -15,9 +15,8 @@
 # its own code. The assertions read the SARIF analyze leaves on disk instead.
 
 target: security/codeql
-e2e:
-  token-permissions:
-    metadata: read
+# The cases never reach GitHub, so the job holds no token and no App key.
+e2e: {}
 
 jobs:
   codeql-composite:

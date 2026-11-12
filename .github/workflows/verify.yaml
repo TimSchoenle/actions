@@ -251,9 +251,6 @@ jobs:
       cache-key: ${{ needs.install.outputs.cache-key }}
       artifact-id: ${{ needs.build.outputs.artifact-id }}
       manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
-    secrets:
-      ACTIONS_TEST_BOT_APP_ID: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-      ACTIONS_TEST_BOT_PRIVATE_KEY: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
 
   verify-helm:
     name: Helm
@@ -387,9 +384,6 @@ jobs:
       cache-key: ${{ needs.install.outputs.cache-key }}
       artifact-id: ${{ needs.build.outputs.artifact-id }}
       manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
-    secrets:
-      ACTIONS_TEST_BOT_APP_ID: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-      ACTIONS_TEST_BOT_PRIVATE_KEY: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
 
   verify-terrace:
     name: Terrace
@@ -406,9 +400,6 @@ jobs:
       cache-key: ${{ needs.install.outputs.cache-key }}
       artifact-id: ${{ needs.build.outputs.artifact-id }}
       manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
-    secrets:
-      ACTIONS_TEST_BOT_APP_ID: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-      ACTIONS_TEST_BOT_PRIVATE_KEY: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
 
   verify-test:
     name: Test
