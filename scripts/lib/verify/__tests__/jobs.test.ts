@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { actionTokenPermissions, e2eJob, e2eJobId, missingTokenInputScopes, workspaceModulePaths } from '../jobs.js';
+import {
+  actionTokenPermissions,
+  e2eGroupId,
+  e2eGroupJob,
+  e2eGroups,
+  missingTokenInputScopes,
+  workspaceModulePaths,
+} from '../jobs.js';
 import { parseSource } from '../source.js';
 
 import type { Permission } from '../../action-docs/docs-file.js';
@@ -111,53 +118,107 @@ describe('actionTokenPermissions', () => {
   });
 });
 
-describe('e2eJob', () => {
-  const source = parseSource(
-    '.github/verify/release-publish-build-commit.yaml',
-    [
-      'target: release/publish-build-commit',
-      'e2e:',
-      '  token-permissions:',
-      '    contents: write',
-      '  extra-endpoints:',
-      "    - 'uploads.github.com:443'",
-      '',
-    ].join('\n'),
-  );
+const source = (file: string, lines: readonly string[]) =>
+  parseSource(`.github/verify/${file}.yaml`, `${lines.join('\n')}\n`);
 
-  it('names the job after the target and runs its cases', () => {
-    const job = e2eJob(source, true, ['node_modules']);
+const PUBLISH = source('release-publish-build-commit', [
+  'target: release/publish-build-commit',
+  'e2e:',
+  '  token-permissions:',
+  '    contents: write',
+  '  extra-endpoints:',
+  "    - 'uploads.github.com:443'",
+]);
+const COMMIT = source('common-commit-changes', [
+  'target: common/commit-changes',
+  'e2e:',
+  '  token-permissions:',
+  '    contents: write',
+]);
+const APPROVE = source('maintenance-auto-approve-pr', [
+  'target: maintenance/auto-approve-pr',
+  'e2e:',
+  '  token-permissions:',
+  '    pull-requests: write',
+  '    contents: write',
+  '  secondary-token-permissions:',
+  '    pull-requests: write',
+]);
+const READ_YAML = source('common-read-yaml', ['target: common/read-yaml', 'e2e: {}']);
+const NO_E2E = source('docker-x', ['target: docker/x', 'jobs:', '  x:', '    permissions: {}']);
 
-    expect(e2eJobId('release/publish-build-commit')).toBe('e2e-release-publish-build-commit');
-    expect(job).toContain('  e2e-release-publish-build-commit:\n');
-    expect(job).toContain('run: bun run e2e actions/release/publish-build-commit');
+describe('e2eGroups', () => {
+  it('groups suites by token scopes, primary and secondary, and keeps tokenless suites apart', () => {
+    const groups = e2eGroups([PUBLISH, READ_YAML, APPROVE, COMMIT, NO_E2E]);
+
+    expect(groups.map((group) => [group.id, group.targets])).toEqual([
+      ['e2e-contents-write', ['common/commit-changes', 'release/publish-build-commit']],
+      ['e2e-contents-write-pull-requests-write-as-pull-requests-write', ['maintenance/auto-approve-pr']],
+      ['e2e-tokenless', ['common/read-yaml']],
+    ]);
+    expect(groups[1]?.title).toBe('End-to-end (contents write, pull-requests write; acting as pull-requests write)');
   });
 
-  it('scopes the token explicitly and allows the extra endpoint, never a registry', () => {
-    const job = e2eJob(source, true, ['node_modules']);
+  it('names a group by its sorted scopes, whatever order the source lists them in', () => {
+    expect(e2eGroupId(APPROVE.e2e!)).toBe('e2e-contents-write-pull-requests-write-as-pull-requests-write');
+    expect(e2eGroupId(READ_YAML.e2e!)).toBe('e2e-tokenless');
+  });
 
+  it("allows every member's endpoints, once each", () => {
+    const [group] = e2eGroups([COMMIT, PUBLISH]);
+
+    expect(group?.endpoints.filter((endpoint) => endpoint === 'api.github.com:443')).toHaveLength(1);
+    expect(group?.endpoints).toContain('uploads.github.com:443');
+  });
+});
+
+describe('e2eGroupJob', () => {
+  const [group] = e2eGroups([COMMIT, PUBLISH]);
+  const job = e2eGroupJob(group!, ['node_modules']);
+
+  it('runs only when the plan selected one of its suites, and runs the directories the plan lists', () => {
+    expect(job).toContain('  e2e-contents-write:\n');
+    expect(job).toContain("contains(fromJSON(needs.plan.outputs.e2e-groups), 'e2e-contents-write')");
+    expect(job).toContain("E2E_DIRECTORIES: ${{ toJSON(fromJSON(needs.plan.outputs.e2e)['e2e-contents-write']) }}");
+    expect(job).toContain('bun run e2e "${directories[@]}"');
+  });
+
+  it('mints one explicitly scoped token, and allows no registry', () => {
+    expect(job.match(/- name: Generate Token\n/g)).toHaveLength(1);
     expect(job).toContain('permission-contents: write');
-    expect(job).toContain('uploads.github.com:443');
     expect(job).not.toContain('registry.npmjs.org');
     expect(job).not.toContain('bun/setup-cached@');
     expect(job).toContain('fail-on-cache-miss: true');
+    expect(job).toContain('key: ${{ needs.install.outputs.cache-key }}');
   });
 
   // C1: the job holds the App key while running code under test; without sudo that code cannot
   // reach past the runner user, read another process's memory or start a container to do so.
   it('disables sudo and containers in the job that holds the key', () => {
-    expect(e2eJob(source, true, ['node_modules'])).toContain('disable-sudo-and-containers: true');
+    expect(job).toContain('disable-sudo-and-containers: true');
   });
 
-  it('installs the shared build through the shard inputs only when the target builds', () => {
-    expect(e2eJob(source, true, ['node_modules'])).toContain('artifact-id: ${{ inputs.artifact-id }}');
-    expect(e2eJob(source, false, ['node_modules'])).not.toContain('Install Built Actions');
+  it('installs the shared build whenever the run built one', () => {
+    expect(job).toContain("if: ${{ needs.build.outputs.artifact-id != '' }}");
+    expect(job).toContain('artifact-id: ${{ needs.build.outputs.artifact-id }}');
+  });
+
+  it('gives a larger group more time, up to an hour', () => {
+    expect(job).toContain('timeout-minutes: 20');
+    const many = { ...group!, targets: Array.from({ length: 20 }, (_, index) => `common/t${index}`) };
+    expect(e2eGroupJob(many, [])).toContain('timeout-minutes: 60');
+  });
+
+  it('mints the second identity only in its own group', () => {
+    const [approve] = e2eGroups([APPROVE]);
+    expect(job).not.toContain('Generate Secondary Token');
+    expect(e2eGroupJob(approve!, [])).toContain('Generate Secondary Token');
   });
 });
 
-describe('e2eJob without a token', () => {
-  const source = parseSource('.github/verify/common-read-yaml.yaml', 'target: common/read-yaml\ne2e: {}\n');
-  const job = e2eJob(source, true, ['node_modules']);
+describe('e2eGroupJob without a token', () => {
+  const [group] = e2eGroups([READ_YAML]);
+  const job = e2eGroupJob(group!, ['node_modules']);
 
   it('holds no key, no environment and no route to the GitHub API', () => {
     expect(job).not.toContain('secrets.');
@@ -165,11 +226,11 @@ describe('e2eJob without a token', () => {
     expect(job).not.toContain('environment:');
     expect(job).not.toContain('api.github.com');
     expect(job).not.toContain('E2E_GITHUB_TOKEN');
+    expect(job).not.toContain('disable-sudo-and-containers');
   });
 
-  it('tells the suite it runs without credentials, and still runs the cases', () => {
+  it('tells the suites they run without credentials', () => {
     expect(job).toContain("E2E_TOKENLESS: '1'");
-    expect(job).toContain('run: bun run e2e actions/common/read-yaml');
   });
 });
 

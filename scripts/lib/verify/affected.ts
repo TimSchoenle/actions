@@ -13,8 +13,13 @@
 export interface PlannedTarget {
   /** `<category>/<name>`. */
   readonly id: string;
-  /** The id of the generated workflow (shard) that holds the target's jobs. */
-  readonly shard: string;
+  /**
+   * The id of the generated workflow (shard) that holds the target's own jobs; `null` for a target
+   * whose only job is its end-to-end suite.
+   */
+  readonly shard: string | null;
+  /** The id of the `verify.yaml` job that runs the target's end-to-end suite; `null` without one. */
+  readonly e2eGroup: string | null;
   /** Repository paths, directories or files, whose change selects the target. */
   readonly inputs: readonly string[];
   /** Action directories the shared build has to build for the target. */
@@ -94,6 +99,10 @@ export interface PlanResult {
   readonly shards: readonly string[];
   /** The union of the selected targets' build directories, sorted. */
   readonly buildDirs: readonly string[];
+  /** End-to-end groups holding at least one selected target, sorted. */
+  readonly e2eGroups: readonly string[];
+  /** The action directories of the selected targets, by end-to-end group, each sorted. */
+  readonly e2e: Readonly<Record<string, readonly string[]>>;
   /** Whether any selected target reads the install job's dependency tree. */
   readonly install: boolean;
   /**
@@ -209,10 +218,19 @@ export function selectTargets(
     (target) => eventAllows(target, event) && (everything || jobsChanged(target.id) || touches(target.inputs)),
   );
 
+  const e2e: Record<string, string[]> = {};
+  for (const target of selected) {
+    if (target.e2eGroup !== null) {
+      e2e[target.e2eGroup] = sortedUnique([...(e2e[target.e2eGroup] ?? []), `actions/${target.id}`]);
+    }
+  }
+
   return {
     targets: sortedUnique(selected.map((target) => target.id)),
-    shards: sortedUnique(selected.map((target) => target.shard)),
+    shards: sortedUnique(selected.flatMap((target) => (target.shard === null ? [] : [target.shard]))),
     buildDirs: sortedUnique(selected.flatMap((target) => target.buildDirs)),
+    e2eGroups: Object.keys(e2e).sort(),
+    e2e: Object.fromEntries(Object.entries(e2e).sort(([a], [b]) => a.localeCompare(b))),
     install: selected.some((target) => target.install),
     seedCache: false,
   };
@@ -301,6 +319,8 @@ export function formatOutputs(result: PlanResult): string {
     `install=${result.install ? 'true' : 'false'}`,
     `seed-cache=${result.seedCache ? 'true' : 'false'}`,
     `build=${result.buildDirs.length > 0 ? 'true' : 'false'}`,
+    `e2e-groups=${JSON.stringify(result.e2eGroups)}`,
+    `e2e=${JSON.stringify(result.e2e)}`,
     'build-dirs<<VERIFY_PLAN_EOF',
     ...result.buildDirs,
     'VERIFY_PLAN_EOF',
@@ -357,7 +377,8 @@ export function parsePlanFile(text: string): PlanFile {
   for (const target of value.targets) {
     const valid =
       typeof target.id === 'string' &&
-      typeof target.shard === 'string' &&
+      (target.shard === null || typeof target.shard === 'string') &&
+      (target.e2eGroup === null || typeof target.e2eGroup === 'string') &&
       isStrings(target.inputs) &&
       isStrings(target.buildDirs) &&
       typeof target.install === 'boolean' &&

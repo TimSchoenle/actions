@@ -9,8 +9,8 @@ import type { Permission } from '../action-docs/docs-file.js';
 import type { E2eSettings, TokenPermissions, VerifySource } from './source.js';
 
 /**
- * The jobs the generator writes itself: `plan`, `install` and `build` of `verify.yaml`, and the job
- * that runs a target's end-to-end cases. Rendered as text, indented to sit under a `jobs:` key.
+ * The jobs the generator writes itself into `verify.yaml`: `plan`, `install`, `build`, and one job per
+ * group of end-to-end suites that share token scopes. Rendered as text, indented to sit under a `jobs:` key.
  *
  * @packageDocumentation
  */
@@ -159,6 +159,8 @@ export function planJob(): string {
       seed-cache: \${{ steps.plan.outputs.seed-cache }}
       build: \${{ steps.plan.outputs.build }}
       build-dirs: \${{ steps.plan.outputs.build-dirs }}
+      e2e-groups: \${{ steps.plan.outputs.e2e-groups }}
+      e2e: \${{ steps.plan.outputs.e2e }}
     steps:
 ${hardenRunnerStep(PLAN_ALLOWED_ENDPOINTS)}
 
@@ -297,25 +299,90 @@ ${cachePathsInput(modulePaths)}
 `;
 }
 
-/** The id of the job that runs a target's end-to-end cases: `e2e-common-find-patch`. */
-export function e2eJobId(target: string): string {
-  return `e2e-${target.replace('/', '-')}`;
+/**
+ * The suites that share one end-to-end job: every source with the same token scopes, primary and
+ * secondary, or every source with no token. One job runs all of its selected suites, so a run mints
+ * one token per scope set rather than one per suite, and restores the dependency cache once.
+ */
+export interface E2eGroup {
+  /** The job id in `verify.yaml`: `e2e-tokenless`, or `e2e-` and the scopes. */
+  readonly id: string;
+  /** The job's display name. */
+  readonly title: string;
+  readonly tokenPermissions?: TokenPermissions;
+  readonly secondaryTokenPermissions?: TokenPermissions;
+  /** The union of the members' allowlists, in first-seen order. */
+  readonly endpoints: readonly string[];
+  /** The member targets, sorted. */
+  readonly targets: readonly string[];
 }
 
-/**
- * The install step, as lines indented to sit in a job's step list at `indent`.
- *
- * Reads the shared build's outputs through the shard's inputs, the contract every source follows.
- */
-export function installStepLines(indent: string): string[] {
-  return [
-    `${indent}# Installs the bundles the build job built from this commit; dist/ is not committed.`,
-    `${indent}- name: Install Built Actions`,
-    `${indent}  uses: ${PINNED.installBuiltActions}`,
-    `${indent}  with:`,
-    `${indent}    artifact-id: \${{ inputs.artifact-id }}`,
-    `${indent}    expected-manifest-sha256: \${{ inputs.manifest-sha256 }}`,
-  ];
+/** The longest a group job may run, whatever its size. */
+const MAX_GROUP_TIMEOUT_MINUTES = 60;
+
+function sortedScopes(permissions: TokenPermissions): [string, string][] {
+  return Object.entries(permissions).sort(([a], [b]) => a.localeCompare(b));
+}
+
+function scopeSlug(permissions: TokenPermissions): string {
+  return sortedScopes(permissions)
+    .map(([scope, access]) => `${scope}-${access}`)
+    .join('-');
+}
+
+function scopeList(permissions: TokenPermissions): string {
+  return sortedScopes(permissions)
+    .map(([scope, access]) => `${scope} ${access}`)
+    .join(', ');
+}
+
+/** The id of the group job that runs a suite with these settings. */
+export function e2eGroupId(settings: E2eSettings): string {
+  const primary = settings.tokenPermissions;
+  if (primary === undefined) {
+    return 'e2e-tokenless';
+  }
+  const secondary = settings.secondaryTokenPermissions;
+
+  return `e2e-${scopeSlug(primary)}${secondary === undefined ? '' : `-as-${scopeSlug(secondary)}`}`;
+}
+
+function groupTitle(settings: E2eSettings): string {
+  const primary = settings.tokenPermissions;
+  if (primary === undefined) {
+    return 'End-to-end (no token)';
+  }
+  const secondary = settings.secondaryTokenPermissions;
+
+  return `End-to-end (${scopeList(primary)}${secondary === undefined ? '' : `; acting as ${scopeList(secondary)}`})`;
+}
+
+/** Groups the sources with an `e2e` block by token scopes, sorted by group id. */
+export function e2eGroups(sources: readonly VerifySource[]): E2eGroup[] {
+  const members = new Map<string, VerifySource[]>();
+  for (const source of sources) {
+    if (source.e2e !== undefined) {
+      const id = e2eGroupId(source.e2e);
+      members.set(id, [...(members.get(id) ?? []), source]);
+    }
+  }
+
+  return [...members.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([id, group]) => {
+      const settings = group[0].e2e as E2eSettings;
+
+      return {
+        id,
+        title: groupTitle(settings),
+        ...(settings.tokenPermissions === undefined ? {} : { tokenPermissions: settings.tokenPermissions }),
+        ...(settings.secondaryTokenPermissions === undefined
+          ? {}
+          : { secondaryTokenPermissions: settings.secondaryTokenPermissions }),
+        endpoints: [...new Set(group.flatMap((source) => e2eEndpoints(source)))],
+        targets: group.map((source) => source.target).sort(),
+      };
+    });
 }
 
 /** The token step of a second identity. */
@@ -350,7 +417,7 @@ ${secondary === undefined ? '' : secondaryTokenStep(secondary)}`;
 }
 
 /** The `env:` of the run step: the token and the scratch repository, or the tokenless flag. */
-function runEnvironment(settings: E2eSettings): string {
+function runEnvironment(settings: Pick<E2eGroup, 'tokenPermissions' | 'secondaryTokenPermissions'>): string {
   if (settings.tokenPermissions === undefined) {
     // No token was minted, so the setup must not insist on one. ScratchRepo still does, so a case
     // that starts reaching GitHub fails here instead of passing without credentials.
@@ -372,24 +439,18 @@ function runEnvironment(settings: E2eSettings): string {
 }
 
 /**
- * The job that runs `bun run e2e actions/<target>`.
+ * The `verify.yaml` job that runs the selected suites of one {@link E2eGroup}: `bun run e2e` with one
+ * directory per selected member, which the plan job lists under the group id.
  *
- * A suite with `token-permissions` gets a token scoped to the scratch repository, minted in the
- * `ci-e2e` environment. A suite without one gets neither: no App key, no environment and no route to
- * the GitHub API, because a job that holds the key while it runs code under test exposes the key.
+ * A group with token scopes gets one token scoped to the scratch repository, minted in the `ci-e2e`
+ * environment. The tokenless group gets neither: no App key, no environment and no route to the
+ * GitHub API, because a job that holds the key while it runs code under test exposes the key.
  *
  * It restores the install job's tree and never installs, so the job has no route to a package
- * registry. The target gate and the display-name prefix are added later, as for every job.
- *
- * @param builds - whether the target runs any bundle, so the job installs the shared build's artifact
+ * registry. It installs the shared build whenever the run built one.
  */
-export function e2eJob(source: VerifySource, builds: boolean, modulePaths: readonly string[]): string {
-  const settings = source.e2e;
-  if (settings === undefined) {
-    throw new Error(`${source.file} has no e2e block.`);
-  }
-  const actionPath = `actions/${source.target}`;
-  const permissions = settings.tokenPermissions;
+export function e2eGroupJob(group: E2eGroup, modulePaths: readonly string[]): string {
+  const permissions = group.tokenPermissions;
   const environment =
     permissions === undefined
       ? ''
@@ -397,21 +458,35 @@ export function e2eJob(source: VerifySource, builds: boolean, modulePaths: reado
       name: ci-e2e
       deployment: false
 `;
+  const timeout = Math.min(MAX_GROUP_TIMEOUT_MINUTES, 15 + 5 * (group.targets.length - 1));
 
-  return `  ${e2eJobId(source.target)}:
-    name: End-to-end
+  return `  ${group.id}:
+    name: ${group.title}
+    needs: [plan, install, build]
+    # Like a shard call: once the shared install and build succeeded or were skipped, and only when
+    # the plan selected a suite of this group.
+    if: \${{ !cancelled() && (needs.install.result == 'success' || needs.install.result == 'skipped') && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.e2e-groups), '${group.id}') }}
 ${environment}    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: ${timeout}
     permissions:
       contents: read # to fetch code
     steps:
-${hardenRunnerStep(e2eEndpoints(source), permissions !== undefined)}
+${hardenRunnerStep(group.endpoints, permissions !== undefined)}
 
       - name: Checkout
         uses: ${PINNED.checkout}
         with:
           persist-credentials: false
-${builds ? `\n${installStepLines('      ').join('\n')}\n` : ''}
+
+      # Installs the bundles the build job built from this commit; dist/ is not committed. A run that
+      # selected no target with a bundle built nothing, and the suites run no bundle.
+      - name: Install Built Actions
+        if: \${{ needs.build.outputs.artifact-id != '' }}
+        uses: ${PINNED.installBuiltActions}
+        with:
+          artifact-id: \${{ needs.build.outputs.artifact-id }}
+          expected-manifest-sha256: \${{ needs.build.outputs.manifest-sha256 }}
+
       # setup-bun rather than setup-cached: the cached wrapper runs \`bun install\` on every job, cache
       # hit or not, and this job is the one that must have no route to a package registry at all.
       - name: Setup Bun
@@ -428,18 +503,24 @@ ${builds ? `\n${installStepLines('      ').join('\n')}\n` : ''}
           node-version: '24'
 
       # Restored, never installed, and never saved. \`fail-on-cache-miss\` is what keeps that honest:
-      # without it a miss would leave the suite to fail later on a missing import.
+      # without it a miss would leave the suites to fail later on a missing import.
       - name: Restore Dependencies
         uses: ${PINNED.cacheRestore}
         with:
 ${cachePathsInput(modulePaths)}
-          key: \${{ inputs.cache-key }}
+          key: \${{ needs.install.outputs.cache-key }}
           fail-on-cache-miss: true
-${permissions === undefined ? '' : `\n${tokenSteps(permissions, settings.secondaryTokenPermissions)}`}
+${permissions === undefined ? '' : `\n${tokenSteps(permissions, group.secondaryTokenPermissions)}`}
+      # One directory per selected suite. The trailing slash keeps actions/a/b from also matching
+      # actions/a/b-c, since vitest filters by substring.
       - name: Run End-to-end Cases
         env:
-${runEnvironment(settings)}
-        run: bun run e2e ${actionPath}
+          E2E_DIRECTORIES: \${{ toJSON(fromJSON(needs.plan.outputs.e2e)['${group.id}']) }}
+${runEnvironment(group)}
+        run: |
+          set -euo pipefail
+          mapfile -t directories < <(jq -r '.[] + "/"' <<< "$E2E_DIRECTORIES")
+          bun run e2e "\${directories[@]}"
 `;
 }
 
