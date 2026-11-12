@@ -35,9 +35,10 @@ jobs:
       pull-requests: read # to read the pull request
     outputs:
       verified: ${{ steps.authors.outputs.verified }}
+      head_sha: ${{ steps.authors.outputs.head_sha }}
     steps:
-      # 29139614 is renovate[bot]. A commit pushed on top by anyone else, or one without a valid
-      # signature, makes verified false.
+      # 29139614 is renovate[bot]. A commit pushed on top by anyone else, one without a valid
+      # signature, or a pull request from a fork makes verified false.
       - id: authors
         uses: TimSchoenle/actions/actions/helper/verify-commit-authors@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-helper-verify-commit-authors-v3.0.4
         with:
@@ -45,14 +46,26 @@ jobs:
           github_token: ${{ github.token }}
           user_ids: '29139614'
 
-  act:
-    name: Act On Verified Pull Request
+  approve:
+    name: Approve Verified Pull Request
     needs: verify
     if: needs.verify.outputs.verified == 'true'
     runs-on: ubuntu-latest
-    permissions: {}
+    permissions:
+      pull-requests: write # to approve the pull request
     steps:
-      - run: echo "Every commit is Renovate's and signed"
+      # commit_id ties the approval to the head that was verified, so a commit pushed since then
+      # shows as unreviewed. GITHUB_TOKEN may approve only when the repository allows GitHub
+      # Actions to approve pull requests.
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ needs.verify.outputs.head_sha }}
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/${REPOSITORY}/pulls/${NUMBER}/reviews" \
+            -f event=APPROVE -f commit_id="${HEAD_SHA}"
 ```
 <!-- /docs:generated usage -->
 
@@ -64,15 +77,17 @@ jobs:
 | `pr_url`       | yes      |         | The URL of the Pull Request to verify.                                                                                                                                                                                                                                                                                                                                                                          |
 | `github_token` | yes      |         | GitHub Token with permission to read PRs.                                                                                                                                                                                                                                                                                                                                                                       |
 | `user_ids`     | yes      |         | Comma-separated list of Database IDs of accepted accounts (e.g. "29139614, 123456"). Every author must be one of them, and every commit must carry a valid signature. A commit signed with a personal key must also have an accepted committer, linked to its account, and an accepted key owner. A commit GitHub signed itself skips those two checks: GitHub is its committer, and it resolves to no account. |
+| `reject_forks` | no       | `true`  | Report a pull request from a fork as unverified, whatever its commits. A fork can make a commit that GitHub signs in the name of github-actions[bot], so an accepted bot account does not prove the commit came from this repository. A pull request whose head repository was deleted counts as a fork.                                                                                                        |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
 ## Outputs
 
-| Output            | Description                                        |
-| ----------------- | -------------------------------------------------- |
-| `verified`        | True if all commits are verified, false otherwise. |
-| `invalid_commits` | List of SHAs that failed verification.             |
+| Output            | Description                                                                                                                                                                  |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `verified`        | True if all commits are verified and, with reject_forks, the head branch lives in this repository. False otherwise.                                                          |
+| `invalid_commits` | List of SHAs that failed verification.                                                                                                                                       |
+| `head_sha`        | SHA of the pull request head the commits were read at. Bind any approval or merge to it, so a commit pushed after the check is not approved with the ones that were checked. |
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->

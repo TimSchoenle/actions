@@ -103,19 +103,31 @@ describe('verify-commit-authors', () => {
   it('verifies a pull request whose commits are authored by an accepted user', async () => {
     const result = await run({ pr_url: prUrl, user_ids: authorId });
 
-    expect(result.outputs, result.errors.join('\n')).toEqual({ verified: 'true', invalid_commits: '' });
+    expect(result.outputs, result.errors.join('\n')).toEqual({
+      verified: 'true',
+      invalid_commits: '',
+      head_sha: commitShas[1],
+    });
   });
 
   it('accepts the author among several allowed IDs', async () => {
     const result = await run({ pr_url: prUrl, user_ids: `${FOREIGN_USER_ID}, ${authorId}` });
 
-    expect(result.outputs, result.errors.join('\n')).toEqual({ verified: 'true', invalid_commits: '' });
+    expect(result.outputs, result.errors.join('\n')).toEqual({
+      verified: 'true',
+      invalid_commits: '',
+      head_sha: commitShas[1],
+    });
   });
 
   it('reports every commit as invalid when the author is not accepted', async () => {
     const result = await run({ pr_url: prUrl, user_ids: FOREIGN_USER_ID });
 
-    expect(result.outputs).toEqual({ verified: 'false', invalid_commits: commitShas.join('\n') });
+    expect(result.outputs).toEqual({
+      verified: 'false',
+      invalid_commits: commitShas.join('\n'),
+      head_sha: commitShas[1],
+    });
     expect(result.errors).toHaveLength(commitShas.length);
   });
 

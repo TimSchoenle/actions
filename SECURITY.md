@@ -233,3 +233,7 @@ shows who used a credential, so the actions cannot tell its owner from someone e
 This risk is accepted. Write access already allows more than this, pull requests from forks are
 rejected by default, and rejecting commits that GitHub signs would stop Renovate and App pull
 requests from being approved automatically. Give write access only to accounts you trust.
+
+A fork can also make a commit that GitHub signs in the name of `github-actions[bot]`, without write
+access, which is why forks are rejected. [Helper Verify-commit-authors](./actions/helper/verify-commit-authors)
+applies the same checks and rejects forks the same way, unless `reject_forks` is `false`.
