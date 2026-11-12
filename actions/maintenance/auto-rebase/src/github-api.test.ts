@@ -113,6 +113,19 @@ describe('createUpdateBranchApi', () => {
       ]);
     });
 
+    it.each([
+      ['no cursor', null],
+      ['the cursor it was asked with', 'cursor-1'],
+    ])('fails when a next page comes with %s', async (_label, endCursor) => {
+      const stuck = { repository: { pullRequests: { nodes: [node(2)], pageInfo: { endCursor, hasNextPage: true } } } };
+      octokit.graphql.mockResolvedValueOnce(page([node(1)], 'cursor-1')).mockResolvedValueOnce(stuck);
+
+      await expect(createUpdateBranchApi('token').listOpenPullRequests(repository)).rejects.toThrow(
+        'GitHub reported more open pull requests in owner/repo but no new cursor to fetch them with.',
+      );
+      expect(octokit.graphql).toHaveBeenCalledTimes(2);
+    });
+
     it('fails when the repository cannot be read', async () => {
       octokit.graphql.mockResolvedValue({ repository: null });
 

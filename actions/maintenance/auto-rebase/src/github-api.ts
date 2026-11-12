@@ -176,8 +176,16 @@ export function createUpdateBranchApi(token: string): UpdateBranchApi {
           });
         }
 
-        if (!pageInfo.hasNextPage || pageInfo.endCursor === null) {
+        if (!pageInfo.hasNextPage) {
           return pullRequests;
+        }
+
+        // A next page without a fresh cursor would either drop the remaining pull requests or ask
+        // for the same page forever; neither is a listing the update decision can rely on.
+        if (pageInfo.endCursor === null || pageInfo.endCursor === after) {
+          throw new Error(
+            `GitHub reported more open pull requests in ${owner}/${repo} but no new cursor to fetch them with.`,
+          );
         }
 
         after = pageInfo.endCursor;
