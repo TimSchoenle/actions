@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       time_elapsed:
-        description: 'How long a pull request must have been open (e.g. "24h", "2d").'
+        description: 'Soak time since the pull request was opened and since its newest commit (e.g. "24h", "2d").'
         required: false
         default: '1d'
 
@@ -38,6 +38,7 @@ jobs:
           token: ${{ steps.token.outputs.token }}
           # Database ID of the bot account that opens the release pull requests.
           trusted_authors: '123456789'
+          base_branch: main
           branch_pattern: 'release-please--branches--%'
           time_elapsed: ${{ inputs.time_elapsed || '1d' }}
           minimum_age: '1h'
