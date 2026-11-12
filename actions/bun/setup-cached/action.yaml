@@ -23,8 +23,8 @@ inputs:
   cache-mode:
     description: 'What the step does with the node_modules cache. "read-write" restores it and saves it on a miss,
       "read-only" restores it and never saves, "none" neither restores nor saves. "auto" is "read-write" on push,
-      schedule, workflow_dispatch and merge_group, and "read-only" on every other event, pull_request and
-      pull_request_target among them. setup-bun''s own cache of the Bun executable is used only in "read-write"; the
+      schedule and workflow_dispatch, and "read-only" on every other event, pull_request, pull_request_target and
+      merge_group among them. setup-bun''s own cache of the Bun executable is used only in "read-write"; the
       other modes download Bun. A restored cache is code the job runs: use "none" in any job that holds secrets, an App
       token or write permissions. Any other value fails the step. See Cache modes below.'
     required: false
@@ -56,7 +56,9 @@ runs:
     # A cache entry is shared by every later run that can read its scope, and any job that runs code
     # can save one, so a job running untrusted code must not decide what a later job restores. The
     # allowlist holds the events whose code is already on a ref a maintainer pushed or dispatched;
-    # anything else (pull_request_target, workflow_run, issue_comment, ...) only reads.
+    # anything else (pull_request_target, workflow_run, issue_comment, ...) only reads. merge_group
+    # only reads too: its entry would be scoped to a gh-readonly-queue ref that is deleted once the
+    # group merges, so no later run could restore it.
     - name: Resolve Cache Mode
       id: mode
       shell: bash
@@ -72,7 +74,7 @@ runs:
             ;;
           auto)
             case "$EVENT_NAME" in
-              push | schedule | workflow_dispatch | merge_group) mode=read-write ;;
+              push | schedule | workflow_dispatch) mode=read-write ;;
               *) mode=read-only ;;
             esac
             ;;
