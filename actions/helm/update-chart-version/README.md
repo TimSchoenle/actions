@@ -82,7 +82,9 @@ jobs:
     version-bump: minor
     pull-contracts: 'true'
 
-- run: echo "Opened $PR_URL for chart version $VERSION"
+# A re-run with every image already at its target opens no pull request and reports changed false.
+- if: steps.chart.outputs.changed == 'true'
+  run: echo "Opened $PR_URL for chart version $VERSION"
   env:
     PR_URL: ${{ steps.chart.outputs.pr-url }}
     VERSION: ${{ steps.chart.outputs.chart-version }}
@@ -116,14 +118,15 @@ jobs:
 <!-- docs:generated outputs -->
 ## Outputs
 
-| Output                   | Description                                                               |
-| ------------------------ | ------------------------------------------------------------------------- |
-| `pr-url`                 | The URL of the created Pull Request                                       |
-| `pr_number`              | The id of the created Pull Request                                        |
-| `chart-version`          | The chart version written to Chart.yaml                                   |
-| `previous-chart-version` | The chart version that was in Chart.yaml before the update                |
-| `updated-count`          | Number of image keys updated in values.yaml                               |
-| `changes`                | JSON array of {key, old, new} for every image key updated, in input order |
+| Output                   | Description                                                                                                                                                                                                                                          |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `changed`                | true when an image or the app version moved and a pull request was opened or updated. false when everything was already at its target: nothing is written, the chart version is kept, no pull request is opened, and pr-url and pr_number are empty. |
+| `pr-url`                 | The URL of the created Pull Request                                                                                                                                                                                                                  |
+| `pr_number`              | The id of the created Pull Request                                                                                                                                                                                                                   |
+| `chart-version`          | The chart version written to Chart.yaml                                                                                                                                                                                                              |
+| `previous-chart-version` | The chart version that was in Chart.yaml before the update                                                                                                                                                                                           |
+| `updated-count`          | Number of image keys updated in values.yaml                                                                                                                                                                                                          |
+| `changes`                | JSON array of {key, old, new} for every image key updated, in input order                                                                                                                                                                            |
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->

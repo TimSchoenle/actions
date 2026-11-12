@@ -761,7 +761,7 @@
       "pullRequestBranches": ["main"],
       "pushBranches": [],
       "schedule": false,
-      "jobsSha256": "fd9d3a40d68461cecb50823047f953b3feb03b57882bfdf339edea6b6ac8728a"
+      "jobsSha256": "78d9fdf8d483cb7495d46a8db8d1e12e52ca443778ab96b6b920fb63d82315cc"
     },
     {
       "id": "helper/resolve-base-branch",

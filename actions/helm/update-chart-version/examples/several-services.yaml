@@ -17,7 +17,9 @@
     version-bump: minor
     pull-contracts: 'true'
 
-- run: echo "Opened $PR_URL for chart version $VERSION"
+# A re-run with every image already at its target opens no pull request and reports changed false.
+- if: steps.chart.outputs.changed == 'true'
+  run: echo "Opened $PR_URL for chart version $VERSION"
   env:
     PR_URL: ${{ steps.chart.outputs.pr-url }}
     VERSION: ${{ steps.chart.outputs.chart-version }}

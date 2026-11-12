@@ -78,6 +78,11 @@ inputs:
     default: 'false'
 
 outputs:
+  changed:
+    description: 'true when an image or the app version moved and a pull request was opened or updated. false when
+      everything was already at its target: nothing is written, the chart version is kept, no pull request is opened,
+      and pr-url and pr_number are empty.'
+    value: ${{ steps.apply.outputs.changed }}
   pr-url:
     description: 'The URL of the created Pull Request'
     value: ${{ steps.create-pr.outputs.pr_url }}
@@ -166,7 +171,7 @@ runs:
     # One step for the whole file update: a composite cannot loop, so N images cannot be N steps.
     - name: Apply Chart Updates
       id: apply
-      uses: TimSchoenle/actions/actions/helm/apply-chart-updates@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-helm-apply-chart-updates-v2.0.4
+      uses: TimSchoenle/actions/actions/helm/apply-chart-updates@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-helm-apply-chart-updates-v2.0.5
       with:
         chart-path: ${{ inputs.chart-path }}
         images: ${{ inputs.images }}
@@ -184,7 +189,7 @@ runs:
     # the new appVersion. The version comes from the charts repository's own terrace.yaml, so the CLI
     # that writes the contract is the one that repository's gates check it with.
     - name: Install terrace-contract
-      if: inputs.pull-contracts == 'true'
+      if: steps.apply.outputs.changed == 'true' && inputs.pull-contracts == 'true'
       uses: TimSchoenle/actions/actions/terrace/setup@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-terrace-setup-v3.1.3
       with:
         oras: 'true'
@@ -193,7 +198,7 @@ runs:
     # terrace.yaml, so the chart pulled is always the one chart-path names.
     - name: Pull Configuration Contracts
       id: contracts
-      if: inputs.pull-contracts == 'true'
+      if: steps.apply.outputs.changed == 'true' && inputs.pull-contracts == 'true'
       shell: bash
       env:
         CHART_PATH: ${{ inputs.chart-path }}
@@ -208,8 +213,11 @@ runs:
         # committed whole; nothing else in this checkout has been written.
         echo "files=${FILES} ${chart_path}" >> "$GITHUB_OUTPUT"
 
+    # A re-run with everything already at its target writes nothing and keeps the chart version, so
+    # there is nothing to propose.
     - name: Create Pull Request
       id: create-pr
+      if: steps.apply.outputs.changed == 'true'
       uses: TimSchoenle/actions/actions/common/create-pull-request@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-common-create-pull-request-v1.0.29
       with:
         app-id: ${{ inputs.app-id }}
