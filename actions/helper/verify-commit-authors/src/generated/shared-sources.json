@@ -39,7 +39,7 @@
         "src/workspace-path.ts": "cbacfa1859d0d47c37e33969cccc9692601cc7dd7daa2977143045e94d95ec18",
         "src/yaml-document.ts": "298340b14316f62b49bad97c81f1108764c813cf2ea1c826f2f06d887b55d3ac",
         "src/yaml-index.ts": "1a215c2fe124102f334f584bf92d98053f65f4d73e9782749319af706b60325a",
-        "src/yaml.ts": "f8dacd7d78b52dd7e2fe6d556dc8da942bf05215aa22144671466dd7fed2ef1d"
+        "src/yaml.ts": "e3b10913271dac2b0048588a204270a59fcf73479435b4aeee0d760991762ec0"
       }
     }
   }
