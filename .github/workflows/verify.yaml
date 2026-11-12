@@ -33,6 +33,7 @@ jobs:
     outputs:
       targets: ${{ steps.plan.outputs.targets }}
       shards: ${{ steps.plan.outputs.shards }}
+      install: ${{ steps.plan.outputs.install }}
       build: ${{ steps.plan.outputs.build }}
       build-dirs: ${{ steps.plan.outputs.build-dirs }}
     steps:
@@ -74,7 +75,9 @@ jobs:
   install:
     name: Install Dependencies
     needs: plan
-    if: ${{ needs.plan.outputs.targets != '[]' }}
+    # Only when a selected target reads the tree: one with end-to-end cases or a build. A run whose
+    # targets are all hand-written jobs that set themselves up skips it rather than waiting on it.
+    if: ${{ needs.plan.outputs.install == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -117,11 +120,14 @@ jobs:
       # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
       # it to 'latest', which would win otherwise. It reinstalls on every run whatever the cache did,
       # which is what validates the restored tree against the lockfile before the next job trusts it.
+      # cache-mode none: the step above already restores and saves this tree under the key the test
+      # jobs read, and setup-cached's own cache of the same 313 MB was a second restore and save.
       - name: Setup Bun And Install
         uses: TimSchoenle/actions/actions/bun/setup-cached@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-bun-setup-cached-v3.1.0
         with:
           bun-version: ''
           bun-version-file: '.bun-version'
+          cache-mode: none
 
   build:
     name: Build Actions
@@ -179,9 +185,10 @@ jobs:
   verify-bun:
     name: Bun
     needs: [plan, install, build]
-    # Runs once the shared build succeeded, or was skipped because none of the selected targets
-    # runs a bundle.
-    if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-bun') }}
+    # Runs once the shared install and build succeeded, or were skipped because none of the
+    # selected targets reads the dependency tree or runs a bundle. A skipped install never strands
+    # a target that needs it: the plan sets install whenever any selected target does.
+    if: ${{ !cancelled() && (needs.install.result == 'success' || needs.install.result == 'skipped') && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-bun') }}
     uses: ./.github/workflows/verify-bun.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read
@@ -194,9 +201,10 @@ jobs:
   verify-common:
     name: Common
     needs: [plan, install, build]
-    # Runs once the shared build succeeded, or was skipped because none of the selected targets
-    # runs a bundle.
-    if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-common') }}
+    # Runs once the shared install and build succeeded, or were skipped because none of the
+    # selected targets reads the dependency tree or runs a bundle. A skipped install never strands
+    # a target that needs it: the plan sets install whenever any selected target does.
+    if: ${{ !cancelled() && (needs.install.result == 'success' || needs.install.result == 'skipped') && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-common') }}
     uses: ./.github/workflows/verify-common.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       actions: read
@@ -213,9 +221,10 @@ jobs:
   verify-configs:
     name: Configs
     needs: [plan, install, build]
-    # Runs once the shared build succeeded, or was skipped because none of the selected targets
-    # runs a bundle.
-    if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-configs') }}
+    # Runs once the shared install and build succeeded, or were skipped because none of the
+    # selected targets reads the dependency tree or runs a bundle. A skipped install never strands
+    # a target that needs it: the plan sets install whenever any selected target does.
+    if: ${{ !cancelled() && (needs.install.result == 'success' || needs.install.result == 'skipped') && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-configs') }}
     uses: ./.github/workflows/verify-configs.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read
@@ -228,9 +237,10 @@ jobs:
   verify-docker:
     name: Docker
     needs: [plan, install, build]
-    # Runs once the shared build succeeded, or was skipped because none of the selected targets
-    # runs a bundle.
-    if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-docker') }}
+    # Runs once the shared install and build succeeded, or were skipped because none of the
+    # selected targets reads the dependency tree or runs a bundle. A skipped install never strands
+    # a target that needs it: the plan sets install whenever any selected target does.
+    if: ${{ !cancelled() && (needs.install.result == 'success' || needs.install.result == 'skipped') && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-docker') }}
     uses: ./.github/workflows/verify-docker.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read
@@ -248,9 +258,10 @@ jobs:
   verify-helm:
     name: Helm
     needs: [plan, install, build]
-    # Runs once the shared build succeeded, or was skipped because none of the selected targets
-    # runs a bundle.
-    if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-helm') }}
+    # Runs once the shared install and build succeeded, or were skipped because none of the
+    # selected targets reads the dependency tree or runs a bundle. A skipped install never strands
+    # a target that needs it: the plan sets install whenever any selected target does.
+    if: ${{ !cancelled() && (needs.install.result == 'success' || needs.install.result == 'skipped') && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-helm') }}
     uses: ./.github/workflows/verify-helm.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read
@@ -266,9 +277,10 @@ jobs:
   verify-helper:
     name: Helper
     needs: [plan, install, build]
-    # Runs once the shared build succeeded, or was skipped because none of the selected targets
-    # runs a bundle.
-    if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-helper') }}
+    # Runs once the shared install and build succeeded, or were skipped because none of the
+    # selected targets reads the dependency tree or runs a bundle. A skipped install never strands
+    # a target that needs it: the plan sets install whenever any selected target does.
+    if: ${{ !cancelled() && (needs.install.result == 'success' || needs.install.result == 'skipped') && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-helper') }}
     uses: ./.github/workflows/verify-helper.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read
@@ -284,9 +296,10 @@ jobs:
   verify-java-gradle:
     name: Java-gradle
     needs: [plan, install, build]
-    # Runs once the shared build succeeded, or was skipped because none of the selected targets
-    # runs a bundle.
-    if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-java-gradle') }}
+    # Runs once the shared install and build succeeded, or were skipped because none of the
+    # selected targets reads the dependency tree or runs a bundle. A skipped install never strands
+    # a target that needs it: the plan sets install whenever any selected target does.
+    if: ${{ !cancelled() && (needs.install.result == 'success' || needs.install.result == 'skipped') && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-java-gradle') }}
     uses: ./.github/workflows/verify-java-gradle.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read
@@ -302,9 +315,10 @@ jobs:
   verify-maintenance:
     name: Maintenance
     needs: [plan, install, build]
-    # Runs once the shared build succeeded, or was skipped because none of the selected targets
-    # runs a bundle.
-    if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-maintenance') }}
+    # Runs once the shared install and build succeeded, or were skipped because none of the
+    # selected targets reads the dependency tree or runs a bundle. A skipped install never strands
+    # a target that needs it: the plan sets install whenever any selected target does.
+    if: ${{ !cancelled() && (needs.install.result == 'success' || needs.install.result == 'skipped') && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-maintenance') }}
     uses: ./.github/workflows/verify-maintenance.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read
@@ -322,9 +336,10 @@ jobs:
   verify-release:
     name: Release
     needs: [plan, install, build]
-    # Runs once the shared build succeeded, or was skipped because none of the selected targets
-    # runs a bundle.
-    if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-release') }}
+    # Runs once the shared install and build succeeded, or were skipped because none of the
+    # selected targets reads the dependency tree or runs a bundle. A skipped install never strands
+    # a target that needs it: the plan sets install whenever any selected target does.
+    if: ${{ !cancelled() && (needs.install.result == 'success' || needs.install.result == 'skipped') && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-release') }}
     uses: ./.github/workflows/verify-release.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       actions: read
@@ -341,9 +356,10 @@ jobs:
   verify-rust:
     name: Rust
     needs: [plan, install, build]
-    # Runs once the shared build succeeded, or was skipped because none of the selected targets
-    # runs a bundle.
-    if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-rust') }}
+    # Runs once the shared install and build succeeded, or were skipped because none of the
+    # selected targets reads the dependency tree or runs a bundle. A skipped install never strands
+    # a target that needs it: the plan sets install whenever any selected target does.
+    if: ${{ !cancelled() && (needs.install.result == 'success' || needs.install.result == 'skipped') && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-rust') }}
     uses: ./.github/workflows/verify-rust.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read
@@ -359,9 +375,10 @@ jobs:
   verify-security:
     name: Security
     needs: [plan, install, build]
-    # Runs once the shared build succeeded, or was skipped because none of the selected targets
-    # runs a bundle.
-    if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-security') }}
+    # Runs once the shared install and build succeeded, or were skipped because none of the
+    # selected targets reads the dependency tree or runs a bundle. A skipped install never strands
+    # a target that needs it: the plan sets install whenever any selected target does.
+    if: ${{ !cancelled() && (needs.install.result == 'success' || needs.install.result == 'skipped') && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-security') }}
     uses: ./.github/workflows/verify-security.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read
@@ -377,9 +394,10 @@ jobs:
   verify-terrace:
     name: Terrace
     needs: [plan, install, build]
-    # Runs once the shared build succeeded, or was skipped because none of the selected targets
-    # runs a bundle.
-    if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-terrace') }}
+    # Runs once the shared install and build succeeded, or were skipped because none of the
+    # selected targets reads the dependency tree or runs a bundle. A skipped install never strands
+    # a target that needs it: the plan sets install whenever any selected target does.
+    if: ${{ !cancelled() && (needs.install.result == 'success' || needs.install.result == 'skipped') && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-terrace') }}
     uses: ./.github/workflows/verify-terrace.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read
@@ -395,9 +413,10 @@ jobs:
   verify-test:
     name: Test
     needs: [plan, install, build]
-    # Runs once the shared build succeeded, or was skipped because none of the selected targets
-    # runs a bundle.
-    if: ${{ !cancelled() && needs.install.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-test') }}
+    # Runs once the shared install and build succeeded, or were skipped because none of the
+    # selected targets reads the dependency tree or runs a bundle. A skipped install never strands
+    # a target that needs it: the plan sets install whenever any selected target does.
+    if: ${{ !cancelled() && (needs.install.result == 'success' || needs.install.result == 'skipped') && (needs.build.result == 'success' || needs.build.result == 'skipped') && contains(fromJSON(needs.plan.outputs.shards), 'verify-test') }}
     uses: ./.github/workflows/verify-test.yaml # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as a workflow without a ref.
     permissions:
       contents: read

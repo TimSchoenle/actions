@@ -269,6 +269,18 @@ describe('generated Verify workflows', () => {
     expect(findDrift(ROOT_DIR), "run 'bun run generate-verify' and commit the result").toEqual([]);
   });
 
+  // A target the plan marks as needing no install may run while the install job is skipped, when
+  // inputs.cache-key is empty and the dependency cache does not exist for this commit.
+  it('reads the dependency cache only in targets the plan marks as needing the install job', () => {
+    const noInstall = new Set(GENERATED.plan.targets.filter((target) => !target.install).map((target) => target.id));
+    expect(noInstall.size).toBeGreaterThan(0);
+    for (const source of SOURCES.filter((candidate) => noInstall.has(candidate.target))) {
+      expect(source.text, `${source.file} reads inputs.cache-key but its target skips install`).not.toMatch(
+        /inputs\.cache-key/,
+      );
+    }
+  });
+
   it(`stay within ${MAX_SHARDS} reusable workflows, so a run never reaches GitHub's limit of 50`, () => {
     expect(
       GENERATED.shards.length,
@@ -405,6 +417,21 @@ describe('affected-target detection against this repository', () => {
 
   it('runs nothing for a README-only change', () => {
     expect(select(['actions/common/find-patch/README.md', 'actions/release/build-actions/CHANGELOG.md'])).toEqual([]);
+  });
+
+  it('runs nothing for a generated-docs change to examples and docs.yaml', () => {
+    expect(
+      select([
+        'actions/common/find-patch/README.md',
+        'actions/common/find-patch/docs.yaml',
+        'actions/common/find-patch/examples/workflow-run-commit.yaml',
+        'actions/common/delete-branch/examples/delete-closed-branch.yaml',
+      ]),
+    ).toEqual([]);
+  });
+
+  it('still runs the target for a file that only looks like an example', () => {
+    expect(select(['actions/common/find-patch/helper/src/examples.ts'])).toContain('common/find-patch');
   });
 
   it('runs the targets that read the terrace-helm fixture for a change to it, through extra-inputs', () => {
