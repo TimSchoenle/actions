@@ -8,6 +8,10 @@ import type { PullRequestCommits } from 'actions-util/commits';
 /** An open pull request reduced to the fields the decision needs. */
 export interface OpenPullRequest {
   number: number;
+  /** Database ID of the account that opened it, or `null` when that account was deleted. */
+  authorId: number | null;
+  /** Name of the branch it would merge into. */
+  baseRef: string;
   /** GraphQL node ID, which `enablePullRequestAutoMerge` addresses the pull request by. */
   nodeId: string;
   /** `https://github.com/owner/repo/pull/N`, which the commit query resolves. */
@@ -89,11 +93,14 @@ interface PullRequestListItem {
   created_at: string;
   draft?: boolean;
   head: { ref: string; sha: string; repo: { full_name: string } | null };
-  base: { repo: { full_name: string } };
+  base: { ref: string; repo: { full_name: string } };
+  user: { id: number } | null;
 }
 
 function toOpenPullRequest(item: PullRequestListItem): OpenPullRequest {
   return {
+    authorId: item.user?.id ?? null,
+    baseRef: item.base.ref,
     baseRepoFullName: item.base.repo.full_name,
     createdAt: item.created_at,
     draft: item.draft === true,

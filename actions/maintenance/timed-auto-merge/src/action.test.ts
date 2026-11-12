@@ -55,6 +55,8 @@ function setInputs(overrides: Record<string, string> = {}): void {
 
 function pullRequest(number: number, overrides: Partial<OpenPullRequest> = {}): OpenPullRequest {
   return {
+    authorId: 1001,
+    baseRef: 'main',
     baseRepoFullName: 'owner/repo',
     createdAt: '2026-10-20T00:00:00Z',
     draft: false,
@@ -78,7 +80,7 @@ function fakeApi(pullRequests: OpenPullRequest[]): TimedAutoMergeApi {
       commits: [
         {
           authorIds: [1001],
-          committedDate: '2026-11-01T00:00:00Z',
+          committedDate: '2026-10-20T00:00:00Z',
           committerId: 1001,
           oid: HEAD,
           signatureState: 'VALID',
@@ -114,6 +116,25 @@ describe('timed-auto-merge action', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+  });
+
+  it('reads base_branch and pr_author_ids, falling back to trusted_authors for the latter', async () => {
+    setInputs({ base_branch: 'main' });
+    const api = fakeApi([pullRequest(1), pullRequest(2, { baseRef: 'develop' }), pullRequest(3, { authorId: 42 })]);
+
+    await run({ api, now: () => NOW });
+
+    expect(output('approved')).toBe('[1]');
+    expect(output('skipped')).toBe('[{"number":2,"reason":"base-mismatch"},{"number":3,"reason":"author-untrusted"}]');
+  });
+
+  it('accepts a pull request author listed in pr_author_ids', async () => {
+    setInputs({ pr_author_ids: '42' });
+    const api = fakeApi([pullRequest(1, { authorId: 42 })]);
+
+    await run({ api, now: () => NOW });
+
+    expect(output('approved')).toBe('[1]');
   });
 
   it('approves eligible pull requests and publishes every outcome', async () => {
@@ -196,6 +217,7 @@ describe('timed-auto-merge action', () => {
       /'time_elapsed' "0s" is shorter than 'minimum_age' "1h"/,
     ],
     ['a malformed time_elapsed', { time_elapsed: '1 day' }, /Invalid 'time_elapsed'/],
+    ['a malformed pr_author_ids', { pr_author_ids: 'renovate' }, /Invalid 'pr_author_ids'/],
     ['a malformed minimum_age', { minimum_age: '' }, /Invalid 'minimum_age'/],
     ['an unknown pattern mode', { pattern_mode: 'glob' }, /Invalid 'pattern_mode'/],
     ['an empty branch pattern', { branch_pattern: '' }, /must not be empty/],
