@@ -42,6 +42,43 @@ describe('createGit', () => {
     expect(args).not.toContain('--');
   });
 
+  describe('checkedOutHead', () => {
+    function answer(symbolicRef: { exitCode: number; stdout: string }, head = `${'c'.repeat(40)}\n`): void {
+      vi.mocked(getExecOutput).mockImplementation(async (_command, args) =>
+        args?.[0] === 'symbolic-ref' ? { ...symbolicRef, stderr: '' } : { exitCode: 0, stderr: '', stdout: head },
+      );
+    }
+
+    it('returns HEAD when the branch is checked out', async () => {
+      answer({ exitCode: 0, stdout: 'refs/heads/main\n' });
+
+      await expect(createGit().checkedOutHead('main')).resolves.toBe('c'.repeat(40));
+      expect(getExecOutput).toHaveBeenCalledWith('git', ['symbolic-ref', '--quiet', 'HEAD'], {
+        ignoreReturnCode: true,
+        silent: true,
+      });
+      expect(getExecOutput).toHaveBeenCalledWith('git', ['rev-parse', '--verify', 'HEAD^{commit}'], { silent: true });
+    });
+
+    it('returns nothing when another branch is checked out', async () => {
+      answer({ exitCode: 0, stdout: 'refs/heads/feature\n' });
+
+      await expect(createGit().checkedOutHead('main')).resolves.toBeUndefined();
+    });
+
+    it('compares full ref names, so a branch named like a ref does not match', async () => {
+      answer({ exitCode: 0, stdout: 'refs/heads/refs/heads/main\n' });
+
+      await expect(createGit().checkedOutHead('main')).resolves.toBeUndefined();
+    });
+
+    it('returns nothing for a detached HEAD', async () => {
+      answer({ exitCode: 1, stdout: '' });
+
+      await expect(createGit().checkedOutHead('main')).resolves.toBeUndefined();
+    });
+  });
+
   it('returns the raw stdout of git status', async () => {
     vi.mocked(getExecOutput).mockResolvedValue({ exitCode: 0, stderr: '', stdout: ' M a.ts\0' });
 
