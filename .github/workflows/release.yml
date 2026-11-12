@@ -389,13 +389,16 @@ jobs:
             release-assets.githubusercontent.com:443
 
       # The whole history and every tag: the plan resolves consumer tags and finds the commit that
-      # added each never-released package.
+      # added each never-released package. blob:none leaves out the blobs of earlier commits, the
+      # bundles of every build commit among them; the rare path that reads the manifest at an old
+      # commit fetches those few blobs on demand from github.com, which the allowlist carries.
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           fetch-depth: 0
           fetch-tags: true
+          filter: blob:none
           ref: ${{ github.sha }}
 
       # The script imports nothing outside node: built-ins, so no dependency is installed.
@@ -594,12 +597,15 @@ jobs:
         with:
           egress-policy: audit
 
+      # The docs generator resolves every consumer tag to the commit it points at and reads no file
+      # from history, so blob:none leaves out the blobs of every earlier commit.
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           fetch-depth: 0
           fetch-tags: true
+          filter: blob:none
           ref: ${{ github.sha }}
 
       # Commit Docs only commits onto this run's commit, so once main has moved on there is nothing
