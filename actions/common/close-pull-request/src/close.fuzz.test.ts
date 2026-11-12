@@ -13,7 +13,7 @@ function fakeApi(exists: boolean): PullRequestApi {
   return {
     closePullRequest: vi.fn(async () => undefined),
     commentOnPullRequest: vi.fn(async () => undefined),
-    pullRequestExists: vi.fn(async () => exists),
+    pullRequestState: vi.fn(async () => (exists ? ('open' as const) : undefined)),
   };
 }
 

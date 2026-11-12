@@ -4,8 +4,14 @@ import type { RepositoryCoordinates } from 'actions-util';
 
 /** The pull request operations this action needs, kept minimal so it can be faked in tests. */
 export interface PullRequestApi {
-  /** Resolves whether the pull request exists and is readable. Throws for any error other than "not found". */
-  pullRequestExists(repository: RepositoryCoordinates, pullRequestNumber: number): Promise<boolean>;
+  /**
+   * The pull request's state, or `undefined` when it does not exist. Throws for any error other than
+   * "not found".
+   */
+  pullRequestState(
+    repository: RepositoryCoordinates,
+    pullRequestNumber: number,
+  ): Promise<'open' | 'closed' | undefined>;
   /** Posts a comment on the pull request. */
   commentOnPullRequest(repository: RepositoryCoordinates, pullRequestNumber: number, comment: string): Promise<void>;
   /** Closes the pull request. Closing an already-closed pull request succeeds without changing it. */
@@ -88,8 +94,8 @@ export function parsePullRequestId(pullRequestId: string): number {
  * pull request may already have been closed and deleted, so its absence is the desired end state and
  * yields `closed: false`.
  *
- * Closing an already-closed pull request yields `closed: true`: the underlying request is idempotent,
- * and the caller asked for the pull request to end up closed, which it is.
+ * An already-closed pull request yields `closed: true` without a comment or a write: the caller asked for
+ * it to end up closed, which it is, and a re-run must not post the comment a second time.
  *
  * The comment is posted before the close, mirroring `gh pr close --comment`, so a reader of the
  * pull request sees the reason above the close event rather than below it.
@@ -101,8 +107,12 @@ export async function closePullRequestIfPresent(api: PullRequestApi, request: Cl
   const coordinates = parseRepository(request.repository);
   const pullRequestNumber = parsePullRequestId(request.pullRequestId);
 
-  if (!(await api.pullRequestExists(coordinates, pullRequestNumber))) {
+  const state = await api.pullRequestState(coordinates, pullRequestNumber);
+  if (state === undefined) {
     return { closed: false, commented: false, pullRequestNumber };
+  }
+  if (state === 'closed') {
+    return { closed: true, commented: false, pullRequestNumber };
   }
 
   const comment = request.comment;
