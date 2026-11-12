@@ -250,14 +250,14 @@ export function createPublishApi(token: string, repository: RepositoryCoordinate
     },
 
     async matchingRefs(prefix) {
-      // The endpoint answers with every matching ref in one response; it takes no page parameters.
-      const { data } = await octokit.request('GET /repos/{owner}/{repo}/git/matching-refs/{ref}', {
-        owner,
-        ref: prefix,
-        repo,
-      });
+      // Paged like any list, so a family with more refs than one page holds is read in full. The
+      // endpoint's generated types leave the paginated item untyped; each item is a git ref.
+      const refs: ReadonlyArray<{ ref: string; object: { sha: string; type: string } }> = await octokit.paginate(
+        'GET /repos/{owner}/{repo}/git/matching-refs/{ref}',
+        { owner, per_page: PER_PAGE, ref: prefix, repo },
+      );
 
-      return data.map((entry) => ({
+      return refs.map((entry) => ({
         ref: entry.ref.replace(/^refs\//, ''),
         sha: entry.object.sha,
         type: entry.object.type,
