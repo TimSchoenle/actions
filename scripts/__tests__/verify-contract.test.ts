@@ -327,6 +327,27 @@ describe('generated Verify workflows', () => {
     expect(summary?.['needs']).toEqual(Object.keys(jobs).filter((id) => jobs[id] !== summary));
   });
 
+  // P2: a push to main that lands a verified pull request head plans no target. Its token reaches
+  // the plan step on that event alone, a run there is never cancelled, and install still seeds the cache.
+  it('give the plan step a token only on a push to main, and cancel only pull request runs', () => {
+    const workflow = parseYamlFile(VERIFY_WORKFLOW) as {
+      concurrency: Record<string, unknown>;
+      jobs: Record<
+        string,
+        { if?: string; permissions?: Record<string, string>; steps?: { id?: string; env?: Record<string, string> }[] }
+      >;
+    };
+    const planStep = workflow.jobs['plan']?.steps?.find((step) => step.id === 'plan');
+
+    expect(workflow.concurrency['cancel-in-progress']).toBe("${{ github.event_name == 'pull_request' }}");
+    expect(workflow.jobs['plan']?.permissions).toEqual({ contents: 'read', checks: 'read' });
+    expect(planStep?.env?.['CHECKS_TOKEN']).toBe(
+      "${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.token || '' }}",
+    );
+    expect(workflow.jobs['install']?.if).toContain("needs.plan.outputs.seed-cache == 'true'");
+    expect(GENERATED.plan.global).toContain('scripts/lib/verify/merged-head.ts');
+  });
+
   // The jobs the generator writes hold the scratch-repository token, so they block. A source job may
   // still audit, where it installs toolchains from hosts nobody has listed yet; AUDITING_SOURCES
   // records those, and may only shrink.

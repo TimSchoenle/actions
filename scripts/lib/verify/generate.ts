@@ -33,6 +33,7 @@ import type { RenderedTarget, Shard } from './render.js';
  */
 export const PLANNER_INPUTS: readonly string[] = [
   'scripts/lib/verify/affected.ts',
+  'scripts/lib/verify/merged-head.ts',
   'scripts/lib/verify/plan-step.ts',
   'scripts/lib/verify/target-inputs.ts',
   'scripts/verify-plan.ts',

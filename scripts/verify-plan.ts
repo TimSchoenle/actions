@@ -3,4 +3,4 @@
 // import Node.js built-ins only, because the step runs before any dependency is installed.
 import { main } from './lib/verify/plan-step.js';
 
-main();
+await main();

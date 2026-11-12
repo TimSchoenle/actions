@@ -73,6 +73,7 @@ describe('selectTargets', () => {
       shards: ['verify-common'],
       buildDirs: ['actions/common/create-patch/helper', 'actions/common/find-patch/helper'],
       install: true,
+      seedCache: false,
     });
   });
 
@@ -100,7 +101,7 @@ describe('selectTargets', () => {
       'actions/common/create-patch/CHANGELOG.md',
     ]);
 
-    expect(result).toEqual({ targets: [], shards: [], buildDirs: [], install: false });
+    expect(result).toEqual({ targets: [], shards: [], buildDirs: [], install: false, seedCache: false });
   });
 
   it('still selects a target for a README below the action root, which the action may read', () => {
@@ -249,18 +250,28 @@ describe('readEvent', () => {
 
 describe('formatOutputs', () => {
   it('writes JSON lists and a heredoc of build directories', () => {
-    expect(formatOutputs({ targets: ['a/b'], shards: ['verify-a'], buildDirs: ['x', 'y'], install: true })).toBe(
-      'targets=["a/b"]\nshards=["verify-a"]\ninstall=true\nbuild=true\nbuild-dirs<<VERIFY_PLAN_EOF\nx\ny\nVERIFY_PLAN_EOF\n',
+    expect(
+      formatOutputs({ targets: ['a/b'], shards: ['verify-a'], buildDirs: ['x', 'y'], install: true, seedCache: false }),
+    ).toBe(
+      'targets=["a/b"]\nshards=["verify-a"]\ninstall=true\nseed-cache=false\nbuild=true\nbuild-dirs<<VERIFY_PLAN_EOF\nx\ny\nVERIFY_PLAN_EOF\n',
     );
   });
 
   it('reports no build when nothing is built', () => {
-    expect(formatOutputs({ targets: [], shards: [], buildDirs: [], install: false })).toContain('build=false\n');
+    expect(formatOutputs({ targets: [], shards: [], buildDirs: [], install: false, seedCache: false })).toContain(
+      'build=false\n',
+    );
   });
 
   it('reports no install when no selected target reads the dependency tree', () => {
-    expect(formatOutputs({ targets: ['a/b'], shards: ['verify-a'], buildDirs: [], install: false })).toContain(
-      'install=false\n',
+    expect(
+      formatOutputs({ targets: ['a/b'], shards: ['verify-a'], buildDirs: [], install: false, seedCache: false }),
+    ).toContain('install=false\n');
+  });
+
+  it('reports a cache seed apart from install', () => {
+    expect(formatOutputs({ targets: [], shards: [], buildDirs: [], install: false, seedCache: true })).toContain(
+      'install=false\nseed-cache=true\n',
     );
   });
 });
