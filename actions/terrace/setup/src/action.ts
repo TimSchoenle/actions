@@ -9,10 +9,10 @@ import { createReleaseDownloadPorts, ReleaseDownloader, sha256File } from 'actio
 import { InvalidInputError, ReleaseNotFoundError } from './errors.js';
 import { getInput, setOutput } from './generated/action-io.js';
 import { installCosign, installOras, installTerrace } from './installer.js';
-import { fetchJson, listReleases } from './releases.js';
+import { fetchJson, latestRelease } from './releases.js';
 import { readCliPin, REPO_CONFIG_FILE } from './repo-config.js';
 import * as toolCache from './tool-cache.js';
-import { formatVersion, isExact, parseVersionRequest, selectRelease } from './version.js';
+import { formatVersion, isExact, parseVersionRequest } from './version.js';
 
 import type { InstallPorts, Runner } from './installer.js';
 import type { FetchJson } from './releases.js';
@@ -197,8 +197,7 @@ async function resolveRelease(
     return formatVersion(request);
   }
 
-  const available = await listReleases(dependencies.fetchJson, token);
-  const release = selectRelease(request, available);
+  const release = await latestRelease(dependencies.fetchJson, token, request.major, request.minor);
 
   if (release === undefined) {
     throw new ReleaseNotFoundError(`No terrace-contract ${formatVersion(request)}.x release is published.`);
