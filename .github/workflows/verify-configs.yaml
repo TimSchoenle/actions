@@ -61,6 +61,19 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
 
+      # JitPack builds the published artifacts with this wrapper, so the distribution it downloads must
+      # be pinned by checksum: the wrapper refuses a download that does not match. Renovate's
+      # gradle-wrapper manager updates the checksum together with distributionUrl.
+      - name: Check the wrapper distribution is pinned
+        working-directory: configs/checkstyle
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Eq '^distributionSha256Sum=[0-9a-f]{64}$' gradle/wrapper/gradle-wrapper.properties || {
+            echo "::error::gradle-wrapper.properties has no distributionSha256Sum"
+            exit 1
+          }
+
       - name: Make gradlew executable
         working-directory: configs/checkstyle
         shell: bash
