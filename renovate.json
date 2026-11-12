@@ -157,6 +157,14 @@
       "groupSlug": "docs-pins"
     },
     {
+      "description": "One pull request for every non-major pin of this repository's own actions inside a published composite under actions/. The shared preset's action group matches only the github-actions manager, which is disabled for these pins, and its ci group stops at .github/, so each pinned action got a branch of its own: a release batch opened up to one pull request per pinned action, each with a full CI round, a Release run and, through renovate-auto-rebase, a rebase of every other open dependency pull request. This rule sits before the examples rules so that they, coming later and therefore winning, keep the example workflows in documentation pins. Majors stay outside the group so they arrive alone and are not auto-merged.",
+      "matchPackageNames": ["TimSchoenle/actions"],
+      "matchFileNames": ["actions/**"],
+      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "groupName": "internal action pins",
+      "groupSlug": "internal-actions"
+    },
+    {
       "description": "The example workflows under actions/<category>/<name>/examples/ are documentation and ship in no release: committed as docs(deps), a type release-please hides, so a pin bump in an example never cuts a release of the action it sits beside. Grouped with the docs/ pins above.",
       "matchFileNames": ["actions/*/*/examples/**"],
       "semanticCommitType": "docs",
