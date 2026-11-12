@@ -1,5 +1,18 @@
 # Changelog
 
+## [4.0.0](https://github.com/TimSchoenle/actions/compare/src-actions-bun-setup-cached-v3.1.0...src-actions-bun-setup-cached-v4.0.0) (2026-11-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **bun-setup-cached:** fail when the working directory has no bun.lock ([#2249](https://github.com/TimSchoenle/actions/issues/2249))
+
+### Bug Fixes
+
+* **bun-setup-cached:** fail when the working directory has no bun.lock ([#2249](https://github.com/TimSchoenle/actions/issues/2249)) ([9b7707b](https://github.com/TimSchoenle/actions/commit/9b7707b3ccb07452be891796e86a540ef38e6232))
+* **bun-setup-cached:** keep setup-bun's executable cache out of none and read-only ([#2215](https://github.com/TimSchoenle/actions/issues/2215)) ([89fd12e](https://github.com/TimSchoenle/actions/commit/89fd12e487680f01e65b48baf51cdf135eca2923))
+* **setup-cached:** only read the cache on merge_group under cache-mode auto ([#2269](https://github.com/TimSchoenle/actions/issues/2269)) ([4c27b0c](https://github.com/TimSchoenle/actions/commit/4c27b0c36cb516f3691cd0073d87fe5747d96d54))
+
 ## [3.1.0](https://github.com/TimSchoenle/actions/compare/actions-bun-setup-cached-v3.0.0...actions-bun-setup-cached-v3.1.0) (2026-11-10)
 
 

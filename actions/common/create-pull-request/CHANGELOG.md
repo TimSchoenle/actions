@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.30](https://github.com/TimSchoenle/actions/compare/src-actions-common-create-pull-request-v1.0.29...src-actions-common-create-pull-request-v1.0.30) (2026-11-12)
+
+
+### Bug Fixes
+
+* **create-pull-request:** report only this repository's pull request ([#2226](https://github.com/TimSchoenle/actions/issues/2226)) ([c4d8d15](https://github.com/TimSchoenle/actions/commit/c4d8d1573fbecefd5ba520718c6c6d1067618e5f))
+* **create-pull-request:** skip the branch comparison after a commit ([#2239](https://github.com/TimSchoenle/actions/issues/2239)) ([6d2b80b](https://github.com/TimSchoenle/actions/commit/6d2b80b378a589a663f9b6832f954aa3e3618f22))
+
 ## [1.0.29](https://github.com/TimSchoenle/actions/compare/src-actions-common-create-pull-request-v1.0.28...src-actions-common-create-pull-request-v1.0.29) (2026-11-11)
 
 

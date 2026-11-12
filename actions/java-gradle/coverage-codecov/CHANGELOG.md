@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/TimSchoenle/actions/compare/src-actions-java-gradle-coverage-codecov-v1.1.6...src-actions-java-gradle-coverage-codecov-v1.2.0) (2026-11-12)
+
+
+### Features
+
+* **java-gradle-coverage-codecov:** add a cache input that defaults off when the job holds a credential ([#2229](https://github.com/TimSchoenle/actions/issues/2229)) ([45ead4e](https://github.com/TimSchoenle/actions/commit/45ead4e78e9c5a6b0034441690a2478cbcd459d4))
+
+
+### Bug Fixes
+
+* pin the Codecov CLI version in both coverage-codecov actions ([#2274](https://github.com/TimSchoenle/actions/issues/2274)) ([0637537](https://github.com/TimSchoenle/actions/commit/0637537fe823542ef0bd4382ef186567ccea0f95))
+
 ## [1.1.6](https://github.com/TimSchoenle/actions/compare/actions-java-gradle-coverage-codecov-v1.1.5...actions-java-gradle-coverage-codecov-v1.1.6) (2026-11-09)
 
 

@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.0.0](https://github.com/TimSchoenle/actions/compare/src-actions-rust-test-v1.1.5...src-actions-rust-test-v2.0.0) (2026-11-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **rust-test:** check out the event's commit, not the head branch by name ([#2220](https://github.com/TimSchoenle/actions/issues/2220))
+
+### Bug Fixes
+
+* **rust-test:** check out the event's commit, not the head branch by name ([#2220](https://github.com/TimSchoenle/actions/issues/2220)) ([36360ca](https://github.com/TimSchoenle/actions/commit/36360ca5e6b444c281765ae7ce7968de2aa76b01))
+* save the Rust cache from the default branch only, and skip it in rust auto-format ([#2238](https://github.com/TimSchoenle/actions/issues/2238)) ([ab9a54e](https://github.com/TimSchoenle/actions/commit/ab9a54ea7c6804c7663de48ade7f8e12cacf88ad))
+
+
+### Dependencies
+
+* **deps:** update taiki-e/install-action action to v2.90.3 ([#2104](https://github.com/TimSchoenle/actions/issues/2104)) ([1d7c882](https://github.com/TimSchoenle/actions/commit/1d7c882c2bd6e4530c0326767d1968848f39f92e))
+
 ## [1.1.5](https://github.com/TimSchoenle/actions/compare/src-actions-rust-test-v1.1.4...src-actions-rust-test-v1.1.5) (2026-11-10)
 
 

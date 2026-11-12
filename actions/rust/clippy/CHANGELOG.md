@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.0](https://github.com/TimSchoenle/actions/compare/src-actions-rust-clippy-v1.1.14...src-actions-rust-clippy-v2.0.0) (2026-11-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **rust-clippy:** check out the event's commit, not the head branch by name ([#2241](https://github.com/TimSchoenle/actions/issues/2241))
+
+### Bug Fixes
+
+* **rust-clippy:** check out the event's commit, not the head branch by name ([#2241](https://github.com/TimSchoenle/actions/issues/2241)) ([8d52c40](https://github.com/TimSchoenle/actions/commit/8d52c40796b5a86002e65a07b6bb1971adb66c81))
+* save the Rust cache from the default branch only, and skip it in rust auto-format ([#2238](https://github.com/TimSchoenle/actions/issues/2238)) ([ab9a54e](https://github.com/TimSchoenle/actions/commit/ab9a54ea7c6804c7663de48ade7f8e12cacf88ad))
+
 ## [1.1.14](https://github.com/TimSchoenle/actions/compare/actions-rust-clippy-v1.1.13...actions-rust-clippy-v1.1.14) (2026-11-09)
 
 
