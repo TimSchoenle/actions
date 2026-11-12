@@ -17,6 +17,11 @@ export interface CommitRecord {
    */
   authorIds: readonly (number | null)[];
   /**
+   * When the commit was committed, as an ISO 8601 timestamp. The committer sets it, so it says when a
+   * trusted account made the commit only once the commit has passed verification.
+   */
+  committedDate: string;
+  /**
    * Database ID of the account the committer email resolves to; `null` when it resolves to none,
    * which includes `GitHub <noreply@github.com>`, the committer of every commit GitHub signs itself.
    */

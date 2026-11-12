@@ -34,6 +34,7 @@ function pullRequest(overrides: Partial<OpenPullRequest> = {}): OpenPullRequest 
 function commit(oid: string, overrides: Partial<CommitRecord> = {}): CommitRecord {
   return {
     authorIds: [TRUSTED],
+    committedDate: '2026-11-01T00:00:00Z',
     committerId: TRUSTED,
     oid,
     signatureState: 'VALID',

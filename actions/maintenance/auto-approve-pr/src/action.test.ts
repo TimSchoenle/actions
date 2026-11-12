@@ -43,6 +43,7 @@ const validPr: PullRequestInfo = {
 
 const signedCommit: CommitRecord = {
   authorIds: [12345],
+  committedDate: '2026-11-01T00:00:00Z',
   committerId: 12345,
   oid: 'abc1234',
   signatureState: 'VALID',

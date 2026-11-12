@@ -26,6 +26,7 @@ function pullRequest(overrides: Partial<PullRequestInfo> = {}): PullRequestInfo 
 function signedCommit(overrides: Partial<CommitRecord> = {}): CommitRecord {
   return {
     authorIds: [12345],
+    committedDate: '2026-11-01T00:00:00Z',
     committerId: 12345,
     oid: HEAD,
     signatureState: 'VALID',
