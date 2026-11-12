@@ -50,11 +50,16 @@ const MODULE_PATH_BINDINGS: readonly ModulePathBinding[] = [
  * `--target node` matches the `node24` runtime GitHub provides. `--minify` is deterministic within a
  * Bun version — which is what the version guard below pins — and shrinks the published bundle.
  * The `--define`s keep the bundle independent of where it was built; see {@link MODULE_PATH_BINDINGS}.
+ * `process.env.NODE_ENV` is fixed to `production` for the same reason: otherwise a dependency's check
+ * is inlined from the build job's environment, which both release builds share, so the byte
+ * comparison between them cannot catch it.
  */
 const BUILD_FLAGS: readonly string[] = [
   '--target',
   'node',
   '--minify',
+  '--define',
+  'process.env.NODE_ENV="production"',
   ...MODULE_PATH_BINDINGS.flatMap(({ variable, identifier }) => ['--define', `${variable}=${identifier}`]),
 ];
 
