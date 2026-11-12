@@ -9,7 +9,7 @@ outside the markers.
 
 Reads release-please state at a commit, read-only. preflight checks that every package has the source tag of its manifest version; plan reports whether the commit merges a pending release pull request and, if so, every release with its tags, name and notes.
 
-[actions-release-plan-release-please-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-plan-release-please-v1.1.0) · JavaScript action (node24)
+[actions-release-plan-release-please-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-release-plan-release-please-v1.1.1) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 Two read-only checks for a release pipeline in which release-please owns versions and changelogs but not tags or
@@ -44,7 +44,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: TimSchoenle/actions/actions/release/plan-release-please@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-plan-release-please-v1.1.0
+      - uses: TimSchoenle/actions/actions/release/plan-release-please@actions-release-plan-release-please-v1.1.1 # tag=actions-release-plan-release-please-v1.1.1
         with:
           mode: preflight
 
@@ -61,7 +61,7 @@ jobs:
       pull-request: ${{ steps.plan.outputs.pull-request }}
     steps:
       - id: plan
-        uses: TimSchoenle/actions/actions/release/plan-release-please@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-plan-release-please-v1.1.0
+        uses: TimSchoenle/actions/actions/release/plan-release-please@actions-release-plan-release-please-v1.1.1 # tag=actions-release-plan-release-please-v1.1.1
         with:
           mode: plan
           release-pr-author-id: '248313786' # the release App's bot user

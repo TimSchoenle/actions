@@ -9,7 +9,7 @@ outside the markers.
 
 Runs cargo fmt and uploads the changes as a patch artifact for common/commit-patch to commit from a separate job. Holds no token.
 
-[actions-rust-auto-format-v2.0.3](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v2.0.3) · Composite action
+[actions-rust-auto-format-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v2.0.4) · Composite action
 <!-- /docs:generated header -->
 
 The action runs `cargo fmt` in the caller's checkout and uploads what it changed as a
@@ -56,7 +56,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - id: format
-        uses: TimSchoenle/actions/actions/rust/auto-format@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-rust-auto-format-v2.0.3
+        uses: TimSchoenle/actions/actions/rust/auto-format@actions-rust-auto-format-v2.0.4 # tag=actions-rust-auto-format-v2.0.4
         with:
           artifact_name: rust-auto-format
 
@@ -83,7 +83,7 @@ jobs:
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
           permission-contents: write
 
-      - uses: TimSchoenle/actions/actions/common/commit-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-commit-patch-v2.0.1
+      - uses: TimSchoenle/actions/actions/common/commit-patch@actions-common-commit-patch-v3.0.0 # tag=actions-common-commit-patch-v3.0.0
         with:
           token: ${{ steps.token.outputs.token }}
           artifact_name: rust-auto-format

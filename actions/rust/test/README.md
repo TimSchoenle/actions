@@ -9,7 +9,7 @@ outside the markers.
 
 Action that runs cargo nextest to verify Rust code passes tests.
 
-[actions-rust-test-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.5) · Composite action
+[actions-rust-test-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v2.0.0) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -35,7 +35,7 @@ jobs:
     permissions:
       contents: read # to fetch code
     steps:
-      - uses: TimSchoenle/actions/actions/rust/test@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-rust-test-v1.1.5
+      - uses: TimSchoenle/actions/actions/rust/test@actions-rust-test-v2.0.0 # tag=actions-rust-test-v2.0.0
 ```
 <!-- /docs:generated usage -->
 

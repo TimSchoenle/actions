@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.7.6](https://github.com/TimSchoenle/actions/compare/src-actions-helm-update-chart-version-v1.7.5...src-actions-helm-update-chart-version-v1.7.6) (2026-11-12)
+
+
+### Bug Fixes
+
+* **update-chart-version:** check the charts repository out without its history ([#2273](https://github.com/TimSchoenle/actions/issues/2273)) ([fa84010](https://github.com/TimSchoenle/actions/commit/fa840108386e25d8d8728429d8cef8ab585ff550))
+* **update-chart-version:** refuse a chart path that could forge step outputs ([#2236](https://github.com/TimSchoenle/actions/issues/2236)) ([9900676](https://github.com/TimSchoenle/actions/commit/990067680041dfc227ba734a28bccac52cf35700))
+
+
+### Dependencies
+
+* **deps:** update timschoenle/actions/actions/common/create-pull-request to vactions-common-create-pull-request-v1.0.29 ([#2107](https://github.com/TimSchoenle/actions/issues/2107)) ([b5f90d0](https://github.com/TimSchoenle/actions/commit/b5f90d07641e0522c98b782ed61ccb2913490de1))
+
 ## [1.7.5](https://github.com/TimSchoenle/actions/compare/src-actions-helm-update-chart-version-v1.7.4...src-actions-helm-update-chart-version-v1.7.5) (2026-11-11)
 
 

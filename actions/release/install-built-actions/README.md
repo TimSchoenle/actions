@@ -9,7 +9,7 @@ outside the markers.
 
 Downloads a release/build-actions artifact by ID, verifies every file against the manifest hash the build job published, and copies the bundles into a checkout, so the actions there run on bundles built from that commit.
 
-[actions-release-install-built-actions-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-install-built-actions-v1.1.0) · Composite action
+[actions-release-install-built-actions-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-release-install-built-actions-v1.1.1) · Composite action
 <!-- /docs:generated header -->
 
 The second half of [`release/build-actions`](../build-actions): run it after the checkout and before any step that
@@ -42,7 +42,7 @@ jobs:
         with:
           persist-credentials: false
       # Before any step that runs a local action with a bundle.
-      - uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+      - uses: TimSchoenle/actions/actions/release/install-built-actions@actions-release-install-built-actions-v1.1.1 # tag=actions-release-install-built-actions-v1.1.1
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -77,7 +77,7 @@ jobs:
         with:
           path: tmp/actions-code
           persist-credentials: false
-      - uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+      - uses: TimSchoenle/actions/actions/release/install-built-actions@actions-release-install-built-actions-v1.1.1 # tag=actions-release-install-built-actions-v1.1.1
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}

@@ -9,7 +9,7 @@ outside the markers.
 
 Sets up a pinned Bun and installs dependencies from the lockfile, with a node_modules cache that by default only trusted events write to.
 
-[actions-bun-setup-cached-v3.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-bun-setup-cached-v3.1.0) · Composite action
+[actions-bun-setup-cached-v4.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-bun-setup-cached-v4.0.0) · Composite action
 <!-- /docs:generated header -->
 
 Installs a pinned Bun, restores `node_modules` from the Actions cache, runs `bun install --frozen-lockfile` and saves
@@ -29,7 +29,7 @@ the result when the cache missed and the job is allowed to write it.
     persist-credentials: false
 
 - name: Setup Bun
-  uses: TimSchoenle/actions/actions/bun/setup-cached@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-bun-setup-cached-v3.1.0
+  uses: TimSchoenle/actions/actions/bun/setup-cached@actions-bun-setup-cached-v4.0.0 # tag=actions-bun-setup-cached-v4.0.0
 ```
 
 ### In a privileged job
@@ -37,7 +37,7 @@ the result when the cache missed and the job is allowed to write it.
 ```yaml
 # In a job that holds secrets, an App token or any write permission.
 - name: Setup Bun
-  uses: TimSchoenle/actions/actions/bun/setup-cached@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-bun-setup-cached-v3.1.0
+  uses: TimSchoenle/actions/actions/bun/setup-cached@actions-bun-setup-cached-v4.0.0 # tag=actions-bun-setup-cached-v4.0.0
   with:
     cache-mode: none
 ```

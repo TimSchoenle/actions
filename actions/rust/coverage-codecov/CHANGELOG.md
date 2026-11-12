@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.1.0](https://github.com/TimSchoenle/actions/compare/src-actions-rust-coverage-codecov-v2.0.9...src-actions-rust-coverage-codecov-v2.1.0) (2026-11-12)
+
+
+### Features
+
+* **rust-coverage-codecov:** add a cache input that defaults off when the job holds a credential ([#2228](https://github.com/TimSchoenle/actions/issues/2228)) ([ccc7465](https://github.com/TimSchoenle/actions/commit/ccc746597090c1b3a6a5c0dbe43732e27d0bd44c))
+
+
+### Bug Fixes
+
+* pin the Codecov CLI version in both coverage-codecov actions ([#2274](https://github.com/TimSchoenle/actions/issues/2274)) ([0637537](https://github.com/TimSchoenle/actions/commit/0637537fe823542ef0bd4382ef186567ccea0f95))
+
+
+### Dependencies
+
+* **deps:** update taiki-e/install-action action to v2.90.3 ([#2104](https://github.com/TimSchoenle/actions/issues/2104)) ([1d7c882](https://github.com/TimSchoenle/actions/commit/1d7c882c2bd6e4530c0326767d1968848f39f92e))
+
 ## [2.0.9](https://github.com/TimSchoenle/actions/compare/src-actions-rust-coverage-codecov-v2.0.8...src-actions-rust-coverage-codecov-v2.0.9) (2026-11-10)
 
 

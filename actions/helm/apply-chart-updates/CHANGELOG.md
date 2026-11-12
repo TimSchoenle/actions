@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.0.5](https://github.com/TimSchoenle/actions/compare/src-actions-helm-apply-chart-updates-v2.0.4...src-actions-helm-apply-chart-updates-v2.0.5) (2026-11-12)
+
+
+### Bug Fixes
+
+* **apply-chart-updates:** neutralize every mention and closing reference GitHub acts on ([#2204](https://github.com/TimSchoenle/actions/issues/2204)) ([1296547](https://github.com/TimSchoenle/actions/commit/1296547e78bf907d2adb4b7799ece83970215616))
+* **apply-chart-updates:** refuse a chart-path with whitespace ([#2231](https://github.com/TimSchoenle/actions/issues/2231)) ([d8837ba](https://github.com/TimSchoenle/actions/commit/d8837ba406a6dcb6d065bd1732988d0ac4cb7b45))
+* **apply-chart-updates:** stop a spliced tag from corrupting values.yaml ([#2248](https://github.com/TimSchoenle/actions/issues/2248)) ([8569ab6](https://github.com/TimSchoenle/actions/commit/8569ab68bf99fff196b885f8a8207550ccfa15bc))
+* **apply-chart-updates:** write nothing and keep the chart version when nothing moved ([#2251](https://github.com/TimSchoenle/actions/issues/2251)) ([c901ffb](https://github.com/TimSchoenle/actions/commit/c901ffb30539c5a2ffbb0001f42af794cb591ef4))
+* **ts-util:** break the legacy ##[ prefix and escape bidi controls in quoteForLog ([#2260](https://github.com/TimSchoenle/actions/issues/2260)) ([b7f7085](https://github.com/TimSchoenle/actions/commit/b7f708587db2f119233f297139f7a651ed3b5be7))
+* **ts-util:** infer a number only when it writes back as the same text ([#2255](https://github.com/TimSchoenle/actions/issues/2255)) ([1c28fcc](https://github.com/TimSchoenle/actions/commit/1c28fcca8a42d0cb4bd11f45b85a5feb78cfa273))
+* **ts-util:** read a ] that opens a bracket expression as a literal ([#2252](https://github.com/TimSchoenle/actions/issues/2252)) ([b9cb578](https://github.com/TimSchoenle/actions/commit/b9cb5788344156dcaa6b102f53d576380ed0e1a5))
+* **ts-util:** read a pull request's head repository and each commit's date ([#2242](https://github.com/TimSchoenle/actions/issues/2242)) ([81ab139](https://github.com/TimSchoenle/actions/commit/81ab139e33c78c8f27a5b60d522ab491caec768c))
+* **ts-util:** refuse a workspace path that reaches a .git directory ([#2253](https://github.com/TimSchoenle/actions/issues/2253)) ([1b368bd](https://github.com/TimSchoenle/actions/commit/1b368bda3a76a8dc1c9a0d997a621607fb0a2850))
+* **ts-util:** retry a missing branch head only for a branch just created ([#2259](https://github.com/TimSchoenle/actions/issues/2259)) ([ed83c5b](https://github.com/TimSchoenle/actions/commit/ed83c5bb9e4638bcb6fb224bb63585f8f07b0d7b))
+* **ts-util:** stop reporting a permission 403 as a rate limit ([#2257](https://github.com/TimSchoenle/actions/issues/2257)) ([cec33de](https://github.com/TimSchoenle/actions/commit/cec33deca70a406f81806bcaffff5328d45cfc77))
+* **ts-util:** verify a spliced YAML edit and fall back when it would change the file's meaning ([#2246](https://github.com/TimSchoenle/actions/issues/2246)) ([5795688](https://github.com/TimSchoenle/actions/commit/5795688af68ab83067c9c9d554cecd509a0ab930))
+* **ts-util:** wait at least a minute when GitHub names no rate-limit wait ([#2258](https://github.com/TimSchoenle/actions/issues/2258)) ([48d2aed](https://github.com/TimSchoenle/actions/commit/48d2aed276678f9b512752adcdd62ef7b247d039))
+
 ## [2.0.4](https://github.com/TimSchoenle/actions/compare/actions-helm-apply-chart-updates-v2.0.3...actions-helm-apply-chart-updates-v2.0.4) (2026-11-10)
 
 

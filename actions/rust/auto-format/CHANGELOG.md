@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.4](https://github.com/TimSchoenle/actions/compare/src-actions-rust-auto-format-v2.0.3...src-actions-rust-auto-format-v2.0.4) (2026-11-12)
+
+
+### Bug Fixes
+
+* save the Rust cache from the default branch only, and skip it in rust auto-format ([#2238](https://github.com/TimSchoenle/actions/issues/2238)) ([ab9a54e](https://github.com/TimSchoenle/actions/commit/ab9a54ea7c6804c7663de48ade7f8e12cacf88ad))
+
+
+### Dependencies
+
+* **deps:** update timschoenle/actions/actions/common/create-patch to vactions-common-create-patch-v2.0.2 ([#2106](https://github.com/TimSchoenle/actions/issues/2106)) ([1fd40ed](https://github.com/TimSchoenle/actions/commit/1fd40edda8726613286feac19ed9562e03522f6c))
+
 ## [2.0.3](https://github.com/TimSchoenle/actions/compare/actions-rust-auto-format-v2.0.2...actions-rust-auto-format-v2.0.3) (2026-11-09)
 
 
