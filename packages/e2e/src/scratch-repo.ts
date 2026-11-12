@@ -117,12 +117,18 @@ export function assertE2eConfigured(): void {
  *
  * `run_id` rather than `run_number`: it is unique across every workflow in the repository, whereas
  * two workflows share the run_number sequence and would generate the same branch on the same day.
+ *
+ * It starts with the run's creation time in epoch seconds. The janitor reads a ref's age from that
+ * prefix: the commit a ref points at says nothing about when the ref was made, since a case may branch
+ * from a years-old commit, so a commit-date sweep could delete a ref while its run still uses it.
  */
 function runIdentifier(): string {
+  const created = Math.floor(Date.now() / 1000);
   const runId = process.env['GITHUB_RUN_ID'];
   const attempt = process.env['GITHUB_RUN_ATTEMPT'] ?? '1';
+  const run = runId === undefined ? `local-${randomBytes(4).toString('hex')}` : `${runId}-${attempt}`;
 
-  return runId === undefined ? `local-${randomBytes(4).toString('hex')}` : `${runId}-${attempt}`;
+  return `${created}-${run}`;
 }
 
 /**
