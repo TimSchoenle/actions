@@ -132,18 +132,12 @@ function docsOf(actionPath: string): ActionDocs | undefined {
  */
 const AUDITING_SOURCES: Readonly<Record<string, number>> = {
   '.github/verify/bun-setup-cached.yaml': 3,
-  '.github/verify/common-create-pull-request.yaml': 4,
-  '.github/verify/common-render-template-and-commit.yaml': 4,
   '.github/verify/configs-checkstyle.yaml': 1,
   '.github/verify/configs-renovate.yaml': 1,
-  '.github/verify/helm-update-chart-version.yaml': 7,
-  '.github/verify/java-gradle-auto-spotless.yaml': 1,
   '.github/verify/java-gradle-coverage-codecov.yaml': 4,
   '.github/verify/java-gradle-setup-base-environment.yaml': 1,
-  '.github/verify/rust-auto-format.yaml': 1,
   '.github/verify/rust-coverage-codecov.yaml': 3,
   '.github/verify/terrace-helm-sync.yaml': 1,
-  '.github/verify/test-setup-e2e.yaml': 1,
 };
 
 const SOURCES = readSources(ROOT_DIR);
@@ -362,6 +356,25 @@ describe('generated Verify workflows', () => {
       auditing,
       'a source audits egress where AUDITING_SOURCES does not record it; block, or lower the count',
     ).toEqual(AUDITING_SOURCES);
+  });
+
+  // C1: a job that reads a secret must not be able to send it anywhere but the hosts it names. Audit
+  // mode records egress and blocks nothing, so it is no control for a job that holds a key.
+  it('block egress in every source job that reads a secret', () => {
+    const auditingWithSecrets = SOURCES.flatMap((source) =>
+      source.jobIds
+        .filter((id) => JSON.stringify(jobValue(source, id)).includes('secrets.'))
+        .filter((id) => {
+          const steps = jobValue(source, id)['steps'];
+          return (
+            Array.isArray(steps) &&
+            (steps as { with?: Record<string, unknown> }[]).some((step) => step.with?.['egress-policy'] === 'audit')
+          );
+        })
+        .map((id) => `${source.file}#${id}`),
+    );
+
+    expect(auditingWithSecrets).toEqual([]);
   });
 
   // The whole reason the install is a separate job: harden-runner sets one policy per job, so the
