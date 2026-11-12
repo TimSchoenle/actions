@@ -1,4 +1,4 @@
-import { mkdtemp } from 'node:fs/promises';
+import { mkdtemp, realpath, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -99,6 +99,52 @@ function readRequest(directory: string): CommitPatchRequest {
   };
 }
 
+/** Whether `child` is `parent` itself or lies below it. Both must be resolved, absolute paths. */
+function isWithin(parent: string, child: string): boolean {
+  const relative = path.relative(parent, child);
+
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+/**
+ * Checks a `source_directory`: an existing directory strictly below the runner temporary directory
+ * and outside the checkout, after symbolic links are resolved. That is where find-patch and
+ * download-artifact leave an artifact, and where no pull request file lands. Its contents are still
+ * untrusted and validated in commit mode like a fresh download.
+ *
+ * @returns the resolved path.
+ */
+async function validateSourceDirectory(value: string, context: RunnerContext): Promise<string> {
+  if (!path.isAbsolute(value)) {
+    throw new Error(`directory must be an absolute path; got ${JSON.stringify(value)}.`);
+  }
+
+  let resolved: string;
+
+  try {
+    resolved = await realpath(value);
+  } catch {
+    throw new Error(`directory ${JSON.stringify(value)} does not exist.`);
+  }
+
+  if (!(await stat(resolved)).isDirectory()) {
+    throw new Error(`directory ${JSON.stringify(value)} is not a directory.`);
+  }
+
+  const temp = await realpath(context.temp);
+  const workspace = await realpath(context.workspace).catch(() => path.resolve(context.workspace));
+
+  if (resolved === temp || !isWithin(temp, resolved)) {
+    throw new Error(`directory must lie below the runner temporary directory; got ${JSON.stringify(value)}.`);
+  }
+
+  if (isWithin(workspace, resolved)) {
+    throw new Error(`directory must lie outside the checkout; got ${JSON.stringify(value)}.`);
+  }
+
+  return resolved;
+}
+
 /** Publishes the commit-mode outputs. */
 function report(result: CommitPatchResult): void {
   setOutput(ActionOutput.outcome, result.outcome);
@@ -116,7 +162,9 @@ function report(result: CommitPatchResult): void {
  *
  * `prepare` validates every input and creates a fresh, empty directory under `RUNNER_TEMP` for
  * download-artifact, so the artifact lands outside the checkout and in a directory nothing else has
- * written to. `commit` then validates what was downloaded and commits it.
+ * written to. Given a `source_directory` that already holds the artifact, it checks that directory
+ * and returns it instead, and the composite downloads nothing. `commit` then validates what is in
+ * the directory and commits it.
  *
  * @param overrides injection seam for tests; each collaborator defaults to the real git executable
  * and GitHub API.
@@ -131,7 +179,12 @@ export function run(
 
     if (mode === 'prepare') {
       readRequest('');
-      setOutput(ActionOutput.directory, await mkdtemp(path.join(context.temp, `commit-patch-${artifactName}-`)));
+      const source = getInput(ActionInput.source_directory);
+      const directory =
+        source === ''
+          ? await mkdtemp(path.join(context.temp, `commit-patch-${artifactName}-`))
+          : await validateSourceDirectory(source, context);
+      setOutput(ActionOutput.directory, directory);
       return;
     }
 
