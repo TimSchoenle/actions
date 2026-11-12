@@ -102,12 +102,12 @@ runs:
         echo "path=$dir/index.mjs" >> "$GITHUB_OUTPUT"
 
     # The commit the generators checked out, not the merge ref: the merged patch has to apply to the
-    # pull request head, which is what the commit job checks base_sha against. With nothing pending,
-    # the head itself, for the empty patch.
+    # pull request head, which is what the commit job checks base_sha against.
     - name: Check Out The Patches' Base
+      if: steps.evaluate.outputs.has_pending == 'true'
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
-        ref: ${{ steps.inspect.outputs.base_sha || github.event.pull_request.head.sha || github.sha }}
+        ref: ${{ steps.inspect.outputs.base_sha }}
         persist-credentials: false
 
     - name: Apply Pending Patches
@@ -123,31 +123,24 @@ runs:
         set -euo pipefail
         node "$HELPER"
 
+    # With nothing pending, the empty patch for the head is written without a checkout.
     - name: Upload The Merged Patch
       id: merged
-      uses: TimSchoenle/actions/actions/common/create-patch@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-common-create-patch-v2.0.2
+      uses: TimSchoenle/actions/actions/common/create-patch@e75e9ab1e1e9fa573051a901347e39ba23a45710 # tag=actions-common-create-patch-v2.1.0
       with:
         artifact_name: ${{ inputs.artifact_name }}
+        empty_base_sha: ${{ steps.evaluate.outputs.has_pending != 'true' && (github.event.pull_request.head.sha || github.sha) || '' }}
         max_patch_bytes: ${{ inputs.max_patch_bytes }}
 
     # A failure before the upload (an invalid needs context, patches from different commits, two
-    # patches that conflict) still replaces any earlier attempt's patch, with an empty one made from
-    # a clean checkout of the head.
-    - name: Check Out The Head After A Failure
-      id: recover
-      if: failure() && steps.merged.conclusion != 'success'
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        ref: ${{ github.event.pull_request.head.sha || github.sha }}
-        persist-credentials: false
-
-    # Only from a clean checkout: were the recovery checkout itself to fail, the tree could still hold
-    # a partly applied merge.
+    # patches that conflict) still replaces any earlier attempt's patch with an empty one for the
+    # head. It is written without reading the workspace, which may hold a partly applied merge.
     - name: Upload An Empty Patch After A Failure
-      if: failure() && steps.merged.conclusion != 'success' && steps.recover.outcome == 'success'
-      uses: TimSchoenle/actions/actions/common/create-patch@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-common-create-patch-v2.0.2
+      if: failure() && steps.merged.conclusion != 'success'
+      uses: TimSchoenle/actions/actions/common/create-patch@e75e9ab1e1e9fa573051a901347e39ba23a45710 # tag=actions-common-create-patch-v2.1.0
       with:
         artifact_name: ${{ inputs.artifact_name }}
+        empty_base_sha: ${{ github.event.pull_request.head.sha || github.sha }}
         max_patch_bytes: ${{ inputs.max_patch_bytes }}
 
     - name: Verdict
