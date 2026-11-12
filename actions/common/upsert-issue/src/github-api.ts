@@ -65,7 +65,11 @@ export function createIssueApi(token: string): IssueApi {
   const octokit = createOctokit(token);
 
   return {
-    async *issues({ owner, repo }: RepositoryCoordinates, state: IssueSearchState): AsyncIterable<ExistingIssue> {
+    async *issues(
+      { owner, repo }: RepositoryCoordinates,
+      state: IssueSearchState,
+      creator = '',
+    ): AsyncIterable<ExistingIssue> {
       // `octokit.paginate.iterator` is what keeps the early exit real: abandoning the loop after the
       // first match stops the generator, and the pages beyond it are never requested. Ordering the
       // scan by most-recently-*updated* first (rather than creation order) is what keeps that exit
@@ -74,8 +78,10 @@ export function createIssueApi(token: string): IssueApi {
       // time this scan needs it again, independent of how many other issues or pull requests the
       // repository has accumulated. A repository-wide scan has no per-container bound the way
       // `upsert-pr-comment`'s per-pull-request comment listing does, so getting this wrong is the
-      // difference between one page and hundreds.
+      // difference between one page and hundreds. With a creator, GitHub drops everybody else's
+      // issues and pull requests before paging, so the scan never reads them at all.
       const pages = octokit.paginate.iterator(octokit.rest.issues.listForRepo, {
+        ...(creator === '' ? {} : { creator }),
         direction: 'desc',
         owner,
         per_page: MAX_PAGE_SIZE,
@@ -132,9 +138,13 @@ export function createIssueApi(token: string): IssueApi {
       { owner, repo }: RepositoryCoordinates,
       issueNumber: number,
       changes: IssueWrite,
+      existingLabels: readonly string[] = [],
     ): Promise<IssueRef> {
-      if (changes.labels !== undefined && changes.labels.length > 0) {
-        await ensureLabelsExist(octokit, owner, repo, changes.labels);
+      // A label already on the issue exists in the repository; label names compare case-insensitively.
+      const present = new Set(existingLabels.map((label) => label.toLowerCase()));
+      const missing = (changes.labels ?? []).filter((label) => !present.has(label.toLowerCase()));
+      if (missing.length > 0) {
+        await ensureLabelsExist(octokit, owner, repo, missing);
       }
 
       try {

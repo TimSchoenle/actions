@@ -260,6 +260,28 @@ describe('createIssueApi', () => {
     expect(octokit.rest.issues.createLabel).not.toHaveBeenCalled();
   });
 
+  // P14f: the author filter ran client-side, so the scan paged every issue and pull request.
+  it("asks the API for one creator's issues when an author is given", async () => {
+    servePages(octokit, [[]]);
+
+    await collect(createIssueApi('token').issues(target, 'open', 'app[bot]'));
+
+    expect(octokit.paginate.iterator).toHaveBeenCalledWith(
+      octokit.rest.issues.listForRepo,
+      expect.objectContaining({ creator: 'app[bot]', state: 'open' }),
+    );
+  });
+
+  // P14f: every update POSTed a failing createLabel for each label the issue already had.
+  it('creates only the labels the issue does not already carry, ignoring case', async () => {
+    octokit.rest.issues.createLabel.mockResolvedValue({ data: {} });
+    octokit.rest.issues.update.mockResolvedValue({ data: { html_url: 'https://example.test/9', number: 9 } });
+
+    await createIssueApi('token').updateIssue(target, 9, { labels: ['Bug', 'fresh'] }, ['bug']);
+
+    expect(octokit.rest.issues.createLabel.mock.calls).toEqual([[{ name: 'fresh', owner: 'owner', repo: 'repo' }]]);
+  });
+
   it('creates a label that does not yet exist before opening an issue with it', async () => {
     octokit.rest.issues.createLabel.mockResolvedValue({ data: {} });
     octokit.rest.issues.create.mockResolvedValue({ data: { html_url: 'https://example.test/new', number: 9 } });

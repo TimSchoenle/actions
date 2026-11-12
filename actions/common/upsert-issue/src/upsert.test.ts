@@ -12,6 +12,9 @@ const target = { owner: 'owner', repo: 'repo' };
 const marker = markerFor('repo-state');
 const composed = `${marker}\n\nthe report`;
 
+/** The labels the default fixture issue carries. */
+const EXISTING_LABELS: string[] = [];
+
 function request(overrides: Partial<UpsertRequest> = {}): UpsertRequest {
   return {
     author: '',
@@ -97,12 +100,17 @@ describe('upsertIssue', () => {
     const api = fakeApi([[issue({ body: `${marker}\n\nan older report`, number: 5 })]]);
 
     await expect(upsertIssue(api, request())).resolves.toMatchObject({ operation: 'updated' });
-    expect(api.updateIssue).toHaveBeenCalledWith(target, 5, {
-      body: composed,
-      labels: [],
-      state: 'open',
-      title: 'Repo state',
-    });
+    expect(api.updateIssue).toHaveBeenCalledWith(
+      target,
+      5,
+      {
+        body: composed,
+        labels: [],
+        state: 'open',
+        title: 'Repo state',
+      },
+      EXISTING_LABELS,
+    );
     expect(api.createIssue).not.toHaveBeenCalled();
   });
 
@@ -110,12 +118,17 @@ describe('upsertIssue', () => {
     const api = fakeApi([[issue({ number: 5, title: 'Old title' })]]);
 
     await expect(upsertIssue(api, request())).resolves.toMatchObject({ operation: 'updated' });
-    expect(api.updateIssue).toHaveBeenCalledWith(target, 5, {
-      body: composed,
-      labels: [],
-      state: 'open',
-      title: 'Repo state',
-    });
+    expect(api.updateIssue).toHaveBeenCalledWith(
+      target,
+      5,
+      {
+        body: composed,
+        labels: [],
+        state: 'open',
+        title: 'Repo state',
+      },
+      EXISTING_LABELS,
+    );
   });
 
   it('writes nothing when the marked issue already says exactly this', async () => {
@@ -148,24 +161,39 @@ describe('upsertIssue', () => {
     const api = fakeApi([[issue({ body: `${marker}\n\nan older report`, number: 5, state: 'closed' })]]);
 
     await expect(upsertIssue(api, request({ reopenIfClosed: false }))).resolves.toMatchObject({ operation: 'updated' });
-    expect(api.updateIssue).toHaveBeenCalledWith(target, 5, {
-      body: composed,
-      labels: [],
-      state: 'closed',
-      title: 'Repo state',
-    });
+    expect(api.updateIssue).toHaveBeenCalledWith(
+      target,
+      5,
+      {
+        body: composed,
+        labels: [],
+        state: 'closed',
+        title: 'Repo state',
+      },
+      EXISTING_LABELS,
+    );
   });
 
-  it('enforces the label set even when title and body are unchanged', async () => {
+  // P14f: the labels already on the issue exist in the repository, so only the others are created.
+  it('enforces the label set even when title and body are unchanged, naming the labels it already has', async () => {
     const api = fakeApi([[issue({ labels: ['stale'], number: 5 })]]);
 
     await expect(upsertIssue(api, request({ labels: ['fresh'] }))).resolves.toMatchObject({ operation: 'updated' });
-    expect(api.updateIssue).toHaveBeenCalledWith(target, 5, {
-      body: composed,
-      labels: ['fresh'],
-      state: 'open',
-      title: 'Repo state',
-    });
+    expect(api.updateIssue).toHaveBeenCalledWith(
+      target,
+      5,
+      { body: composed, labels: ['fresh'], state: 'open', title: 'Repo state' },
+      ['stale'],
+    );
+  });
+
+  // P14f: the author filter ran client-side, so the scan paged every issue and pull request.
+  it("asks the API for the required author's issues only", async () => {
+    const api = fakeApi([[issue({ author: 'app[bot]', number: 5 })]]);
+
+    await upsertIssue(api, request({ author: 'app[bot]' }));
+
+    expect(api.issues).toHaveBeenCalledWith(target, 'all', 'app[bot]');
   });
 
   it('ignores label order and duplicates when deciding whether anything changed', async () => {
@@ -184,7 +212,12 @@ describe('upsertIssue', () => {
 
     await upsertIssue(api, request());
 
-    expect(api.updateIssue).toHaveBeenCalledWith(target, 2, expect.objectContaining({ body: composed }));
+    expect(api.updateIssue).toHaveBeenCalledWith(
+      target,
+      2,
+      expect.objectContaining({ body: composed }),
+      EXISTING_LABELS,
+    );
   });
 
   it('stops scanning at the first match rather than draining every page', async () => {
