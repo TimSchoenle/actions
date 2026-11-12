@@ -94,7 +94,7 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 | `static.crates.io:443`                     | the project's dependencies, from the default crates.io registry            |
 | `*.actions.githubusercontent.com:443`      | the Rust cache, when `cache` resolves to true, and the OIDC token          |
 | `*.blob.core.windows.net:443`              | the Rust cache, when `cache` resolves to true                              |
-| `cli.codecov.io:443`                       | the Codecov CLI download                                                   |
+| `cli.codecov.io:443`                       | the Codecov CLI download, at the version the action pins                   |
 | `keybase.io:443`                           | the key that verifies the Codecov CLI                                      |
 | `ingest.codecov.io:443`                    | the coverage and test result uploads                                       |
 | `storage.googleapis.com:443`               | the report storage Codecov hands the upload to                             |
