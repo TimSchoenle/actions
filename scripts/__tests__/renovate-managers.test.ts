@@ -854,6 +854,13 @@ describe('Renovate coverage of the checksum-pinned tool inputs of terrace/setup'
     expect(matching[0]).toMatchObject({ datasource: 'github-release-attachments', currentValue: version });
   });
 
+  // The datasource reads the pinned digest from GET releases/tags/<currentValue>, so the captured
+  // value has to be the release tag itself. An extractVersion would mean it is not: with oras's
+  // `1.3.6` for the tag `v1.3.6`, every lookup failed with a 404 and Renovate reported the error.
+  it('captures each version as the release tag, with no extractVersion', () => {
+    expect(captures(content).filter((capture) => capture['extractVersion'] !== undefined)).toEqual([]);
+  });
+
   it('captures nothing that is not a version and digest pair', () => {
     expect(captures(content).every((capture) => /^[a-f0-9]{64}$/.test(capture['currentDigest'] ?? ''))).toBe(true);
     expect(captures(content)).toHaveLength(tools.length);

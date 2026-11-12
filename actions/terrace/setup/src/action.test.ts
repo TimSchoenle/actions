@@ -160,7 +160,9 @@ describe('terrace setup action', () => {
     [{}, /cannot be read/],
     [{ version: '0.8.0', cosign_version: '3.1.3' }, /cosign_version: must be vMAJOR.MINOR.PATCH/],
     [{ version: '0.8.0', cosign_version: 'v3.1.3/../../evil' }, /cosign_version: must be vMAJOR.MINOR.PATCH/],
-    [{ version: '0.8.0', oras: 'true', oras_version: 'v1.3.4' }, /oras_version: must be MAJOR.MINOR.PATCH/],
+    [{ version: '0.8.0', oras: 'true', oras_version: 'vv1.3.4' }, /oras_version: must be MAJOR.MINOR.PATCH/],
+    [{ version: '0.8.0', oras: 'true', oras_version: 'v1.3' }, /oras_version: must be MAJOR.MINOR.PATCH/],
+    [{ version: '0.8.0', oras: 'true', oras_version: '1.3.4/../x' }, /oras_version: must be MAJOR.MINOR.PATCH/],
     [{ version: '0.8.0', cosign_checksums_sha256: '' }, /cosign_checksums_sha256: must be a SHA-256/],
     [{ version: '0.8.0', cosign_checksums_sha256: 'a'.repeat(63) }, /cosign_checksums_sha256: must be a SHA-256/],
     [{ version: '0.8.0', oras: 'true', oras_checksums_sha256: 'z'.repeat(64) }, /oras_checksums_sha256: must be/],
@@ -172,6 +174,24 @@ describe('terrace setup action', () => {
 
     expect(failure()).toMatch(reason);
     expect(deps.ports.download).not.toHaveBeenCalled();
+  });
+
+  // The default carries the release tag's v, which Renovate needs; the asset names do not.
+  it('installs the same oras for the release tag and the bare version', async () => {
+    setInputs({ version: '0.8.0', oras: 'true', oras_version: 'v1.3.4' });
+    const deps = dependencies();
+
+    await run(deps);
+
+    expect(failure()).toBeUndefined();
+    expect(outputs()).toMatchObject({ oras_path: path.join('/cache/oras/1.3.4', 'oras') });
+    expect(deps.ports.download).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'oras_1.3.4_linux_amd64.tar.gz',
+        repository: 'oras-project/oras',
+        tag: 'v1.3.4',
+      }),
+    );
   });
 
   it('ignores oras_version and oras_checksums_sha256 when oras is not requested', async () => {
