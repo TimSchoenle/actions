@@ -64,14 +64,19 @@ export function e2eEndpoints(source: VerifySource): readonly string[] {
   return [...base, ...(source.e2e?.extraEndpoints ?? [])];
 }
 
-/** Renders a harden-runner step with the allowlist for one job, indented to sit under `steps:`. */
-function hardenRunnerStep(endpoints: readonly string[]): string {
+/**
+ * Renders a harden-runner step with the allowlist for one job, indented to sit under `steps:`.
+ *
+ * @param disableSudo - for a job that holds a secret while it runs code under test: without sudo or a
+ * container runtime that code cannot reach past the runner user to the runner's own memory or files.
+ */
+function hardenRunnerStep(endpoints: readonly string[], disableSudo = false): string {
   const rendered = endpoints.map((endpoint) => `            ${endpoint}`).join('\n');
 
   return `      - name: Harden Runner
         uses: ${PINNED.hardenRunner}
         with:
-          egress-policy: block
+          egress-policy: block${disableSudo ? '\n          disable-sudo-and-containers: true' : ''}
           allowed-endpoints: >
 ${rendered}`;
 }
@@ -389,7 +394,7 @@ ${environment}    runs-on: ubuntu-latest
     permissions:
       contents: read # to fetch code
     steps:
-${hardenRunnerStep(e2eEndpoints(source))}
+${hardenRunnerStep(e2eEndpoints(source), permissions !== undefined)}
 
       - name: Checkout
         uses: ${PINNED.checkout}
