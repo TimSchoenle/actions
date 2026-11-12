@@ -2,13 +2,24 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { formatOutputs, formatSummary, jobChanges, parsePlanFile, readEvent, selectTargets } from './affected.js';
+import {
+  DEFAULT_BRANCH,
+  formatOutputs,
+  formatSummary,
+  jobChanges,
+  parsePlanFile,
+  readEvent,
+  selectTargets,
+} from './affected.js';
+import { checkRunsLookup, verifiedMergedHead } from './merged-head.js';
 
-import type { ChangedFiles, DiffRequest, PlanEnvironment, PlanFile, PlanResult } from './affected.js';
+import type { ChangedFiles, DiffRequest, PlanEnvironment, PlanEvent, PlanFile, PlanResult } from './affected.js';
+import type { CheckRunsLookup } from './merged-head.js';
 
 /**
  * The `plan` step of `.github/workflows/verify.yaml`: reads the event, diffs with git, selects the
- * targets and writes the step outputs. No REST call is made, so planning costs no API budget.
+ * targets and writes the step outputs. Only a push to `main` whose tree equals a pull request head
+ * makes a REST call, one, to confirm that head passed Verify ({@link verifiedMergedHead}).
  *
  * Node.js built-ins only, like `affected.ts`: the step runs before anything is installed.
  *
@@ -98,29 +109,78 @@ export function basePlan(git: Git, base: string): { plan?: PlanFile; note?: stri
   }
 }
 
-/** Plans a run from the environment, the plan file and git. */
-export function plan(
+/** The lockfile whose hash keys the dependency cache the install job saves. */
+const LOCKFILE = 'bun.lock';
+
+/** A push to `main` that can only land a tree a pull request verified, as the `from..to` it pushed. */
+function mergeToMain(event: PlanEvent, diff: DiffRequest): { from: string; to: string } | undefined {
+  return event.name === 'push' && event.branch === DEFAULT_BRANCH && diff.kind === 'range'
+    ? { from: diff.from, to: diff.to }
+    : undefined;
+}
+
+/**
+ * Plans a run from the environment, the plan file and git.
+ *
+ * A push to `main` whose tree a pull request head already verified selects nothing; the install job
+ * still runs when the push changed the lockfile, so pull requests find the new dependency cache.
+ * Without a `lookup` every push plans as usual.
+ */
+export async function plan(
   env: PlanEnvironment,
   root: string,
   git: Git = gitIn(root),
-): { result: PlanResult; changed: ChangedFiles; note?: string } {
+  lookup?: CheckRunsLookup,
+): Promise<{ result: PlanResult; changed: ChangedFiles; note?: string }> {
   const planFile = parsePlanFile(fs.readFileSync(path.join(root, PLAN_FILE), 'utf8'));
   const { event, diff } = readEvent(env);
   const { changed, note: diffNote, base } = changedFiles(git, diff);
+
+  const push = mergeToMain(event, diff);
+  let mergeNote: string | undefined;
+  if (push !== undefined && lookup !== undefined) {
+    const merged = await verifiedMergedHead(git, lookup, push);
+    if (merged.verified) {
+      return {
+        result: {
+          targets: [],
+          shards: [],
+          buildDirs: [],
+          install: false,
+          seedCache: changed === 'all' || changed.includes(LOCKFILE),
+        },
+        changed,
+        note: `Nothing runs: the pushed tree is the head of #${merged.pullRequest}, which passed Verify.`,
+      };
+    }
+    mergeNote = `Targets are selected as usual: ${merged.reason}.`;
+  }
+
   const { plan: previous, note: baseNote } =
     changed === 'all' || base === undefined ? { plan: planFile } : basePlan(git, base);
-  const note = diffNote ?? baseNote;
+  const notes = [mergeNote, diffNote ?? baseNote].filter((text) => text !== undefined);
 
   return {
     result: selectTargets(planFile, event, changed, jobChanges(planFile, previous)),
     changed,
-    ...(note === undefined ? {} : { note }),
+    ...(notes.length === 0 ? {} : { note: notes.join(' ') }),
   };
 }
 
+/** The check-runs lookup for a push to `main`, or `undefined` when the step was given no token. */
+function lookupFrom(env: NodeJS.ProcessEnv): CheckRunsLookup | undefined {
+  const token = env['CHECKS_TOKEN'];
+  const repository = env['GITHUB_REPOSITORY'];
+  if (!token || !repository) {
+    return undefined;
+  }
+
+  return checkRunsLookup({ apiUrl: env['GITHUB_API_URL'] || 'https://api.github.com', repository, token });
+}
+
 /** Entry point: plans, then appends to `GITHUB_OUTPUT` and `GITHUB_STEP_SUMMARY` when they are set. */
-export function main(env: NodeJS.ProcessEnv = process.env, root = process.cwd()): PlanResult {
-  const { result, changed, note } = plan(
+export async function main(env: NodeJS.ProcessEnv = process.env, root = process.cwd()): Promise<PlanResult> {
+  const { result, changed, note } = await plan(
     {
       EVENT_NAME: env['EVENT_NAME'],
       BASE_REF: env['BASE_REF'],
@@ -131,6 +191,8 @@ export function main(env: NodeJS.ProcessEnv = process.env, root = process.cwd())
       AFTER: env['AFTER'],
     },
     root,
+    gitIn(root),
+    lookupFrom(env),
   );
   const summary = formatSummary(result, changed, note);
 

@@ -39,6 +39,12 @@ export const BASE_ENDPOINTS: readonly string[] = [
  * This job holds no token and touches no repository. It exists so that the registry appears in
  * exactly one job's allowlist, and it is not a job that runs tests.
  */
+/**
+ * The plan job's extra reach: the API, for the one check-runs call a push to `main` makes. The pull
+ * request head it fetches comes from `github.com`, like the checkout.
+ */
+export const PLAN_ALLOWED_ENDPOINTS: readonly string[] = [...BASE_ENDPOINTS, 'api.github.com:443'];
+
 export const INSTALL_ALLOWED_ENDPOINTS: readonly string[] = [...BASE_ENDPOINTS, 'registry.npmjs.org:443'];
 
 /**
@@ -145,14 +151,16 @@ export function planJob(): string {
     timeout-minutes: 5
     permissions:
       contents: read # to fetch code and history
+      checks: read # to confirm a merged pull request head passed Verify
     outputs:
       targets: \${{ steps.plan.outputs.targets }}
       shards: \${{ steps.plan.outputs.shards }}
       install: \${{ steps.plan.outputs.install }}
+      seed-cache: \${{ steps.plan.outputs.seed-cache }}
       build: \${{ steps.plan.outputs.build }}
       build-dirs: \${{ steps.plan.outputs.build-dirs }}
     steps:
-${hardenRunnerStep(BASE_ENDPOINTS)}
+${hardenRunnerStep(PLAN_ALLOWED_ENDPOINTS)}
 
       - name: Checkout
         uses: ${PINNED.checkout}
@@ -177,6 +185,8 @@ ${hardenRunnerStep(BASE_ENDPOINTS)}
           REF: \${{ github.ref }}
           BEFORE: \${{ github.event.before }}
           AFTER: \${{ github.event.after }}
+          # Only a push to main reads a check run; no other event gets the token.
+          CHECKS_TOKEN: \${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.token || '' }}
         run: bun scripts/verify-plan.ts
 `;
 }
@@ -194,7 +204,8 @@ export function installJob(modulePaths: readonly string[]): string {
     needs: plan
     # Only when a selected target reads the tree: one with end-to-end cases or a build. A run whose
     # targets are all hand-written jobs that set themselves up skips it rather than waiting on it.
-    if: \${{ needs.plan.outputs.install == 'true' }}
+    # seed-cache: a push to main that selects nothing but changes bun.lock still saves the cache.
+    if: \${{ needs.plan.outputs.install == 'true' || needs.plan.outputs.seed-cache == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
