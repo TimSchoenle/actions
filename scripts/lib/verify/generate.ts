@@ -26,6 +26,12 @@ import type { Shard } from './render.js';
 import type { VerifySource } from './source.js';
 
 /**
+ * The code that decides which targets run. A change to it can change every selection, including the
+ * one for the pull request that makes it, so it selects every target, as `verify.yaml` does.
+ */
+export const PLANNER_INPUTS: readonly string[] = ['scripts/lib/verify', 'scripts/verify-plan.ts'];
+
+/**
  * Everything `bun run generate-verify` writes, computed in memory so the write and the drift check
  * share one code path.
  *
@@ -96,7 +102,7 @@ export function generate(root: string): { files: GeneratedFiles; shards: readonl
   files.set(VERIFY_WORKFLOW, format(root, VERIFY_WORKFLOW, renderVerifyWorkflow(shards, modulePaths, secretsByShard)));
 
   const plan: PlanFile = {
-    global: [VERIFY_WORKFLOW],
+    global: [VERIFY_WORKFLOW, ...PLANNER_INPUTS],
     ignore: IGNORED_FILES,
     targets: shards.flatMap((shard) =>
       shard.targets.map((target) => plannedTarget(root, target.source, shard, packages)),

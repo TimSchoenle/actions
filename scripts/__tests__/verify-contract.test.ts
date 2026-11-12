@@ -429,6 +429,26 @@ describe('generated Verify workflows', () => {
   });
 });
 
+/**
+ * Action directories that lie in no target's inputs, each with the reason. May only shrink: an
+ * action in no target is one whose changes Verify never runs anything for.
+ */
+const UNTARGETED_ACTIONS: Record<string, string> = {};
+
+describe('target coverage', () => {
+  // C3d: actions/rust/{cargo-check,clippy,test} had no target, so their changes ran nothing.
+  it('puts every action directory inside some target, or in UNTARGETED_ACTIONS with a reason', async () => {
+    const actions = [...new Set((await scanSorted('actions/*/*/action.yaml')).map((file) => path.posix.dirname(file)))];
+    const covered = (action: string): boolean =>
+      GENERATED.plan.targets.some((target) =>
+        target.inputs.some((input) => input === action || action.startsWith(`${input}/`)),
+      );
+
+    expect(actions.filter((action) => !covered(action) && UNTARGETED_ACTIONS[action] === undefined)).toEqual([]);
+    expect(Object.keys(UNTARGETED_ACTIONS).filter((action) => covered(action))).toEqual([]);
+  });
+});
+
 describe('affected-target detection against this repository', () => {
   const { plan } = GENERATED;
   const pr: PlanEvent = { name: 'pull_request', baseRef: 'main' };
@@ -442,6 +462,41 @@ describe('affected-target detection against this repository', () => {
     expect(expected.length).toBeGreaterThan(40);
     expect(select(['packages/ts-util/src/index.ts'])).toEqual(expected.sort());
   });
+
+  // C3: each of these changes every bundle or every end-to-end run, and each used to select nothing.
+  const building = (): string[] =>
+    plan.targets
+      .filter((target) => target.buildDirs.length > 0)
+      .map((target) => target.id)
+      .sort();
+  const withCases = (): string[] =>
+    SOURCES.filter((source) => source.e2e !== undefined)
+      .map((source) => source.target)
+      .sort();
+
+  it.each([
+    'tsconfig.json',
+    'scripts/build-action.ts',
+    'scripts/lib/action-sources.ts',
+    'scripts/lib/utils.ts',
+    'scripts/lib/sys.ts',
+  ])('runs every target that builds for a change to %s', (file) => {
+    expect(select([file])).toEqual(expect.arrayContaining(building()));
+  });
+
+  it.each(['vitest.e2e.config.ts', 'vitest.e2e.setup.ts', 'vitest.aliases.ts', 'package.json'])(
+    'runs every target with end-to-end cases for a change to %s',
+    (file) => {
+      expect(select([file])).toEqual(expect.arrayContaining(withCases()));
+    },
+  );
+
+  it.each(['scripts/lib/verify/affected.ts', 'scripts/lib/verify/plan-step.ts', 'scripts/verify-plan.ts'])(
+    'runs every target for a change to the planner, %s',
+    (file) => {
+      expect(select([file])).toEqual(plan.targets.map((target) => target.id).sort());
+    },
+  );
 
   it('runs every target with end-to-end cases for a lockfile change', () => {
     const withCases = SOURCES.filter((source) => source.e2e !== undefined).map((source) => source.target);
