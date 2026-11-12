@@ -109,6 +109,20 @@ describe('buildAction', () => {
     );
   });
 
+  // Without the define, a dependency's `process.env.NODE_ENV` check is inlined from the environment of
+  // the build job. Both release builds share that environment, so the byte comparison between them
+  // cannot see it, and a bundle built with NODE_ENV=development would ship as such.
+  it('fixes process.env.NODE_ENV to production, whatever the build job sets', async () => {
+    const spawn = stubBuild(0, 'x');
+
+    await buildAction(actionDir);
+
+    const [command] = spawn.mock.calls[0] as [string[]];
+    const index = command.indexOf('process.env.NODE_ENV="production"');
+    expect(index).toBeGreaterThan(0);
+    expect(command[index - 1]).toBe('--define');
+  });
+
   it('rewrites the bundle with the bindings it references', async () => {
     stubBuild(0, 'f(__bundleDirname);');
 
