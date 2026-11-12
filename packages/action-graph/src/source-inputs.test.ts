@@ -21,6 +21,7 @@ function monorepo(): string {
     'package.json': pkg('root'),
     'bun.lock': '',
     '.bun-version': '1.4.4',
+    'tsconfig.json': '{}',
     'packages/util/package.json': pkg('util', { shared: 'workspace:*' }),
     'packages/shared/package.json': pkg('shared'),
     'packages/unused/package.json': pkg('unused'),
@@ -56,6 +57,7 @@ describe('sourceInputs', () => {
       'bun.lock',
       'packages/shared',
       'packages/util',
+      'tsconfig.json',
     ]);
   });
 
@@ -76,7 +78,7 @@ describe('sourceInputs', () => {
   });
 
   it('lists only root build inputs that exist', () => {
-    expect(rootBuildInputs(monorepo())).toEqual(['bun.lock', '.bun-version']);
+    expect(rootBuildInputs(monorepo())).toEqual(['bun.lock', '.bun-version', 'tsconfig.json']);
   });
 });
 
@@ -88,6 +90,8 @@ describe('affected', () => {
     ['bun.lock', ['actions/a', 'actions/b']],
     // actions/c builds nothing, so a toolchain change cannot affect it.
     ['.bun-version', ['actions/a', 'actions/b']],
+    // C3a: its paths are how the bundler resolves the workspace packages, so it changes every bundle.
+    ['tsconfig.json', ['actions/a', 'actions/b']],
     // A path equal to an action directory, as a deleted or renamed directory is reported.
     ['actions/a', ['actions/a']],
     // Compared by segment: actions/a2 is not inside actions/a.
