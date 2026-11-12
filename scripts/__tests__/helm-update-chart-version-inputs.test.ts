@@ -78,3 +78,18 @@ describe('update-chart-version input parsing', () => {
     expect(outputs).toBe('');
   });
 });
+
+describe('update-chart-version checkout', () => {
+  // P14k: the charts repository was cloned with its whole history, which nothing after the checkout
+  // reads: apply-chart-updates edits files, terrace-contract pull fetches from a registry, and
+  // commit-changes reads only the working tree status and HEAD.
+  it('checks the charts repository out without its history', () => {
+    const manifest = parse(fs.readFileSync(MANIFEST, 'utf8')) as {
+      runs: { steps: { name?: string; with?: Record<string, unknown> }[] };
+    };
+    const checkout = manifest.runs.steps.find((step) => step.name === 'Checkout Helm Charts');
+
+    expect(checkout?.with).toBeDefined();
+    expect(checkout?.with).not.toHaveProperty('fetch-depth');
+  });
+});

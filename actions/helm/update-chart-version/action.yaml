@@ -161,7 +161,6 @@ runs:
         repository: ${{ inputs.helm-repo }}
         token: ${{ steps.generate_token.outputs.token }}
         ref: ${{ steps.resolve-base-branch.outputs.base_branch }}
-        fetch-depth: 0
         persist-credentials: false
 
     # One step for the whole file update: a composite cannot loop, so N images cannot be N steps.
