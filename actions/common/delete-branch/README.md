@@ -86,10 +86,16 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
 - End-to-end tests: [`.github/verify/common-delete-branch.yaml`](../../../.github/verify/common-delete-branch.yaml)
-- Called from this repository by:
-  - [`.github/verify/common-create-pull-request.yaml`](../../../.github/verify/common-create-pull-request.yaml)
-  - [`.github/verify/common-render-template-and-commit.yaml`](../../../.github/verify/common-render-template-and-commit.yaml)
-  - [`.github/verify/helm-update-chart-version.yaml`](../../../.github/verify/helm-update-chart-version.yaml)
-  - [`.github/verify/java-gradle-auto-spotless.yaml`](../../../.github/verify/java-gradle-auto-spotless.yaml)
-  - [`.github/verify/rust-auto-format.yaml`](../../../.github/verify/rust-auto-format.yaml)
+
+<details>
+<summary>Called from 6 files in this repository</summary>
+
+- [`.github/verify/common-create-pull-request.yaml`](../../../.github/verify/common-create-pull-request.yaml)
+- [`.github/verify/common-render-template-and-commit.yaml`](../../../.github/verify/common-render-template-and-commit.yaml)
+- [`.github/verify/helm-update-chart-version.yaml`](../../../.github/verify/helm-update-chart-version.yaml)
+- [`.github/verify/java-gradle-auto-spotless.yaml`](../../../.github/verify/java-gradle-auto-spotless.yaml)
+- [`.github/verify/rust-auto-format.yaml`](../../../.github/verify/rust-auto-format.yaml)
+- [`actions/common/create-pull-request/action.yaml`](../../../actions/common/create-pull-request/action.yaml)
+
+</details>
 <!-- /docs:generated reference -->

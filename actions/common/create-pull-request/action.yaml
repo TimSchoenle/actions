@@ -27,7 +27,7 @@ inputs:
     required: false
     default: ''
   reset_branch:
-    description: 'Whether to reset the branch to the base branch before committing (force push)'
+    description: "Whether to replace the branch with the base branch plus this run's commit (force push). The commit is built on a temporary branch and the target is moved only once it exists, so a failed run leaves the branch as it was. With commit_changes on and nothing to commit, the branch and any pull request from it are left untouched."
     required: false
     default: 'true'
   commit_changes:
@@ -65,13 +65,104 @@ runs:
       env:
         REPO: ${{ inputs.repository }}
       run: |
+        set -euo pipefail
         OWNER="${REPO%%/*}"
         REPO_NAME="${REPO#*/}"
         echo "owner=$OWNER" >> "$GITHUB_OUTPUT"
         echo "repo=$REPO_NAME" >> "$GITHUB_OUTPUT"
 
+    # Everything that can fail without the API is checked before anything is written: a missing
+    # commit message, an invalid boolean or an empty branch_name fails here, with the branch untouched.
+    # With nothing to commit and reset_branch on, a reset would only rewind the branch to its base, so
+    # the run stops here without a token and without touching the branch or any pull request.
+    - name: Check Inputs And Local Changes
+      id: local
+      shell: bash
+      env:
+        BRANCH: ${{ inputs.branch_name }}
+        COMMIT_CHANGES: ${{ inputs.commit_changes }}
+        RESET_BRANCH: ${{ inputs.reset_branch }}
+        COMMIT_MESSAGE: ${{ inputs.commit_message }}
+        FILE_PATTERN: ${{ inputs.file_pattern }}
+      run: |
+        set -euo pipefail
+
+        # The YAML 1.2 core schema booleans, as commit-changes and create-branch accept them. Normalised
+        # here because the step conditions below compare case-insensitively.
+        boolean() {
+          case "$2" in
+            true | True | TRUE) echo true ;;
+            false | False | FALSE) echo false ;;
+            *)
+              echo "::error::$1 must be true or false; got '$2'." >&2
+              return 1
+              ;;
+          esac
+        }
+        commit="$(boolean commit_changes "$COMMIT_CHANGES")"
+        reset="$(boolean reset_branch "$RESET_BRANCH")"
+
+        if [ -z "$BRANCH" ]; then
+          echo "::error::branch_name is required."
+          exit 1
+        fi
+
+        has_changes=false
+        if [ "$commit" = true ]; then
+          if [ -z "${COMMIT_MESSAGE//[[:space:]]/}" ]; then
+            echo "::error::commit_message is required when commit_changes is true."
+            exit 1
+          fi
+
+          # The same pathspecs and status call commit-changes makes, so both agree on what changed:
+          # file_pattern split on whitespace, a wildcard wrapped in :(glob), `.` meaning the whole tree.
+          specs=()
+          set -f
+          for spec in $FILE_PATTERN; do
+            if [[ "$spec" == ':('* ]]; then
+              specs+=("$spec")
+            elif [[ "$spec" == *[*?[]* ]]; then
+              specs+=(":(glob)$spec")
+            else
+              specs+=("$spec")
+            fi
+          done
+          set +f
+          if [ "${#specs[@]}" -eq 1 ] && [ "${specs[0]}" = . ]; then
+            specs=()
+          fi
+
+          bytes="$(git -c core.fileMode=false status --porcelain -z -uall --no-renames -- "${specs[@]}" | wc -c)"
+          if [ "$bytes" -gt 0 ]; then
+            has_changes=true
+          fi
+        fi
+
+        proceed=true
+        if [ "$commit" = true ] && [ "$has_changes" = false ] && [ "$reset" = true ]; then
+          proceed=false
+          echo "::notice::No local changes match file_pattern. The branch and any pull request from it are left as they are."
+        fi
+
+        # A reset is built on a temporary branch from the base and moved onto the target only once the
+        # commit exists, so a failure on the way leaves the target branch as it was.
+        temporary=''
+        if [ "$commit" = true ] && [ "$has_changes" = true ] && [ "$reset" = true ]; then
+          suffix="$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n')"
+          temporary="$BRANCH-create-pull-request-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$suffix"
+        fi
+
+        {
+          echo "commit=$commit"
+          echo "reset=$reset"
+          echo "has_changes=$has_changes"
+          echo "proceed=$proceed"
+          echo "temporary=$temporary"
+        } >> "$GITHUB_OUTPUT"
+
     - name: Generate Bot Token
       id: generate_token
+      if: steps.local.outputs.proceed == 'true'
       uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
       with:
         client-id: ${{ inputs.app-id }}
@@ -84,43 +175,122 @@ runs:
         permission-contents: write
         permission-pull-requests: write
 
+    # The branch the commit is made on: the temporary branch for a reset with changes, otherwise the
+    # target itself. Skipped when there is nothing to commit, so a run without changes writes nothing.
     - name: Create Branch
       id: branch
-      uses: TimSchoenle/actions/actions/common/create-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-create-branch-v2.0.4
+      if: steps.local.outputs.proceed == 'true' && (steps.local.outputs.commit != 'true' || steps.local.outputs.has_changes == 'true')
+      uses: TimSchoenle/actions/actions/common/create-branch@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-common-create-branch-v2.0.5
       with:
         token: ${{ steps.generate_token.outputs.token }}
         repository: ${{ inputs.repository }}
-        branch_name: ${{ inputs.branch_name }}
+        branch_name: ${{ steps.local.outputs.temporary || inputs.branch_name }}
         base_branch: ${{ inputs.base_branch }}
-        reset_branch: ${{ inputs.reset_branch }}
+        reset_branch: ${{ steps.local.outputs.reset }}
 
+    - name: Resolve Base Branch
+      id: base
+      if: steps.local.outputs.proceed == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+        REPO: ${{ inputs.repository }}
+        RESOLVED: ${{ steps.branch.outputs.base_branch }}
+        REQUESTED: ${{ inputs.base_branch }}
+      run: |
+        set -euo pipefail
+        base="${RESOLVED:-$REQUESTED}"
+        if [ -z "$base" ]; then
+          base="$(gh api "repos/$REPO" --jq '.default_branch')"
+        fi
+        echo "branch=$base" >> "$GITHUB_OUTPUT"
+
+    # Pinned to the head create-branch reported, so a push to the branch after that is refused rather
+    # than overwritten.
     - name: Commit Changes
-      if: inputs.commit_changes == 'true'
+      if: steps.local.outputs.has_changes == 'true'
       id: commit
-      uses: TimSchoenle/actions/actions/common/commit-changes@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-commit-changes-v3.0.4
+      uses: TimSchoenle/actions/actions/common/commit-changes@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-common-commit-changes-v3.1.0
       with:
         token: ${{ steps.generate_token.outputs.token }}
         repository: ${{ inputs.repository }}
-        branch: ${{ inputs.branch_name }}
+        branch: ${{ steps.local.outputs.temporary || inputs.branch_name }}
+        expected_head_sha: ${{ steps.branch.outputs.sha }}
         commit_message: ${{ inputs.commit_message }}
         file_pattern: ${{ inputs.file_pattern }}
 
+    # The one write to the target branch on a reset: it is created at, or force-moved to, the finished
+    # commit.
+    - name: Move The Branch To The Commit
+      id: move
+      if: steps.local.outputs.temporary != '' && steps.commit.outputs.changes_detected == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+        REPO: ${{ inputs.repository }}
+        BRANCH: ${{ inputs.branch_name }}
+        COMMIT_SHA: ${{ steps.commit.outputs.commit_hash }}
+      run: |
+        set -euo pipefail
+        if ! [[ "$COMMIT_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+          echo "::error::commit-changes reported no commit SHA ('$COMMIT_SHA')."
+          exit 1
+        fi
+
+        # An exact lookup: the REST ref endpoints prefix-match, so they would report `feature` as
+        # existing while only `feature-2` does.
+        # shellcheck disable=SC2016
+        current="$(gh api graphql \
+          -f query='query($owner: String!, $name: String!, $ref: String!) { repository(owner: $owner, name: $name) { ref(qualifiedName: $ref) { target { oid } } } }' \
+          -f owner="${REPO%%/*}" -f name="${REPO#*/}" -f ref="refs/heads/$BRANCH" \
+          --jq '.data.repository.ref.target.oid // ""')"
+
+        if [ -z "$current" ]; then
+          gh api -X POST "repos/$REPO/git/refs" -f ref="refs/heads/$BRANCH" -f sha="$COMMIT_SHA" --silent
+          echo "Created $BRANCH at $COMMIT_SHA"
+        else
+          encoded="$(jq -rn --arg branch "$BRANCH" '$branch | @uri')"
+          gh api -X PATCH "repos/$REPO/git/refs/heads/$encoded" -f sha="$COMMIT_SHA" -F force=true --silent
+          echo "Moved $BRANCH from $current to $COMMIT_SHA"
+        fi
+
+    - name: Delete The Temporary Branch
+      if: always() && steps.local.outputs.temporary != '' && steps.branch.outcome != 'skipped' && steps.generate_token.outcome == 'success'
+      uses: TimSchoenle/actions/actions/common/delete-branch@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-common-delete-branch-v2.0.5
+      with:
+        token: ${{ steps.generate_token.outputs.token }}
+        repository: ${{ inputs.repository }}
+        branch_name: ${{ steps.local.outputs.temporary }}
+
     # A commit this run made is a difference by construction, so the comparison is only asked for when
     # there was none: the branch may still carry an earlier run's commits that need a pull request.
+    # Not after a reset, whose target branch was left alone when it got no commit.
     - name: Check for Branch Differences
       id: diff-check
-      if: steps.commit.outputs.changes_detected != 'true'
+      if: steps.local.outputs.proceed == 'true' && steps.local.outputs.temporary == '' && steps.commit.outputs.changes_detected != 'true'
       shell: bash
       env:
         GH_TOKEN: ${{ steps.generate_token.outputs.token }}
         REPO: ${{ inputs.repository }}
         HEAD_BRANCH: ${{ inputs.branch_name }}
-        BASE_BRANCH: ${{ steps.branch.outputs.base_branch }}
+        BASE_BRANCH: ${{ steps.base.outputs.branch }}
       run: |
         set -euo pipefail
 
-        # Compare the two branches
-        COMPARISON=$(gh api "/repos/$REPO/compare/$BASE_BRANCH...$HEAD_BRANCH" --jq '.status')
+        # With nothing to commit the branch was not created, so it may not exist; that is no
+        # difference rather than a failed comparison.
+        # shellcheck disable=SC2016
+        head="$(gh api graphql \
+          -f query='query($owner: String!, $name: String!, $ref: String!) { repository(owner: $owner, name: $name) { ref(qualifiedName: $ref) { target { oid } } } }' \
+          -f owner="${REPO%%/*}" -f name="${REPO#*/}" -f ref="refs/heads/$HEAD_BRANCH" \
+          --jq '.data.repository.ref.target.oid // ""')"
+        if [ -z "$head" ]; then
+          echo "has_differences=false" >> "$GITHUB_OUTPUT"
+          echo "Branch $HEAD_BRANCH does not exist, no pull request to open"
+          exit 0
+        fi
+
+        COMPARISON=$(gh api "/repos/$REPO/compare/$BASE_BRANCH...$head" --jq '.status')
 
         if [ "$COMPARISON" = "identical" ]; then
           echo "has_differences=false" >> "$GITHUB_OUTPUT"
@@ -139,7 +309,7 @@ runs:
         GH_TOKEN: ${{ steps.generate_token.outputs.token }}
         REPO: ${{ inputs.repository }}
         HEAD_BRANCH: ${{ inputs.branch_name }}
-        BASE_BRANCH: ${{ steps.branch.outputs.base_branch }}
+        BASE_BRANCH: ${{ steps.base.outputs.branch }}
         TITLE: ${{ inputs.title }}
         BODY: ${{ inputs.body }}
       run: |
