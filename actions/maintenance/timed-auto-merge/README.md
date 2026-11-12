@@ -101,11 +101,11 @@ Every input is validated before the first API call, so a misconfigured workflow 
 <!-- docs:generated outputs -->
 ## Outputs
 
-| Output     | Description                                                                                                                                                                                                                                  |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `approved` | JSON array of the pull request numbers that were approved on this run and either had auto-merge enabled or, when already mergeable, were merged, e.g. `[12,15]`.                                                                             |
-| `skipped`  | JSON array of {"number", "reason"} for matching pull requests that were left alone, e.g. `[{"number":13,"reason":"too-young"}]`. The reasons are fork, author-untrusted, base-mismatch, draft, too-young, head-moved and commits-unverified. |
-| `failed`   | JSON array of {"number", "message"} for pull requests where an API call failed, with the error, e.g. `[{"number":14,"message":"..."}]`.                                                                                                      |
+| Output     | Description                                                                                                                                                                                                                                                                                                     |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `approved` | JSON array of the pull request numbers that were approved on this run and either had auto-merge enabled or, when already mergeable, were merged, e.g. `[12,15]`. A pull request an earlier run already approved at its current head, with auto-merge still on, is listed too, though nothing was written to it. |
+| `skipped`  | JSON array of {"number", "reason"} for matching pull requests that were left alone, e.g. `[{"number":13,"reason":"too-young"}]`. The reasons are fork, author-untrusted, base-mismatch, draft, too-young, head-moved and commits-unverified.                                                                    |
+| `failed`   | JSON array of {"number", "message"} for pull requests where an API call failed, with the error, e.g. `[{"number":14,"message":"..."}]`.                                                                                                                                                                         |
 <!-- /docs:generated outputs -->
 
 The step summary has one row per matching pull request with the same information and a longer explanation of each
@@ -154,6 +154,10 @@ When every check passes, the pull request is approved with the review attached t
 auto-merge is enabled through the GraphQL `enablePullRequestAutoMerge` mutation with the same SHA as
 `expectedHeadOid`. If someone pushes to the branch after the commits were verified, GitHub refuses the auto-merge
 request, and the pull request is reported under `failed`. The next run verifies the new head.
+
+A pull request that stays open is not approved again on every run. When the listing shows auto-merge on, the action
+reads whether this token's identity already approved the current head and auto-merge is still enabled. If both hold, it
+writes nothing and reports the pull request under `approved` as before. The commits are verified first either way.
 
 GitHub also refuses auto-merge when nothing is left to wait for, because the pull request is already mergeable. So
 whenever enabling auto-merge fails, the action reads the merge state. If it is `CLEAN`, `HAS_HOOKS` or `UNSTABLE` at

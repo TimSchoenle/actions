@@ -78,7 +78,11 @@ function logOutcome(outcome: PullRequestOutcome): void {
 
   switch (outcome.status) {
     case 'approved': {
-      const merge = outcome.merge === 'merged' ? 'merged, since it was already mergeable' : 'auto-merge enabled';
+      const merge = {
+        'already-queued': 'auto-merge already enabled by an earlier run',
+        'auto-merge-enabled': 'auto-merge enabled',
+        merged: 'merged, since it was already mergeable',
+      }[outcome.merge];
 
       core.info(`${prefix}: approved at ${outcome.headSha} and ${merge}.`);
       break;

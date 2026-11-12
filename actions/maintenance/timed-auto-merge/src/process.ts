@@ -50,7 +50,8 @@ interface OutcomeBase {
 export interface ApprovedOutcome extends OutcomeBase {
   status: 'approved';
   headSha: string;
-  merge: 'auto-merge-enabled' | 'merged';
+  /** `already-queued`: an earlier run approved `headSha` and auto-merge is on, so nothing was written. */
+  merge: 'already-queued' | 'auto-merge-enabled' | 'merged';
 }
 
 export interface SkippedOutcome extends OutcomeBase {
@@ -209,9 +210,9 @@ async function processOne(
     );
   }
 
-  await api.approve(request.repository, pullRequest.number, pullRequest.headSha, request.approveMessage);
-
-  const merge = await enableAutoMergeOrMerge(api, pullRequest, request);
+  const merge = (await isQueued(api, pullRequest))
+    ? 'already-queued'
+    : await approveAndQueue(api, pullRequest, request);
 
   return {
     headRef: pullRequest.headRef,
@@ -220,6 +221,34 @@ async function processOne(
     number: pullRequest.number,
     status: 'approved',
   };
+}
+
+/**
+ * Whether an earlier run already approved this head and auto-merge is still on, so approving and
+ * enabling again would only add a duplicate review. Read only when the listing showed auto-merge on,
+ * so a pull request that is not queued costs no extra request; the read itself is what confirms the
+ * head, the approval and auto-merge, since any of them may have changed since the listing.
+ */
+async function isQueued(api: TimedAutoMergeApi, pullRequest: OpenPullRequest): Promise<boolean> {
+  if (!pullRequest.autoMergeEnabled) {
+    return false;
+  }
+  const state = await api.getMergeState(pullRequest.nodeId);
+
+  return (
+    state.headOid === pullRequest.headSha && state.autoMergeEnabled && state.viewerApprovedOid === pullRequest.headSha
+  );
+}
+
+/** Approves at the listed head, then enables auto-merge or merges; see {@link enableAutoMergeOrMerge}. */
+async function approveAndQueue(
+  api: TimedAutoMergeApi,
+  pullRequest: OpenPullRequest,
+  request: TimedAutoMergeRequest,
+): Promise<ApprovedOutcome['merge']> {
+  await api.approve(request.repository, pullRequest.number, pullRequest.headSha, request.approveMessage);
+
+  return enableAutoMergeOrMerge(api, pullRequest, request);
 }
 
 /**
