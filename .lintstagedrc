@@ -1,5 +1,6 @@
 {
   "*.{ts,js,mjs}": ["eslint --fix", "oxfmt --no-error-on-unmatched-pattern"],
   "*.{json,md,yml,yaml}": ["oxfmt --no-error-on-unmatched-pattern"],
-  "actions/*/*/action.{yml,yaml}": ["bun scripts/generate-action-sources.ts --stage"]
+  "actions/*/*/action.{yml,yaml}": ["bun scripts/generate-action-sources.ts --stage"],
+  "{packages/*/src/**,actions/*/*/package.json}": ["bun scripts/generate-action-sources.ts --stage"]
 }
