@@ -31,15 +31,16 @@ Scripts CI fails while a generated file differs from what the generator writes.
 
 ## Jobs
 
-| Job                 | Runs when                                                                              | Does                                                                                       |
-| ------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `plan`              | always                                                                                 | diffs with git, selects the affected targets, the shards to call and the build list        |
-| `install`           | a selected target has end-to-end cases or a build, or `plan` asks it to seed the cache | installs the workspace once and saves the dependency cache; the only job with the registry |
-| `build`             | a selected target runs a bundle                                                        | builds the union of the selected targets' build directories with `release/build-actions`   |
-| `verify-<category>` | the shard holds a selected target                                                      | calls the shard; each of its jobs runs only when its target is selected                    |
-| `verify`            | always                                                                                 | fails when any job above failed or was cancelled                                           |
+| Job                 | Runs when                                                                              | Does                                                                                                       |
+| ------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `plan`              | always                                                                                 | diffs with git, selects the affected targets, the shards to call, the build list and the end-to-end suites |
+| `install`           | a selected target has end-to-end cases or a build, or `plan` asks it to seed the cache | installs the workspace once and saves the dependency cache; the only job with the registry                 |
+| `build`             | a selected target runs a bundle                                                        | builds the union of the selected targets' build directories with `release/build-actions`                   |
+| `e2e-<scopes>`      | the group holds a selected suite                                                       | runs the selected end-to-end suites whose sources ask for these token scopes, in one vitest run            |
+| `verify-<category>` | the shard holds a selected target with its own jobs                                    | calls the shard; each of its jobs runs only when its target is selected                                    |
+| `verify`            | always                                                                                 | fails when any job above failed or was cancelled                                                           |
 
-A shard call waits on `install` and `build` and accepts either as skipped. A target with neither
+A shard call and an end-to-end group job wait on `install` and `build` and accept either as skipped. A target with neither
 end-to-end cases nor build directories runs only hand-written jobs that set themselves up, so a run
 that selects only such targets skips `install` instead of waiting on it; the plan sets `install`
 whenever any selected target reads the tree.
@@ -53,7 +54,8 @@ does for `Lint & Test`. Never require a shard call or a job inside a shard: thos
 names while they run, and not at all when their target is not selected.
 
 A shard receives `targets`, `cache-key`, `artifact-id` and `manifest-sha256` as inputs, and only the
-secrets its jobs read. Its caller job grants the union of its jobs' permissions: a called workflow
+secrets its jobs read. A group job reads the plan, install and build outputs through `needs`
+directly, since it lives in `verify.yaml`. Its caller job grants the union of its jobs' permissions: a called workflow
 can narrow its token, never widen it.
 
 ## Source format
@@ -75,10 +77,17 @@ jobs: # ordinary workflow jobs
   find-patch-composite: ...
 ```
 
-With an `e2e` block the generator adds a job `e2e-<category>-<name>` that runs
-`bun run e2e actions/<target>`.
+With an `e2e` block the target's suite runs in a group job of `verify.yaml`. Every source with the
+same `token-permissions` and `secondary-token-permissions` shares one job, named after its sorted
+scopes (`e2e-contents-write`, `e2e-contents-write-pull-requests-write-as-pull-requests-write`);
+every source without a token shares `e2e-tokenless`. `plan` lists the selected suites under their
+group in its `e2e` output, and the job runs `bun run e2e actions/<target>/ …` once for all of them,
+so a run mints one token per scope set and restores the dependency cache once per group. The job
+allows the union of its members' endpoints, including any `extra-endpoints`, and gets 15 minutes plus
+5 per further member, at most 60. One suite's failure fails its group job; the log names the file.
+A target whose only job is its suite has no shard.
 
-With `token-permissions`, the job runs in the `ci-e2e` environment, mints a token scoped to the scratch
+With `token-permissions`, the group job runs in the `ci-e2e` environment, mints a token scoped to the scratch
 repository and may reach `api.github.com`. Without it, the job holds no App key, uses no environment,
 cannot reach the GitHub API, and runs with `E2E_TOKENLESS=1`, which lets the suite start without
 credentials. A job that mints a token holds the App's private key while it runs code under test, so a
@@ -120,8 +129,8 @@ the graph the release uses:
 - its source file and its `extra-inputs`
 
 Its shard file is not an input: the shard file changes whenever any target in it changes, so it
-would select every shard-mate. Instead `plan.json` records a SHA-256 of each target's rendered jobs,
-pins resolved, and one of the `plan`, `install` and `build` jobs of `verify.yaml`.
+would select every shard-mate. Instead `plan.json` records a SHA-256 of each target's rendered jobs
+and its end-to-end group job, pins resolved, and one of the `plan`, `install` and `build` jobs of `verify.yaml`.
 
 `plan` intersects the inputs with the changed files from git, and compares the hashes with the plan
 file of the base commit (`git show <base>:.github/verify/plan.json`), with no REST call. A target also

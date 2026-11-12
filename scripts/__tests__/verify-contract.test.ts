@@ -12,7 +12,8 @@ import { findDrift, generate } from '../lib/verify/generate.js';
 import {
   actionTokenPermissions,
   E2E_ALLOWED_ENDPOINTS,
-  e2eJobId,
+  e2eGroupId,
+  e2eGroups,
   INSTALL_ALLOWED_ENDPOINTS,
   missingTokenInputScopes,
   workspaceMemberDirectories,
@@ -152,6 +153,7 @@ function auditSteps(source: (typeof SOURCES)[number]): number {
     .filter((step) => step.with?.['egress-policy'] === 'audit').length;
 }
 const GENERATED = generate(ROOT_DIR);
+const E2E_GROUPS = e2eGroups(SOURCES);
 
 /** Each action's token-input scopes from `docs.yaml` that its end-to-end token lacks. */
 function tokenScopeGaps(): Record<string, string[]> {
@@ -357,14 +359,10 @@ describe('generated Verify workflows', () => {
         continue;
       }
       const jobs = jobsOf(file);
-      for (const shard of GENERATED.shards.filter((candidate) => shardFile(candidate.id) === file)) {
-        for (const target of shard.targets.filter((candidate) => candidate.source.e2e !== undefined)) {
-          expect(JSON.stringify(jobs[e2eJobId(target.source.target)]), `${file}: the e2e job must block`).toContain(
-            '"egress-policy":"block"',
-          );
-        }
-      }
       if (file === VERIFY_WORKFLOW) {
+        for (const group of E2E_GROUPS) {
+          expect(JSON.stringify(jobs[group.id]), `${group.id} must block`).toContain('"egress-policy":"block"');
+        }
         expect(fs.readFileSync(path.join(ROOT_DIR, file), 'utf8')).not.toContain('egress-policy: audit');
       }
     }
@@ -404,23 +402,39 @@ describe('generated Verify workflows', () => {
     expect(E2E_ALLOWED_ENDPOINTS).not.toContain('registry.npmjs.org:443');
     expect(INSTALL_ALLOWED_ENDPOINTS).toContain('registry.npmjs.org:443');
 
-    for (const shard of GENERATED.shards) {
-      for (const target of shard.targets.filter((candidate) => candidate.source.e2e !== undefined)) {
-        const job = jobText(shardFile(shard.id), e2eJobId(target.source.target));
+    for (const group of E2E_GROUPS) {
+      const job = jobText(VERIFY_WORKFLOW, group.id);
 
-        expect(job).toContain('egress-policy');
-        expect(job).not.toContain('registry.npmjs.org');
-        expect(job).not.toContain('bun/setup-cached@');
-        expect(job).toContain('fail-on-cache-miss');
-        if (target.source.e2e?.tokenPermissions === undefined) {
-          expect(job, 'a tokenless suite holds no secret').not.toContain('secrets.');
-          expect(job).not.toContain('api.github.com');
-        } else {
-          expect(job).toMatch(/permission-[\w-]+/);
-          expect(job, 'a job that holds the App key disables sudo').toContain('"disable-sudo-and-containers":true');
-        }
-        expect(job).toContain(`bun run e2e actions/${target.source.target}`);
+      expect(job).toContain('egress-policy');
+      expect(job).not.toContain('registry.npmjs.org');
+      expect(job).not.toContain('bun/setup-cached@');
+      expect(job).toContain('fail-on-cache-miss');
+      if (group.tokenPermissions === undefined) {
+        expect(job, 'a tokenless suite holds no secret').not.toContain('secrets.');
+        expect(job).not.toContain('api.github.com');
+      } else {
+        expect(job).toMatch(/permission-[\w-]+/);
+        expect(job, 'a job that holds the App key disables sudo').toContain('"disable-sudo-and-containers":true');
       }
+    }
+  });
+
+  // P8: a shard holds no end-to-end job and no token step; each suite runs in the group job of its
+  // token scopes, which the plan file names, and nowhere else.
+  it('run every end-to-end suite in the group job of its token scopes, and mint no token in a shard', () => {
+    const groupIds = new Set(E2E_GROUPS.map((group) => group.id));
+    for (const source of SOURCES) {
+      const planned = GENERATED.plan.targets.find((target) => target.id === source.target);
+      expect(planned?.e2eGroup, source.file).toBe(source.e2e === undefined ? null : e2eGroupId(source.e2e));
+      expect(planned?.shard === null, `${source.file}: a shard exactly when it has own jobs`).toBe(
+        source.jobIds.length === 0,
+      );
+    }
+    expect(Object.keys(jobsOf(VERIFY_WORKFLOW)).filter((id) => id.startsWith('e2e-'))).toEqual([...groupIds]);
+    expect(jobsOf(VERIFY_WORKFLOW)[SUMMARY_JOB_ID]?.['needs']).toEqual(expect.arrayContaining([...groupIds]));
+    for (const shard of GENERATED.shards) {
+      const text = fs.readFileSync(path.join(ROOT_DIR, shardFile(shard.id)), 'utf8');
+      expect(text, `${shard.id} runs end-to-end cases`).not.toMatch(/bun run e2e /);
     }
   });
 
@@ -442,10 +456,8 @@ describe('generated Verify workflows', () => {
     for (const pattern of workspaceModulePaths(workspaceMemberDirectories(ROOT_DIR))) {
       expect(saved?.split('\n')).toContain(pattern);
     }
-    for (const shard of GENERATED.shards) {
-      for (const target of shard.targets.filter((candidate) => candidate.source.e2e !== undefined)) {
-        expect(pathsOf(jobsOf(shardFile(shard.id))[e2eJobId(target.source.target)])).toEqual(saved);
-      }
+    for (const group of E2E_GROUPS) {
+      expect(pathsOf(jobsOf(VERIFY_WORKFLOW)[group.id])).toEqual(saved);
     }
   });
 });

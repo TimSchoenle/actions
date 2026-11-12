@@ -517,69 +517,6 @@ jobs:
           test "$DOCKERFILE" = failure || { echo "::error::a stale label block passed"; exit 1; }
           test "$LAYOUT" = failure || { echo "::error::a signature was accepted on an OCI layout"; exit 1; }
 
-  e2e-terrace-setup:
-    name: 'Terrace Setup: End-to-end'
-    if: ${{ contains(fromJSON(inputs.targets), 'terrace/setup') }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read # to fetch code
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
-        with:
-          egress-policy: block
-          allowed-endpoints: >
-            github.com:443
-            objects.githubusercontent.com:443
-            *.actions.githubusercontent.com:443
-            *.blob.core.windows.net:443
-
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      # Installs the bundles the build job built from this commit; dist/ is not committed.
-      - name: Install Built Actions
-        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
-        with:
-          artifact-id: ${{ inputs.artifact-id }}
-          expected-manifest-sha256: ${{ inputs.manifest-sha256 }}
-
-      # setup-bun rather than setup-cached: the cached wrapper runs `bun install` on every job, cache
-      # hit or not, and this job is the one that must have no route to a package registry at all.
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version-file: '.bun-version'
-
-      # The harness runs a node24 bundle with the first node on PATH and refuses any other major,
-      # and the image's default node is not 24. A major alone resolves from the runner's tool
-      # cache, so this reaches no endpoint the allowlist above does not already carry.
-      - name: Setup Node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '24'
-
-      # Restored, never installed, and never saved. `fail-on-cache-miss` is what keeps that honest:
-      # without it a miss would leave the suite to fail later on a missing import.
-      - name: Restore Dependencies
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            node_modules
-            actions/*/*/*/node_modules
-            actions/*/*/node_modules
-            packages/*/node_modules
-          key: ${{ inputs.cache-key }}
-          fail-on-cache-miss: true
-
-      - name: Run End-to-end Cases
-        env:
-          E2E_TOKENLESS: '1'
-        run: bun run e2e actions/terrace/setup
-
   install-exact:
     name: 'Terrace Setup: Install an exact release (${{ matrix.os }})'
     if: ${{ contains(fromJSON(inputs.targets), 'terrace/setup') }}

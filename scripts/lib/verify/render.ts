@@ -1,12 +1,13 @@
 import { buildSet, localUsesPath } from 'action-graph';
 import { parseDocument } from 'yaml';
 
-import { ARTIFACT_ENDPOINTS, buildJob, e2eJob, e2eJobId, installJob, planJob } from './jobs.js';
+import { ARTIFACT_ENDPOINTS, buildJob, e2eGroupJob, installJob, planJob } from './jobs.js';
 import { VERIFY_CHECK_NAME } from './merged-head.js';
 import { PINNED, resolvePins } from './pins.js';
 import { jobValue } from './source.js';
 import { CHECKOUT_PREFIXES } from './target-inputs.js';
 
+import type { E2eGroup } from './jobs.js';
 import type { VerifySource } from './source.js';
 
 /**
@@ -188,16 +189,13 @@ function gateAndName(
 }
 
 /**
- * Renders one target's jobs: the generated end-to-end job first when the source has an `e2e` block,
- * then the source's own jobs, each gated and named.
+ * Renders one target's own jobs, each gated and named. Its end-to-end suite runs in a group job of
+ * `verify.yaml` instead ({@link e2eGroupJob}).
  *
- * @param builds - whether the target runs a bundle, so its end-to-end job installs the build artifact
  * @throws an `Error` when the rendered jobs do not parse back to the source's jobs plus the two edits
  */
-export function renderTarget(source: VerifySource, builds: boolean, modulePaths: readonly string[]): RenderedTarget {
-  const generated = source.e2e === undefined ? [] : e2eJob(source, builds, modulePaths).trimEnd().split('\n');
-  const sourceLines = jobsBlock(source.text);
-  const block = [...generated, ...(generated.length > 0 && sourceLines.length > 0 ? [''] : []), ...sourceLines];
+export function renderTarget(source: VerifySource): RenderedTarget {
+  const block = jobsBlock(source.text);
   const parsedSource =
     (parseDocument(`jobs:\n${block.join('\n')}\n`).toJS() as { jobs?: Record<string, Record<string, unknown>> }).jobs ??
     {};
@@ -216,7 +214,7 @@ export function renderTarget(source: VerifySource, builds: boolean, modulePaths:
   const parsed =
     (parseDocument(`jobs:\n${text}`).toJS() as { jobs?: Record<string, Record<string, unknown>> }).jobs ?? {};
   const jobIds = ranges.map((range) => range.id);
-  const expectedIds = [...(source.e2e === undefined ? [] : [e2eJobId(source.target)]), ...source.jobIds];
+  const expectedIds = source.jobIds;
   if (
     JSON.stringify(Object.keys(parsed)) !== JSON.stringify(expectedIds) ||
     JSON.stringify(jobIds) !== JSON.stringify(expectedIds)
@@ -372,6 +370,7 @@ ${resolved}`;
 /** Renders `verify.yaml`, before formatting. */
 export function renderVerifyWorkflow(
   shards: readonly Shard[],
+  groups: readonly E2eGroup[],
   modulePaths: readonly string[],
   secretsByShard: ReadonlyMap<string, readonly string[]>,
 ): string {
@@ -402,7 +401,7 @@ export function renderVerifyWorkflow(
 `;
     })
     .join('\n');
-  const needs = ['plan', 'install', 'build', ...shards.map((shard) => shard.id)]
+  const needs = ['plan', 'install', 'build', ...groups.map((group) => group.id), ...shards.map((shard) => shard.id)]
     .map((id) => `      - ${id}`)
     .join('\n');
 
@@ -411,8 +410,9 @@ export function renderVerifyWorkflow(
 # Scripts CI fails while it is out of date. See docs/verify-pipeline.md.
 #
 # One run verifies every target the change affects: plan selects them from the changed files and the
-# dependency graph, install and build run once for all of them, and each shard runs the jobs of its
-# selected targets. The final job is the one required check.
+# dependency graph, install and build run once for all of them, one job per token scope set runs the
+# selected end-to-end suites, and each shard runs the hand-written jobs of its selected targets. The
+# final job is the one required check.
 name: Verify
 
 on:
@@ -437,6 +437,7 @@ jobs:
 ${planJob()}
 ${installJob(modulePaths)}
 ${buildJob(modulePaths)}
+${groups.map((group) => e2eGroupJob(group, modulePaths)).join('\n')}
 ${callers}
   # Reports as the required check '${SUMMARY_JOB_NAME}' only on pull_request. A push run attaches its own
   # check to the commit, the pull request head included when it is a feature/** branch; under the
@@ -586,7 +587,7 @@ export function validateSources(root: string, sources: readonly VerifySource[]):
   const owners = new Map<string, string>();
   const hasBundle = bundleCheck(root);
   const problems = sources.flatMap((source) => {
-    const ids = [...(source.e2e === undefined ? [] : [e2eJobId(source.target)]), ...source.jobIds];
+    const ids = source.jobIds;
 
     return [
       ...idProblems(source, ids, owners),

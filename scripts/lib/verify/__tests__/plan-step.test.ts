@@ -77,6 +77,7 @@ describe('plan against a real repository', () => {
         {
           id: 'common/a',
           shard: 'verify-common',
+          e2eGroup: null,
           inputs: ['actions/common/a'],
           buildDirs: ['actions/common/a'],
           install: true,
@@ -88,6 +89,7 @@ describe('plan against a real repository', () => {
         {
           id: 'common/b',
           shard: 'verify-common',
+          e2eGroup: null,
           inputs: ['actions/common/b'],
           buildDirs: [],
           install: false,
@@ -123,6 +125,8 @@ describe('plan against a real repository', () => {
       targets: ['common/a'],
       shards: ['verify-common'],
       buildDirs: ['actions/common/a'],
+      e2eGroups: [],
+      e2e: {},
       install: true,
       seedCache: false,
     });
@@ -269,7 +273,15 @@ describe('plan against a real repository', () => {
       lookup,
     );
 
-    expect(planned.result).toEqual({ targets: [], shards: [], buildDirs: [], install: false, seedCache: false });
+    expect(planned.result).toEqual({
+      targets: [],
+      shards: [],
+      buildDirs: [],
+      e2eGroups: [],
+      e2e: {},
+      install: false,
+      seedCache: false,
+    });
     expect(planned.note).toMatch(/head of #7, which passed Verify/);
     expect(asked).toEqual([head]);
   });
