@@ -6,18 +6,18 @@ import { createUpdateBranchApi } from './github-api.js';
 vi.mock('actions-util/octokit');
 
 interface OctokitMock {
-  paginate: { iterator: ReturnType<typeof vi.fn> };
+  graphql: ReturnType<typeof vi.fn>;
   rest: {
-    pulls: { get: ReturnType<typeof vi.fn>; list: ReturnType<typeof vi.fn>; updateBranch: ReturnType<typeof vi.fn> };
+    pulls: { get: ReturnType<typeof vi.fn>; updateBranch: ReturnType<typeof vi.fn> };
     repos: { compareCommitsWithBasehead: ReturnType<typeof vi.fn> };
   };
 }
 
 function mockOctokit(): OctokitMock {
   const octokit: OctokitMock = {
-    paginate: { iterator: vi.fn() },
+    graphql: vi.fn(),
     rest: {
-      pulls: { get: vi.fn(), list: vi.fn(), updateBranch: vi.fn() },
+      pulls: { get: vi.fn(), updateBranch: vi.fn() },
       repos: { compareCommitsWithBasehead: vi.fn() },
     },
   };
@@ -25,16 +25,6 @@ function mockOctokit(): OctokitMock {
   vi.mocked(github.getOctokit).mockReturnValue(octokit as unknown as ReturnType<typeof github.getOctokit>);
 
   return octokit;
-}
-
-async function* pages(...pageData: unknown[][]): AsyncGenerator<{ data: unknown[] }> {
-  for (const data of pageData) {
-    yield { data };
-  }
-}
-
-function listed(number: number, labels: string[] = []): unknown {
-  return { labels: labels.map((name) => ({ name })), number };
 }
 
 function pullData(overrides: Record<string, unknown> = {}): unknown {
@@ -61,27 +51,87 @@ describe('createUpdateBranchApi', () => {
   });
 
   describe('listOpenPullRequests', () => {
-    it('requests open pull requests at the largest page size', async () => {
-      octokit.paginate.iterator.mockReturnValue(pages([]));
+    function node(number: number, overrides: Record<string, unknown> = {}): unknown {
+      return {
+        autoMergeRequest: null,
+        headRefOid: `sha-${number}`,
+        isDraft: false,
+        labels: { nodes: [] },
+        mergeStateStatus: 'CLEAN',
+        number,
+        ...overrides,
+      };
+    }
+
+    function page(nodes: unknown[], endCursor: string | null = null): unknown {
+      return { repository: { pullRequests: { nodes, pageInfo: { endCursor, hasNextPage: endCursor !== null } } } };
+    }
+
+    it('queries open pull requests oldest first at the largest page size', async () => {
+      octokit.graphql.mockResolvedValue(page([]));
 
       await createUpdateBranchApi('token').listOpenPullRequests(repository);
 
-      expect(octokit.paginate.iterator).toHaveBeenCalledWith(octokit.rest.pulls.list, {
-        owner: 'owner',
-        per_page: 100,
-        repo: 'repo',
-        state: 'open',
-      });
+      expect(octokit.graphql).toHaveBeenCalledTimes(1);
+      const [query, variables] = octokit.graphql.mock.calls[0] as [string, Record<string, unknown>];
+      expect(query).toContain('states: OPEN');
+      expect(query).toContain('orderBy: { field: CREATED_AT, direction: ASC }');
+      expect(variables).toEqual({ after: null, first: 100, owner: 'owner', repo: 'repo' });
     });
 
-    it('collects every page, with label names', async () => {
-      const first = Array.from({ length: 100 }, (_, index) => listed(index + 1));
-      octokit.paginate.iterator.mockReturnValue(pages(first, [listed(101, ['dependencies', 'bug'])]));
+    it('follows the cursor across pages and reduces each node', async () => {
+      octokit.graphql.mockResolvedValueOnce(page([node(1)], 'cursor-1')).mockResolvedValueOnce(
+        page([
+          null,
+          node(2, {
+            autoMergeRequest: { enabledAt: '2026-11-12T00:00:00Z' },
+            isDraft: true,
+            labels: { nodes: [{ name: 'dependencies' }, null, { name: 'bug' }] },
+            mergeStateStatus: 'BEHIND',
+          }),
+        ]),
+      );
 
       const pullRequests = await createUpdateBranchApi('token').listOpenPullRequests(repository);
 
-      expect(pullRequests).toHaveLength(101);
-      expect(pullRequests.at(-1)).toEqual({ labels: ['dependencies', 'bug'], number: 101 });
+      expect(octokit.graphql).toHaveBeenLastCalledWith(expect.any(String), {
+        after: 'cursor-1',
+        first: 100,
+        owner: 'owner',
+        repo: 'repo',
+      });
+      expect(pullRequests).toEqual([
+        { autoMergeEnabled: false, draft: false, headSha: 'sha-1', labels: [], mergeStateStatus: 'CLEAN', number: 1 },
+        {
+          autoMergeEnabled: true,
+          draft: true,
+          headSha: 'sha-2',
+          labels: ['dependencies', 'bug'],
+          mergeStateStatus: 'BEHIND',
+          number: 2,
+        },
+      ]);
+    });
+
+    it.each([
+      ['no cursor', null],
+      ['the cursor it was asked with', 'cursor-1'],
+    ])('fails when a next page comes with %s', async (_label, endCursor) => {
+      const stuck = { repository: { pullRequests: { nodes: [node(2)], pageInfo: { endCursor, hasNextPage: true } } } };
+      octokit.graphql.mockResolvedValueOnce(page([node(1)], 'cursor-1')).mockResolvedValueOnce(stuck);
+
+      await expect(createUpdateBranchApi('token').listOpenPullRequests(repository)).rejects.toThrow(
+        'GitHub reported more open pull requests in owner/repo but no new cursor to fetch them with.',
+      );
+      expect(octokit.graphql).toHaveBeenCalledTimes(2);
+    });
+
+    it('fails when the repository cannot be read', async () => {
+      octokit.graphql.mockResolvedValue({ repository: null });
+
+      await expect(createUpdateBranchApi('token').listOpenPullRequests(repository)).rejects.toThrow(
+        'Repository owner/repo was not found or the token cannot read it.',
+      );
     });
   });
 

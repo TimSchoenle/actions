@@ -3,9 +3,23 @@ import { quoteForLog } from 'actions-util';
 /** The namespace every branch ref lives under, and the prefix the cache API filters on. */
 export const BRANCH_REF_PREFIX = 'refs/heads/';
 
-/** A branch named both ways the cache API and the repository API need it. */
+/**
+ * The merge ref a `pull_request` run checks out and saves its caches under. Only `merge` is
+ * accepted: GitHub records a pull request run's caches against it, never against `head`.
+ */
+const PULL_REQUEST_MERGE_REF = /^refs\/pull\/[1-9]\d{0,9}\/merge$/u;
+
+/** The ref whose caches are wiped, named both ways the cache API and the repository API need it. */
 export interface BranchTarget {
-  /** Short name, e.g. `feature/x`; compared against the repository default branch. */
+  /**
+   * `branch` for a `refs/heads/` ref. `pull-request` for a `refs/pull/<n>/merge` ref, which no
+   * default branch can be, so the default-branch check is skipped for it.
+   */
+  kind: 'branch' | 'pull-request';
+  /**
+   * Short name, e.g. `feature/x`, compared against the repository default branch. For a pull
+   * request, the full ref, which never equals a branch name.
+   */
   name: string;
   /** Fully qualified ref, e.g. `refs/heads/feature/x`; the `ref` filter of the cache list. */
   ref: string;
@@ -27,10 +41,12 @@ function invalid(input: string, reason: string): Error {
 }
 
 /**
- * Resolves the `branch` input to a short name and a `refs/heads/` ref.
+ * Resolves the `branch` input to a short name and a `refs/heads/` ref, or to a pull request's
+ * merge ref.
  *
  * Accepts both `feature/x` and `refs/heads/feature/x`: a `delete` event carries the short name in
- * `github.event.ref`, while `github.ref` and most other contexts carry the full ref. Any other
+ * `github.event.ref`, while `github.ref` and most other contexts carry the full ref. It also accepts
+ * `refs/pull/<n>/merge` exactly, the ref a `pull_request` run saves its caches under. Any other
  * `refs/` namespace is refused rather than nested under `refs/heads/`: `refs/tags/v1` names a tag,
  * and prefixing it would wipe the caches of a branch literally called `refs/tags/v1` instead.
  *
@@ -44,6 +60,10 @@ export function resolveBranch(input: string): BranchTarget {
     );
   }
 
+  if (PULL_REQUEST_MERGE_REF.test(input)) {
+    return { kind: 'pull-request', name: input, ref: input };
+  }
+
   const name = input.startsWith(BRANCH_REF_PREFIX) ? input.slice(BRANCH_REF_PREFIX.length) : input;
 
   if (name === '') {
@@ -51,7 +71,11 @@ export function resolveBranch(input: string): BranchTarget {
   }
 
   if (name.startsWith('refs/')) {
-    throw invalid(input, `only branches can be wiped, and a full ref must start with '${BRANCH_REF_PREFIX}'`);
+    throw invalid(
+      input,
+      `only branches and pull request merge refs can be wiped, and a full ref must start with ` +
+        `'${BRANCH_REF_PREFIX}' or be 'refs/pull/<number>/merge'`,
+    );
   }
 
   if (FORBIDDEN_CHARACTERS.test(name)) {
@@ -74,5 +98,5 @@ export function resolveBranch(input: string): BranchTarget {
     }
   }
 
-  return { name, ref: `${BRANCH_REF_PREFIX}${name}` };
+  return { kind: 'branch', name, ref: `${BRANCH_REF_PREFIX}${name}` };
 }

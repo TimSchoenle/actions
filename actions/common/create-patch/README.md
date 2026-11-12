@@ -7,9 +7,9 @@ outside the markers.
 <!-- docs:generated header -->
 # Common Create Patch
 
-Uploads the working-tree changes as a binary git patch against HEAD, for common/commit-patch to commit from a job that runs no repository code.
+Uploads the working-tree changes as a binary git patch against HEAD, for common/commit-patch to commit from a job that runs no repository code. Can also upload an empty patch for a given commit without a checkout.
 
-[actions-common-create-patch-v2.0.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-patch-v2.0.3) · Composite action
+[actions-common-create-patch-v2.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-patch-v2.1.0) · Composite action
 <!-- /docs:generated header -->
 
 Records what a formatter or generator changed in the checkout as a binary `git` patch against `HEAD`, and uploads it
@@ -45,7 +45,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - run: bun install --frozen-lockfile && bun run format
       - id: patch
-        uses: TimSchoenle/actions/actions/common/create-patch@actions-common-create-patch-v2.0.3 # tag=actions-common-create-patch-v2.0.3
+        uses: TimSchoenle/actions/actions/common/create-patch@actions-common-create-patch-v2.1.0 # tag=actions-common-create-patch-v2.1.0
         with:
           artifact_name: format-patch
 
@@ -58,11 +58,12 @@ jobs:
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input             | Required | Default    | Description                                                                                                                                                                     |
-| ----------------- | -------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `artifact_name`   | yes      |            | Name of the uploaded artifact, which commit-patch downloads by the same name. 1 to 100 characters of letters, digits, ., _ and -.                                               |
-| `paths`           | no       | `.`        | Space- or newline-separated paths or globs scoping the patch, as commit-changes file_pattern takes them. A glob is matched across directories. Empty or . takes the whole tree. |
-| `max_patch_bytes` | no       | `10485760` | Largest patch, in bytes. A larger one fails the step. Keep it equal to max_patch_bytes on commit-patch.                                                                         |
+| Input             | Required | Default    | Description                                                                                                                                                                                                                                                  |
+| ----------------- | -------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `artifact_name`   | yes      |            | Name of the uploaded artifact, which commit-patch downloads by the same name. 1 to 100 characters of letters, digits, ., _ and -.                                                                                                                            |
+| `paths`           | no       | `.`        | Space- or newline-separated paths or globs scoping the patch, as commit-changes file_pattern takes them. A glob is matched across directories. Empty or . takes the whole tree.                                                                              |
+| `empty_base_sha`  | no       |            | Full commit SHA to upload an empty patch for, without diffing a checkout. For a job that only has to tell commit-patch or find-patch "nothing to commit for this head": no checkout is needed, and paths is not read. Empty diffs the checkout against HEAD. |
+| `max_patch_bytes` | no       | `10485760` | Largest patch, in bytes. A larger one fails the step. Keep it equal to max_patch_bytes on commit-patch.                                                                                                                                                      |
 <!-- /docs:generated inputs -->
 
 ### paths
@@ -74,11 +75,11 @@ jobs:
 <!-- docs:generated outputs -->
 ## Outputs
 
-| Output          | Description                                                                |
-| --------------- | -------------------------------------------------------------------------- |
-| `has_changes`   | true when the patch is non-empty, false when the scoped tree matches HEAD. |
-| `artifact_name` | Name of the uploaded artifact.                                             |
-| `base_sha`      | The commit the patch was computed against: HEAD of the checkout.           |
+| Output          | Description                                                                         |
+| --------------- | ----------------------------------------------------------------------------------- |
+| `has_changes`   | true when the patch is non-empty, false when the scoped tree matches HEAD.          |
+| `artifact_name` | Name of the uploaded artifact.                                                      |
+| `base_sha`      | The commit the patch was computed against: HEAD of the checkout, or empty_base_sha. |
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->

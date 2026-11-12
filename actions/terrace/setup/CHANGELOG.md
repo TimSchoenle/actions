@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.1](https://github.com/TimSchoenle/actions/compare/src-actions-terrace-setup-v4.0.0...src-actions-terrace-setup-v4.0.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **terrace-setup:** pin the oras default as its release tag, so Renovate can look it up ([#2280](https://github.com/TimSchoenle/actions/issues/2280)) ([1b4f203](https://github.com/TimSchoenle/actions/commit/1b4f2037db560fb46ea3c079ad7f7b7e4a3b9854))
+
 ## [4.0.0](https://github.com/TimSchoenle/actions/compare/src-actions-terrace-setup-v3.1.3...src-actions-terrace-setup-v4.0.0) (2026-11-12)
 
 

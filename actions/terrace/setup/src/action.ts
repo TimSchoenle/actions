@@ -121,21 +121,30 @@ function booleanInput(name: 'oras', value: string): boolean {
 }
 
 /**
- * An exact tool release from an input, with its leading `v` when `prefixed`. Checked because it is
- * spliced into a download URL: anything but a version would request some other path on GitHub.
+ * An exact tool release from an input. Checked because it is spliced into a download URL: anything
+ * but a version would request some other path on GitHub.
+ *
+ * - `required`: the value is the release tag, `vMAJOR.MINOR.PATCH`, and is returned as given.
+ * - `optional`: the value is `MAJOR.MINOR.PATCH` with or without a leading `v`, and is returned
+ *   without it. oras tags its releases `v1.3.6` but names its assets `oras_1.3.6_...`; the default
+ *   carries the `v` because Renovate looks the pinned digest up by the release tag.
  */
-function toolVersionInput(name: 'cosign_version' | 'oras_version', value: string, prefixed: boolean): string {
+function toolVersionInput(
+  name: 'cosign_version' | 'oras_version',
+  value: string,
+  prefix: 'optional' | 'required',
+): string {
   const trimmed = value.trim();
-  const bare = prefixed && trimmed.startsWith('v') ? trimmed.slice(1) : trimmed;
-  const request = prefixed && bare === trimmed ? undefined : parseVersionRequest(bare);
+  const bare = trimmed.startsWith('v') ? trimmed.slice(1) : trimmed;
+  const request = prefix === 'required' && bare === trimmed ? undefined : parseVersionRequest(bare);
 
   if (request === undefined || !isExact(request)) {
-    const shape = prefixed ? 'vMAJOR.MINOR.PATCH' : 'MAJOR.MINOR.PATCH';
+    const shape = prefix === 'required' ? 'vMAJOR.MINOR.PATCH,' : 'MAJOR.MINOR.PATCH, with or without a leading v,';
 
-    throw new InvalidInputError(name, `must be ${shape}, got ${JSON.stringify(value)}.`);
+    throw new InvalidInputError(name, `must be ${shape} got ${JSON.stringify(value)}.`);
   }
 
-  return trimmed;
+  return prefix === 'required' ? trimmed : bare;
 }
 
 const SHA256_PATTERN = /^[\dA-Fa-f]{64}$/;
@@ -209,9 +218,9 @@ async function resolveRelease(
 export async function run(dependencies: ActionDependencies = defaultDependencies()): Promise<void> {
   await runAction(async () => {
     const wantsOras = booleanInput('oras', getInput('oras'));
-    const cosignVersion = toolVersionInput('cosign_version', getInput('cosign_version'), true);
+    const cosignVersion = toolVersionInput('cosign_version', getInput('cosign_version'), 'required');
     const cosignChecksums = sha256Input('cosign_checksums_sha256', getInput('cosign_checksums_sha256'));
-    const orasVersion = wantsOras ? toolVersionInput('oras_version', getInput('oras_version'), false) : '';
+    const orasVersion = wantsOras ? toolVersionInput('oras_version', getInput('oras_version'), 'optional') : '';
     const orasChecksums = wantsOras ? sha256Input('oras_checksums_sha256', getInput('oras_checksums_sha256')) : '';
     const { request, source } = await requestedVersion(
       dependencies,

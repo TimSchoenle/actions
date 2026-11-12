@@ -9,7 +9,7 @@ outside the markers.
 
 Commits a common/create-patch artifact from this run or from the run run_id names as a verified commit, refusing any path outside allowed_paths, under .github/workflows/ or below a symbolic link.
 
-[actions-common-commit-patch-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-patch-v3.0.0) · Composite action
+[actions-common-commit-patch-v3.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-patch-v3.1.0) · Composite action
 <!-- /docs:generated header -->
 
 Downloads the patch [`common/create-patch`](../create-patch) uploaded in an earlier job of the same run, or in the
@@ -50,7 +50,7 @@ jobs:
           client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           permission-contents: write
-      - uses: TimSchoenle/actions/actions/common/commit-patch@actions-common-commit-patch-v3.0.0 # tag=actions-common-commit-patch-v3.0.0
+      - uses: TimSchoenle/actions/actions/common/commit-patch@actions-common-commit-patch-v3.1.0 # tag=actions-common-commit-patch-v3.1.0
         with:
           token: ${{ steps.token.outputs.token }}
           artifact_name: format-patch
@@ -97,7 +97,7 @@ jobs:
           client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           permission-contents: write
-      - uses: TimSchoenle/actions/actions/common/commit-patch@actions-common-commit-patch-v3.0.0 # tag=actions-common-commit-patch-v3.0.0
+      - uses: TimSchoenle/actions/actions/common/commit-patch@actions-common-commit-patch-v3.1.0 # tag=actions-common-commit-patch-v3.1.0
         with:
           token: ${{ steps.token.outputs.token }}
           run_id: ${{ github.event.workflow_run.id }}
@@ -135,6 +135,30 @@ The `if:` compares branch names as strings. `branch` must therefore be a plain b
 `refs/`, such as a branch literally named `refs/heads/main` that would pass the comparison, fails the step, as does any
 name `git check-ref-format --branch` refuses.
 
+### Reusing a patch find-patch already downloaded
+
+A job that runs `find-patch` first, to skip the token and the commit when there is nothing to commit, has the artifact
+on disk already. Pass `find-patch`'s `directory` output as `directory` and the second download is skipped:
+
+```yaml
+- uses: TimSchoenle/actions/actions/common/commit-patch@<sha> # tag=actions-common-commit-patch-v<version>
+  if: steps.find.outputs.has_changes == 'true'
+  with:
+    token: ${{ steps.token.outputs.token }}
+    run_id: ${{ github.event.workflow_run.id }}
+    directory: ${{ steps.find.outputs.directory }}
+    artifact_name: format-patch
+    allowed_paths: 'src/** README.md'
+    commit_message: 'style: auto-format code'
+    branch: ${{ github.event.workflow_run.head_branch }}
+    expected_head_sha: ${{ github.event.workflow_run.head_sha }}
+```
+
+The directory must be an absolute path below the runner temporary directory and outside the checkout, after symbolic
+links are resolved, which is where `find-patch` and download-artifact put an artifact. Its contents are validated
+exactly as a fresh download's: the policy, the size limit and the metadata's base commit all apply. `artifact_name`
+and `run_id` are still validated, and `run_id` still makes `branch` and `expected_head_sha` required.
+
 <!-- docs:generated inputs -->
 ## Inputs
 
@@ -150,6 +174,7 @@ name `git check-ref-format --branch` refuses.
 | `repository`             | no       | `${{ github.repository }}` | Repository to commit to, as owner/repo.                                                                                                                                                                                                                                                                                                                      |
 | `branch`                 | no       |                            | Branch to commit to, as a branch name: a value starting with refs/, or one git would refuse, fails the step. Empty uses the branch of the triggering event, github.head_ref \|\| github.ref_name. With run_id set it must be given, since in a workflow_run job the event branch is the default branch.                                                      |
 | `expected_head_sha`      | no       |                            | The commit the branch must still point at, and the one the checkout must be at. A patch made from any other commit is skipped with a notice. Empty uses the head of the triggering event, github.event.pull_request.head.sha \|\| github.sha. With run_id set it must be given, since in a workflow_run job the event head is the tip of the default branch. |
+| `directory`              | no       |                            | Directory that already holds the artifact, such as the directory output of find-patch. Set, nothing is downloaded: the patch there is validated and committed exactly as a fresh download would be. It must be an absolute path below the runner temporary directory and outside the checkout. Empty downloads the artifact.                                 |
 | `max_patch_bytes`        | no       | `10485760`                 | Largest patch accepted, in bytes. Keep it equal to max_patch_bytes on create-patch.                                                                                                                                                                                                                                                                          |
 <!-- /docs:generated inputs -->
 

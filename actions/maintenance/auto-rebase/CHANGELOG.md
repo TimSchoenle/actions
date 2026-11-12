@@ -1,5 +1,21 @@
 # Changelog
 
+## [4.0.0](https://github.com/TimSchoenle/actions/compare/src-actions-maintenance-auto-rebase-v3.0.5...src-actions-maintenance-auto-rebase-v4.0.0) (2026-11-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **auto-rebase:** refuse a pull request page that cannot advance ([#2282](https://github.com/TimSchoenle/actions/issues/2282))
+
+### Features
+
+* **auto-rebase:** update only behind pull requests, oldest first, with only_auto_merge and limit ([#2276](https://github.com/TimSchoenle/actions/issues/2276)) ([ecf98d0](https://github.com/TimSchoenle/actions/commit/ecf98d0ab063a798391612627f943b84a68fbff9))
+
+
+### Bug Fixes
+
+* **auto-rebase:** refuse a pull request page that cannot advance ([#2282](https://github.com/TimSchoenle/actions/issues/2282)) ([9850af0](https://github.com/TimSchoenle/actions/commit/9850af0767637d52e6555ec0492b761db7702e16))
+
 ## [3.0.5](https://github.com/TimSchoenle/actions/compare/src-actions-maintenance-auto-rebase-v3.0.4...src-actions-maintenance-auto-rebase-v3.0.5) (2026-11-12)
 
 

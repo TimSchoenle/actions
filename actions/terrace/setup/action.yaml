@@ -32,10 +32,10 @@ inputs:
     required: false
     default: 'e70e59b328d52949b3a9ae3e0d04721ea8f380c4e91c28197aa91df02afbf4c0'
   oras_version:
-    description: 'oras release to install when oras is true, as MAJOR.MINOR.PATCH without a leading v.'
+    description: 'oras release to install when oras is true, as its release tag vMAJOR.MINOR.PATCH. MAJOR.MINOR.PATCH without the v is accepted too.'
     required: false
-    # renovate: datasource=github-release-attachments depName=oras-project/oras extractVersion=^v(?<version>.*)$
-    default: '1.3.6'
+    # renovate: datasource=github-release-attachments depName=oras-project/oras
+    default: 'v1.3.6'
   oras_checksums_sha256:
     description: "SHA-256 of oras_version's oras_<version>_checksums.txt, which then verifies the oras archive. Read
       only when oras is true. Set it whenever oras_version is set: the default pins the default version's list, and

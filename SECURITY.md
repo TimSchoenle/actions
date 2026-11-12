@@ -28,8 +28,8 @@ is not, including older versions of a component whose neighbours have since rele
 | [Close Pull Request](./actions/common/close-pull-request) | [actions-common-close-pull-request-v2.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-common-close-pull-request-v2.0.5) | :white_check_mark: |
 | [Commit Changes](./actions/common/commit-changes) | [actions-common-commit-changes-v3.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v3.1.0) | :white_check_mark: |
 | [Common Commit Generated Files](./actions/common/commit-generated-files) | [actions-common-commit-generated-files-v1.3.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-generated-files-v1.3.0) | :white_check_mark: |
-| [Common Commit Patch](./actions/common/commit-patch) | [actions-common-commit-patch-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-patch-v3.0.0) | :white_check_mark: |
-| [Common Create Patch](./actions/common/create-patch) | [actions-common-create-patch-v2.0.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-patch-v2.0.3) | :white_check_mark: |
+| [Common Commit Patch](./actions/common/commit-patch) | [actions-common-commit-patch-v3.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-patch-v3.1.0) | :white_check_mark: |
+| [Common Create Patch](./actions/common/create-patch) | [actions-common-create-patch-v2.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-patch-v2.1.0) | :white_check_mark: |
 | [Common Download Release Asset](./actions/common/download-release-asset) | [actions-common-download-release-asset-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-download-release-asset-v1.1.4) | :white_check_mark: |
 | [Common Fetch Head](./actions/common/fetch-head) | [actions-common-fetch-head-v2.0.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-fetch-head-v2.0.2) | :white_check_mark: |
 | [Common Find Patch](./actions/common/find-patch) | [actions-common-find-patch-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-find-patch-v1.1.4) | :white_check_mark: |
@@ -83,11 +83,11 @@ is not, including older versions of a component whose neighbours have since rele
 | Component | Version | Supported |
 | --- | --- | --- |
 | [Maintenance Auto-approve-pr](./actions/maintenance/auto-approve-pr) | [actions-maintenance-auto-approve-pr-v3.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v3.0.5) | :white_check_mark: |
-| [Maintenance Auto-rebase](./actions/maintenance/auto-rebase) | [actions-maintenance-auto-rebase-v3.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-rebase-v3.0.5) | :white_check_mark: |
+| [Maintenance Auto-rebase](./actions/maintenance/auto-rebase) | [actions-maintenance-auto-rebase-v4.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-rebase-v4.0.0) | :white_check_mark: |
 | [Maintenance Ensure-actions-are-executed](./actions/maintenance/ensure-actions-are-executed) | [actions-maintenance-ensure-actions-are-executed-v2.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v2.0.5) | :white_check_mark: |
 | [Maintenance Timed-auto-merge](./actions/maintenance/timed-auto-merge) | [actions-maintenance-timed-auto-merge-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-timed-auto-merge-v3.0.0) | :white_check_mark: |
 | [Maintenance Trigger-coderabbit-review](./actions/maintenance/trigger-coderabbit-review) | [actions-maintenance-trigger-coderabbit-review-v2.0.2](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-trigger-coderabbit-review-v2.0.2) | :white_check_mark: |
-| [Maintenance Wipe-cache](./actions/maintenance/wipe-cache) | [actions-maintenance-wipe-cache-v3.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-wipe-cache-v3.0.5) | :white_check_mark: |
+| [Maintenance Wipe-cache](./actions/maintenance/wipe-cache) | [actions-maintenance-wipe-cache-v3.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-wipe-cache-v3.1.0) | :white_check_mark: |
 
 #### Release
 
@@ -126,7 +126,7 @@ is not, including older versions of a component whose neighbours have since rele
 | [Terrace Helm Diff](./actions/terrace/helm-diff) | [actions-terrace-helm-diff-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-diff-v1.1.3) | :white_check_mark: |
 | [Terrace Helm Sync](./actions/terrace/helm-sync) | [actions-terrace-helm-sync-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-sync-v1.1.3) | :white_check_mark: |
 | [Terrace Image](./actions/terrace/image) | [actions-terrace-image-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-image-v1.1.4) | :white_check_mark: |
-| [Terrace Setup](./actions/terrace/setup) | [actions-terrace-setup-v4.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-setup-v4.0.0) | :white_check_mark: |
+| [Terrace Setup](./actions/terrace/setup) | [actions-terrace-setup-v4.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-setup-v4.0.1) | :white_check_mark: |
 
 #### Test
 

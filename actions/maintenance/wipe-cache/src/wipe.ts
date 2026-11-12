@@ -58,10 +58,10 @@ export interface WipeResult {
  * The default branch's caches are the ones every other branch falls back to restoring, so wiping
  * them slows every job in the repository until they are rebuilt. A `delete` event cannot name the
  * default branch, so reaching it means the `branch` input was wired to the wrong context, and that
- * is worth a failed step.
+ * is worth a failed step. A pull request's merge ref is never the default branch, so it costs no call.
  */
 export async function assertWipeAllowed(api: CacheApi, options: WipeOptions): Promise<void> {
-  if (options.allowDefaultBranch) {
+  if (options.allowDefaultBranch || options.target.kind === 'pull-request') {
     return;
   }
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/TimSchoenle/actions/compare/src-actions-common-create-patch-v2.0.3...src-actions-common-create-patch-v2.1.0) (2026-11-12)
+
+
+### Features
+
+* **create-patch:** upload an empty patch for a commit without a checkout ([#2281](https://github.com/TimSchoenle/actions/issues/2281)) ([a5c4ecf](https://github.com/TimSchoenle/actions/commit/a5c4ecfafedcc12c2320bc2d93f1bbf96d0da6ba))
+
 ## [2.0.3](https://github.com/TimSchoenle/actions/compare/src-actions-common-create-patch-v2.0.2...src-actions-common-create-patch-v2.0.3) (2026-11-12)
 
 

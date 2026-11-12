@@ -3,10 +3,20 @@ import { createOctokit } from 'actions-util/client';
 
 import type { RepositoryCoordinates } from 'actions-util';
 
-/** An open pull request as the list endpoint reports it. */
+/** An open pull request as the listing reports it: a snapshot, re-read before it is acted on. */
 export interface PullRequestSummary {
   number: number;
   labels: string[];
+  draft: boolean;
+  /** Whether auto-merge was on at the time of listing. */
+  autoMergeEnabled: boolean;
+  /** The head commit at the time of listing. */
+  headSha: string;
+  /**
+   * GitHub's `MergeStateStatus` at the time of listing, such as `BEHIND`, `DIRTY` or `CLEAN`.
+   * GitHub computes it in the background, so a freshly pushed pull request reports `UNKNOWN`.
+   */
+  mergeStateStatus: string;
 }
 
 /** A pull request re-read just before it is updated. */
@@ -29,7 +39,7 @@ export interface PullRequestDetail {
 
 /** The GitHub operations this action needs, kept minimal so it can be faked in tests. */
 export interface UpdateBranchApi {
-  /** Every open pull request in the repository, across all pages. */
+  /** Every open pull request in the repository, across all pages, oldest first. */
   listOpenPullRequests(repository: RepositoryCoordinates): Promise<PullRequestSummary[]>;
   /** One pull request, or `undefined` when it no longer exists. */
   getPullRequest(repository: RepositoryCoordinates, number: number): Promise<PullRequestDetail | undefined>;
@@ -44,8 +54,54 @@ export interface UpdateBranchApi {
   updateBranch(repository: RepositoryCoordinates, number: number, expectedHeadSha: string): Promise<void>;
 }
 
-/** GitHub's ceiling on `per_page` for the pull request list. */
+/** GitHub's ceiling on `first` for a connection. */
 const PAGE_SIZE = 100;
+
+/**
+ * Lists open pull requests oldest first, with the fields the update decision reads from the
+ * snapshot. The label filter stays on the client: GraphQL's `labels` argument compares names
+ * exactly, and this action documents a case-insensitive match.
+ */
+const OPEN_PULL_REQUESTS_QUERY = `query OpenPullRequests($owner: String!, $repo: String!, $first: Int!, $after: String) {
+  repository(owner: $owner, name: $repo) {
+    pullRequests(states: OPEN, first: $first, after: $after, orderBy: { field: CREATED_AT, direction: ASC }) {
+      nodes {
+        number
+        isDraft
+        headRefOid
+        mergeStateStatus
+        autoMergeRequest {
+          enabledAt
+        }
+        labels(first: 100) {
+          nodes {
+            name
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}`;
+
+interface OpenPullRequestsResponse {
+  repository: {
+    pullRequests: {
+      nodes: ({
+        number: number;
+        isDraft: boolean;
+        headRefOid: string;
+        mergeStateStatus: string;
+        autoMergeRequest: { enabledAt: string | null } | null;
+        labels: { nodes: ({ name: string } | null)[] | null } | null;
+      } | null)[];
+      pageInfo: { hasNextPage: boolean; endCursor: string | null };
+    };
+  } | null;
+}
 
 export function createUpdateBranchApi(token: string): UpdateBranchApi {
   const octokit = createOctokit(token);
@@ -91,20 +147,49 @@ export function createUpdateBranchApi(token: string): UpdateBranchApi {
 
     async listOpenPullRequests({ owner, repo }: RepositoryCoordinates): Promise<PullRequestSummary[]> {
       const pullRequests: PullRequestSummary[] = [];
-      const pages = octokit.paginate.iterator(octokit.rest.pulls.list, {
-        owner,
-        per_page: PAGE_SIZE,
-        repo,
-        state: 'open',
-      });
+      let after: string | null = null;
 
-      for await (const { data } of pages) {
-        for (const pullRequest of data) {
-          pullRequests.push({ labels: pullRequest.labels.map((label) => label.name), number: pullRequest.number });
+      for (;;) {
+        const response: OpenPullRequestsResponse = await octokit.graphql<OpenPullRequestsResponse>(
+          OPEN_PULL_REQUESTS_QUERY,
+          { after, first: PAGE_SIZE, owner, repo },
+        );
+
+        if (response.repository === null) {
+          throw new Error(`Repository ${owner}/${repo} was not found or the token cannot read it.`);
         }
-      }
 
-      return pullRequests;
+        const { nodes, pageInfo } = response.repository.pullRequests;
+
+        for (const node of nodes) {
+          if (node === null) {
+            continue;
+          }
+
+          pullRequests.push({
+            autoMergeEnabled: node.autoMergeRequest !== null,
+            draft: node.isDraft,
+            headSha: node.headRefOid,
+            labels: (node.labels?.nodes ?? []).flatMap((label) => (label === null ? [] : [label.name])),
+            mergeStateStatus: node.mergeStateStatus,
+            number: node.number,
+          });
+        }
+
+        if (!pageInfo.hasNextPage) {
+          return pullRequests;
+        }
+
+        // A next page without a fresh cursor would either drop the remaining pull requests or ask
+        // for the same page forever; neither is a listing the update decision can rely on.
+        if (pageInfo.endCursor === null || pageInfo.endCursor === after) {
+          throw new Error(
+            `GitHub reported more open pull requests in ${owner}/${repo} but no new cursor to fetch them with.`,
+          );
+        }
+
+        after = pageInfo.endCursor;
+      }
     },
 
     async updateBranch({ owner, repo }: RepositoryCoordinates, number: number, expectedHeadSha: string): Promise<void> {

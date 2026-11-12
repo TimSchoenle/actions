@@ -17,6 +17,7 @@ export const ActionInput = {
   mode: 'mode',
   artifact_name: 'artifact_name',
   directory: 'directory',
+  source_directory: 'source_directory',
   token: 'token',
   allowed_paths: 'allowed_paths',
   allow_workflow_changes: 'allow_workflow_changes',

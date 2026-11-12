@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -91,6 +91,7 @@ describe('prepare', () => {
     vi.stubEnv('INPUT_MODE', 'prepare');
     vi.stubEnv('INPUT_DIRECTORY', '');
     vi.stubEnv('INPUT_TOKEN', '');
+    vi.stubEnv('INPUT_SOURCE_DIRECTORY', '');
   });
 
   // In a workflow_run job the event values name the default branch and its tip, not the pull request
@@ -152,6 +153,75 @@ describe('prepare', () => {
     expect(path.dirname(directory)).toBe(temp);
     expect(path.basename(directory)).toMatch(/^commit-patch-update-readme-/);
     expect(await readdir(directory)).toEqual([]);
+  });
+
+  // The checkout is `download` here: these cases keep the temporary directory outside it, as on a
+  // hosted runner.
+  describe('with a directory that already holds the artifact', () => {
+    it('returns that directory and creates none', async () => {
+      const source = await mkdtemp(path.join(temp, 'find-patch-'));
+      vi.stubEnv('INPUT_SOURCE_DIRECTORY', source);
+
+      await run({ temp, workspace: download });
+
+      expect(core.setFailed).not.toHaveBeenCalled();
+      expect(outputs()['directory']).toBe(await realpath(source));
+      expect(await readdir(temp)).toEqual([path.basename(source)]);
+    });
+
+    it('still validates every other input first', async () => {
+      vi.stubEnv('INPUT_SOURCE_DIRECTORY', await mkdtemp(path.join(temp, 'find-patch-')));
+      vi.stubEnv('INPUT_EXPECTED_HEAD_SHA', 'abc1234');
+
+      await run({ temp, workspace: download });
+
+      expect(core.setFailed).toHaveBeenCalledWith(expect.stringMatching(/expected_head_sha must be a full/));
+    });
+
+    it.each([
+      ['a relative path', () => 'temp/x', /must be an absolute path/],
+      ['a missing directory', () => path.join(temp, 'missing'), /does not exist/],
+      ['the temporary directory itself', () => temp, /below the runner temporary directory/],
+      ['a directory outside it', () => download, /below the runner temporary directory/],
+      ['a traversal out of it', () => `${temp}/../download`, /below the runner temporary directory/],
+    ])('refuses %s', async (_name, value, message) => {
+      vi.stubEnv('INPUT_SOURCE_DIRECTORY', value());
+
+      await run({ temp, workspace: download });
+
+      expect(core.setFailed).toHaveBeenCalledWith(expect.stringMatching(message));
+    });
+
+    it('refuses a file', async () => {
+      const file = path.join(temp, 'changes.patch');
+      await writeFile(file, '');
+      vi.stubEnv('INPUT_SOURCE_DIRECTORY', file);
+
+      await run({ temp, workspace: download });
+
+      expect(core.setFailed).toHaveBeenCalledWith(expect.stringMatching(/is not a directory/));
+    });
+
+    // A link inside the temporary directory that points into the checkout resolves to the checkout.
+    it('refuses a symbolic link that resolves outside it', async () => {
+      const link = path.join(temp, 'link');
+      await symlink(download, link);
+      vi.stubEnv('INPUT_SOURCE_DIRECTORY', link);
+
+      await run({ temp, workspace: download });
+
+      expect(core.setFailed).toHaveBeenCalledWith(expect.stringMatching(/below the runner temporary directory/));
+    });
+
+    // A self-hosted runner can keep its temporary directory inside the workspace.
+    it('refuses a directory inside the checkout', async () => {
+      const source = await mkdtemp(path.join(temp, 'find-patch-'));
+      vi.stubEnv('INPUT_SOURCE_DIRECTORY', source);
+
+      await run({ temp, workspace: temp });
+
+      expect(core.setFailed).toHaveBeenCalledWith(expect.stringMatching(/outside the checkout/));
+    });
   });
 
   it.each([

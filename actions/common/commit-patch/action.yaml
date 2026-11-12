@@ -38,6 +38,10 @@ inputs:
     description: 'The commit the branch must still point at, and the one the checkout must be at. A patch made from any other commit is skipped with a notice. Empty uses the head of the triggering event, github.event.pull_request.head.sha || github.sha. With run_id set it must be given, since in a workflow_run job the event head is the tip of the default branch.'
     required: false
     default: ''
+  directory:
+    description: 'Directory that already holds the artifact, such as the directory output of find-patch. Set, nothing is downloaded: the patch there is validated and committed exactly as a fresh download would be. It must be an absolute path below the runner temporary directory and outside the checkout. Empty downloads the artifact.'
+    required: false
+    default: ''
   max_patch_bytes:
     description: 'Largest patch accepted, in bytes. Keep it equal to max_patch_bytes on create-patch.'
     required: false
@@ -61,7 +65,8 @@ runs:
   using: 'composite'
   steps:
     # Validates every input before anything is downloaded, and creates a fresh directory under
-    # RUNNER_TEMP, outside the checkout, for the artifact to land in.
+    # RUNNER_TEMP, outside the checkout, for the artifact to land in. Given a directory that already
+    # holds the artifact, it checks that directory instead and neither download step runs.
     - name: Prepare
       id: prepare
       shell: bash
@@ -79,12 +84,14 @@ runs:
         INPUT_EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         INPUT_MAX_PATCH_BYTES: ${{ inputs.max_patch_bytes }}
         INPUT_RUN_ID: ${{ inputs.run_id }}
+        INPUT_SOURCE_DIRECTORY: ${{ inputs.directory }}
       run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"
 
     # By name. download-artifact extracts a single named artifact straight into the path. Prepare has
-    # already checked that run_id is empty or a run ID, so exactly one of the two steps runs.
+    # already checked that run_id is empty or a run ID, so exactly one of the two steps runs, and
+    # neither when directory is set.
     - name: Download Patch
-      if: inputs.run_id == ''
+      if: inputs.directory == '' && inputs.run_id == ''
       uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
       with:
         name: ${{ inputs.artifact_name }}
@@ -93,7 +100,7 @@ runs:
     # From another run of this repository, which goes through the REST API with the job token and so
     # needs actions: read. A workflow_run job uses it to commit what the pull_request run produced.
     - name: Download Patch From Run
-      if: inputs.run_id != ''
+      if: inputs.directory == '' && inputs.run_id != ''
       uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
       with:
         name: ${{ inputs.artifact_name }}

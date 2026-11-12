@@ -12,6 +12,10 @@ inputs:
     description: 'Directory the artifact was downloaded to. Read in commit mode.'
     required: false
     default: ''
+  source_directory:
+    description: 'In prepare mode, a directory that already holds the artifact, under the runner temporary directory. Returned as directory in place of a fresh one, and nothing is downloaded.'
+    required: false
+    default: ''
   token:
     description: 'Token for the commit, in commit mode.'
     required: false

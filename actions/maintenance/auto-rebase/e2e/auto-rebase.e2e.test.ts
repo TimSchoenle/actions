@@ -153,15 +153,20 @@ describe('auto-rebase', () => {
     }
   });
 
-  it('merges the base into a labelled pull request and reports a conflict without failing', async () => {
+  // GitHub computes the merge state in the background. Once it has, the conflicting pull request is
+  // skipped as `conflicting` without a call; before that, the update is sent and rejected with 422.
+  // Either way it is never updated and never fails the step.
+  it('merges the base into a labelled pull request and leaves a conflicting one alone without failing', async () => {
     const result = await run();
+    const skipped = JSON.parse(result.outputs.skipped ?? '[]') as number[];
+    const failed = JSON.parse(result.outputs.failed ?? '[]') as number[];
 
-    expect(result.outputs).toEqual({
-      updated: JSON.stringify([behindNumber]),
-      skipped: '[]',
-      failed: JSON.stringify([conflictingNumber]),
-    });
-    expect(result.warnings.join('\n')).toContain(`#${conflictingNumber}: GitHub rejected the update`);
+    expect(result.outputs.updated).toBe(JSON.stringify([behindNumber]));
+    expect([...skipped, ...failed]).toEqual([conflictingNumber]);
+
+    if (failed.length > 0) {
+      expect(result.warnings.join('\n')).toContain(`#${conflictingNumber}: GitHub rejected the update`);
+    }
     expect(result.stepSummary).toContain(`| #${behindNumber} | updated |`);
 
     const merged = await movedHead(behind, behindHead);
@@ -182,6 +187,13 @@ describe('auto-rebase', () => {
     expect(result.outputs).toEqual({ updated: '[]', skipped: JSON.stringify([currentNumber]), failed: '[]' });
     expectNoInjection(result);
     expectSecretNotLeaked(result, scratch.token);
+  });
+
+  it('touches no pull request without auto-merge when only_auto_merge is true', async () => {
+    const result = await run({ label: currentLabel, only_auto_merge: 'true' });
+
+    expect(result.outputs).toEqual({ updated: '[]', skipped: JSON.stringify([currentNumber]), failed: '[]' });
+    expect(result.stepSummary).toContain('auto-merge is off, and only_auto_merge is set');
   });
 
   it('matches nothing for a label no pull request carries', async () => {

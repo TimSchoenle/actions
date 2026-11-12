@@ -36,7 +36,7 @@ jobs:
       contents: write # to create the branch
     steps:
       - id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@actions-common-create-branch-v2.0.5 # tag=actions-common-create-branch-v2.0.5
+        uses: TimSchoenle/actions/actions/common/create-branch@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-common-create-branch-v2.0.5
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}

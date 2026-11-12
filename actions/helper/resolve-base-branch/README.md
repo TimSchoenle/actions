@@ -21,7 +21,7 @@ Resolve the given base branch or return default branch. With optional existence 
 # An empty branch_name resolves the repository's default branch. The step fails when the branch
 # does not exist, so the checkout never runs against a missing ref.
 - id: base
-  uses: TimSchoenle/actions/actions/helper/resolve-base-branch@actions-helper-resolve-base-branch-v2.0.5 # tag=actions-helper-resolve-base-branch-v2.0.5
+  uses: TimSchoenle/actions/actions/helper/resolve-base-branch@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-helper-resolve-base-branch-v2.0.5
   with:
     token: ${{ steps.token.outputs.token }}
     repository: acme/helm-charts
@@ -42,7 +42,7 @@ Resolve the given base branch or return default branch. With optional existence 
 # silent_fail turns only a missing branch into an empty output. A token that cannot see the
 # repository still fails the step, rather than reading as "branch not found".
 - id: base
-  uses: TimSchoenle/actions/actions/helper/resolve-base-branch@actions-helper-resolve-base-branch-v2.0.5 # tag=actions-helper-resolve-base-branch-v2.0.5
+  uses: TimSchoenle/actions/actions/helper/resolve-base-branch@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-helper-resolve-base-branch-v2.0.5
   with:
     token: ${{ steps.token.outputs.token }}
     repository: ${{ github.repository }}
@@ -50,7 +50,7 @@ Resolve the given base branch or return default branch. With optional existence 
     silent_fail: 'true'
 
 - if: steps.base.outputs.base_branch == ''
-  uses: TimSchoenle/actions/actions/common/create-branch@actions-common-create-branch-v2.0.5 # tag=actions-common-create-branch-v2.0.5
+  uses: TimSchoenle/actions/actions/common/create-branch@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-common-create-branch-v2.0.5
   with:
     token: ${{ steps.token.outputs.token }}
     repository: ${{ github.repository }}

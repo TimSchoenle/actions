@@ -16,7 +16,29 @@ vi.mock('actions-util/core', async (importOriginal) => ({
 
 const repository = { owner: 'owner', repo: 'repo' };
 
-const options: UpdateOptions = { label: 'dependencies', repository, skipDrafts: false };
+const options: UpdateOptions = {
+  label: 'dependencies',
+  limit: undefined,
+  onlyAutoMerge: false,
+  repository,
+  skipDrafts: false,
+};
+
+function summary(
+  number: number,
+  labels: string[] = ['dependencies'],
+  overrides: Partial<PullRequestSummary> = {},
+): PullRequestSummary {
+  return {
+    autoMergeEnabled: false,
+    draft: false,
+    headSha: `sha-${number}`,
+    labels,
+    mergeStateStatus: 'UNKNOWN',
+    number,
+    ...overrides,
+  };
+}
 
 function detail(number: number, overrides: Partial<PullRequestDetail> = {}): PullRequestDetail {
   return {
@@ -44,11 +66,7 @@ interface FakeOptions {
 }
 
 function fakeApi({ behind = 3, details, listed }: FakeOptions = {}): UpdateBranchApi {
-  const summaries = listed ?? [
-    { labels: ['dependencies'], number: 1 },
-    { labels: ['bug'], number: 2 },
-    { labels: ['dependencies', 'bug'], number: 3 },
-  ];
+  const summaries = listed ?? [summary(1, ['dependencies']), summary(2, ['bug']), summary(3, ['dependencies', 'bug'])];
 
   return {
     commitsBehindBase: vi.fn(async () => behind),
@@ -90,7 +108,7 @@ describe('updateLabelledPullRequests', () => {
   });
 
   it('matches the label case-insensitively', async () => {
-    const api = fakeApi({ listed: [{ labels: ['Dependencies'], number: 1 }] });
+    const api = fakeApi({ listed: [summary(1, ['Dependencies'])] });
 
     const result = await updateLabelledPullRequests(api, { ...options, label: 'DEPENDENCIES' });
 
@@ -98,7 +116,7 @@ describe('updateLabelledPullRequests', () => {
   });
 
   it('touches nothing when no pull request carries the label', async () => {
-    const api = fakeApi({ listed: [{ labels: ['bug'], number: 2 }] });
+    const api = fakeApi({ listed: [summary(2, ['bug'])] });
 
     const result = await updateLabelledPullRequests(api, options);
 
@@ -114,7 +132,7 @@ describe('updateLabelledPullRequests', () => {
       ['on a deleted fork', detail(1, { headRepoFullName: null }), 'head-repository-deleted'],
       ['on a fork maintainers cannot push to', detail(1, { headRepoFullName: 'fork/repo' }), 'fork-not-writable'],
     ] as const)('skips a pull request that is now %s', async (_name, current, reason) => {
-      const api = fakeApi({ details: { 1: current }, listed: [{ labels: ['dependencies'], number: 1 }] });
+      const api = fakeApi({ details: { 1: current }, listed: [summary(1, ['dependencies'])] });
 
       const result = await updateLabelledPullRequests(api, options);
 
@@ -125,7 +143,7 @@ describe('updateLabelledPullRequests', () => {
     it('updates a fork whose maintainers may push', async () => {
       const api = fakeApi({
         details: { 1: detail(1, { headRepoFullName: 'fork/repo', maintainerCanModify: true }) },
-        listed: [{ labels: ['dependencies'], number: 1 }],
+        listed: [summary(1, ['dependencies'])],
       });
 
       const result = await updateLabelledPullRequests(api, options);
@@ -137,7 +155,7 @@ describe('updateLabelledPullRequests', () => {
     it('conditions the update on the head it just read', async () => {
       const api = fakeApi({
         details: { 1: detail(1, { headSha: 'fresh' }) },
-        listed: [{ labels: ['dependencies'], number: 1 }],
+        listed: [summary(1, ['dependencies'])],
       });
 
       await updateLabelledPullRequests(api, options);
@@ -148,7 +166,7 @@ describe('updateLabelledPullRequests', () => {
   });
 
   describe('drafts', () => {
-    const draftOnly = { details: { 1: detail(1, { draft: true }) }, listed: [{ labels: ['dependencies'], number: 1 }] };
+    const draftOnly = { details: { 1: detail(1, { draft: true }) }, listed: [summary(1, ['dependencies'])] };
 
     it('updates a draft by default', async () => {
       const result = await updateLabelledPullRequests(fakeApi(draftOnly), options);
@@ -160,6 +178,15 @@ describe('updateLabelledPullRequests', () => {
       const result = await updateLabelledPullRequests(fakeApi(draftOnly), { ...options, skipDrafts: true });
 
       expect(result.skipped).toEqual([{ number: 1, reason: 'draft' }]);
+    });
+
+    it('skips a draft the listing reports without reading it', async () => {
+      const api = fakeApi({ listed: [summary(1, ['dependencies'], { draft: true })] });
+
+      const result = await updateLabelledPullRequests(api, { ...options, skipDrafts: true });
+
+      expect(result.skipped).toEqual([{ number: 1, reason: 'draft' }]);
+      expect(api.getPullRequest).not.toHaveBeenCalled();
     });
   });
 
@@ -177,13 +204,137 @@ describe('updateLabelledPullRequests', () => {
     });
 
     it('still sends the update when the comparison fails', async () => {
-      const api = fakeApi({ listed: [{ labels: ['dependencies'], number: 1 }] });
+      const api = fakeApi({ listed: [summary(1, ['dependencies'])] });
       vi.mocked(api.commitsBehindBase).mockRejectedValue(new Error('No common ancestor'));
 
       const result = await updateLabelledPullRequests(api, options);
 
       expect(result.updated).toEqual([1]);
       expect(core.debug).toHaveBeenCalledWith('Could not compare #1 with its base: No common ancestor');
+    });
+  });
+
+  describe('merge state from the listing', () => {
+    it('skips a pull request GitHub reports as conflicting without reading it', async () => {
+      const api = fakeApi({ listed: [summary(1, ['dependencies'], { mergeStateStatus: 'DIRTY' }), summary(3)] });
+
+      const result = await updateLabelledPullRequests(api, options);
+
+      expect(result.skipped).toEqual([{ number: 1, reason: 'conflicting' }]);
+      expect(result.updated).toEqual([3]);
+      expect(api.getPullRequest).not.toHaveBeenCalledWith(repository, 1);
+    });
+
+    it('updates a BEHIND pull request without comparing when its head has not moved', async () => {
+      const api = fakeApi({ listed: [summary(1, ['dependencies'], { mergeStateStatus: 'BEHIND' })] });
+
+      const result = await updateLabelledPullRequests(api, options);
+
+      expect(result.updated).toEqual([1]);
+      expect(api.commitsBehindBase).not.toHaveBeenCalled();
+      expect(api.updateBranch).toHaveBeenCalledWith(repository, 1, 'sha-1');
+    });
+
+    it('compares a BEHIND pull request whose head moved since the listing', async () => {
+      const api = fakeApi({
+        behind: 0,
+        details: { 1: detail(1, { headSha: 'fresh' }) },
+        listed: [summary(1, ['dependencies'], { mergeStateStatus: 'BEHIND' })],
+      });
+
+      const result = await updateLabelledPullRequests(api, options);
+
+      expect(api.commitsBehindBase).toHaveBeenCalledWith(repository, 'main', 'fresh');
+      expect(result.skipped).toEqual([{ number: 1, reason: 'up-to-date' }]);
+    });
+
+    it.each(['CLEAN', 'BLOCKED', 'UNSTABLE', 'HAS_HOOKS', 'UNKNOWN'])(
+      'compares a pull request whose merge state is %s',
+      async (mergeStateStatus) => {
+        const api = fakeApi({ listed: [summary(1, ['dependencies'], { mergeStateStatus })] });
+
+        const result = await updateLabelledPullRequests(api, options);
+
+        expect(api.commitsBehindBase).toHaveBeenCalledWith(repository, 'main', 'sha-1');
+        expect(result.updated).toEqual([1]);
+      },
+    );
+  });
+
+  describe('only_auto_merge', () => {
+    const listed = [summary(1), summary(2, ['dependencies'], { autoMergeEnabled: true })];
+
+    it('skips a pull request without auto-merge without reading it', async () => {
+      const api = fakeApi({ listed });
+
+      const result = await updateLabelledPullRequests(api, { ...options, onlyAutoMerge: true });
+
+      expect(result.skipped).toEqual([{ number: 1, reason: 'auto-merge-off' }]);
+      expect(result.updated).toEqual([2]);
+      expect(api.getPullRequest).not.toHaveBeenCalledWith(repository, 1);
+    });
+
+    it('updates both when not set', async () => {
+      const result = await updateLabelledPullRequests(fakeApi({ listed }), options);
+
+      expect(result.updated).toEqual([1, 2]);
+    });
+  });
+
+  describe('limit', () => {
+    const listed = [summary(1), summary(2), summary(3)];
+
+    it('updates only the oldest pull requests and skips the rest without reading them', async () => {
+      const api = fakeApi({ listed });
+
+      const result = await updateLabelledPullRequests(api, { ...options, limit: 1 });
+
+      expect(result.updated).toEqual([1]);
+      expect(result.skipped).toEqual([
+        { number: 2, reason: 'limit-reached' },
+        { number: 3, reason: 'limit-reached' },
+      ]);
+      expect(api.getPullRequest).toHaveBeenCalledTimes(1);
+    });
+
+    // The oldest pull request is the one that can merge next; updating a younger one would only
+    // re-run its CI before the next merge puts it behind again.
+    it('lets an up-to-date pull request hold its slot', async () => {
+      const api = fakeApi({ behind: 0, listed });
+
+      const result = await updateLabelledPullRequests(api, { ...options, limit: 1 });
+
+      expect(result.skipped).toEqual([
+        { number: 1, reason: 'up-to-date' },
+        { number: 2, reason: 'limit-reached' },
+        { number: 3, reason: 'limit-reached' },
+      ]);
+      expect(api.updateBranch).not.toHaveBeenCalled();
+    });
+
+    it('gives the slot of a skipped or rejected pull request to the next one', async () => {
+      const api = fakeApi({
+        details: { 1: detail(1, { state: 'closed' }) },
+        listed: [summary(1), summary(2), summary(3), summary(4)],
+      });
+      vi.mocked(api.updateBranch).mockRejectedValueOnce(httpError(422, 'merge conflict'));
+
+      const result = await updateLabelledPullRequests(api, { ...options, limit: 1 });
+
+      expect(result.failed).toEqual([{ kind: 'rejected', message: 'merge conflict', number: 2 }]);
+      expect(result.updated).toEqual([3]);
+      expect(result.skipped).toEqual([
+        { number: 1, reason: 'not-open' },
+        { number: 4, reason: 'limit-reached' },
+      ]);
+    });
+
+    it('counts only pull requests that pass the listing rules', async () => {
+      const api = fakeApi({ listed: [summary(1, ['dependencies'], { mergeStateStatus: 'DIRTY' }), summary(2)] });
+
+      const result = await updateLabelledPullRequests(api, { ...options, limit: 1 });
+
+      expect(result.updated).toEqual([2]);
     });
   });
 
@@ -217,7 +368,7 @@ describe('updateLabelledPullRequests', () => {
     });
 
     it('records a failing re-read as an error', async () => {
-      const api = fakeApi({ listed: [{ labels: ['dependencies'], number: 1 }] });
+      const api = fakeApi({ listed: [summary(1, ['dependencies'])] });
       vi.mocked(api.getPullRequest).mockRejectedValue(httpError(500, 'Server Error'));
 
       const result = await updateLabelledPullRequests(api, options);
