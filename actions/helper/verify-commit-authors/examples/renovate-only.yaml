@@ -15,9 +15,10 @@ jobs:
       pull-requests: read # to read the pull request
     outputs:
       verified: ${{ steps.authors.outputs.verified }}
+      head_sha: ${{ steps.authors.outputs.head_sha }}
     steps:
-      # 29139614 is renovate[bot]. A commit pushed on top by anyone else, or one without a valid
-      # signature, makes verified false.
+      # 29139614 is renovate[bot]. A commit pushed on top by anyone else, one without a valid
+      # signature, or a pull request from a fork makes verified false.
       - id: authors
         uses: TimSchoenle/actions/actions/helper/verify-commit-authors@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-helper-verify-commit-authors-v3.0.4
         with:
@@ -25,11 +26,23 @@ jobs:
           github_token: ${{ github.token }}
           user_ids: '29139614'
 
-  act:
-    name: Act On Verified Pull Request
+  approve:
+    name: Approve Verified Pull Request
     needs: verify
     if: needs.verify.outputs.verified == 'true'
     runs-on: ubuntu-latest
-    permissions: {}
+    permissions:
+      pull-requests: write # to approve the pull request
     steps:
-      - run: echo "Every commit is Renovate's and signed"
+      # commit_id ties the approval to the head that was verified, so a commit pushed since then
+      # shows as unreviewed. GITHUB_TOKEN may approve only when the repository allows GitHub
+      # Actions to approve pull requests.
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ needs.verify.outputs.head_sha }}
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/${REPOSITORY}/pulls/${NUMBER}/reviews" \
+            -f event=APPROVE -f commit_id="${HEAD_SHA}"
