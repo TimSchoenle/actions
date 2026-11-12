@@ -74,6 +74,7 @@ jobs:
 | `branch`            | no       | `${{ github.head_ref \|\| github.ref_name }}` | Branch to commit to                                                                                                                                                                                                                                                                                                                       |
 | `expected_head_sha` | no       |                                               | The commit the branch must still point at; GitHub refuses the commit when it moved on. Empty uses the checked-out commit when branch is the checked-out branch, so a push that landed after the checkout is never overwritten. Otherwise the branch head is read just before the commit, with a warning, and such a push goes undetected. |
 | `file_pattern`      | no       | `.`                                           | File pattern to commit                                                                                                                                                                                                                                                                                                                    |
+| `literal_paths`     | no       |                                               | Paths to commit, one per line, each taken literally: spaces, `*` and `?` are part of the name. Use it for a path that file_pattern, which splits on whitespace, cannot name. Setting both with a file_pattern other than the default fails the step.                                                                                      |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
@@ -111,6 +112,11 @@ when it is gone. The commit API records regular files only, so the step fails on
 link, a directory or any other entry, and on a regular file reached through a linked directory that leaves the
 working tree. Before this, a link was followed and its target committed as a file: a generator that left
 `generated/env.txt` pointing at `/proc/self/environ` committed the step's environment, `INPUT_TOKEN` included.
+
+`file_pattern` splits on whitespace, so it cannot name a path with a space in it: `docs/my page.md` becomes the two
+patterns `docs/my` and `page.md`, which match nothing, and the step commits nothing without failing. Name such a path in
+`literal_paths` instead, one per line. Each line is one path, taken as written: spaces, `*` and `?` are part of the
+name. Set one of the two inputs; a `file_pattern` other than the default next to `literal_paths` fails the step.
 
 ## Which head the commit applies to
 

@@ -20,6 +20,7 @@ export const ActionInput = {
   branch: 'branch',
   expected_head_sha: 'expected_head_sha',
   file_pattern: 'file_pattern',
+  literal_paths: 'literal_paths',
 } as const;
 
 export type ActionInput = (typeof ActionInput)[keyof typeof ActionInput];

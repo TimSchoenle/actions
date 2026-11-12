@@ -125,6 +125,23 @@ describe('commit-changes under hostile input', () => {
       });
     });
 
+    // file_pattern splits on whitespace, so it cannot name `docs/my page.md`; literal_paths can. A
+    // `*` is part of a literal name too, but that is left to the unit tests: Windows forbids it.
+    it('commits a literal path with a space in it, and nothing next to it', async () => {
+      await withCheckout('literal-paths', {}, async ({ workspace, branch }) => {
+        await workspace.write({ 'docs/my page.md': 'page\n', 'docs/other.md': 'other\n' });
+
+        const result = await run(workspace, {
+          branch,
+          commit_message: 'test: literal paths',
+          literal_paths: 'docs/my page.md',
+        });
+
+        expect(result.outputs['changes_detected']).toBe('true');
+        await expect(committedPaths(result.outputs['commit_hash'] as string)).resolves.toEqual(['docs/my page.md']);
+      });
+    });
+
     // The path is spotless, `generated/env.txt` inside the checkout, but it is a link, and reading it
     // read the target: a link to /proc/self/environ committed the step's environment, token included.
     it.runIf(SYMLINKS)('refuses a changed path that is a link outside, and commits nothing', async () => {

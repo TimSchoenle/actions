@@ -1,7 +1,7 @@
 import * as core from 'actions-util/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { run } from './action.js';
+import { parseLiteralPaths, run } from './action.js';
 
 import type { CommitChangesDeps } from './commit.js';
 
@@ -120,5 +120,19 @@ describe('commit-changes action', () => {
 
     expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('No branch given'));
     expect(core.setOutput).not.toHaveBeenCalled();
+  });
+});
+
+describe('parseLiteralPaths', () => {
+  it('keeps one path per line, spaces and glob characters included', () => {
+    expect(parseLiteralPaths('docs/my page.md\na*b.txt')).toEqual(['docs/my page.md', 'a*b.txt']);
+  });
+
+  it('drops a Windows line ending and blank lines', () => {
+    expect(parseLiteralPaths('one.txt\r\n\n  \ntwo.txt\n')).toEqual(['one.txt', 'two.txt']);
+  });
+
+  it('is empty for an empty input', () => {
+    expect(parseLiteralPaths('')).toEqual([]);
   });
 });

@@ -24,6 +24,12 @@ inputs:
     description: 'File pattern to commit'
     required: false
     default: '.'
+  literal_paths:
+    description: 'Paths to commit, one per line, each taken literally: spaces, `*` and `?` are part of the name. Use it
+      for a path that file_pattern, which splits on whitespace, cannot name. Setting both with a file_pattern other than
+      the default fails the step.'
+    required: false
+    default: ''
 
 outputs:
   commit_hash:
