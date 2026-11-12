@@ -43,7 +43,7 @@ function fakeApi(options: {
     commitParents: async () => options.parents ?? [PARENT],
     fileAt: async (path, ref) => files[ref]?.[path],
     pullRequestsForCommit: async () => options.pulls ?? [],
-    tagsWithPrefix: async (prefix) => new Set((options.tags ?? []).filter((tag) => tag.startsWith(prefix))),
+    existingTags: async (names) => new Set(names.filter((name) => (options.tags ?? []).includes(name))),
   };
 }
 
