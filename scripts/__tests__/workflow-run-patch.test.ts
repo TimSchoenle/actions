@@ -55,6 +55,23 @@ describe('workflow_run commit workflows start only for a failed upstream run', (
     }
   });
 
+  // The default-branch guard is a string comparison. A branch literally named refs/heads/main
+  // passes it, so every job that compares names also refuses a name starting with refs/.
+  it.each(['auto-format-commit.yml', 'update-files-commit.yml'])(
+    '%s refuses a head branch named like a full ref wherever it guards the default branch',
+    (file) => {
+      const guarded = Object.entries(loadWorkflow(file).jobs).filter(([, job]) =>
+        normalise(job.if).includes('head_branch != github.event.repository.default_branch'),
+      );
+      expect(guarded.length).toBeGreaterThan(0);
+      for (const [id, job] of guarded) {
+        expect(normalise(job.if), `${file} ${id}`).toContain(
+          "!startsWith(github.event.workflow_run.head_branch, 'refs/')",
+        );
+      }
+    },
+  );
+
   it('auto-format.yml fails the run while a same-repository patch is uncommitted', () => {
     const steps = Object.values(loadWorkflow('auto-format.yml').jobs).flatMap((job) => job.steps ?? []);
     const createPatch = steps.find((step) => step.name === 'Create Patch');
