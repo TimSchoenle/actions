@@ -345,6 +345,22 @@ edition.workspace = true
     expect(inherited).toThrow(/^Cargo\.toml: no 'workspace\.package\.version'\. It is a multiline string/);
   });
 
+  // P14l: each quote of an unterminated string was rescanned to the end of the line from the next
+  // character, so a line of `"\` pairs took quadratic time.
+  it('scans a line of unterminated strings in linear time', () => {
+    const start = performance.now();
+    const facts = readCargoManifest(`${MINIMAL}junk = ${'"\\'.repeat(100_000)}\nlicense = "MIT"\n`, 'Cargo.toml');
+
+    expect(performance.now() - start).toBeLessThan(250);
+    expect(facts.license).toBe('MIT');
+  });
+
+  it('opens no multiline string inside an unterminated one', () => {
+    const facts = readCargoManifest(`${MINIMAL}junk = 'unterminated """\nlicense = "MIT"\n`, 'Cargo.toml');
+
+    expect(facts.license).toBe('MIT');
+  });
+
   it('reports a missing version with the path in the message', () => {
     expect(() => readCargoManifest(`[package]\nname = "web"\n`, 'apps/web/Cargo.toml')).toThrow(
       /^apps\/web\/Cargo\.toml: no 'package\.version'\.$/,

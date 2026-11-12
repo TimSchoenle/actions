@@ -23,8 +23,26 @@ const SUMMARY_LIMIT = 200;
 /** Files that are documentation to a reader rather than to a linter. */
 const DOCUMENTED_EXTENSIONS = new Set(['.md', '.markdown']);
 
-/** An ATX heading, e.g. `# Title`. Setext headings are not read; nothing in the estate uses them. */
-const ATX_HEADING = /^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$/;
+/**
+ * How much of a Markdown file is read. A pull request controls what is under `docs-dir`, and a file
+ * larger than this is indexed by path, like a non-Markdown one, rather than read into memory.
+ */
+const DOCUMENT_SIZE_LIMIT = 1024 * 1024;
+
+/**
+ * How much of a heading or paragraph is reduced to plain text. The summary keeps far less than this,
+ * and the cap bounds the code-span scan, whose cost grows faster than the text it is given.
+ */
+const MARKUP_LIMIT = 16 * 1024;
+
+/** The deepest ATX heading level. */
+const MAX_HEADING_LEVEL = 6;
+
+/** A whitespace character, as `\s` matches it. */
+const WHITESPACE = /^\s$/u;
+
+/** A line terminator, which `.` in a pattern does not match. */
+const LINE_TERMINATOR = /^[\n\r\u2028\u2029]$/u;
 
 /** Fenced code, which may contain anything at all and must not be read as prose. */
 const FENCE = /^\s{0,3}(?:```|~~~)/;
@@ -64,9 +82,6 @@ const BLOCK_HTML_TAGS = new Set(
     'p param search section summary table tbody td tfoot th thead title tr track ul'
   ).split(' '),
 );
-
-/** A link or image, reduced to its text. */
-const LINK = /!?\[([^\]]*)\]\([^)]*\)/g;
 
 /** Candidate emphasis delimiters, judged whole by `stripEmphasis`. */
 const EMPHASIS = /\*+|_+/gu;
@@ -183,11 +198,147 @@ function findClosingRun(markdown: string, from: number, length: number): number 
   return -1;
 }
 
+/** Whether `character` is whitespace; past the end of a line it is not. */
+function isWhitespace(character: string | undefined): boolean {
+  return character !== undefined && WHITESPACE.test(character);
+}
+
+/**
+ * The text of an ATX heading, e.g. `Title` from `## Title ##`, or nothing if `line` is not one.
+ * Setext headings are not read; nothing in the estate uses them.
+ *
+ * Scanned rather than matched: the pattern it replaced, `^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$`, tries
+ * every split of a long run of spaces between its lazy text and its trailing whitespace, and a
+ * heading padded with spaces took seconds per few thousand of them. The text is what that pattern
+ * captures: up to three columns of indentation, one to six `#`, at least one whitespace character,
+ * then everything up to an optional closing run of `#` and the trailing whitespace around it. As in
+ * the pattern, the text must not be empty and must not contain a line terminator.
+ */
+export function readAtxHeading(line: string): string | undefined {
+  const marker = headingMarkerEnd(line);
+
+  if (marker === undefined) {
+    return undefined;
+  }
+
+  let start = marker + 1;
+
+  while (isWhitespace(line[start])) {
+    start++;
+  }
+
+  if (start === line.length) {
+    return whitespaceHeadingText(line, marker);
+  }
+
+  const text = line.slice(start, headingTextEnd(line, start));
+
+  return [...text].some((character) => LINE_TERMINATOR.test(character)) ? undefined : text;
+}
+
+/**
+ * The index of the whitespace character that must follow an ATX heading's run of `#`, or nothing
+ * if the line does not open with up to three columns of indentation and one to six `#` before one.
+ */
+function headingMarkerEnd(line: string): number | undefined {
+  let index = 0;
+
+  while (index < 3 && isWhitespace(line[index])) {
+    index++;
+  }
+
+  const marker = index;
+
+  while (line[index] === '#') {
+    index++;
+  }
+
+  return index === marker || index - marker > MAX_HEADING_LEVEL || !isWhitespace(line[index]) ? undefined : index;
+}
+
+/**
+ * The text of a heading with only whitespace after its marker. The pattern gives back the last
+ * whitespace character `.` can match as the text, and needs at least one before it.
+ */
+function whitespaceHeadingText(line: string, marker: number): string | undefined {
+  for (let candidate = line.length - 1; candidate > marker; candidate--) {
+    if (!LINE_TERMINATOR.test(line[candidate])) {
+      return line[candidate];
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * The end of a heading's text that starts at `start`, before the trailing whitespace and the
+ * closing run of `#` with the whitespace before it. Text that is nothing but `#` keeps its first
+ * one, since it cannot be empty.
+ */
+function headingTextEnd(line: string, start: number): number {
+  let end = line.length;
+
+  while (isWhitespace(line[end - 1])) {
+    end--;
+  }
+
+  while (end > start + 1 && line[end - 1] === '#') {
+    end--;
+  }
+
+  while (end > start + 1 && isWhitespace(line[end - 1])) {
+    end--;
+  }
+
+  return end;
+}
+
+/**
+ * Reduces each link and image, `[text](destination)` or `![text](destination)`, to its text.
+ *
+ * Scanned rather than matched, so that a line of unclosed brackets is read once. The pattern it
+ * replaced, `!?\[([^\]]*)\]\([^)]*\)`, ran each of its unbounded classes from every `[` to the
+ * end of such a line. The text runs from a `[` to the first `]` after it, and the destination from
+ * the `(` that must follow that `]` to the first `)` after it. When no `(` follows the `]`, no
+ * link opens at any `[` before it; when no `)` follows, no link opens anywhere after.
+ */
+export function replaceLinks(text: string): string {
+  let result = '';
+  let copied = 0;
+  let open = text.indexOf('[');
+
+  while (open !== -1) {
+    const close = text.indexOf(']', open + 1);
+
+    if (close === -1) {
+      break;
+    }
+
+    if (text[close + 1] !== '(') {
+      open = text.indexOf('[', close + 1);
+      continue;
+    }
+
+    const end = text.indexOf(')', close + 2);
+
+    if (end === -1) {
+      break;
+    }
+
+    const start = open > copied && text[open - 1] === '!' ? open - 1 : open;
+    result += text.slice(copied, start) + text.slice(open + 1, close);
+    copied = end + 1;
+    open = text.indexOf('[', copied);
+  }
+
+  return result + text.slice(copied);
+}
+
 /** Strips links, emphasis and code-span delimiters down to their text. */
 function plainText(markdown: string): string {
-  const { text, spans } = extractCodeSpans(markdown.replaceAll(MARKER_CHARACTERS, ''));
+  const { text, spans } = extractCodeSpans(markdown.slice(0, MARKUP_LIMIT).replaceAll(MARKER_CHARACTERS, ''));
 
-  return stripEmphasis(text.replaceAll(LINK, '$1'))
+  return stripEmphasis(replaceLinks(text))
     .replaceAll(SPAN_MARKER, (_marker, index: string) => spans[Number(index)] ?? '')
     .replaceAll(/\s+/g, ' ')
     .trim();
@@ -258,7 +409,7 @@ function endsParagraph(line: string, next: string | undefined): boolean {
   return (
     line.trim() === '' ||
     FENCE.test(line) ||
-    ATX_HEADING.test(line) ||
+    readAtxHeading(line) !== undefined ||
     BLOCK_START.test(line) ||
     THEMATIC_BREAK.test(line.replaceAll(/\s/g, '')) ||
     isHtmlBlockStart(line) ||
@@ -314,12 +465,12 @@ export function summarise(source: string, fallbackTitle: string): { title: strin
       continue;
     }
 
-    const heading = ATX_HEADING.exec(line);
+    const heading = readAtxHeading(line);
 
-    if (heading !== null) {
+    if (heading !== undefined) {
       // The first heading names the document. A later one starts a section, and a section title is
       // not a summary, so the search for prose continues past it rather than stopping.
-      title ??= plainText(heading[1]);
+      title ??= plainText(heading);
       continue;
     }
 
@@ -363,7 +514,7 @@ async function collect(root: string, directory: string, found: string[]): Promis
  *
  * Non-Markdown files are indexed by path with no summary. `docs/config.contract.json` is a document
  * a reader follows a link to, and leaving it out of the table would be the index lying about what
- * the directory holds.
+ * the directory holds. So is a Markdown file over 1 MiB, which is not read at all.
  */
 export async function buildDocsIndex(workspace: string, docsDir: string): Promise<DocEntry[]> {
   const root = docsDir.trim();
@@ -391,6 +542,10 @@ export async function buildDocsIndex(workspace: string, docsDir: string): Promis
       const extension = path.extname(file).toLowerCase();
 
       if (!DOCUMENTED_EXTENSIONS.has(extension)) {
+        return { path: relative, title: relative, summary: '' };
+      }
+
+      if ((await fs.stat(file)).size > DOCUMENT_SIZE_LIMIT) {
         return { path: relative, title: relative, summary: '' };
       }
 
