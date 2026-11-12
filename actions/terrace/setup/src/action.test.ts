@@ -74,12 +74,14 @@ function dependencies(files: Record<string, string> = {}): ActionDependencies {
   return {
     ports: ports(),
     runner: { platform: 'linux', arch: 'x64' },
-    fetchJson: vi.fn(() =>
-      Promise.resolve([
-        { tag_name: 'terrace-contract-v0.8.2' },
-        { tag_name: 'terrace-contract-v0.8.0' },
-        { tag_name: 'terrace-contract-v0.9.0' },
-      ]),
+    fetchJson: vi.fn((url: string) =>
+      Promise.resolve(
+        url.includes('/git/matching-refs/')
+          ? ['terrace-contract-v0.8.2', 'terrace-contract-v0.8.0', 'terrace-contract-v0.9.0'].map((tag) => ({
+              ref: `refs/tags/${tag}`,
+            }))
+          : { tag_name: url.slice(url.lastIndexOf('/') + 1) },
+      ),
     ),
     readText: vi.fn((file: string) =>
       file in files ? Promise.resolve(files[file] ?? '') : Promise.reject(new Error(`ENOENT: ${file}`)),

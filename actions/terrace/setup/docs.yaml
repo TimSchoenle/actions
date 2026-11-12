@@ -8,7 +8,7 @@ egress:
   - endpoint: release-assets.githubusercontent.com:443
     for: the release assets that github.com redirects to
   - endpoint: api.github.com:443
-    for: listing terrace-contract releases for a MAJOR.MINOR version, and the REST API download fallback
+    for: looking up the newest terrace-contract release of a MAJOR.MINOR line, and the REST API download fallback
   - endpoint: tuf-repo-cdn.sigstore.dev:443
     for: the Sigstore trust root cosign verifies the terrace-contract release against
 

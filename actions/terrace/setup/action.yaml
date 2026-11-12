@@ -43,10 +43,11 @@ inputs:
     required: false
     default: '7c5fd385736ac5e9b0b2dc1053b232ffbd4d5bdabdf3af7e517ddef97abe8af9'
   github_token:
-    description: 'Token for api.github.com: for listing terrace-contract releases, needed only when the version is a
-      MAJOR.MINOR line, and for the REST API fallback that runs when a release download fails. Defaults to the job token on github.com and to empty elsewhere, because a GitHub Enterprise
-      Server token is not a github.com credential and must not be sent there. Unauthenticated listing works but
-      shares a low per-IP rate limit.'
+    description: 'Token for api.github.com: for looking up the newest terrace-contract release of a line, needed
+      only when the version is a MAJOR.MINOR line, and for the REST API fallback that runs when a release download
+      fails. Defaults to the job token on github.com and to empty elsewhere, because a GitHub Enterprise Server token is
+      not a github.com credential and must not be sent there. Unauthenticated lookups work but share a low per-IP rate
+      limit.'
     required: false
     default: ${{ github.server_url == 'https://github.com' && github.token || '' }}
 
