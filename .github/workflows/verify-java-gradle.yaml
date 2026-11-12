@@ -308,15 +308,15 @@ jobs:
 
           echo "✅ File is properly formatted"
 
-      - name: We do another post setup after update-chart-version fully reset the current state. This is needed for the post action to run ...
-        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+      # The post steps of the local actions above run from tmp/actions-code. This restores it in case a
+      # step removed it, with a plain checkout of this repository: no second token is minted and the
+      # test repository is not cloned again.
+      - name: Restore Workspace For The Post Action
+        if: always()
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
+          persist-credentials: false
+          path: tmp/actions-code
 
       - name: Cleanup Branch
         if: always()

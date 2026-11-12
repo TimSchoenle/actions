@@ -732,7 +732,7 @@
       "pullRequestBranches": ["main"],
       "pushBranches": [],
       "schedule": false,
-      "jobsSha256": "cbdfbbf834d53702823ff9e9762c0c3a81d3a3d82eaf4149e36400da409af20b"
+      "jobsSha256": "fd9d3a40d68461cecb50823047f953b3feb03b57882bfdf339edea6b6ac8728a"
     },
     {
       "id": "helper/resolve-base-branch",
@@ -845,7 +845,7 @@
       "pullRequestBranches": null,
       "pushBranches": [],
       "schedule": false,
-      "jobsSha256": "fb8e79312953a6a7b7e225c63510a1610521f1c29b4da465a8ba07d6a73e6c2b"
+      "jobsSha256": "50c07ade85d8fe28bad22c87f0bd86d48131eebba164bc433c77564a3f75b5bc"
     },
     {
       "id": "java-gradle/coverage-codecov",
