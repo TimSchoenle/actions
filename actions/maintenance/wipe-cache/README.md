@@ -40,7 +40,7 @@ jobs:
     permissions:
       actions: write # to list and delete caches
     steps:
-      - uses: TimSchoenle/actions/actions/maintenance/wipe-cache@actions-maintenance-wipe-cache-v3.0.5 # tag=actions-maintenance-wipe-cache-v3.0.5
+      - uses: TimSchoenle/actions/actions/maintenance/wipe-cache@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-maintenance-wipe-cache-v3.0.5
         with:
           token: ${{ github.token }}
 ```
@@ -48,7 +48,7 @@ jobs:
 ### Another branch, or a dry run first
 
 ```yaml
-- uses: TimSchoenle/actions/actions/maintenance/wipe-cache@actions-maintenance-wipe-cache-v3.0.5 # tag=actions-maintenance-wipe-cache-v3.0.5
+- uses: TimSchoenle/actions/actions/maintenance/wipe-cache@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-maintenance-wipe-cache-v3.0.5
   with:
     token: ${{ github.token }}
     branch: ${{ inputs.branch }}

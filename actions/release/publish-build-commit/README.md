@@ -68,11 +68,11 @@ jobs:
 
       # Re-derived here, so the notes files exist in this job.
       - id: plan
-        uses: TimSchoenle/actions/actions/release/plan-release-please@actions-release-plan-release-please-v1.1.1 # tag=actions-release-plan-release-please-v1.1.1
+        uses: TimSchoenle/actions/actions/release/plan-release-please@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-release-plan-release-please-v1.1.1
         with:
           mode: plan
 
-      - uses: TimSchoenle/actions/actions/release/publish-build-commit@actions-release-publish-build-commit-v2.0.0 # tag=actions-release-publish-build-commit-v2.0.0
+      - uses: TimSchoenle/actions/actions/release/publish-build-commit@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-release-publish-build-commit-v2.0.0
         with:
           token: ${{ steps.token.outputs.token }}
           source-sha: ${{ github.sha }}
@@ -129,7 +129,7 @@ jobs:
           releases="$(jq -cn --arg tag "v${VERSION}" --arg notes "$notes" '[{consumerTag: $tag, releaseName: $tag, notesFile: $notes}]')"
           echo "releases=${releases}" >> "$GITHUB_OUTPUT"
 
-      - uses: TimSchoenle/actions/actions/release/publish-build-commit@actions-release-publish-build-commit-v2.0.0 # tag=actions-release-publish-build-commit-v2.0.0
+      - uses: TimSchoenle/actions/actions/release/publish-build-commit@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-release-publish-build-commit-v2.0.0
         with:
           token: ${{ steps.token.outputs.token }}
           source-sha: ${{ github.sha }}

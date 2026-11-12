@@ -4,7 +4,7 @@ strategy:
   matrix:
     platform: [linux/amd64, linux/arm64]
 steps:
-  - uses: TimSchoenle/actions/actions/docker/image-check@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-docker-image-check-v1.1.15
+  - uses: TimSchoenle/actions/actions/docker/image-check@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-docker-image-check-v1.1.16
     with:
       image: app:test
       platform: ${{ matrix.platform }}

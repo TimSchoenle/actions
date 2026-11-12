@@ -15,4 +15,4 @@ jobs:
     permissions:
       contents: read # to fetch code
     steps:
-      - uses: TimSchoenle/actions/actions/rust/test@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-rust-test-v1.1.5
+      - uses: TimSchoenle/actions/actions/rust/test@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-rust-test-v2.0.0

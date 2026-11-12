@@ -64,7 +64,7 @@ took minutes.
   run: docker build -t myservice:test .
 
 - name: Config contract
-  uses: TimSchoenle/actions/actions/rust/config-contract@actions-rust-config-contract-v2.0.5 # tag=actions-rust-config-contract-v2.0.5
+  uses: TimSchoenle/actions/actions/rust/config-contract@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-rust-config-contract-v2.0.5
   with:
     features: config-schema
     image: myservice:test
@@ -77,7 +77,7 @@ took minutes.
 # precedence. Naming neither uses the example config-schema, which is what every workflow written
 # before bin existed relies on.
 - name: Config contract
-  uses: TimSchoenle/actions/actions/rust/config-contract@actions-rust-config-contract-v2.0.5 # tag=actions-rust-config-contract-v2.0.5
+  uses: TimSchoenle/actions/actions/rust/config-contract@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-rust-config-contract-v2.0.5
   with:
     # A [[bin]], because other crates link it and the build runs the compiled artefact.
     bin: config-contract
@@ -97,7 +97,7 @@ strategy:
 
 steps:
   - name: Config contract
-    uses: TimSchoenle/actions/actions/rust/config-contract@actions-rust-config-contract-v2.0.5 # tag=actions-rust-config-contract-v2.0.5
+    uses: TimSchoenle/actions/actions/rust/config-contract@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-rust-config-contract-v2.0.5
     with:
       bin: config-contract
       extra_args: --service ${{ matrix.service }}
@@ -112,7 +112,7 @@ steps:
 # Each check is skipped by emptying its input, so a repository with no image, or no committed
 # contract, takes only the half that applies to it.
 - name: Config contract
-  uses: TimSchoenle/actions/actions/rust/config-contract@actions-rust-config-contract-v2.0.5 # tag=actions-rust-config-contract-v2.0.5
+  uses: TimSchoenle/actions/actions/rust/config-contract@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-rust-config-contract-v2.0.5
   with:
     source_directory: services/api
     package: api-config
