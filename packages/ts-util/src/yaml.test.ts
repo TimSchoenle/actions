@@ -2,7 +2,7 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { parseDocument } from 'yaml';
 
-import { applyYamlEdits, generateYamlString } from './yaml.js';
+import { applyYamlEdits, generateYamlString, inferValueType } from './yaml.js';
 
 import type { YamlEdit } from './yaml.js';
 
@@ -29,6 +29,40 @@ function parsed(text: string): unknown {
 }
 
 const LONG = Array.from({ length: 30 }, (_, index) => `word${index}`).join(' ');
+
+// K1: a tag such as 1.10 was written as the number 1.1, so the image that deployed was not the one named.
+describe('inferValueType', () => {
+  it.each(['1.10', '0123', '1.0', '12e4567', '1e10', '9007199254740993', '0xFF', '0o777', '-0', '+1', '.5', '1.'])(
+    'keeps %j as the string it is, because no number writes back as that text',
+    (value) => {
+      expect(inferValueType(value)).toBe(value);
+    },
+  );
+
+  it.each([
+    ['123', 123],
+    ['-10', -10],
+    ['0', 0],
+    ['12.34', 12.34],
+    ['-0.5', -0.5],
+    ['9007199254740991', 9_007_199_254_740_991],
+  ])('infers %j as a number, because it writes back unchanged', (value, number) => {
+    expect(inferValueType(value)).toBe(number);
+  });
+
+  it('round-trips every inferred number through its own text', () => {
+    fc.assert(
+      fc.property(fc.oneof(fc.stringMatching(/^-?\d{1,20}(\.\d{1,20})?([Ee][+-]?\d{1,4})?$/), fc.string()), (value) => {
+        const inferred = inferValueType(value);
+
+        if (typeof inferred === 'number' && Number.isFinite(inferred)) {
+          expect(String(inferred)).toBe(value);
+        }
+      }),
+      { numRuns: 500 },
+    );
+  });
+});
 
 describe('generateYamlString', () => {
   it('never folds a long string onto a second line', () => {
