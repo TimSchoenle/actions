@@ -151,6 +151,15 @@ describe('apply-chart-updates action', () => {
     expect(await readFile(join(workspace, CHART_PATH, 'Chart.yaml'), 'utf8')).toBe(CHART);
   });
 
+  it('fails on a chart-path with a space, before writing or publishing anything', async () => {
+    setInputs({ 'chart-path': 'charts/my app' });
+
+    await run();
+
+    expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('chart-path must not contain whitespace'));
+    expect(core.setOutput).not.toHaveBeenCalledWith('files', expect.anything());
+  });
+
   it('fails on a chart-path that leaves the workspace', async () => {
     setInputs({ 'chart-path': '../elsewhere' });
 
