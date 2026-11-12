@@ -143,6 +143,12 @@ describe('e2eJob', () => {
     expect(job).toContain('fail-on-cache-miss: true');
   });
 
+  // C1: the job holds the App key while running code under test; without sudo that code cannot
+  // reach past the runner user, read another process's memory or start a container to do so.
+  it('disables sudo and containers in the job that holds the key', () => {
+    expect(e2eJob(source, true, ['node_modules'])).toContain('disable-sudo-and-containers: true');
+  });
+
   it('installs the shared build through the shard inputs only when the target builds', () => {
     expect(e2eJob(source, true, ['node_modules'])).toContain('artifact-id: ${{ inputs.artifact-id }}');
     expect(e2eJob(source, false, ['node_modules'])).not.toContain('Install Built Actions');
