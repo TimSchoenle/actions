@@ -25,6 +25,8 @@ export const ActionInput = {
   repository: 'repository',
   branch: 'branch',
   expected_head_sha: 'expected_head_sha',
+  event_branch: 'event_branch',
+  event_head_sha: 'event_head_sha',
   max_patch_bytes: 'max_patch_bytes',
   run_id: 'run_id',
 } as const;
