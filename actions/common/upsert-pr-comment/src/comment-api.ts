@@ -15,6 +15,11 @@ export interface ExistingComment extends CommentRef {
   body: string;
   /** Login of whoever posted it, e.g. `my-app[bot]`. */
   author: string;
+  /**
+   * Whether a GitHub App posted it: as its bot account, or on behalf of a user. A person typing the
+   * marker into a comment of their own is neither.
+   */
+  postedByApp: boolean;
 }
 
 /**

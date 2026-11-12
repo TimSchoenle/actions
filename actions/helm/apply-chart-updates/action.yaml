@@ -3,7 +3,7 @@ description: "Applies a set of templated image updates to a Helm chart's values.
   preserving comments and structure. Every image carries its own version and digest."
 inputs:
   chart-path:
-    description: 'Path of the chart inside the workspace (e.g. charts/my-app). Chart.yaml and values.yaml are resolved beneath it.'
+    description: 'Path of the chart inside the workspace (e.g. charts/my-app). Chart.yaml and values.yaml are resolved beneath it. It must not contain whitespace, because the files output is a space-separated file pattern.'
     required: true
   images:
     description: 'JSON object mapping a dot-notation key in values.yaml to that image''s own variables,
@@ -53,21 +53,26 @@ inputs:
     default: '^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}(@sha256:[0-9a-f]{64})?$'
 
 outputs:
+  changed:
+    description: 'true when an image or the app version moved and both files were written. false when every image
+      and the app version were already at their targets: nothing is written, the chart version is kept, and the
+      pull request steps of a caller should be skipped.'
   chart-version:
-    description: 'The chart version written to Chart.yaml'
+    description: 'The chart version written to Chart.yaml, or the unchanged version when changed is false'
   previous-chart-version:
     description: 'The chart version that was in Chart.yaml before the update'
   updated-count:
-    description: 'Number of image keys updated in values.yaml'
+    description: 'Number of image keys whose value changed in values.yaml. A key already at its target is not counted.'
   changes:
-    description: 'JSON array of {key, old, new} for every image key updated, in input order'
+    description: 'JSON array of {key, old, new} for every image key whose value changed, in input order'
   summary-markdown:
     description: 'Markdown table of the applied image updates, safe to embed in a pull request body'
   changelog-markdown:
     description: 'The sanitized changelog wrapped in a collapsed <details> section, safe to embed in a pull
       request body. Empty when no changelog was given, so embedding it unconditionally leaves no empty heading.'
   files:
-    description: 'Space-separated paths of the files written, for use as a commit file pattern'
+    description: 'Space-separated paths of the files written, for use as a commit file pattern. Empty when changed is
+      false.'
 
 runs:
   using: 'node24'

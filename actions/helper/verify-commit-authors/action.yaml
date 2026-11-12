@@ -15,11 +15,21 @@ inputs:
       an accepted committer, linked to its account, and an accepted key owner. A commit GitHub signed itself skips those
       two checks: GitHub is its committer, and it resolves to no account.'
     required: true
+  reject_forks:
+    description: 'Report a pull request from a fork as unverified, whatever its commits. A fork can make a commit
+      that GitHub signs in the name of github-actions[bot], so an accepted bot account does not prove the commit came
+      from this repository. A pull request whose head repository was deleted counts as a fork.'
+    required: false
+    default: 'true'
 outputs:
   verified:
-    description: 'True if all commits are verified, false otherwise.'
+    description: 'True if all commits are verified and, with reject_forks, the head branch lives in this repository.
+      False otherwise.'
   invalid_commits:
     description: 'List of SHAs that failed verification.'
+  head_sha:
+    description: 'SHA of the pull request head the commits were read at. Bind any approval or merge to it, so a
+      commit pushed after the check is not approved with the ones that were checked.'
 runs:
   using: 'node24'
   main: 'dist/index.js'

@@ -9,7 +9,7 @@ outside the markers.
 
 Publishes bundles built by release/build-actions: a build commit B with the source commit tree plus the bundles, a fast-forwarded releases branch, consumer tags on B, source tags on the source commit, and GitHub Releases with checksum assets. Every step is idempotent and no repository code runs.
 
-[actions-release-publish-build-commit-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-publish-build-commit-v1.1.0) · Composite action
+[actions-release-publish-build-commit-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-publish-build-commit-v2.0.0) · Composite action
 <!-- /docs:generated header -->
 
 The privileged end of a build-on-release pipeline. The default branch holds sources only; this action turns a source
@@ -68,11 +68,11 @@ jobs:
 
       # Re-derived here, so the notes files exist in this job.
       - id: plan
-        uses: TimSchoenle/actions/actions/release/plan-release-please@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-plan-release-please-v1.1.0
+        uses: TimSchoenle/actions/actions/release/plan-release-please@actions-release-plan-release-please-v1.1.1 # tag=actions-release-plan-release-please-v1.1.1
         with:
           mode: plan
 
-      - uses: TimSchoenle/actions/actions/release/publish-build-commit@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-publish-build-commit-v1.1.0
+      - uses: TimSchoenle/actions/actions/release/publish-build-commit@actions-release-publish-build-commit-v2.0.0 # tag=actions-release-publish-build-commit-v2.0.0
         with:
           token: ${{ steps.token.outputs.token }}
           source-sha: ${{ github.sha }}
@@ -129,7 +129,7 @@ jobs:
           releases="$(jq -cn --arg tag "v${VERSION}" --arg notes "$notes" '[{consumerTag: $tag, releaseName: $tag, notesFile: $notes}]')"
           echo "releases=${releases}" >> "$GITHUB_OUTPUT"
 
-      - uses: TimSchoenle/actions/actions/release/publish-build-commit@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-publish-build-commit-v1.1.0
+      - uses: TimSchoenle/actions/actions/release/publish-build-commit@actions-release-publish-build-commit-v2.0.0 # tag=actions-release-publish-build-commit-v2.0.0
         with:
           token: ${{ steps.token.outputs.token }}
           source-sha: ${{ github.sha }}
@@ -145,25 +145,25 @@ jobs:
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input                         | Required | Default                | Description                                                                                                                                                                                                        |
-| ----------------------------- | -------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `token`                       | yes      |                        | Token that writes the repository: contents: write, plus pull-requests: write and issues: write when pull-request is set. Typically a GitHub App installation token, which also gets B signed.                      |
-| `github-token`                | no       | `${{ github.token }}`  | Token that reads this run's artifacts, for the artifact record check and the download. Needs actions: read.                                                                                                        |
-| `source-sha`                  | yes      |                        | The source commit M the bundles were built from. B is M plus the bundles.                                                                                                                                          |
-| `artifact-id`                 | yes      |                        | artifact-id output of release/build-actions in this run.                                                                                                                                                           |
-| `expected-artifact-digest`    | yes      |                        | artifact-digest output of release/build-actions; the artifact record must carry it.                                                                                                                                |
-| `expected-manifest-sha256`    | yes      |                        | manifest-sha256 output of release/build-actions. Every file is verified against the manifest with this SHA-256.                                                                                                    |
-| `cross-check-manifest-sha256` | no       |                        | manifest-sha256 of an independent second build. When set, it must equal expected-manifest-sha256.                                                                                                                  |
-| `allowed-paths`               | no       | `actions/**/dist/**`   | Space- or newline-separated globs every bundle path must match. ** matches any number of directories, * anything within one.                                                                                       |
-| `existing-files`              | no       | `fail`                 | fail refuses a bundle path that already exists in the source commit, so B only adds files. require-identical accepts it when the bytes are identical, for a repository that still commits its bundles.             |
-| `releases-branch`             | no       | `releases`             | Branch every B is chained on and that is fast-forwarded to B, so every B belongs to a branch. Empty gives B the source commit as its only parent and moves no branch.                                              |
-| `releases`                    | yes      |                        | JSON array of releases: the releases output of release/plan-release-please, or hand-written {consumerTag, sourceTag?, releaseName, notesFile, path?}. consumerTag is created on B, sourceTag on the source commit. |
-| `release-assets`              | no       | `checksums`            | none, checksums (a bundles.sha256 listing the bundles below the release path), or bundles (that file plus each of those bundles).                                                                                  |
-| `make-latest`                 | no       | `legacy`               | true, false or legacy, passed to the Releases API when a release is published.                                                                                                                                     |
-| `pull-request`                | no       |                        | Release pull request to mark as released once everything else is done: a comment listing the releases, tagged-label added, pending-label removed. Empty leaves pull requests alone.                                |
-| `pending-label`               | no       | `autorelease: pending` | Label removed from pull-request.                                                                                                                                                                                   |
-| `tagged-label`                | no       | `autorelease: tagged`  | Label added to pull-request.                                                                                                                                                                                       |
-| `dry-run`                     | no       | `false`                | true verifies the artifact, computes the tree of B and checks every tag and release against the repository, and writes nothing.                                                                                    |
+| Input                         | Required | Default                  | Description                                                                                                                                                                                                                                                                                                    |
+| ----------------------------- | -------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `token`                       | yes      |                          | Token that writes the repository: contents: write, plus pull-requests: write and issues: write when pull-request is set. Typically a GitHub App installation token, which also gets B signed.                                                                                                                  |
+| `github-token`                | no       | `${{ github.token }}`    | Token that reads this run's artifacts, for the artifact record check and the download. Needs actions: read.                                                                                                                                                                                                    |
+| `source-sha`                  | yes      |                          | The source commit M the bundles were built from. B is M plus the bundles.                                                                                                                                                                                                                                      |
+| `artifact-id`                 | yes      |                          | artifact-id output of release/build-actions in this run.                                                                                                                                                                                                                                                       |
+| `expected-artifact-digest`    | yes      |                          | artifact-digest output of release/build-actions; the artifact record must carry it.                                                                                                                                                                                                                            |
+| `expected-manifest-sha256`    | yes      |                          | manifest-sha256 output of release/build-actions. Every file is verified against the manifest with this SHA-256.                                                                                                                                                                                                |
+| `cross-check-manifest-sha256` | no       |                          | manifest-sha256 of an independent second build. When set, it must equal expected-manifest-sha256.                                                                                                                                                                                                              |
+| `allowed-paths`               | no       | `actions/*/**/dist/**/*` | Space- or newline-separated globs every bundle path must match. ** matches any number of directories, zero included, * anything within one. The default takes a file below a dist directory at least one directory under actions/, as the consumer check in SECURITY.md does; actions/dist/ itself is refused. |
+| `existing-files`              | no       | `fail`                   | fail refuses a bundle path that already exists in the source commit, so B only adds files. require-identical accepts it when the bytes are identical, for a repository that still commits its bundles.                                                                                                         |
+| `releases-branch`             | no       | `releases`               | Branch every B is chained on and that is fast-forwarded to B, so every B belongs to a branch. Empty gives B the source commit as its only parent and moves no branch.                                                                                                                                          |
+| `releases`                    | yes      |                          | JSON array of releases: the releases output of release/plan-release-please, or hand-written {consumerTag, sourceTag?, releaseName, notesFile, path?}. consumerTag is created on B, sourceTag on the source commit.                                                                                             |
+| `release-assets`              | no       | `checksums`              | none, checksums (a bundles.sha256 listing the bundles below the release path), or bundles (that file plus each of those bundles).                                                                                                                                                                              |
+| `make-latest`                 | no       | `legacy`                 | true, false or legacy, passed to the Releases API when a release is published.                                                                                                                                                                                                                                 |
+| `pull-request`                | no       |                          | Release pull request to mark as released once everything else is done: a comment listing the releases, tagged-label added, pending-label removed. Empty leaves pull requests alone.                                                                                                                            |
+| `pending-label`               | no       | `autorelease: pending`   | Label removed from pull-request.                                                                                                                                                                                                                                                                               |
+| `tagged-label`                | no       | `autorelease: tagged`    | Label added to pull-request.                                                                                                                                                                                                                                                                                   |
+| `dry-run`                     | no       | `false`                  | true verifies the artifact, computes the tree of B and checks every tag and release against the repository, and writes nothing.                                                                                                                                                                                |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
@@ -239,7 +239,7 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-release-publish-build-commit.yaml`](../../../.github/workflows/verify-action-release-publish-build-commit.yaml)
+- End-to-end tests: [`.github/verify/release-publish-build-commit.yaml`](../../../.github/verify/release-publish-build-commit.yaml)
 - Called from this repository by:
   - [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
 <!-- /docs:generated reference -->

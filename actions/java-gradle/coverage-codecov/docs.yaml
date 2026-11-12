@@ -22,11 +22,11 @@ egress:
   - endpoint: repo.maven.apache.org:443
     for: the JaCoCo agent and the build's dependencies, when the build resolves from Maven Central
   - endpoint: '*.actions.githubusercontent.com:443'
-    for: the Gradle cache and the OIDC token
+    for: the Gradle cache, when `cache` resolves to true, and the OIDC token
   - endpoint: '*.blob.core.windows.net:443'
-    for: the Gradle cache
+    for: the Gradle cache, when `cache` resolves to true
   - endpoint: cli.codecov.io:443
-    for: the Codecov CLI download
+    for: the Codecov CLI download, at the version the action pins
   - endpoint: keybase.io:443
     for: the key that verifies the Codecov CLI
   - endpoint: ingest.codecov.io:443

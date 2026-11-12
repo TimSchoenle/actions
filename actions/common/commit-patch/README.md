@@ -9,7 +9,7 @@ outside the markers.
 
 Commits a common/create-patch artifact from this run or from the run run_id names as a verified commit, refusing any path outside allowed_paths, under .github/workflows/ or below a symbolic link.
 
-[actions-common-commit-patch-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-patch-v2.0.1) · Composite action
+[actions-common-commit-patch-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-patch-v3.0.0) · Composite action
 <!-- /docs:generated header -->
 
 Downloads the patch [`common/create-patch`](../create-patch) uploaded in an earlier job of the same run, or in the
@@ -50,7 +50,7 @@ jobs:
           client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           permission-contents: write
-      - uses: TimSchoenle/actions/actions/common/commit-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-commit-patch-v2.0.1
+      - uses: TimSchoenle/actions/actions/common/commit-patch@actions-common-commit-patch-v3.0.0 # tag=actions-common-commit-patch-v3.0.0
         with:
           token: ${{ steps.token.outputs.token }}
           artifact_name: format-patch
@@ -97,15 +97,15 @@ jobs:
           client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           permission-contents: write
-      - uses: TimSchoenle/actions/actions/common/commit-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-commit-patch-v2.0.1
+      - uses: TimSchoenle/actions/actions/common/commit-patch@actions-common-commit-patch-v3.0.0 # tag=actions-common-commit-patch-v3.0.0
         with:
           token: ${{ steps.token.outputs.token }}
           run_id: ${{ github.event.workflow_run.id }}
           artifact_name: format-patch
           allowed_paths: 'src/** README.md'
           commit_message: 'style: auto-format code'
-          # Both have to be set: their defaults read the pull_request and push payloads, which a
-          # workflow_run event does not carry.
+          # Both are required with run_id: the event of a workflow_run job names the default branch
+          # and its tip, so the step fails rather than fall back to them.
           branch: ${{ github.event.workflow_run.head_branch }}
           expected_head_sha: ${{ github.event.workflow_run.head_sha }}
 ```
@@ -131,22 +131,26 @@ protected branch, for example `!startsWith(github.event.workflow_run.head_branch
 in an environment whose deployment branches allow only the default branch, so a `pull_request` job that names the
 environment gets nothing either.
 
+The `if:` compares branch names as strings. `branch` must therefore be a plain branch name: a value starting with
+`refs/`, such as a branch literally named `refs/heads/main` that would pass the comparison, fails the step, as does any
+name `git check-ref-format --branch` refuses.
+
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input                    | Required | Default                                                     | Description                                                                                                                                                                                                                                               |
-| ------------------------ | -------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `token`                  | yes      |                                                             | Token for the commit: an App installation token with contents: write, and workflows: write only when allow_workflow_changes is true.                                                                                                                      |
-| `artifact_name`          | yes      |                                                             | Name of the artifact create-patch uploaded, in this run or in the run run_id names.                                                                                                                                                                       |
-| `run_id`                 | no       |                                                             | ID of another workflow run of this repository to download the artifact from, such as github.event.workflow_run.id. Empty downloads from this run. Set, the job needs actions: read.                                                                       |
-| `allowed_paths`          | yes      |                                                             | Whitespace-separated globs every changed path must match. * and ? stay within a path segment, ** spans segments. A patch touching any other path fails the step and nothing is committed. See allowed_paths below.                                        |
-| `allow_workflow_changes` | no       | `false`                                                     | Accept changes under .github/workflows/. Off, such a change fails the step even when allowed_paths matches it. On, the token also needs workflows: write: GitHub refuses a commit that touches .github/workflows/ without it, whatever the action allows. |
-| `allow_binary`           | no       | `false`                                                     | Accept binary changes. Off, a binary hunk or new content git would treat as binary fails the step.                                                                                                                                                        |
-| `commit_message`         | yes      |                                                             | The commit message. The first line is the headline.                                                                                                                                                                                                       |
-| `repository`             | no       | `${{ github.repository }}`                                  | Repository to commit to, as owner/repo.                                                                                                                                                                                                                   |
-| `branch`                 | no       | `${{ github.head_ref \|\| github.ref_name }}`               | Branch to commit to.                                                                                                                                                                                                                                      |
-| `expected_head_sha`      | no       | `${{ github.event.pull_request.head.sha \|\| github.sha }}` | The commit the branch must still point at, and the one the checkout must be at. A patch made from any other commit is skipped with a notice.                                                                                                              |
-| `max_patch_bytes`        | no       | `10485760`                                                  | Largest patch accepted, in bytes. Keep it equal to max_patch_bytes on create-patch.                                                                                                                                                                       |
+| Input                    | Required | Default                    | Description                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------ | -------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `token`                  | yes      |                            | Token for the commit: an App installation token with contents: write, and workflows: write only when allow_workflow_changes is true.                                                                                                                                                                                                                         |
+| `artifact_name`          | yes      |                            | Name of the artifact create-patch uploaded, in this run or in the run run_id names.                                                                                                                                                                                                                                                                          |
+| `run_id`                 | no       |                            | ID of another workflow run of this repository to download the artifact from, such as github.event.workflow_run.id. Empty downloads from this run. Set, the job needs actions: read.                                                                                                                                                                          |
+| `allowed_paths`          | yes      |                            | Whitespace-separated globs every changed path must match. * and ? stay within a path segment, ** spans segments. A patch touching any other path fails the step and nothing is committed. See allowed_paths below.                                                                                                                                           |
+| `allow_workflow_changes` | no       | `false`                    | Accept changes under .github/workflows/. Off, such a change fails the step even when allowed_paths matches it. On, the token also needs workflows: write: GitHub refuses a commit that touches .github/workflows/ without it, whatever the action allows.                                                                                                    |
+| `allow_binary`           | no       | `false`                    | Accept binary changes. Off, a binary hunk or new content git would treat as binary fails the step.                                                                                                                                                                                                                                                           |
+| `commit_message`         | yes      |                            | The commit message. The first line is the headline.                                                                                                                                                                                                                                                                                                          |
+| `repository`             | no       | `${{ github.repository }}` | Repository to commit to, as owner/repo.                                                                                                                                                                                                                                                                                                                      |
+| `branch`                 | no       |                            | Branch to commit to, as a branch name: a value starting with refs/, or one git would refuse, fails the step. Empty uses the branch of the triggering event, github.head_ref \|\| github.ref_name. With run_id set it must be given, since in a workflow_run job the event branch is the default branch.                                                      |
+| `expected_head_sha`      | no       |                            | The commit the branch must still point at, and the one the checkout must be at. A patch made from any other commit is skipped with a notice. Empty uses the head of the triggering event, github.event.pull_request.head.sha \|\| github.sha. With run_id set it must be given, since in a workflow_run job the event head is the tip of the default branch. |
+| `max_patch_bytes`        | no       | `10485760`                 | Largest patch accepted, in bytes. Keep it equal to max_patch_bytes on create-patch.                                                                                                                                                                                                                                                                          |
 <!-- /docs:generated inputs -->
 
 ### allowed_paths
@@ -159,12 +163,12 @@ files and no other workflow.
 <!-- docs:generated outputs -->
 ## Outputs
 
-| Output              | Description                                                                                                                   |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `changes_committed` | true when a commit was created.                                                                                               |
-| `commit_sha`        | SHA of the created commit, when one was created.                                                                              |
-| `commit_url`        | URL of the created commit, when one was created.                                                                              |
-| `outcome`           | committed; no_changes when the patch is empty; branch_moved when the patch or the branch no longer matches expected_head_sha. |
+| Output              | Description                                                                                                                                              |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `changes_committed` | true when a commit was created.                                                                                                                          |
+| `commit_sha`        | SHA of the created commit, when one was created.                                                                                                         |
+| `commit_url`        | URL of the created commit, when one was created.                                                                                                         |
+| `outcome`           | committed; no_changes when the patch is empty; branch_moved when the patch or the branch no longer matches expected_head_sha, or the branch was deleted. |
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
@@ -223,6 +227,8 @@ The policy judges git's view of the result: the patch is applied to a throwaway 
 - **A stale patch is skipped, not committed.** When the artifact's base is not `expected_head_sha`, or the branch has
   moved past it by the time of the commit, the step ends with a notice and `outcome: branch_moved`. The run for the new
   head redoes the work. The commit carries `expectedHeadOid`, so a push that lands in between makes GitHub refuse it.
+  A branch deleted in the meantime, because its pull request was merged or closed, ends the same way, with a notice
+  that says so.
 - **A checkout at another commit fails the step.** It means the workflow checked out something other than
   `expected_head_sha`, and applying the patch there would commit against a tree it was not made from.
 - **The artifact is validated before git sees it:** exactly `changes.patch` and `metadata.json`, both regular files
@@ -235,7 +241,7 @@ The policy judges git's view of the result: the patch is applied to a throwaway 
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-commit-patch.yaml`](../../../.github/workflows/verify-action-common-commit-patch.yaml)
+- End-to-end tests: [`.github/verify/common-commit-patch.yaml`](../../../.github/verify/common-commit-patch.yaml)
 - Called from this repository by:
   - [`.github/workflows/auto-format-commit.yml`](../../../.github/workflows/auto-format-commit.yml)
   - [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)

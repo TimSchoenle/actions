@@ -1,5 +1,30 @@
 # Changelog
 
+## [4.0.0](https://github.com/TimSchoenle/actions/compare/src-actions-terrace-setup-v3.1.3...src-actions-terrace-setup-v4.0.0) (2026-11-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **terrace-setup:** pin the SHA-256 of the cosign and oras checksum lists ([#2230](https://github.com/TimSchoenle/actions/issues/2230))
+
+### Features
+
+* **terrace-setup:** pin the SHA-256 of the cosign and oras checksum lists ([#2230](https://github.com/TimSchoenle/actions/issues/2230)) ([eafcf62](https://github.com/TimSchoenle/actions/commit/eafcf6294a55486145166a873716ef663cb55fbf))
+
+
+### Bug Fixes
+
+* **terrace-setup:** resolve a MAJOR.MINOR version from the line's tags, not the release list ([#2270](https://github.com/TimSchoenle/actions/issues/2270)) ([c4a110f](https://github.com/TimSchoenle/actions/commit/c4a110f016a8b55bb787c4872c0b3b4a142671e4))
+* **ts-util:** break the legacy ##[ prefix and escape bidi controls in quoteForLog ([#2260](https://github.com/TimSchoenle/actions/issues/2260)) ([b7f7085](https://github.com/TimSchoenle/actions/commit/b7f708587db2f119233f297139f7a651ed3b5be7))
+* **ts-util:** infer a number only when it writes back as the same text ([#2255](https://github.com/TimSchoenle/actions/issues/2255)) ([1c28fcc](https://github.com/TimSchoenle/actions/commit/1c28fcca8a42d0cb4bd11f45b85a5feb78cfa273))
+* **ts-util:** read a ] that opens a bracket expression as a literal ([#2252](https://github.com/TimSchoenle/actions/issues/2252)) ([b9cb578](https://github.com/TimSchoenle/actions/commit/b9cb5788344156dcaa6b102f53d576380ed0e1a5))
+* **ts-util:** read a pull request's head repository and each commit's date ([#2242](https://github.com/TimSchoenle/actions/issues/2242)) ([81ab139](https://github.com/TimSchoenle/actions/commit/81ab139e33c78c8f27a5b60d522ab491caec768c))
+* **ts-util:** refuse a workspace path that reaches a .git directory ([#2253](https://github.com/TimSchoenle/actions/issues/2253)) ([1b368bd](https://github.com/TimSchoenle/actions/commit/1b368bda3a76a8dc1c9a0d997a621607fb0a2850))
+* **ts-util:** retry a missing branch head only for a branch just created ([#2259](https://github.com/TimSchoenle/actions/issues/2259)) ([ed83c5b](https://github.com/TimSchoenle/actions/commit/ed83c5bb9e4638bcb6fb224bb63585f8f07b0d7b))
+* **ts-util:** stop reporting a permission 403 as a rate limit ([#2257](https://github.com/TimSchoenle/actions/issues/2257)) ([cec33de](https://github.com/TimSchoenle/actions/commit/cec33deca70a406f81806bcaffff5328d45cfc77))
+* **ts-util:** verify a spliced YAML edit and fall back when it would change the file's meaning ([#2246](https://github.com/TimSchoenle/actions/issues/2246)) ([5795688](https://github.com/TimSchoenle/actions/commit/5795688af68ab83067c9c9d554cecd509a0ab930))
+* **ts-util:** wait at least a minute when GitHub names no rate-limit wait ([#2258](https://github.com/TimSchoenle/actions/issues/2258)) ([48d2aed](https://github.com/TimSchoenle/actions/commit/48d2aed276678f9b512752adcdd62ef7b247d039))
+
 ## [3.1.3](https://github.com/TimSchoenle/actions/compare/actions-terrace-setup-v3.1.2...actions-terrace-setup-v3.1.3) (2026-11-10)
 
 

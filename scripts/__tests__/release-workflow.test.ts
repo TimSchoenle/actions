@@ -269,9 +269,10 @@ describe('release docs commit', () => {
   const commit = jobs['commit-docs'];
 
   it('generates the same files as the pull request docs stage', () => {
-    expect(stepUsing(generate, 'common/create-patch').with?.paths).toBe(
-      stepUsing(updateFiles['generate-docs'], 'common/create-patch').with?.paths,
-    );
+    const docsPatch = stepsOf(updateFiles['generate']).find((step) => step.id === 'docs-patch');
+
+    expect(docsPatch?.uses).toContain('/actions/common/create-patch@');
+    expect(stepUsing(generate, 'common/create-patch').with?.paths).toBe(docsPatch?.with?.paths);
   });
 
   it('commits only the paths the pull request docs commit allows', () => {

@@ -9,7 +9,7 @@ outside the markers.
 
 Uploads the working-tree changes as a binary git patch against HEAD, for common/commit-patch to commit from a job that runs no repository code.
 
-[actions-common-create-patch-v2.0.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-patch-v2.0.2) · Composite action
+[actions-common-create-patch-v2.0.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-patch-v2.0.3) · Composite action
 <!-- /docs:generated header -->
 
 Records what a formatter or generator changed in the checkout as a binary `git` patch against `HEAD`, and uploads it
@@ -45,7 +45,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - run: bun install --frozen-lockfile && bun run format
       - id: patch
-        uses: TimSchoenle/actions/actions/common/create-patch@actions-common-create-patch-v2.0.2 # tag=actions-common-create-patch-v2.0.2
+        uses: TimSchoenle/actions/actions/common/create-patch@actions-common-create-patch-v2.0.3 # tag=actions-common-create-patch-v2.0.3
         with:
           artifact_name: format-patch
 
@@ -120,17 +120,17 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-create-patch.yaml`](../../../.github/workflows/verify-action-common-create-patch.yaml)
+- End-to-end tests: [`.github/verify/common-create-patch.yaml`](../../../.github/verify/common-create-patch.yaml)
 
 <details>
 <summary>Called from 10 files in this repository</summary>
 
+- [`.github/verify/common-commit-patch.yaml`](../../../.github/verify/common-commit-patch.yaml)
+- [`.github/verify/common-find-patch.yaml`](../../../.github/verify/common-find-patch.yaml)
+- [`.github/verify/common-generated-files-verdict.yaml`](../../../.github/verify/common-generated-files-verdict.yaml)
 - [`.github/workflows/auto-format.yml`](../../../.github/workflows/auto-format.yml)
 - [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
 - [`.github/workflows/update-files.yml`](../../../.github/workflows/update-files.yml)
-- [`.github/workflows/verify-action-common-commit-patch.yaml`](../../../.github/workflows/verify-action-common-commit-patch.yaml)
-- [`.github/workflows/verify-action-common-find-patch.yaml`](../../../.github/workflows/verify-action-common-find-patch.yaml)
-- [`.github/workflows/verify-action-common-generated-files-verdict.yaml`](../../../.github/workflows/verify-action-common-generated-files-verdict.yaml)
 - [`actions/common/generated-files-verdict/action.yaml`](../../../actions/common/generated-files-verdict/action.yaml)
 - [`actions/common/render-readme/action.yaml`](../../../actions/common/render-readme/action.yaml)
 - [`actions/java-gradle/auto-spotless/action.yaml`](../../../actions/java-gradle/auto-spotless/action.yaml)

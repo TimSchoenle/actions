@@ -1,0 +1,4 @@
+target: common/upsert-issue
+e2e:
+  token-permissions:
+    issues: write

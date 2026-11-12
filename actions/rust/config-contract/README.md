@@ -9,7 +9,7 @@ outside the markers.
 
 Action that checks a terrace-config contract, its Dockerfile LABEL block and a built image against the configuration types they claim to describe.
 
-[actions-rust-config-contract-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-config-contract-v2.0.4) · JavaScript action (node24)
+[actions-rust-config-contract-v2.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-config-contract-v2.0.5) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 > [!WARNING]
@@ -64,7 +64,7 @@ took minutes.
   run: docker build -t myservice:test .
 
 - name: Config contract
-  uses: TimSchoenle/actions/actions/rust/config-contract@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-rust-config-contract-v2.0.4
+  uses: TimSchoenle/actions/actions/rust/config-contract@actions-rust-config-contract-v2.0.5 # tag=actions-rust-config-contract-v2.0.5
   with:
     features: config-schema
     image: myservice:test
@@ -77,7 +77,7 @@ took minutes.
 # precedence. Naming neither uses the example config-schema, which is what every workflow written
 # before bin existed relies on.
 - name: Config contract
-  uses: TimSchoenle/actions/actions/rust/config-contract@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-rust-config-contract-v2.0.4
+  uses: TimSchoenle/actions/actions/rust/config-contract@actions-rust-config-contract-v2.0.5 # tag=actions-rust-config-contract-v2.0.5
   with:
     # A [[bin]], because other crates link it and the build runs the compiled artefact.
     bin: config-contract
@@ -97,7 +97,7 @@ strategy:
 
 steps:
   - name: Config contract
-    uses: TimSchoenle/actions/actions/rust/config-contract@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-rust-config-contract-v2.0.4
+    uses: TimSchoenle/actions/actions/rust/config-contract@actions-rust-config-contract-v2.0.5 # tag=actions-rust-config-contract-v2.0.5
     with:
       bin: config-contract
       extra_args: --service ${{ matrix.service }}
@@ -112,7 +112,7 @@ steps:
 # Each check is skipped by emptying its input, so a repository with no image, or no committed
 # contract, takes only the half that applies to it.
 - name: Config contract
-  uses: TimSchoenle/actions/actions/rust/config-contract@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-rust-config-contract-v2.0.4
+  uses: TimSchoenle/actions/actions/rust/config-contract@actions-rust-config-contract-v2.0.5 # tag=actions-rust-config-contract-v2.0.5
   with:
     source_directory: services/api
     package: api-config
@@ -255,6 +255,6 @@ to say which region belongs to which contract. A matrix answers both, in a form 
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-rust-config-contract.yaml`](../../../.github/workflows/verify-action-rust-config-contract.yaml)
+- End-to-end tests: [`.github/verify/rust-config-contract.yaml`](../../../.github/verify/rust-config-contract.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

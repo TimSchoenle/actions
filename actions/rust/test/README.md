@@ -9,7 +9,7 @@ outside the markers.
 
 Action that runs cargo nextest to verify Rust code passes tests.
 
-[actions-rust-test-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v1.1.5) · Composite action
+[actions-rust-test-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-test-v2.0.0) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -35,19 +35,19 @@ jobs:
     permissions:
       contents: read # to fetch code
     steps:
-      - uses: TimSchoenle/actions/actions/rust/test@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-rust-test-v1.1.5
+      - uses: TimSchoenle/actions/actions/rust/test@actions-rust-test-v2.0.0 # tag=actions-rust-test-v2.0.0
 ```
 <!-- /docs:generated usage -->
 
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input              | Required | Default                                       | Description                                                                     |
-| ------------------ | -------- | --------------------------------------------- | ------------------------------------------------------------------------------- |
-| `repository`       | no       | `${{ github.repository }}`                    | Target repository in the format owner/repo. Defaults to the current repository. |
-| `branch`           | no       | `${{ github.head_ref \|\| github.ref_name }}` | Target branch to checkout. Defaults to the current branch.                      |
-| `source_directory` | no       | `.`                                           | Directory containing the Rust project                                           |
-| `test_arguments`   | no       | `--all-features --workspace`                  | Additional arguments to pass to cargo nextest                                   |
+| Input              | Required | Default                      | Description                                                                                                                                        |
+| ------------------ | -------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `repository`       | no       | `${{ github.repository }}`   | Target repository in the format owner/repo. Defaults to the current repository.                                                                    |
+| `branch`           | no       |                              | Branch, tag or SHA to check out. Empty checks out the commit of the triggering event: the merge commit on pull_request, the pushed commit on push. |
+| `source_directory` | no       | `.`                          | Directory containing the Rust project                                                                                                              |
+| `test_arguments`   | no       | `--all-features --workspace` | Additional arguments to pass to cargo nextest                                                                                                      |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
@@ -81,9 +81,17 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 | `*.blob.core.windows.net:443`              | the Rust cache                                                  |
 <!-- /docs:generated egress -->
 
+## Cache
+
+`actions-rust-lang/setup-rust-toolchain` restores the Rust cache on every run but saves it only on the default branch,
+and on a schedule, which always runs there. GitHub scopes a cache to the ref that saved it, so a cache saved from a
+pull request could not be restored on the default branch, yet it counted against the repository's cache quota and
+evicted the default branch's entries.
+
 <!-- docs:generated reference -->
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
+- End-to-end tests: [`.github/verify/rust-test.yaml`](../../../.github/verify/rust-test.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

@@ -1,3 +1,7 @@
+import { mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+
 import * as core from 'actions-util/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -36,21 +40,29 @@ function outputs(): Record<string, string> {
   return Object.fromEntries(vi.mocked(core.setOutput).mock.calls as [string, string][]);
 }
 
+let workspace: string;
+let outside: string;
+
 describe('read-yaml action', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    workspace = realpathSync(mkdtempSync(path.join(tmpdir(), 'read-yaml-workspace-')));
+    outside = realpathSync(mkdtempSync(path.join(tmpdir(), 'read-yaml-outside-')));
+    vi.stubEnv('GITHUB_WORKSPACE', workspace);
     setInputs();
     vi.mocked(readYaml).mockResolvedValue('localhost');
   });
 
   afterEach(() => {
     vi.unstubAllEnvs();
+    rmSync(workspace, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
   });
 
   it('resolves the key and publishes the value', async () => {
     await run();
 
-    expect(readYaml).toHaveBeenCalledWith('config.yaml', 'app.database.host');
+    expect(readYaml).toHaveBeenCalledWith(path.join(workspace, 'config.yaml'), 'app.database.host');
     expect(outputs()).toEqual({ value: 'localhost' });
     expect(core.setFailed).not.toHaveBeenCalled();
   });
@@ -98,5 +110,50 @@ describe('read-yaml action', () => {
     await run();
 
     expect(core.setFailed).toHaveBeenCalledWith('boom');
+  });
+
+  // The file is repository content's choice in many workflows: a committed link or a `..` path would
+  // otherwise read any YAML or JSON file on the runner into the log and the value output.
+  describe('workspace containment', () => {
+    it.each(['../secrets.yaml', 'nested/../../secrets.yaml'])(
+      'refuses %s, which leaves the workspace',
+      async (file) => {
+        setInputs({ file });
+
+        await run();
+
+        expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('file'));
+        expect(readYaml).not.toHaveBeenCalled();
+      },
+    );
+
+    it('refuses an absolute path', async () => {
+      setInputs({ file: path.join(outside, 'secrets.yaml') });
+
+      await run();
+
+      expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('must be relative'));
+      expect(readYaml).not.toHaveBeenCalled();
+    });
+
+    it('refuses a committed symbolic link to a file outside the workspace', async () => {
+      writeFileSync(path.join(outside, 'secrets.yaml'), 'token: hunter2\n');
+      symlinkSync(path.join(outside, 'secrets.yaml'), path.join(workspace, 'config.yaml'));
+
+      await run();
+
+      expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('symbolic link'));
+      expect(readYaml).not.toHaveBeenCalled();
+    });
+
+    it('follows a symbolic link that stays inside the workspace', async () => {
+      writeFileSync(path.join(workspace, 'real.yaml'), 'a: 1\n');
+      symlinkSync(path.join(workspace, 'real.yaml'), path.join(workspace, 'config.yaml'));
+
+      await run();
+
+      expect(readYaml).toHaveBeenCalledWith(path.join(workspace, 'config.yaml'), 'app.database.host');
+      expect(core.setFailed).not.toHaveBeenCalled();
+    });
   });
 });

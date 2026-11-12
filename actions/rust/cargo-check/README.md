@@ -9,7 +9,7 @@ outside the markers.
 
 Action that runs cargo check to verify Rust code compiles without errors.
 
-[actions-rust-cargo-check-v1.1.8](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v1.1.8) · Composite action
+[actions-rust-cargo-check-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-cargo-check-v2.0.0) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -35,19 +35,19 @@ jobs:
     permissions:
       contents: read # to fetch code
     steps:
-      - uses: TimSchoenle/actions/actions/rust/cargo-check@be7a69175612d9de514acc14bf55dda8e7ad2e57 # tag=actions-rust-cargo-check-v1.1.8
+      - uses: TimSchoenle/actions/actions/rust/cargo-check@actions-rust-cargo-check-v2.0.0 # tag=actions-rust-cargo-check-v2.0.0
 ```
 <!-- /docs:generated usage -->
 
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input              | Required | Default                                       | Description                                                                     |
-| ------------------ | -------- | --------------------------------------------- | ------------------------------------------------------------------------------- |
-| `repository`       | no       | `${{ github.repository }}`                    | Target repository in the format owner/repo. Defaults to the current repository. |
-| `branch`           | no       | `${{ github.head_ref \|\| github.ref_name }}` | Target branch to checkout. Defaults to the current branch.                      |
-| `source_directory` | no       | `.`                                           | Directory containing the Rust project                                           |
-| `check_arguments`  | no       | `--all-targets --all-features`                | Additional arguments to pass to cargo check                                     |
+| Input              | Required | Default                        | Description                                                                                                                                        |
+| ------------------ | -------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `repository`       | no       | `${{ github.repository }}`     | Target repository in the format owner/repo. Defaults to the current repository.                                                                    |
+| `branch`           | no       |                                | Branch, tag or SHA to check out. Empty checks out the commit of the triggering event: the merge commit on pull_request, the pushed commit on push. |
+| `source_directory` | no       | `.`                            | Directory containing the Rust project                                                                                                              |
+| `check_arguments`  | no       | `--all-targets --all-features` | Additional arguments to pass to cargo check                                                                                                        |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
@@ -79,9 +79,17 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 | `*.blob.core.windows.net:443`         | the Rust cache                                                  |
 <!-- /docs:generated egress -->
 
+## Cache
+
+`actions-rust-lang/setup-rust-toolchain` restores the Rust cache on every run but saves it only on the default branch,
+and on a schedule, which always runs there. GitHub scopes a cache to the ref that saved it, so a cache saved from a
+pull request could not be restored on the default branch, yet it counted against the repository's cache quota and
+evicted the default branch's entries.
+
 <!-- docs:generated reference -->
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
+- End-to-end tests: [`.github/verify/rust-cargo-check.yaml`](../../../.github/verify/rust-cargo-check.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

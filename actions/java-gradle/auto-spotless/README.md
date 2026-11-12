@@ -9,7 +9,7 @@ outside the markers.
 
 Runs Gradle spotlessApply and uploads the changes as a patch artifact for common/commit-patch to commit from a separate job. Holds no token.
 
-[actions-java-gradle-auto-spotless-v2.0.3](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v2.0.3) · Composite action
+[actions-java-gradle-auto-spotless-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v2.0.4) · Composite action
 <!-- /docs:generated header -->
 
 The action runs `spotlessApply` in the caller's checkout and uploads what it changed as a
@@ -56,7 +56,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - id: spotless
-        uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-java-gradle-auto-spotless-v2.0.3
+        uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@actions-java-gradle-auto-spotless-v2.0.4 # tag=actions-java-gradle-auto-spotless-v2.0.4
         with:
           java_version: '21'
           artifact_name: auto-spotless
@@ -86,7 +86,7 @@ jobs:
           permission-pull-requests: write # only for the comment below
 
       - id: commit
-        uses: TimSchoenle/actions/actions/common/commit-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-commit-patch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/commit-patch@actions-common-commit-patch-v3.0.0 # tag=actions-common-commit-patch-v3.0.0
         with:
           token: ${{ steps.token.outputs.token }}
           artifact_name: auto-spotless
@@ -95,7 +95,7 @@ jobs:
 
       # Optional. v1 posted this comment itself.
       - if: steps.commit.outputs.changes_committed == 'true'
-        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-upsert-pr-comment-v2.0.4
+        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@actions-common-upsert-pr-comment-v3.0.0 # tag=actions-common-upsert-pr-comment-v3.0.0
         with:
           token: ${{ steps.token.outputs.token }}
           identifier: 'java-gradle-auto-spotless'
@@ -207,6 +207,6 @@ v1 was one step that checked out, formatted, committed and commented. v2 is the 
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-java-gradle-auto-spotless.yaml`](../../../.github/workflows/verify-action-java-gradle-auto-spotless.yaml)
+- End-to-end tests: [`.github/verify/java-gradle-auto-spotless.yaml`](../../../.github/verify/java-gradle-auto-spotless.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

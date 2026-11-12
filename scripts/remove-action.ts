@@ -3,16 +3,11 @@ import path from 'node:path';
 import { confirm, search } from '@inquirer/prompts';
 import chalk from 'chalk';
 
-import { main as generateCiRequired } from './generate-ci-required.js';
 import { main as generateCodecovComponents } from './generate-codecov-components.js';
 import { main as generateDocs } from './generate-docs.js';
-import {
-  getSubActions,
-  removeActionFromReleasePlease,
-  removeVerifyWorkflow,
-  selectPackage,
-} from './lib/action-utils.js';
-import { ACTIONS_DIR, Sys } from './lib/utils.js';
+import { getSubActions, removeActionFromReleasePlease, removeVerifySource, selectPackage } from './lib/action-utils.js';
+import { ACTIONS_DIR, ROOT_DIR, Sys } from './lib/utils.js';
+import { writeGenerated as generateVerify } from './lib/verify/generate.js';
 
 export async function main() {
   console.log(chalk.red('🗑️  Shared CI Action Remover'));
@@ -59,7 +54,7 @@ export async function main() {
 
   // 2. Update Release Please Config & Manifest
   await removeActionFromReleasePlease(packageName, subAction);
-  await removeVerifyWorkflow(packageName, subAction);
+  await removeVerifySource(packageName, subAction);
 
   // 3. Check if Package is now empty (ignoring non-directories or standard files)
   const remaining = await getSubActions(packageName);
@@ -80,11 +75,10 @@ export async function main() {
     console.log(chalk.blue(`Package ${packageName} still has ${remaining.length} sub-actions.`));
   }
 
-  // 5. Regenerate README, sync the ci-required aggregate gate watch list and drop the action's
-  //    Codecov component.
+  // 5. Regenerate README and the Verify workflows, and drop the action's Codecov component.
   console.log(chalk.blue('\nUpdating README.md...'));
   await generateDocs();
-  generateCiRequired();
+  generateVerify(ROOT_DIR);
   generateCodecovComponents();
 
   console.log(chalk.blue('\nDone! 🗑️'));
@@ -111,7 +105,7 @@ async function removePackage(packageName: string) {
     }
   }
 
-  // Verify jobs are per-action and removed above.
+  // Verify sources are per-action and removed above.
 }
 
 if (import.meta.main) {

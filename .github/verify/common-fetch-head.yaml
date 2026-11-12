@@ -1,0 +1,106 @@
+# Jobs of this target beyond its end-to-end cases.
+#
+# The end-to-end cases fetch from a local server over file://. This job fetches from github.com the
+# way a workflow does: the action's defaults for repository, server_url and token, a pull request's
+# merge commit (served only under refs/pull/<n>/merge, so never advertised as a branch tip), its head
+# commit, and the same head anonymously. It holds no credential beyond the job token.
+
+target: common/fetch-head
+# The cases never reach GitHub, so the job holds no token and no App key.
+e2e: {}
+
+jobs:
+  verify-github-fetch:
+    name: Fetch From GitHub
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: pinned:hardenRunner
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            objects.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: pinned:checkout
+        with:
+          persist-credentials: false
+          path: source
+
+      # Installs the bundles the build job built from this commit; dist/ is not committed.
+      - name: Install Built Actions
+        uses: pinned:installBuiltActions
+        with:
+          artifact-id: ${{ inputs.artifact-id }}
+          expected-manifest-sha256: ${{ inputs.manifest-sha256 }}
+          path: source
+
+      # Every input but sha and path left to its default: this repository, this server, the job token.
+      - name: Fetch The Triggering Commit
+        id: triggering
+        uses: ./source/actions/common/fetch-head # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          sha: ${{ github.sha }}
+          path: fetched/triggering
+
+      - name: Fetch The Head Commit
+        id: head
+        uses: ./source/actions/common/fetch-head # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          sha: ${{ github.event.pull_request.head.sha || github.sha }}
+          path: fetched/head
+
+      - name: Fetch The Head Commit Anonymously
+        id: anonymous
+        uses: ./source/actions/common/fetch-head # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          sha: ${{ github.event.pull_request.head.sha || github.sha }}
+          path: fetched/anonymous
+          token: ''
+
+      - name: Fetch A Malformed SHA
+        id: malformed
+        continue-on-error: true
+        uses: ./source/actions/common/fetch-head # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          sha: ${{ github.sha }}abc
+          path: fetched/malformed
+
+      - name: Assert Fetched Repositories
+        env:
+          TRIGGERING_SHA: ${{ github.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          TRIGGERING_OUTPUT: ${{ steps.triggering.outputs.sha }}
+          HEAD_OUTPUT: ${{ steps.head.outputs.sha }}
+          ANONYMOUS_OUTPUT: ${{ steps.anonymous.outputs.sha }}
+          MALFORMED_OUTCOME: ${{ steps.malformed.outcome }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+
+          check() {
+            local directory="$1" expected="$2" output="$3"
+            [ "$output" = "$expected" ] || fail "$directory: output sha '$output' is not '$expected'"
+            [ "$(git -C "$directory" rev-parse HEAD)" = "$expected" ] || fail "$directory: HEAD is not '$expected'"
+            git -C "$directory" cat-file -e "$expected:actions/common/fetch-head/action.yaml" ||
+              fail "$directory: the commit's tree is not readable"
+            files="$(find "$directory" -mindepth 1 -maxdepth 1 ! -name .git)"
+            [ -z "$files" ] || fail "$directory: files were checked out: $files"
+            if git -C "$directory" config --get-regexp 'extraheader' >/dev/null; then
+              fail "$directory: an authorization header was written to the repository config"
+            fi
+          }
+
+          check fetched/triggering "$TRIGGERING_SHA" "$TRIGGERING_OUTPUT"
+          check fetched/head "$HEAD_SHA" "$HEAD_OUTPUT"
+          check fetched/anonymous "$HEAD_SHA" "$ANONYMOUS_OUTPUT"
+          [ "$MALFORMED_OUTCOME" = "failure" ] || fail "an invalid sha did not fail the step ($MALFORMED_OUTCOME)"
+          [ ! -e fetched/malformed/.git ] || fail "an invalid sha created a repository"
+
+          echo "Triggering, head and anonymous fetches each left HEAD on the commit with nothing checked out"

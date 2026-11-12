@@ -16,14 +16,16 @@ import {
 vi.mock('./octokit.js');
 vi.mock('./core.js');
 
-const POLICY: RetryPolicy = { maxRetries: 3, baseDelayMs: 1_000, maxDelayMs: 60_000, maxTotalDelayMs: 300_000 };
+const POLICY: RetryPolicy = { maxRetries: 3, maxDelayMs: 60_000, maxTotalDelayMs: 300_000 };
+
+/** A ceiling high enough that the doubling of the one-minute wait is visible before it is capped. */
+const WIDE: RetryPolicy = { maxRetries: 5, maxDelayMs: 600_000, maxTotalDelayMs: 1_800_000 };
 
 /**
  * Jitter draws pinned to the ends of their range, so every delay below can still be asserted exactly.
  *
- * A wait GitHub dictated is only ever smeared *forwards*, so `NO_JITTER` leaves it exactly as
- * dictated. A backoff this module picked for itself is drawn from the whole interval below its cap,
- * so `FULL_JITTER` is what reproduces the nominal schedule and `NO_JITTER` collapses it to the floor.
+ * Every wait is only ever smeared *forwards*, so `NO_JITTER` leaves it exactly as computed and
+ * `FULL_JITTER` adds the whole spread.
  */
 const NO_JITTER = () => 0;
 const FULL_JITTER = () => 1;
@@ -142,23 +144,41 @@ describe('rateLimitDelayMs', () => {
     expect(rateLimitDelayMs(error, 0, POLICY, nowMs, NO_JITTER)).toBeUndefined();
   });
 
-  it('backs off exponentially when the budget is spent but no reset is given', () => {
+  it('backs off from a minute, doubling, when the budget is spent but no reset is given', () => {
     const error = httpError(403, { headers: { 'x-ratelimit-remaining': '0' } });
 
-    expect(rateLimitDelayMs(error, 0, POLICY, 0, FULL_JITTER)).toBe(1_000);
-    expect(rateLimitDelayMs(error, 1, POLICY, 0, FULL_JITTER)).toBe(2_000);
-    expect(rateLimitDelayMs(error, 2, POLICY, 0, FULL_JITTER)).toBe(4_000);
+    expect(rateLimitDelayMs(error, 0, WIDE, 0, NO_JITTER)).toBe(60_000);
+    expect(rateLimitDelayMs(error, 1, WIDE, 0, NO_JITTER)).toBe(120_000);
+    expect(rateLimitDelayMs(error, 2, WIDE, 0, NO_JITTER)).toBe(240_000);
   });
 
-  it('backs off on a secondary rate limit that arrives without a Retry-After', () => {
+  // P14a: this was retried three times within seven seconds. GitHub asks for at least a minute when it
+  // names no wait, and an early retry only extends the limit.
+  it('waits at least a minute on a secondary rate limit that arrives without a Retry-After', () => {
     const error = httpError(403, { data: { message: 'You have exceeded a secondary rate limit' } });
 
-    expect(rateLimitDelayMs(error, 0, POLICY, 0, FULL_JITTER)).toBe(1_000);
-    expect(rateLimitDelayMs(error, 3, POLICY, 0, FULL_JITTER)).toBe(8_000);
+    expect(rateLimitDelayMs(error, 0, WIDE, 0, NO_JITTER)).toBe(60_000);
+    expect(rateLimitDelayMs(error, 1, WIDE, 0, NO_JITTER)).toBe(120_000);
+    expect(rateLimitDelayMs(error, 3, WIDE, 0, NO_JITTER)).toBe(480_000);
   });
 
-  it('backs off on a bare 429 with no headers', () => {
-    expect(rateLimitDelayMs(httpError(429), 0, POLICY, 0, FULL_JITTER)).toBe(1_000);
+  it('waits at least a minute on a bare 429 with no headers', () => {
+    expect(rateLimitDelayMs(httpError(429), 0, WIDE, 0, NO_JITTER)).toBe(60_000);
+  });
+
+  it('serves the default policy no more than two unstated waits inside its total budget', async () => {
+    const clock = fakeClock();
+    const error = httpError(429);
+    const perform = vi.fn().mockRejectedValue(error);
+
+    await expect(requestWithRateLimitRetry(perform, DEFAULT_RETRY_POLICY, clock)).rejects.toBe(error);
+    expect(clock.sleeps).toEqual([60_000, 120_000]);
+  });
+
+  it('no longer treats the word abuse alone as a secondary limit', () => {
+    const error = httpError(403, { data: { message: 'Repository access blocked: abuse report' } });
+
+    expect(isRateLimitError(error)).toBe(false);
   });
 
   it('caps exponential backoff at the ceiling', () => {
@@ -170,21 +190,29 @@ describe('rateLimitDelayMs', () => {
   // GitHub answers a rate-limited GraphQL call with HTTP 200 and an `errors` payload, so none of the
   // status-based signals above apply — yet every write these actions perform goes through GraphQL.
   it('backs off on a GraphQL rate-limit payload that carries no status', () => {
-    const error = graphqlError('API rate limit already exceeded for installation ID 103406604.');
+    const error = graphqlError('API rate limit already exceeded for installation ID 103406604.', {
+      type: 'RATE_LIMITED',
+    });
 
-    expect(rateLimitDelayMs(error, 0, POLICY, 0, FULL_JITTER)).toBe(1_000);
-    expect(rateLimitDelayMs(error, 2, POLICY, 0, FULL_JITTER)).toBe(4_000);
+    expect(rateLimitDelayMs(error, 0, WIDE, 0, NO_JITTER)).toBe(60_000);
+    expect(rateLimitDelayMs(error, 2, WIDE, 0, NO_JITTER)).toBe(240_000);
   });
 
   it('recognises a RATE_LIMITED entry whose message does not say so', () => {
     const error = graphqlError('You have exceeded your quota.', { type: 'RATE_LIMITED' });
 
-    expect(rateLimitDelayMs(error, 0, POLICY, 0, FULL_JITTER)).toBe(1_000);
+    expect(rateLimitDelayMs(error, 0, WIDE, 0, NO_JITTER)).toBe(60_000);
+  });
+
+  // GitHub marks the refusal with its type; a message is free text that a validation error can share.
+  it('classifies a GraphQL error by its type alone, not by the words rate limit', () => {
+    expect(isRateLimitError(graphqlError('Argument "rate limit" is not valid.'))).toBe(false);
   });
 
   it('waits for the reset carried on a GraphQL rate-limit error', () => {
     const error = graphqlError('API rate limit exceeded.', {
       headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': '10' },
+      type: 'RATE_LIMITED',
     });
 
     // 10s until reset, plus the 1s skew buffer.
@@ -202,16 +230,12 @@ describe('rateLimitDelayMs', () => {
 // the same backoff schedule. Jitter is the only thing standing between that and a herd which loses
 // the same race together, waits the same interval, and collides again on the same tick.
 describe('jitter', () => {
-  it('draws a backoff it chose itself from the whole interval below the cap', () => {
+  it('spreads a backoff it chose itself forwards only, never under the minute', () => {
     const error = httpError(429);
 
-    // attempt 2 caps at 4s; a mid-range draw must land inside the interval, not on its edge.
-    expect(rateLimitDelayMs(error, 2, POLICY, 0, () => 0.5)).toBe(2_000);
-  });
-
-  it('never lets a jittered backoff fall below the floor, which would be a busy loop', () => {
-    // The floor is 1s; attempt 5 caps at 32s, and the lowest draw must still not undercut it.
-    expect(rateLimitDelayMs(httpError(429), 5, POLICY, 0, NO_JITTER)).toBe(1_000);
+    expect(rateLimitDelayMs(error, 0, WIDE, 0, NO_JITTER)).toBe(60_000);
+    expect(rateLimitDelayMs(error, 0, WIDE, 0, () => 0.5)).toBe(62_500);
+    expect(rateLimitDelayMs(error, 0, WIDE, 0, FULL_JITTER)).toBe(65_000);
   });
 
   it('smears a wait GitHub dictated forwards only, never waking before the window reopens', () => {
@@ -243,9 +267,27 @@ describe('isRateLimitError', () => {
   it.each([
     ['a 403 with a spent budget', httpError(403, { headers: { 'x-ratelimit-remaining': '0' } })],
     ['a 429', httpError(429)],
-    ['a GraphQL rate-limit payload', graphqlError('API rate limit exceeded.')],
+    ['a GraphQL rate-limit payload', graphqlError('API rate limit exceeded.', { type: 'RATE_LIMITED' })],
   ])('recognises %s', (_label, error) => {
     expect(isRateLimitError(error)).toBe(true);
+  });
+
+  it.each([
+    ['a 403 with a retry-after header', httpError(403, { headers: { 'retry-after': '5' } })],
+    [
+      'a 403 with a secondary-limit message',
+      httpError(403, { data: { message: 'You have exceeded a secondary rate limit' } }),
+    ],
+  ])('recognises %s', (_label, error) => {
+    expect(isRateLimitError(error)).toBe(true);
+  });
+
+  // K3i: every 403 used to count, so a missing permission was annotated as a rate limit.
+  it.each([
+    ['a 403 for a missing permission', httpError(403, { data: { message: 'Resource not accessible by integration' } })],
+    ['a 403 with budget left', httpError(403, { headers: { 'x-ratelimit-remaining': '4999' } })],
+  ])('does not mistake %s for one', (_label, error) => {
+    expect(isRateLimitError(error)).toBe(false);
   });
 
   it.each([
@@ -317,12 +359,14 @@ describe('requestWithRateLimitRetry', () => {
     const clock = fakeClock();
     const perform = vi
       .fn()
-      .mockRejectedValueOnce(graphqlError('API rate limit already exceeded for installation ID 1.'))
+      .mockRejectedValueOnce(
+        graphqlError('API rate limit already exceeded for installation ID 1.', { type: 'RATE_LIMITED' }),
+      )
       .mockResolvedValueOnce('committed');
 
     await expect(requestWithRateLimitRetry(perform, POLICY, clock)).resolves.toBe('committed');
     expect(perform).toHaveBeenCalledTimes(2);
-    expect(clock.sleeps).toEqual([1_000]);
+    expect(clock.sleeps).toEqual([60_000]);
   });
 
   it('stops once serving the next wait would overrun the total budget', async () => {
@@ -339,9 +383,21 @@ describe('requestWithRateLimitRetry', () => {
     expect(vi.mocked(core.error).mock.calls[0][0]).toContain('total wait budget');
   });
 
+  it('rethrows a permission 403 at once, without calling it a rate limit', async () => {
+    const clock = fakeClock();
+    const error = httpError(403, { data: { message: 'Resource not accessible by integration' } });
+    const perform = vi.fn().mockRejectedValue(error);
+
+    await expect(requestWithRateLimitRetry(perform, POLICY, clock)).rejects.toBe(error);
+    expect(perform).toHaveBeenCalledTimes(1);
+    expect(clock.sleeps).toEqual([]);
+    expect(core.error).not.toHaveBeenCalled();
+  });
+
   it('names the rate limit it gave up on under a stable annotation title', async () => {
     const error = graphqlError('API rate limit already exceeded for installation ID 1.', {
       headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': '3600' },
+      type: 'RATE_LIMITED',
     });
 
     await expect(requestWithRateLimitRetry(vi.fn().mockRejectedValue(error), POLICY, fakeClock())).rejects.toBe(error);
@@ -397,7 +453,7 @@ describe('createOctokit', () => {
 
   it('registers a request hook that retries rate-limited requests', async () => {
     const clock = fakeClock();
-    createOctokit('token', { baseDelayMs: 500, maxDelayMs: 10_000, maxRetries: 1 }, clock);
+    createOctokit('token', { maxDelayMs: 10_000, maxRetries: 1 }, clock);
 
     // getOctokit is mocked, so the plugin never ran against a real client; run it against ours.
     applyPlugin();
@@ -424,13 +480,14 @@ describe('createOctokit', () => {
   // has already travelled back through the hook.
   it('replaces graphql with one that retries a rate-limited GraphQL response', async () => {
     const clock = fakeClock();
-    createOctokit('token', { baseDelayMs: 500, maxDelayMs: 10_000, maxRetries: 1 }, clock);
+    createOctokit('token', { maxDelayMs: 10_000, maxRetries: 1 }, clock);
     const retrying = applyPlugin().graphql;
 
     graphql
       .mockRejectedValueOnce(
         graphqlError('API rate limit already exceeded for installation ID 1.', {
           headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': '3' },
+          type: 'RATE_LIMITED',
         }),
       )
       .mockResolvedValueOnce({ createCommitOnBranch: null });
@@ -444,7 +501,7 @@ describe('createOctokit', () => {
 
   it('leaves an HTTP-level rate limit to the request hook instead of retrying it a second time', async () => {
     const clock = fakeClock();
-    createOctokit('token', { baseDelayMs: 500, maxDelayMs: 10_000, maxRetries: 1 }, clock);
+    createOctokit('token', { maxDelayMs: 10_000, maxRetries: 1 }, clock);
     const retrying = applyPlugin().graphql;
 
     const error = httpError(403, { headers: { 'retry-after': '1' } });
@@ -457,14 +514,14 @@ describe('createOctokit', () => {
 
   it('keeps the graphql endpoint and gives derived clients the same retry', async () => {
     const clock = fakeClock();
-    createOctokit('token', { baseDelayMs: 500, maxDelayMs: 10_000, maxRetries: 1 }, clock);
+    createOctokit('token', { maxDelayMs: 10_000, maxRetries: 1 }, clock);
     const retrying = applyPlugin().graphql;
 
     expect(retrying.endpoint).toBe(endpoint);
 
     const derivedGraphql = vi
       .fn()
-      .mockRejectedValueOnce(graphqlError('API rate limit exceeded.'))
+      .mockRejectedValueOnce(graphqlError('API rate limit exceeded.', { type: 'RATE_LIMITED' }))
       .mockResolvedValueOnce('derived');
     graphql.defaults.mockReturnValue(derivedGraphql);
 
@@ -478,9 +535,9 @@ describe('createOctokit', () => {
 describe('DEFAULT_RETRY_POLICY', () => {
   it('is a bounded, self-consistent policy', () => {
     expect(DEFAULT_RETRY_POLICY.maxRetries).toBeGreaterThan(0);
-    expect(DEFAULT_RETRY_POLICY.baseDelayMs).toBeGreaterThan(0);
-    // The ceiling must sit at or above the base, or the first backoff would already be clipped.
-    expect(DEFAULT_RETRY_POLICY.maxDelayMs).toBeGreaterThanOrEqual(DEFAULT_RETRY_POLICY.baseDelayMs);
+    // The ceiling must sit at or above GitHub's one-minute minimum, or the first unstated wait would
+    // already be clipped below it.
+    expect(DEFAULT_RETRY_POLICY.maxDelayMs).toBeGreaterThanOrEqual(60_000);
     expect(Number.isFinite(DEFAULT_RETRY_POLICY.maxDelayMs)).toBe(true);
     // A total below the per-attempt ceiling would make that ceiling unreachable and misleading.
     expect(DEFAULT_RETRY_POLICY.maxTotalDelayMs).toBeGreaterThanOrEqual(DEFAULT_RETRY_POLICY.maxDelayMs);

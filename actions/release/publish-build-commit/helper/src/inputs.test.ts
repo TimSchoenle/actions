@@ -36,6 +36,31 @@ describe('matchesGlob', () => {
   });
 });
 
+// The consumer check in SECURITY.md accepts a bundle only below actions/<something>/dist/. The default
+// allowlist has to be at least as strict, or a build commit could add actions/dist/index.js, which
+// every consumer following that check would then refuse.
+describe('the default allowed-paths', () => {
+  const ACTION_YAML = path.join(import.meta.dirname, '..', '..', 'action.yaml');
+  const CONSUMER_CHECK = /^actions\/.+\/dist\//;
+  const defaultGlobs = parseGlobs(
+    /allowed-paths:[\s\S]*?default: '([^']*)'/.exec(fs.readFileSync(ACTION_YAML, 'utf8'))?.[1] ?? '',
+  );
+
+  it.each([
+    'actions/common/x/dist/index.js',
+    'actions/common/x/helper/dist/index.js',
+    'actions/common/x/dist/nested/chunk.js',
+    'actions/dist/index.js',
+    'actions/x/src/index.js',
+    'actions/dist',
+    'actions/x/dist',
+    'scripts/dist/index.js',
+  ])('agrees with the consumer check on %s', (file) => {
+    expect(defaultGlobs.length).toBeGreaterThan(0);
+    expect(defaultGlobs.some((glob) => matchesGlob(glob, file))).toBe(CONSUMER_CHECK.test(file));
+  });
+});
+
 describe('parseGlobs', () => {
   it('splits on whitespace', () => {
     expect(parseGlobs(' actions/**/dist/**\n dist/** ')).toEqual(['actions/**/dist/**', 'dist/**']);
@@ -197,6 +222,7 @@ describe('uploadEndpoint', () => {
     draft: true,
     htmlUrl: '',
     uploadUrl,
+    createdAt: '2026-01-01T00:00:00Z',
     assets: [],
   });
 

@@ -8,6 +8,10 @@ import type { PullRequestCommits } from 'actions-util/commits';
 /** An open pull request reduced to the fields the decision needs. */
 export interface OpenPullRequest {
   number: number;
+  /** Database ID of the account that opened it, or `null` when that account was deleted. */
+  authorId: number | null;
+  /** Name of the branch it would merge into. */
+  baseRef: string;
   /** GraphQL node ID, which `enablePullRequestAutoMerge` addresses the pull request by. */
   nodeId: string;
   /** `https://github.com/owner/repo/pull/N`, which the commit query resolves. */
@@ -21,6 +25,8 @@ export interface OpenPullRequest {
   /** ISO 8601 creation time. */
   createdAt: string;
   draft: boolean;
+  /** Whether auto-merge was on at the time of listing. */
+  autoMergeEnabled: boolean;
 }
 
 /** The GitHub operations this action performs, kept minimal so they can be faked in tests. */
@@ -33,7 +39,10 @@ export interface TimedAutoMergeApi {
   approve(repository: RepositoryCoordinates, number: number, headSha: string, body: string): Promise<void>;
   /** Enables auto-merge, which GitHub refuses if the head is no longer `expectedHeadOid`. */
   enableAutoMerge(nodeId: string, mergeMethod: MergeMethod, expectedHeadOid: string): Promise<void>;
-  /** Reads the pull request's current head and GitHub's `mergeStateStatus` for it. */
+  /**
+   * Reads the pull request's current head, GitHub's `mergeStateStatus` for it, whether auto-merge is on
+   * and what this token's identity last approved.
+   */
   getMergeState(nodeId: string): Promise<MergeState>;
   /** Merges now, which GitHub refuses if the head is no longer `sha`. */
   merge(repository: RepositoryCoordinates, number: number, mergeMethod: MergeMethod, sha: string): Promise<void>;
@@ -44,6 +53,10 @@ export interface MergeState {
   headOid: string;
   /** GitHub's `MergeStateStatus`, such as `CLEAN`, `BLOCKED` or `UNSTABLE`. */
   status: string;
+  /** Whether auto-merge is on. */
+  autoMergeEnabled: boolean;
+  /** The commit this token's identity last approved, or `null` when its latest review is not an approval. */
+  viewerApprovedOid: string | null;
 }
 
 /** GitHub's enum value for each merge method. */
@@ -70,12 +83,26 @@ const MERGE_STATE_QUERY = `query MergeState($pullRequestId: ID!) {
     ... on PullRequest {
       headRefOid
       mergeStateStatus
+      autoMergeRequest {
+        enabledAt
+      }
+      viewerLatestReview {
+        state
+        commit {
+          oid
+        }
+      }
     }
   }
 }`;
 
 interface MergeStateResponse {
-  node: { headRefOid?: string; mergeStateStatus?: string } | null;
+  node: {
+    headRefOid?: string;
+    mergeStateStatus?: string;
+    autoMergeRequest?: { enabledAt: string | null } | null;
+    viewerLatestReview?: { state: string; commit: { oid: string } | null } | null;
+  } | null;
 }
 
 /** Page size for the pull request listing; the maximum GitHub accepts. */
@@ -89,11 +116,15 @@ interface PullRequestListItem {
   created_at: string;
   draft?: boolean;
   head: { ref: string; sha: string; repo: { full_name: string } | null };
-  base: { repo: { full_name: string } };
+  base: { ref: string; repo: { full_name: string } };
+  user: { id: number } | null;
+  auto_merge?: unknown;
 }
 
 function toOpenPullRequest(item: PullRequestListItem): OpenPullRequest {
   return {
+    authorId: item.user?.id ?? null,
+    baseRef: item.base.ref,
     baseRepoFullName: item.base.repo.full_name,
     createdAt: item.created_at,
     draft: item.draft === true,
@@ -103,6 +134,7 @@ function toOpenPullRequest(item: PullRequestListItem): OpenPullRequest {
     nodeId: item.node_id,
     number: item.number,
     url: item.html_url,
+    autoMergeEnabled: item.auto_merge !== null && item.auto_merge !== undefined,
   };
 }
 
@@ -143,7 +175,14 @@ export function createTimedAutoMergeApi(token: string): TimedAutoMergeApi {
         throw new Error(`Pull request ${nodeId} has no head or merge state.`);
       }
 
-      return { headOid: node.headRefOid, status: node.mergeStateStatus };
+      const review = node.viewerLatestReview;
+
+      return {
+        autoMergeEnabled: node.autoMergeRequest !== null && node.autoMergeRequest !== undefined,
+        headOid: node.headRefOid,
+        status: node.mergeStateStatus,
+        viewerApprovedOid: review?.state === 'APPROVED' ? (review.commit?.oid ?? null) : null,
+      };
     },
 
     async merge({ owner, repo }, number, mergeMethod, sha) {

@@ -9,14 +9,11 @@ import * as github from './octokit.js';
  * it, and a limit whose reset lies further out is treated as un-waitable. `maxTotalDelayMs` bounds
  * what the attempts may cost *together*. Either one being reached is a decision to stop waiting and
  * fail — an exhausted hourly installation budget can be most of an hour from its reset, and parking a
- * runner on that is worse than failing and letting the deferred re-run sweep pick the work up once
- * the window has actually reopened.
+ * runner on that is worse than failing fast with an annotation that says why.
  */
 export interface RetryPolicy {
   /** How many times a rate-limited request is retried before its error is surfaced. */
   maxRetries: number;
-  /** Base of the exponential backoff used when GitHub does not tell us how long to wait. */
-  baseDelayMs: number;
   /** The longest any single wait may be. A required wait above this abandons the retries. */
   maxDelayMs: number;
   /**
@@ -32,14 +29,13 @@ export interface RetryPolicy {
 /**
  * Defaults tuned for GitHub Actions, where a job holds a runner for every second it waits.
  *
- * A secondary (abuse) rate limit clears in seconds to a few minutes, which the three-minute ceiling
- * rides out. A primary-limit reset tens of minutes away is deliberately *not* waited for, and the
- * five-minute total keeps three such waits from quietly compounding into a quarter-hour of idling:
- * failing fast and letting the work be re-run is cheaper than holding the runner.
+ * A secondary rate limit with no stated wait is retried after one minute and then two, which the
+ * three-minute ceiling and five-minute total allow; a third would exceed the total. A primary-limit
+ * reset tens of minutes away is deliberately *not* waited for: failing fast and letting the work be
+ * re-run is cheaper than holding the runner.
  */
 export const DEFAULT_RETRY_POLICY: RetryPolicy = {
   maxRetries: 3,
-  baseDelayMs: 1_000,
   maxDelayMs: 180_000,
   maxTotalDelayMs: 300_000,
 };
@@ -66,8 +62,14 @@ const REAL_CLOCK: RetryClock = {
   random: () => Math.random(),
 };
 
-/** The statuses GitHub uses to refuse a request for rate limiting; every retry decision starts here. */
-const RATE_LIMIT_STATUSES = new Set([403, 429]);
+/**
+ * The first wait when GitHub refuses a request without saying how long to wait, doubled on each retry.
+ *
+ * GitHub's documentation asks for at least one minute in that case, and a retry before then extends
+ * the secondary limit instead of clearing it. Not part of {@link RetryPolicy}, because no caller has a
+ * reason to wait less.
+ */
+const UNSTATED_WAIT_MS = 60_000;
 
 /** Floor on any wait, so a reset already in the past becomes a brief pause rather than a busy loop. */
 const MIN_DELAY_MS = 1_000;
@@ -76,20 +78,20 @@ const MIN_DELAY_MS = 1_000;
 const RESET_BUFFER_MS = 1_000;
 
 /**
- * The window a wait GitHub itself dictated is smeared across.
+ * The window every wait is smeared across.
  *
- * A `Retry-After` or a reset epoch names one instant, and every job refused by the same installation
- * budget is handed that same instant — so without a spread the whole batch wakes on the same second
- * and collides again. The spread is only ever added: waking *before* the window reopens would
- * guarantee another refusal, so the dictated wait is a floor, never an average.
+ * A `Retry-After`, a reset epoch or the one-minute schedule names one instant, and every job refused
+ * by the same installation budget is handed that same instant — so without a spread the whole batch
+ * wakes on the same second and collides again. The spread is only ever added: waking *before* the
+ * window reopens would guarantee another refusal, so the computed wait is a floor, never an average.
  */
-const DICTATED_SPREAD_MS = 5_000;
+const SPREAD_MS = 5_000;
 
 /**
  * The `title` on the annotation written when a rate limit outlives the retries.
  *
- * A stable key, unlike the message text, so tooling that reacts to these failures — the deferred
- * re-run sweep in `scripts/rerun-rate-limited.ts` — can recognise one without matching on prose.
+ * A stable key, unlike the message text, so tooling or a reader filtering annotations can recognise
+ * one without matching on prose.
  */
 export const RATE_LIMIT_ANNOTATION_TITLE = 'GitHub API rate limit';
 
@@ -146,10 +148,11 @@ function nonNegativeInt(value: string | undefined): number | undefined {
 }
 
 /**
- * Recognises a secondary (abuse) rate limit that arrived without a `Retry-After` header.
+ * Recognises a secondary rate limit that arrived without a `Retry-After` header.
  *
  * These are told apart from an ordinary 403 by their message alone, so a permission error is never
- * mistaken for something worth retrying.
+ * mistaken for something worth retrying. GitHub says "secondary rate limit"; the bare word "abuse"
+ * also appears in refusals that no wait will clear, such as a repository blocked for an abuse report.
  */
 function isSecondaryRateLimit(error: unknown): boolean {
   const data = asHttpError(error)?.response?.data;
@@ -159,7 +162,7 @@ function isSecondaryRateLimit(error: unknown): boolean {
       : '';
   const text = `${errorMessage(error)} ${dataMessage}`.toLowerCase();
 
-  return text.includes('secondary rate limit') || text.includes('abuse');
+  return text.includes('secondary rate limit');
 }
 
 /** Reads the top-level `errors` array a `GraphqlResponseError` carries, or an empty list. */
@@ -176,9 +179,6 @@ function graphqlErrors(error: unknown): unknown[] {
 /** The `type` GitHub puts on a GraphQL error entry it rejected for rate limiting. */
 const GRAPHQL_RATE_LIMITED_TYPE = 'RATE_LIMITED';
 
-/** Matches the wording GitHub uses for a rate-limit refusal, primary and secondary alike. */
-const RATE_LIMIT_MESSAGE = /rate limit/i;
-
 /**
  * Recognises a GraphQL request GitHub refused for rate limiting.
  *
@@ -187,6 +187,9 @@ const RATE_LIMIT_MESSAGE = /rate limit/i;
  * carries the response headers but none of the HTTP signals the rest of this module reads. Every
  * write these actions perform — commits, branches, pull requests — goes through GraphQL, so this is
  * the path that matters most, not an edge case.
+ *
+ * Only the entry's `type` counts. Its message is free text that a validation error naming a field or
+ * argument can share.
  */
 function isGraphqlRateLimited(error: unknown): boolean {
   return graphqlErrors(error).some((entry) => {
@@ -194,38 +197,40 @@ function isGraphqlRateLimited(error: unknown): boolean {
       return false;
     }
 
-    const { message, type } = entry as { message?: unknown; type?: unknown };
-
-    return type === GRAPHQL_RATE_LIMITED_TYPE || (typeof message === 'string' && RATE_LIMIT_MESSAGE.test(message));
+    return (entry as { type?: unknown }).type === GRAPHQL_RATE_LIMITED_TYPE;
   });
+}
+
+/**
+ * Whether a 403 carries a sign of rate limiting: a `Retry-After`, a spent primary budget, or a
+ * secondary-limit message. GitHub also answers a missing permission with a bare 403, and calling that
+ * a rate limit sends whoever reads the annotation after the wrong fix.
+ */
+function isRateLimited403(error: unknown): boolean {
+  const headers = httpHeaders(error);
+
+  return (
+    nonNegativeInt(headers['retry-after']) !== undefined ||
+    headers['x-ratelimit-remaining'] === '0' ||
+    isSecondaryRateLimit(error)
+  );
 }
 
 /** Whether GitHub refused this request for rate limiting, over either the REST or the GraphQL path. */
 export function isRateLimitError(error: unknown): boolean {
   const status = httpStatus(error);
 
-  return (status !== undefined && RATE_LIMIT_STATUSES.has(status)) || isGraphqlRateLimited(error);
+  return status === 429 || (status === 403 && isRateLimited403(error)) || isGraphqlRateLimited(error);
 }
 
-/** Exponential backoff, capped at the policy ceiling. */
+/** The unstated-wait schedule: one minute, doubling, capped at the policy ceiling. */
 function backoffMs(attempt: number, policy: RetryPolicy): number {
-  return Math.min(policy.baseDelayMs * 2 ** attempt, policy.maxDelayMs);
+  return Math.min(UNSTATED_WAIT_MS * 2 ** attempt, policy.maxDelayMs);
 }
 
-/**
- * Spreads a wait we chose ourselves across the whole interval below it ("full jitter").
- *
- * The backoff schedule is identical in every job, so an unjittered one has every job that lost the
- * same race retry on the same tick, and lose it again together. Drawing uniformly from `[0, delay]`
- * is what breaks that lockstep; the floor keeps the draw from becoming a busy loop.
- */
-function withFullJitter(milliseconds: number, random: () => number): number {
-  return Math.max(MIN_DELAY_MS, Math.round(random() * milliseconds));
-}
-
-/** Smears a wait GitHub dictated forwards only, never past the per-attempt ceiling. */
+/** Smears a wait forwards only, never past the per-attempt ceiling. */
 function withSpread(milliseconds: number, policy: RetryPolicy, random: () => number): number {
-  return Math.min(milliseconds + Math.round(random() * DICTATED_SPREAD_MS), policy.maxDelayMs);
+  return Math.min(milliseconds + Math.round(random() * SPREAD_MS), policy.maxDelayMs);
 }
 
 /**
@@ -240,9 +245,9 @@ function boundedDelay(milliseconds: number, policy: RetryPolicy): number | undef
   return Math.max(milliseconds, MIN_DELAY_MS);
 }
 
-/** The backoff this loop picks for itself when GitHub named no wait, jittered across its interval. */
+/** The wait this loop picks for itself when GitHub named none, spread forwards like a dictated one. */
 function chosenDelay(attempt: number, policy: RetryPolicy, random: () => number): number {
-  return withFullJitter(backoffMs(attempt, policy), random);
+  return withSpread(backoffMs(attempt, policy), policy, random);
 }
 
 /**
@@ -255,8 +260,9 @@ function chosenDelay(attempt: number, policy: RetryPolicy, random: () => number)
  *  2. `x-ratelimit-remaining: 0` with `x-ratelimit-reset` — the primary budget is spent; wait for the
  *     window to reopen.
  *  3. A GraphQL rate-limit payload, a secondary-limit message, or a bare 429 — no time was given, so
- *     back off exponentially.
- * A 403 carrying none of these is a permission or availability error, which retrying cannot mend.
+ *     wait a minute, doubling on each retry, as GitHub asks.
+ * A 403 carrying none of these is a permission or availability error, which retrying cannot mend;
+ * {@link isRateLimitError} already rejects it, so it is never reported as a rate limit.
  *
  * Whether to retry at all is decided on the *unjittered* wait, so the answer does not turn on a coin
  * flip; the jitter is applied only to the wait that decision keeps.
@@ -313,7 +319,8 @@ type RetryDecision = { delayMs: number } | { giveUp: string };
  *
  * Three separate bounds can stop a retry, and an operator can only act on the one that actually
  * bit — "still refused after 3 retries" calls for cutting call volume, while "exceeds the total wait
- * budget" calls for a deferred re-run instead of a longer wait. The raw error names none of them.
+ * budget" calls for re-running once the window reopens instead of a longer wait. The raw error names
+ * none of them.
  */
 function decideRetry(
   error: unknown,
@@ -344,8 +351,8 @@ function decideRetry(
  *
  * The raw error says only that GitHub refused the request; it never says that the refusal was ridden
  * out to the end of the policy, which is the part an operator can act on — a GraphQL refusal least of
- * all, since it reads as an ordinary response error. The title is what lets the deferred re-run sweep
- * tell this failure apart from every other way a job can go red, without matching on prose.
+ * all, since it reads as an ordinary response error. The title is what tells this failure apart from
+ * every other way a job can go red, without matching on prose.
  */
 function reportUnretried(error: unknown, reason: string): void {
   core.error(`GitHub API rate limit hit and not ridden out — ${reason}: ${errorMessage(error)}`, {
@@ -359,8 +366,8 @@ function reportUnretried(error: unknown, reason: string): void {
  * A rate-limited request is rejected *before* GitHub acts on it, so replaying one — even a mutation —
  * cannot double an effect; the only requests retried here are those that never ran.
  *
- * Every wait is jittered, because these actions do not run alone: a release batch puts dozens of jobs
- * on one installation budget, and an unjittered schedule has all of them retry on the same tick.
+ * Every wait is spread, because these actions do not run alone: a release batch puts dozens of jobs
+ * on one installation budget, and an unspread schedule has all of them retry on the same tick.
  */
 export async function requestWithRateLimitRetry<T>(
   perform: () => Promise<T>,

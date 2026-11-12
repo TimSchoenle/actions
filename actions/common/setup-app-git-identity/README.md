@@ -9,7 +9,7 @@ outside the markers.
 
 Configures git with the identity of a GitHub App bot and outputs the bot details.
 
-[actions-common-setup-app-git-identity-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-setup-app-git-identity-v2.0.4) · JavaScript action (node24)
+[actions-common-setup-app-git-identity-v2.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-common-setup-app-git-identity-v2.0.5) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -44,7 +44,7 @@ jobs:
         with:
           token: ${{ steps.token.outputs.token }}
 
-      - uses: TimSchoenle/actions/actions/common/setup-app-git-identity@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-setup-app-git-identity-v2.0.4
+      - uses: TimSchoenle/actions/actions/common/setup-app-git-identity@actions-common-setup-app-git-identity-v2.0.5 # tag=actions-common-setup-app-git-identity-v2.0.5
         with:
           app-slug: ${{ steps.token.outputs.app-slug }}
           token: ${{ steps.token.outputs.token }}
@@ -95,6 +95,6 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-setup-app-git-identity.yaml`](../../../.github/workflows/verify-action-common-setup-app-git-identity.yaml)
+- End-to-end tests: [`.github/verify/common-setup-app-git-identity.yaml`](../../../.github/verify/common-setup-app-git-identity.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

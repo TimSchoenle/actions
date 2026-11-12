@@ -11,6 +11,8 @@ import { readFile } from 'node:fs/promises';
 
 import { quoteForLog, resolveRealWithinWorkspace } from 'actions-util';
 
+import { carriesMarkerLine } from './marker.js';
+
 /** The two body inputs, exactly as the runner delivered them. */
 export interface BodySource {
   body: string;
@@ -32,10 +34,28 @@ export class BodySourceError extends Error {
  * renders as a blank issue, and every later run would then find and rewrite that blank -- a
  * misconfigured path would be indistinguishable from a report that had nothing to say.
  *
- * @throws {@link BodySourceError} if both inputs are set, neither is, or the file is empty.
+ * A body carrying a marker of this action on a line of its own is refused too, whichever input it came
+ * from: see {@link carriesMarkerLine}.
+ *
+ * @throws {@link BodySourceError} if both inputs are set, neither is, the file is empty, or the body
+ * carries a marker line.
  * @throws {@link UnsafePathError} if `body_file` leaves the workspace.
  */
-export async function resolveBody({ body, bodyFile }: BodySource, workspace: string): Promise<string> {
+export async function resolveBody(source: BodySource, workspace: string): Promise<string> {
+  const markdown = await readSource(source, workspace);
+
+  if (carriesMarkerLine(markdown)) {
+    throw new BodySourceError(
+      'the body carries an issue marker on a line of its own, which would let a later run for that ' +
+        'identifier find and overwrite this issue',
+    );
+  }
+
+  return markdown;
+}
+
+/** The markdown the one validated input names. */
+async function readSource({ body, bodyFile }: BodySource, workspace: string): Promise<string> {
   if (body !== '' && bodyFile !== '') {
     throw new BodySourceError("only one of 'body' and 'body_file' may be set");
   }

@@ -34,16 +34,16 @@ const POSIX_CLASSES = new Map<string, string>([
   ['xdigit', '0-9A-Fa-f'],
 ]);
 
-/** A POSIX class found in a bracket expression, and where it ends. */
-interface PosixClassMatch {
-  /** The JavaScript character range the class translates to. */
+/** A piece of the pattern read at some index: its JavaScript translation, and where it ends. */
+interface TranslatedToken {
+  /** The JavaScript text the piece translates to. */
   text: string;
-  /** Index of the first character after the class. */
+  /** Index of the first character after the piece. */
   nextIndex: number;
 }
 
 /** Reads a `[:class:]` token at `index`, or returns undefined if there is none. */
-function readPosixClass(pattern: string, index: number): PosixClassMatch | undefined {
+function readPosixClass(pattern: string, index: number): TranslatedToken | undefined {
   if (pattern[index] !== '[' || pattern[index + 1] !== ':') {
     return undefined;
   }
@@ -60,10 +60,35 @@ function readPosixClass(pattern: string, index: number): PosixClassMatch | undef
 }
 
 /**
+ * Reads the `[` that opens a bracket expression at `index`, with its `^` and a leading `]`.
+ *
+ * A `]` first in the set, after an optional `^`, is a literal member in POSIX. JavaScript reads `[]`
+ * as an empty class, so it is escaped.
+ */
+function readBracketOpening(pattern: string, index: number): TranslatedToken {
+  let next = index + 1;
+  let text = '[';
+
+  if (pattern[next] === '^') {
+    text += '^';
+    next += 1;
+  }
+
+  if (pattern[next] === ']') {
+    text += '\\]';
+    next += 1;
+  }
+
+  return { text, nextIndex: next };
+}
+
+/**
  * Rewrites POSIX bracket expression classes (`[[:digit:]]`) into JavaScript character ranges.
  *
  * Only occurrences inside a bracket expression are rewritten; outside of one, `[:digit:]` is an
- * ordinary character class in both dialects and must be left untouched.
+ * ordinary character class in both dialects and must be left untouched. A `]` that opens the set,
+ * as in `[]a-z]` or `[^]/]`, is literal in POSIX and is escaped, since JavaScript would read `[]` as
+ * an empty class.
  */
 export function translatePosixClasses(pattern: string): string {
   let result = '';
@@ -88,8 +113,15 @@ export function translatePosixClasses(pattern: string): string {
     }
 
     if (character === '[' && !insideBracket) {
+      const opening = readBracketOpening(pattern, index);
+
       insideBracket = true;
-    } else if (character === ']' && insideBracket) {
+      result += opening.text;
+      index = opening.nextIndex;
+      continue;
+    }
+
+    if (character === ']' && insideBracket) {
       insideBracket = false;
     }
 

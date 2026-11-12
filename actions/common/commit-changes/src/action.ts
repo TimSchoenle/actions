@@ -13,6 +13,13 @@ import type { CommitChangesDeps, CommitChangesResult } from './commit.js';
 function report(result: CommitChangesResult): void {
   setOutput(ActionOutput.changes_detected, String(result.committed));
 
+  if (result.expectedHeadSource === 'remote') {
+    core.warning(
+      'The target branch is not checked out, so the commit expected the branch head read just before it. ' +
+        'A push that landed after the checkout was not detected. Check out the branch or set expected_head_sha.',
+    );
+  }
+
   if (result.committed) {
     core.info(`✅ Commit created: ${result.commitHash}`);
     setOutput(ActionOutput.commit_hash, result.commitHash ?? '');
@@ -20,6 +27,17 @@ function report(result: CommitChangesResult): void {
   } else {
     core.info('ℹ️ No changes detected — skipping commit');
   }
+}
+
+/**
+ * One path per line of `literal_paths`, kept as written apart from a Windows line ending. Blank lines
+ * are skipped, so a block scalar's trailing newline adds nothing.
+ */
+export function parseLiteralPaths(value: string): string[] {
+  return value
+    .split('\n')
+    .map((line) => line.replace(/\r$/, ''))
+    .filter((line) => line.trim() !== '');
 }
 
 /**
@@ -37,6 +55,8 @@ export function run(overrides: Partial<CommitChangesDeps> = {}): Promise<void> {
     const repository = getInput(ActionInput.repository);
     const branch = getInput(ActionInput.branch);
     const filePattern = getInput(ActionInput.file_pattern);
+    const literalPaths = parseLiteralPaths(getInput(ActionInput.literal_paths));
+    const expectedHeadSha = getInput(ActionInput.expected_head_sha);
 
     const deps: CommitChangesDeps = {
       api: overrides.api ?? createCommitApi(token),
@@ -44,7 +64,14 @@ export function run(overrides: Partial<CommitChangesDeps> = {}): Promise<void> {
       workspace: overrides.workspace ?? createWorkspace(),
     };
 
-    const result = await commitChanges(deps, { branch, filePattern, message, repository });
+    const result = await commitChanges(deps, {
+      branch,
+      expectedHeadSha,
+      filePattern,
+      literalPaths,
+      message,
+      repository,
+    });
 
     report(result);
   });

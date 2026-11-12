@@ -9,7 +9,7 @@ outside the markers.
 
 Applies a set of templated image updates to a Helm chart's values.yaml and bumps Chart.yaml, preserving comments and structure. Every image carries its own version and digest.
 
-[actions-helm-apply-chart-updates-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-apply-chart-updates-v2.0.4) · JavaScript action (node24)
+[actions-helm-apply-chart-updates-v2.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-apply-chart-updates-v2.0.5) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -21,7 +21,7 @@ Applies a set of templated image updates to a Helm chart's values.yaml and bumps
 # Writes values.yaml and Chart.yaml in the workspace; the files output is what to commit.
 # To open a pull request in a separate charts repository, use helm/update-chart-version instead.
 - id: apply
-  uses: TimSchoenle/actions/actions/helm/apply-chart-updates@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-helm-apply-chart-updates-v2.0.4
+  uses: TimSchoenle/actions/actions/helm/apply-chart-updates@actions-helm-apply-chart-updates-v2.0.5 # tag=actions-helm-apply-chart-updates-v2.0.5
   with:
     chart-path: charts/my-app
     images: |
@@ -31,7 +31,7 @@ Applies a set of templated image updates to a Helm chart's values.yaml and bumps
       }
     version-bump: minor
 
-- uses: TimSchoenle/actions/actions/common/commit-changes@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-commit-changes-v3.0.4
+- uses: TimSchoenle/actions/actions/common/commit-changes@actions-common-commit-changes-v3.1.0 # tag=actions-common-commit-changes-v3.1.0
   if: steps.apply.outputs.updated-count != '0'
   with:
     token: ${{ steps.token.outputs.token }}
@@ -45,7 +45,7 @@ Applies a set of templated image updates to a Helm chart's values.yaml and bumps
 
 | Input                 | Required | Default                                                      | Description                                                                                                                                                                                                                              |
 | --------------------- | -------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `chart-path`          | yes      |                                                              | Path of the chart inside the workspace (e.g. charts/my-app). Chart.yaml and values.yaml are resolved beneath it.                                                                                                                         |
+| `chart-path`          | yes      |                                                              | Path of the chart inside the workspace (e.g. charts/my-app). Chart.yaml and values.yaml are resolved beneath it. It must not contain whitespace, because the files output is a space-separated file pattern.                             |
 | `images`              | yes      |                                                              | JSON object mapping a dot-notation key in values.yaml to that image's own variables, e.g. {"services.api.image.tag": {"tag": "v1.2.3", "digest": "sha256:..."}}. Every key must already exist in values.yaml and must match key-pattern. |
 | `value-template`      | no       | `${tag}@${digest}`                                           | Template for the value written at each key. Supports ${name} placeholders only, resolved against the entry's own variables layered over `variables`. An undefined placeholder is an error.                                               |
 | `variables`           | no       | `{}`                                                         | JSON object of default template variables, shared by every entry. An entry's own variables always win. Optional: images that move independently carry their versions per entry.                                                          |
@@ -61,15 +61,16 @@ Applies a set of templated image updates to a Helm chart's values.yaml and bumps
 <!-- docs:generated outputs -->
 ## Outputs
 
-| Output                   | Description                                                                                                                                                                                         |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `chart-version`          | The chart version written to Chart.yaml                                                                                                                                                             |
-| `previous-chart-version` | The chart version that was in Chart.yaml before the update                                                                                                                                          |
-| `updated-count`          | Number of image keys updated in values.yaml                                                                                                                                                         |
-| `changes`                | JSON array of {key, old, new} for every image key updated, in input order                                                                                                                           |
-| `summary-markdown`       | Markdown table of the applied image updates, safe to embed in a pull request body                                                                                                                   |
-| `changelog-markdown`     | The sanitized changelog wrapped in a collapsed <details> section, safe to embed in a pull request body. Empty when no changelog was given, so embedding it unconditionally leaves no empty heading. |
-| `files`                  | Space-separated paths of the files written, for use as a commit file pattern                                                                                                                        |
+| Output                   | Description                                                                                                                                                                                                                                                 |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `changed`                | true when an image or the app version moved and both files were written. false when every image and the app version were already at their targets: nothing is written, the chart version is kept, and the pull request steps of a caller should be skipped. |
+| `chart-version`          | The chart version written to Chart.yaml, or the unchanged version when changed is false                                                                                                                                                                     |
+| `previous-chart-version` | The chart version that was in Chart.yaml before the update                                                                                                                                                                                                  |
+| `updated-count`          | Number of image keys whose value changed in values.yaml. A key already at its target is not counted.                                                                                                                                                        |
+| `changes`                | JSON array of {key, old, new} for every image key whose value changed, in input order                                                                                                                                                                       |
+| `summary-markdown`       | Markdown table of the applied image updates, safe to embed in a pull request body                                                                                                                                                                           |
+| `changelog-markdown`     | The sanitized changelog wrapped in a collapsed <details> section, safe to embed in a pull request body. Empty when no changelog was given, so embedding it unconditionally leaves no empty heading.                                                         |
+| `files`                  | Space-separated paths of the files written, for use as a commit file pattern. Empty when changed is false.                                                                                                                                                  |
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
@@ -88,7 +89,7 @@ Reaches no endpoint beyond those the runner itself needs.
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-helm-apply-chart-updates.yaml`](../../../.github/workflows/verify-action-helm-apply-chart-updates.yaml)
+- End-to-end tests: [`.github/verify/helm-apply-chart-updates.yaml`](../../../.github/verify/helm-apply-chart-updates.yaml)
 - Called from this repository by:
   - [`actions/helm/update-chart-version/action.yaml`](../../../actions/helm/update-chart-version/action.yaml)
 <!-- /docs:generated reference -->

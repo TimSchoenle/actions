@@ -28,7 +28,6 @@ vi.mock('@inquirer/prompts', () => ({
 
 import { search, input } from '@inquirer/prompts';
 import { createFromTemplate } from '../utils';
-import { PINNED } from '../e2e-workflow';
 
 describe('action-utils', () => {
   beforeEach(() => {
@@ -244,39 +243,27 @@ describe('action-utils', () => {
     });
   });
 
-  describe('createVerifyWorkflow', () => {
-    it('should create workflow file from template', async () => {
-      await actionUtils.createVerifyWorkflow('pkg', 'sub');
+  describe('createVerifySource', () => {
+    it('should create the source file from the template under .github/verify', async () => {
+      await actionUtils.createVerifySource('pkg', 'sub');
       expect(createFromTemplate).toHaveBeenCalledWith(
-        'action/verify-workflow.yaml',
-        expect.stringContaining('verify-action-pkg-sub.yaml'),
+        'action/verify-source.yaml',
+        expect.stringContaining('.github/verify/pkg-sub.yaml'),
         expect.objectContaining({ packageName: 'pkg', subAction: 'sub' }),
-      );
-    });
-
-    it('should pass the pinned action refs from PINNED', async () => {
-      await actionUtils.createVerifyWorkflow('pkg', 'sub');
-      expect(createFromTemplate).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(String),
-        expect.objectContaining({
-          hardenRunnerRef: PINNED.hardenRunner.split('@')[1],
-          checkoutRef: PINNED.checkout.split('@')[1],
-        }),
       );
     });
   });
 
-  describe('removeVerifyWorkflow', () => {
-    it('should remove workflow file if exists', async () => {
+  describe('removeVerifySource', () => {
+    it('should remove the source file if it exists', async () => {
       vi.mocked(Sys.exists).mockReturnValue(true);
-      await actionUtils.removeVerifyWorkflow('pkg', 'sub');
-      expect(Sys.rm).toHaveBeenCalledWith(expect.stringContaining('verify-action-pkg-sub.yaml'));
+      await actionUtils.removeVerifySource('pkg', 'sub');
+      expect(Sys.rm).toHaveBeenCalledWith(expect.stringContaining('.github/verify/pkg-sub.yaml'));
     });
 
-    it('should not remove workflow file if not exists', async () => {
+    it('should not remove the source file if it does not exist', async () => {
       vi.mocked(Sys.exists).mockReturnValue(false);
-      await actionUtils.removeVerifyWorkflow('pkg', 'sub');
+      await actionUtils.removeVerifySource('pkg', 'sub');
       expect(Sys.rm).not.toHaveBeenCalled();
     });
   });

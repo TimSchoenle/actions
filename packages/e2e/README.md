@@ -170,7 +170,7 @@ without `fail-on-cache-miss`.
 Every generated workflow declares explicit `permission-*` inputs on `create-github-app-token`.
 Without at least one, that action hands over the installation's **entire** permission set — a suite
 that only reads a YAML file would be given a token that can rewrite branches. The scopes live in
-`TOKEN_PERMISSIONS` in `scripts/lib/e2e-workflow.ts` and are the union of what an action's fixtures
+the `e2e.token-permissions` of the action's source in `.github/verify/` and are the union of what an action's fixtures
 need and what the action itself needs; a contract test fails any workflow that mints an unscoped
 token.
 
@@ -178,10 +178,15 @@ token.
 
 Teardown removes every branch a suite reserved and closes every pull request it opened, and **throws**
 if anything survives — teardown that fails quietly is indistinguishable from teardown that worked.
-It cannot survive a cancelled run, so `.github/workflows/e2e-janitor.yaml` sweeps stale `test/**` refs
-and stale pull requests on a schedule as the backstop. A pull request is only swept when the e2e app's
-bot account opened it from a `test/` branch of the scratch repository; anything else there is left
-alone, however old.
+It cannot survive a cancelled run, so `.github/workflows/e2e-janitor.yaml` sweeps stale `test/**` refs,
+pull requests and issues on a schedule as the backstop. A pull request is only swept when the e2e app's
+bot account opened it from a `test/` branch of the scratch repository, and an issue only when that bot
+account opened it; anything else there is left alone, however old.
+
+Every name the harness generates has the form `test/<suite>/<created>-<run>/<case>`, where `<created>`
+is the run's start in epoch seconds. The janitor reads a ref's age from that prefix rather than from
+the commit the ref points at, because a case can branch from an old commit and would otherwise be
+swept while it runs. Refs without the prefix fall back to the commit date.
 
 Check runs are the one resource that cannot be cleaned up: GitHub offers no delete endpoint. Each CI
 run of `ensure-actions-are-executed` leaves four behind on an orphaned commit.
@@ -224,5 +229,5 @@ What this does **not** cover, and still needs a workflow:
 - `post:` steps, matrix expansion, `if:` conditions and step outputs feeding a later step.
 - Composite actions — seven verify workflows remain hand-written for exactly this reason.
 - An `action.yaml` default that is a `${{ }}` expression. `verify-branch-name` keeps one job in YAML
-  to cover its payload fallback; see `actions/helper/verify-branch-name/e2e/extra-jobs.yaml`, whose
+  to cover its payload fallback; see `.github/verify/helper-verify-branch-name.yaml`, whose
   contents the generator appends to the generated workflow.

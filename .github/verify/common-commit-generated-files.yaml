@@ -1,0 +1,138 @@
+target: common/commit-generated-files
+rules:
+  # Only pushes to main ran this workflow before it moved into Verify.
+  push-branches: []
+jobs:
+  # The action commits only from a workflow_run job, which runs the default branch's copy of the
+  # workflow. Started by anything else it must stop before it looks for a patch or touches the App
+  # key, so the inputs here are placeholders that are never read.
+  commit-generated-files-verify:
+    name: 'Test Commit Generated Files: refuses a non-workflow_run event'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run commit-generated-files
+        id: run
+        continue-on-error: true
+        uses: ./actions/common/commit-generated-files # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          client_id: placeholder-never-read
+          private_key: placeholder-never-read
+          allowed_paths: README.md
+
+      - name: Assert The Step Failed Before Doing Anything
+        env:
+          OUTCOME: ${{ steps.run.outcome }}
+          RESULT: ${{ steps.run.outputs.outcome }}
+          COMMIT_SHA: ${{ steps.run.outputs.commit_sha }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          [ "$OUTCOME" = "failure" ] || fail "the step ended '$OUTCOME' outside a workflow_run job"
+          [ -z "$RESULT" ] || fail "outcome '$RESULT' set by a step that should have stopped first"
+          [ -z "$COMMIT_SHA" ] || fail "commit_sha '$COMMIT_SHA' set outside a workflow_run job"
+          echo "Refused a ${GITHUB_EVENT_NAME} event without looking for a patch"
+
+  # The event filter decides whether the App key is used at all, so every branch of it is driven
+  # here with the fields a workflow_run event carries.
+  check-event:
+    name: 'Test Commit Generated Files: event filter'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Drive Every Branch
+        run: bash actions/common/commit-generated-files/check-event-test.sh actions/common/commit-generated-files/check-event.sh
+
+  # Whether a fork's branch is committed to rests on the pull request allowing edits by
+  # maintainers, so every branch of that decision is driven here with fixture responses.
+  check-fork:
+    name: 'Test Commit Generated Files: fork check'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Drive Every Branch
+        run: bash actions/common/commit-generated-files/check-fork-test.sh actions/common/commit-generated-files/check-fork.sh
+
+      # The list endpoint leaves out maintainer_can_modify, so the reader has to fetch each pull
+      # request in full. A stand-in gh serves both shapes.
+      - name: Drive The Reader
+        run: bash actions/common/commit-generated-files/read-pulls-test.sh actions/common/commit-generated-files/read-pulls.sh actions/common/commit-generated-files/check-fork.sh
+
+  # The fork check reads the open pull requests with the job token of a caller that grants only
+  # actions: read and contents: read. This makes the same request with the same grant against this
+  # public repository, so a GitHub change that started requiring pull-requests: read fails here
+  # instead of silently skipping every fork.
+  fork-read:
+    name: 'Test Commit Generated Files: open pull requests are readable'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read # the grant a caller's commit job has
+      contents: read # the grant a caller's commit job has
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+
+      - name: Read The Open Pull Requests
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # The same requests the action sends: the list filtered by head owner and branch, then one
+          # pull request in full, which has to carry maintainer_can_modify.
+          count="$(gh api -X GET "repos/${REPOSITORY}/pulls" -f state=open -f head="${REPOSITORY%%/*}:main" -f per_page=100 --jq 'length')"
+          echo "Read ${count} open pull request(s) without a pull-requests permission."
+          number="$(gh api -X GET "repos/${REPOSITORY}/pulls" -f state=all -f per_page=1 --jq '.[0].number')"
+          has_flag="$(gh api "repos/${REPOSITORY}/pulls/${number}" --jq 'has("maintainer_can_modify")')"
+          if [ "${has_flag}" != "true" ]; then
+            echo "::error::Pull request ${number} read in full carries no maintainer_can_modify."
+            exit 1
+          fi
+          echo "Pull request ${number} read in full carries maintainer_can_modify."

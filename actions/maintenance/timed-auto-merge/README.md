@@ -9,18 +9,20 @@ outside the markers.
 
 Approve and enable auto-merge on aged pull requests whose head branch matches a pattern and whose commits are all signed by trusted authors.
 
-[actions-maintenance-timed-auto-merge-v2.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-timed-auto-merge-v2.0.5) · JavaScript action (node24)
+[actions-maintenance-timed-auto-merge-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-timed-auto-merge-v3.0.0) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
-The pull requests must have been open for at least `time_elapsed`, and every commit must be signed and authored only by
-`trusted_authors`. A pull request that is already mergeable, so GitHub refuses auto-merge for it, is merged directly
+`time_elapsed` is a soak time: a pull request must have been opened at least that long ago, and its newest commit made
+at least that long ago. Renovate and release-please push new commits onto a pull request that is already open, and each
+such push starts the wait again. Every commit must be signed and authored only by `trusted_authors`, and the pull
+request must have been opened by one of `pr_author_ids`, which defaults to `trusted_authors`. A pull request that is already mergeable, so GitHub refuses auto-merge for it, is merged directly
 instead. The action is meant for a scheduled job that lets release-please or Renovate pull requests merge themselves after a
 waiting period in which a human can still intervene.
 
 <!-- docs:generated usage -->
 ## Usage
 
-### Merge release pull requests after a day
+### Merge release pull requests a day after their newest commit
 
 ```yaml
 name: Timed Auto-merge
@@ -31,7 +33,7 @@ on:
   workflow_dispatch:
     inputs:
       time_elapsed:
-        description: 'How long a pull request must have been open (e.g. "24h", "2d").'
+        description: 'Soak time since the pull request was opened and since its newest commit (e.g. "24h", "2d").'
         required: false
         default: '1d'
 
@@ -58,11 +60,12 @@ jobs:
           permission-pull-requests: write
 
       - name: Approve and Auto-merge
-        uses: TimSchoenle/actions/actions/maintenance/timed-auto-merge@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-maintenance-timed-auto-merge-v2.0.5
+        uses: TimSchoenle/actions/actions/maintenance/timed-auto-merge@actions-maintenance-timed-auto-merge-v3.0.0 # tag=actions-maintenance-timed-auto-merge-v3.0.0
         with:
           token: ${{ steps.token.outputs.token }}
           # Database ID of the bot account that opens the release pull requests.
           trusted_authors: '123456789'
+          base_branch: main
           branch_pattern: 'release-please--branches--%'
           time_elapsed: ${{ inputs.time_elapsed || '1d' }}
           minimum_age: '1h'
@@ -83,7 +86,9 @@ takes a commit to the workflow file.
 | `trusted_authors` | yes      |                                                                                                             | Comma-separated list of GitHub user database IDs (e.g. "29139614, 123456"). Every author of every commit must be in this list, and every commit must carry a valid signature. A commit signed with a personal key must also have its committer and key owner in this list; a commit GitHub signed itself skips those two checks. See Commit verification below. |
 | `branch_pattern`  | no       | `release-please--branches--%`                                                                               | Pattern the head branch must match. Read according to pattern_mode. An empty pattern is rejected. See Branch pattern below.                                                                                                                                                                                                                                     |
 | `pattern_mode`    | no       | `legacy`                                                                                                    | How branch_pattern is read. "legacy": every "%" becomes ".*" and the pattern is anchored at the start of the branch name. "regex": a POSIX extended regular expression, unanchored. See Branch pattern below.                                                                                                                                                   |
-| `time_elapsed`    | no       | `1d`                                                                                                        | How long a pull request must have been open, as a whole number followed by s, m, h or d (e.g. "90m", "24h", "7d"). Nothing else is accepted, including "1 day", "1d12h" or "01h".                                                                                                                                                                               |
+| `pr_author_ids`   | no       |                                                                                                             | Comma-separated list of GitHub user database IDs the pull request may be opened by. Empty uses trusted_authors.                                                                                                                                                                                                                                                 |
+| `base_branch`     | no       |                                                                                                             | Branch the pull request must target, e.g. "main". Empty accepts any base branch.                                                                                                                                                                                                                                                                                |
+| `time_elapsed`    | no       | `1d`                                                                                                        | Soak time: how long ago the pull request must have been opened and its newest commit made, as a whole number followed by s, m, h or d (e.g. "90m", "24h", "7d"). A new commit pushed onto an open pull request starts the wait again. Nothing else is accepted, including "1 day", "1d12h" or "01h".                                                            |
 | `minimum_age`     | no       | `1h`                                                                                                        | Lower bound for time_elapsed, in the same format. A time_elapsed below it fails the step, so a dispatch input cannot shorten the wait.                                                                                                                                                                                                                          |
 | `merge_method`    | no       | `squash`                                                                                                    | Merge method for auto-merge: merge, squash or rebase.                                                                                                                                                                                                                                                                                                           |
 | `repository`      | no       | `${{ github.repository }}`                                                                                  | Repository to process, in owner/repo format.                                                                                                                                                                                                                                                                                                                    |
@@ -96,11 +101,11 @@ Every input is validated before the first API call, so a misconfigured workflow 
 <!-- docs:generated outputs -->
 ## Outputs
 
-| Output     | Description                                                                                                                                                      |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `approved` | JSON array of the pull request numbers that were approved on this run and either had auto-merge enabled or, when already mergeable, were merged, e.g. `[12,15]`. |
-| `skipped`  | JSON array of {"number", "reason"} for matching pull requests that were left alone, e.g. `[{"number":13,"reason":"too-young"}]`.                                 |
-| `failed`   | JSON array of {"number", "message"} for pull requests where an API call failed, with the error, e.g. `[{"number":14,"message":"..."}]`.                          |
+| Output     | Description                                                                                                                                                                                                                                                                                                     |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `approved` | JSON array of the pull request numbers that were approved on this run and either had auto-merge enabled or, when already mergeable, were merged, e.g. `[12,15]`. A pull request an earlier run already approved at its current head, with auto-merge still on, is listed too, though nothing was written to it. |
+| `skipped`  | JSON array of {"number", "reason"} for matching pull requests that were left alone, e.g. `[{"number":13,"reason":"too-young"}]`. The reasons are fork, author-untrusted, base-mismatch, draft, too-young, head-moved and commits-unverified.                                                                    |
+| `failed`   | JSON array of {"number", "message"} for pull requests where an API call failed, with the error, e.g. `[{"number":14,"message":"..."}]`.                                                                                                                                                                         |
 <!-- /docs:generated outputs -->
 
 The step summary has one row per matching pull request with the same information and a longer explanation of each
@@ -137,15 +142,22 @@ are not mentioned anywhere. Each one that matches is processed in turn:
 | Check                                                           | If it fails                  |
 | --------------------------------------------------------------- | ---------------------------- |
 | The head branch is in the repository itself, not a fork         | skipped, `fork`              |
+| It was opened by one of `pr_author_ids`                         | skipped, `author-untrusted`  |
+| It targets `base_branch`, when that is set                      | skipped, `base-mismatch`     |
 | The pull request is not a draft                                 | skipped, `draft`             |
 | It was opened at least `time_elapsed` ago                       | skipped, `too-young`         |
 | Its commits were read at the head SHA from the listing          | skipped, `head-moved`        |
 | It has commits, and every commit passes verification            | skipped, `commits-unverified` |
+| Its newest commit was made at least `time_elapsed` ago          | skipped, `too-young`         |
 
 When every check passes, the pull request is approved with the review attached to that head SHA (`commit_id`), and
 auto-merge is enabled through the GraphQL `enablePullRequestAutoMerge` mutation with the same SHA as
 `expectedHeadOid`. If someone pushes to the branch after the commits were verified, GitHub refuses the auto-merge
 request, and the pull request is reported under `failed`. The next run verifies the new head.
+
+A pull request that stays open is not approved again on every run. When the listing shows auto-merge on, the action
+reads whether this token's identity already approved the current head and auto-merge is still enabled. If both hold, it
+writes nothing and reports the pull request under `approved` as before. The commits are verified first either way.
 
 GitHub also refuses auto-merge when nothing is left to wait for, because the pull request is already mergeable. So
 whenever enabling auto-merge fails, the action reads the merge state. If it is `CLEAN`, `HAS_HOOKS` or `UNSTABLE` at
@@ -215,7 +227,7 @@ is reported under `failed`.
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-maintenance-timed-auto-merge.yaml`](../../../.github/workflows/verify-action-maintenance-timed-auto-merge.yaml)
+- End-to-end tests: [`.github/verify/maintenance-timed-auto-merge.yaml`](../../../.github/verify/maintenance-timed-auto-merge.yaml)
 - Called from this repository by:
   - [`.github/workflows/auto-merge-release-please.yml`](../../../.github/workflows/auto-merge-release-please.yml)
 <!-- /docs:generated reference -->

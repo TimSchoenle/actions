@@ -75,7 +75,7 @@ describe('createIssueApi', () => {
           number: 1,
           state: 'open',
           title: 'First',
-          user: { login: 'app[bot]' },
+          user: { login: 'app[bot]', type: 'Bot' },
         },
       ],
       [
@@ -86,7 +86,7 @@ describe('createIssueApi', () => {
           number: 2,
           state: 'closed',
           title: 'Second',
-          user: { login: 'human' },
+          user: { login: 'human', type: 'User' },
         },
       ],
     ]);
@@ -97,6 +97,7 @@ describe('createIssueApi', () => {
         body: 'first',
         labels: ['bug'],
         number: 1,
+        postedByApp: true,
         state: 'open',
         title: 'First',
         url: 'https://example.test/1',
@@ -106,6 +107,7 @@ describe('createIssueApi', () => {
         body: 'second',
         labels: [],
         number: 2,
+        postedByApp: false,
         state: 'closed',
         title: 'Second',
         url: 'https://example.test/2',
@@ -132,7 +134,7 @@ describe('createIssueApi', () => {
           pull_request: {},
           state: 'open',
           title: 'A PR',
-          user: { login: 'human' },
+          user: { login: 'human', type: 'User' },
         },
         {
           body: 'a real issue',
@@ -141,7 +143,7 @@ describe('createIssueApi', () => {
           number: 2,
           state: 'open',
           title: 'A real issue',
-          user: { login: 'human' },
+          user: { login: 'human', type: 'User' },
         },
       ],
     ]);
@@ -152,6 +154,7 @@ describe('createIssueApi', () => {
         body: 'a real issue',
         labels: [],
         number: 2,
+        postedByApp: false,
         state: 'open',
         title: 'A real issue',
         url: 'https://example.test/2',
@@ -175,7 +178,39 @@ describe('createIssueApi', () => {
     ]);
 
     await expect(collect(createIssueApi('token').issues(target, 'open'))).resolves.toEqual([
-      { author: '', body: '', labels: [], number: 1, state: 'open', title: 'x', url: 'https://example.test/1' },
+      {
+        author: '',
+        body: '',
+        labels: [],
+        number: 1,
+        postedByApp: false,
+        state: 'open',
+        title: 'x',
+        url: 'https://example.test/1',
+      },
+    ]);
+  });
+
+  // A GitHub App acting through a user-to-server token opens the issue as the user, and GitHub
+  // records the app in performed_via_github_app.
+  it('counts an issue an app opened on behalf of a user as app-posted', async () => {
+    servePages(octokit, [
+      [
+        {
+          body: 'x',
+          html_url: 'https://example.test/1',
+          labels: [],
+          number: 1,
+          performed_via_github_app: { id: 9, slug: 'app' },
+          state: 'open',
+          title: 'x',
+          user: { login: 'human', type: 'User' },
+        },
+      ],
+    ]);
+
+    await expect(collect(createIssueApi('token').issues(target, 'open'))).resolves.toMatchObject([
+      { author: 'human', postedByApp: true },
     ]);
   });
 
@@ -194,7 +229,7 @@ describe('createIssueApi', () => {
               number,
               state: 'open',
               title: 'x',
-              user: { login: 'app[bot]' },
+              user: { login: 'app[bot]', type: 'Bot' },
             },
           ],
         };
@@ -223,6 +258,28 @@ describe('createIssueApi', () => {
       title: 'Title',
     });
     expect(octokit.rest.issues.createLabel).not.toHaveBeenCalled();
+  });
+
+  // P14f: the author filter ran client-side, so the scan paged every issue and pull request.
+  it("asks the API for one creator's issues when an author is given", async () => {
+    servePages(octokit, [[]]);
+
+    await collect(createIssueApi('token').issues(target, 'open', 'app[bot]'));
+
+    expect(octokit.paginate.iterator).toHaveBeenCalledWith(
+      octokit.rest.issues.listForRepo,
+      expect.objectContaining({ creator: 'app[bot]', state: 'open' }),
+    );
+  });
+
+  // P14f: every update POSTed a failing createLabel for each label the issue already had.
+  it('creates only the labels the issue does not already carry, ignoring case', async () => {
+    octokit.rest.issues.createLabel.mockResolvedValue({ data: {} });
+    octokit.rest.issues.update.mockResolvedValue({ data: { html_url: 'https://example.test/9', number: 9 } });
+
+    await createIssueApi('token').updateIssue(target, 9, { labels: ['Bug', 'fresh'] }, ['bug']);
+
+    expect(octokit.rest.issues.createLabel.mock.calls).toEqual([[{ name: 'fresh', owner: 'owner', repo: 'repo' }]]);
   });
 
   it('creates a label that does not yet exist before opening an issue with it', async () => {

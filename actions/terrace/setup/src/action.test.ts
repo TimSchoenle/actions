@@ -32,7 +32,9 @@ const defaultInputs: Record<string, string> = {
   working_directory: '.',
   oras: 'false',
   cosign_version: 'v3.1.3',
+  cosign_checksums_sha256: GOOD,
   oras_version: '1.3.4',
+  oras_checksums_sha256: GOOD,
   github_token: 'token',
 };
 
@@ -72,12 +74,14 @@ function dependencies(files: Record<string, string> = {}): ActionDependencies {
   return {
     ports: ports(),
     runner: { platform: 'linux', arch: 'x64' },
-    fetchJson: vi.fn(() =>
-      Promise.resolve([
-        { tag_name: 'terrace-contract-v0.8.2' },
-        { tag_name: 'terrace-contract-v0.8.0' },
-        { tag_name: 'terrace-contract-v0.9.0' },
-      ]),
+    fetchJson: vi.fn((url: string) =>
+      Promise.resolve(
+        url.includes('/git/matching-refs/')
+          ? ['terrace-contract-v0.8.2', 'terrace-contract-v0.8.0', 'terrace-contract-v0.9.0'].map((tag) => ({
+              ref: `refs/tags/${tag}`,
+            }))
+          : { tag_name: url.slice(url.lastIndexOf('/') + 1) },
+      ),
     ),
     readText: vi.fn((file: string) =>
       file in files ? Promise.resolve(files[file] ?? '') : Promise.reject(new Error(`ENOENT: ${file}`)),
@@ -157,6 +161,9 @@ describe('terrace setup action', () => {
     [{ version: '0.8.0', cosign_version: '3.1.3' }, /cosign_version: must be vMAJOR.MINOR.PATCH/],
     [{ version: '0.8.0', cosign_version: 'v3.1.3/../../evil' }, /cosign_version: must be vMAJOR.MINOR.PATCH/],
     [{ version: '0.8.0', oras: 'true', oras_version: 'v1.3.4' }, /oras_version: must be MAJOR.MINOR.PATCH/],
+    [{ version: '0.8.0', cosign_checksums_sha256: '' }, /cosign_checksums_sha256: must be a SHA-256/],
+    [{ version: '0.8.0', cosign_checksums_sha256: 'a'.repeat(63) }, /cosign_checksums_sha256: must be a SHA-256/],
+    [{ version: '0.8.0', oras: 'true', oras_checksums_sha256: 'z'.repeat(64) }, /oras_checksums_sha256: must be/],
   ])('fails on %j before downloading anything', async (overrides, reason) => {
     setInputs(overrides);
     const deps = dependencies();
@@ -167,8 +174,8 @@ describe('terrace setup action', () => {
     expect(deps.ports.download).not.toHaveBeenCalled();
   });
 
-  it('ignores oras_version when oras is not requested', async () => {
-    setInputs({ version: '0.8.0', oras_version: 'not a version' });
+  it('ignores oras_version and oras_checksums_sha256 when oras is not requested', async () => {
+    setInputs({ version: '0.8.0', oras_version: 'not a version', oras_checksums_sha256: '' });
 
     await run(dependencies());
 

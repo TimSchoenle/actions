@@ -9,7 +9,7 @@ outside the markers.
 
 Commits the merged generator patch from a pull_request run to the pull request branch as a GitHub App, from a workflow_run job.
 
-[actions-common-commit-generated-files-v1.2.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-generated-files-v1.2.4) · Composite action
+[actions-common-commit-generated-files-v1.3.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-generated-files-v1.3.0) · Composite action
 <!-- /docs:generated header -->
 
 The commit half of a repository's Generate workflow. It commits the merged patch that
@@ -44,7 +44,7 @@ jobs:
       actions: read # to list and download the pull_request run's artifacts
       contents: read
     steps:
-      - uses: TimSchoenle/actions/actions/common/commit-generated-files@actions-common-commit-generated-files-v1.2.4 # tag=actions-common-commit-generated-files-v1.2.4
+      - uses: TimSchoenle/actions/actions/common/commit-generated-files@actions-common-commit-generated-files-v1.3.0 # tag=actions-common-commit-generated-files-v1.3.0
         with:
           client_id: ${{ vars.BOT_CLIENT_ID }}
           private_key: ${{ secrets.BOT_PRIVATE_KEY }}
@@ -58,15 +58,16 @@ jobs:
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input             | Required | Default                         | Description                                                                                                                                                        |
-| ----------------- | -------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `client_id`       | yes      |                                 | Client ID of the GitHub App that commits. Its installation needs contents: write on this repository.                                                               |
-| `private_key`     | yes      |                                 | Private key of that GitHub App.                                                                                                                                    |
-| `allowed_paths`   | yes      |                                 | Space- or newline-separated paths and globs the merged patch may change, as common/commit-patch takes them. Cover every generator: anything else fails the commit. |
-| `allow_binary`    | no       | `false`                         | Accept binary changes in the merged patch, as common/commit-patch takes it. Off, a binary change fails the commit.                                                 |
-| `commit_message`  | no       | `chore: update generated files` | Message of the commit.                                                                                                                                             |
-| `artifact_name`   | no       | `generated-files`               | Name of the merged patch artifact, as given to common/generated-files-verdict.                                                                                     |
-| `max_patch_bytes` | no       | `10485760`                      | Largest patch, in bytes. Keep it equal to max_patch_bytes on common/generated-files-verdict.                                                                       |
+| Input               | Required | Default                         | Description                                                                                                                                                                                                                                                                                |
+| ------------------- | -------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `client_id`         | yes      |                                 | Client ID of the GitHub App that commits. Its installation needs contents: write on this repository.                                                                                                                                                                                       |
+| `private_key`       | yes      |                                 | Private key of that GitHub App.                                                                                                                                                                                                                                                            |
+| `allowed_paths`     | yes      |                                 | Space- or newline-separated paths and globs the merged patch may change, as common/commit-patch takes them. Cover every generator: anything else fails the commit.                                                                                                                         |
+| `allow_binary`      | no       | `false`                         | Accept binary changes in the merged patch, as common/commit-patch takes it. Off, a binary change fails the commit.                                                                                                                                                                         |
+| `commit_message`    | no       | `chore: update generated files` | Message of the commit.                                                                                                                                                                                                                                                                     |
+| `artifact_name`     | no       | `generated-files`               | Name of the merged patch artifact, as given to common/generated-files-verdict.                                                                                                                                                                                                             |
+| `excluded_branches` | no       |                                 | Whitespace-separated shell patterns of this repository's branches never to commit to, e.g. "release/* develop". * also matches "/". List every protected branch the App can push to: a pull request may name any branch of this repository as its head. A fork's branches are not matched. |
+| `max_patch_bytes`   | no       | `10485760`                      | Largest patch, in bytes. Keep it equal to max_patch_bytes on common/generated-files-verdict.                                                                                                                                                                                               |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
@@ -90,7 +91,7 @@ jobs:
 <!-- /docs:generated permissions -->
 
 `contents: read` is used only when there is something to commit, to fetch the head. `pull-requests: read` is used
-only on a fork's pull request, where the job token reads the open pull requests: a public repository needs no
+only on a fork's pull request with something to commit, where the job token reads the open pull requests: a public repository needs no
 permission for that, a private one does, or every fork is skipped. The commit itself is made with the App token, whose
 installation needs `contents: write`.
 
@@ -111,12 +112,22 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 
 - **Only from `workflow_run`.** Started by any other event, the step fails before it looks for a patch.
 - **Skipped, without touching the key,** when the triggering run was not a pull request's, ran on this repository's
-  default branch, or ended other than `success` or `failure` (cancelled, skipped, timed out). The filter is
+  default branch or on a branch matching `excluded_branches`, names a branch that is not a plain branch name (one
+  starting with `refs/`, or one `git check-ref-format --branch` refuses), or ended other than `success` or `failure`
+  (cancelled, skipped, timed out). The filter is
   `check-event.sh`, which the verify workflow drives through every case. A failed run still commits: the verdict job fails
   whenever there is something to commit.
+- **Every other branch of this repository is committed to, protected ones included.** A pull request can name any
+  branch of this repository as its head, and the `pull_request` run then executes the base branch's copy of the
+  workflow, which the author may have written. The App must therefore not be able to bypass protection on any branch,
+  or `excluded_branches` has to list every protected branch, for example `release/*`. Keep the App's secrets in an
+  environment whose deployment branches allow only the default branch, so a `pull_request` job that names the
+  environment gets nothing either.
 - **A fork's branch is committed to while its pull request allows edits by maintainers.** GitHub lets the App push
   there then, with the token it mints for this repository. A fork that does not allow it, which includes every fork
-  owned by an organization, is skipped, and the verdict tells the contributor to push the files. The decision is
+  owned by an organization, is skipped, and the verdict tells the contributor to push the files. The pull requests are
+  read only once the run's merged patch has changes, so a fork run with nothing to commit costs no listing. The
+  decision is
   `check-fork.sh`, over the pull requests `read-pulls.sh` reads in full (the list endpoint omits the flag), both
   driven through every case. The run on the bot commit may wait for a maintainer's approval, as GitHub asks for
   first-time contributors. Callers must not exclude forks in their own job-level `if:`.
@@ -143,6 +154,6 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-commit-generated-files.yaml`](../../../.github/workflows/verify-action-common-commit-generated-files.yaml)
+- End-to-end tests: [`.github/verify/common-commit-generated-files.yaml`](../../../.github/verify/common-commit-generated-files.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

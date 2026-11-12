@@ -18,6 +18,8 @@ function pullRequest(overrides: Partial<OpenPullRequest> = {}): OpenPullRequest 
   const number = overrides.number ?? 7;
 
   return {
+    authorId: TRUSTED,
+    baseRef: 'main',
     baseRepoFullName: 'owner/repo',
     createdAt: new Date(NOW - 2 * DAY).toISOString(),
     draft: false,
@@ -27,6 +29,7 @@ function pullRequest(overrides: Partial<OpenPullRequest> = {}): OpenPullRequest 
     nodeId: `PR_node_${number}`,
     number,
     url: `https://github.com/owner/repo/pull/${number}`,
+    autoMergeEnabled: false,
     ...overrides,
   };
 }
@@ -34,6 +37,7 @@ function pullRequest(overrides: Partial<OpenPullRequest> = {}): OpenPullRequest 
 function commit(oid: string, overrides: Partial<CommitRecord> = {}): CommitRecord {
   return {
     authorIds: [TRUSTED],
+    committedDate: new Date(NOW - 2 * DAY).toISOString(),
     committerId: TRUSTED,
     oid,
     signatureState: 'VALID',
@@ -65,12 +69,23 @@ function fakeApi(
   return {
     approve: vi.fn<TimedAutoMergeApi['approve']>(async () => {}),
     enableAutoMerge: vi.fn<TimedAutoMergeApi['enableAutoMerge']>(async () => {}),
-    getMergeState: vi.fn<TimedAutoMergeApi['getMergeState']>(async () => ({ headOid: HEAD, status: 'BLOCKED' })),
+    getMergeState: vi.fn<TimedAutoMergeApi['getMergeState']>(async () => ({
+      autoMergeEnabled: false,
+      headOid: HEAD,
+      status: 'BLOCKED',
+      viewerApprovedOid: null,
+    })),
     merge: vi.fn<TimedAutoMergeApi['merge']>(async () => {}),
     fetchCommits: vi.fn<TimedAutoMergeApi['fetchCommits']>(async (url) => {
       const commits = commitsByUrl[url] ?? [commit(OLDER), commit(HEAD)];
 
-      return { commits, headOid: headOidByUrl[url] ?? HEAD, totalCount: commits.length };
+      return {
+        commits,
+        headOid: headOidByUrl[url] ?? HEAD,
+        headRepository: 'owner/repo',
+        isCrossRepository: false,
+        totalCount: commits.length,
+      };
     }),
     listOpenPullRequests: vi.fn<TimedAutoMergeApi['listOpenPullRequests']>(async () => pullRequests),
   };
@@ -79,10 +94,12 @@ function fakeApi(
 function request(overrides: Partial<TimedAutoMergeRequest> = {}): TimedAutoMergeRequest {
   return {
     approveMessage: 'ok',
+    baseBranch: '',
     matcher: createBranchMatcher('release-please--branches--%', 'legacy'),
     mergeMethod: 'squash',
     minimumOpenMs: DAY,
     nowMs: NOW,
+    prAuthorIds: [TRUSTED],
     repository: { owner: 'owner', repo: 'repo' },
     trustedAuthorIds: [TRUSTED],
     ...overrides,
@@ -111,6 +128,65 @@ describe('processPullRequests', () => {
     expect(api.approve).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo' }, 7, HEAD, 'ok');
     expect(api.enableAutoMerge).toHaveBeenCalledWith('PR_node_7', 'rebase', HEAD);
     expect(api.approve.mock.invocationCallOrder[0]).toBeLessThan(api.enableAutoMerge.mock.invocationCallOrder[0]);
+  });
+
+  // P14i: a pull request that stayed open got a new approval and auto-merge re-enabled on every run.
+  describe('a pull request already queued by this identity', () => {
+    const queued = { autoMergeEnabled: true, headOid: HEAD, status: 'BLOCKED', viewerApprovedOid: HEAD };
+
+    it('is left alone when this identity approved the current head and auto-merge is on', async () => {
+      const api = fakeApi([pullRequest({ autoMergeEnabled: true })]);
+      api.getMergeState.mockResolvedValue(queued);
+
+      const report = await processPullRequests(api, request());
+
+      expect(report.outcomes).toEqual([
+        {
+          headRef: 'release-please--branches--main',
+          headSha: HEAD,
+          merge: 'already-queued',
+          number: 7,
+          status: 'approved',
+        },
+      ]);
+      expect(api.approve).not.toHaveBeenCalled();
+      expect(api.enableAutoMerge).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['approved an older head', { ...queued, viewerApprovedOid: OLDER }],
+      ['never approved', { ...queued, viewerApprovedOid: null }],
+      ['had auto-merge turned off since the listing', { ...queued, autoMergeEnabled: false }],
+      ['moved since the listing', { ...queued, headOid: OLDER }],
+    ])('is approved and queued again when this identity %s', async (_name, state) => {
+      const api = fakeApi([pullRequest({ autoMergeEnabled: true })]);
+      api.getMergeState.mockResolvedValue(state);
+
+      await processPullRequests(api, request());
+
+      expect(api.approve).toHaveBeenCalledOnce();
+      expect(api.enableAutoMerge).toHaveBeenCalledOnce();
+    });
+
+    it('costs no extra read when the listing shows auto-merge off', async () => {
+      const api = fakeApi([pullRequest()]);
+
+      await processPullRequests(api, request());
+
+      expect(api.getMergeState).not.toHaveBeenCalled();
+    });
+
+    it('is still verified first, so an untrusted commit is never treated as queued', async () => {
+      const api = fakeApi([pullRequest({ autoMergeEnabled: true })], {
+        'https://github.com/owner/repo/pull/7': [commit(HEAD, { authorIds: [STRANGER] })],
+      });
+      api.getMergeState.mockResolvedValue(queued);
+
+      const report = await processPullRequests(api, request());
+
+      expect(report.outcomes[0]).toMatchObject({ status: 'skipped', reason: 'commits-unverified' });
+      expect(api.getMergeState).not.toHaveBeenCalled();
+    });
   });
 
   it('leaves pull requests on non-matching branches out of the report entirely', async () => {
@@ -155,6 +231,111 @@ describe('processPullRequests', () => {
     const { outcomes } = await processPullRequests(api, request());
 
     expect(outcomes).toEqual([expect.objectContaining({ detail: 'open for 0m, needs 24h', reason: 'too-young' })]);
+  });
+
+  // Renovate and release-please push a fresh head onto an open pull request. The wait is a soak window
+  // for that head, so an old pull request with a new commit waits again.
+  it('skips an old pull request whose newest commit is younger than the minimum', async () => {
+    const api = fakeApi([pullRequest()], {
+      'https://github.com/owner/repo/pull/7': [
+        commit(OLDER),
+        commit(HEAD, { committedDate: new Date(NOW - 5 * 60_000).toISOString() }),
+      ],
+    });
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({ detail: 'newest commit is 5m old, needs 24h', reason: 'too-young', status: 'skipped' }),
+    ]);
+    expect(api.approve).not.toHaveBeenCalled();
+  });
+
+  it('measures from the newest commit whatever order the commits are listed in', async () => {
+    const api = fakeApi([pullRequest()], {
+      'https://github.com/owner/repo/pull/7': [
+        commit(OLDER, { committedDate: new Date(NOW - 60 * 60_000).toISOString() }),
+        commit(HEAD, { committedDate: new Date(NOW - 3 * DAY).toISOString() }),
+      ],
+    });
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes).toEqual([expect.objectContaining({ detail: 'newest commit is 60m old, needs 24h' })]);
+  });
+
+  it('approves when the newest commit is exactly the minimum age', async () => {
+    const api = fakeApi([pullRequest()], {
+      'https://github.com/owner/repo/pull/7': [
+        commit(OLDER),
+        commit(HEAD, { committedDate: new Date(NOW - DAY).toISOString() }),
+      ],
+    });
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes[0].status).toBe('approved');
+  });
+
+  it('records an unreadable commit date as a failure, not as old enough', async () => {
+    const api = fakeApi([pullRequest()], {
+      'https://github.com/owner/repo/pull/7': [commit(HEAD, { committedDate: 'yesterday' })],
+    });
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({ message: expect.stringContaining('"yesterday"'), status: 'failed' }),
+    ]);
+    expect(api.approve).not.toHaveBeenCalled();
+  });
+
+  it('skips a pull request opened by an account outside pr_author_ids, without fetching its commits', async () => {
+    const api = fakeApi([pullRequest({ authorId: STRANGER })]);
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({ detail: `opened by ${STRANGER}`, reason: 'author-untrusted', status: 'skipped' }),
+    ]);
+    expect(api.fetchCommits).not.toHaveBeenCalled();
+  });
+
+  it('skips a pull request whose author account was deleted', async () => {
+    const api = fakeApi([pullRequest({ authorId: null })]);
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({ detail: 'opened by a deleted account', reason: 'author-untrusted' }),
+    ]);
+  });
+
+  it('accepts an author in pr_author_ids that is not among the commit authors', async () => {
+    const api = fakeApi([pullRequest({ authorId: STRANGER })]);
+
+    const { outcomes } = await processPullRequests(api, request({ prAuthorIds: [STRANGER] }));
+
+    expect(outcomes[0].status).toBe('approved');
+  });
+
+  it('skips a pull request into another base branch when base_branch is set', async () => {
+    const api = fakeApi([pullRequest({ baseRef: 'release/1.x' })]);
+
+    const { outcomes } = await processPullRequests(api, request({ baseBranch: 'main' }));
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({ detail: 'targets release/1.x, not main', reason: 'base-mismatch', status: 'skipped' }),
+    ]);
+    expect(api.fetchCommits).not.toHaveBeenCalled();
+  });
+
+  it('accepts any base branch when base_branch is empty', async () => {
+    const api = fakeApi([pullRequest({ baseRef: 'release/1.x' })]);
+
+    const { outcomes } = await processPullRequests(api, request());
+
+    expect(outcomes[0].status).toBe('approved');
   });
 
   it('skips a pull request from a fork even when its branch name matches', async () => {
@@ -297,7 +478,12 @@ describe('processPullRequests', () => {
     async (status) => {
       const api = fakeApi([pullRequest()]);
       api.enableAutoMerge.mockRejectedValueOnce(new Error('Pull request Pull request is in clean status'));
-      api.getMergeState.mockResolvedValueOnce({ headOid: HEAD, status });
+      api.getMergeState.mockResolvedValueOnce({
+        autoMergeEnabled: false,
+        headOid: HEAD,
+        status,
+        viewerApprovedOid: null,
+      });
 
       const { outcomes } = await processPullRequests(api, request({ mergeMethod: 'rebase' }));
 
@@ -310,7 +496,12 @@ describe('processPullRequests', () => {
   it('does not merge directly when the head moved after verification', async () => {
     const api = fakeApi([pullRequest()]);
     api.enableAutoMerge.mockRejectedValueOnce(new Error('Pull request Pull request is in clean status'));
-    api.getMergeState.mockResolvedValueOnce({ headOid: OLDER, status: 'CLEAN' });
+    api.getMergeState.mockResolvedValueOnce({
+      autoMergeEnabled: false,
+      headOid: OLDER,
+      status: 'CLEAN',
+      viewerApprovedOid: null,
+    });
 
     const { outcomes } = await processPullRequests(api, request());
 
@@ -342,7 +533,12 @@ describe('processPullRequests', () => {
   it('records a direct merge that GitHub refused', async () => {
     const api = fakeApi([pullRequest()]);
     api.enableAutoMerge.mockRejectedValueOnce(new Error('Pull request Pull request is in clean status'));
-    api.getMergeState.mockResolvedValueOnce({ headOid: HEAD, status: 'CLEAN' });
+    api.getMergeState.mockResolvedValueOnce({
+      autoMergeEnabled: false,
+      headOid: HEAD,
+      status: 'CLEAN',
+      viewerApprovedOid: null,
+    });
     api.merge.mockRejectedValueOnce(new Error('Head branch was modified. Review and try the merge again.'));
 
     const { outcomes } = await processPullRequests(api, request());

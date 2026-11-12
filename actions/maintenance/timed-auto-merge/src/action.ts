@@ -18,19 +18,22 @@ export interface RunDependencies {
   now?: () => number;
 }
 
-/** @throws naming `trusted_authors`, since the shared parser's message names a different input. */
-function readTrustedAuthors(value: string): number[] {
+/** @throws naming the input, since the shared parser's message names a different one. */
+function readUserIds(value: string, input: string): number[] {
   try {
     return parseUserIds(value);
   } catch (error) {
-    throw new Error(`Invalid 'trusted_authors': ${errorMessage(error)}`, { cause: error });
+    throw new Error(`Invalid '${input}': ${errorMessage(error)}`, { cause: error });
   }
 }
 
 /** Reads and validates every input before any API call, so a misconfiguration changes nothing. */
 function readRequest(nowMs: number): { token: string; failOnError: boolean; request: TimedAutoMergeRequest } {
   const token = getInput(ActionInput.token, { required: true });
-  const trustedAuthorIds = readTrustedAuthors(getInput(ActionInput.trusted_authors, { required: true }));
+  const trustedAuthorIds = readUserIds(getInput(ActionInput.trusted_authors, { required: true }), 'trusted_authors');
+  const prAuthorInput = getInput(ActionInput.pr_author_ids);
+  const prAuthorIds = prAuthorInput === '' ? trustedAuthorIds : readUserIds(prAuthorInput, 'pr_author_ids');
+  const baseBranch = getInput(ActionInput.base_branch);
   const patternMode = parsePatternMode(getInput(ActionInput.pattern_mode));
   const matcher = createBranchMatcher(getInput(ActionInput.branch_pattern), patternMode);
   const minimumOpen = resolveMinimumOpenTime(getInput(ActionInput.time_elapsed), getInput(ActionInput.minimum_age));
@@ -46,19 +49,23 @@ function readRequest(nowMs: number): { token: string; failOnError: boolean; requ
   core.startGroup('Configuration');
   core.info(`Repository: ${repository.owner}/${repository.repo}`);
   core.info(`Branch pattern (${patternMode}): ${quoteForLog(matcher.source)}`);
-  core.info(`Open for at least: ${minimumOpen.text}`);
+  core.info(`Base branch: ${baseBranch === '' ? 'any' : quoteForLog(baseBranch)}`);
+  core.info(`Soak time since opening and since the newest commit: ${minimumOpen.text}`);
   core.info(`Merge method: ${mergeMethod}`);
   core.info(`Trusted authors: ${trustedAuthorIds.join(', ')}`);
+  core.info(`Pull request authors: ${prAuthorIds.join(', ')}`);
   core.endGroup();
 
   return {
     failOnError,
     request: {
       approveMessage,
+      baseBranch,
       matcher,
       mergeMethod,
       minimumOpenMs: minimumOpen.milliseconds,
       nowMs,
+      prAuthorIds,
       repository,
       trustedAuthorIds,
     },
@@ -71,7 +78,11 @@ function logOutcome(outcome: PullRequestOutcome): void {
 
   switch (outcome.status) {
     case 'approved': {
-      const merge = outcome.merge === 'merged' ? 'merged, since it was already mergeable' : 'auto-merge enabled';
+      const merge = {
+        'already-queued': 'auto-merge already enabled by an earlier run',
+        'auto-merge-enabled': 'auto-merge enabled',
+        merged: 'merged, since it was already mergeable',
+      }[outcome.merge];
 
       core.info(`${prefix}: approved at ${outcome.headSha} and ${merge}.`);
       break;

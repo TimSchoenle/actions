@@ -9,7 +9,7 @@ outside the markers.
 
 Reports whether a run uploaded a non-empty common/create-patch artifact, without any secret, so a workflow_run job can skip minting a write token when there is nothing to commit.
 
-[actions-common-find-patch-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-find-patch-v1.1.3) · Composite action
+[actions-common-find-patch-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-find-patch-v1.1.4) · Composite action
 <!-- /docs:generated header -->
 
 The artifact is the one [`common/create-patch`](../create-patch) uploads. A `workflow_run` workflow runs this action
@@ -64,7 +64,7 @@ jobs:
       has_changes: ${{ steps.patch.outputs.has_changes }}
     steps:
       - id: patch
-        uses: TimSchoenle/actions/actions/common/find-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-find-patch-v1.1.3
+        uses: TimSchoenle/actions/actions/common/find-patch@actions-common-find-patch-v1.1.4 # tag=actions-common-find-patch-v1.1.4
         with:
           run_id: ${{ github.event.workflow_run.id }}
           artifact_name: format-patch
@@ -155,11 +155,11 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-find-patch.yaml`](../../../.github/workflows/verify-action-common-find-patch.yaml)
+- End-to-end tests: [`.github/verify/common-find-patch.yaml`](../../../.github/verify/common-find-patch.yaml)
 - Called from this repository by:
+  - [`.github/verify/common-generated-files-verdict.yaml`](../../../.github/verify/common-generated-files-verdict.yaml)
+  - [`.github/verify/common-render-readme.yaml`](../../../.github/verify/common-render-readme.yaml)
   - [`.github/workflows/auto-format-commit.yml`](../../../.github/workflows/auto-format-commit.yml)
   - [`.github/workflows/update-files-commit.yml`](../../../.github/workflows/update-files-commit.yml)
-  - [`.github/workflows/verify-action-common-generated-files-verdict.yaml`](../../../.github/workflows/verify-action-common-generated-files-verdict.yaml)
-  - [`.github/workflows/verify-action-common-render-readme.yaml`](../../../.github/workflows/verify-action-common-render-readme.yaml)
   - [`actions/common/commit-generated-files/action.yaml`](../../../actions/common/commit-generated-files/action.yaml)
 <!-- /docs:generated reference -->

@@ -4,7 +4,7 @@ import { Sys } from '../lib/utils';
 import { selectPackage, getSubActions } from '../lib/action-utils';
 import { confirm, search } from '@inquirer/prompts';
 import { main as generateDocs } from '../generate-docs';
-import { main as generateCiRequired } from '../generate-ci-required';
+import { writeGenerated as generateVerify } from '../lib/verify/generate';
 import { main as generateCodecovComponents } from '../generate-codecov-components';
 
 // Mock Dependencies
@@ -25,7 +25,7 @@ vi.mock('../lib/action-utils', () => ({
   selectPackage: vi.fn(),
   getSubActions: vi.fn(),
   removeActionFromReleasePlease: vi.fn(),
-  removeVerifyWorkflow: vi.fn(),
+  removeVerifySource: vi.fn(),
 }));
 
 vi.mock('@inquirer/prompts', () => ({
@@ -37,8 +37,8 @@ vi.mock('../generate-docs', () => ({
   main: vi.fn(),
 }));
 
-vi.mock('../generate-ci-required', () => ({
-  main: vi.fn(),
+vi.mock('../lib/verify/generate', () => ({
+  writeGenerated: vi.fn(),
 }));
 
 vi.mock('../generate-codecov-components', () => ({
@@ -67,7 +67,7 @@ describe('remove-action', () => {
 
     expect(Sys.rm).toHaveBeenCalledWith(expect.stringContaining('sub1'), { recursive: true, force: true });
     expect(generateDocs).toHaveBeenCalled();
-    expect(generateCiRequired).toHaveBeenCalled();
+    expect(generateVerify).toHaveBeenCalled();
     expect(generateCodecovComponents).toHaveBeenCalled();
   });
 

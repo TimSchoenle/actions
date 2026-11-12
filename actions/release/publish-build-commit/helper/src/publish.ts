@@ -2,7 +2,7 @@ import { gitBlobId, isWithin, renderChecksums } from 'action-graph';
 
 import { planTree } from './tree.js';
 
-import type { MakeLatest, PublishApi, Release } from './github.js';
+import type { GitCommit, MakeLatest, PublishApi, Release } from './github.js';
 import type { ExistingFilesPolicy, PlannedFile, TreePlan } from './tree.js';
 import type { BundleFile } from 'action-graph';
 
@@ -57,6 +57,13 @@ export interface PublishResult {
 /** How often a lost race on the releases branch is retried before the publish fails. */
 const BRANCH_ATTEMPTS = 3;
 
+/**
+ * How long before the source commit a draft release may have been created and still be found. A draft
+ * is left only by an earlier run for this source, which started after the source commit existed; the
+ * margin absorbs clock skew between the committer and GitHub.
+ */
+const DRAFT_LOOKBACK_MS = 24 * 60 * 60 * 1000;
+
 /** The file name of the checksum asset. */
 export const CHECKSUMS_ASSET = 'bundles.sha256';
 
@@ -75,6 +82,43 @@ export function buildCommitMessage(request: Pick<PublishRequest, 'sourceSha' | '
     `Bundles-Manifest-SHA256: ${request.manifestSha256}`,
     '',
   ].join('\n');
+}
+
+/** The longest prefix every one of `names` starts with. */
+function commonPrefix(names: readonly string[]): string {
+  let prefix = names[0] ?? '';
+  for (const name of names) {
+    while (!name.startsWith(prefix)) {
+      prefix = prefix.slice(0, -1);
+    }
+  }
+
+  return prefix;
+}
+
+/**
+ * The tag-name prefixes to list so that every name in `families` falls under exactly one listing: the
+ * common prefix of each non-empty family, without one that another already covers.
+ */
+export function tagListingPrefixes(families: ReadonlyArray<readonly string[]>): string[] {
+  const prefixes = [...new Set(families.filter((family) => family.length > 0).map(commonPrefix))];
+
+  return prefixes.filter((prefix) => !prefixes.some((other) => other !== prefix && prefix.startsWith(other))).sort();
+}
+
+/** An ISO-8601 instant in GitHub's format, whole seconds, so it compares as a string with GitHub's. */
+function githubTimestamp(milliseconds: number): string {
+  return new Date(milliseconds).toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
+/** The oldest creation time a draft left for `source` can have; see {@link DRAFT_LOOKBACK_MS}. */
+function draftCutoff(source: GitCommit): string {
+  const committed = Date.parse(source.committedAt);
+  if (Number.isNaN(committed)) {
+    throw new TypeError(`Commit ${source.sha} has the unreadable committer date '${source.committedAt}'.`);
+  }
+
+  return githubTimestamp(committed - DRAFT_LOOKBACK_MS);
 }
 
 /** The assets of one release: name and content, sorted by name. */
@@ -118,6 +162,8 @@ export function releaseAssets(
  */
 export class Publisher {
   private readonly created: string[] = [];
+  /** The commit each existing tag of this publish names, read once; see {@link loadTags}. */
+  private readonly tags = new Map<string, string>();
 
   constructor(
     private readonly api: PublishApi,
@@ -133,6 +179,7 @@ export class Publisher {
       return { path: file.path, content, blobSha: gitBlobId(content) };
     });
     const plan = await planTree(this.api, source.tree, plannedFiles, this.request.existingFiles);
+    await this.loadTags();
 
     const buildSha = await this.ensureBuildCommit(source.tree, plan);
     if (buildSha !== undefined) {
@@ -140,7 +187,7 @@ export class Publisher {
     } else {
       await this.checkTagsAbsent();
     }
-    const releases = await this.ensureReleases();
+    const releases = await this.ensureReleases(source);
     await this.markPullRequest(releases);
 
     return { buildSha, treeSha: plan.treeSha, created: [...this.created], releases };
@@ -150,18 +197,46 @@ export class Publisher {
     this.created.push(change);
   }
 
+  /**
+   * Reads which of this publish's tags exist, with one `matching-refs` listing per tag family rather
+   * than one lookup per tag. Only an annotated tag costs a further read, to reach its commit.
+   */
+  private async loadTags(): Promise<void> {
+    const consumer = this.request.releases.map((release) => release.consumerTag);
+    const source = this.request.releases.flatMap((release) =>
+      release.sourceTag === undefined ? [] : [release.sourceTag],
+    );
+    const wanted = new Set([...consumer, ...source]);
+
+    for (const prefix of tagListingPrefixes([consumer, source])) {
+      for (const entry of await this.api.matchingRefs(prefix === '' ? 'tags' : `tags/${prefix}`)) {
+        const name = entry.ref.slice('tags/'.length);
+        if (!wanted.has(name)) {
+          continue;
+        }
+        const sha = entry.type === 'tag' ? await this.api.resolveRef(entry.ref) : entry.sha;
+        if (sha !== undefined) {
+          this.tags.set(name, sha);
+        }
+      }
+    }
+  }
+
+  /** Whether `commit` is a build commit of this source with this tree. */
+  private isBuildCommitOf(commit: GitCommit, treeSha: string): boolean {
+    return commit.tree === treeSha && commit.parents.includes(this.request.sourceSha);
+  }
+
   /** Whether `sha` is a build commit of this source with this tree. */
   private async isBuildCommit(sha: string, treeSha: string): Promise<boolean> {
-    const commit = await this.api.getCommit(sha);
-
-    return commit.tree === treeSha && commit.parents.includes(this.request.sourceSha);
+    return this.isBuildCommitOf(await this.api.getCommit(sha), treeSha);
   }
 
   /** The build commit an existing consumer tag already names, when one does. */
   private async buildCommitFromTags(treeSha: string): Promise<string | undefined> {
     const found = new Set<string>();
     for (const release of this.request.releases) {
-      const sha = await this.api.resolveRef(`tags/${release.consumerTag}`);
+      const sha = this.tags.get(release.consumerTag);
       if (sha === undefined) {
         continue;
       }
@@ -179,8 +254,23 @@ export class Publisher {
     return [...found][0];
   }
 
-  /** Writes the blobs and the tree, checking each id GitHub returns against the local computation. */
-  private async writeTree(sourceTree: string, plan: TreePlan): Promise<void> {
+  /** The ids of every blob below `tree`, so a bundle the repository already stores is not uploaded again. */
+  private async blobsIn(tree: string | undefined): Promise<Set<string>> {
+    if (tree === undefined) {
+      return new Set();
+    }
+    // A truncated listing still names real blobs; it only misses some, which are then uploaded.
+    const { items } = await this.api.getTreeRecursive(tree);
+
+    return new Set(items.filter((item) => item.type === 'blob').map((item) => item.sha));
+  }
+
+  /**
+   * Writes the blobs and the tree, checking each id GitHub returns against the local computation. A
+   * blob in `stored` is already in the repository and is referenced, not uploaded; the check of the
+   * created tree's id still covers it.
+   */
+  private async writeTree(sourceTree: string, plan: TreePlan, stored: ReadonlySet<string>): Promise<void> {
     if (plan.additions.length === 0) {
       if (plan.treeSha !== sourceTree) {
         throw new Error(
@@ -190,6 +280,9 @@ export class Publisher {
       return;
     }
     for (const file of plan.additions) {
+      if (stored.has(file.blobSha)) {
+        continue;
+      }
       const sha = await this.api.createBlob(file.content);
       if (sha !== file.blobSha) {
         throw new Error(`GitHub stored ${file.path} as blob ${sha}, expected ${file.blobSha}.`);
@@ -229,7 +322,7 @@ export class Publisher {
     if (this.request.dryRun) {
       return undefined;
     }
-    await this.writeTree(sourceTree, plan);
+    await this.writeTree(sourceTree, plan, new Set());
     const buildSha = await this.createBuildCommit(plan.treeSha, [this.request.sourceSha]);
     this.record(`commit:${buildSha}`);
 
@@ -246,14 +339,16 @@ export class Publisher {
 
     for (let attempt = 1; attempt <= BRANCH_ATTEMPTS; attempt += 1) {
       const head = await this.api.resolveRef(`heads/${branch}`);
-      if (head !== undefined && (await this.isBuildCommit(head, plan.treeSha))) {
+      const headCommit = head === undefined ? undefined : await this.api.getCommit(head);
+      if (head !== undefined && headCommit !== undefined && this.isBuildCommitOf(headCommit, plan.treeSha)) {
         return head;
       }
       if (this.request.dryRun) {
         return undefined;
       }
       if (!wroteTree) {
-        await this.writeTree(sourceTree, plan);
+        // The head is the previous build commit, so every bundle that did not change is already stored.
+        await this.writeTree(sourceTree, plan, await this.blobsIn(headCommit?.tree));
         wroteTree = true;
       }
 
@@ -311,7 +406,7 @@ export class Publisher {
 
   /** Creates `tag` at `sha`, or confirms it is there. Never moves a tag. */
   private async ensureTag(tag: string, sha: string): Promise<void> {
-    const current = await this.api.resolveRef(`tags/${tag}`);
+    const current = this.tags.get(tag);
     if (current === sha) {
       return;
     }
@@ -355,19 +450,25 @@ export class Publisher {
     );
   }
 
-  /** Creates, completes and publishes every release, skipping one that is already published. */
-  private async ensureReleases(): Promise<PublishedRelease[]> {
-    const all = await this.api.listReleases();
+  /**
+   * Creates, completes and publishes every release, skipping one that is already published.
+   *
+   * A published release is found by its tag. A draft cannot be, since GitHub answers a tag lookup with
+   * published releases only, so the drafts come from one listing of the releases created since shortly
+   * before the source commit, read only when some release is not published yet.
+   */
+  private async ensureReleases(source: GitCommit): Promise<PublishedRelease[]> {
     const published: PublishedRelease[] = [];
+    let recent: Release[] | undefined;
 
     for (const spec of this.sortedReleases()) {
-      const matching = all.filter((release) => release.tagName === spec.consumerTag);
-      const done = matching.find((release) => !release.draft);
+      const done = await this.api.getReleaseByTag(spec.consumerTag);
       if (done !== undefined) {
         published.push({ tag: spec.consumerTag, id: done.id, url: done.htmlUrl });
         continue;
       }
-      const drafts = matching.filter((release) => release.draft);
+      recent ??= await this.api.listReleasesSince(draftCutoff(source));
+      const drafts = recent.filter((release) => release.draft && release.tagName === spec.consumerTag);
       if (drafts.length > 1) {
         throw new Error(`Tag ${spec.consumerTag} has ${drafts.length} draft releases; delete all but one.`);
       }

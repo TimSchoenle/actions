@@ -83,11 +83,11 @@ export const REQUIRED_CHECKS: readonly RequiredCheck[] = [
       'Always-running gate over the "Format" and "Commit Format" jobs, both of which are skipped on release-please branches and so cannot be required themselves.',
   },
   {
-    context: 'ci-required',
-    workflow: 'ci-required.yaml',
-    kind: 'status',
+    context: 'Verify',
+    workflow: 'verify.yaml',
+    kind: 'job',
     reason:
-      'Aggregate of the path-filtered verify workflows, posted only by the workflow_run evaluation, which runs the default-branch copy of ci-required.yaml; the workflow has no pull_request trigger, so no copy a pull request controls ever publishes it. The "Aggregate verify checks" job name must NOT be required in its place: its workflow_run check runs land on the default branch, never on the pull request head.',
+      'The final job of the generated Verify workflow. It runs on every pull request without a path filter, needs plan, install, build and every shard call, and fails when any of them failed or was cancelled, so it reports a verdict whether the change selects no target or all of them. The shard jobs themselves must NOT be required: they report as "<shard> / <job>" while they run and only under the bare shard name while skipped.',
   },
 ];
 
@@ -99,8 +99,12 @@ export const REQUIRED_CHECKS: readonly RequiredCheck[] = [
  * still gates nothing, so those are named outright.
  */
 export const FORBIDDEN_REQUIRED_CHECKS: Readonly<Record<string, string>> = {
+  'ci-required':
+    'The commit status the CI Required workflow posted before the Verify workflow replaced it. That workflow is gone, so nothing posts the context any more and a ruleset still requiring it would hold every pull request for ever. Require the Verify job instead.',
   'Aggregate verify checks':
-    "The job name behind ci-required. It only runs on workflow_run, on the default branch, so its check runs never reach the pull request head and the context would wait for ever. Require the 'ci-required' commit status instead.",
+    'The job of the deleted CI Required workflow. It only ever ran on workflow_run, on the default branch, so its check runs never reached a pull request head. Require the Verify job instead.',
+  'CI Summary: Verify':
+    "The Verify job's name while CI Required still aggregated it. The job is named Verify now, so the old context never reports again.",
   'Auto Format / Auto Format':
     "The nested name of the reusable-workflow call auto-format.yml used to make, which disappeared whenever the call was skipped. Require 'Auto Format Gate' instead.",
   'Auto Approve Renovate / Auto-approve PR':
@@ -111,6 +115,14 @@ export interface WorkflowJob {
   id: string;
   /** The context GitHub reports for this job: its `name:`, or its id when unnamed. */
   checkName: string;
+  /**
+   * The context a pull_request run reports: `checkName` for a literal name, or `X` for a name of the
+   * form `${{ github.event_name == 'pull_request' && 'X' || ... }}`, which reports another context on
+   * every other event. Undefined for any other expression, whose context is not known statically.
+   */
+  pullRequestCheckName: string | undefined;
+  /** True when `name:` is a literal, so every event reports the same context. */
+  literalName: boolean;
   /** True when the job delegates to a reusable workflow via `uses:`. */
   isReusableCall: boolean;
   /** Ids of the jobs listed in `needs:`. */
@@ -132,6 +144,11 @@ export interface WorkflowTriggers {
   branches?: string[];
   /** True when `branches-ignore` is present, which can exclude the base branch. */
   branchesIgnored: boolean;
+  /**
+   * True when an `on.push` trigger can run on a branch other than the default one: no branch filter,
+   * `branches-ignore`, or a `branches` entry other than the default branch.
+   */
+  pushBeyondDefault: boolean;
 }
 
 export interface ParsedWorkflow {
@@ -156,14 +173,25 @@ function readTriggers(on: unknown): WorkflowTriggers {
     onWorkflowRun: false,
     pathFiltered: false,
     branchesIgnored: false,
+    pushBeyondDefault: false,
   };
 
   // `on: pull_request` and `on: [pull_request]` carry no filters at all; only the mapping form can.
   if (typeof on === 'string') {
-    return { ...absent, onPullRequest: on === 'pull_request', onWorkflowRun: on === 'workflow_run' };
+    return {
+      ...absent,
+      onPullRequest: on === 'pull_request',
+      onWorkflowRun: on === 'workflow_run',
+      pushBeyondDefault: on === 'push',
+    };
   }
   if (Array.isArray(on)) {
-    return { ...absent, onPullRequest: on.includes('pull_request'), onWorkflowRun: on.includes('workflow_run') };
+    return {
+      ...absent,
+      onPullRequest: on.includes('pull_request'),
+      onWorkflowRun: on.includes('workflow_run'),
+      pushBeyondDefault: on.includes('push'),
+    };
   }
   if (on === null || typeof on !== 'object') {
     return absent;
@@ -171,8 +199,9 @@ function readTriggers(on: unknown): WorkflowTriggers {
 
   const events = on as Record<string, unknown>;
   const onWorkflowRun = Object.hasOwn(events, 'workflow_run');
+  const pushBeyondDefault = Object.hasOwn(events, 'push') && pushReachesOtherBranches(events.push);
   if (!Object.hasOwn(events, 'pull_request')) {
-    return { ...absent, onWorkflowRun };
+    return { ...absent, onWorkflowRun, pushBeyondDefault };
   }
 
   // `pull_request:` with no filters parses as null, which is the unconditional case.
@@ -183,7 +212,39 @@ function readTriggers(on: unknown): WorkflowTriggers {
     pathFiltered: Object.hasOwn(filters, 'paths') || Object.hasOwn(filters, 'paths-ignore'),
     branches: asStringArray(filters.branches),
     branchesIgnored: Object.hasOwn(filters, 'branches-ignore'),
+    pushBeyondDefault,
   };
+}
+
+/** Whether an `on.push` value can run on a branch other than the default one. */
+function pushReachesOtherBranches(push: unknown, defaultBranch: string = DEFAULT_BRANCH): boolean {
+  // `push:` with no filters parses as null and runs on every branch; a tags-only filter runs on none.
+  const filters = (push ?? {}) as Record<string, unknown>;
+  if (Object.hasOwn(filters, 'branches-ignore')) {
+    return true;
+  }
+  const branches = asStringArray(filters.branches);
+  if (branches === undefined) {
+    return !Object.hasOwn(filters, 'tags') && !Object.hasOwn(filters, 'tags-ignore');
+  }
+  return branches.some((branch) => branch !== defaultBranch);
+}
+
+/** The pull_request context of an event-dependent job name: `X` in `github.event_name == 'pull_request' && 'X' || ...`. */
+const PULL_REQUEST_NAME = /^\$\{\{\s*github\.event_name\s*==\s*'pull_request'\s*&&\s*'([^']+)'\s*\|\|.*\}\}$/s;
+
+/** The context a pull_request run of a job reports, and whether every event reports the same one. */
+function jobNames(
+  id: string,
+  name: unknown,
+): { checkName: string; pullRequestCheckName: string | undefined; literalName: boolean } {
+  if (typeof name !== 'string') {
+    return { checkName: id, pullRequestCheckName: id, literalName: true };
+  }
+  if (!name.includes('${{')) {
+    return { checkName: name, pullRequestCheckName: name, literalName: true };
+  }
+  return { checkName: name, pullRequestCheckName: PULL_REQUEST_NAME.exec(name.trim())?.[1], literalName: false };
 }
 
 export function parseWorkflow(content: string): ParsedWorkflow {
@@ -194,7 +255,7 @@ export function parseWorkflow(content: string): ParsedWorkflow {
     const job = (value ?? {}) as { name?: unknown; uses?: unknown; needs?: unknown; if?: unknown };
     return {
       id,
-      checkName: typeof job.name === 'string' ? job.name : id,
+      ...jobNames(id, job.name),
       isReusableCall: typeof job.uses === 'string',
       needs: asStringArray(job.needs) ?? [],
       condition: typeof job.if === 'string' ? job.if : typeof job.if === 'boolean' ? String(job.if) : '',
@@ -257,7 +318,11 @@ function unguardedNeed(
 ): string | undefined {
   const unrequired = job.needs.filter((need) => {
     const upstream = workflow.jobs.find((candidate) => candidate.id === need);
-    return upstream === undefined || !requiredContexts.includes(upstream.checkName);
+    return (
+      upstream === undefined ||
+      upstream.pullRequestCheckName === undefined ||
+      !requiredContexts.includes(upstream.pullRequestCheckName)
+    );
   });
 
   if (unrequired.length === 0) {
@@ -291,8 +356,8 @@ function unguardedNeed(
 function triggerProblems(check: RequiredCheck, triggers: ParsedWorkflow['triggers'], defaultBranch: string): string[] {
   const problems: string[] = [];
   // A commit status is POSTed to an explicit SHA, so a workflow_run evaluation can report it onto the
-  // pull request head as well as a pull_request run can. That it does so for every pull request is
-  // ci-required's anchor contract, which ci-required.test.ts holds; a job context has no such route.
+  // pull request head as well as a pull_request run can, provided something triggers it for every
+  // pull request; a job context has no such route.
   const reachesPullRequest = triggers.onPullRequest || (check.kind === 'status' && triggers.onWorkflowRun);
   if (!reachesPullRequest) {
     problems.push(
@@ -354,11 +419,21 @@ export function findRequiredCheckProblems(
     return problems;
   }
 
-  const producers = workflow.jobs.filter((job) => job.checkName === check.context);
+  const producers = workflow.jobs.filter((job) => job.pullRequestCheckName === check.context);
   if (producers.length === 0) {
     fail(`${check.workflow} has no job reporting as '${check.context}'.`);
   }
   for (const job of producers) {
+    // A push run attaches its own check to the commit it ran on, the pull request head included. With
+    // the same name it can stand in for the pull_request run: a push to a feature branch that selects
+    // nothing reports success, and re-running it after a failed pull_request run puts a newer success
+    // on the head.
+    if (workflow.triggers.pushBeyondDefault && job.literalName) {
+      fail(
+        `job '${job.id}' in ${check.workflow} reports '${check.context}' on push runs to branches other than '${defaultBranch}' too, which attach a second '${check.context}' check to a pull request head. Name it \${{ github.event_name == 'pull_request' && '${check.context}' || format('${check.context} ({0})', github.event_name) }}.`,
+      );
+    }
+
     if (job.isReusableCall) {
       fail(
         `job '${job.id}' in ${check.workflow} is a reusable-workflow call, so it reports as '${check.context} / <called job>' while running and only as '${check.context}' while skipped.`,

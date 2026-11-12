@@ -9,7 +9,7 @@ outside the markers.
 
 Measures a locally loaded image, warns past a size threshold, scans it with Trivy, uploads the SARIF to code scanning and reports the result on the pull request.
 
-[actions-docker-image-check-v1.1.15](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-v1.1.15) · Composite action · needs Docker
+[actions-docker-image-check-v1.1.16](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-v1.1.16) · Composite action · needs Docker
 <!-- /docs:generated header -->
 
 It replaces the four steps every service repository used to carry inline after its `docker/build-push-action` step.
@@ -34,7 +34,7 @@ steps:
   # the same way.
   - run: docker build --tag app:test .
 
-  - uses: TimSchoenle/actions/actions/docker/image-check@actions-docker-image-check-v1.1.15 # tag=actions-docker-image-check-v1.1.15
+  - uses: TimSchoenle/actions/actions/docker/image-check@actions-docker-image-check-v1.1.16 # tag=actions-docker-image-check-v1.1.16
     with:
       image: app:test
 ```
@@ -48,7 +48,7 @@ strategy:
   matrix:
     platform: [linux/amd64, linux/arm64]
 steps:
-  - uses: TimSchoenle/actions/actions/docker/image-check@actions-docker-image-check-v1.1.15 # tag=actions-docker-image-check-v1.1.15
+  - uses: TimSchoenle/actions/actions/docker/image-check@actions-docker-image-check-v1.1.16 # tag=actions-docker-image-check-v1.1.16
     with:
       image: app:test
       platform: ${{ matrix.platform }}
@@ -67,7 +67,7 @@ jobs:
         platform: [linux/amd64, linux/arm64]
     steps:
       # ... build and load ...
-      - uses: TimSchoenle/actions/actions/docker/image-check@actions-docker-image-check-v1.1.15 # tag=actions-docker-image-check-v1.1.15
+      - uses: TimSchoenle/actions/actions/docker/image-check@actions-docker-image-check-v1.1.16 # tag=actions-docker-image-check-v1.1.16
         with:
           image: app:test
           platform: ${{ matrix.platform }}
@@ -80,7 +80,7 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - uses: TimSchoenle/actions/actions/docker/image-check-summary@actions-docker-image-check-summary-v2.0.5 # tag=actions-docker-image-check-summary-v2.0.5
+      - uses: TimSchoenle/actions/actions/docker/image-check-summary@actions-docker-image-check-summary-v2.0.6 # tag=actions-docker-image-check-summary-v2.0.6
 ```
 <!-- /docs:generated usage -->
 
@@ -146,16 +146,16 @@ uploading an artifact does not use the token.
 
 A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
 
-| Endpoint                                   | For                                        |
-| ------------------------------------------ | ------------------------------------------ |
-| `github.com:443`                           | the Trivy binary                           |
-| `get.trivy.dev:443`                        | the Trivy binary                           |
-| `release-assets.githubusercontent.com:443` | the Trivy binary                           |
-| `mirror.gcr.io:443`                        | the Trivy vulnerability database           |
-| `ghcr.io:443`                              | the Trivy vulnerability database           |
-| `api.github.com:443`                       | the SARIF upload and the comment           |
-| `*.actions.githubusercontent.com:443`      | the Actions cache and the summary artifact |
-| `*.blob.core.windows.net:443`              | the Actions cache and the summary artifact |
+| Endpoint                                   | For                              |
+| ------------------------------------------ | -------------------------------- |
+| `github.com:443`                           | the Trivy binary                 |
+| `get.trivy.dev:443`                        | the Trivy binary                 |
+| `release-assets.githubusercontent.com:443` | the Trivy binary                 |
+| `mirror.gcr.io:443`                        | the Trivy vulnerability database |
+| `ghcr.io:443`                              | the Trivy vulnerability database |
+| `api.github.com:443`                       | the SARIF upload and the comment |
+| `*.actions.githubusercontent.com:443`      | the summary artifact             |
+| `*.blob.core.windows.net:443`              | the summary artifact             |
 <!-- /docs:generated egress -->
 
 ## Behaviour
@@ -172,6 +172,17 @@ pull request and in code scanning:
    (`per-image`) or uploads the fragment `image-check-<slug>` (`summary`).
 5. **Enforce.** Warns above `size-warning-mib`. Fails above `size-limit-mib`, or on findings when
    `trivy-fail-on-findings` is `true`.
+
+**Files in the workspace do not reach Trivy.** Trivy reads `trivy.yaml` and `.trivyignore` from its working directory,
+and on a pull request that is the pull request's checkout. A `trivy.yaml` there could lower the severities or turn the
+vulnerability scanner off, and a `.trivyignore` could list the very CVEs the pull request brings in. The action points
+`TRIVY_CONFIG` and `TRIVY_IGNOREFILE` at empty files of its own under `RUNNER_TEMP`, so the only ignore file Trivy reads
+is the one named in `trivy-ignore-file`. Name it from a trusted source: on `pull_request` the workspace file it names
+is the pull request's version.
+
+**No Actions cache.** trivy-action's cache restores the Trivy binary and database with a prefix match, which hands the
+job whatever any branch saved, a pull request branch included. The action turns it off, so both are downloaded on every
+run.
 
 `trivy-severity` is passed with `limit-severities-for-sarif: true`. Without that flag trivy-action drops the severity
 filter for SARIF output, and every LOW and MEDIUM finding reaches code scanning whatever the input says.
@@ -224,6 +235,6 @@ Without a platform, the image reference names the image instead. The link is omi
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-docker-image-check.yaml`](../../../.github/workflows/verify-action-docker-image-check.yaml)
+- End-to-end tests: [`.github/verify/docker-image-check.yaml`](../../../.github/verify/docker-image-check.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

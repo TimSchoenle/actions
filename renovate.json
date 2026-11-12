@@ -10,14 +10,14 @@
     "**/__fixtures__/**"
   ],
   "github-actions": {
-    "description": "The example workflows each action README embeds, under actions/<category>/<name>/examples/. The shared preset reads only workflow directories and action.yaml, so without this the third-party pins in them go stale while every workflow moves. Their pins of this repository's own actions are written by bun run generate-docs, which pins them to the latest release with a # tag= comment; the actions preset leaves them to the generator. A contract test in scripts/__tests__ fails an example this pattern does not claim.",
-    "managerFilePatterns": ["/^actions/[^/]+/[^/]+/examples/[^/]+\\.ya?ml$/"]
+    "description": "The example workflows each action README embeds, under actions/<category>/<name>/examples/. The shared preset reads only workflow directories and action.yaml, so without this the third-party pins in them go stale while every workflow moves. Their pins of this repository's own actions are written by bun run generate-docs, which pins them to the latest release with a # tag= comment; the actions preset leaves them to the generator. A contract test in scripts/__tests__ fails an example this pattern does not claim. The Verify sources under .github/verify/ are workflow jobs the generator copies into .github/workflows/verify-*.yaml; claiming them here lets Renovate move a third-party pin in the source and its generated copy on one branch, which keeps the Verify drift check green.",
+    "managerFilePatterns": ["/^actions/[^/]+/[^/]+/examples/[^/]+\\.ya?ml$/", "/^\\.github/verify/[^/]+\\.ya?ml$/"]
   },
   "customManagers": [
     {
-      "description": "Internal action refs pinned inside the end-to-end workflow generator. scripts/lib/e2e-workflow.ts is the source of truth for every generated verify-action-*.yaml, and is matched by no built-in manager because it is TypeScript rather than YAML. Without this, Renovate bumps only the generated copies and the drift check fails; with it, one branch carries both, because Renovate updates every occurrence of the same dependency at the same version together. A contract test in scripts/__tests__ fails any pin these managers would not match.",
+      "description": "Internal action refs pinned inside the Verify workflow generator. scripts/lib/verify/pins.ts is the source of truth for every pin the generated .github/workflows/verify*.yaml files share, and is matched by no built-in manager because it is TypeScript rather than YAML. Without this, Renovate bumps only the generated copies and the drift check fails; with it, one branch carries both, because Renovate updates every occurrence of the same dependency at the same version together. A contract test in scripts/__tests__ fails any pin these managers would not match.",
       "customType": "regex",
-      "managerFilePatterns": ["/^scripts/lib/e2e-workflow\\.ts$/"],
+      "managerFilePatterns": ["/^scripts/lib/verify/pins\\.ts$/"],
       "matchStrings": [
         "'(?<depName>TimSchoenle\\/actions(?:\\/[^@'\\s#]+)?)@(?<currentDigest>[a-fA-F0-9]{40}) # tag=(?<currentValue>actions-[^'\\s#]+)'"
       ],
@@ -29,7 +29,7 @@
     {
       "description": "Third-party actions pinned inside the end-to-end workflow generator, addressed by a subdirectory of their repository. These need depName and packageName to differ \u2014 the tags live on actions/cache, not on actions/cache/restore \u2014 which a single generic pattern cannot express, so each is listed explicitly and the contract test fails a new one that is not.",
       "customType": "regex",
-      "managerFilePatterns": ["/^scripts/lib/e2e-workflow\\.ts$/"],
+      "managerFilePatterns": ["/^scripts/lib/verify/pins\\.ts$/"],
       "matchStrings": [
         "'(?<depName>actions\\/cache\\/restore)@(?<currentDigest>[a-fA-F0-9]{40}) # (?<currentValue>v[^'\\s#]+)'"
       ],
@@ -39,7 +39,7 @@
     {
       "description": "Third-party actions pinned inside the end-to-end workflow generator, addressed by repository. Anchored on the opening quote of the TypeScript string literal, which is what keeps it from also matching the subdirectory and internal forms above without needing a lookahead \u2014 re2, which Renovate uses, has none.",
       "customType": "regex",
-      "managerFilePatterns": ["/^scripts/lib/e2e-workflow\\.ts$/"],
+      "managerFilePatterns": ["/^scripts/lib/verify/pins\\.ts$/"],
       "matchStrings": [
         "'(?<depName>[\\w.-]+\\/[\\w.-]+)@(?<currentDigest>[a-fA-F0-9]{40}) # (?<currentValue>v[^'\\s#]+)'"
       ],
@@ -67,11 +67,11 @@
       "datasourceTemplate": "docker"
     },
     {
-      "description": "The cosign and oras releases actions/terrace/setup installs, pinned as input defaults in its action.yaml with a `# renovate:` comment naming the datasource. Neither the github-actions manager nor any other reads an input default, so without this Renovate would never update them. The bump ships as a release of the action.",
+      "description": "The cosign and oras releases actions/terrace/setup installs, pinned as two input defaults in its action.yaml: <tool>_version under a `# renovate:` comment naming the github-release-attachments datasource, and right after it <tool>_checksums_sha256, the SHA-256 of that release's checksum list. The datasource finds the asset whose own SHA-256 is the pin and hashes the asset of the same name in the new release, so version and digest move in one commit and the install keeps verifying. Neither the github-actions manager nor any other reads an input default, so without this Renovate would never update them. The bump ships as a release of the action. A contract test in scripts/__tests__ fails a pair this manager would not capture.",
       "customType": "regex",
       "managerFilePatterns": ["/^actions/terrace/setup/action\\.yaml$/"],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[\\w-]+) depName=(?<depName>[\\w./-]+)(?: extractVersion=(?<extractVersion>\\S+))?\\s+default: '(?<currentValue>[^']+)'"
+        "# renovate: datasource=(?<datasource>github-release-attachments) depName=(?<depName>[\\w.-]+\\/[\\w.-]+)(?: extractVersion=(?<extractVersion>\\S+))?\\s+default: '(?<currentValue>[^']+)'\\s+[a-z]+_checksums_sha256:\\s+description:[\\s\\S]*?\\s+required: false\\s+default: '(?<currentDigest>[a-f0-9]{64})'"
       ],
       "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>.*)${{/if}}"
     },
@@ -79,6 +79,15 @@
       "description": "A version the example workflows under actions/<category>/<name>/examples/ pass as a literal input value, such as the terrace-contract version given to terrace/setup, with a `# renovate:` comment naming the datasource on the line above. No built-in manager reads an input value, so without this the example keeps recommending the version it was written with. The datasources are listed rather than matched with a wildcard so that a github-release-attachments pair, which the release-binary manager below updates with its checksum, is never matched twice. The commit is typed docs(deps) by the examples rule under packageRules. A contract test in scripts/__tests__ fails a literal version in an example that no manager matches.",
       "customType": "regex",
       "managerFilePatterns": ["/^actions/[^/]+/[^/]+/examples/[^/]+\\.ya?ml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>github-releases|github-tags|docker) depName=(?<depName>[\\w./-]+)(?: extractVersion=(?<extractVersion>\\S+))?\\s+[\\w-]+: [\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
+      ],
+      "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>.*)${{/if}}"
+    },
+    {
+      "description": "A version a composite under actions/ passes as a literal input value to a step it runs, such as the Codecov CLI version both coverage-codecov actions give codecov/codecov-action, with a `# renovate:` comment naming the datasource on the line above. No built-in manager reads an input value, so without this the composite keeps the version it was written with. The datasources are listed rather than matched with a wildcard so that a github-release-attachments pair, which the release-binary manager below updates with its checksum, is never matched twice. The bump ships as a release of the action. A contract test in scripts/__tests__ fails a literal version in an action that no manager matches.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^actions/[^/]+/[^/]+/action\\.ya?ml$/"],
       "matchStrings": [
         "# renovate: datasource=(?<datasource>github-releases|github-tags|docker) depName=(?<depName>[\\w./-]+)(?: extractVersion=(?<extractVersion>\\S+))?\\s+[\\w-]+: [\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
       ],
@@ -131,14 +140,14 @@
       "automerge": false
     },
     {
-      "description": "scripts/lib/e2e-workflow.ts is the source of the generated .github/workflows/verify-action-*.yaml, so its pins must land on the same branch as the generated copies, which the shared preset types as ci and groups as ci dependencies. Without this, an update splits across two branches and each fails the e2e workflow drift check. The type and the group mirror the preset's .github/** rules and must change with them.",
-      "matchFileNames": ["scripts/lib/e2e-workflow.ts"],
+      "description": "scripts/lib/verify/pins.ts is the source of the pins in the generated .github/workflows/verify*.yaml, so its pins must land on the same branch as the generated copies, which the shared preset types as ci and groups as ci dependencies. Without this, an update splits across two branches and each fails the Verify drift check. The type and the group mirror the preset's .github/** rules and must change with them.",
+      "matchFileNames": ["scripts/lib/verify/pins.ts"],
       "semanticCommitType": "ci",
       "separateMinorPatch": false
     },
     {
       "description": "The group half of the rule above.",
-      "matchFileNames": ["scripts/lib/e2e-workflow.ts"],
+      "matchFileNames": ["scripts/lib/verify/pins.ts"],
       "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
       "groupName": "ci dependencies",
       "groupSlug": "ci"
@@ -155,6 +164,20 @@
       "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
       "groupName": "documentation pins",
       "groupSlug": "docs-pins"
+    },
+    {
+      "description": "The branch half of the rule below. The shared preset sets separateMinorPatch: true, which puts a patch update on a patch- prefixed branch of its own, so without this a release batch of internal pins splits across renovate/internal-actions and renovate/patch-internal-actions. It lives in a rule of its own because Renovate refuses separateMinorPatch next to matchUpdateTypes.",
+      "matchPackageNames": ["TimSchoenle/actions"],
+      "matchFileNames": ["actions/**"],
+      "separateMinorPatch": false
+    },
+    {
+      "description": "The group half of the rule above: one pull request for every non-major pin of this repository's own actions inside a published composite under actions/. The shared preset's action group matches only the github-actions manager, which is disabled for these pins, and its ci group stops at .github/, so each pinned action got a branch of its own: a release batch opened up to one pull request per pinned action, each with a full CI round, a Release run and, through renovate-auto-rebase, a rebase of every other open dependency pull request. This rule sits before the examples rules so that they, coming later and therefore winning, keep the example workflows in documentation pins. Majors stay outside the group so they arrive alone and are not auto-merged.",
+      "matchPackageNames": ["TimSchoenle/actions"],
+      "matchFileNames": ["actions/**"],
+      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "groupName": "internal action pins",
+      "groupSlug": "internal-actions"
     },
     {
       "description": "The example workflows under actions/<category>/<name>/examples/ are documentation and ship in no release: committed as docs(deps), a type release-please hides, so a pin bump in an example never cuts a release of the action it sits beside. Grouped with the docs/ pins above.",

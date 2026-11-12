@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/TimSchoenle/actions/compare/src-actions-common-render-readme-v1.1.1...src-actions-common-render-readme-v1.1.2) (2026-11-12)
+
+
+### Dependencies
+
+* **deps:** update timschoenle/actions/actions/common/create-patch to vactions-common-create-patch-v2.0.2 ([#2106](https://github.com/TimSchoenle/actions/issues/2106)) ([1fd40ed](https://github.com/TimSchoenle/actions/commit/1fd40edda8726613286feac19ed9562e03522f6c))
+
 ## [1.1.1](https://github.com/TimSchoenle/actions/compare/src-actions-common-render-readme-v1.1.0...src-actions-common-render-readme-v1.1.1) (2026-11-11)
 
 

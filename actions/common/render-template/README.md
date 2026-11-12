@@ -9,7 +9,7 @@ outside the markers.
 
 A action to render a Handlebars template file to an output file from a JSON map of variables, deterministically
 
-[actions-common-render-template-v3.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-v3.0.4) · JavaScript action (node24)
+[actions-common-render-template-v3.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-v3.0.5) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 The template language is [Handlebars](https://handlebarsjs.com/). The action is built for generated documentation, with
@@ -26,7 +26,7 @@ on every run.
 ### Generate a file
 
 ```yaml
-- uses: TimSchoenle/actions/actions/common/render-template@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-render-template-v3.0.4
+- uses: TimSchoenle/actions/actions/common/render-template@actions-common-render-template-v3.0.5 # tag=actions-common-render-template-v3.0.5
   id: render
   with:
     template: docs/README.hbs
@@ -41,7 +41,7 @@ on every run.
         ]
       }
 
-- uses: TimSchoenle/actions/actions/common/commit-changes@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-commit-changes-v3.0.4
+- uses: TimSchoenle/actions/actions/common/commit-changes@actions-common-commit-changes-v3.1.0 # tag=actions-common-commit-changes-v3.1.0
   if: steps.render.outputs.changed == 'true'
   with:
     # A GitHub App installation token, so the commit is verified.
@@ -53,7 +53,7 @@ on every run.
 
 ```yaml
 # A CI gate: writes nothing and fails when README.md is missing or stale.
-- uses: TimSchoenle/actions/actions/common/render-template@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-render-template-v3.0.4
+- uses: TimSchoenle/actions/actions/common/render-template@actions-common-render-template-v3.0.5 # tag=actions-common-render-template-v3.0.5
   with:
     template: docs/README.hbs
     output: README.md
@@ -152,6 +152,11 @@ missing all its partials.
 Every helper is deterministic. There is deliberately no `now`, `random`, `uuid` or environment access: a file regenerated
 from unchanged inputs has to come out byte-identical.
 
+Handlebars' built-in `log` helper is removed. It wrote its arguments to the step log, where a template or partial from a
+pull request could emit workflow commands such as `::add-mask::` or a forged `::error::` annotation. `{{log ...}}` now
+fails the render as a missing helper, and `{{ log }}` reads a variable named `log` like any other name. The other
+built-ins (`if`, `unless`, `each`, `with`, `lookup`) are unchanged.
+
 ### Markdown
 
 | Helper             | Result                                                                                          |
@@ -211,11 +216,19 @@ Templates and partials are read with their line endings normalized to LF and a l
 output is written the same way. Neither is content, but both would otherwise reach the output file and make a checkout on
 a different machine look like a change.
 
+## Paths and symbolic links
+
+`template`, `output` and `partials-dir` must stay inside the workspace, and none of them may reach into a `.git`
+directory, directly or through a symbolic link. A template or partials directory that links to another place inside the
+workspace is followed. The output may not be a link at all, because writing goes through it: a `README.md` committed as a
+link to another file makes the render overwrite that file instead, and the step fails before rendering anything. Commit
+the output as a regular file.
+
 <!-- docs:generated reference -->
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-render-template.yaml`](../../../.github/workflows/verify-action-common-render-template.yaml)
+- End-to-end tests: [`.github/verify/common-render-template.yaml`](../../../.github/verify/common-render-template.yaml)
 - Called from this repository by:
   - [`actions/common/render-readme/action.yaml`](../../../actions/common/render-readme/action.yaml)
   - [`actions/common/render-template-and-commit/action.yaml`](../../../actions/common/render-template-and-commit/action.yaml)

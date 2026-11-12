@@ -9,7 +9,7 @@ outside the markers.
 
 Creates or updates a pull request using GitHub App authentication with optional branch reset.
 
-[actions-common-create-pull-request-v1.0.29](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-pull-request-v1.0.29) · Composite action
+[actions-common-create-pull-request-v1.0.30](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-pull-request-v1.0.30) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -43,7 +43,7 @@ jobs:
       - run: ./scripts/update-data.sh
 
       - id: pr
-        uses: TimSchoenle/actions/actions/common/create-pull-request@actions-common-create-pull-request-v1.0.29 # tag=actions-common-create-pull-request-v1.0.29
+        uses: TimSchoenle/actions/actions/common/create-pull-request@actions-common-create-pull-request-v1.0.30 # tag=actions-common-create-pull-request-v1.0.30
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
@@ -76,7 +76,7 @@ jobs:
 | `commit_changes` | no       | `true`                     | Whether to commit local changes to the branch before creating PR              |
 | `commit_message` | no       |                            | Commit message for changes (required if commit_changes is true)               |
 | `file_pattern`   | no       | `.`                        | File pattern to commit (used when commit_changes is true)                     |
-| `empty_commit`   | no       | `false`                    | Allow making an empty commit if there are no changes                          |
+| `empty_commit`   | no       | `false`                    | Ignored. It never had an effect: commit-changes cannot make an empty commit.  |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
@@ -108,7 +108,7 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-create-pull-request.yaml`](../../../.github/workflows/verify-action-common-create-pull-request.yaml)
+- End-to-end tests: [`.github/verify/common-create-pull-request.yaml`](../../../.github/verify/common-create-pull-request.yaml)
 - Called from this repository by:
   - [`actions/helm/update-chart-version/action.yaml`](../../../actions/helm/update-chart-version/action.yaml)
 <!-- /docs:generated reference -->

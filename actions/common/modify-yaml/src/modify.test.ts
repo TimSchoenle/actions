@@ -159,10 +159,65 @@ level1:
     });
   });
 
+  // Each case below was a reproduced corruption: the splice wrote text that parsed differently, or
+  // not at all, and nothing checked it.
+  describe('Splices that used to change the meaning of the file', () => {
+    async function edited(yaml: string, keyPath: string, value: string): Promise<unknown> {
+      await fs.writeFile(tmpFile, yaml);
+      await modifyYaml(tmpFile, keyPath, value);
+      const { parseDocument } = await import('yaml');
+      const document = parseDocument(await fs.readFile(tmpFile, 'utf-8'));
+      expect(document.errors).toEqual([]);
+
+      return document.toJS();
+    }
+
+    const long = Array.from({ length: 30 }, (_, index) => `word${index}`).join(' ');
+
+    it('keeps a long value at a nested key under that key', async () => {
+      expect(await edited('a:\n  b:\n    c: short\n  d: 1\n', 'a.b.c', long)).toEqual({ a: { b: { c: long }, d: 1 } });
+    });
+
+    it('writes into an empty node instead of replacing its map', async () => {
+      expect(await edited('image:\n  tag:\n  repo: x\n', 'image.tag', 'v2')).toEqual({
+        image: { tag: 'v2', repo: 'x' },
+      });
+    });
+
+    it('keeps one flow entry one entry', async () => {
+      expect(await edited('args: [v1, --safe]\n', 'args.0', 'v2,--privileged')).toEqual({
+        args: ['v2,--privileged', '--safe'],
+      });
+    });
+
+    it('keeps the key after a block scalar it replaces', async () => {
+      expect(await edited('script: |\n  echo one\nnext: 2\n', 'script', 'two')).toEqual({ script: 'two', next: 2 });
+    });
+
+    it('keeps the key after a map it replaces', async () => {
+      expect(await edited('map:\n  k: v\nnext: 2\n', 'map', 'scalar')).toEqual({ map: 'scalar', next: 2 });
+    });
+  });
+
+  // K1: new-value echoed the input, so it claimed `.inf` or `+Infinity` reached the file verbatim. It is
+  // read back from the written file and formatted like old-value, so the two compare like for like.
+  it.each([
+    ['1.10', '1.10'],
+    ['42', '42'],
+    ['+Infinity', 'Infinity'],
+    ['.inf', 'Infinity'],
+    ['.nan', 'NaN'],
+    ['null', 'null'],
+  ])('reports %s as written: %s', async (input, written) => {
+    await fs.writeFile(tmpFile, 'tag: 1.0.0\n');
+
+    await expect(modifyYaml(tmpFile, 'tag', input)).resolves.toEqual({ oldValue: '1.0.0', newValue: written });
+  });
+
   it('should modify a simple key', async () => {
     await fs.writeFile(tmpFile, 'key: old_value\n');
-    const old = await modifyYaml(tmpFile, 'key', 'new_value');
-    expect(old).toBe('old_value');
+    const result = await modifyYaml(tmpFile, 'key', 'new_value');
+    expect(result).toEqual({ oldValue: 'old_value', newValue: 'new_value' });
     const content = await fs.readFile(tmpFile, 'utf-8');
     expect(content).toContain('key: new_value');
   });
@@ -204,23 +259,18 @@ level1:
     expect(doc.count).toBe(42);
   });
 
-  // Regression: these all reach the file as numbers, not as the literal text that was passed in.
-  // The fuzz test's expectation used to cover only plain decimals, so `0x0` silently disagreed with
-  // the implementation until a seed happened to generate it.
-  it.each([
-    ['0x0', 0],
-    ['0xFF', 255],
-    ['-0x1f', -31],
-    ['0o777', 511],
-    ['1e5', 100_000],
-  ])('should infer %s as the number %s', async (input, expected) => {
-    await fs.writeFile(tmpFile, 'count: initial\n');
-    await modifyYaml(tmpFile, 'count', input);
-    const { parse } = await import('yaml');
-    const doc = parse(await fs.readFile(tmpFile, 'utf-8'));
-    expect(doc.count).toBe(expected);
-    expect(typeof doc.count).toBe('number');
-  });
+  // K1: these used to reach the file as numbers, so a tag of 1.10 deployed image 1.1. Text that no
+  // number writes back as is a version or an identifier, and stays exactly what was passed in.
+  it.each(['1.10', '1.0', '0123', '0x0', '0xFF', '-0x1f', '0o777', '1e5', '12e4567', '-0'])(
+    'should write %s as the string it is',
+    async (input) => {
+      await fs.writeFile(tmpFile, 'image:\n  tag: initial\n');
+      await modifyYaml(tmpFile, 'image.tag', input);
+      const { parse } = await import('yaml');
+      const doc = parse(await fs.readFile(tmpFile, 'utf-8'));
+      expect(doc.image.tag).toBe(input);
+    },
+  );
 
   it('should handle array index access', async () => {
     await fs.writeFile(tmpFile, 'items:\n  - one\n  - two\n');
@@ -346,17 +396,19 @@ describe('inferValueType', () => {
     expect(inferValueType('-10')).toBe(-10);
   });
 
-  it('should infer floats, hex, octal, infinity, and NaN', () => {
+  it('should infer floats, infinity, and NaN', () => {
     expect(inferValueType('12.34')).toBe(12.34);
     expect(inferValueType('-0.5')).toBe(-0.5);
-    expect(inferValueType('1e10')).toBe(1e10);
-    expect(inferValueType('-1.5E-5')).toBe(-1.5e-5);
-    expect(inferValueType('0xFF')).toBe(255);
-    expect(inferValueType('-0x1')).toBe(-1);
-    expect(inferValueType('0o777')).toBe(511);
     expect(inferValueType('.inf')).toBe(Infinity);
     expect(inferValueType('-.inf')).toBe(-Infinity);
     expect(inferValueType('.nan')).toBeNaN();
+  });
+
+  // A number is inferred only when it writes back as the same text; anything else would change the value.
+  it('should keep number-like strings that no number writes back as', () => {
+    for (const value of ['1.10', '1.0', '0123', '1e10', '-1.5E-5', '0xFF', '-0x1', '0o777', '12e4567', '-0']) {
+      expect(inferValueType(value)).toBe(value);
+    }
   });
 
   it('should infer booleans', () => {
@@ -371,10 +423,6 @@ describe('inferValueType', () => {
   it('should keep other strings as is', () => {
     expect(inferValueType('hello')).toBe('hello');
     expect(inferValueType('123a')).toBe('123a');
-    expect(inferValueType('0123')).toBe(123); // Standard JS Number('0123') is 123. If checking for OCTAL, regex might differ? Regex `^\d+` Matches 0123.
-    // Wait, yaml 1.2 doesn't octal with leading 0 usually?
-    // JS Number('0123') -> 123.
-    // If user expected string '0123', strict logic might be needed, but current logic is Number().
   });
 });
 

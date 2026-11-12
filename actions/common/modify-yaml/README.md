@@ -9,7 +9,7 @@ outside the markers.
 
 A action to modify a value in a YAML file while strictly preserving comments and structure
 
-[actions-common-modify-yaml-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-modify-yaml-v2.0.4) · JavaScript action (node24)
+[actions-common-modify-yaml-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-modify-yaml-v3.0.0) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -21,7 +21,7 @@ A action to modify a value in a YAML file while strictly preserving comments and
 # Edits the file in the workspace only. Comments and quoting elsewhere in values.yaml survive.
 # Committing the change is a separate step.
 - id: tag
-  uses: TimSchoenle/actions/actions/common/modify-yaml@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-modify-yaml-v2.0.4
+  uses: TimSchoenle/actions/actions/common/modify-yaml@actions-common-modify-yaml-v3.0.0 # tag=actions-common-modify-yaml-v3.0.0
   with:
     file: charts/api/values.yaml
     key: image.tag
@@ -37,20 +37,20 @@ A action to modify a value in a YAML file while strictly preserving comments and
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input   | Required | Default | Description           |
-| ------- | -------- | ------- | --------------------- |
-| `file`  | yes      |         | Path to the YAML file |
-| `key`   | yes      |         | Dot-notation key path |
-| `value` | yes      |         | Value to set          |
+| Input   | Required | Default | Description                                                                                                                                                             |
+| ------- | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `file`  | yes      |         | Path to the YAML file, relative to the workspace. It must resolve inside the workspace, symbolic links included.                                                        |
+| `key`   | yes      |         | Dot-notation key path                                                                                                                                                   |
+| `value` | yes      |         | Value to set. A number, true, false, null, .inf or .nan is written as that YAML type; text that only looks like a number, such as 1.10 or 0123, is written as a string. |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
 ## Outputs
 
-| Output      | Description               |
-| ----------- | ------------------------- |
-| `old-value` | Value before modification |
-| `new-value` | Value after modification  |
+| Output      | Description                                                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `old-value` | Value before modification                                                                                                       |
+| `new-value` | Value after modification, read back from the written file and formatted like old-value. Infinity and .inf both report Infinity. |
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
@@ -65,10 +65,20 @@ Needs no token permissions.
 Reaches no endpoint beyond those the runner itself needs.
 <!-- /docs:generated egress -->
 
+## How the value is typed
+
+`value` arrives as text and is written as a number only when the number writes back as exactly that text: `42` and
+`12.5` become numbers, while `1.10`, `1.0`, `0123`, `0xFF` and `1e5` stay strings and are quoted in the file. Before
+this, a tag `1.10` was written as the number `1.1`, so the image that deployed was not the one named. `true`, `false`,
+`null`, `.inf` and `.nan` keep their YAML meaning.
+
+`new-value` is read back from the written file and formatted the same way as `old-value`, so the two compare like for
+like. It differs from `value` only where YAML spells a value differently: `+Infinity` and `.inf` both report `Infinity`.
+
 <!-- docs:generated reference -->
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-modify-yaml.yaml`](../../../.github/workflows/verify-action-common-modify-yaml.yaml)
+- End-to-end tests: [`.github/verify/common-modify-yaml.yaml`](../../../.github/verify/common-modify-yaml.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

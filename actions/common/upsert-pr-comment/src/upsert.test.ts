@@ -29,6 +29,7 @@ function comment(overrides: Partial<ExistingComment> = {}): ExistingComment {
     author: 'app[bot]',
     body: composed,
     id: 1,
+    postedByApp: true,
     url: 'https://github.com/owner/repo/pull/7#issuecomment-1',
     ...overrides,
   };
@@ -113,6 +114,37 @@ describe('upsertComment', () => {
     await upsertComment(api, request());
 
     expect(api.served).toHaveLength(1);
+  });
+
+  // The marker is derivable from the workflow file, and a token with pull-requests: write may edit
+  // anyone's comment. Without an author, adopting a person's comment would hand them the report.
+  it('skips a marked comment posted by a person when no author is required', async () => {
+    const api = fakeApi([[comment({ author: 'contributor', body: `${marker}\n\nforged`, id: 4, postedByApp: false })]]);
+
+    await expect(upsertComment(api, request())).resolves.toMatchObject({ operation: 'created' });
+    expect(api.updateComment).not.toHaveBeenCalled();
+  });
+
+  it('adopts the oldest app-posted comment behind a person who planted the marker first', async () => {
+    const api = fakeApi([
+      [
+        comment({ author: 'contributor', body: `${marker}\n\nforged`, id: 3, postedByApp: false }),
+        comment({ author: 'github-actions[bot]', body: `${marker}\n\nold`, id: 4 }),
+      ],
+    ]);
+
+    await expect(upsertComment(api, request())).resolves.toMatchObject({ operation: 'updated' });
+    expect(api.updateComment).toHaveBeenCalledWith(target, 4, composed);
+  });
+
+  it('adopts a person-posted comment when that person is the required author', async () => {
+    const api = fakeApi([
+      [comment({ author: 'release-bot-user', body: `${marker}\n\nold`, id: 4, postedByApp: false })],
+    ]);
+
+    await expect(upsertComment(api, request({ author: 'release-bot-user' }))).resolves.toMatchObject({
+      operation: 'updated',
+    });
   });
 
   it('skips a marked comment posted by another author when one is required', async () => {

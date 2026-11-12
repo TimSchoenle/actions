@@ -9,7 +9,7 @@ outside the markers.
 
 Sets up a pinned Bun and installs dependencies from the lockfile, with a node_modules cache that by default only trusted events write to.
 
-[actions-bun-setup-cached-v3.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-bun-setup-cached-v3.1.0) · Composite action
+[actions-bun-setup-cached-v4.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-bun-setup-cached-v4.0.0) · Composite action
 <!-- /docs:generated header -->
 
 Installs a pinned Bun, restores `node_modules` from the Actions cache, runs `bun install --frozen-lockfile` and saves
@@ -29,7 +29,7 @@ the result when the cache missed and the job is allowed to write it.
     persist-credentials: false
 
 - name: Setup Bun
-  uses: TimSchoenle/actions/actions/bun/setup-cached@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-bun-setup-cached-v3.1.0
+  uses: TimSchoenle/actions/actions/bun/setup-cached@actions-bun-setup-cached-v4.0.0 # tag=actions-bun-setup-cached-v4.0.0
 ```
 
 ### In a privileged job
@@ -37,7 +37,7 @@ the result when the cache missed and the job is allowed to write it.
 ```yaml
 # In a job that holds secrets, an App token or any write permission.
 - name: Setup Bun
-  uses: TimSchoenle/actions/actions/bun/setup-cached@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-bun-setup-cached-v3.1.0
+  uses: TimSchoenle/actions/actions/bun/setup-cached@actions-bun-setup-cached-v4.0.0 # tag=actions-bun-setup-cached-v4.0.0
   with:
     cache-mode: none
 ```
@@ -46,23 +46,24 @@ the result when the cache missed and the job is allowed to write it.
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input               | Required | Default | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| ------------------- | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `bun-version`       | no       |         | The version of Bun to install (e.g. "1.3.0"). Takes precedence over bun-version-file. Empty reads the version from bun-version-file instead.                                                                                                                                                                                                                                                                                                                                                                                |
-| `bun-version-file`  | no       |         | File to read the Bun version from, relative to the repository root: a file holding only the version (".bun-version"), ".tool-versions", or a package.json naming "bun@<version>" as its packageManager or setting engines.bun. Empty looks for .bun-version in working-directory, then a package.json there that names Bun, then .bun-version in the repository root. The step fails when no version can be read.                                                                                                           |
-| `working-directory` | no       | `.`     | Directory holding package.json and bun.lock. bun install runs there, node_modules is cached from there, and the Bun version lookup starts there.                                                                                                                                                                                                                                                                                                                                                                            |
-| `cache-mode`        | no       | `auto`  | What the step does with the node_modules cache. "read-write" restores it and saves it on a miss, "read-only" restores it and never saves, "none" neither restores nor saves. "auto" is "read-write" on push, schedule, workflow_dispatch and merge_group, and "read-only" on every other event, pull_request and pull_request_target among them. A restored cache is code the job runs: use "none" in any job that holds secrets, an App token or write permissions. Any other value fails the step. See Cache modes below. |
-| `cache-key-prefix`  | no       |         | Optional prefix for the cache key. See Cache key below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Input               | Required | Default | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------------------- | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun-version`       | no       |         | The version of Bun to install (e.g. "1.3.0"). Takes precedence over bun-version-file. Empty reads the version from bun-version-file instead.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `bun-version-file`  | no       |         | File to read the Bun version from, relative to the repository root: a file holding only the version (".bun-version"), ".tool-versions", or a package.json naming "bun@<version>" as its packageManager or setting engines.bun. Empty looks for .bun-version in working-directory, then a package.json there that names Bun, then .bun-version in the repository root. The step fails when no version can be read.                                                                                                                                                                                                                   |
+| `working-directory` | no       | `.`     | Directory holding package.json and bun.lock. bun install runs there, node_modules is cached from there, and the Bun version lookup starts there. The step fails when bun.lock is missing.                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `cache-mode`        | no       | `auto`  | What the step does with the node_modules cache. "read-write" restores it and saves it on a miss, "read-only" restores it and never saves, "none" neither restores nor saves. "auto" is "read-write" on push, schedule and workflow_dispatch, and "read-only" on every other event, pull_request, pull_request_target and merge_group among them. setup-bun's own cache of the Bun executable is used only in "read-write"; the other modes download Bun. A restored cache is code the job runs: use "none" in any job that holds secrets, an App token or write permissions. Any other value fails the step. See Cache modes below. |
+| `cache-key-prefix`  | no       |         | Optional prefix for the cache key. See Cache key below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
 ## Outputs
 
-| Output       | Description                                                                                              |
-| ------------ | -------------------------------------------------------------------------------------------------------- |
-| `cache-hit`  | Whether node_modules was restored from an exact key match. Always "false" when the cache mode is "none". |
-| `cache-key`  | The cache key for this lockfile, also when the cache mode is "none".                                     |
-| `cache-mode` | The cache mode the step ran with: "read-write", "read-only" or "none", with "auto" resolved.             |
+| Output          | Description                                                                                                                                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `cache-hit`     | Whether node_modules was restored from an exact key match. Always "false" when the cache mode is "none".                                                                                                           |
+| `cache-key`     | The cache key for this lockfile, also when the cache mode is "none".                                                                                                                                               |
+| `cache-mode`    | The cache mode the step ran with: "read-write", "read-only" or "none", with "auto" resolved.                                                                                                                       |
+| `bun-cache-hit` | Whether setup-bun skipped the Bun download: it restored the executable from its own cache, which only the "read-write" cache mode uses, or found the same version already installed by an earlier step of the job. |
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
@@ -83,13 +84,14 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 | `objects.githubusercontent.com:443`        | the Bun release asset that github.com redirects to                                    |
 | `api.github.com:443`                       | setup-bun resolving a version that is not an exact release, such as latest or a range |
 | `registry.npmjs.org:443`                   | bun install, with the default registry                                                |
-| `*.actions.githubusercontent.com:443`      | the Actions cache service                                                             |
-| `*.blob.core.windows.net:443`              | cache entry downloads and uploads                                                     |
+| `*.actions.githubusercontent.com:443`      | the Actions cache service, except with cache-mode none                                |
+| `*.blob.core.windows.net:443`              | cache entry downloads and uploads, except with cache-mode none                        |
 <!-- /docs:generated egress -->
 
 `api.github.com` is contacted only when the version is not an exact release: setup-bun then lists Bun's tags to pick
-one. The cache hosts are contacted even with `cache-mode: none`, because setup-bun caches the Bun binary of an exact
-version itself; `cache-mode` governs only the `node_modules` cache.
+one. The cache hosts are not contacted with `cache-mode: none`: `cache-mode` governs both the `node_modules` cache and
+setup-bun's own cache of the Bun executable, which only `read-write` uses. `read-only` and `none` download Bun from
+github.com on every run.
 
 ## Bun version
 
@@ -109,9 +111,11 @@ the latest Bun without being told to: `bun-version: latest` still does that, exp
 | `read-write` | yes | yes |
 | `read-only` | yes | no |
 | `none` | no | no |
-| `auto` | yes | only on `push`, `schedule`, `workflow_dispatch` and `merge_group` |
+| `auto` | yes | only on `push`, `schedule` and `workflow_dispatch` |
 
-`auto` treats every other event, `pull_request` and `pull_request_target` among them, as `read-only`. A run on
+`auto` treats every other event, `pull_request`, `pull_request_target` and `merge_group` among them, as `read-only`. A
+`merge_group` run saves into the scope of its `gh-readonly-queue/` ref, which is deleted once the group merges, so no
+later run could restore the entry. A run on
 `pull_request_target`, `workflow_run` or `issue_comment` saves into the base branch's cache scope, which every later
 run on that branch restores. An entry saved by code from a pull request would then run in those later jobs.
 
@@ -137,6 +141,10 @@ running what another job saved. Use:
 `<cache-key-prefix>bun-modules-v2-<runner.os>-<runner.arch>-<hash of bun.lock>`. The `v2` segment keeps this release
 from restoring entries saved by earlier releases, which wrote from every event.
 
+The step fails when `working-directory` has no `bun.lock`. Without one the hash is empty, so every project would share
+one key, and `bun install --frozen-lockfile` exits 0 without pinning anything. A project with only the binary
+`bun.lockb` gets the same failure, with the command that writes `bun.lock`.
+
 ## Migrating from v1
 
 - `bun-version` no longer defaults to `latest`. A repository without `.bun-version` (or a `package.json` naming Bun) now
@@ -149,59 +157,11 @@ from restoring entries saved by earlier releases, which wrote from every event.
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-bun-setup-cached.yaml`](../../../.github/workflows/verify-action-bun-setup-cached.yaml)
-
-<details>
-<summary>Called from 48 files in this repository</summary>
-
-- [`.github/workflows/auto-format.yml`](../../../.github/workflows/auto-format.yml)
-- [`.github/workflows/ci-required.yaml`](../../../.github/workflows/ci-required.yaml)
-- [`.github/workflows/rate-limit-rerun.yml`](../../../.github/workflows/rate-limit-rerun.yml)
-- [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
-- [`.github/workflows/scripts-ci.yml`](../../../.github/workflows/scripts-ci.yml)
-- [`.github/workflows/update-files.yml`](../../../.github/workflows/update-files.yml)
-- [`.github/workflows/verify-action-common-close-pull-request.yaml`](../../../.github/workflows/verify-action-common-close-pull-request.yaml)
-- [`.github/workflows/verify-action-common-commit-changes.yaml`](../../../.github/workflows/verify-action-common-commit-changes.yaml)
-- [`.github/workflows/verify-action-common-commit-patch.yaml`](../../../.github/workflows/verify-action-common-commit-patch.yaml)
-- [`.github/workflows/verify-action-common-create-branch.yaml`](../../../.github/workflows/verify-action-common-create-branch.yaml)
-- [`.github/workflows/verify-action-common-create-patch.yaml`](../../../.github/workflows/verify-action-common-create-patch.yaml)
-- [`.github/workflows/verify-action-common-delete-branch.yaml`](../../../.github/workflows/verify-action-common-delete-branch.yaml)
-- [`.github/workflows/verify-action-common-download-release-asset.yaml`](../../../.github/workflows/verify-action-common-download-release-asset.yaml)
-- [`.github/workflows/verify-action-common-fetch-head.yaml`](../../../.github/workflows/verify-action-common-fetch-head.yaml)
-- [`.github/workflows/verify-action-common-find-patch.yaml`](../../../.github/workflows/verify-action-common-find-patch.yaml)
-- [`.github/workflows/verify-action-common-generated-files-verdict.yaml`](../../../.github/workflows/verify-action-common-generated-files-verdict.yaml)
-- [`.github/workflows/verify-action-common-get-app-git-identity.yaml`](../../../.github/workflows/verify-action-common-get-app-git-identity.yaml)
-- [`.github/workflows/verify-action-common-modify-yaml.yaml`](../../../.github/workflows/verify-action-common-modify-yaml.yaml)
-- [`.github/workflows/verify-action-common-read-yaml.yaml`](../../../.github/workflows/verify-action-common-read-yaml.yaml)
-- [`.github/workflows/verify-action-common-readme-variables.yaml`](../../../.github/workflows/verify-action-common-readme-variables.yaml)
-- [`.github/workflows/verify-action-common-render-template.yaml`](../../../.github/workflows/verify-action-common-render-template.yaml)
-- [`.github/workflows/verify-action-common-setup-app-git-identity.yaml`](../../../.github/workflows/verify-action-common-setup-app-git-identity.yaml)
-- [`.github/workflows/verify-action-common-upsert-issue.yaml`](../../../.github/workflows/verify-action-common-upsert-issue.yaml)
-- [`.github/workflows/verify-action-common-upsert-pr-comment.yaml`](../../../.github/workflows/verify-action-common-upsert-pr-comment.yaml)
-- [`.github/workflows/verify-action-docker-image-check-summary.yaml`](../../../.github/workflows/verify-action-docker-image-check-summary.yaml)
-- [`.github/workflows/verify-action-docker-image-check.yaml`](../../../.github/workflows/verify-action-docker-image-check.yaml)
-- [`.github/workflows/verify-action-helm-apply-chart-updates.yaml`](../../../.github/workflows/verify-action-helm-apply-chart-updates.yaml)
-- [`.github/workflows/verify-action-helper-resolve-base-branch.yaml`](../../../.github/workflows/verify-action-helper-resolve-base-branch.yaml)
-- [`.github/workflows/verify-action-helper-verify-branch-name.yaml`](../../../.github/workflows/verify-action-helper-verify-branch-name.yaml)
-- [`.github/workflows/verify-action-helper-verify-commit-authors.yaml`](../../../.github/workflows/verify-action-helper-verify-commit-authors.yaml)
-- [`.github/workflows/verify-action-java-gradle-auto-spotless.yaml`](../../../.github/workflows/verify-action-java-gradle-auto-spotless.yaml)
-- [`.github/workflows/verify-action-maintenance-auto-approve-pr.yaml`](../../../.github/workflows/verify-action-maintenance-auto-approve-pr.yaml)
-- [`.github/workflows/verify-action-maintenance-auto-rebase.yaml`](../../../.github/workflows/verify-action-maintenance-auto-rebase.yaml)
-- [`.github/workflows/verify-action-maintenance-ensure-actions-are-executed.yaml`](../../../.github/workflows/verify-action-maintenance-ensure-actions-are-executed.yaml)
-- [`.github/workflows/verify-action-maintenance-timed-auto-merge.yaml`](../../../.github/workflows/verify-action-maintenance-timed-auto-merge.yaml)
-- [`.github/workflows/verify-action-maintenance-trigger-coderabbit-review.yaml`](../../../.github/workflows/verify-action-maintenance-trigger-coderabbit-review.yaml)
-- [`.github/workflows/verify-action-maintenance-wipe-cache.yaml`](../../../.github/workflows/verify-action-maintenance-wipe-cache.yaml)
-- [`.github/workflows/verify-action-release-build-actions.yaml`](../../../.github/workflows/verify-action-release-build-actions.yaml)
-- [`.github/workflows/verify-action-release-install-built-actions.yaml`](../../../.github/workflows/verify-action-release-install-built-actions.yaml)
-- [`.github/workflows/verify-action-release-plan-release-please.yaml`](../../../.github/workflows/verify-action-release-plan-release-please.yaml)
-- [`.github/workflows/verify-action-release-publish-build-commit.yaml`](../../../.github/workflows/verify-action-release-publish-build-commit.yaml)
-- [`.github/workflows/verify-action-release-resolve-actions.yaml`](../../../.github/workflows/verify-action-release-resolve-actions.yaml)
-- [`.github/workflows/verify-action-rust-auto-format.yaml`](../../../.github/workflows/verify-action-rust-auto-format.yaml)
-- [`.github/workflows/verify-action-rust-config-contract.yaml`](../../../.github/workflows/verify-action-rust-config-contract.yaml)
-- [`.github/workflows/verify-action-security-codeql.yaml`](../../../.github/workflows/verify-action-security-codeql.yaml)
-- [`.github/workflows/verify-action-security-zizmor.yaml`](../../../.github/workflows/verify-action-security-zizmor.yaml)
-- [`.github/workflows/verify-action-terrace-setup.yaml`](../../../.github/workflows/verify-action-terrace-setup.yaml)
-- [`.github/workflows/verify-config-renovate.yaml`](../../../.github/workflows/verify-config-renovate.yaml)
-
-</details>
+- End-to-end tests: [`.github/verify/bun-setup-cached.yaml`](../../../.github/verify/bun-setup-cached.yaml)
+- Called from this repository by:
+  - [`.github/verify/configs-renovate.yaml`](../../../.github/verify/configs-renovate.yaml)
+  - [`.github/workflows/auto-format.yml`](../../../.github/workflows/auto-format.yml)
+  - [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
+  - [`.github/workflows/scripts-ci.yml`](../../../.github/workflows/scripts-ci.yml)
+  - [`.github/workflows/update-files.yml`](../../../.github/workflows/update-files.yml)
 <!-- /docs:generated reference -->

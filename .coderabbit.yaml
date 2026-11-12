@@ -99,15 +99,15 @@ reviews:
         actor, weakened required review/signature/status-check rule, or widened ref include pattern.
     - path: 'scripts/**/*.ts'
       instructions: |
-        Repository tooling and generators (action sources, docs, e2e workflows, codecov components,
-        ci-required). Output must be deterministic and idempotent, and the CI drift checks must keep
-        covering every generated file. `scripts/lib/e2e-workflow.ts` is the source of the generated
-        `verify-action-*` workflows: apply the workflow hardening rules to the YAML it emits, and keep
-        its pin string format matching the regex managers in `renovate.json`.
+        Repository tooling and generators (action sources, docs, the Verify workflows, codecov
+        components). Output must be deterministic and idempotent, and the CI drift checks must keep
+        covering every generated file. `scripts/lib/verify/` and the sources in `.github/verify/` are the source of
+        the generated Verify workflows: apply the workflow hardening rules to the YAML they emit, and keep
+        the pin string format in `scripts/lib/verify/pins.ts` matching the regex managers in `renovate.json`.
     - path: 'scripts/templates/**'
       instructions: |
         Sources for the root README.md and SECURITY.md and scaffolding for every new action and its
-        verify workflow. Defects here propagate into each new component; apply the action and workflow
+        verify source. Defects here propagate into each new component; apply the action and workflow
         rules.
     - path: '.github/workflows/**'
       instructions: |
@@ -115,7 +115,7 @@ reviews:
         Require least-privilege `permissions:` at workflow or job level, `persist-credentials: false`
         on checkout unless pushing, no untrusted `${{ github.event.* }}` interpolation into `run:`,
         and no `pull_request_target` that checks out or executes PR code. Files whose first line is
-        `# GENERATED` are emitted by `scripts/lib/e2e-workflow.ts`; reject hand edits and direct fixes
+        `# GENERATED` are emitted by `scripts/generate-verify.ts`; reject hand edits and direct fixes
         to the generator.
     - path: 'docs/**'
       instructions: |

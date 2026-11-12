@@ -9,7 +9,7 @@ outside the markers.
 
 Runs CodeQL on one language with build-mode none, excluding test sources so fixtures and assertion messages do not raise alerts, and uploads the result to code scanning.
 
-[actions-security-codeql-v1.1.10](https://github.com/TimSchoenle/actions/releases/tag/actions-security-codeql-v1.1.10) · Composite action
+[actions-security-codeql-v1.1.11](https://github.com/TimSchoenle/actions/releases/tag/actions-security-codeql-v1.1.11) · Composite action
 <!-- /docs:generated header -->
 
 Default setup reads a configuration file only from the `github-codeql-config-file` repository property, and custom
@@ -51,7 +51,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: TimSchoenle/actions/actions/security/codeql@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-security-codeql-v1.1.10
+      - uses: TimSchoenle/actions/actions/security/codeql@actions-security-codeql-v1.1.11 # tag=actions-security-codeql-v1.1.11
         with:
           language: ${{ matrix.language }}
           paths-ignore: |
@@ -65,13 +65,13 @@ Turn default setup off before the first run. GitHub rejects an advanced-setup up
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input                | Required | Default | Description                                                                                                                                                                                                         |
-| -------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `language`           | yes      |         | CodeQL language identifier, one per job: actions, c-cpp, csharp, java-kotlin, javascript-typescript, python, ruby or rust. Languages that need a build (go, swift) are refused. See Languages below.                |
-| `exclude-test-paths` | no       | `true`  | Exclude the shared test locations: Cargo tests and benches, Rust test modules in their own file, Gradle and Maven test source sets, and Vitest and Jest suites. The patterns are listed under Excluded paths below. |
-| `paths-ignore`       | no       |         | Additional glob patterns to exclude, one per line, relative to the repository root. Blank lines and lines starting with # are skipped.                                                                              |
-| `category`           | no       |         | Code scanning category. Defaults to /language:<language>, the category default setup writes, so switching from default setup keeps one analysis per language.                                                       |
-| `upload`             | no       | `true`  | Upload the SARIF to code scanning. Needs security-events: write.                                                                                                                                                    |
+| Input                | Required | Default | Description                                                                                                                                                                                                                                                               |
+| -------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `language`           | yes      |         | CodeQL language identifier, one per job: actions, c-cpp, csharp, java-kotlin, javascript-typescript, python, ruby or rust. Languages that need a build (go, swift) are refused. See Languages below.                                                                      |
+| `exclude-test-paths` | no       | `true`  | Exclude the shared test locations: Cargo tests and benches, Rust test modules in their own file, Gradle and Maven test source sets, and Vitest and Jest suites. The patterns are listed under Excluded paths below. Ignored for actions, whose workflows are never tests. |
+| `paths-ignore`       | no       |         | Additional glob patterns to exclude, one per line, relative to the repository root. Blank lines and lines starting with # are skipped.                                                                                                                                    |
+| `category`           | no       |         | Code scanning category. Defaults to /language:<language>, the category default setup writes, so switching from default setup keeps one analysis per language.                                                                                                             |
+| `upload`             | no       | `true`  | Upload the SARIF to code scanning. Needs security-events: write.                                                                                                                                                                                                          |
 <!-- /docs:generated inputs -->
 
 ### Languages
@@ -86,7 +86,8 @@ builds nothing.
 
 ### Excluded paths
 
-With `exclude-test-paths` on, these are excluded before any `paths-ignore` pattern:
+With `exclude-test-paths` on, these are excluded before any `paths-ignore` pattern. For `actions` none
+of them is: `**/*.test.*` would match a workflow named `ci.test.yml`, and a workflow is never a test.
 
 | Pattern                                         | Covers                                                      |
 | ----------------------------------------------- | ----------------------------------------------------------- |
@@ -152,6 +153,6 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-security-codeql.yaml`](../../../.github/workflows/verify-action-security-codeql.yaml)
+- End-to-end tests: [`.github/verify/security-codeql.yaml`](../../../.github/verify/security-codeql.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

@@ -66,13 +66,13 @@ describe('createCommentApi', () => {
 
   it('reads every page of comments, oldest first', async () => {
     servePages(octokit, [
-      [{ body: 'first', html_url: 'https://example.test/1', id: 1, user: { login: 'app[bot]' } }],
-      [{ body: 'second', html_url: 'https://example.test/2', id: 2, user: { login: 'human' } }],
+      [{ body: 'first', html_url: 'https://example.test/1', id: 1, user: { login: 'app[bot]', type: 'Bot' } }],
+      [{ body: 'second', html_url: 'https://example.test/2', id: 2, user: { login: 'human', type: 'User' } }],
     ]);
 
     await expect(collect(createCommentApi('token').comments(target))).resolves.toEqual([
-      { author: 'app[bot]', body: 'first', id: 1, url: 'https://example.test/1' },
-      { author: 'human', body: 'second', id: 2, url: 'https://example.test/2' },
+      { author: 'app[bot]', body: 'first', id: 1, postedByApp: true, url: 'https://example.test/1' },
+      { author: 'human', body: 'second', id: 2, postedByApp: false, url: 'https://example.test/2' },
     ]);
     expect(octokit.paginate.iterator).toHaveBeenCalledWith(octokit.rest.issues.listComments, {
       issue_number: 7,
@@ -86,7 +86,27 @@ describe('createCommentApi', () => {
     servePages(octokit, [[{ body: null, html_url: 'https://example.test/1', id: 1, user: null }]]);
 
     await expect(collect(createCommentApi('token').comments(target))).resolves.toEqual([
-      { author: '', body: '', id: 1, url: 'https://example.test/1' },
+      { author: '', body: '', id: 1, postedByApp: false, url: 'https://example.test/1' },
+    ]);
+  });
+
+  // A GitHub App acting through a user-to-server token posts as the user, and GitHub records the app
+  // in performed_via_github_app.
+  it('counts a comment an app posted on behalf of a user as app-posted', async () => {
+    servePages(octokit, [
+      [
+        {
+          body: 'x',
+          html_url: 'https://example.test/1',
+          id: 1,
+          performed_via_github_app: { id: 9, slug: 'app' },
+          user: { login: 'human', type: 'User' },
+        },
+      ],
+    ]);
+
+    await expect(collect(createCommentApi('token').comments(target))).resolves.toEqual([
+      { author: 'human', body: 'x', id: 1, postedByApp: true, url: 'https://example.test/1' },
     ]);
   });
 

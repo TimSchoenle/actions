@@ -9,7 +9,7 @@ outside the markers.
 
 Verify the head branch of a pull request matches a pattern and check whether it comes from a fork
 
-[actions-helper-verify-branch-name-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-branch-name-v2.0.4) · JavaScript action (node24)
+[actions-helper-verify-branch-name-v3.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-verify-branch-name-v3.0.0) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -36,7 +36,7 @@ jobs:
       # Reads the branch and both repositories from the pull_request payload, so it needs no checkout.
       # A fork's branch fails the check even when its name matches.
       - id: branch
-        uses: TimSchoenle/actions/actions/helper/verify-branch-name@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-helper-verify-branch-name-v2.0.4
+        uses: TimSchoenle/actions/actions/helper/verify-branch-name@actions-helper-verify-branch-name-v3.0.0 # tag=actions-helper-verify-branch-name-v3.0.0
         with:
           branch_pattern: '^release-please--branches--.*$'
 
@@ -54,14 +54,14 @@ jobs:
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input                 | Required | Default                                                | Description                                                                                                                                                                |
-| --------------------- | -------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `branch_pattern`      | yes      |                                                        | Regex pattern to match branch names (e.g. "^release-please--branches--.*$"). POSIX extended regex syntax, unanchored and case-sensitive. An empty pattern skips the check. |
-| `reject_forks`        | no       | `true`                                                 | Reject PRs from forked repositories. When true, only PRs from branches in the same repository will be approved.                                                            |
-| `error_on_failure`    | no       | `false`                                                | When true, the action fails if any of the checks fail. When false, the action succeeds and reports the results via its outputs.                                            |
-| `head_repo_full_name` | no       | `${{ github.event.pull_request.head.repo.full_name }}` | Full name of the head repository (e.g. "owner/repo"). Defaults to github.event.pull_request.head.repo.full_name of the triggering event.                                   |
-| `base_repo_full_name` | no       | `${{ github.event.pull_request.base.repo.full_name }}` | Full name of the base repository (e.g. "owner/repo"). Defaults to github.event.pull_request.base.repo.full_name of the triggering event.                                   |
-| `head_ref`            | no       | `${{ github.event.pull_request.head.ref }}`            | The head branch name (e.g. "feature/my-branch"). Defaults to github.event.pull_request.head.ref of the triggering event.                                                   |
+| Input                 | Required | Default                                                | Description                                                                                                                                                                                                    |
+| --------------------- | -------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `branch_pattern`      | yes      |                                                        | Regex pattern to match branch names (e.g. "^release-please--branches--.*$"). POSIX extended regex syntax, unanchored and case-sensitive. An empty pattern fails the step; pass ".*" to accept any branch name. |
+| `reject_forks`        | no       | `true`                                                 | Reject PRs from forked repositories. When true, only PRs from branches in the same repository will be approved.                                                                                                |
+| `error_on_failure`    | no       | `false`                                                | When true, the action fails if any of the checks fail. When false, the action succeeds and reports the results via its outputs.                                                                                |
+| `head_repo_full_name` | no       | `${{ github.event.pull_request.head.repo.full_name }}` | Full name of the head repository (e.g. "owner/repo"). Defaults to github.event.pull_request.head.repo.full_name of the triggering event.                                                                       |
+| `base_repo_full_name` | no       | `${{ github.event.pull_request.base.repo.full_name }}` | Full name of the base repository (e.g. "owner/repo"). Defaults to github.event.pull_request.base.repo.full_name of the triggering event.                                                                       |
+| `head_ref`            | no       | `${{ github.event.pull_request.head.ref }}`            | The head branch name (e.g. "feature/my-branch"). Defaults to github.event.pull_request.head.ref of the triggering event.                                                                                       |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
@@ -90,6 +90,6 @@ Reaches no endpoint beyond those the runner itself needs.
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-helper-verify-branch-name.yaml`](../../../.github/workflows/verify-action-helper-verify-branch-name.yaml)
+- End-to-end tests: [`.github/verify/helper-verify-branch-name.yaml`](../../../.github/verify/helper-verify-branch-name.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

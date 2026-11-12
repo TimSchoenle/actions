@@ -26,7 +26,10 @@ jobs:
     permissions:
       contents: read # to fetch code
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    # The test step's outcome, which the coverage job keys on: `skipped` when an earlier step failed.
+    outputs:
+      tests: ${{ steps.test.outcome }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -63,85 +66,70 @@ jobs:
       - name: Build Action Bundles
         run: bun run build:actions --all
 
-      # The verify-action-* workflows for actions with e2e cases are generated. A hand-edited one
-      # would be silently overwritten on the next run of the generator, taking its edit with it.
-      - name: Check Generated E2E Workflows
-        run: bun run check-e2e-workflows
+      # The Verify workflows and their plan file are generated from .github/verify/. A hand-edited
+      # one would be silently overwritten on the next run of the generator, taking its edit with it.
+      - name: Check Generated Verify Workflows
+        run: bun run check-verify
 
       - name: Typecheck
         run: bun run typecheck
 
-      - name: Test
-        run: bun run test
-
-  # Coverage is measured and uploaded in two jobs, so the OIDC token Codecov authenticates with never
-  # shares a job with pull request code. `coverage-tests` runs the suite, which is code the pull request
-  # controls, with nothing more than a read-only token, and hands the two report files over as an
-  # artifact. `coverage` holds `id-token: write`, executes no repository code, and only uploads those
-  # files. Both are kept apart from `lint-and-test`, so a Codecov outage fails the upload alone and the
-  # required `Lint & Test` check never holds `id-token: write`. `.github/codecov.yml` decides what the
-  # Codecov statuses check.
-  coverage-tests:
-    name: Coverage Tests
-    # Skipped on release-please pull requests; see lint-and-test.
-    if: >-
-      !(startsWith(github.head_ref, 'release-please--') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.id == 248313786)
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read # Required to checkout the code
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
-        with:
-          egress-policy: audit
-
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - name: Setup Bun
-        uses: TimSchoenle/actions/actions/bun/setup-cached@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-bun-setup-cached-v3.1.0
-        with:
-          bun-version: ''
-          bun-version-file: '.bun-version'
-          cache-mode: none
-
       # Writes coverage/lcov.info and coverage/junit.xml, the two files the coverage job uploads.
       # Vitest writes lcov.info only when the suite passes, junit.xml either way.
       - name: Test
+        id: test
         run: bun run test
 
-      # Runs after a failed test step too: the failing cases are what Test Analytics records.
+      # Runs after a failed test step too: the failing cases are what Test Analytics records. Not
+      # after an earlier step failed, when the suite never ran and there is nothing to hand over.
       - name: Upload coverage reports
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.test.outcome != 'skipped' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-reports
           path: |
             coverage/lcov.info
             coverage/junit.xml
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 1
 
+  # Coverage is uploaded in a job of its own, so the OIDC token Codecov authenticates with never shares
+  # a job with pull request code. `lint-and-test` runs the suite, which is code the pull request
+  # controls, with nothing more than a read-only token, and hands the two report files over as an
+  # artifact. `coverage` holds `id-token: write`, executes no repository code, and only uploads those
+  # files, so a Codecov outage fails the upload alone and the required `Lint & Test` check never holds
+  # `id-token: write`. The suite used to run a second time in a separate Coverage Tests job; it now
+  # runs once, here. `.github/codecov.yml` decides what the Codecov statuses check.
   coverage:
     name: Coverage
-    needs: coverage-tests
-    # Runs when the tests failed too, so the failing cases still reach Test Analytics, but not when
-    # they were skipped on a release-please pull request: there is nothing to upload.
+    needs: lint-and-test
+    # Runs when the tests failed too, so the failing cases still reach Test Analytics, but not when the
+    # suite never ran: the job was skipped on a release-please pull request, or a step before Test
+    # failed. The output is empty for a skipped job.
     if: >-
-      !cancelled() && needs.coverage-tests.result != 'skipped'
+      !cancelled() && (needs.lint-and-test.outputs.tests == 'success' || needs.lint-and-test.outputs.tests == 'failure')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read # Required to checkout the code
       id-token: write # Required to authenticate the Codecov upload with OIDC
     steps:
+      # Blocked: this job holds id-token: write. github.com for the checkout, the artifact hosts for the
+      # report download and the OIDC token, the four Codecov hosts as actions/rust/coverage-codecov
+      # lists them (CLI download, its verification key, the upload and the storage it hands off to).
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            cli.codecov.io:443
+            keybase.io:443
+            ingest.codecov.io:443
+            storage.googleapis.com:443
 
       # The Codecov CLI lists the repository's files to map report paths onto them, so the tree has
       # to be present. It is only read: no step below runs anything from it, and the uploads pass
@@ -158,7 +146,7 @@ jobs:
           path: coverage
 
       - name: Upload coverage to Codecov
-        if: ${{ needs.coverage-tests.result == 'success' }}
+        if: ${{ needs.lint-and-test.outputs.tests == 'success' }}
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           files: coverage/lcov.info
@@ -183,10 +171,10 @@ jobs:
 
       # Keeps the Coverage check red whenever the suite failed, as it was when one job did both.
       - name: Fail if the tests failed
-        if: ${{ needs.coverage-tests.result != 'success' }}
+        if: ${{ needs.lint-and-test.outputs.tests != 'success' }}
         env:
-          TESTS_RESULT: ${{ needs.coverage-tests.result }}
+          TESTS_RESULT: ${{ needs.lint-and-test.outputs.tests }}
         run: |
           set -euo pipefail
-          echo "::error::Coverage Tests finished as '${TESTS_RESULT}', so no coverage was uploaded."
+          echo "::error::The test step finished as '${TESTS_RESULT}', so no coverage was uploaded."
           exit 1

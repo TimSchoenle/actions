@@ -1,0 +1,618 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
+import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
+
+import { DOCS_FILE_NAME, validateDocsFile } from '../lib/action-docs/docs-file.js';
+import { parseActionManifest } from '../lib/action-docs/manifest.js';
+import { ROOT_DIR, scanSorted } from '../lib/utils.js';
+import { selectTargets } from '../lib/verify/affected.js';
+import { findDrift, generate } from '../lib/verify/generate.js';
+import {
+  actionTokenPermissions,
+  E2E_ALLOWED_ENDPOINTS,
+  e2eGroupId,
+  e2eGroups,
+  INSTALL_ALLOWED_ENDPOINTS,
+  missingTokenInputScopes,
+  workspaceMemberDirectories,
+  workspaceModulePaths,
+} from '../lib/verify/jobs.js';
+import { shardFile, SUMMARY_JOB_ID, SUMMARY_JOB_NAME, VERIFY_WORKFLOW } from '../lib/verify/render.js';
+import { jobValue, readSources } from '../lib/verify/source.js';
+import { E2E_DIRECTORY, hasE2eCases } from '../lib/verify/target-inputs.js';
+
+import type { PlanEvent } from '../lib/verify/affected.js';
+import type { ActionDocs } from '../lib/action-docs/docs-file.js';
+
+/**
+ * Contract between the actions, their Verify sources and the generated Verify workflows.
+ *
+ * Every action reaches CI through a target of `.github/workflows/verify.yaml`, generated from the
+ * sources in `.github/verify/`. What can go wrong silently is checked here: an action without cases,
+ * a source and an action's cases that disagree, a generated file edited by hand, a token wider than it
+ * should be, and a generated workflow growing toward a limit GitHub enforces by refusing to run it.
+ */
+
+/**
+ * GitHub refuses to start a run whose caller reaches more than 50 distinct reusable workflows, and
+ * one whose workflow file is larger than 500 KB. The budgets leave room to notice before either.
+ */
+const MAX_SHARDS = 45;
+const MAX_WORKFLOW_BYTES = 450_000;
+
+/**
+ * Actions with no end-to-end cases, each with the reason.
+ *
+ * This list may only ever shrink. A composite action cannot be driven by the harness — only the
+ * runner can invoke one — so those keep hand-written workflows; anything else in this list is a gap.
+ */
+const E2E_EXEMPTIONS: Record<string, string> = {
+  'actions/bun/setup-cached': 'composite: wraps setup-bun and actions/cache, which only the runner can run',
+  'actions/common/create-pull-request': 'composite: orchestrates create-branch, commit-changes and the PR call',
+  'actions/common/render-template-and-commit': 'composite: orchestrates render-template and commit-changes',
+  'actions/java-gradle/auto-spotless': 'composite: sets up Java and Gradle, runs spotless, then create-patch',
+  'actions/java-gradle/coverage-codecov': 'composite: checks out, sets up Java and Gradle, then uploads to Codecov',
+  'actions/java-gradle/setup-base-environment': 'composite: sets up Java, Gradle and their caches',
+  'actions/rust/auto-format': 'composite: sets up rustfmt, runs cargo fmt, then create-patch',
+  'actions/rust/cargo-check': 'composite: checks out inputs.repository as its own first step',
+  'actions/rust/clippy': 'composite: checks out inputs.repository as its own first step',
+  'actions/rust/coverage-codecov': 'composite: checks out, measures with cargo-llvm-cov, then uploads to Codecov',
+  'actions/rust/test': 'composite: checks out inputs.repository as its own first step',
+  'actions/test/setup-e2e': 'composite: the harness for the workflows that still need one',
+};
+
+/**
+ * Suites whose token deliberately lacks a scope `docs.yaml` lists on a token input, each with why.
+ *
+ * Without an entry here, a token narrower than the action's documented needs reads as drift. With
+ * one, the narrowing is a decision someone wrote down. `missing` lists the exact entries the reason
+ * covers, so a gap added later is not waved through by a reason written for a different one.
+ */
+const NARROWER_TOKEN_SUITES: Record<string, { missing: string[]; reason: string }> = {
+  'actions/maintenance/auto-approve-pr': {
+    missing: ['contents: read (input token)'],
+    reason:
+      'docs.yaml needs it only on a private repository; the scratch repository is public, and the reviewing identity is kept to pull-requests: write',
+  },
+  'actions/maintenance/ensure-actions-are-executed': {
+    missing: ['actions: read (input token)'],
+    reason:
+      'only the jobs fallback reads actions, and it needs GITHUB_RUN_ID, which the harness does not pass, so every case reads check runs alone',
+  },
+  'actions/release/publish-build-commit': {
+    missing: [
+      'actions: read (input github-token)',
+      'pull-requests: write (input token)',
+      'issues: write (input token)',
+    ],
+    reason:
+      'the cases drive the helper in publish mode over a staged directory, without an artifact record or a pull request; the Dry Run Through The Runner extra job reads the artifact with actions: read',
+  },
+  'actions/maintenance/wipe-cache': {
+    missing: ['actions: read (input token)', 'actions: write (input token)'],
+    reason: 'every case stops before the cache API, so the suite runs on metadata: read and never deletes a cache',
+  },
+};
+
+/** Parses a YAML file, naming it in the error a syntax mistake would otherwise throw anonymously. */
+function parseYamlFile(file: string): unknown {
+  try {
+    return parse(fs.readFileSync(path.join(ROOT_DIR, file), 'utf8'));
+  } catch (error) {
+    throw new Error(`${file}: not valid YAML: ${(error as Error).message}`, { cause: error });
+  }
+}
+
+/** Reads and validates an action's `docs.yaml`, or `undefined` when it has none. */
+function docsOf(actionPath: string): ActionDocs | undefined {
+  const file = `${actionPath}/${DOCS_FILE_NAME}`;
+  if (!fs.existsSync(path.join(ROOT_DIR, file))) {
+    return undefined;
+  }
+  const manifest = parseActionManifest(
+    fs.readFileSync(path.join(ROOT_DIR, actionPath, 'action.yaml'), 'utf8'),
+    `${actionPath}/action.yaml`,
+  );
+  const result = validateDocsFile(parseYamlFile(file), {
+    file,
+    inputNames: new Set(manifest.inputs.map((input) => input.name)),
+  });
+  if (!result.ok) {
+    throw new Error(result.problems.join('\n'));
+  }
+
+  return result.docs;
+}
+
+/**
+ * Sources whose jobs run harden-runner in audit mode, with how many such steps each has. They moved
+ * from hand-written workflows that already audited. THIS LIST MAY ONLY SHRINK: lower a count when a
+ * job starts blocking, and delete the entry at zero.
+ */
+const AUDITING_SOURCES: Readonly<Record<string, number>> = {
+  '.github/verify/bun-setup-cached.yaml': 3,
+  '.github/verify/configs-checkstyle.yaml': 1,
+  '.github/verify/configs-renovate.yaml': 1,
+  '.github/verify/java-gradle-coverage-codecov.yaml': 4,
+  '.github/verify/java-gradle-setup-base-environment.yaml': 1,
+  '.github/verify/rust-coverage-codecov.yaml': 3,
+  '.github/verify/terrace-helm-sync.yaml': 1,
+};
+
+const SOURCES = readSources(ROOT_DIR);
+
+/** How many steps of a source's jobs set harden-runner's `egress-policy` to `audit`, read as parsed YAML. */
+function auditSteps(source: (typeof SOURCES)[number]): number {
+  return source.jobIds
+    .flatMap((id) => {
+      const steps = jobValue(source, id)['steps'];
+      return Array.isArray(steps) ? (steps as { with?: Record<string, unknown> }[]) : [];
+    })
+    .filter((step) => step.with?.['egress-policy'] === 'audit').length;
+}
+const GENERATED = generate(ROOT_DIR);
+const E2E_GROUPS = e2eGroups(SOURCES);
+
+/** Each action's token-input scopes from `docs.yaml` that its end-to-end token lacks. */
+function tokenScopeGaps(): Record<string, string[]> {
+  const gaps: Record<string, string[]> = {};
+
+  // A tokenless suite hands the action no token at all, so it has no token scope to compare.
+  for (const source of SOURCES.filter((candidate) => candidate.e2e?.tokenPermissions !== undefined)) {
+    const actionPath = `actions/${source.target}`;
+    const docs = docsOf(actionPath);
+    const missing = docs === undefined ? [] : missingTokenInputScopes(actionTokenPermissions(source), docs.permissions);
+
+    if (missing.length > 0) {
+      gaps[actionPath] = missing.map(
+        (permission) => `${permission.scope}: ${permission.access} (input ${permission.token})`,
+      );
+    }
+  }
+
+  return gaps;
+}
+
+/** Reads `runs.using` without a YAML parse, which is all the composite/node split needs. */
+function runtimeOf(actionPath: string): string {
+  const manifest = fs.readFileSync(path.join(ROOT_DIR, actionPath, 'action.yaml'), 'utf8');
+
+  return /^\s*using:\s*'?([\w-]+)'?/m.exec(manifest)?.[1] ?? 'unknown';
+}
+
+/** The parsed jobs of a generated workflow on disk. */
+function jobsOf(file: string): Record<string, Record<string, unknown>> {
+  return (
+    parse(fs.readFileSync(path.join(ROOT_DIR, file), 'utf8')) as { jobs: Record<string, Record<string, unknown>> }
+  ).jobs;
+}
+
+/** The text of one job of a generated workflow, as YAML. */
+function jobText(file: string, id: string): string {
+  return JSON.stringify(jobsOf(file)[id]);
+}
+
+/** Every action directory with end-to-end cases. */
+async function actionsWithCases(): Promise<string[]> {
+  const files = await scanSorted(`actions/*/*/${E2E_DIRECTORY}/*.e2e.test.ts`);
+
+  return [...new Set(files.map((file) => file.split('/').slice(0, 3).join('/')))];
+}
+
+describe('end-to-end contract', () => {
+  it('gives every node action end-to-end cases, or a stated exemption', async () => {
+    const manifests = await scanSorted('actions/*/*/action.yaml');
+    const withCases = new Set(await actionsWithCases());
+
+    const missing = manifests
+      .map((manifest) => path.posix.dirname(manifest))
+      .filter((actionPath) => runtimeOf(actionPath).startsWith('node'))
+      .filter((actionPath) => !withCases.has(actionPath) && !(actionPath in E2E_EXEMPTIONS));
+
+    expect(missing, `add ${E2E_DIRECTORY}/ cases or an entry in E2E_EXEMPTIONS with a reason`).toEqual([]);
+  });
+
+  it('exempts nothing that has cases anyway, and nothing that does not exist', async () => {
+    const withCases = new Set(await actionsWithCases());
+
+    expect(Object.keys(E2E_EXEMPTIONS).filter((actionPath) => withCases.has(actionPath))).toEqual([]);
+    expect(
+      Object.keys(E2E_EXEMPTIONS).filter(
+        (actionPath) => !fs.existsSync(path.join(ROOT_DIR, actionPath, 'action.yaml')),
+      ),
+    ).toEqual([]);
+  });
+
+  it('gives every action with cases a source with an e2e block, and an e2e block only to such an action', async () => {
+    const withCases = await actionsWithCases();
+    const withBlock = SOURCES.filter((source) => source.e2e !== undefined).map((source) => `actions/${source.target}`);
+
+    expect(withBlock, "add an e2e block to the action's source in .github/verify/, or remove it").toEqual(withCases);
+    for (const actionPath of withBlock) {
+      expect(hasE2eCases(ROOT_DIR, actionPath)).toBe(true);
+    }
+  });
+
+  // The harness passes its one token to the action's token input, so a scope docs.yaml documents on
+  // that input is one the cases exercise. Compared exactly, so the check fails both ways.
+  it('grants every token the scopes docs.yaml documents on its token input, or states why not', () => {
+    const explained = Object.fromEntries(
+      Object.entries(NARROWER_TOKEN_SUITES).map(([actionPath, { missing }]) => [actionPath, missing]),
+    );
+
+    expect(tokenScopeGaps(), 'grant the missing scopes in the source, or record them in NARROWER_TOKEN_SUITES').toEqual(
+      explained,
+    );
+  });
+
+  // C1: the job that mints a token holds the App's private key while it runs code under test, so a
+  // suite gets one only when its cases reach GitHub, and every suite whose cases do gets one.
+  it('gives a suite a token if and only if its cases reach the scratch repository', () => {
+    const reachesGitHub = (source: (typeof SOURCES)[number]): boolean =>
+      fs
+        .readdirSync(path.join(ROOT_DIR, 'actions', source.target, E2E_DIRECTORY), {
+          recursive: true,
+          withFileTypes: true,
+        })
+        .filter((entry) => entry.isFile() && entry.name.endsWith('.ts'))
+        .some((entry) =>
+          /\bScratchRepo\b|\bE2E_GITHUB_TOKEN\b/.test(fs.readFileSync(path.join(entry.parentPath, entry.name), 'utf8')),
+        );
+
+    const mismatched = SOURCES.filter((source) => source.e2e !== undefined)
+      .filter((source) => (source.e2e?.tokenPermissions !== undefined) !== reachesGitHub(source))
+      .map(
+        (source) => `${source.file}: ${reachesGitHub(source) ? 'needs token-permissions' : 'remove token-permissions'}`,
+      );
+
+    expect(mismatched).toEqual([]);
+  });
+
+  it('widens an e2e allowlist never to a package registry', () => {
+    for (const source of SOURCES) {
+      expect(
+        (source.e2e?.extraEndpoints ?? []).filter((endpoint) => /registry|npmjs|pypi|crates/.test(endpoint)),
+      ).toEqual([]);
+    }
+  });
+});
+
+describe('generated Verify workflows', () => {
+  it('match their generator', () => {
+    expect(findDrift(ROOT_DIR), "run 'bun run generate-verify' and commit the result").toEqual([]);
+  });
+
+  // A target the plan marks as needing no install may run while the install job is skipped, when
+  // inputs.cache-key is empty and the dependency cache does not exist for this commit.
+  it('reads the dependency cache only in targets the plan marks as needing the install job', () => {
+    const noInstall = new Set(GENERATED.plan.targets.filter((target) => !target.install).map((target) => target.id));
+    expect(noInstall.size).toBeGreaterThan(0);
+    for (const source of SOURCES.filter((candidate) => noInstall.has(candidate.target))) {
+      expect(source.text, `${source.file} reads inputs.cache-key but its target skips install`).not.toMatch(
+        /inputs\.cache-key/,
+      );
+    }
+  });
+
+  it(`stay within ${MAX_SHARDS} reusable workflows, so a run never reaches GitHub's limit of 50`, () => {
+    expect(
+      GENERATED.shards.length,
+      'too many shards: raise SHARD_SIZE_BUDGET or merge categories before GitHub refuses to start the run',
+    ).toBeLessThanOrEqual(MAX_SHARDS);
+  });
+
+  it(`keep every generated file under ${MAX_WORKFLOW_BYTES} bytes, below GitHub's 500 KB limit`, () => {
+    for (const [file, content] of GENERATED.files) {
+      expect(Buffer.byteLength(content), `${file} is too large; lower SHARD_SIZE_BUDGET`).toBeLessThan(
+        MAX_WORKFLOW_BYTES,
+      );
+    }
+  });
+
+  it('keep job ids unique across every shard', () => {
+    const ids = GENERATED.shards.flatMap((shard) => Object.keys(jobsOf(shardFile(shard.id))));
+
+    expect(ids.filter((id, index) => ids.indexOf(id) !== index)).toEqual([]);
+  });
+
+  it('end verify.yaml with the summary job, which needs every other job', () => {
+    const jobs = jobsOf(VERIFY_WORKFLOW);
+    const summary = jobs[SUMMARY_JOB_ID];
+
+    expect(summary).toBeDefined();
+    expect(summary?.['name']).toBe(
+      `\${{ github.event_name == 'pull_request' && '${SUMMARY_JOB_NAME}' || format('${SUMMARY_JOB_NAME} ({0})', github.event_name) }}`,
+    );
+    expect(summary?.['if']).toBe('${{ always() }}');
+    expect(summary?.['needs']).toEqual(Object.keys(jobs).filter((id) => jobs[id] !== summary));
+  });
+
+  // P2: a push to main that lands a verified pull request head plans no target. Its token reaches
+  // the plan step on that event alone, a run there is never cancelled, and install still seeds the cache.
+  it('give the plan step a token only on a push to main, and cancel only pull request runs', () => {
+    const workflow = parseYamlFile(VERIFY_WORKFLOW) as {
+      concurrency: Record<string, unknown>;
+      jobs: Record<
+        string,
+        { if?: string; permissions?: Record<string, string>; steps?: { id?: string; env?: Record<string, string> }[] }
+      >;
+    };
+    const planStep = workflow.jobs['plan']?.steps?.find((step) => step.id === 'plan');
+
+    expect(workflow.concurrency['cancel-in-progress']).toBe("${{ github.event_name == 'pull_request' }}");
+    expect(workflow.jobs['plan']?.permissions).toEqual({ contents: 'read', checks: 'read' });
+    expect(planStep?.env?.['CHECKS_TOKEN']).toBe(
+      "${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.token || '' }}",
+    );
+    expect(workflow.jobs['install']?.if).toContain("needs.plan.outputs.seed-cache == 'true'");
+    expect(GENERATED.plan.global).toContain('scripts/lib/verify/merged-head.ts');
+  });
+
+  // The jobs the generator writes hold the scratch-repository token, so they block. A source job may
+  // still audit, where it installs toolchains from hosts nobody has listed yet; AUDITING_SOURCES
+  // records those, and may only shrink.
+  it('block egress in every job the generator writes, and audit only where a source is recorded', () => {
+    for (const file of GENERATED.files.keys()) {
+      if (!file.endsWith('.yaml')) {
+        continue;
+      }
+      const jobs = jobsOf(file);
+      if (file === VERIFY_WORKFLOW) {
+        for (const group of E2E_GROUPS) {
+          expect(JSON.stringify(jobs[group.id]), `${group.id} must block`).toContain('"egress-policy":"block"');
+        }
+        expect(fs.readFileSync(path.join(ROOT_DIR, file), 'utf8')).not.toContain('egress-policy: audit');
+      }
+    }
+
+    const auditing = Object.fromEntries(
+      SOURCES.map((source) => [source.file, auditSteps(source)]).filter(([, count]) => (count as number) > 0),
+    );
+
+    expect(
+      auditing,
+      'a source audits egress where AUDITING_SOURCES does not record it; block, or lower the count',
+    ).toEqual(AUDITING_SOURCES);
+  });
+
+  // C1: a job that reads a secret must not be able to send it anywhere but the hosts it names. Audit
+  // mode records egress and blocks nothing, so it is no control for a job that holds a key.
+  it('block egress in every source job that reads a secret', () => {
+    const auditingWithSecrets = SOURCES.flatMap((source) =>
+      source.jobIds
+        .filter((id) => JSON.stringify(jobValue(source, id)).includes('secrets.'))
+        .filter((id) => {
+          const steps = jobValue(source, id)['steps'];
+          return (
+            Array.isArray(steps) &&
+            (steps as { with?: Record<string, unknown> }[]).some((step) => step.with?.['egress-policy'] === 'audit')
+          );
+        })
+        .map((id) => `${source.file}#${id}`),
+    );
+
+    expect(auditingWithSecrets).toEqual([]);
+  });
+
+  // The whole reason the install is a separate job: harden-runner sets one policy per job, so the
+  // only way for the job holding the token to have no route to a package registry is not to install.
+  it('give the job that holds the scratch-repository token no route to a package registry', () => {
+    expect(E2E_ALLOWED_ENDPOINTS).not.toContain('registry.npmjs.org:443');
+    expect(INSTALL_ALLOWED_ENDPOINTS).toContain('registry.npmjs.org:443');
+
+    for (const group of E2E_GROUPS) {
+      const job = jobText(VERIFY_WORKFLOW, group.id);
+
+      expect(job).toContain('egress-policy');
+      expect(job).not.toContain('registry.npmjs.org');
+      expect(job).not.toContain('bun/setup-cached@');
+      expect(job).toContain('fail-on-cache-miss');
+      if (group.tokenPermissions === undefined) {
+        expect(job, 'a tokenless suite holds no secret').not.toContain('secrets.');
+        expect(job).not.toContain('api.github.com');
+      } else {
+        expect(job).toMatch(/permission-[\w-]+/);
+        expect(job, 'a job that holds the App key disables sudo').toContain('"disable-sudo-and-containers":true');
+      }
+    }
+  });
+
+  // P8: a shard holds no end-to-end job and no token step; each suite runs in the group job of its
+  // token scopes, which the plan file names, and nowhere else.
+  it('run every end-to-end suite in the group job of its token scopes, and mint no token in a shard', () => {
+    const groupIds = new Set(E2E_GROUPS.map((group) => group.id));
+    for (const source of SOURCES) {
+      const planned = GENERATED.plan.targets.find((target) => target.id === source.target);
+      expect(planned?.e2eGroup, source.file).toBe(source.e2e === undefined ? null : e2eGroupId(source.e2e));
+      expect(planned?.shard === null, `${source.file}: a shard exactly when it has own jobs`).toBe(
+        source.jobIds.length === 0,
+      );
+    }
+    expect(Object.keys(jobsOf(VERIFY_WORKFLOW)).filter((id) => id.startsWith('e2e-'))).toEqual([...groupIds]);
+    expect(jobsOf(VERIFY_WORKFLOW)[SUMMARY_JOB_ID]?.['needs']).toEqual(expect.arrayContaining([...groupIds]));
+    for (const shard of GENERATED.shards) {
+      const text = fs.readFileSync(path.join(ROOT_DIR, shardFile(shard.id)), 'utf8');
+      expect(text, `${shard.id} runs end-to-end cases`).not.toMatch(/bun run e2e /);
+    }
+  });
+
+  /**
+   * `actions/cache` returns an entry only when the key and a version hashed from the `path` input both
+   * match, and it hashes that input exactly as written, so the job that saves and every job that
+   * restores have to name the paths identically. The set has to cover every workspace member: bun
+   * leaves each package's own dependencies in its own `node_modules`.
+   */
+  it('save and restore the same dependency paths, covering every workspace', () => {
+    const pathsOf = (job: Record<string, unknown>): string | undefined =>
+      (job['steps'] as { uses?: string; with?: { path?: string } }[]).find((step) =>
+        step.uses?.startsWith('actions/cache'),
+      )?.with?.path;
+    const saved = pathsOf(jobsOf(VERIFY_WORKFLOW)['install']);
+
+    expect(saved).toBeDefined();
+    expect(pathsOf(jobsOf(VERIFY_WORKFLOW)['build'])).toEqual(saved);
+    for (const pattern of workspaceModulePaths(workspaceMemberDirectories(ROOT_DIR))) {
+      expect(saved?.split('\n')).toContain(pattern);
+    }
+    for (const group of E2E_GROUPS) {
+      expect(pathsOf(jobsOf(VERIFY_WORKFLOW)[group.id])).toEqual(saved);
+    }
+  });
+});
+
+/**
+ * Action directories that lie in no target's inputs, each with the reason. May only shrink: an
+ * action in no target is one whose changes Verify never runs anything for.
+ */
+const UNTARGETED_ACTIONS: Record<string, string> = {};
+
+describe('target coverage', () => {
+  // C3d: actions/rust/{cargo-check,clippy,test} had no target, so their changes ran nothing.
+  it('puts every action directory inside some target, or in UNTARGETED_ACTIONS with a reason', async () => {
+    const actions = [...new Set((await scanSorted('actions/*/*/action.yaml')).map((file) => path.posix.dirname(file)))];
+    const covered = (action: string): boolean =>
+      GENERATED.plan.targets.some((target) =>
+        target.inputs.some((input) => input === action || action.startsWith(`${input}/`)),
+      );
+
+    expect(actions.filter((action) => !covered(action) && UNTARGETED_ACTIONS[action] === undefined)).toEqual([]);
+    expect(Object.keys(UNTARGETED_ACTIONS).filter((action) => covered(action))).toEqual([]);
+  });
+});
+
+describe('affected-target detection against this repository', () => {
+  const { plan } = GENERATED;
+  const pr: PlanEvent = { name: 'pull_request', baseRef: 'main' };
+  const select = (files: string[]) => selectTargets(plan, pr, files).targets;
+
+  it('runs every target that builds or tests with packages/ts-util for a change to it', () => {
+    const expected = plan.targets
+      .filter((target) => target.inputs.includes('packages/ts-util'))
+      .map((target) => target.id);
+
+    expect(expected.length).toBeGreaterThan(40);
+    expect(select(['packages/ts-util/src/index.ts'])).toEqual(expected.sort());
+  });
+
+  // C3: each of these changes every bundle or every end-to-end run, and each used to select nothing.
+  const building = (): string[] =>
+    plan.targets
+      .filter((target) => target.buildDirs.length > 0)
+      .map((target) => target.id)
+      .sort();
+  const withCases = (): string[] =>
+    SOURCES.filter((source) => source.e2e !== undefined)
+      .map((source) => source.target)
+      .sort();
+
+  it.each([
+    'tsconfig.json',
+    'scripts/build-action.ts',
+    'scripts/lib/action-sources.ts',
+    'scripts/lib/utils.ts',
+    'scripts/lib/sys.ts',
+  ])('runs every target that builds for a change to %s', (file) => {
+    expect(select([file])).toEqual(expect.arrayContaining(building()));
+  });
+
+  it.each(['vitest.e2e.config.ts', 'vitest.e2e.setup.ts', 'vitest.aliases.ts', 'package.json'])(
+    'runs every target with end-to-end cases for a change to %s',
+    (file) => {
+      expect(select([file])).toEqual(expect.arrayContaining(withCases()));
+    },
+  );
+
+  it.each(['scripts/lib/verify/affected.ts', 'scripts/lib/verify/plan-step.ts', 'scripts/verify-plan.ts'])(
+    'runs every target for a change to the planner, %s',
+    (file) => {
+      expect(select([file])).toEqual(plan.targets.map((target) => target.id).sort());
+    },
+  );
+
+  it('runs every target with end-to-end cases for a lockfile change', () => {
+    const withCases = SOURCES.filter((source) => source.e2e !== undefined).map((source) => source.target);
+
+    expect(select(['bun.lock'])).toEqual(expect.arrayContaining(withCases));
+  });
+
+  it("runs a single action's target, and the targets that run it, for a change to that action", () => {
+    expect(select(['actions/common/find-patch/helper/src/find.ts'])).toEqual([
+      'common/find-patch',
+      'common/generated-files-verdict',
+    ]);
+  });
+
+  it('runs nothing for a README-only change', () => {
+    expect(select(['actions/common/find-patch/README.md', 'actions/release/build-actions/CHANGELOG.md'])).toEqual([]);
+  });
+
+  it('runs nothing for a generated-docs change to examples and docs.yaml', () => {
+    expect(
+      select([
+        'actions/common/find-patch/README.md',
+        'actions/common/find-patch/docs.yaml',
+        'actions/common/find-patch/examples/workflow-run-commit.yaml',
+        'actions/common/delete-branch/examples/delete-closed-branch.yaml',
+      ]),
+    ).toEqual([]);
+  });
+
+  it('still runs the target for a file that only looks like an example', () => {
+    expect(select(['actions/common/find-patch/helper/src/examples.ts'])).toContain('common/find-patch');
+  });
+
+  it('runs the targets that read the terrace-helm fixture for a change to it, through extra-inputs', () => {
+    expect(select(['.github/testdata/terrace-helm/terrace.yaml'])).toEqual([
+      'helm/update-chart-version',
+      'terrace/helm-check',
+      'terrace/helm-diff',
+      'terrace/helm-sync',
+    ]);
+  });
+
+  it('runs only the scheduled targets on the weekly schedule', () => {
+    expect(selectTargets(plan, { name: 'schedule' }, 'all').targets).toEqual(['configs/renovate']);
+  });
+
+  it('keeps the targets restricted to main off a pull request against another base', () => {
+    const restricted = [
+      'bun/setup-cached',
+      'common/create-pull-request',
+      'common/render-template-and-commit',
+      'helm/update-chart-version',
+    ];
+
+    expect(plan.targets.filter((target) => target.pullRequestBranches !== null).map((target) => target.id)).toEqual(
+      restricted,
+    );
+    const selected = selectTargets(plan, { name: 'pull_request', baseRef: 'release' }, ['bun.lock']).targets;
+    for (const target of restricted) {
+      expect(selected).not.toContain(target);
+    }
+  });
+
+  // P1: a real pull request that edits a source also regenerates its shard file, which used to be an
+  // input of every shard-mate. Both files together must still select the edited target alone.
+  it('runs only the edited target for a source edit together with its regenerated shard file', () => {
+    const findPatch = plan.targets.find((target) => target.id === 'common/find-patch');
+
+    expect(findPatch).toBeDefined();
+    expect(select(['.github/verify/common-find-patch.yaml', shardFile(findPatch?.shard ?? '')])).toEqual([
+      'common/find-patch',
+    ]);
+  });
+
+  it('lists no generated workflow among any target inputs', () => {
+    expect(
+      plan.targets.flatMap((target) => target.inputs.filter((input) => input.startsWith('.github/workflows/'))),
+    ).toEqual([]);
+  });
+
+  it('keeps verify.yaml out of the global inputs; its shared jobs select by hash', () => {
+    expect(plan.global).not.toContain('.github/workflows/verify.yaml');
+    expect(plan.sharedJobsSha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(plan.targets.every((target) => /^[0-9a-f]{64}$/.test(target.jobsSha256))).toBe(true);
+  });
+});

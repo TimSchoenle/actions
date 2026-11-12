@@ -9,10 +9,10 @@ import { createReleaseDownloadPorts, ReleaseDownloader, sha256File } from 'actio
 import { InvalidInputError, ReleaseNotFoundError } from './errors.js';
 import { getInput, setOutput } from './generated/action-io.js';
 import { installCosign, installOras, installTerrace } from './installer.js';
-import { fetchJson, listReleases } from './releases.js';
+import { fetchJson, latestRelease } from './releases.js';
 import { readCliPin, REPO_CONFIG_FILE } from './repo-config.js';
 import * as toolCache from './tool-cache.js';
-import { formatVersion, isExact, parseVersionRequest, selectRelease } from './version.js';
+import { formatVersion, isExact, parseVersionRequest } from './version.js';
 
 import type { InstallPorts, Runner } from './installer.js';
 import type { FetchJson } from './releases.js';
@@ -138,6 +138,19 @@ function toolVersionInput(name: 'cosign_version' | 'oras_version', value: string
   return trimmed;
 }
 
+const SHA256_PATTERN = /^[\dA-Fa-f]{64}$/;
+
+/** A pinned SHA-256 from an input, required: an empty pin would verify nothing. */
+function sha256Input(name: 'cosign_checksums_sha256' | 'oras_checksums_sha256', value: string): string {
+  const trimmed = value.trim();
+
+  if (!SHA256_PATTERN.test(trimmed)) {
+    throw new InvalidInputError(name, `must be a SHA-256 of 64 hex digits, got ${JSON.stringify(value)}.`);
+  }
+
+  return trimmed.toLowerCase();
+}
+
 /** The version the caller asked for: the input when set, otherwise the `cli` pin in `terrace.yaml`. */
 async function requestedVersion(
   dependencies: ActionDependencies,
@@ -184,8 +197,7 @@ async function resolveRelease(
     return formatVersion(request);
   }
 
-  const available = await listReleases(dependencies.fetchJson, token);
-  const release = selectRelease(request, available);
+  const release = await latestRelease(dependencies.fetchJson, token, request.major, request.minor);
 
   if (release === undefined) {
     throw new ReleaseNotFoundError(`No terrace-contract ${formatVersion(request)}.x release is published.`);
@@ -198,7 +210,9 @@ export async function run(dependencies: ActionDependencies = defaultDependencies
   await runAction(async () => {
     const wantsOras = booleanInput('oras', getInput('oras'));
     const cosignVersion = toolVersionInput('cosign_version', getInput('cosign_version'), true);
+    const cosignChecksums = sha256Input('cosign_checksums_sha256', getInput('cosign_checksums_sha256'));
     const orasVersion = wantsOras ? toolVersionInput('oras_version', getInput('oras_version'), false) : '';
+    const orasChecksums = wantsOras ? sha256Input('oras_checksums_sha256', getInput('oras_checksums_sha256')) : '';
     const { request, source } = await requestedVersion(
       dependencies,
       getInput('version'),
@@ -209,11 +223,11 @@ export async function run(dependencies: ActionDependencies = defaultDependencies
     core.info(`terrace-contract ${formatVersion(request)} from ${source} resolves to ${version}.`);
 
     const { ports, runner } = dependencies;
-    const cosign = await installCosign(ports, runner, cosignVersion);
+    const cosign = await installCosign(ports, runner, cosignVersion, cosignChecksums);
     const terrace = await installTerrace(ports, runner, version, cosign.path);
     // Every requested tool is installed before anything is published, so a failed step leaves
     // nothing on PATH and no outputs for a later step to mistake for a working install.
-    const oras = wantsOras ? await installOras(ports, runner, orasVersion) : undefined;
+    const oras = wantsOras ? await installOras(ports, runner, orasVersion, orasChecksums) : undefined;
 
     dependencies.addPath(path.dirname(cosign.path));
     dependencies.addPath(path.dirname(terrace.path));

@@ -3,6 +3,9 @@ import { fileURLToPath } from 'node:url';
 import { rebuildStaleBundles } from './packages/e2e/src/autobuild.js';
 import { assertE2eConfigured } from './packages/e2e/src/scratch-repo.js';
 
+/** Set to `1` by the generated job of a suite that holds no token (no `token-permissions`). */
+const TOKENLESS_ENV = 'E2E_TOKENLESS';
+
 /** Set to `1` to run on whatever bundles are on disk, without rebuilding stale ones first. */
 const NO_AUTOBUILD_ENV = 'E2E_NO_AUTOBUILD';
 
@@ -20,7 +23,12 @@ export function setup(): void {
   // token is a configuration failure and must stop the run before a single file loads; the suites
   // that do reach GitHub would otherwise be the only thing reporting it, one error at a time.
   if (process.env['CI'] !== undefined) {
-    assertE2eConfigured();
+    // A suite whose job holds no token says so, and only ScratchRepo, which every case that reaches
+    // GitHub goes through, insists on credentials. A case that starts reaching GitHub without its
+    // source asking for a token therefore still fails, at its first ScratchRepo, instead of passing.
+    if (process.env[TOKENLESS_ENV] !== '1') {
+      assertE2eConfigured();
+    }
     // CI never builds here: the cases run the bundles the verify workflow built and installed.
     return;
   }

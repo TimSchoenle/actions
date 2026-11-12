@@ -43,6 +43,39 @@ describe('translatePosixClasses', () => {
   );
 });
 
+// In POSIX a `]` right after `[` or `[^` is a literal member of the set. JavaScript reads `[]` as an
+// empty class instead, so `[]a-z]` became "match nothing, then `a-z]`" and `[^]/]` "any character,
+// then `/]`". These patterns gate approvals and merges, so the difference opens or closes a gate.
+describe('a literal ] at the start of a bracket expression', () => {
+  it.each([
+    ['[]a-z]', '[\\]a-z]'],
+    ['[^]/]', '[^\\]/]'],
+    ['^[]]+$', '^[\\]]+$'],
+    ['[][:digit:]]', '[\\]0-9]'],
+  ])('translates %s to %s', (pattern, expected) => {
+    expect(translatePosixClasses(pattern)).toBe(expected);
+  });
+
+  it('matches like bash: []a-z] takes a ] or a lower-case letter', () => {
+    const regex = compilePosixRegex('^[]a-z]+$');
+
+    expect(regex.test(']ab]')).toBe(true);
+    expect(regex.test('aB')).toBe(false);
+  });
+
+  it('matches like bash: [^]/] takes anything but ] and /', () => {
+    const regex = compilePosixRegex('^[^]/]+$');
+
+    expect(regex.test('feature-x')).toBe(true);
+    expect(regex.test('feature/x')).toBe(false);
+    expect(regex.test('x]')).toBe(false);
+  });
+
+  it('still closes a bracket expression at a later ]', () => {
+    expect(translatePosixClasses('[a]]')).toBe('[a]]');
+  });
+});
+
 describe('compilePosixRegex', () => {
   it('compiles an unanchored, case-sensitive pattern', () => {
     const regex = compilePosixRegex('^feature/.*');

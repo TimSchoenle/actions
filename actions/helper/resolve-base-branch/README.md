@@ -9,7 +9,7 @@ outside the markers.
 
 Resolve the given base branch or return default branch. With optional existence check.
 
-[actions-helper-resolve-base-branch-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-resolve-base-branch-v2.0.4) · JavaScript action (node24)
+[actions-helper-resolve-base-branch-v2.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-helper-resolve-base-branch-v2.0.5) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -21,7 +21,7 @@ Resolve the given base branch or return default branch. With optional existence 
 # An empty branch_name resolves the repository's default branch. The step fails when the branch
 # does not exist, so the checkout never runs against a missing ref.
 - id: base
-  uses: TimSchoenle/actions/actions/helper/resolve-base-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-helper-resolve-base-branch-v2.0.4
+  uses: TimSchoenle/actions/actions/helper/resolve-base-branch@actions-helper-resolve-base-branch-v2.0.5 # tag=actions-helper-resolve-base-branch-v2.0.5
   with:
     token: ${{ steps.token.outputs.token }}
     repository: acme/helm-charts
@@ -42,7 +42,7 @@ Resolve the given base branch or return default branch. With optional existence 
 # silent_fail turns only a missing branch into an empty output. A token that cannot see the
 # repository still fails the step, rather than reading as "branch not found".
 - id: base
-  uses: TimSchoenle/actions/actions/helper/resolve-base-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-helper-resolve-base-branch-v2.0.4
+  uses: TimSchoenle/actions/actions/helper/resolve-base-branch@actions-helper-resolve-base-branch-v2.0.5 # tag=actions-helper-resolve-base-branch-v2.0.5
   with:
     token: ${{ steps.token.outputs.token }}
     repository: ${{ github.repository }}
@@ -50,7 +50,7 @@ Resolve the given base branch or return default branch. With optional existence 
     silent_fail: 'true'
 
 - if: steps.base.outputs.base_branch == ''
-  uses: TimSchoenle/actions/actions/common/create-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-create-branch-v2.0.4
+  uses: TimSchoenle/actions/actions/common/create-branch@actions-common-create-branch-v2.0.5 # tag=actions-common-create-branch-v2.0.5
   with:
     token: ${{ steps.token.outputs.token }}
     repository: ${{ github.repository }}
@@ -100,7 +100,7 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-helper-resolve-base-branch.yaml`](../../../.github/workflows/verify-action-helper-resolve-base-branch.yaml)
+- End-to-end tests: [`.github/verify/helper-resolve-base-branch.yaml`](../../../.github/verify/helper-resolve-base-branch.yaml)
 - Called from this repository by:
   - [`actions/helm/update-chart-version/action.yaml`](../../../actions/helm/update-chart-version/action.yaml)
 <!-- /docs:generated reference -->

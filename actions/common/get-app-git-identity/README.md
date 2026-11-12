@@ -9,7 +9,7 @@ outside the markers.
 
 Resolves the git identity (username, email, user ID) for a GitHub App bot.
 
-[actions-common-get-app-git-identity-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-get-app-git-identity-v2.0.4) · JavaScript action (node24)
+[actions-common-get-app-git-identity-v2.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-common-get-app-git-identity-v2.0.5) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -31,7 +31,7 @@ jobs:
     permissions: {}
     steps:
       - id: bot
-        uses: TimSchoenle/actions/actions/common/get-app-git-identity@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-get-app-git-identity-v2.0.4
+        uses: TimSchoenle/actions/actions/common/get-app-git-identity@actions-common-get-app-git-identity-v2.0.5 # tag=actions-common-get-app-git-identity-v2.0.5
         with:
           app-slug: my-app
           token: ${{ github.token }}
@@ -82,6 +82,6 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-get-app-git-identity.yaml`](../../../.github/workflows/verify-action-common-get-app-git-identity.yaml)
+- End-to-end tests: [`.github/verify/common-get-app-git-identity.yaml`](../../../.github/verify/common-get-app-git-identity.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

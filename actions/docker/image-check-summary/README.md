@@ -9,7 +9,7 @@ outside the markers.
 
 Collects the fragments docker/image-check legs uploaded with comment: summary and posts one table of every image on the pull request.
 
-[actions-docker-image-check-summary-v2.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-summary-v2.0.5) · Composite action
+[actions-docker-image-check-summary-v2.0.6](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-summary-v2.0.6) · Composite action
 <!-- /docs:generated header -->
 
 The fragments come from [`docker/image-check`](../image-check) legs run with `comment: summary`. A matrix leg can only
@@ -30,7 +30,7 @@ jobs:
         platform: [linux/amd64, linux/arm64]
     steps:
       # ... build and load ...
-      - uses: TimSchoenle/actions/actions/docker/image-check@actions-docker-image-check-v1.1.15 # tag=actions-docker-image-check-v1.1.15
+      - uses: TimSchoenle/actions/actions/docker/image-check@actions-docker-image-check-v1.1.16 # tag=actions-docker-image-check-v1.1.16
         with:
           image: app:test
           platform: ${{ matrix.platform }}
@@ -45,7 +45,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: TimSchoenle/actions/actions/docker/image-check-summary@actions-docker-image-check-summary-v2.0.5 # tag=actions-docker-image-check-summary-v2.0.5
+      - uses: TimSchoenle/actions/actions/docker/image-check-summary@actions-docker-image-check-summary-v2.0.6 # tag=actions-docker-image-check-summary-v2.0.6
 ```
 <!-- /docs:generated usage -->
 
@@ -125,7 +125,7 @@ severities, each count names its own instead of the line under the table.
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-docker-image-check-summary.yaml`](../../../.github/workflows/verify-action-docker-image-check-summary.yaml)
+- End-to-end tests: [`.github/verify/docker-image-check-summary.yaml`](../../../.github/verify/docker-image-check-summary.yaml)
 - Called from this repository by:
-  - [`.github/workflows/verify-action-docker-image-check.yaml`](../../../.github/workflows/verify-action-docker-image-check.yaml)
+  - [`.github/verify/docker-image-check.yaml`](../../../.github/verify/docker-image-check.yaml)
 <!-- /docs:generated reference -->

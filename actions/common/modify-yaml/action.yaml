@@ -2,19 +2,19 @@ name: 'Common Modify YAML'
 description: 'A action to modify a value in a YAML file while strictly preserving comments and structure'
 inputs:
   file:
-    description: 'Path to the YAML file'
+    description: 'Path to the YAML file, relative to the workspace. It must resolve inside the workspace, symbolic links included.'
     required: true
   key:
     description: 'Dot-notation key path'
     required: true
   value:
-    description: 'Value to set'
+    description: 'Value to set. A number, true, false, null, .inf or .nan is written as that YAML type; text that only looks like a number, such as 1.10 or 0123, is written as a string.'
     required: true
 outputs:
   old-value:
     description: 'Value before modification'
   new-value:
-    description: 'Value after modification'
+    description: 'Value after modification, read back from the written file and formatted like old-value. Infinity and .inf both report Infinity.'
 runs:
   using: 'node24'
   main: 'dist/index.js'

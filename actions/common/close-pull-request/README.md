@@ -9,7 +9,7 @@ outside the markers.
 
 Closes a pull request
 
-[actions-common-close-pull-request-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-close-pull-request-v2.0.4) · JavaScript action (node24)
+[actions-common-close-pull-request-v2.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-common-close-pull-request-v2.0.5) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -39,7 +39,7 @@ jobs:
       pull-requests: write # to comment on and close the pull request
     steps:
       - id: close
-        uses: TimSchoenle/actions/actions/common/close-pull-request@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-close-pull-request-v2.0.4
+        uses: TimSchoenle/actions/actions/common/close-pull-request@actions-common-close-pull-request-v2.0.5 # tag=actions-common-close-pull-request-v2.0.5
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -68,9 +68,9 @@ jobs:
 <!-- docs:generated outputs -->
 ## Outputs
 
-| Output   | Description                                                                                                                                  |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `closed` | Whether the pull request was closed (true) or does not exist (false). Closing an already-closed pull request is idempotent and reports true. |
+| Output   | Description                                                                                                                                                              |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `closed` | Whether the pull request was closed (true) or does not exist (false). An already-closed pull request reports true and is left as it is: the comment is not posted again. |
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
@@ -95,8 +95,8 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-close-pull-request.yaml`](../../../.github/workflows/verify-action-common-close-pull-request.yaml)
+- End-to-end tests: [`.github/verify/common-close-pull-request.yaml`](../../../.github/verify/common-close-pull-request.yaml)
 - Called from this repository by:
-  - [`.github/workflows/verify-action-common-create-pull-request.yaml`](../../../.github/workflows/verify-action-common-create-pull-request.yaml)
-  - [`.github/workflows/verify-action-helm-update-chart-version.yaml`](../../../.github/workflows/verify-action-helm-update-chart-version.yaml)
+  - [`.github/verify/common-create-pull-request.yaml`](../../../.github/verify/common-create-pull-request.yaml)
+  - [`.github/verify/helm-update-chart-version.yaml`](../../../.github/verify/helm-update-chart-version.yaml)
 <!-- /docs:generated reference -->

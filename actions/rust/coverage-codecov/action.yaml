@@ -42,6 +42,12 @@ inputs:
       not used, because it still registers the commit with Codecov and so needs a token."
     required: false
     default: 'false'
+  cache:
+    description: "Restore and save the Cargo cache through setup-rust-toolchain: 'true', 'false' or 'auto'. A
+      restored cache holds build scripts and binaries that run in this job, so auto turns it off whenever the job holds
+      an upload credential: use_oidc is true, codecov_token is set, or the job may mint an OIDC token."
+    required: false
+    default: 'auto'
 
 outputs:
   coverage_file:
@@ -50,6 +56,9 @@ outputs:
   test_results_file:
     description: 'Absolute path of the nextest JUnit report. Empty when no report was written.'
     value: ${{ steps.junit.outputs.test_results_file }}
+  cache:
+    description: "Whether the Cargo cache was used: 'true' or 'false', with auto resolved."
+    value: ${{ steps.validate.outputs.cache }}
 
 runs:
   using: 'composite'
@@ -57,6 +66,7 @@ runs:
     # Every boolean is compared against the literal 'true' further down, so 'True' or 'yes' would
     # silently mean false. That is how an upload goes missing without a failing step.
     - name: Validate inputs
+      id: validate
       shell: bash
       env:
         TEST_ARGUMENTS: ${{ inputs.test_arguments }}
@@ -65,6 +75,7 @@ runs:
         TEST_RESULTS: ${{ inputs.test_results }}
         FAIL_CI_IF_ERROR: ${{ inputs.fail_ci_if_error }}
         DRY_RUN: ${{ inputs.dry_run }}
+        CACHE: ${{ inputs.cache }}
       run: |
         set -euo pipefail
         status=0
@@ -95,6 +106,25 @@ runs:
           esac
         done
 
+        # The runner sets ACTIONS_ID_TOKEN_REQUEST_URL only for a job with id-token: write, which a
+        # build script restored from the cache could use whatever use_oidc says.
+        case "${CACHE}" in
+          true | false) cache="${CACHE}" ;;
+          auto)
+            if [[ "${USE_OIDC}" == 'true' || -n "${CODECOV_TOKEN_INPUT}" || -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]]; then
+              cache=false
+            else
+              cache=true
+            fi
+            ;;
+          *)
+            echo "::error::cache must be 'true', 'false' or 'auto', got '${CACHE}'."
+            status=1
+            cache=false
+            ;;
+        esac
+        echo "cache=${cache}" >> "${GITHUB_OUTPUT}"
+
         if [[ "${USE_OIDC}" == 'false' && -z "${CODECOV_TOKEN_INPUT}" && "${DRY_RUN}" == 'false' ]]; then
           echo "::warning::use_oidc is false and codecov_token is empty. Codecov accepts that only from a fork, or from a repository whose Codecov settings disable token authentication."
         fi
@@ -112,17 +142,18 @@ runs:
     # The cache key is shared under its own name because the instrumented build in
     # `target/llvm-cov-target` reuses nothing the uninstrumented test job compiled. Only the
     # default branch saves, so a pull request cannot evict the entry every other pull request
-    # restores from.
+    # restores from. The cache input decides whether there is a cache at all; see Validate inputs.
     - name: Install toolchain
       uses: actions-rust-lang/setup-rust-toolchain@a188e68d0fd2bd36ad51dccb2b07ba6e75105f30 # v2.0.1
       with:
         components: llvm-tools-preview
+        cache: ${{ steps.validate.outputs.cache }}
         cache-shared-key: coverage
         cache-workspaces: '${{ inputs.source_directory }} -> target'
         cache-save-if: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
 
     - name: Install cargo-llvm-cov and nextest
-      uses: taiki-e/install-action@3a3daafd3b7f23b8f65d9f5ba2db203fb59b79e2 # v2.90.2
+      uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2.90.3
       with:
         tool: cargo-llvm-cov,nextest
 
@@ -206,6 +237,8 @@ runs:
       if: ${{ inputs.dry_run != 'true' }}
       uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
       with:
+        # renovate: datasource=github-releases depName=codecov/codecov-cli
+        version: 'v11.3.2'
         files: ${{ steps.paths.outputs.coverage_file }}
         disable_search: true
         disable_telem: true
@@ -219,6 +252,8 @@ runs:
       if: ${{ !cancelled() && inputs.dry_run != 'true' && inputs.test_results == 'true' && steps.junit.outputs.test_results_file != '' }}
       uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
       with:
+        # renovate: datasource=github-releases depName=codecov/codecov-cli
+        version: 'v11.3.2'
         report_type: test_results
         files: ${{ steps.junit.outputs.test_results_file }}
         disable_search: true

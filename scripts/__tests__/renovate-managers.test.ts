@@ -2,8 +2,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
 
-import { EXTRA_JOBS_FILE, PINNED, resolvePins } from '../lib/e2e-workflow.js';
+import { PINNED, resolvePins } from '../lib/verify/pins.js';
+import { SOURCES_DIR } from '../lib/verify/source.js';
 import { ROOT_DIR, scanSorted } from '../lib/utils.js';
 
 /**
@@ -27,7 +29,7 @@ interface CustomManager {
   datasourceTemplate?: string;
 }
 
-const GENERATOR_FILE = 'scripts/lib/e2e-workflow.ts';
+const GENERATOR_FILE = 'scripts/lib/verify/pins.ts';
 
 function customManagers(): CustomManager[] {
   const config = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'renovate.json'), 'utf8')) as {
@@ -125,7 +127,7 @@ describe('Renovate coverage of the workflow generator', () => {
   it('keeps every pin present in the generated workflows, so one branch updates both', () => {
     const workflows = fs
       .readdirSync(path.join(ROOT_DIR, '.github', 'workflows'))
-      .filter((file) => file.startsWith('verify-action-'))
+      .filter((file) => /^verify(?:-[a-z0-9-]+)?\.yaml$/.test(file))
       .map((file) => fs.readFileSync(path.join(ROOT_DIR, '.github', 'workflows', file), 'utf8'))
       .join('\n');
 
@@ -136,23 +138,25 @@ describe('Renovate coverage of the workflow generator', () => {
 });
 
 /**
- * Contract between an extra-jobs fragment and the same managers.
+ * Contract between a Verify source and the same managers.
  *
- * A fragment is copied into its generated workflow verbatim, and lives under `actions/`, which no
- * manager in `renovate.json` reads. A ref written out in full there is therefore a pin Renovate
- * updates in the generated copy and nowhere else — and the drift check then fails on every pull
- * request until someone reverts the bump by hand, because the regenerate job's answer to drift is to
- * rewrite the workflow from the fragment. That is how `harden-runner` sat two minor versions behind
- * in `verify-action-helper-verify-branch-name.yaml` while every other job in it moved.
+ * A source is copied into its generated workflow verbatim. A ref written out in full there is a pin
+ * Renovate has to update in the source and in the generated copy on the same branch, or the drift
+ * check fails on every pull request until someone reverts the bump by hand. That is how
+ * `harden-runner` once sat two minor versions behind in one generated workflow while every other job
+ * in it moved.
  *
- * So fragments name a `PINNED` key instead, and that is what is enforced here.
+ * So a source either names a `PINNED` key, or pins by digest in a file the github-actions manager
+ * claims, so the same branch moves both copies. Both are enforced here.
  */
-describe('Renovate coverage of the extra-jobs fragments', () => {
-  /** `uses:` values a fragment states, with the line they are on for the failure message. */
-  function usesIn(fragment: string): { line: number; value: string }[] {
+describe('Renovate coverage of the Verify sources', () => {
+  const sourcePattern = `${SOURCES_DIR}/*.yaml`;
+
+  /** `uses:` values a source states, with the line they are on for the failure message. */
+  function usesIn(source: string): { line: number; value: string }[] {
     const uses: { line: number; value: string }[] = [];
 
-    fragment.split(/\r?\n/).forEach((line, index) => {
+    source.split(/\r?\n/).forEach((line, index) => {
       const match = /^\s*(?:-\s*)?uses:\s*(\S+)/.exec(line);
 
       if (match) {
@@ -163,41 +167,50 @@ describe('Renovate coverage of the extra-jobs fragments', () => {
     return uses;
   }
 
-  it('finds the fragments this suite is meant to cover', async () => {
+  it('finds the sources this suite is meant to cover', async () => {
     // A glob that silently matched nothing would make every assertion below vacuously true.
-    expect(await scanSorted(`actions/*/*/e2e/${EXTRA_JOBS_FILE}`)).not.toEqual([]);
+    expect(await scanSorted(sourcePattern)).not.toEqual([]);
   });
 
-  it('lets no fragment pin an action itself', async () => {
-    for (const fragmentPath of await scanSorted(`actions/*/*/e2e/${EXTRA_JOBS_FILE}`)) {
-      const fragment = fs.readFileSync(path.join(ROOT_DIR, fragmentPath), 'utf8');
+  it('pins every action a source runs where Renovate moves it', async () => {
+    const config = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'renovate.json'), 'utf8')) as {
+      'github-actions'?: { managerFilePatterns?: string[] };
+    };
+    const claimed = (file: string): boolean =>
+      (config['github-actions']?.managerFilePatterns ?? []).some(
+        (pattern) => pattern.startsWith('/') && pattern.endsWith('/') && new RegExp(pattern.slice(1, -1)).test(file),
+      );
 
-      for (const { line, value } of usesIn(fragment)) {
+    for (const sourcePath of await scanSorted(sourcePattern)) {
+      const source = fs.readFileSync(path.join(ROOT_DIR, sourcePath), 'utf8');
+
+      for (const { line, value } of usesIn(source)) {
         // A local action carries no version, so there is nothing for Renovate to update.
-        if (value.startsWith('./')) {
+        if (value.startsWith('./') || /^pinned:\w+$/.test(value)) {
           continue;
         }
 
+        expect(value, `${sourcePath}:${line} must pin by a 40-character digest`).toMatch(
+          /^[\w.-]+\/[\w./-]+@[a-f0-9]{40}$/,
+        );
         expect(
-          value,
-          `${fragmentPath}:${line} pins an action Renovate cannot see here. Write 'uses: pinned:<key>' ` +
-            'and add the ref to PINNED in scripts/lib/e2e-workflow.ts, where the customManagers read it.',
-        ).toMatch(/^pinned:\w+$/);
+          claimed(sourcePath),
+          `${sourcePath}:${line} pins an action, but no github-actions managerFilePatterns entry claims the file. ` +
+            "Write 'uses: pinned:<key>', or claim .github/verify/ in renovate.json.",
+        ).toBe(true);
       }
     }
   });
 
-  it('resolves every placeholder a fragment names', async () => {
-    for (const fragmentPath of await scanSorted(`actions/*/*/e2e/${EXTRA_JOBS_FILE}`)) {
-      const fragment = fs.readFileSync(path.join(ROOT_DIR, fragmentPath), 'utf8');
+  it('resolves every placeholder a source names', async () => {
+    for (const sourcePath of await scanSorted(sourcePattern)) {
+      const source = fs.readFileSync(path.join(ROOT_DIR, sourcePath), 'utf8');
 
-      expect(() => resolvePins(fragment), `${fragmentPath} names a pin that PINNED does not hold`).not.toThrow();
+      expect(() => resolvePins(source), `${sourcePath} names a pin that PINNED does not hold`).not.toThrow();
 
-      // Only the `uses:` values: the fragment's own header explains the convention, and matching on
-      // the whole text would fail on the explanation rather than on an unsubstituted step.
-      const unresolved = usesIn(resolvePins(fragment)).filter(({ value }) => value.startsWith('pinned:'));
+      const unresolved = usesIn(resolvePins(source)).filter(({ value }) => value.startsWith('pinned:'));
 
-      expect(unresolved, `${fragmentPath} left a placeholder unsubstituted`).toEqual([]);
+      expect(unresolved, `${sourcePath} left a placeholder unsubstituted`).toEqual([]);
     }
   });
 });
@@ -622,6 +635,59 @@ describe('Renovate coverage of the documentation pins', () => {
 });
 
 /**
+ * A line that hands an example or an action a literal release version: a `version:` or `tag:` key, or a
+ * `<NAME>_VERSION` value, set to something that reads as a version (`1.2`, `v1.2.3`). A bare major
+ * such as `java_version: '21'` picks a runtime line rather than pinning a release, and an
+ * expression such as `${{ steps.release.outputs.tag }}` is no literal, so neither counts.
+ */
+const LITERAL_VERSION = /^\s*(?:[\w-]*version|tag)\s*:\s*['"]?v?\d+\.\d+/i;
+
+/** The custom managers whose `managerFilePatterns` claim `file`. */
+function managersFor(file: string): CustomManager[] {
+  return customManagers().filter((manager) =>
+    manager.managerFilePatterns.some(
+      (pattern) => pattern.startsWith('/') && pattern.endsWith('/') && new RegExp(pattern.slice(1, -1)).test(file),
+    ),
+  );
+}
+
+/**
+ * Every literal version line in `content` that is not updated by exactly one manager, as a failure
+ * message. A line counts as updated by a manager when one of its matches captures `currentValue`
+ * on that line, which is how a `# renovate:` comment on the line above carries over to the value.
+ */
+function versionCoverageProblems(file: string, content: string): string[] {
+  // Where each manager's `currentValue` capture starts: that is the value Renovate rewrites, so a
+  // match that only passes over a line does not count for it.
+  const valueStarts = managersFor(file).map((manager) =>
+    manager.matchStrings.flatMap((matchString) =>
+      [...content.matchAll(new RegExp(matchString, 'gd'))].flatMap((match) => {
+        const range = match.indices?.groups?.currentValue;
+        return range ? [range[0]] : [];
+      }),
+    ),
+  );
+
+  const problems: string[] = [];
+  let offset = 0;
+  for (const [index, line] of content.split('\n').entries()) {
+    const start = offset;
+    offset += line.length + 1;
+    if (!LITERAL_VERSION.test(line)) {
+      continue;
+    }
+    const covering = valueStarts.filter((starts) => starts.some((at) => at >= start && at < offset)).length;
+    if (covering !== 1) {
+      problems.push(
+        `${file}:${index + 1} '${line.trim()}' is updated by ${covering} managers; put a '# renovate:' comment ` +
+          'naming its datasource on the line above, as actions/terrace/setup/examples/exact-with-oras.yaml does',
+      );
+    }
+  }
+  return problems;
+}
+
+/**
  * Contract between the example workflows the action READMEs embed and the Renovate configuration that
  * keeps them current.
  *
@@ -698,59 +764,6 @@ describe('Renovate coverage of the README examples', () => {
     }
   });
 
-  /**
-   * A line that hands an example a literal release version: a `version:` or `tag:` key, or a
-   * `<NAME>_VERSION` value, set to something that reads as a version (`1.2`, `v1.2.3`). A bare major
-   * such as `java_version: '21'` picks a runtime line rather than pinning a release, and an
-   * expression such as `${{ steps.release.outputs.tag }}` is no literal, so neither counts.
-   */
-  const LITERAL_VERSION = /^\s*(?:[\w-]*version|tag)\s*:\s*['"]?v?\d+\.\d+/i;
-
-  /** The custom managers whose `managerFilePatterns` claim `file`. */
-  function managersFor(file: string): CustomManager[] {
-    return customManagers().filter((manager) =>
-      manager.managerFilePatterns.some(
-        (pattern) => pattern.startsWith('/') && pattern.endsWith('/') && new RegExp(pattern.slice(1, -1)).test(file),
-      ),
-    );
-  }
-
-  /**
-   * Every literal version line in `content` that is not updated by exactly one manager, as a failure
-   * message. A line counts as updated by a manager when one of its matches captures `currentValue`
-   * on that line, which is how a `# renovate:` comment on the line above carries over to the value.
-   */
-  function versionCoverageProblems(file: string, content: string): string[] {
-    // Where each manager's `currentValue` capture starts: that is the value Renovate rewrites, so a
-    // match that only passes over a line does not count for it.
-    const valueStarts = managersFor(file).map((manager) =>
-      manager.matchStrings.flatMap((matchString) =>
-        [...content.matchAll(new RegExp(matchString, 'gd'))].flatMap((match) => {
-          const range = match.indices?.groups?.currentValue;
-          return range ? [range[0]] : [];
-        }),
-      ),
-    );
-
-    const problems: string[] = [];
-    let offset = 0;
-    for (const [index, line] of content.split('\n').entries()) {
-      const start = offset;
-      offset += line.length + 1;
-      if (!LITERAL_VERSION.test(line)) {
-        continue;
-      }
-      const covering = valueStarts.filter((starts) => starts.some((at) => at >= start && at < offset)).length;
-      if (covering !== 1) {
-        problems.push(
-          `${file}:${index + 1} '${line.trim()}' is updated by ${covering} managers; put a '# renovate:' comment ` +
-            'naming its datasource on the line above, as actions/terrace/setup/examples/exact-with-oras.yaml does',
-        );
-      }
-    }
-    return problems;
-  }
-
   it('updates every literal version in an example through exactly one manager', async () => {
     const files = await exampleFiles();
     const contents = files.map((file) => fs.readFileSync(path.join(ROOT_DIR, file), 'utf8').replaceAll('\r\n', '\n'));
@@ -787,5 +800,110 @@ describe('Renovate coverage of the README examples', () => {
       references.filter(({ line }) => !/@[0-9a-f]{40} # tag=actions-[\w-]+-v\d+\.\d+\.\d+$/.test(line)),
       'run bun run generate-docs to pin these',
     ).toEqual([]);
+  });
+});
+
+/**
+ * actions/terrace/setup pins each tool as two input defaults: `<tool>_version`, under a `# renovate:`
+ * comment, and `<tool>_checksums_sha256`, the SHA-256 of that release's checksum list, right after
+ * it. The list verifies the binary, so a version bump without its digest fails every install. One
+ * manager has to capture both, with the digest as `currentDigest`, so Renovate moves them together.
+ */
+describe('Renovate coverage of the checksum-pinned tool inputs of terrace/setup', () => {
+  const FILE = 'actions/terrace/setup/action.yaml';
+
+  interface Input {
+    default?: string;
+  }
+
+  function inputs(content: string): Record<string, Input> {
+    return (parse(content) as { inputs: Record<string, Input> }).inputs;
+  }
+
+  function captures(content: string): Record<string, string>[] {
+    return customManagers()
+      .filter((manager) =>
+        manager.managerFilePatterns.some(
+          (pattern) => pattern.startsWith('/') && pattern.endsWith('/') && new RegExp(pattern.slice(1, -1)).test(FILE),
+        ),
+      )
+      .flatMap((manager) =>
+        manager.matchStrings.flatMap((matchString) =>
+          [...content.matchAll(new RegExp(matchString, 'g'))].map((match) => ({ ...match.groups })),
+        ),
+      );
+  }
+
+  const content = fs.readFileSync(path.join(ROOT_DIR, FILE), 'utf8');
+  const tools = Object.keys(inputs(content))
+    .filter((name) => name.endsWith('_checksums_sha256'))
+    .map((name) => name.slice(0, -'_checksums_sha256'.length));
+
+  it('finds the cosign and oras pins, so the check below is not vacuous', () => {
+    expect(tools).toEqual(['cosign', 'oras']);
+  });
+
+  it.each(tools)('captures the %s version and the digest of its checksum list as one dependency', (tool) => {
+    const declared = inputs(content);
+    const version = declared[`${tool}_version`]?.default;
+    const digest = declared[`${tool}_checksums_sha256`]?.default;
+    const matching = captures(content).filter((capture) => capture['currentDigest'] === digest);
+
+    expect(digest).toMatch(/^[a-f0-9]{64}$/);
+    expect(matching).toHaveLength(1);
+    expect(matching[0]).toMatchObject({ datasource: 'github-release-attachments', currentValue: version });
+  });
+
+  it('captures nothing that is not a version and digest pair', () => {
+    expect(captures(content).every((capture) => /^[a-f0-9]{64}$/.test(capture['currentDigest'] ?? ''))).toBe(true);
+    expect(captures(content)).toHaveLength(tools.length);
+  });
+});
+
+/**
+ * A composite under actions/ that hands a step a literal release version, such as the Codecov CLI
+ * version both coverage-codecov actions give codecov/codecov-action. The version ships in a release
+ * of the action, so a pin no manager reads would stay on that release for good.
+ */
+describe('Renovate coverage of literal versions in actions', () => {
+  async function actionFiles(): Promise<string[]> {
+    return [...(await scanSorted('actions/*/*/action.yaml')), ...(await scanSorted('actions/*/*/action.yml'))];
+  }
+
+  const CODECOV_ACTIONS = [
+    'actions/java-gradle/coverage-codecov/action.yaml',
+    'actions/rust/coverage-codecov/action.yaml',
+  ];
+
+  // P14m: with no `version`, codecov-action downloads and verifies whichever CLI is `latest`, once per
+  // upload step, so two jobs on the same commit could upload with different CLIs.
+  it.each(CODECOV_ACTIONS)('pins the Codecov CLI on every codecov-action step of %s', (file) => {
+    const manifest = parse(fs.readFileSync(path.join(ROOT_DIR, file), 'utf8')) as {
+      runs: { steps: { uses?: string; with?: Record<string, unknown> }[] };
+    };
+    const uploads = manifest.runs.steps.filter((step) => step.uses?.startsWith('codecov/codecov-action@'));
+    const versions = uploads.map((step) => step.with?.['version']);
+
+    expect(uploads.length).toBeGreaterThan(0);
+    expect(versions.every((version) => typeof version === 'string' && /^v\d+\.\d+\.\d+$/.test(version))).toBe(true);
+    expect(new Set(versions).size).toBe(1);
+  });
+
+  it('updates every literal version in an action through exactly one manager', async () => {
+    const files = await actionFiles();
+    const contents = files.map((file) => fs.readFileSync(path.join(ROOT_DIR, file), 'utf8').replaceAll('\r\n', '\n'));
+
+    // The coverage-codecov actions hold literal versions; a scan that found none would pass without checking.
+    expect(contents.some((content) => content.split('\n').some((line) => LITERAL_VERSION.test(line)))).toBe(true);
+    expect(files.flatMap((file, index) => versionCoverageProblems(file, contents[index]))).toEqual([]);
+  });
+
+  it('reports a literal version in an action that has no renovate comment', () => {
+    const file = 'actions/demo/tool/action.yaml';
+    const content = ['    - uses: owner/tool@v1', '      with:', "        version: 'v1.2.3'", ''].join('\n');
+
+    expect(versionCoverageProblems(file, content)).toEqual([
+      expect.stringContaining(`${file}:3 'version: 'v1.2.3'' is updated by 0 managers`),
+    ]);
   });
 });

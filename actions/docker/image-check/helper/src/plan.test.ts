@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -48,6 +48,16 @@ describe('createPlanLocation', () => {
 
   it('names the SARIF after the image when there is no platform', async () => {
     expect(path.basename((await createPlanLocation(runnerTemp, '')).sarifPath)).toBe('trivy-image.sarif');
+  });
+
+  // Trivy reads trivy.yaml and .trivyignore from the working directory, which is the checked-out
+  // pull request. Pointing it at these files instead keeps a planted file from hiding a finding.
+  it('writes an empty Trivy config and an empty ignore file of its own', async () => {
+    const location = await createPlanLocation(runnerTemp, 'x');
+
+    expect(path.basename(location.trivyConfigPath)).toBe('trivy.yaml');
+    expect(await readFile(location.trivyConfigPath, 'utf8')).toBe('{}\n');
+    expect(await readFile(location.emptyIgnorePath, 'utf8')).toBe('');
   });
 
   it('keeps every file under RUNNER_TEMP', async () => {

@@ -9,7 +9,7 @@ outside the markers.
 
 Builds JavaScript actions from source with a caller-supplied command, checks that every bundle their manifests name exists, and uploads the bundles with a manifest of their SHA-256 digests as one artifact for release/install-built-actions.
 
-[actions-release-build-actions-v1.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-release-build-actions-v1.1.0) · Composite action
+[actions-release-build-actions-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-release-build-actions-v1.1.1) · Composite action
 <!-- /docs:generated header -->
 
 The first half of a build-then-test pipeline: one job builds the bundles from the commit under test and uploads them
@@ -50,7 +50,7 @@ jobs:
           bun-version-file: '.bun-version'
       - run: bun install --frozen-lockfile
       - id: build
-        uses: TimSchoenle/actions/actions/release/build-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-build-actions-v1.1.0
+        uses: TimSchoenle/actions/actions/release/build-actions@actions-release-build-actions-v1.1.1 # tag=actions-release-build-actions-v1.1.1
         with:
           build-dirs: |
             actions/my/action
@@ -67,7 +67,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+      - uses: TimSchoenle/actions/actions/release/install-built-actions@actions-release-install-built-actions-v1.1.1 # tag=actions-release-install-built-actions-v1.1.1
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -98,7 +98,7 @@ jobs:
           node-version-file: '.nvmrc'
       - run: npm ci
       # action.yml at the root runs dist/index.js; the build writes it.
-      - uses: TimSchoenle/actions/actions/release/build-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-build-actions-v1.1.0
+      - uses: TimSchoenle/actions/actions/release/build-actions@actions-release-build-actions-v1.1.1 # tag=actions-release-build-actions-v1.1.1
         with:
           build-dirs: .
           build-command: npm run build
@@ -176,52 +176,9 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-release-build-actions.yaml`](../../../.github/workflows/verify-action-release-build-actions.yaml)
-
-<details>
-<summary>Called from 41 files in this repository</summary>
-
-- [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
-- [`.github/workflows/verify-action-common-close-pull-request.yaml`](../../../.github/workflows/verify-action-common-close-pull-request.yaml)
-- [`.github/workflows/verify-action-common-commit-changes.yaml`](../../../.github/workflows/verify-action-common-commit-changes.yaml)
-- [`.github/workflows/verify-action-common-commit-patch.yaml`](../../../.github/workflows/verify-action-common-commit-patch.yaml)
-- [`.github/workflows/verify-action-common-create-branch.yaml`](../../../.github/workflows/verify-action-common-create-branch.yaml)
-- [`.github/workflows/verify-action-common-create-patch.yaml`](../../../.github/workflows/verify-action-common-create-patch.yaml)
-- [`.github/workflows/verify-action-common-delete-branch.yaml`](../../../.github/workflows/verify-action-common-delete-branch.yaml)
-- [`.github/workflows/verify-action-common-download-release-asset.yaml`](../../../.github/workflows/verify-action-common-download-release-asset.yaml)
-- [`.github/workflows/verify-action-common-fetch-head.yaml`](../../../.github/workflows/verify-action-common-fetch-head.yaml)
-- [`.github/workflows/verify-action-common-find-patch.yaml`](../../../.github/workflows/verify-action-common-find-patch.yaml)
-- [`.github/workflows/verify-action-common-generated-files-verdict.yaml`](../../../.github/workflows/verify-action-common-generated-files-verdict.yaml)
-- [`.github/workflows/verify-action-common-get-app-git-identity.yaml`](../../../.github/workflows/verify-action-common-get-app-git-identity.yaml)
-- [`.github/workflows/verify-action-common-modify-yaml.yaml`](../../../.github/workflows/verify-action-common-modify-yaml.yaml)
-- [`.github/workflows/verify-action-common-read-yaml.yaml`](../../../.github/workflows/verify-action-common-read-yaml.yaml)
-- [`.github/workflows/verify-action-common-readme-variables.yaml`](../../../.github/workflows/verify-action-common-readme-variables.yaml)
-- [`.github/workflows/verify-action-common-render-template.yaml`](../../../.github/workflows/verify-action-common-render-template.yaml)
-- [`.github/workflows/verify-action-common-setup-app-git-identity.yaml`](../../../.github/workflows/verify-action-common-setup-app-git-identity.yaml)
-- [`.github/workflows/verify-action-common-upsert-issue.yaml`](../../../.github/workflows/verify-action-common-upsert-issue.yaml)
-- [`.github/workflows/verify-action-common-upsert-pr-comment.yaml`](../../../.github/workflows/verify-action-common-upsert-pr-comment.yaml)
-- [`.github/workflows/verify-action-docker-image-check-summary.yaml`](../../../.github/workflows/verify-action-docker-image-check-summary.yaml)
-- [`.github/workflows/verify-action-docker-image-check.yaml`](../../../.github/workflows/verify-action-docker-image-check.yaml)
-- [`.github/workflows/verify-action-helm-apply-chart-updates.yaml`](../../../.github/workflows/verify-action-helm-apply-chart-updates.yaml)
-- [`.github/workflows/verify-action-helper-resolve-base-branch.yaml`](../../../.github/workflows/verify-action-helper-resolve-base-branch.yaml)
-- [`.github/workflows/verify-action-helper-verify-branch-name.yaml`](../../../.github/workflows/verify-action-helper-verify-branch-name.yaml)
-- [`.github/workflows/verify-action-helper-verify-commit-authors.yaml`](../../../.github/workflows/verify-action-helper-verify-commit-authors.yaml)
-- [`.github/workflows/verify-action-java-gradle-auto-spotless.yaml`](../../../.github/workflows/verify-action-java-gradle-auto-spotless.yaml)
-- [`.github/workflows/verify-action-maintenance-auto-approve-pr.yaml`](../../../.github/workflows/verify-action-maintenance-auto-approve-pr.yaml)
-- [`.github/workflows/verify-action-maintenance-auto-rebase.yaml`](../../../.github/workflows/verify-action-maintenance-auto-rebase.yaml)
-- [`.github/workflows/verify-action-maintenance-ensure-actions-are-executed.yaml`](../../../.github/workflows/verify-action-maintenance-ensure-actions-are-executed.yaml)
-- [`.github/workflows/verify-action-maintenance-timed-auto-merge.yaml`](../../../.github/workflows/verify-action-maintenance-timed-auto-merge.yaml)
-- [`.github/workflows/verify-action-maintenance-trigger-coderabbit-review.yaml`](../../../.github/workflows/verify-action-maintenance-trigger-coderabbit-review.yaml)
-- [`.github/workflows/verify-action-maintenance-wipe-cache.yaml`](../../../.github/workflows/verify-action-maintenance-wipe-cache.yaml)
-- [`.github/workflows/verify-action-release-install-built-actions.yaml`](../../../.github/workflows/verify-action-release-install-built-actions.yaml)
-- [`.github/workflows/verify-action-release-plan-release-please.yaml`](../../../.github/workflows/verify-action-release-plan-release-please.yaml)
-- [`.github/workflows/verify-action-release-publish-build-commit.yaml`](../../../.github/workflows/verify-action-release-publish-build-commit.yaml)
-- [`.github/workflows/verify-action-release-resolve-actions.yaml`](../../../.github/workflows/verify-action-release-resolve-actions.yaml)
-- [`.github/workflows/verify-action-rust-auto-format.yaml`](../../../.github/workflows/verify-action-rust-auto-format.yaml)
-- [`.github/workflows/verify-action-rust-config-contract.yaml`](../../../.github/workflows/verify-action-rust-config-contract.yaml)
-- [`.github/workflows/verify-action-security-codeql.yaml`](../../../.github/workflows/verify-action-security-codeql.yaml)
-- [`.github/workflows/verify-action-security-zizmor.yaml`](../../../.github/workflows/verify-action-security-zizmor.yaml)
-- [`.github/workflows/verify-action-terrace-setup.yaml`](../../../.github/workflows/verify-action-terrace-setup.yaml)
-
-</details>
+- End-to-end tests: [`.github/verify/release-build-actions.yaml`](../../../.github/verify/release-build-actions.yaml)
+- Called from this repository by:
+  - [`.github/verify/release-install-built-actions.yaml`](../../../.github/verify/release-install-built-actions.yaml)
+  - [`.github/verify/release-publish-build-commit.yaml`](../../../.github/verify/release-publish-build-commit.yaml)
+  - [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
 <!-- /docs:generated reference -->

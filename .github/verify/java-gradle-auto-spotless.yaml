@@ -1,0 +1,292 @@
+target: java-gradle/auto-spotless
+build:
+  - actions/common/commit-changes
+  - actions/common/commit-patch/helper
+rules:
+  # Only pushes to main ran this workflow before it moved into Verify.
+  push-branches: []
+jobs:
+  test-spotless-formats-and-commits:
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: 'Test Spotless: ${{ matrix.name }}'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: java-11-temurin
+            java_version: '11'
+            java_distribution: 'temurin'
+            gradle_version: '8.14.3'
+
+          - name: java-17-temurin
+            java_version: '17'
+            java_distribution: 'temurin'
+            gradle_version: '8.14.3'
+
+          - name: java-21-zulu
+            java_version: '21'
+            java_distribution: 'zulu'
+            gradle_version: '9.3.1'
+
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: auto-spotless-test-${{ github.run_number }}-${{ github.run_attempt }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            api.adoptium.net:443
+            api.azul.com:443
+            cdn.azul.com:443
+            services.gradle.org:443
+            downloads.gradle.org:443
+            plugins.gradle.org:443
+            plugins-artifacts.gradle.org:443
+            repo.maven.apache.org:443
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      # Replaces the committed bundles in tmp/actions-code with the ones the build job built.
+      - name: Install Built Actions
+        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        with:
+          artifact-id: ${{ inputs.artifact-id }}
+          expected-manifest-sha256: ${{ inputs.manifest-sha256 }}
+          path: tmp/actions-code
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-create-branch-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/spotless/${{ matrix.name }}/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      - name: Create Gradle Project with Spotless
+        shell: bash
+        env:
+          GRADLE_VERSION: ${{ matrix.gradle_version }}
+          TEST_ID: ${{ env.TEST_ID }}
+        run: |
+          set -euo pipefail
+
+          # Create Gradle project structure
+          mkdir -p src/main/java/com/example
+
+          # Create build.gradle with spotless plugin
+          cat > build.gradle << 'EOF'
+          plugins {
+              id 'java'
+              id 'com.diffplug.spotless' version '6.25.0'
+          }
+
+          repositories {
+              mavenCentral()
+          }
+
+          spotless {
+              java {
+                  googleJavaFormat()
+                  removeUnusedImports()
+                  trimTrailingWhitespace()
+                  endWithNewline()
+              }
+          }
+          EOF
+
+          # Create settings.gradle
+          echo 'rootProject.name = "spotless-test"' > settings.gradle
+
+          # Gradle's own output must stay out of the patch: create-patch includes untracked files
+          # that are not ignored, and commit-patch would refuse them.
+          printf '.gradle/\nbuild/\n' > .gitignore
+
+          # Create badly formatted Java file
+          cat > src/main/java/com/example/TestClass.java << 'EOF'
+          package com.example;
+
+          import java.util.List;
+          import java.util.ArrayList;
+          import java.util.HashMap;
+
+          public class TestClass{
+          private String name;
+          private int value;
+
+          public TestClass(String name,int value){
+          this.name=name;
+          this.value=value;
+          }
+
+          public String getName(){return name;}
+          public void setName(String name){this.name=name;}
+
+          public int getValue(){return value;}
+          public void setValue(int value){this.value=value;}
+          }
+          EOF
+
+      # Gradle runs on the JDK it finds, and the runner image's default moves with the image
+      # (ubuntu-26.04 ships 25, which Gradle 8.14.3 cannot run on). JDK 21 runs every Gradle version
+      # in the matrix, whatever Java version the leg then tests; the action sets up its own.
+      - name: Set Up JDK For The Gradle Wrapper
+        id: wrapper-jdk
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Generate Gradle Wrapper
+        shell: bash
+        env:
+          GRADLE_VERSION: ${{ matrix.gradle_version }}
+          JAVA_HOME: ${{ steps.wrapper-jdk.outputs.path }}
+        run: |
+          set -euo pipefail
+          sdk_install_dir="${RUNNER_TEMP}/gradle-install"
+          gradle_zip="${RUNNER_TEMP}/gradle-${GRADLE_VERSION}-bin.zip"
+
+          curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -o "${gradle_zip}"
+          unzip -q "${gradle_zip}" -d "${sdk_install_dir}"
+
+          "${sdk_install_dir}/gradle-${GRADLE_VERSION}/bin/gradle" wrapper --gradle-version "${GRADLE_VERSION}"
+
+      - name: Commit Initial Unformatted Files
+        uses: ./tmp/actions-code/actions/common/commit-changes # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: add unformatted Java files (${{ env.TEST_ID }})'
+          file_pattern: '.'
+
+      - name: Sync Local With Remote
+        env:
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+        run: |
+          set -euo pipefail
+          git fetch --prune origin "+refs/heads/$BRANCH_NAME:refs/remotes/origin/$BRANCH_NAME"
+          git reset --hard "origin/$BRANCH_NAME"
+
+      # The action is the unprivileged half: it formats this checkout and uploads a patch. In a real
+      # workflow commit-patch runs in a second job that holds the token and runs no repository code;
+      # here the Gradle project is the fixture this job wrote, so both halves share one job.
+      - name: Run Auto-Spotless Action
+        id: auto_spotless
+        uses: ./tmp/actions-code/actions/java-gradle/auto-spotless # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          java_version: ${{ matrix.java_version }}
+          java_distribution: ${{ matrix.java_distribution }}
+          artifact_name: auto-spotless-${{ matrix.name }}-${{ github.run_attempt }}
+
+      - name: Commit Patch
+        id: commit_patch
+        uses: ./tmp/actions-code/actions/common/commit-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          artifact_name: ${{ steps.auto_spotless.outputs.artifact_name }}
+          allowed_paths: '**/*.java **/*.kt **/*.kts **/*.gradle'
+          commit_message: 'style: apply spotless formatting'
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          expected_head_sha: ${{ steps.auto_spotless.outputs.base_sha }}
+
+      - name: Verify Action Outputs
+        env:
+          CHANGES_DETECTED: ${{ steps.auto_spotless.outputs.changes_detected }}
+          OUTCOME: ${{ steps.commit_patch.outputs.outcome }}
+        run: |
+          set -euo pipefail
+          [ "$CHANGES_DETECTED" = "true" ] || { echo "::error::changes_detected is '$CHANGES_DETECTED' for an unformatted file"; exit 1; }
+          [ "$OUTCOME" = "committed" ] || { echo "::error::commit-patch outcome is '$OUTCOME', expected committed"; exit 1; }
+          echo "The patch was detected and committed"
+
+      - name: Verify Formatting Changes Were Committed
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+        run: |
+          set -euo pipefail
+
+          # Get the latest commit on the branch
+          LATEST_COMMIT=$(gh api "/repos/$TEST_REPO/commits/$BRANCH_NAME" --jq '.sha')
+          COMMIT_MSG=$(gh api "/repos/$TEST_REPO/git/commits/$LATEST_COMMIT" --jq '.message')
+
+          # Verify commit message contains spotless reference
+          if ! echo "$COMMIT_MSG" | grep -qi "spotless"; then
+            echo "::error::Commit message should reference spotless: $COMMIT_MSG"
+            exit 1
+          fi
+          echo "✅ Spotless commit created with message: $COMMIT_MSG"
+
+          # Verify that TestClass.java was modified
+          FILES=$(gh api "/repos/$TEST_REPO/commits/$LATEST_COMMIT" --jq '.files[].filename')
+          if ! echo "$FILES" | grep -q "TestClass.java"; then
+            echo "::error::TestClass.java should have been modified"
+            echo "Modified files: $FILES"
+            exit 1
+          fi
+          if [ "$FILES" != "src/main/java/com/example/TestClass.java" ]; then
+            echo "::error::The commit should change TestClass.java and nothing else"
+            echo "Modified files: $FILES"
+            exit 1
+          fi
+          echo "✅ Java file was formatted and committed"
+
+          # Verify the file is now properly formatted
+          FILE_CONTENT=$(gh api "/repos/$TEST_REPO/contents/src/main/java/com/example/TestClass.java?ref=$BRANCH_NAME" --jq '.content' | base64 -d)
+
+          # Check for proper formatting indicators (proper spacing after class name)
+          if echo "$FILE_CONTENT" | grep -q "public class TestClass{"; then
+            echo "::error::File still has formatting issues (no space before brace)"
+            exit 1
+          fi
+
+          echo "✅ File is properly formatted"
+
+      # The post steps of the local actions above run from tmp/actions-code. This restores it in case a
+      # step removed it, with a plain checkout of this repository: no second token is minted and the
+      # test repository is not cloned again.
+      - name: Restore Workspace For The Post Action
+        if: always()
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          path: tmp/actions-code
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-delete-branch-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}

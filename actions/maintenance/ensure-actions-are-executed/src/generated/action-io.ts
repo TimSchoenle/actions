@@ -16,6 +16,7 @@ import { createActionIo } from 'actions-util';
 export const ActionInput = {
   token: 'token',
   checks: 'checks',
+  required: 'required',
   match_mode: 'match_mode',
   repository: 'repository',
   ref: 'ref',

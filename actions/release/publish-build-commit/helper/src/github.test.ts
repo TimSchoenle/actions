@@ -129,3 +129,108 @@ describe('createPublishApi updateRef', () => {
     ).rejects.toMatchObject({ status: 422, message: expect.stringContaining(message) });
   });
 });
+
+describe('createPublishApi release lookups', () => {
+  const api = () => createPublishApi('token', { owner: 'o', repo: 'r' });
+
+  /** A release as the REST API returns it. */
+  function release(id: number, createdAt: string, draft = false) {
+    return {
+      id,
+      tag_name: `v${id}`,
+      draft,
+      html_url: `https://github.com/o/r/releases/${id}`,
+      upload_url: `https://uploads.github.com/repos/o/r/releases/${id}/assets{?name,label}`,
+      created_at: createdAt,
+      assets: [],
+    };
+  }
+
+  it('stops listing releases at the first page that reaches back past the cutoff', async () => {
+    const base = process.env['GITHUB_API_URL'] as string;
+    const pages: Record<string, unknown[]> = {
+      '1': [release(4, '2026-03-04T00:00:00Z', true), release(3, '2026-03-03T00:00:00Z')],
+      '2': [release(2, '2026-03-02T00:00:00Z'), release(1, '2026-02-01T00:00:00Z')],
+      '3': [release(0, '2026-01-01T00:00:00Z')],
+    };
+    const requested: string[] = [];
+    handler = (request, response) => {
+      const url = new URL(request.url ?? '', base);
+      const page = url.searchParams.get('page') ?? '1';
+      requested.push(page);
+      response.writeHead(200, {
+        'content-type': 'application/json',
+        link: `<${base}/repos/o/r/releases?per_page=100&page=${Number(page) + 1}>; rel="next"`,
+      });
+      response.end(JSON.stringify(pages[page] ?? []));
+    };
+
+    const releases = await api().listReleasesSince('2026-03-01T00:00:00Z');
+
+    expect(requested).toEqual(['1', '2']);
+    expect(releases.map((entry) => [entry.id, entry.draft, entry.createdAt])).toEqual([
+      [4, true, '2026-03-04T00:00:00Z'],
+      [3, false, '2026-03-03T00:00:00Z'],
+      [2, false, '2026-03-02T00:00:00Z'],
+      [1, false, '2026-02-01T00:00:00Z'],
+    ]);
+  });
+
+  it('finds a published release by its tag, and nothing for an unknown tag', async () => {
+    handler = (request, response) => {
+      if (request.url === '/repos/o/r/releases/tags/v1') {
+        reply(response, 200, release(1, '2026-01-01T00:00:00Z'));
+      } else {
+        reply(response, 404, { message: 'Not Found' });
+      }
+    };
+
+    await expect(api().getReleaseByTag('v1')).resolves.toMatchObject({ id: 1, tagName: 'v1', draft: false });
+    await expect(api().getReleaseByTag('v2')).resolves.toBeUndefined();
+  });
+
+  it('lists a tree recursively in one request and reports truncation', async () => {
+    let query = '';
+    handler = (request, response) => {
+      query = new URL(request.url ?? '', 'http://x').search;
+      reply(response, 200, {
+        sha: SHA,
+        truncated: true,
+        tree: [
+          { path: 'a', mode: '040000', type: 'tree', sha: 'b'.repeat(40) },
+          { path: 'a/x.js', mode: '100644', type: 'blob', sha: 'c'.repeat(40) },
+        ],
+      });
+    };
+
+    await expect(api().getTreeRecursive(SHA)).resolves.toEqual({
+      truncated: true,
+      items: [
+        { name: 'a', mode: '040000', type: 'tree', sha: 'b'.repeat(40) },
+        { name: 'a/x.js', mode: '100644', type: 'blob', sha: 'c'.repeat(40) },
+      ],
+    });
+    expect(query).toBe('?recursive=1');
+  });
+});
+
+describe('createPublishApi matchingRefs', () => {
+  it('reads every page of a ref family, without the refs/ prefix', async () => {
+    const base = process.env['GITHUB_API_URL'] as string;
+    const ref = (name: string, type = 'commit') => ({ ref: `refs/tags/${name}`, object: { sha: SHA, type } });
+    handler = (request, response) => {
+      const page = new URL(request.url ?? '', base).searchParams.get('page') ?? '1';
+      const headers: Record<string, string> = { 'content-type': 'application/json' };
+      if (page === '1') {
+        headers['link'] = `<${base}/repos/o/r/git/matching-refs/tags/a-?per_page=100&page=2>; rel="next"`;
+      }
+      response.writeHead(200, headers);
+      response.end(JSON.stringify(page === '1' ? [ref('a-v1')] : [ref('a-v2', 'tag')]));
+    };
+
+    await expect(createPublishApi('token', { owner: 'o', repo: 'r' }).matchingRefs('tags/a-')).resolves.toEqual([
+      { ref: 'tags/a-v1', sha: SHA, type: 'commit' },
+      { ref: 'tags/a-v2', sha: SHA, type: 'tag' },
+    ]);
+  });
+});

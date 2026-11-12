@@ -1,0 +1,5 @@
+target: helper/verify-commit-authors
+e2e:
+  token-permissions:
+    contents: write
+    pull-requests: write

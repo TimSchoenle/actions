@@ -4,17 +4,20 @@ import {
   commandInjectionPayload,
   expectCleanRejection,
   expectNoInjection,
+  linkOutside,
+  OUTSIDE_SECRET,
   oversized,
   runAction,
   ScratchRepo,
   expectNoCrash,
   expectSecretNotLeaked,
+  Workspace,
 } from 'actions-e2e';
 import { createOctokit } from 'actions-util/client';
 import { afterAll, describe, expect, it } from 'vitest';
 
 import type { ActionInput, ActionOutput } from '../src/generated/action-io.js';
-import type { ActionRunResult, ExpectedOutcome, ProvidedInputs, Workspace, WorkspaceFiles } from 'actions-e2e';
+import type { ActionRunResult, ExpectedOutcome, ProvidedInputs, WorkspaceFiles } from 'actions-e2e';
 
 /**
  * Hostile cases for `actions/common/commit-changes`, run against a real repository.
@@ -27,6 +30,8 @@ import type { ActionRunResult, ExpectedOutcome, ProvidedInputs, Workspace, Works
  */
 
 const ACTION_DIRECTORY = fileURLToPath(new URL('..', import.meta.url));
+
+const SYMLINKS = await Workspace.symlinksSupported();
 
 describe('commit-changes under hostile input', () => {
   const scratch = ScratchRepo.fromEnvironment('commit-changes-adv');
@@ -117,6 +122,46 @@ describe('commit-changes under hostile input', () => {
 
         expect(result.outputs['changes_detected']).toBe('true');
         await expect(committedPaths(result.outputs['commit_hash'] as string)).resolves.toEqual(['wanted/a.txt']);
+      });
+    });
+
+    // file_pattern splits on whitespace, so it cannot name `docs/my page.md`; literal_paths can. A
+    // `*` is part of a literal name too, but that is left to the unit tests: Windows forbids it.
+    it('commits a literal path with a space in it, and nothing next to it', async () => {
+      await withCheckout('literal-paths', {}, async ({ workspace, branch }) => {
+        await workspace.write({ 'docs/my page.md': 'page\n', 'docs/other.md': 'other\n' });
+
+        const result = await run(workspace, {
+          branch,
+          commit_message: 'test: literal paths',
+          literal_paths: 'docs/my page.md',
+        });
+
+        expect(result.outputs['changes_detected']).toBe('true');
+        await expect(committedPaths(result.outputs['commit_hash'] as string)).resolves.toEqual(['docs/my page.md']);
+      });
+    });
+
+    // The path is spotless, `generated/env.txt` inside the checkout, but it is a link, and reading it
+    // read the target: a link to /proc/self/environ committed the step's environment, token included.
+    it.runIf(SYMLINKS)('refuses a changed path that is a link outside, and commits nothing', async () => {
+      await withCheckout('symlink-escape', { 'seed.txt': 'seed\n' }, async ({ workspace, branch, baseSha }) => {
+        await workspace.write({ 'generated/ok.txt': 'ok\n' });
+        const outside = await linkOutside(workspace, 'generated/env.txt', `TOKEN=${OUTSIDE_SECRET}\n`);
+
+        try {
+          const result = await run(
+            workspace,
+            { branch, commit_message: 'test: symlink', file_pattern: 'generated/*' },
+            'failure',
+          );
+
+          expectCleanRejection(result, /symbolic link; only regular files are committed/);
+          expectSecretNotLeaked(result, OUTSIDE_SECRET);
+          await expect(scratch.refSha(branch), 'the branch must not move').resolves.toBe(baseSha);
+        } finally {
+          await outside.dispose();
+        }
       });
     });
 

@@ -13,12 +13,12 @@ bun install --frozen-lockfile
 ## Adding and removing components
 
 Two interactive generators own the scaffolding. `create-action` writes the directory and its
-`action.yaml`, the `verify-action-*` workflow, the `ci-required` entry that watches it, the
-release-please package and manifest entries, and then regenerates the docs. It does all of that in
-one run because those five have to agree.
+`action.yaml`, its verify source under `.github/verify/` and the Verify workflows generated from it,
+the release-please package and manifest entries, and then regenerates the docs. It does all of that
+in one run because those five have to agree.
 
 ```bash
-bun run create-action     # actions/<category>/<name>/, action.yaml, verify workflow
+bun run create-action     # actions/<category>/<name>/, action.yaml, verify source
 bun run remove-action     # the same set, deleted together
 ```
 
@@ -32,15 +32,16 @@ the release workflow creates its source tag on the first push to `main` after it
 Several files in this repository are outputs. Editing one is reverted on the next pull request,
 because CI regenerates it and commits the result back to the branch.
 
-| Output                                   | Generated from                                                      | Command                           |
-| ---------------------------------------- | ------------------------------------------------------------------- | --------------------------------- |
-| `README.md`, `SECURITY.md`               | `scripts/templates/`, plus every `action.yaml` and `configs/*.json` | `bun run generate-docs`           |
-| `actions/*/*/src/generated/action-io.ts` | that action's `action.yaml`                                         | `bun run generate-action-sources` |
-| `.github/workflows/verify-action-*.yaml` | `scripts/lib/e2e-workflow.ts`                                       | `bun run generate-e2e-workflows`  |
-| `.github/workflows/ci-required.yaml`     | the workflow files themselves                                       | `bun run generate-ci-required`    |
+| Output                                                       | Generated from                                                      | Command                           |
+| ------------------------------------------------------------ | ------------------------------------------------------------------- | --------------------------------- |
+| `README.md`, `SECURITY.md`                                   | `scripts/templates/`, plus every `action.yaml` and `configs/*.json` | `bun run generate-docs`           |
+| `actions/*/*/src/generated/action-io.ts`, `index.ts`         | that action's `action.yaml`                                         | `bun run generate-action-sources` |
+| `actions/*/*/src/generated/shared-sources.json`              | the workspace packages that action bundles                          | `bun run generate-action-sources` |
+| `.github/workflows/verify*.yaml`, `.github/verify/plan.json` | `.github/verify/*.yaml`, `scripts/lib/verify/`                      | `bun run generate-verify`         |
 
-The pre-commit hook regenerates `action-io.ts` for the staged `action.yaml` files, and Scripts CI fails
-a pull request whose committed copies have drifted. The rest are checked in CI and committed back to
+The pre-commit hook regenerates these sources when a staged change touches an `action.yaml`, an
+action's `package.json` or a file under `packages/*/src/`, and Scripts CI fails a pull request whose
+committed copies have drifted. The rest are checked in CI and committed back to
 the branch when they drift.
 
 ## Action bundles
@@ -55,8 +56,8 @@ bun run build:actions --all                        # every action
 bun run build:actions actions/common/create-patch  # one action, with the actions it needs
 ```
 
-The `verify-action-*` workflows build the bundles they run in a job of their own and install them
-before any step uses them; the end-to-end harness refuses a bundle that build did not produce.
+The Verify workflow builds the bundles its selected targets run once, in its `build` job, and every
+job installs them before any step uses them (see [docs/verify-pipeline.md](docs/verify-pipeline.md)); the end-to-end harness refuses a bundle that build did not produce.
 
 ## Dependencies of a Node action
 
@@ -75,6 +76,21 @@ exposes the endpoints listed in `REST_ROUTES` (`packages/ts-util/src/octokit.ts`
 to call another one. YAML helpers live behind `actions-util/yaml`, so actions that never parse YAML
 do not bundle the parser.
 
+### Releasing a change to a shared package
+
+release-please releases a component only for commits that touch its directory, and a change under
+`packages/` touches none. So each Node action commits `src/generated/shared-sources.json`, which holds
+the SHA-256 of every non-test source file in each workspace package that the action bundles. A change to
+one of those files changes the digest file of every action that bundles it. That puts the change
+inside each of those components, and the commit type decides their releases as usual.
+
+A `fix(ts-util)` commit therefore releases every action that bundles `actions-util`, which is most of
+them, and Renovate follows with pin bumps. Use `refactor`, `test` or `chore` for a shared-package
+change that does not change what an action does.
+
+The digest covers source files only. It leaves out tests, fixtures, the package's `package.json` and
+the root lockfile, so a dependency update of a shared package does not release the actions on its own.
+
 ## Before opening a pull request
 
 ```bash
@@ -84,7 +100,7 @@ bun run typecheck
 bun run test
 ```
 
-Scripts CI runs those, plus `check-action-sources` and `check-e2e-workflows`, each of which fails when
+Scripts CI runs those, plus `check-action-sources` and `check-verify`, each of which fails when
 a committed output no longer matches its source, and `build:actions --all`, which fails when any
 bundle no longer builds. `jactionlint` checks the
 workflow files and composite actions in the Security workflow, with the settings in
@@ -122,22 +138,17 @@ context is safe to require, and neither is visible in the workflow that produces
   checks are named `<caller job> / <called job>` while the call runs, and only `<caller job>` while
   it is skipped, so neither name is always there. A plain job is safe — a skipped one still reports,
   and branch protection accepts it.
-- **It must report after the work it gates.** `ci-required` aggregates the path-filtered
-  `verify-action-*` and `verify-config-*` workflows, and it does so from a `workflow_run` trigger, whose check runs land on
-  the default branch rather than on the pull request head. Only the commit status it POSTs reaches
-  the pull request, so `ci-required` is the context to require — never the `Aggregate verify checks`
-  job name, whose check runs never reach the pull request at all.
+- **It must report after the work it gates.** A job that runs alongside the work, rather than after it,
+  reports before the work has failed.
 
-`ci-required` also has to be posted by code the pull request cannot rewrite. A `pull_request` run
-executes the pull request's own copy of the workflow, so the workflow has no `pull_request` trigger:
-the `workflow_run` evaluation, which always runs the copy on `main`, is its only publisher. Because the verify workflows are path-filtered, the watch list also holds
-anchor workflows that run on every pull request (`ANCHOR_WORKFLOW_FILES` in
-[`scripts/lib/ci-required.ts`](scripts/lib/ci-required.ts)), so a pull request that starts no verify
-workflow still gets an evaluation. An anchor can finish before GitHub has created a verify run, so
-each evaluation also works out which verify workflows apply to the pull request's changed files and
-stays pending until every one of them has a run
-([`scripts/lib/ci-required-registration.ts`](scripts/lib/ci-required-registration.ts)). The header of
-[`ci-required.yaml`](.github/workflows/ci-required.yaml) states the full trust model and its limits.
+`Verify`, the final job of the generated [`verify.yaml`](.github/workflows/verify.yaml), meets both.
+The workflow runs on every pull request without a path filter; its `plan` job selects the targets
+the change affects, and the `Verify` job needs `plan`, `install`, `build` and every shard call and
+fails when any of them failed or was cancelled. It reports whether the change selects every target
+or none. Require `Verify`, never a shard call or a job inside a shard: those report under nested
+names, or not at all when their target is not selected. Like `Lint & Test`, the pull request's own
+copy of the workflow decides the verdict, so review covers a change to it. See
+[docs/verify-pipeline.md](docs/verify-pipeline.md).
 
 [`scripts/lib/required-checks.ts`](scripts/lib/required-checks.ts) lists the required contexts and
 the reason for each. Its contract test proves every listed context is produced unconditionally by the
@@ -166,7 +177,9 @@ only identity permitted to create a release tag or move the `releases` branch.
 
 Choose the type by what consumers get. A pull request that changes only workflows, tooling or
 generated files under component directories takes a type that releases nothing (`ci`, `chore`,
-`docs`, `test`); any other type releases every component whose directory it touches.
+`docs`, `test`); any other type releases every component whose directory it touches. That includes
+every action whose `shared-sources.json` a shared-package change regenerates; see
+[Releasing a change to a shared package](#releasing-a-change-to-a-shared-package).
 
 ## Prose
 

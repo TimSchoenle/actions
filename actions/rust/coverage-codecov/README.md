@@ -9,7 +9,7 @@ outside the markers.
 
 Action that measures Rust test coverage with cargo llvm-cov and nextest, and uploads the coverage report and the JUnit test results to Codecov.
 
-[actions-rust-coverage-codecov-v2.0.9](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v2.0.9) · Composite action
+[actions-rust-coverage-codecov-v2.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-coverage-codecov-v2.1.0) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -37,7 +37,7 @@ jobs:
       contents: read # to fetch code
       id-token: write # to authenticate the upload with OIDC
     steps:
-      - uses: TimSchoenle/actions/actions/rust/coverage-codecov@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-rust-coverage-codecov-v2.0.9
+      - uses: TimSchoenle/actions/actions/rust/coverage-codecov@actions-rust-coverage-codecov-v2.1.0 # tag=actions-rust-coverage-codecov-v2.1.0
         with:
           flags: unit
 ```
@@ -46,17 +46,18 @@ jobs:
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input              | Required | Default                      | Description                                                                                                                                                                                                 |
-| ------------------ | -------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `source_directory` | no       | `.`                          | Directory containing the Rust project, relative to the workspace. Tests run here.                                                                                                                           |
-| `test_arguments`   | no       | `--all-features --workspace` | Arguments passed to cargo llvm-cov nextest, split on whitespace. Report format, output path, nextest profile and tool config belong to the action and are refused here.                                     |
-| `flags`            | no       |                              | Comma-separated Codecov flags attached to both uploads. Empty for none.                                                                                                                                     |
-| `name`             | no       |                              | Upload name shown in the Codecov UI. Empty lets Codecov choose.                                                                                                                                             |
-| `use_oidc`         | no       | `true`                       | Authenticate the upload with a GitHub OIDC token, which needs the id-token: write permission on the calling job. Pull requests from forks get no OIDC token and fall back to a tokenless upload either way. |
-| `codecov_token`    | no       |                              | Codecov upload token. Ignored while use_oidc is true.                                                                                                                                                       |
-| `test_results`     | no       | `true`                       | Also upload the nextest JUnit report to Codecov Test Analytics. The upload runs when tests fail too, since that is the run whose results matter.                                                            |
-| `fail_ci_if_error` | no       | `true`                       | Fail the step when Codecov rejects or cannot receive an upload.                                                                                                                                             |
-| `dry_run`          | no       | `false`                      | Measure coverage and write both reports, then skip both uploads. The Codecov CLI's own dry run is not used, because it still registers the commit with Codecov and so needs a token.                        |
+| Input              | Required | Default                      | Description                                                                                                                                                                                                                                                                                                    |
+| ------------------ | -------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `source_directory` | no       | `.`                          | Directory containing the Rust project, relative to the workspace. Tests run here.                                                                                                                                                                                                                              |
+| `test_arguments`   | no       | `--all-features --workspace` | Arguments passed to cargo llvm-cov nextest, split on whitespace. Report format, output path, nextest profile and tool config belong to the action and are refused here.                                                                                                                                        |
+| `flags`            | no       |                              | Comma-separated Codecov flags attached to both uploads. Empty for none.                                                                                                                                                                                                                                        |
+| `name`             | no       |                              | Upload name shown in the Codecov UI. Empty lets Codecov choose.                                                                                                                                                                                                                                                |
+| `use_oidc`         | no       | `true`                       | Authenticate the upload with a GitHub OIDC token, which needs the id-token: write permission on the calling job. Pull requests from forks get no OIDC token and fall back to a tokenless upload either way.                                                                                                    |
+| `codecov_token`    | no       |                              | Codecov upload token. Ignored while use_oidc is true.                                                                                                                                                                                                                                                          |
+| `test_results`     | no       | `true`                       | Also upload the nextest JUnit report to Codecov Test Analytics. The upload runs when tests fail too, since that is the run whose results matter.                                                                                                                                                               |
+| `fail_ci_if_error` | no       | `true`                       | Fail the step when Codecov rejects or cannot receive an upload.                                                                                                                                                                                                                                                |
+| `dry_run`          | no       | `false`                      | Measure coverage and write both reports, then skip both uploads. The Codecov CLI's own dry run is not used, because it still registers the commit with Codecov and so needs a token.                                                                                                                           |
+| `cache`            | no       | `auto`                       | Restore and save the Cargo cache through setup-rust-toolchain: 'true', 'false' or 'auto'. A restored cache holds build scripts and binaries that run in this job, so auto turns it off whenever the job holds an upload credential: use_oidc is true, codecov_token is set, or the job may mint an OIDC token. |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
@@ -66,6 +67,7 @@ jobs:
 | ------------------- | ---------------------------------------------------------------------------- |
 | `coverage_file`     | Absolute path of the coverage report, in the Codecov JSON format.            |
 | `test_results_file` | Absolute path of the nextest JUnit report. Empty when no report was written. |
+| `cache`             | Whether the Cargo cache was used: 'true' or 'false', with auto resolved.     |
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
@@ -90,18 +92,29 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 | `static.rust-lang.org:443`                 | the toolchain and the llvm-tools-preview component                         |
 | `index.crates.io:443`                      | the project's dependencies, from the default crates.io registry            |
 | `static.crates.io:443`                     | the project's dependencies, from the default crates.io registry            |
-| `*.actions.githubusercontent.com:443`      | the Rust cache and the OIDC token                                          |
-| `*.blob.core.windows.net:443`              | the Rust cache                                                             |
-| `cli.codecov.io:443`                       | the Codecov CLI download                                                   |
+| `*.actions.githubusercontent.com:443`      | the Rust cache, when `cache` resolves to true, and the OIDC token          |
+| `*.blob.core.windows.net:443`              | the Rust cache, when `cache` resolves to true                              |
+| `cli.codecov.io:443`                       | the Codecov CLI download, at the version the action pins                   |
 | `keybase.io:443`                           | the key that verifies the Codecov CLI                                      |
 | `ingest.codecov.io:443`                    | the coverage and test result uploads                                       |
 | `storage.googleapis.com:443`               | the report storage Codecov hands the upload to                             |
 <!-- /docs:generated egress -->
 
+## The Cargo cache
+
+`setup-rust-toolchain` restores a cache of the Cargo registry and the `target` directory. Both hold code that runs in
+this job: build scripts, proc macros and compiled test binaries. A cache saved by a poisoned run would execute in every
+later job that restores it, with that job's upload credential in reach.
+
+`cache: auto`, the default, therefore turns the cache off whenever the job holds a credential: `use_oidc` is `true`,
+`codecov_token` is set, or the job has `id-token: write`. With the default `use_oidc: true` that is every upload, so the
+toolchain and every dependency build from scratch. Set `cache: 'true'` to keep the cache anyway, for a repository that
+accepts the risk for faster runs. The `cache` output says what was used.
+
 <!-- docs:generated reference -->
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-rust-coverage-codecov.yaml`](../../../.github/workflows/verify-action-rust-coverage-codecov.yaml)
+- End-to-end tests: [`.github/verify/rust-coverage-codecov.yaml`](../../../.github/verify/rust-coverage-codecov.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

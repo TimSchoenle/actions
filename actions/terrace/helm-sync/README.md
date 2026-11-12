@@ -47,7 +47,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: TimSchoenle/actions/actions/terrace/helm-sync@actions-terrace-helm-sync-v1.1.3 # tag=actions-terrace-helm-sync-v1.1.3
+      - uses: TimSchoenle/actions/actions/terrace/helm-sync@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-terrace-helm-sync-v1.1.3
         with:
           token: ${{ steps.token.outputs.token }}
           file_pattern: charts
@@ -59,7 +59,7 @@ jobs:
 # Only the value schemas and README references are rewritten from the contracts already vendored,
 # and with no token nothing is committed: a later step decides what to do with changed.
 - id: sync
-  uses: TimSchoenle/actions/actions/terrace/helm-sync@actions-terrace-helm-sync-v1.1.3 # tag=actions-terrace-helm-sync-v1.1.3
+  uses: TimSchoenle/actions/actions/terrace/helm-sync@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-terrace-helm-sync-v1.1.3
   with:
     pull: 'false'
 
@@ -120,6 +120,6 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-terrace-helm-sync.yaml`](../../../.github/workflows/verify-action-terrace-helm-sync.yaml)
+- End-to-end tests: [`.github/verify/terrace-helm-sync.yaml`](../../../.github/verify/terrace-helm-sync.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

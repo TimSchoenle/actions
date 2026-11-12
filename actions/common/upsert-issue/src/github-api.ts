@@ -17,7 +17,8 @@ const MAX_PAGE_SIZE = 100;
  * but may not edit somebody else's. Falling back on it would open a fresh issue on every single run:
  * the issue that provoked the refusal is still the one this action's scan keeps finding, so the next
  * run finds it, is refused again, and adds another. Failing instead says exactly once that the marker was
- * found on an issue this identity does not own, which the `author` input is there to prevent. A rate
+ * found on an issue this identity does not own. With `author` empty only an App's issues are candidates,
+and with it set only that login's, so the refusal is left for the case of another App's issue. A rate
  * limit reports as 403 too, which is a second reason not to read that status as "deleted".
  */
 const UNAVAILABLE_STATUSES = [404, 410];
@@ -64,7 +65,11 @@ export function createIssueApi(token: string): IssueApi {
   const octokit = createOctokit(token);
 
   return {
-    async *issues({ owner, repo }: RepositoryCoordinates, state: IssueSearchState): AsyncIterable<ExistingIssue> {
+    async *issues(
+      { owner, repo }: RepositoryCoordinates,
+      state: IssueSearchState,
+      creator = '',
+    ): AsyncIterable<ExistingIssue> {
       // `octokit.paginate.iterator` is what keeps the early exit real: abandoning the loop after the
       // first match stops the generator, and the pages beyond it are never requested. Ordering the
       // scan by most-recently-*updated* first (rather than creation order) is what keeps that exit
@@ -73,8 +78,10 @@ export function createIssueApi(token: string): IssueApi {
       // time this scan needs it again, independent of how many other issues or pull requests the
       // repository has accumulated. A repository-wide scan has no per-container bound the way
       // `upsert-pr-comment`'s per-pull-request comment listing does, so getting this wrong is the
-      // difference between one page and hundreds.
+      // difference between one page and hundreds. With a creator, GitHub drops everybody else's
+      // issues and pull requests before paging, so the scan never reads them at all.
       const pages = octokit.paginate.iterator(octokit.rest.issues.listForRepo, {
+        ...(creator === '' ? {} : { creator }),
         direction: 'desc',
         owner,
         per_page: MAX_PAGE_SIZE,
@@ -97,6 +104,7 @@ export function createIssueApi(token: string): IssueApi {
             body: issue.body ?? '',
             labels: labelNames(issue.labels),
             number: issue.number,
+            postedByApp: issue.user?.type === 'Bot' || Boolean(issue.performed_via_github_app),
             state: issue.state === 'closed' ? 'closed' : 'open',
             title: issue.title,
             url: issue.html_url,
@@ -130,9 +138,13 @@ export function createIssueApi(token: string): IssueApi {
       { owner, repo }: RepositoryCoordinates,
       issueNumber: number,
       changes: IssueWrite,
+      existingLabels: readonly string[] = [],
     ): Promise<IssueRef> {
-      if (changes.labels !== undefined && changes.labels.length > 0) {
-        await ensureLabelsExist(octokit, owner, repo, changes.labels);
+      // A label already on the issue exists in the repository; label names compare case-insensitively.
+      const present = new Set(existingLabels.map((label) => label.toLowerCase()));
+      const missing = (changes.labels ?? []).filter((label) => !present.has(label.toLowerCase()));
+      if (missing.length > 0) {
+        await ensureLabelsExist(octokit, owner, repo, missing);
       }
 
       try {

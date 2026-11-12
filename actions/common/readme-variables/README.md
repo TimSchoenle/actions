@@ -9,7 +9,7 @@ outside the markers.
 
 Collect the standard README render payload — repository facts, release, toolchain and a docs index — as strict JSON for render-template
 
-[actions-common-readme-variables-v2.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-readme-variables-v2.1.4) · JavaScript action (node24)
+[actions-common-readme-variables-v2.1.5](https://github.com/TimSchoenle/actions/releases/tag/actions-common-readme-variables-v2.1.5) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 It is the input half of [Common Render Template](../render-template): this action produces the `variables` map, that one
@@ -28,10 +28,10 @@ suggestion.
 ```yaml
 - name: Collect the README payload
   id: variables
-  uses: TimSchoenle/actions/actions/common/readme-variables@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-readme-variables-v2.1.4
+  uses: TimSchoenle/actions/actions/common/readme-variables@actions-common-readme-variables-v2.1.5 # tag=actions-common-readme-variables-v2.1.5
 
 - name: Render the README
-  uses: TimSchoenle/actions/actions/common/render-template@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-render-template-v3.0.4
+  uses: TimSchoenle/actions/actions/common/render-template@actions-common-render-template-v3.0.5 # tag=actions-common-render-template-v3.0.5
   with:
     template: .github/templates/README.md.hbs
     output: README.md
@@ -52,7 +52,7 @@ suggestion.
 
 - name: Collect the README payload
   id: variables
-  uses: TimSchoenle/actions/actions/common/readme-variables@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-readme-variables-v2.1.4
+  uses: TimSchoenle/actions/actions/common/readme-variables@actions-common-readme-variables-v2.1.5 # tag=actions-common-readme-variables-v2.1.5
   with:
     extra: ${{ steps.config.outputs.json }}
 ```
@@ -145,6 +145,9 @@ A manifest with `[package]` is read from it, and a field written `field.workspac
 alone, so `repo.package` is omitted. A member manifest whose version is inherited from a workspace it does not define
 fails with a message naming the workspace root, rather than reporting a bare absence.
 
+A manifest over 1 MiB is refused before it is read. A pull request controls the file, and no manifest this action reads
+comes near that size.
+
 Gradle reads `gradle.properties` and not `build.gradle`, because the build script is a program and the version in it can
 be computed. A project that computes its version writes it to the properties file for this action to read.
 
@@ -153,7 +156,8 @@ be computed. A project that computes its version writes it to the properties fil
 Every file under `docs-dir`, depth-first and sorted, so the rendered table cannot reorder itself between runners.
 Markdown is indexed by its own first heading and first paragraph. Front matter, fenced blocks and the HTML comment
 banner that opens every generated file are all skipped. Anything else is indexed by path with no summary, because
-`docs/config.contract.json` is a document a reader follows a link to and leaving it out would make the table lie.
+`docs/config.contract.json` is a document a reader follows a link to and leaving it out would make the table lie. A Markdown
+file over 1 MiB is indexed the same way, without being read.
 
 Both are reduced to plain text for a table cell: a link keeps its text, and emphasis and code-span delimiters are
 dropped. The characters inside a code span are kept, and so is an underscore inside a word, so `TANKOVAULT_*` and
@@ -188,7 +192,7 @@ rather than as it resolved.
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-readme-variables.yaml`](../../../.github/workflows/verify-action-common-readme-variables.yaml)
+- End-to-end tests: [`.github/verify/common-readme-variables.yaml`](../../../.github/verify/common-readme-variables.yaml)
 - Called from this repository by:
   - [`actions/common/render-readme/action.yaml`](../../../actions/common/render-readme/action.yaml)
 <!-- /docs:generated reference -->

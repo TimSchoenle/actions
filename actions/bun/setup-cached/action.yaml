@@ -17,15 +17,16 @@ inputs:
     default: ''
   working-directory:
     description: 'Directory holding package.json and bun.lock. bun install runs there, node_modules is cached from
-      there, and the Bun version lookup starts there.'
+      there, and the Bun version lookup starts there. The step fails when bun.lock is missing.'
     required: false
     default: '.'
   cache-mode:
     description: 'What the step does with the node_modules cache. "read-write" restores it and saves it on a miss,
       "read-only" restores it and never saves, "none" neither restores nor saves. "auto" is "read-write" on push,
-      schedule, workflow_dispatch and merge_group, and "read-only" on every other event, pull_request and
-      pull_request_target among them. A restored cache is code the job runs: use "none" in any job that holds secrets,
-      an App token or write permissions. Any other value fails the step. See Cache modes below.'
+      schedule and workflow_dispatch, and "read-only" on every other event, pull_request, pull_request_target and
+      merge_group among them. setup-bun''s own cache of the Bun executable is used only in "read-write"; the
+      other modes download Bun. A restored cache is code the job runs: use "none" in any job that holds secrets, an App
+      token or write permissions. Any other value fails the step. See Cache modes below.'
     required: false
     default: 'auto'
   cache-key-prefix:
@@ -44,6 +45,10 @@ outputs:
   cache-mode:
     description: 'The cache mode the step ran with: "read-write", "read-only" or "none", with "auto" resolved.'
     value: ${{ steps.mode.outputs.value }}
+  bun-cache-hit:
+    description: 'Whether setup-bun skipped the Bun download: it restored the executable from its own cache, which only
+      the "read-write" cache mode uses, or found the same version already installed by an earlier step of the job.'
+    value: ${{ steps.setup-bun.outputs.cache-hit == 'true' }}
 
 runs:
   using: 'composite'
@@ -51,7 +56,9 @@ runs:
     # A cache entry is shared by every later run that can read its scope, and any job that runs code
     # can save one, so a job running untrusted code must not decide what a later job restores. The
     # allowlist holds the events whose code is already on a ref a maintainer pushed or dispatched;
-    # anything else (pull_request_target, workflow_run, issue_comment, ...) only reads.
+    # anything else (pull_request_target, workflow_run, issue_comment, ...) only reads. merge_group
+    # only reads too: its entry would be scoped to a gh-readonly-queue ref that is deleted once the
+    # group merges, so no later run could restore it.
     - name: Resolve Cache Mode
       id: mode
       shell: bash
@@ -67,7 +74,7 @@ runs:
             ;;
           auto)
             case "$EVENT_NAME" in
-              push | schedule | workflow_dispatch | merge_group) mode=read-write ;;
+              push | schedule | workflow_dispatch) mode=read-write ;;
               *) mode=read-only ;;
             esac
             ;;
@@ -152,10 +159,34 @@ runs:
         echo "Bun ${version}, from ${source}."
         echo "value=${version}" >> "$GITHUB_OUTPUT"
 
+    # The cache key hashes bun.lock, and without one hashFiles returns '' and every project shares one
+    # key. bun install --frozen-lockfile also exits 0 when there is no lockfile, so nothing would pin
+    # the installed versions either. Checked before anything is downloaded.
+    - name: Check Lockfile
+      shell: bash
+      env:
+        WORKING_DIRECTORY: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+
+        if [[ ! -f "${WORKING_DIRECTORY}/bun.lock" ]]; then
+          if [[ -f "${WORKING_DIRECTORY}/bun.lockb" ]]; then
+            echo "::error::${WORKING_DIRECTORY} has only the binary bun.lockb. Run bun install --save-text-lockfile and commit bun.lock: the cache key and the frozen install both need it."
+          else
+            echo "::error::${WORKING_DIRECTORY} has no bun.lock. Commit one: without it the cache key is the same for every project and bun install --frozen-lockfile pins nothing."
+          fi
+          exit 1
+        fi
+
+    # setup-bun keeps its own Actions cache of the Bun executable and runs whatever it restores, so
+    # cache-mode has to govern that cache too: without no-cache, a job in "none" ran a Bun binary
+    # from the cache it was told to stay away from. no-cache stops both the restore and the save.
     - name: Setup Bun
+      id: setup-bun
       uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       with:
         bun-version: ${{ steps.version.outputs.value }}
+        no-cache: ${{ steps.mode.outputs.value != 'read-write' }}
 
     # The `v2` segment keeps this release from restoring entries that earlier releases saved from
     # any event, pull_request_target among them. The architecture is part of the key because

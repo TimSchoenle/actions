@@ -9,7 +9,7 @@ outside the markers.
 
 Holds a service image to the configuration contract its build produced, in any language: the document against the specification, the committed document against its generator, the Dockerfile label block against the document, and the built image itself, read through oras. Optionally attaches the document to the image digest and signs it.
 
-[actions-terrace-image-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-image-v1.1.3) · Composite action
+[actions-terrace-image-v1.1.4](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-image-v1.1.4) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -20,7 +20,7 @@ Holds a service image to the configuration contract its build produced, in any l
 ```yaml
 # No image: the committed document is held to what the configuration types print, to the
 # specification, and to the label block of the Dockerfile.
-- uses: TimSchoenle/actions/actions/terrace/image@actions-terrace-image-v1.1.3 # tag=actions-terrace-image-v1.1.3
+- uses: TimSchoenle/actions/actions/terrace/image@actions-terrace-image-v1.1.4 # tag=actions-terrace-image-v1.1.4
   with:
     contract: config/contract.json
     generate: cargo run -q --example contract -- --format contract
@@ -35,7 +35,7 @@ Holds a service image to the configuration contract its build produced, in any l
     docker build --tag app:check .
     docker save app:check --output image.tar
 
-- uses: TimSchoenle/actions/actions/terrace/image@actions-terrace-image-v1.1.3 # tag=actions-terrace-image-v1.1.3
+- uses: TimSchoenle/actions/actions/terrace/image@actions-terrace-image-v1.1.4 # tag=actions-terrace-image-v1.1.4
   with:
     contract: config/contract.json
     dockerfile: Dockerfile
@@ -56,7 +56,7 @@ permissions:
 
 steps:
   # ... build, log in and push, with the digest as steps.push.outputs.digest ...
-  - uses: TimSchoenle/actions/actions/terrace/image@actions-terrace-image-v1.1.3 # tag=actions-terrace-image-v1.1.3
+  - uses: TimSchoenle/actions/actions/terrace/image@actions-terrace-image-v1.1.4 # tag=actions-terrace-image-v1.1.4
     with:
       contract: config/contract.json
       image: ghcr.io/${{ github.repository }}@${{ steps.push.outputs.digest }}
@@ -81,7 +81,7 @@ steps:
 | `path`              | no       | `/config/contract.json`                                                    | Where the document lives inside the image, which is also what its path label must say.                                                                                                                                                                                                                                                                                                                                    |
 | `attach`            | no       | `false`                                                                    | Attach the document to the image digest as an OCI referrer before the image is verified, so the verification covers what was attached. Safe to repeat: a referrer holding this document is kept, one holding another is refused. Needs write access to the registry.                                                                                                                                                      |
 | `sign`              | no       | `false`                                                                    | Sign the attached referrer keyless with cosign, under the job's GitHub Actions OIDC identity. Needs attach, a registry image and the id-token: write permission.                                                                                                                                                                                                                                                          |
-| `signer`            | no       |                                                                            | Also verify the image signature, keyless, against this identity regular expression, before anything else is read. Empty skips signature verification.                                                                                                                                                                                                                                                                     |
+| `signer`            | no       |                                                                            | Also verify the image signature, keyless, against this identity regular expression, before anything is attached, signed or read from the image. Empty skips signature verification.                                                                                                                                                                                                                                       |
 | `github_token`      | no       | `${{ github.server_url == 'https://github.com' && github.token \|\| '' }}` | Token terrace/setup lists terrace-contract releases with, needed only when the version is a MAJOR.MINOR line. Defaults to the job token on github.com and to empty elsewhere.                                                                                                                                                                                                                                             |
 <!-- /docs:generated inputs -->
 
@@ -123,6 +123,6 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-terrace-image.yaml`](../../../.github/workflows/verify-action-terrace-image.yaml)
+- End-to-end tests: [`.github/verify/terrace-image.yaml`](../../../.github/verify/terrace-image.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

@@ -9,7 +9,7 @@ outside the markers.
 
 Action that measures Java and Kotlin test coverage with JaCoCo through Gradle, and uploads the coverage reports and the JUnit test results to Codecov.
 
-[actions-java-gradle-coverage-codecov-v1.1.6](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-coverage-codecov-v1.1.6) · Composite action
+[actions-java-gradle-coverage-codecov-v1.2.0](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-coverage-codecov-v1.2.0) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -37,7 +37,7 @@ jobs:
       contents: read # to fetch code
       id-token: write # to authenticate the upload with OIDC
     steps:
-      - uses: TimSchoenle/actions/actions/java-gradle/coverage-codecov@6a49261c7bbd756b4ceca9b1c168dfc7dc095e64 # tag=actions-java-gradle-coverage-codecov-v1.1.6
+      - uses: TimSchoenle/actions/actions/java-gradle/coverage-codecov@actions-java-gradle-coverage-codecov-v1.2.0 # tag=actions-java-gradle-coverage-codecov-v1.2.0
         with:
           java_version: '21'
           flags: unit
@@ -47,19 +47,20 @@ jobs:
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input               | Required | Default   | Description                                                                                                                                                                                                  |
-| ------------------- | -------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `source_directory`  | no       | `.`       | Directory containing the Gradle build and its wrapper, relative to the workspace.                                                                                                                            |
-| `java_version`      | yes      |           | Java version to run Gradle and the tests on.                                                                                                                                                                 |
-| `java_distribution` | no       | `temurin` | Java distribution to use.                                                                                                                                                                                    |
-| `gradle_arguments`  | no       |           | Extra arguments for the Gradle invocation, split on whitespace, e.g. -x functionalTest to leave a suite out of the measurement. Every Test task in a project counts towards its report unless excluded here. |
-| `flags`             | no       |           | Comma-separated Codecov flags attached to both uploads. Empty for none.                                                                                                                                      |
-| `name`              | no       |           | Upload name shown in the Codecov UI. Empty lets Codecov choose.                                                                                                                                              |
-| `use_oidc`          | no       | `true`    | Authenticate the upload with a GitHub OIDC token, which needs the id-token: write permission on the calling job. Pull requests from forks get no OIDC token and fall back to a tokenless upload either way.  |
-| `codecov_token`     | no       |           | Codecov upload token. Ignored while use_oidc is true.                                                                                                                                                        |
-| `test_results`      | no       | `true`    | Also upload the JUnit reports of every Test task to Codecov Test Analytics. The upload runs when tests fail too, since that is the run whose results matter.                                                 |
-| `fail_ci_if_error`  | no       | `true`    | Fail the step when Codecov rejects or cannot receive an upload.                                                                                                                                              |
-| `dry_run`           | no       | `false`   | Measure coverage and write all reports, then skip both uploads. The Codecov CLI's own dry run is not used, because it still registers the commit with Codecov and so needs a token.                          |
+| Input               | Required | Default   | Description                                                                                                                                                                                                                                                                                                         |
+| ------------------- | -------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `source_directory`  | no       | `.`       | Directory containing the Gradle build and its wrapper, relative to the workspace.                                                                                                                                                                                                                                   |
+| `java_version`      | yes      |           | Java version to run Gradle and the tests on.                                                                                                                                                                                                                                                                        |
+| `java_distribution` | no       | `temurin` | Java distribution to use.                                                                                                                                                                                                                                                                                           |
+| `gradle_arguments`  | no       |           | Extra arguments for the Gradle invocation, split on whitespace, e.g. -x functionalTest to leave a suite out of the measurement. Every Test task in a project counts towards its report unless excluded here.                                                                                                        |
+| `flags`             | no       |           | Comma-separated Codecov flags attached to both uploads. Empty for none.                                                                                                                                                                                                                                             |
+| `name`              | no       |           | Upload name shown in the Codecov UI. Empty lets Codecov choose.                                                                                                                                                                                                                                                     |
+| `use_oidc`          | no       | `true`    | Authenticate the upload with a GitHub OIDC token, which needs the id-token: write permission on the calling job. Pull requests from forks get no OIDC token and fall back to a tokenless upload either way.                                                                                                         |
+| `codecov_token`     | no       |           | Codecov upload token. Ignored while use_oidc is true.                                                                                                                                                                                                                                                               |
+| `test_results`      | no       | `true`    | Also upload the JUnit reports of every Test task to Codecov Test Analytics. The upload runs when tests fail too, since that is the run whose results matter.                                                                                                                                                        |
+| `fail_ci_if_error`  | no       | `true`    | Fail the step when Codecov rejects or cannot receive an upload.                                                                                                                                                                                                                                                     |
+| `dry_run`           | no       | `false`   | Measure coverage and write all reports, then skip both uploads. The Codecov CLI's own dry run is not used, because it still registers the commit with Codecov and so needs a token.                                                                                                                                 |
+| `cache`             | no       | `auto`    | Restore and save the Gradle cache through setup-gradle: 'true', 'false' or 'auto'. A restored cache holds plugins, dependencies and build output that run in this job, so auto turns it off whenever the job holds an upload credential: use_oidc is true, codecov_token is set, or the job may mint an OIDC token. |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
@@ -69,6 +70,7 @@ jobs:
 | -------------------- | ----------------------------------------------------------------------------------------- |
 | `coverage_files`     | Comma-separated absolute paths of the JaCoCo XML reports, one per project that ran tests. |
 | `test_results_files` | Comma-separated absolute paths of the JUnit XML reports. Empty when no test ran.          |
+| `cache`              | Whether the Gradle cache was used: 'true' or 'false', with auto resolved.                 |
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
@@ -94,18 +96,29 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 | `services.gradle.org:443`                  | the Gradle distribution URL in the wrapper, and checksums of wrapper versions setup-gradle does not know |
 | `downloads.gradle.org:443`                 | the wrapper checksums that services.gradle.org redirects to                                              |
 | `repo.maven.apache.org:443`                | the JaCoCo agent and the build's dependencies, when the build resolves from Maven Central                |
-| `*.actions.githubusercontent.com:443`      | the Gradle cache and the OIDC token                                                                      |
-| `*.blob.core.windows.net:443`              | the Gradle cache                                                                                         |
-| `cli.codecov.io:443`                       | the Codecov CLI download                                                                                 |
+| `*.actions.githubusercontent.com:443`      | the Gradle cache, when `cache` resolves to true, and the OIDC token                                      |
+| `*.blob.core.windows.net:443`              | the Gradle cache, when `cache` resolves to true                                                          |
+| `cli.codecov.io:443`                       | the Codecov CLI download, at the version the action pins                                                 |
 | `keybase.io:443`                           | the key that verifies the Codecov CLI                                                                    |
 | `ingest.codecov.io:443`                    | the coverage and test result uploads                                                                     |
 | `storage.googleapis.com:443`               | the report storage Codecov hands the upload to                                                           |
 <!-- /docs:generated egress -->
 
+## The Gradle cache
+
+`setup-gradle` restores a cache of the Gradle user home: downloaded plugins and dependencies, and build output. All of
+it runs in this job. A cache saved by a poisoned run would execute in every later job that restores it, with that job's
+upload credential in reach.
+
+`cache: auto`, the default, therefore turns the cache off whenever the job holds a credential: `use_oidc` is `true`,
+`codecov_token` is set, or the job has `id-token: write`. With the default `use_oidc: true` that is every upload, so
+Gradle downloads its distribution and every dependency on each run. Set `cache: 'true'` to keep the cache anyway, for a
+repository that accepts the risk for faster runs. The `cache` output says what was used.
+
 <!-- docs:generated reference -->
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-java-gradle-coverage-codecov.yaml`](../../../.github/workflows/verify-action-java-gradle-coverage-codecov.yaml)
+- End-to-end tests: [`.github/verify/java-gradle-coverage-codecov.yaml`](../../../.github/verify/java-gradle-coverage-codecov.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

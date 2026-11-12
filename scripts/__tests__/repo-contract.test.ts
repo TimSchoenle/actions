@@ -47,23 +47,12 @@ interface StrictShellExemption {
  * entry until its line is deleted. Never raise a number and never add a key for new work.
  */
 const STRICT_SHELL_EXEMPTIONS: Readonly<Record<string, StrictShellExemption>> = {
-  'verify-action-common-create-pull-request.yaml': {
-    known: 7,
-    reason: 'Shell assertions awaiting the TypeScript e2e port.',
-  },
-  'verify-action-common-render-template-and-commit.yaml': {
-    known: 4,
-    reason: 'Shell assertions awaiting the TypeScript e2e port.',
-  },
-  'verify-action-helper-verify-branch-name.yaml': {
-    known: 1,
-    reason: 'Shell assertions awaiting the TypeScript e2e port.',
-  },
-  'verify-action-java-gradle-setup-base-environment.yaml': {
-    known: 5,
-    reason: 'Shell assertions awaiting the TypeScript e2e port.',
-  },
-  'verify-action-test-setup-e2e.yaml': { known: 4, reason: 'Shell assertions awaiting the TypeScript e2e port.' },
+  // common/create-pull-request (7) and common/render-template-and-commit (4).
+  'verify-common.yaml': { known: 11, reason: 'Shell assertions awaiting the TypeScript e2e port.' },
+  // java-gradle/setup-base-environment.
+  'verify-java-gradle.yaml': { known: 5, reason: 'Shell assertions awaiting the TypeScript e2e port.' },
+  // test/setup-e2e.
+  'verify-test.yaml': { known: 4, reason: 'Shell assertions awaiting the TypeScript e2e port.' },
 };
 
 function describeViolation(block: RunBlock): string {

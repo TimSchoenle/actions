@@ -1,0 +1,7 @@
+{
+  "name": "bun-setup-cached-fixture",
+  "private": true,
+  "dependencies": {
+    "fixture-dep": "file:./dep"
+  }
+}

@@ -1,0 +1,274 @@
+target: rust/coverage-codecov
+rules:
+  # Only pushes to main ran this workflow before it moved into Verify.
+  push-branches: []
+jobs:
+  rust-coverage-verify:
+    name: Verify Coverage-codecov
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # to fetch code
+    env:
+      FIXTURE: actions/rust/coverage-codecov/fixture
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Test coverage-codecov
+        id: coverage
+        uses: ./actions/rust/coverage-codecov # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          source_directory: ${{ env.FIXTURE }}
+          test_arguments: '--workspace --all-features'
+          flags: verify
+          use_oidc: 'false'
+          dry_run: 'true'
+
+      # Line numbers refer to `crates/arith/src/lib.rs`: 5-7 is `covered`, 10-12 is `uncovered`.
+      - name: Verify the coverage report
+        shell: bash
+        env:
+          COVERAGE_FILE: ${{ steps.coverage.outputs.coverage_file }}
+          CACHE: ${{ steps.coverage.outputs.cache }}
+        run: |
+          set -euo pipefail
+          # No OIDC, no token and no id-token permission: auto keeps the cache.
+          if [[ "${CACHE}" != 'true' ]]; then
+            echo "::error::cache resolved to '${CACHE}' for a job without credentials, expected 'true'"
+            exit 1
+          fi
+
+          if [[ ! -f "${COVERAGE_FILE}" ]]; then
+            echo "::error::coverage_file '${COVERAGE_FILE}' does not exist"
+            exit 1
+          fi
+
+          lines="$(jq -c '.coverage | to_entries[] | select(.key | endswith("crates/arith/src/lib.rs")) | .value' "${COVERAGE_FILE}")"
+          if [[ -z "${lines}" ]]; then
+            echo "::error::The report has no entry for crates/arith/src/lib.rs"
+            jq . "${COVERAGE_FILE}"
+            exit 1
+          fi
+
+          for line in 5 6 7; do
+            hits="$(jq -r --arg l "${line}" '.[$l]' <<< "${lines}")"
+            if [[ "${hits}" != '1/1' ]]; then
+              echo "::error::Line ${line} should be covered (1/1), got '${hits}'"
+              exit 1
+            fi
+          done
+
+          for line in 10 11 12; do
+            hits="$(jq -r --arg l "${line}" '.[$l]' <<< "${lines}")"
+            if [[ "${hits}" != '0/1' ]]; then
+              echo "::error::Line ${line} should be missed (0/1), got '${hits}'"
+              exit 1
+            fi
+          done
+
+      - name: Verify the test results
+        shell: bash
+        env:
+          TEST_RESULTS_FILE: ${{ steps.coverage.outputs.test_results_file }}
+        run: |
+          set -euo pipefail
+          if [[ ! -f "${TEST_RESULTS_FILE}" ]]; then
+            echo "::error::test_results_file '${TEST_RESULTS_FILE}' does not exist"
+            exit 1
+          fi
+
+          if ! grep -q '<testsuites name="nextest-run" tests="2" skipped="0" failures="0"' "${TEST_RESULTS_FILE}"; then
+            echo "::error::Expected two passing tests in the JUnit report"
+            cat "${TEST_RESULTS_FILE}"
+            exit 1
+          fi
+
+  # A failing test must fail the action and still leave a JUnit report, because the test-results
+  # upload exists for exactly that run.
+  rust-coverage-verify-failing-tests:
+    name: Verify Coverage-codecov (failing tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # to fetch code
+    env:
+      FIXTURE: actions/rust/coverage-codecov/fixture
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Test coverage-codecov
+        id: coverage
+        continue-on-error: true
+        uses: ./actions/rust/coverage-codecov # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        env:
+          FIXTURE_FAIL: '1'
+        with:
+          source_directory: ${{ env.FIXTURE }}
+          use_oidc: 'false'
+          dry_run: 'true'
+
+      - name: Verify the action failed and kept the test results
+        shell: bash
+        env:
+          OUTCOME: ${{ steps.coverage.outcome }}
+          TEST_RESULTS_FILE: ${{ runner.temp }}/rust-coverage-codecov/nextest/codecov/junit.xml
+        run: |
+          set -euo pipefail
+          if [[ "${OUTCOME}" != 'failure' ]]; then
+            echo "::error::Expected the action to fail on a failing test, got '${OUTCOME}'"
+            exit 1
+          fi
+
+          if ! grep -q 'failures="1"' "${TEST_RESULTS_FILE}"; then
+            echo "::error::Expected one failure in the JUnit report at ${TEST_RESULTS_FILE}"
+            cat "${TEST_RESULTS_FILE}" || true
+            exit 1
+          fi
+
+  # A job that may upload with OIDC or a token gets no restored build scripts or binaries. Each case
+  # runs the whole measurement, so the reports show the action still works without the cache.
+  rust-coverage-verify-cache-off:
+    name: Verify Coverage-codecov (cache off, ${{ matrix.case }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - case: auto with OIDC
+            use_oidc: 'true'
+            cache: auto
+          - case: explicit false
+            use_oidc: 'false'
+            cache: 'false'
+    permissions:
+      contents: read # to fetch code
+    env:
+      FIXTURE: actions/rust/coverage-codecov/fixture
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            static.rust-lang.org:443
+            index.crates.io:443
+            static.crates.io:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Test coverage-codecov
+        id: coverage
+        uses: ./actions/rust/coverage-codecov # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          source_directory: ${{ env.FIXTURE }}
+          use_oidc: ${{ matrix.use_oidc }}
+          cache: ${{ matrix.cache }}
+          dry_run: 'true'
+
+      - name: Verify the cache stayed off
+        shell: bash
+        env:
+          CACHE: ${{ steps.coverage.outputs.cache }}
+          COVERAGE_FILE: ${{ steps.coverage.outputs.coverage_file }}
+        run: |
+          set -euo pipefail
+          if [[ "${CACHE}" != 'false' ]]; then
+            echo "::error::cache resolved to '${CACHE}', expected 'false'"
+            exit 1
+          fi
+
+          if [[ ! -f "${COVERAGE_FILE}" ]]; then
+            echo "::error::coverage_file '${COVERAGE_FILE}' does not exist"
+            exit 1
+          fi
+
+  rust-coverage-verify-rejects-inputs:
+    name: Verify Coverage-codecov (rejects ${{ matrix.case }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - case: reserved argument
+            test_arguments: '--workspace --lcov'
+            use_oidc: 'false'
+          - case: reserved argument with value
+            test_arguments: '--workspace --output-path=elsewhere.json'
+            use_oidc: 'false'
+          - case: non-boolean
+            test_arguments: '--workspace'
+            use_oidc: 'yes'
+          - case: unknown cache mode
+            test_arguments: '--workspace'
+            use_oidc: 'false'
+            cache: 'yes'
+    permissions:
+      contents: read # to fetch code
+    env:
+      FIXTURE: actions/rust/coverage-codecov/fixture
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Test coverage-codecov
+        id: coverage
+        continue-on-error: true
+        uses: ./actions/rust/coverage-codecov # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          source_directory: ${{ env.FIXTURE }}
+          test_arguments: ${{ matrix.test_arguments }}
+          use_oidc: ${{ matrix.use_oidc }}
+          cache: ${{ matrix.cache || 'auto' }}
+          dry_run: 'true'
+
+      # The report path is checked as well as the outcome: a failure from a later step would also
+      # be 'failure', and only an absent report shows the input check stopped the run first.
+      - name: Verify the action refused the input before running tests
+        shell: bash
+        env:
+          OUTCOME: ${{ steps.coverage.outcome }}
+          COVERAGE_FILE: ${{ runner.temp }}/rust-coverage-codecov/coverage.json
+        run: |
+          set -euo pipefail
+          if [[ "${OUTCOME}" != 'failure' ]]; then
+            echo "::error::Expected the action to refuse the input, got '${OUTCOME}'"
+            exit 1
+          fi
+
+          if [[ -e "${COVERAGE_FILE}" ]]; then
+            echo "::error::A coverage report exists, so the action ran tests before refusing"
+            exit 1
+          fi

@@ -1,7 +1,7 @@
 import * as core from 'actions-util/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { run } from './action.js';
+import { parseLiteralPaths, run } from './action.js';
 
 import type { CommitChangesDeps } from './commit.js';
 
@@ -30,13 +30,14 @@ function setInputs(overrides: Inputs = {}): void {
 }
 
 /** Deps whose git reports the given status and whose API records the commit it is asked to create. */
-function fakeDeps(status = ''): CommitChangesDeps {
+function fakeDeps(status = '', checkedOut?: string): CommitChangesDeps {
   return {
     api: {
       createCommit: vi.fn(async () => ({ oid: 'newsha', url: 'https://example/commit/newsha' })),
       getHeadOid: vi.fn(async () => 'headsha'),
     },
     git: {
+      checkedOutHead: vi.fn(async () => checkedOut),
       ignoreFileModeChanges: vi.fn(async () => {}),
       status: vi.fn(async () => status),
     },
@@ -64,6 +65,27 @@ describe('commit-changes action', () => {
     expect(core.setOutput).toHaveBeenCalledWith('commit_url', 'https://example/commit/newsha');
     expect(core.setOutput).toHaveBeenCalledWith('changes_detected', 'true');
     expect(core.setFailed).not.toHaveBeenCalled();
+  });
+
+  it('warns when the expected head had to be read from the remote', async () => {
+    await run(fakeDeps(' M a.ts\0'));
+
+    expect(core.warning).toHaveBeenCalledWith(expect.stringContaining('expected_head_sha'));
+  });
+
+  it('does not warn when the target branch is checked out', async () => {
+    await run(fakeDeps(' M a.ts\0', 'c'.repeat(40)));
+
+    expect(core.warning).not.toHaveBeenCalled();
+  });
+
+  it('passes expected_head_sha to the commit', async () => {
+    setInputs({ expected_head_sha: 'd'.repeat(40) });
+    const deps = fakeDeps(' M a.ts\0');
+
+    await run(deps);
+
+    expect(deps.api.createCommit).toHaveBeenCalledWith(expect.objectContaining({ expectedHeadOid: 'd'.repeat(40) }));
   });
 
   it('reports changes_detected=false and no hash when the tree is clean', async () => {
@@ -98,5 +120,19 @@ describe('commit-changes action', () => {
 
     expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('No branch given'));
     expect(core.setOutput).not.toHaveBeenCalled();
+  });
+});
+
+describe('parseLiteralPaths', () => {
+  it('keeps one path per line, spaces and glob characters included', () => {
+    expect(parseLiteralPaths('docs/my page.md\na*b.txt')).toEqual(['docs/my page.md', 'a*b.txt']);
+  });
+
+  it('drops a Windows line ending and blank lines', () => {
+    expect(parseLiteralPaths('one.txt\r\n\n  \ntwo.txt\n')).toEqual(['one.txt', 'two.txt']);
+  });
+
+  it('is empty for an empty input', () => {
+    expect(parseLiteralPaths('')).toEqual([]);
   });
 });

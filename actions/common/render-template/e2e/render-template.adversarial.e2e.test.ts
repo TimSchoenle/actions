@@ -220,6 +220,22 @@ describe('render-template under hostile input', () => {
 
       await expect(workspace.read(OUTPUT)).resolves.toBe('shared\n');
     });
+
+    // The output is the exception: writing goes through a link, so an output linked to another file
+    // overwrites that file. The attack this blocks commits README.md as a link to .git/config and
+    // renders a core.fsmonitor command into it; a link to an ordinary file is refused just the same.
+    it.each([
+      { name: 'into .git', target: '.git/config', reason: /output resolves into a \.git directory/ },
+      { name: 'to another file in the workspace', target: 'docs/other.md', reason: /output is a symbolic link/ },
+    ])('refuses an output that links $name, and leaves the target untouched', async ({ target, reason }) => {
+      workspace = await Workspace.create({ [TEMPLATE]: '[core]\n\tfsmonitor = touch pwned\n', [target]: 'original\n' });
+      await workspace.symlink(OUTPUT, path.join(workspace.path, target));
+
+      const result = await render({}, 'failure');
+
+      expectCleanRejection(result, reason);
+      await expect(workspace.read(target), 'the link target must be untouched').resolves.toBe('original\n');
+    });
   });
 
   describe('workflow command injection', () => {
@@ -242,6 +258,32 @@ describe('render-template under hostile input', () => {
       const result = await render({ variables: JSON.stringify({ body: commandInjectionPayload() }) });
 
       expectNoInjection(result);
+    });
+
+    // Handlebars' built-in log helper wrote its arguments to the step log, each on a line of its own,
+    // so a template or partial from a pull request could emit any workflow command through it.
+    it.each([
+      { name: 'the template', files: { [TEMPLATE]: '{{log PAYLOAD}}' }, inputs: {} },
+      {
+        name: 'a partial',
+        files: { [TEMPLATE]: '{{> forged }}', 'partials/forged.hbs': '{{log PAYLOAD}}' },
+        inputs: { 'partials-dir': 'partials' },
+      },
+    ])('forges nothing through the log helper in $name', async ({ files, inputs }) => {
+      workspace = await Workspace.create(
+        Object.fromEntries(
+          Object.entries(files).map(([file, text]) => [
+            file,
+            text.replace('PAYLOAD', JSON.stringify(commandInjectionPayload())),
+          ]),
+        ),
+      );
+
+      const result = await render(inputs, 'failure');
+
+      expectCleanRejection(result, /log/);
+      expectNoInjection(result);
+      await expect(workspace.exists(OUTPUT)).resolves.toBe(false);
     });
 
     it('forges nothing through the paths it names in a failure', async () => {

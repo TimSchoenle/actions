@@ -7,9 +7,9 @@ egress:
   - endpoint: static.rust-lang.org:443
     for: the toolchain and the rustfmt component
   - endpoint: '*.actions.githubusercontent.com:443'
-    for: the patch artifact upload and the toolchain cache
+    for: the patch artifact upload
   - endpoint: '*.blob.core.windows.net:443'
-    for: the patch artifact upload and the toolchain cache
+    for: the patch artifact upload
 
 examples:
   - title: Format in one job, commit from another

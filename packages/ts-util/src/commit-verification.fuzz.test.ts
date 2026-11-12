@@ -11,6 +11,7 @@ const oid = fc.stringMatching(/^[\da-f]{7,40}$/);
 const commitRecord = (idPool: fc.Arbitrary<number | null>): fc.Arbitrary<CommitRecord> =>
   fc.record({
     authorIds: fc.array(idPool, { maxLength: 5, minLength: 0 }),
+    committedDate: fc.constant('2026-11-01T00:00:00Z'),
     committerId: idPool,
     oid,
     signatureState: fc.oneof(fc.constant(null), fc.constantFrom('VALID', 'INVALID', 'UNSIGNED')),

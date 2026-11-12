@@ -1,0 +1,5 @@
+target: common/close-pull-request
+e2e:
+  token-permissions:
+    contents: write
+    pull-requests: write

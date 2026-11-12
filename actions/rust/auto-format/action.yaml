@@ -49,6 +49,8 @@ runs:
       uses: actions-rust-lang/setup-rust-toolchain@a188e68d0fd2bd36ad51dccb2b07ba6e75105f30 # v2.0.1
       with:
         components: rustfmt
+        # cargo fmt compiles nothing, so a Rust cache would only cost a restore and a save.
+        cache: 'false'
 
     # setup-rust-toolchain only reads a toolchain file at the repository root, while cargo fmt
     # resolves one from source_directory upwards. Adding rustfmt here, from the same directory,
@@ -63,7 +65,7 @@ runs:
 
     - name: Create Patch
       id: patch
-      uses: TimSchoenle/actions/actions/common/create-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-create-patch-v2.0.1
+      uses: TimSchoenle/actions/actions/common/create-patch@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-common-create-patch-v2.0.2
       with:
         artifact_name: ${{ inputs.artifact_name }}
         paths: ${{ inputs.source_directory }}

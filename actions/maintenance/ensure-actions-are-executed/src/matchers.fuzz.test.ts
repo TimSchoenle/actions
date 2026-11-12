@@ -14,7 +14,7 @@ function escapeRegex(value: string): string {
 }
 
 function checkRun(name: string, id = 1): CheckRun {
-  return { conclusion: 'success', detailsUrl: null, id, name, status: 'completed' };
+  return { appId: 15_368, conclusion: 'success', detailsUrl: null, id, name, status: 'completed', suiteId: 1 };
 }
 
 describe('normalizeMatchers fuzzing', () => {

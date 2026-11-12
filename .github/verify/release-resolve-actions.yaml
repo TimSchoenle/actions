@@ -1,0 +1,3 @@
+target: release/resolve-actions
+# The cases never reach GitHub, so the job holds no token and no App key.
+e2e: {}

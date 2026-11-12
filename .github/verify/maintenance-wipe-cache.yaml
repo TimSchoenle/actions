@@ -1,0 +1,4 @@
+target: maintenance/wipe-cache
+e2e:
+  token-permissions:
+    metadata: read

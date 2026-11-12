@@ -330,7 +330,16 @@ async function makeSecureDir(dirPath: string): Promise<void> {
 }
 
 async function writeSecureFile(filePath: string, content: string): Promise<void> {
-  await fs.writeFile(filePath, content, { encoding: 'utf8', mode: 0o600 });
+  // `wx` refuses to replace an existing file, so an earlier key is never destroyed and the new
+  // secret is never written into a file that already has looser permissions.
+  try {
+    await fs.writeFile(filePath, content, { encoding: 'utf8', flag: 'wx', mode: 0o600 });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'EEXIST') {
+      throw new Error(`Refusing to overwrite existing file: ${filePath}`, { cause: error });
+    }
+    throw error;
+  }
   try {
     await fs.chmod(filePath, 0o600);
   } catch {
@@ -810,21 +819,37 @@ function redactedSecretSections(outputDir: string | undefined): string[] {
   ];
 }
 
-async function saveMaterialToDisk(outputDir: string, material: SigningKeyMaterial): Promise<void> {
+export async function saveMaterialToDisk(outputDir: string, material: SigningKeyMaterial): Promise<void> {
   const resolvedOutputDir = path.resolve(outputDir);
   await makeSecureDir(resolvedOutputDir);
 
-  const publicKeyPath = path.join(resolvedOutputDir, 'public.asc');
-  const privateKeyPath = path.join(resolvedOutputDir, 'private.asc');
-  const revocationPath = path.join(resolvedOutputDir, 'revocation.asc');
-  const metadataPath = path.join(resolvedOutputDir, 'credentials.json');
+  const files: [string, string][] = [
+    [path.join(resolvedOutputDir, 'public.asc'), material.publicKey],
+    [path.join(resolvedOutputDir, 'private.asc'), material.privateKey],
+    ...(material.revocationCertificate
+      ? [[path.join(resolvedOutputDir, 'revocation.asc'), material.revocationCertificate] as [string, string]]
+      : []),
+    [path.join(resolvedOutputDir, 'credentials.json'), `${JSON.stringify(material, undefined, 2)}\n`],
+  ];
 
-  await writeSecureFile(publicKeyPath, material.publicKey);
-  await writeSecureFile(privateKeyPath, material.privateKey);
-  if (material.revocationCertificate) {
-    await writeSecureFile(revocationPath, material.revocationCertificate);
+  // Check every target up front so a clash does not leave a partial set behind.
+  for (const [filePath] of files) {
+    if (await pathExists(filePath)) {
+      throw new Error(`Refusing to overwrite existing file: ${filePath}`);
+    }
   }
-  await writeSecureFile(metadataPath, `${JSON.stringify(material, undefined, 2)}\n`);
+  for (const [filePath, content] of files) {
+    await writeSecureFile(filePath, content);
+  }
+}
+
+async function pathExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function buildGenerateKeyOptions(

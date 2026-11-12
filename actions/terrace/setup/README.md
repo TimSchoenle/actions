@@ -9,7 +9,7 @@ outside the markers.
 
 Installs a signature-verified terrace-contract release on PATH, together with cosign and, when asked, oras. The version comes from the version input or from the cli pin in terrace.yaml.
 
-[actions-terrace-setup-v3.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-setup-v3.1.3) · JavaScript action (node24)
+[actions-terrace-setup-v4.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-setup-v4.0.0) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -28,7 +28,7 @@ steps:
       persist-credentials: false
 
   - id: terrace
-    uses: TimSchoenle/actions/actions/terrace/setup@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-terrace-setup-v3.1.3
+    uses: TimSchoenle/actions/actions/terrace/setup@actions-terrace-setup-v4.0.0 # tag=actions-terrace-setup-v4.0.0
 
   - run: terrace-contract doctor
 ```
@@ -38,7 +38,7 @@ steps:
 ```yaml
 # An exact version needs no release listing, so the run is reproducible and makes no API call
 # unless a download fails. oras is what terrace-contract pull fetches contracts from a registry with.
-- uses: TimSchoenle/actions/actions/terrace/setup@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-terrace-setup-v3.1.3
+- uses: TimSchoenle/actions/actions/terrace/setup@actions-terrace-setup-v4.0.0 # tag=actions-terrace-setup-v4.0.0
   with:
     version: '0.13.1'
     oras: 'true'
@@ -48,14 +48,16 @@ steps:
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input               | Required | Default                                                                    | Description                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| ------------------- | -------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `version`           | no       |                                                                            | terrace-contract release to install: an exact MAJOR.MINOR.PATCH, or MAJOR.MINOR for the newest patch release of that line. Empty reads the cli pin from terrace.yaml in working_directory, with the same meaning. An exact version is what makes a run reproducible.                                                                                                                                                              |
-| `working_directory` | no       | `.`                                                                        | Directory holding terrace.yaml, relative to the workspace. Read only when version is empty.                                                                                                                                                                                                                                                                                                                                       |
-| `oras`              | no       | `false`                                                                    | Also install oras, which terrace-contract pull needs to fetch contracts from a registry.                                                                                                                                                                                                                                                                                                                                          |
-| `cosign_version`    | no       | `v3.1.4`                                                                   | cosign release to install, as vMAJOR.MINOR.PATCH. It is installed even when another cosign is on PATH, so the verification this action runs does not depend on the runner image. cosign verifies the terrace-contract release here and image signatures in terrace-contract pull.                                                                                                                                                 |
-| `oras_version`      | no       | `1.3.6`                                                                    | oras release to install when oras is true, as MAJOR.MINOR.PATCH without a leading v.                                                                                                                                                                                                                                                                                                                                              |
-| `github_token`      | no       | `${{ github.server_url == 'https://github.com' && github.token \|\| '' }}` | Token for api.github.com: for listing terrace-contract releases, needed only when the version is a MAJOR.MINOR line, and for the REST API fallback that runs when a release download fails. Defaults to the job token on github.com and to empty elsewhere, because a GitHub Enterprise Server token is not a github.com credential and must not be sent there. Unauthenticated listing works but shares a low per-IP rate limit. |
+| Input                     | Required | Default                                                                    | Description                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------- | -------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `version`                 | no       |                                                                            | terrace-contract release to install: an exact MAJOR.MINOR.PATCH, or MAJOR.MINOR for the newest patch release of that line. Empty reads the cli pin from terrace.yaml in working_directory, with the same meaning. An exact version is what makes a run reproducible.                                                                                                                                                                                   |
+| `working_directory`       | no       | `.`                                                                        | Directory holding terrace.yaml, relative to the workspace. Read only when version is empty.                                                                                                                                                                                                                                                                                                                                                            |
+| `oras`                    | no       | `false`                                                                    | Also install oras, which terrace-contract pull needs to fetch contracts from a registry.                                                                                                                                                                                                                                                                                                                                                               |
+| `cosign_version`          | no       | `v3.1.4`                                                                   | cosign release to install, as vMAJOR.MINOR.PATCH. It is installed even when another cosign is on PATH, so the verification this action runs does not depend on the runner image. cosign verifies the terrace-contract release here and image signatures in terrace-contract pull.                                                                                                                                                                      |
+| `cosign_checksums_sha256` | no       | `e70e59b328d52949b3a9ae3e0d04721ea8f380c4e91c28197aa91df02afbf4c0`         | SHA-256 of cosign_version's cosign_checksums.txt, which then verifies the cosign binary. The binary and the list come from one release, so the pin is what ties the install to the release that was pinned. Set it whenever cosign_version is set: the default pins the default version's list, and any other release fails.                                                                                                                           |
+| `oras_version`            | no       | `1.3.6`                                                                    | oras release to install when oras is true, as MAJOR.MINOR.PATCH without a leading v.                                                                                                                                                                                                                                                                                                                                                                   |
+| `oras_checksums_sha256`   | no       | `7c5fd385736ac5e9b0b2dc1053b232ffbd4d5bdabdf3af7e517ddef97abe8af9`         | SHA-256 of oras_version's oras_<version>_checksums.txt, which then verifies the oras archive. Read only when oras is true. Set it whenever oras_version is set: the default pins the default version's list, and any other release fails.                                                                                                                                                                                                              |
+| `github_token`            | no       | `${{ github.server_url == 'https://github.com' && github.token \|\| '' }}` | Token for api.github.com: for looking up the newest terrace-contract release of a line, needed only when the version is a MAJOR.MINOR line, and for the REST API fallback that runs when a release download fails. Defaults to the job token on github.com and to empty elsewhere, because a GitHub Enterprise Server token is not a github.com credential and must not be sent there. Unauthenticated lookups work but share a low per-IP rate limit. |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
@@ -80,20 +82,33 @@ Needs no token permissions.
 
 A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
 
-| Endpoint                                   | For                                                                                             |
-| ------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| `github.com:443`                           | the terrace-contract, cosign and oras release downloads                                         |
-| `objects.githubusercontent.com:443`        | the release assets that github.com redirects to                                                 |
-| `release-assets.githubusercontent.com:443` | the release assets that github.com redirects to                                                 |
-| `api.github.com:443`                       | listing terrace-contract releases for a MAJOR.MINOR version, and the REST API download fallback |
-| `tuf-repo-cdn.sigstore.dev:443`            | the Sigstore trust root cosign verifies the terrace-contract release against                    |
+| Endpoint                                   | For                                                                                                      |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `github.com:443`                           | the terrace-contract, cosign and oras release downloads                                                  |
+| `objects.githubusercontent.com:443`        | the release assets that github.com redirects to                                                          |
+| `release-assets.githubusercontent.com:443` | the release assets that github.com redirects to                                                          |
+| `api.github.com:443`                       | looking up the newest terrace-contract release of a MAJOR.MINOR line, and the REST API download fallback |
+| `tuf-repo-cdn.sigstore.dev:443`            | the Sigstore trust root cosign verifies the terrace-contract release against                             |
 <!-- /docs:generated egress -->
+
+## How each tool is verified
+
+- **terrace-contract.** cosign verifies the keyless signature over the release's `SHA256SUMS` against the release
+  workflow of `TimSchoenle/terrace-config` on `main`, then `SHA256SUMS` verifies the archive.
+- **cosign and oras.** Each release publishes a checksum list next to its binaries. Whoever can replace a binary in a
+  release can replace the list beside it, so the list alone proves nothing. The SHA-256 of the list is pinned in
+  `cosign_checksums_sha256` and `oras_checksums_sha256`, next to the version, and the step fails before anything
+  reaches the tool cache when the downloaded list hashes to anything else.
+
+The defaults pin the default versions. Setting `cosign_version` or `oras_version` therefore means setting the matching
+digest too: with the default digest, any other release fails the step and names the input to set. Renovate moves each
+version and its digest in one commit.
 
 <!-- docs:generated reference -->
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-terrace-setup.yaml`](../../../.github/workflows/verify-action-terrace-setup.yaml)
+- End-to-end tests: [`.github/verify/terrace-setup.yaml`](../../../.github/verify/terrace-setup.yaml)
 - Called from this repository by:
   - [`actions/helm/update-chart-version/action.yaml`](../../../actions/helm/update-chart-version/action.yaml)
   - [`actions/terrace/helm-check/action.yaml`](../../../actions/terrace/helm-check/action.yaml)

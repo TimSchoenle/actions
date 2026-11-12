@@ -1,0 +1,70 @@
+target: configs/checkstyle
+title: Checkstyle Configs
+extra-inputs:
+  - 'configs/checkstyle'
+  - 'jitpack.yml'
+rules:
+  # Only pushes to main ran this workflow before it moved into Verify.
+  push-branches: []
+jobs:
+  checkstyle-verify:
+    name: Verify Checkstyle Configs
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+        with:
+          java-version: '21'
+          distribution: temurin
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
+
+      # JitPack builds the published artifacts with this wrapper, so the distribution it downloads must
+      # be pinned by checksum: the wrapper refuses a download that does not match. Renovate's
+      # gradle-wrapper manager updates the checksum together with distributionUrl.
+      - name: Check the wrapper distribution is pinned
+        working-directory: configs/checkstyle
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Eq '^distributionSha256Sum=[0-9a-f]{64}$' gradle/wrapper/gradle-wrapper.properties || {
+            echo "::error::gradle-wrapper.properties has no distributionSha256Sum"
+            exit 1
+          }
+
+      - name: Make gradlew executable
+        working-directory: configs/checkstyle
+        shell: bash
+        run: chmod +x ./gradlew
+
+      # Builds the two publishable modules (proves the classpath: resource rewrite still produces
+      # a valid jar) and runs every Checkstyle compatibility + Lombok-suppression check registered
+      # in compat-check/build.gradle.kts, against the Checkstyle version pinned in
+      # gradle/libs.versions.toml (which Renovate's built-in Gradle version-catalog support keeps
+      # current, so this job re-validates on every bump).
+      - name: Build and verify
+        working-directory: configs/checkstyle
+        shell: bash
+        run: ./gradlew :checkstyle-application:build :checkstyle-library:build :compat-check:verifyCheckstyleCompat --no-daemon
+
+      - name: Upload Checkstyle reports
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: checkstyle-compat-reports
+          path: configs/checkstyle/compat-check/build/reports/checkstyle/
+          retention-days: 14

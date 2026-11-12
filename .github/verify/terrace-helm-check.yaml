@@ -1,0 +1,112 @@
+target: terrace/helm-check
+title: Terrace Helm Check
+extra-inputs:
+  - '.github/testdata/terrace-helm'
+rules:
+  # Only pushes to main ran this workflow before it moved into Verify.
+  push-branches: []
+jobs:
+  helm-check-clean:
+    name: 'Test: a current tree passes every gate'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # to fetch code, and to list terrace-contract releases
+    env:
+      FIXTURE: .github/testdata/terrace-helm
+      TERRACE_CONFIG: ${{ github.workspace }}/.github/testdata/terrace-helm/terrace.yaml
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            tuf-repo-cdn.sigstore.dev:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Check
+        id: check
+        uses: ./actions/terrace/helm-check # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          since: ''
+
+      - name: Verify the version came from the fixture's pin
+        env:
+          VERSION: ${{ steps.check.outputs.version }}
+        run: |
+          set -euo pipefail
+          case "$VERSION" in 0.11.*) ;; *) echo "::error::$VERSION is not on the fixture's 0.11 line"; exit 1;; esac
+
+  helm-check-drift:
+    name: 'Test: a stale value schema and an unknown chart fail the step'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # to fetch code, and to list terrace-contract releases
+    env:
+      FIXTURE: .github/testdata/terrace-helm
+      TERRACE_CONFIG: ${{ github.workspace }}/.github/testdata/terrace-helm/terrace.yaml
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            tuf-repo-cdn.sigstore.dev:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # The first value projected from the contract gets the wrong type in its generated `@schema`
+      # block: the drift `shapes --check` exists to catch, where the contract says one thing and the
+      # chart's schema another.
+      - name: Make a value schema stale
+        run: |
+          set -euo pipefail
+          values="${FIXTURE}/charts/mp-stats-legacy-viewer/values.yaml"
+          marker="$(grep -n '@config projection' "$values" | head -n 1 | cut -d: -f1)"
+          test -n "$marker" || { echo "::error::no projected value to break"; exit 1; }
+          line=$((marker + 1))
+          grep -q 'type: string' <(sed -n "${line}p" "$values") || { echo "::error::line ${line} is not its type"; exit 1; }
+          sed -i "${line}s/type: string/type: object/" "$values"
+          git diff --stat
+
+      - name: Check
+        id: stale
+        continue-on-error: true
+        uses: ./actions/terrace/helm-check # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          since: ''
+
+      - name: Check a chart the tree does not hold
+        id: unknown
+        continue-on-error: true
+        uses: ./actions/terrace/helm-check # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working_directory: ${{ env.FIXTURE }}
+          charts: no-such-chart
+
+      - name: Verify both runs failed
+        env:
+          STALE: ${{ steps.stale.outcome }}
+          UNKNOWN: ${{ steps.unknown.outcome }}
+        run: |
+          set -euo pipefail
+          test "$STALE" = failure || { echo "::error::a stale schema passed the gates"; exit 1; }
+          test "$UNKNOWN" = failure || { echo "::error::an unknown chart name passed"; exit 1; }

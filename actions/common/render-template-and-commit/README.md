@@ -40,7 +40,7 @@ over unchanged inputs makes no commit and no API call.
     private-key: ${{ secrets.BOT_PRIVATE_KEY }}
     permission-contents: write
 
-- uses: TimSchoenle/actions/actions/common/render-template-and-commit@actions-common-render-template-and-commit-v1.1.21 # tag=actions-common-render-template-and-commit-v1.1.21
+- uses: TimSchoenle/actions/actions/common/render-template-and-commit@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-common-render-template-and-commit-v1.1.21
   id: docs
   with:
     template: docs/README.hbs
@@ -138,6 +138,6 @@ Nothing is reached when the render changed nothing, because the commit step is s
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-render-template-and-commit.yaml`](../../../.github/workflows/verify-action-common-render-template-and-commit.yaml)
+- End-to-end tests: [`.github/verify/common-render-template-and-commit.yaml`](../../../.github/verify/common-render-template-and-commit.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

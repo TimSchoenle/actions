@@ -1,0 +1,4 @@
+target: common/create-branch
+e2e:
+  token-permissions:
+    contents: write

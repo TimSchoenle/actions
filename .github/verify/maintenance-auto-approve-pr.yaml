@@ -1,0 +1,9 @@
+target: maintenance/auto-approve-pr
+e2e:
+  token-permissions:
+    contents: write
+    pull-requests: write
+  # GitHub rejects a review by the pull request's own author, so the action runs as a second
+  # identity that may only submit reviews.
+  secondary-token-permissions:
+    pull-requests: write

@@ -4,7 +4,13 @@ import { join, resolve } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { MissingChartVersionError, readChartVersion, resolveChartFiles, UnsafePathError } from './chart-files.js';
+import {
+  MissingChartVersionError,
+  readChartVersion,
+  resolveChartFiles,
+  UnsafePathError,
+  WhitespaceInChartPathError,
+} from './chart-files.js';
 
 const WORKSPACE = resolve('/workspace');
 
@@ -37,6 +43,16 @@ describe('resolveChartFiles', () => {
   ])('rejects %s', (_label, chartPath) => {
     expect(() => resolveChartFiles(chartPath, WORKSPACE)).toThrow(UnsafePathError);
   });
+
+  // The files output is a space-separated file pattern, so `charts/my app/Chart.yaml` would reach the
+  // commit step as `charts/my` and `app/Chart.yaml`, which stage the wrong paths or none.
+  it.each(['charts/my app', 'charts/app\tv2', 'charts/x/ y'])(
+    'rejects a chart path with whitespace: %j',
+    (chartPath) => {
+      expect(() => resolveChartFiles(chartPath, WORKSPACE)).toThrow(WhitespaceInChartPathError);
+      expect(() => resolveChartFiles(chartPath, WORKSPACE)).toThrow(/chart-path must not contain whitespace/);
+    },
+  );
 });
 
 describe('readChartVersion', () => {

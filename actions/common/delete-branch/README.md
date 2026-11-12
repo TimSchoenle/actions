@@ -9,13 +9,13 @@ outside the markers.
 
 Deletes a branch from a repository. Fails gracefully if the branch does not exist.
 
-[actions-common-delete-branch-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-delete-branch-v2.0.4) · JavaScript action (node24)
+[actions-common-delete-branch-v2.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-common-delete-branch-v2.0.5) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
 ## Usage
 
-### Delete a pull request's branch once it is closed
+### Delete a pull request's branch once it is merged
 
 ```yaml
 name: Delete Closed Branch
@@ -28,13 +28,17 @@ permissions: {}
 
 jobs:
   delete-branch:
-    # A fork's branch is not in this repository, and a fork run's token is read-only anyway.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # Only a merged pull request: a pull request whose head is a long-lived branch, such as develop
+    # or gh-pages, would otherwise delete that branch when someone closes it unmerged. A fork's
+    # branch is not in this repository, and a fork run's token is read-only anyway.
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: write # to delete the branch
     steps:
-      - uses: TimSchoenle/actions/actions/common/delete-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-delete-branch-v2.0.4
+      - uses: TimSchoenle/actions/actions/common/delete-branch@actions-common-delete-branch-v2.0.5 # tag=actions-common-delete-branch-v2.0.5
         with:
           token: ${{ github.token }}
           branch_name: ${{ github.event.pull_request.head.ref }}
@@ -81,11 +85,11 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-delete-branch.yaml`](../../../.github/workflows/verify-action-common-delete-branch.yaml)
+- End-to-end tests: [`.github/verify/common-delete-branch.yaml`](../../../.github/verify/common-delete-branch.yaml)
 - Called from this repository by:
-  - [`.github/workflows/verify-action-common-create-pull-request.yaml`](../../../.github/workflows/verify-action-common-create-pull-request.yaml)
-  - [`.github/workflows/verify-action-common-render-template-and-commit.yaml`](../../../.github/workflows/verify-action-common-render-template-and-commit.yaml)
-  - [`.github/workflows/verify-action-helm-update-chart-version.yaml`](../../../.github/workflows/verify-action-helm-update-chart-version.yaml)
-  - [`.github/workflows/verify-action-java-gradle-auto-spotless.yaml`](../../../.github/workflows/verify-action-java-gradle-auto-spotless.yaml)
-  - [`.github/workflows/verify-action-rust-auto-format.yaml`](../../../.github/workflows/verify-action-rust-auto-format.yaml)
+  - [`.github/verify/common-create-pull-request.yaml`](../../../.github/verify/common-create-pull-request.yaml)
+  - [`.github/verify/common-render-template-and-commit.yaml`](../../../.github/verify/common-render-template-and-commit.yaml)
+  - [`.github/verify/helm-update-chart-version.yaml`](../../../.github/verify/helm-update-chart-version.yaml)
+  - [`.github/verify/java-gradle-auto-spotless.yaml`](../../../.github/verify/java-gradle-auto-spotless.yaml)
+  - [`.github/verify/rust-auto-format.yaml`](../../../.github/verify/rust-auto-format.yaml)
 <!-- /docs:generated reference -->

@@ -9,7 +9,7 @@ outside the markers.
 
 Updates a Helm chart's image tags, version and appVersion, then opens a Pull Request. Every image carries its own version and digest, so one call can move a chart with many services. This action requires a bot account with access to the charts repo.
 
-[actions-helm-update-chart-version-v1.7.5](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.7.5) · Composite action
+[actions-helm-update-chart-version-v1.7.6](https://github.com/TimSchoenle/actions/releases/tag/actions-helm-update-chart-version-v1.7.6) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -48,7 +48,7 @@ jobs:
     steps:
       # The action checks the charts repository out over the workspace, so it needs no checkout of
       # its own and anything already in the workspace is replaced.
-      - uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.7.5 # tag=actions-helm-update-chart-version-v1.7.5
+      - uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.7.6 # tag=actions-helm-update-chart-version-v1.7.6
         with:
           app-id: ${{ vars.CHARTS_BOT_APP_ID }}
           private-key: ${{ secrets.charts-bot-private-key }}
@@ -67,7 +67,7 @@ jobs:
 # With pull-contracts, the charts repository needs a terrace.yaml at its root and the images must be
 # pullable without credentials.
 - id: chart
-  uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.7.5 # tag=actions-helm-update-chart-version-v1.7.5
+  uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.7.6 # tag=actions-helm-update-chart-version-v1.7.6
   with:
     app-id: ${{ vars.CHARTS_BOT_APP_ID }}
     private-key: ${{ secrets.CHARTS_BOT_PRIVATE_KEY }}
@@ -98,7 +98,7 @@ jobs:
 | `private-key`         | yes      |                                                              | GitHub App Private Key                                                                                                                                                                                                                                                                                                                                                           |
 | `helm-repo`           | yes      |                                                              | Repository name of the helm charts (e.g. owner/repo)                                                                                                                                                                                                                                                                                                                             |
 | `base_branch`         | no       |                                                              | The branch to merge into (defaults to repository default branch)                                                                                                                                                                                                                                                                                                                 |
-| `chart-path`          | yes      |                                                              | Path of the chart inside the repo (e.g. charts/my-app)                                                                                                                                                                                                                                                                                                                           |
+| `chart-path`          | yes      |                                                              | Path of the chart inside the repo (e.g. charts/my-app). Letters, digits, ".", "_", "-" and "/" only.                                                                                                                                                                                                                                                                             |
 | `images`              | yes      |                                                              | JSON object mapping a dot-notation key in values.yaml to that image's own variables, e.g. {"services.api.image.tag": {"tag": "v1.2.3", "digest": "sha256:..."}}. Every key must already exist in values.yaml and must match key-pattern.                                                                                                                                         |
 | `value-template`      | no       | `${tag}@${digest}`                                           | Template for the value written at each key. Supports ${name} placeholders only, resolved against the entry's own variables layered over `variables`. An undefined placeholder is an error.                                                                                                                                                                                       |
 | `variables`           | no       | `{}`                                                         | JSON object of default template variables, shared by every entry. An entry's own variables always win. Optional: images that move independently carry their versions per entry.                                                                                                                                                                                                  |
@@ -152,6 +152,6 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-helm-update-chart-version.yaml`](../../../.github/workflows/verify-action-helm-update-chart-version.yaml)
+- End-to-end tests: [`.github/verify/helm-update-chart-version.yaml`](../../../.github/verify/helm-update-chart-version.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

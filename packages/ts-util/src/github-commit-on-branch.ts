@@ -49,10 +49,20 @@ export interface CreateCommitRequest {
   fileChanges: FileChanges;
 }
 
+/** How {@link CommitApi.getHeadOid} reads the branch. */
+export interface HeadReadOptions {
+  /**
+   * The branch was created moments ago, so a 404 may be replication lag: retry it for up to 7.5s
+   * before believing it. Off by default, because for any other branch a 404 means it is gone, and
+   * waiting it out only delays the failure.
+   */
+  justCreated?: boolean;
+}
+
 /** The GitHub operations a branch commit needs, kept minimal so callers can fake them in tests. */
 export interface CommitApi {
   /** Resolves the commit the branch currently points at. Throws when the branch does not exist. */
-  getHeadOid(coordinates: RepositoryCoordinates, branch: string): Promise<string>;
+  getHeadOid(coordinates: RepositoryCoordinates, branch: string, options?: HeadReadOptions): Promise<string>;
   /** Creates a verified commit at the tip of the branch and returns it. */
   createCommit(request: CreateCommitRequest): Promise<CreatedCommit>;
 }
@@ -141,13 +151,16 @@ export function createCommitApi(token: string): CommitApi {
       return { oid: commit.oid, url: commit.url };
     },
 
-    async getHeadOid({ owner, repo }: RepositoryCoordinates, branch: string): Promise<string> {
-      // Callers routinely commit to a branch created moments earlier, and a ref that new is not yet
-      // readable on every replica: the 404 that comes back is replication lag, not a missing branch.
-      const { data } = await readAfterWrite(
-        () => octokit.rest.git.getRef({ owner, ref: `heads/${branch}`, repo }),
-        `Branch '${branch}'`,
-      );
+    async getHeadOid(
+      { owner, repo }: RepositoryCoordinates,
+      branch: string,
+      { justCreated = false }: HeadReadOptions = {},
+    ): Promise<string> {
+      const read = () => octokit.rest.git.getRef({ owner, ref: `heads/${branch}`, repo });
+
+      // A ref created moments earlier is not yet readable on every replica, so for such a branch the
+      // 404 that comes back is replication lag, not a missing branch.
+      const { data } = justCreated ? await readAfterWrite(read, `Branch '${branch}'`) : await read();
 
       return data.object.sha;
     },

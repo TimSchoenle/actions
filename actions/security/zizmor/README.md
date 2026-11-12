@@ -9,7 +9,7 @@ outside the markers.
 
 Runs zizmor over workflows and actions with strict collection, uploads the SARIF to code scanning under the category zizmor, and fails the job on an input zizmor cannot parse or a finding at or above a severity.
 
-[actions-security-zizmor-v2.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-security-zizmor-v2.0.5) · Composite action · Linux runners only · needs Docker
+[actions-security-zizmor-v2.0.6](https://github.com/TimSchoenle/actions/releases/tag/actions-security-zizmor-v2.0.6) · Composite action · Linux runners only · needs Docker
 <!-- /docs:generated header -->
 
 [zizmor](https://docs.zizmor.sh) audits a repository's workflows and actions. This action fails the job when zizmor
@@ -46,7 +46,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: TimSchoenle/actions/actions/security/zizmor@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-security-zizmor-v2.0.5
+      - uses: TimSchoenle/actions/actions/security/zizmor@actions-security-zizmor-v2.0.6 # tag=actions-security-zizmor-v2.0.6
 ```
 <!-- /docs:generated usage -->
 
@@ -141,6 +141,6 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-security-zizmor.yaml`](../../../.github/workflows/verify-action-security-zizmor.yaml)
+- End-to-end tests: [`.github/verify/security-zizmor.yaml`](../../../.github/verify/security-zizmor.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

@@ -1,4 +1,4 @@
-import { hasStatus, resolveExists } from 'actions-util';
+import { hasStatus, resolveOptional } from 'actions-util';
 import { createOctokit } from 'actions-util/client';
 
 import type { PullRequestApi } from './close.js';
@@ -10,7 +10,7 @@ const UNPROCESSABLE = 422;
 /**
  * Binds the {@link PullRequestApi} to the GitHub REST API.
  *
- * Only a missing pull request is translated into `false`; every other error (bad credentials, rate
+ * Only a missing pull request is translated into `undefined`; every other error (bad credentials, rate
  * limit, server error) propagates, so it cannot be misreported as a pull request that never existed.
  *
  * Comments are posted through the issues endpoint because GitHub models a pull request as an issue
@@ -46,8 +46,16 @@ export function createPullRequestApi(token: string): PullRequestApi {
       await octokit.rest.issues.createComment({ body: comment, issue_number: pullRequestNumber, owner, repo });
     },
 
-    async pullRequestExists({ owner, repo }: RepositoryCoordinates, pullRequestNumber: number): Promise<boolean> {
-      return resolveExists(octokit.rest.pulls.get({ owner, pull_number: pullRequestNumber, repo }));
+    async pullRequestState(
+      { owner, repo }: RepositoryCoordinates,
+      pullRequestNumber: number,
+    ): Promise<'open' | 'closed' | undefined> {
+      const response = await resolveOptional(octokit.rest.pulls.get({ owner, pull_number: pullRequestNumber, repo }));
+      if (response === undefined) {
+        return undefined;
+      }
+
+      return response.data.state === 'closed' ? 'closed' : 'open';
     },
   };
 

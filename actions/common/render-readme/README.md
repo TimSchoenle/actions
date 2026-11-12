@@ -9,7 +9,7 @@ outside the markers.
 
 Renders README.md from its Handlebars template with the shared README payload, and either uploads the result as a create-patch artifact or fails when the committed file is stale.
 
-[actions-common-render-readme-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-readme-v1.1.1) · Composite action
+[actions-common-render-readme-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-readme-v1.1.2) · Composite action
 <!-- /docs:generated header -->
 
 It is the README job every repository repeats, in one step: [`common/readme-variables`](../readme-variables) collects
@@ -41,14 +41,14 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
       - id: readme
-        uses: TimSchoenle/actions/actions/common/render-readme@actions-common-render-readme-v1.1.1 # tag=actions-common-render-readme-v1.1.1
+        uses: TimSchoenle/actions/actions/common/render-readme@actions-common-render-readme-v1.1.2 # tag=actions-common-render-readme-v1.1.2
 ```
 
 ### Drift gate on the default branch
 
 ```yaml
 # The drift gate on the default branch. Give it the same inputs as the generator job.
-- uses: TimSchoenle/actions/actions/common/render-readme@actions-common-render-readme-v1.1.1 # tag=actions-common-render-readme-v1.1.1
+- uses: TimSchoenle/actions/actions/common/render-readme@actions-common-render-readme-v1.1.2 # tag=actions-common-render-readme-v1.1.2
   with:
     check: 'true'
 ```
@@ -115,6 +115,6 @@ Neither is reached with `check: true`, which uploads nothing.
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-render-readme.yaml`](../../../.github/workflows/verify-action-common-render-readme.yaml)
+- End-to-end tests: [`.github/verify/common-render-readme.yaml`](../../../.github/verify/common-render-readme.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

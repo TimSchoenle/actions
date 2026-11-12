@@ -43,7 +43,8 @@ inputs:
     required: false
     default: '.'
   empty_commit:
-    description: 'Allow making an empty commit if there are no changes'
+    description: 'Ignored. It never had an effect: commit-changes cannot make an empty commit.'
+    deprecationMessage: 'empty_commit has never had an effect and will be removed. Stop passing it.'
     required: false
     default: 'false'
 
@@ -97,18 +98,18 @@ runs:
       if: inputs.commit_changes == 'true'
       id: commit
       uses: TimSchoenle/actions/actions/common/commit-changes@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-commit-changes-v3.0.4
-      env:
-        GITHUB_SHA: ${{ steps.branch.outputs.sha }}
       with:
         token: ${{ steps.generate_token.outputs.token }}
         repository: ${{ inputs.repository }}
         branch: ${{ inputs.branch_name }}
         commit_message: ${{ inputs.commit_message }}
         file_pattern: ${{ inputs.file_pattern }}
-        empty: ${{ inputs.empty_commit }}
 
+    # A commit this run made is a difference by construction, so the comparison is only asked for when
+    # there was none: the branch may still carry an earlier run's commits that need a pull request.
     - name: Check for Branch Differences
       id: diff-check
+      if: steps.commit.outputs.changes_detected != 'true'
       shell: bash
       env:
         GH_TOKEN: ${{ steps.generate_token.outputs.token }}
@@ -130,7 +131,7 @@ runs:
         fi
 
     - name: Create Pull Request
-      # The diff-check step sometimes fails, since github takes a while to update the comparison status. So we will just assume that it changed if we commit ourselfs
+      # A commit this run made is trusted over the comparison, which can lag a fresh push.
       if: steps.diff-check.outputs.has_differences == 'true' || steps.commit.outputs.changes_detected == 'true'
       id: create-pr
       shell: bash
@@ -142,43 +143,40 @@ runs:
         TITLE: ${{ inputs.title }}
         BODY: ${{ inputs.body }}
       run: |
-        # Try to create PR, or get existing one
-        if PR_URL=$(gh pr create \
-          --repo "$REPO" \
-          --head "$HEAD_BRANCH" \
-          --base "$BASE_BRANCH" \
-          --title "$TITLE" \
-          --body "$BODY" 2>&1); then
-          echo "pr-url=$PR_URL" >> "$GITHUB_OUTPUT"
-          
-          # Extract PR number from URL
-          PR_NUMBER=$(echo "$PR_URL" | grep -oP '\d+$')
-          echo "pr-number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
-          
-          echo "Pull request created: $PR_URL"
+        set -euo pipefail
+
+        # Look for an open pull request from this repository's branch first, qualified by owner and
+        # checked by head repository. `gh pr list --head` ignores the owner, so a fork's pull request
+        # from a same-named branch into the same base could be reported, and a caller that labels,
+        # approves or merges pr_number would act on the fork's code.
+        OWNER="${REPO%%/*}"
+        # $ENV.REPO is jq's environment lookup, so the single quotes are intended.
+        # shellcheck disable=SC2016
+        EXISTING=$(gh api -X GET "repos/$REPO/pulls" \
+          -f head="$OWNER:$HEAD_BRANCH" -f base="$BASE_BRANCH" -f state=open \
+          --jq '[.[] | select(.head.repo.full_name == $ENV.REPO)] | first // empty | "\(.number) \(.html_url)"')
+
+        if [ -n "$EXISTING" ]; then
+          PR_NUMBER="${EXISTING%% *}"
+          PR_URL="${EXISTING#* }"
+          echo "Existing pull request: $PR_URL"
         else
-          # Check if PR already exists
-          if echo "$PR_URL" | grep -q "already exists"; then
-            echo "Pull request already exists, fetching URL..."
-            EXISTING_PR_URL=$(gh pr list \
-              --repo "$REPO" \
-              --head "$HEAD_BRANCH" \
-              --base "$BASE_BRANCH" \
-              --json url \
-              --jq '.[0].url')
-            
-            EXISTING_PR_NUMBER=$(gh pr list \
-              --repo "$REPO" \
-              --head "$HEAD_BRANCH" \
-              --base "$BASE_BRANCH" \
-              --json number \
-              --jq '.[0].number')
-            
-            echo "pr-url=$EXISTING_PR_URL" >> "$GITHUB_OUTPUT"
-            echo "pr-number=$EXISTING_PR_NUMBER" >> "$GITHUB_OUTPUT"
-            echo "Existing pull request: $EXISTING_PR_URL"
-          else
-            echo "Error creating pull request: $PR_URL"
-            exit 1
-          fi
+          # A pull request created concurrently makes this fail, which is reported rather than
+          # resolved by a lookup that could pick the wrong one.
+          PR_URL=$(gh pr create \
+            --repo "$REPO" \
+            --head "$HEAD_BRANCH" \
+            --base "$BASE_BRANCH" \
+            --title "$TITLE" \
+            --body "$BODY")
+          PR_NUMBER="${PR_URL##*/}"
+          echo "Pull request created: $PR_URL"
         fi
+
+        if ! [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+          echo "::error::Could not read a pull request number from '$PR_URL'."
+          exit 1
+        fi
+
+        echo "pr-url=$PR_URL" >> "$GITHUB_OUTPUT"
+        echo "pr-number=$PR_NUMBER" >> "$GITHUB_OUTPUT"

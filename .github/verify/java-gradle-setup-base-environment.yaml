@@ -1,0 +1,159 @@
+target: java-gradle/setup-base-environment
+rules:
+  # Only pushes to main ran this workflow before it moved into Verify.
+  push-branches: []
+jobs:
+  setup-base-environment-verify:
+    name: Verify Setup-base-environment
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      # Every pair of values across the five inputs, in 8 legs instead of the 64 of the full product
+      # (4 x 2 x 2 x 2 x 2), which was about a third of all Verify legs. Each Java version appears
+      # twice with complementary values of the four binary inputs, so it meets both values of each;
+      # the four base rows (0000, 0011, 0101, 0110) give every two binary inputs all four
+      # combinations. The inputs do not interact beyond pairs: each is passed straight to
+      # actions/setup-java or to the wrapper permission step.
+      matrix:
+        include:
+          - java-version: '11'
+            java-package: 'jre'
+            java-distribution: 'temurin'
+            gradle-setup-version: '9.3.1'
+            gradle-wrapper-permission-set: 'read-only'
+          - java-version: '11'
+            java-package: 'jdk'
+            java-distribution: 'zulu'
+            gradle-setup-version: '8.14.3'
+            gradle-wrapper-permission-set: 'read-write'
+          - java-version: '17'
+            java-package: 'jre'
+            java-distribution: 'temurin'
+            gradle-setup-version: '8.14.3'
+            gradle-wrapper-permission-set: 'read-write'
+          - java-version: '17'
+            java-package: 'jdk'
+            java-distribution: 'zulu'
+            gradle-setup-version: '9.3.1'
+            gradle-wrapper-permission-set: 'read-only'
+          - java-version: '21'
+            java-package: 'jre'
+            java-distribution: 'zulu'
+            gradle-setup-version: '9.3.1'
+            gradle-wrapper-permission-set: 'read-write'
+          - java-version: '21'
+            java-package: 'jdk'
+            java-distribution: 'temurin'
+            gradle-setup-version: '8.14.3'
+            gradle-wrapper-permission-set: 'read-only'
+          - java-version: '25'
+            java-package: 'jre'
+            java-distribution: 'zulu'
+            gradle-setup-version: '8.14.3'
+            gradle-wrapper-permission-set: 'read-only'
+          - java-version: '25'
+            java-package: 'jdk'
+            java-distribution: 'temurin'
+            gradle-setup-version: '9.3.1'
+            gradle-wrapper-permission-set: 'read-write'
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # Gradle runs on the JDK it finds, and the runner image's default moves with the image
+      # (ubuntu-26.04 ships 25, which Gradle 8.14.3 cannot run on). JDK 21 runs every Gradle version
+      # in the matrix, whatever Java version the leg then tests; the action sets up its own.
+      - name: Set Up JDK For The Gradle Wrapper
+        id: wrapper-jdk
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Generate Gradle wrapper
+        shell: bash
+        env:
+          GRADLE_VERSION: ${{ matrix.gradle-setup-version }}
+          JAVA_HOME: ${{ steps.wrapper-jdk.outputs.path }}
+        run: |
+          # Install Gradle temporarily to generate the wrapper files
+          sdk_install_dir="${RUNNER_TEMP}/gradle-install"
+          gradle_zip="${RUNNER_TEMP}/gradle-${GRADLE_VERSION}-bin.zip"
+
+          curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -o "${gradle_zip}"
+          unzip -q "${gradle_zip}" -d "${sdk_install_dir}"
+
+          # Create a minimal Gradle project structure
+          echo 'rootProject.name = "verify-test"' > settings.gradle
+
+          # Generate wrapper files (gradlew, gradlew.bat, gradle/wrapper/*)
+          "${sdk_install_dir}/gradle-${GRADLE_VERSION}/bin/gradle" wrapper --gradle-version "${GRADLE_VERSION}"
+
+          # Verify the wrapper was created
+          ls -la gradlew gradle/wrapper/
+
+      - name: Set Gradle wrapper permissions
+        shell: bash
+        if: matrix.gradle-wrapper-permission-set == 'read-only'
+        run: chmod a-w gradlew gradle/wrapper/gradle-wrapper.jar
+
+      - name: Test setup-base-environment
+        id: setup-base-environment
+        uses: ./actions/java-gradle/setup-base-environment # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          java_version: ${{ matrix.java-version }}
+          java_package: ${{ matrix.java-package }}
+          java_distribution: ${{ matrix.java-distribution }}
+
+      - name: Verify Java Version
+        shell: bash
+        env:
+          INSTALLED_JAVA_VERSION: ${{ steps.setup-base-environment.outputs.java_version }}
+          EXPECTED_JAVA_VERSION: ${{ matrix.java-version }}
+        run: |
+          # Verify that the installed Java version starts with the expected version
+          if [[ "${INSTALLED_JAVA_VERSION}" != ${EXPECTED_JAVA_VERSION}* ]]; then
+            echo "::error::Expected Java version ${EXPECTED_JAVA_VERSION}, got ${INSTALLED_JAVA_VERSION}"
+            exit 1
+          fi
+
+      - name: Verify Java distribution
+        shell: bash
+        env:
+          INSTALLED_JAVA_DISTRIBUTION: ${{ steps.setup-base-environment.outputs.java_distribution }}
+          EXPECTED_JAVA_DISTRIBUTION: ${{ matrix.java-distribution }}
+        run: |
+          if [[ "${INSTALLED_JAVA_DISTRIBUTION,,}" != *"${EXPECTED_JAVA_DISTRIBUTION,,}"* ]]; then
+            echo "::error::Expected Java distribution ${EXPECTED_JAVA_DISTRIBUTION}, got ${INSTALLED_JAVA_DISTRIBUTION}"
+            exit 1
+          fi
+
+      - name: Verify Java Path
+        shell: bash
+        env:
+          INSTALLED_JAVA_PATH: ${{ steps.setup-base-environment.outputs.java_path }}
+        run: |
+          if [ ! -d "${INSTALLED_JAVA_PATH}" ]; then
+            echo "::error::Java directory not found at: ${INSTALLED_JAVA_PATH}"
+            exit 1
+          fi
+
+      - name: Verify gradlew is executable
+        run: |
+          if [ ! -x "./gradlew" ]; then
+            echo "::error::gradlew is not executable"
+            exit 1
+          fi
+
+          echo "gradlew is executable"
+        shell: bash

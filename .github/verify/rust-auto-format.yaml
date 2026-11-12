@@ -1,0 +1,202 @@
+target: rust/auto-format
+build:
+  - actions/common/commit-changes
+  - actions/common/commit-patch/helper
+rules:
+  # Only pushes to main ran this workflow before it moved into Verify.
+  push-branches: []
+jobs:
+  test-auto-format-formats-and-commits:
+    environment:
+      name: ci-e2e
+      deployment: false
+    name: 'Test Auto-format: ${{ matrix.name }}'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: root
+            source_directory: '.'
+            crate_path: '.'
+
+          - name: subdirectory
+            source_directory: 'crates/demo'
+            crate_path: 'crates/demo'
+
+          # A toolchain file only in the crate, with a profile that leaves rustfmt out. The setup
+          # step never sees it, so the action must add rustfmt to the toolchain cargo fmt selects.
+          - name: subdirectory-toolchain
+            source_directory: 'crates/demo'
+            crate_path: 'crates/demo'
+            toolchain_file: 'true'
+
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: rust-auto-format-test-${{ github.run_number }}-${{ github.run_attempt }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            static.rust-lang.org:443
+
+      - name: Setup E2E Test Environment
+        id: setup
+        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        with:
+          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          test_owner: ${{ env.TEST_OWNER }}
+          test_repo: ${{ env.TEST_REPO }}
+          test_repo_name: ${{ env.TEST_REPO_NAME }}
+          current_repo_checkout_path: 'tmp/actions-code'
+
+      # Replaces the committed bundles in tmp/actions-code with the ones the build job built.
+      - name: Install Built Actions
+        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        with:
+          artifact-id: ${{ inputs.artifact-id }}
+          expected-manifest-sha256: ${{ inputs.manifest-sha256 }}
+          path: tmp/actions-code
+
+      - name: Create Test Branch
+        id: branch
+        uses: TimSchoenle/actions/actions/common/create-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-create-branch-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/rust-auto-format/${{ matrix.name }}/${{ env.TEST_ID }}
+          reset_branch: 'true'
+
+      # The unformatted file outside the crate is never formatted, since cargo fmt only reaches the
+      # crate's own modules. It proves the commit holds what the crate's formatting changed and no more.
+      - name: Create Unformatted Crate
+        shell: bash
+        env:
+          CRATE_PATH: ${{ matrix.crate_path }}
+          TOOLCHAIN_FILE: ${{ matrix.toolchain_file || 'false' }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$CRATE_PATH/src" outside
+          printf 'target/\n' > .gitignore
+
+          cat > "$CRATE_PATH/Cargo.toml" << 'EOF'
+          [package]
+          name = "demo"
+          version = "0.1.0"
+          edition = "2021"
+          EOF
+
+          cat > "$CRATE_PATH/src/main.rs" << 'EOF'
+          fn   main( ){let greeting="hello";
+          println!( "{}",greeting ) ;}
+          EOF
+
+          cat > outside/untouched.rs << 'EOF'
+          fn   untouched( ){}
+          EOF
+
+          if [ "$TOOLCHAIN_FILE" = "true" ]; then
+            cat > "$CRATE_PATH/rust-toolchain.toml" << 'EOF'
+          [toolchain]
+          channel = "1.85.0"
+          profile = "minimal"
+          EOF
+          fi
+
+      - name: Commit Initial Unformatted Files
+        uses: ./tmp/actions-code/actions/common/commit-changes # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          commit_message: 'test: add unformatted Rust crate (${{ env.TEST_ID }})'
+          file_pattern: '.'
+
+      - name: Sync Local With Remote
+        env:
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+        run: |
+          set -euo pipefail
+          git fetch --prune origin "+refs/heads/$BRANCH_NAME:refs/remotes/origin/$BRANCH_NAME"
+          git reset --hard "origin/$BRANCH_NAME"
+
+      # The action is the unprivileged half: it formats this checkout and uploads a patch. In a real
+      # workflow commit-patch runs in a second job that holds the token and runs no repository code;
+      # here the crate is the fixture this job wrote, so both halves share one job.
+      - name: Run Auto-format Action
+        id: auto_format
+        uses: ./tmp/actions-code/actions/rust/auto-format # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          source_directory: ${{ matrix.source_directory }}
+          artifact_name: rust-auto-format-${{ matrix.name }}-${{ github.run_attempt }}
+
+      - name: Commit Patch
+        id: commit_patch
+        uses: ./tmp/actions-code/actions/common/commit-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          artifact_name: ${{ steps.auto_format.outputs.artifact_name }}
+          allowed_paths: '**/*.rs'
+          commit_message: 'style: auto-format rust code'
+          repository: ${{ env.TEST_REPO }}
+          branch: ${{ steps.branch.outputs.branch }}
+          expected_head_sha: ${{ steps.auto_format.outputs.base_sha }}
+
+      - name: Verify Formatting Changes Were Committed
+        env:
+          GH_TOKEN: ${{ steps.setup.outputs.token }}
+          TEST_REPO: ${{ env.TEST_REPO }}
+          BRANCH_NAME: ${{ steps.branch.outputs.branch }}
+          CRATE_PATH: ${{ matrix.crate_path }}
+          CHANGES_DETECTED: ${{ steps.auto_format.outputs.changes_detected }}
+          BASE_SHA: ${{ steps.auto_format.outputs.base_sha }}
+          OUTCOME: ${{ steps.commit_patch.outputs.outcome }}
+          COMMIT_SHA: ${{ steps.commit_patch.outputs.commit_sha }}
+        run: |
+          set -euo pipefail
+
+          [ "$CHANGES_DETECTED" = "true" ] || { echo "::error::changes_detected is '$CHANGES_DETECTED' for an unformatted crate"; exit 1; }
+          [ "$OUTCOME" = "committed" ] || { echo "::error::commit-patch outcome is '$OUTCOME', expected committed"; exit 1; }
+
+          head="$(gh api "/repos/$TEST_REPO/commits/$BRANCH_NAME" --jq '.sha')"
+          [ "$head" = "$COMMIT_SHA" ] || { echo "::error::branch head '$head' is not the reported commit '$COMMIT_SHA'"; exit 1; }
+
+          parent="$(gh api "/repos/$TEST_REPO/commits/$head" --jq '.parents[0].sha')"
+          [ "$parent" = "$BASE_SHA" ] || { echo "::error::commit parent '$parent' is not base_sha '$BASE_SHA'"; exit 1; }
+
+          expected="src/main.rs"
+          if [ "$CRATE_PATH" != "." ]; then
+            expected="$CRATE_PATH/src/main.rs"
+          fi
+          files="$(gh api "/repos/$TEST_REPO/commits/$head" --jq '.files[].filename')"
+          [ "$files" = "$expected" ] || { echo "::error::the commit changed '$files', expected only '$expected'"; exit 1; }
+
+          content="$(gh api "/repos/$TEST_REPO/contents/$expected?ref=$head" --jq '.content' | base64 -d)"
+          expected_content="$(printf 'fn main() {\n    let greeting = "hello";\n    println!("{}", greeting);\n}')"
+          [ "$content" = "$expected_content" ] || { echo "::error::$expected is not formatted:"; echo "$content"; exit 1; }
+
+          echo "The crate was formatted and committed as one verified commit on top of base_sha"
+
+      - name: Cleanup Branch
+        if: always()
+        uses: TimSchoenle/actions/actions/common/delete-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-delete-branch-v2.0.4
+        with:
+          token: ${{ steps.setup.outputs.token }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: ${{ steps.branch.outputs.branch }}

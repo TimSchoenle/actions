@@ -51,7 +51,7 @@ function api(isRelease: boolean, tags: string[] = []): ReleaseStateApi {
             },
           ]
         : [],
-    tagsWithPrefix: async () => new Set(tags),
+    existingTags: async (names) => new Set(names.filter((name) => tags.includes(name))),
   };
 }
 

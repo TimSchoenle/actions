@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0](https://github.com/TimSchoenle/actions/compare/src-actions-common-commit-generated-files-v1.2.4...src-actions-common-commit-generated-files-v1.3.0) (2026-11-12)
+
+
+### Features
+
+* **commit-generated-files:** skip excluded and non-plain branches ([#2224](https://github.com/TimSchoenle/actions/issues/2224)) ([136e4e8](https://github.com/TimSchoenle/actions/commit/136e4e81a11c161bdb20f3d3fd6daf8a5988d401))
+
+
+### Bug Fixes
+
+* **commit-generated-files:** read whether a fork allows edits only when there is a patch ([#2240](https://github.com/TimSchoenle/actions/issues/2240)) ([5d1ec2e](https://github.com/TimSchoenle/actions/commit/5d1ec2ea05b61d099ba7110a0e780be1ddec8779))
+
 ## [1.2.4](https://github.com/TimSchoenle/actions/compare/src-actions-common-commit-generated-files-v1.2.3...src-actions-common-commit-generated-files-v1.2.4) (2026-11-11)
 
 

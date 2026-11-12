@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { TemplateCompileError, TemplateRenderError, UndefinedReferenceError } from './errors.js';
 import { renderTemplate } from './render.js';
@@ -224,5 +224,49 @@ describe('renderTemplate', () => {
 
     expect(render(source, variables)).toBe(first);
     expect(first).toBe('a,b,');
+  });
+});
+
+describe('renderTemplate and the console', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function spyOnOutput(): (() => number)[] {
+    const spies = [
+      vi.spyOn(console, 'log').mockImplementation(() => undefined),
+      vi.spyOn(console, 'info').mockImplementation(() => undefined),
+      vi.spyOn(console, 'warn').mockImplementation(() => undefined),
+      vi.spyOn(console, 'error').mockImplementation(() => undefined),
+      vi.spyOn(console, 'debug').mockImplementation(() => undefined),
+      vi.spyOn(process.stdout, 'write').mockImplementation(() => true),
+    ];
+
+    return spies.map((spy) => () => spy.mock.calls.length);
+  }
+
+  // The reproduction: under strict mode the built-in helper printed the workflow command on its own
+  // line of the step log and rendered nothing.
+  it.each([true, false])('has no log helper, so a template cannot write workflow commands (strict %s)', (strict) => {
+    const counts = spyOnOutput();
+
+    expect(() => render('{{log "::error title=forged::x"}}', {}, { strict })).toThrow(TemplateRenderError);
+    expect(() => render('{{log "::add-mask::x" level="error"}}', {}, { strict })).toThrow(
+      /Missing helper: "log"|"log" not defined/,
+    );
+    expect(counts.map((count) => count())).toEqual([0, 0, 0, 0, 0, 0]);
+  });
+
+  it('has no log helper in a partial either', () => {
+    const counts = spyOnOutput();
+
+    expect(() =>
+      render('{{> forged }}', {}, { partials: [partial('forged', '{{log "::stop-commands::t"}}')] }),
+    ).toThrow(TemplateRenderError);
+    expect(counts.map((count) => count())).toEqual([0, 0, 0, 0, 0, 0]);
+  });
+
+  it('still renders a variable named log', () => {
+    expect(render('{{ log }}', { log: 'kept' })).toBe('kept');
   });
 });

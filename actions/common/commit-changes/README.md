@@ -9,7 +9,7 @@ outside the markers.
 
 Commits changes using the GitHub API to ensure verified bot commits.
 
-[actions-common-commit-changes-v3.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v3.0.4) · JavaScript action (node24)
+[actions-common-commit-changes-v3.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v3.1.0) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -50,7 +50,7 @@ jobs:
           permission-contents: write
 
       - id: commit
-        uses: TimSchoenle/actions/actions/common/commit-changes@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-commit-changes-v3.0.4
+        uses: TimSchoenle/actions/actions/common/commit-changes@actions-common-commit-changes-v3.1.0 # tag=actions-common-commit-changes-v3.1.0
         with:
           token: ${{ steps.token.outputs.token }}
           commit_message: 'chore: regenerate files'
@@ -66,13 +66,15 @@ jobs:
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input            | Required | Default                                       | Description                                                                      |
-| ---------------- | -------- | --------------------------------------------- | -------------------------------------------------------------------------------- |
-| `commit_message` | yes      |                                               | The commit message                                                               |
-| `token`          | yes      |                                               | The GitHub token to use (must be an App installation token for verified commits) |
-| `repository`     | no       | `${{ github.repository }}`                    | Repository name to commit to (e.g. owner/repo)                                   |
-| `branch`         | no       | `${{ github.head_ref \|\| github.ref_name }}` | Branch to commit to                                                              |
-| `file_pattern`   | no       | `.`                                           | File pattern to commit                                                           |
+| Input               | Required | Default                                       | Description                                                                                                                                                                                                                                                                                                                               |
+| ------------------- | -------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `commit_message`    | yes      |                                               | The commit message                                                                                                                                                                                                                                                                                                                        |
+| `token`             | yes      |                                               | The GitHub token to use (must be an App installation token for verified commits)                                                                                                                                                                                                                                                          |
+| `repository`        | no       | `${{ github.repository }}`                    | Repository name to commit to (e.g. owner/repo)                                                                                                                                                                                                                                                                                            |
+| `branch`            | no       | `${{ github.head_ref \|\| github.ref_name }}` | Branch to commit to                                                                                                                                                                                                                                                                                                                       |
+| `expected_head_sha` | no       |                                               | The commit the branch must still point at; GitHub refuses the commit when it moved on. Empty uses the checked-out commit when branch is the checked-out branch, so a push that landed after the checkout is never overwritten. Otherwise the branch head is read just before the commit, with a warning, and such a push goes undetected. |
+| `file_pattern`      | no       | `.`                                           | File pattern to commit                                                                                                                                                                                                                                                                                                                    |
+| `literal_paths`     | no       |                                               | Paths to commit, one per line, each taken literally: spaces, `*` and `?` are part of the name. Use it for a path that file_pattern, which splits on whitespace, cannot name. Setting both with a file_pattern other than the default fails the step.                                                                                      |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
@@ -103,13 +105,38 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 | `api.github.com:443` | the branch head lookup and the GraphQL commit |
 <!-- /docs:generated egress -->
 
+## What is committed
+
+Every path `git status` reports under `file_pattern` is committed with its bytes from the working tree, or deleted
+when it is gone. The commit API records regular files only, so the step fails on a changed path that is a symbolic
+link, a directory or any other entry, and on a regular file reached through a linked directory that leaves the
+working tree. Before this, a link was followed and its target committed as a file: a generator that left
+`generated/env.txt` pointing at `/proc/self/environ` committed the step's environment, `INPUT_TOKEN` included.
+
+`file_pattern` splits on whitespace, so it cannot name a path with a space in it: `docs/my page.md` becomes the two
+patterns `docs/my` and `page.md`, which match nothing, and the step commits nothing without failing. Name such a path in
+`literal_paths` instead, one per line. Each line is one path, taken as written: spaces, `*` and `?` are part of the
+name. Set one of the two inputs; a `file_pattern` other than the default next to `literal_paths` fails the step.
+
+## Which head the commit applies to
+
+The commit is made through the GraphQL API with an expected head, and GitHub refuses it when the branch no longer
+points there. The expected head is, in order:
+
+1. `expected_head_sha`, when it is set.
+2. The checked-out commit, when `branch` is the checked-out branch. The files were rewritten on top of that commit, so a
+   push that landed after the checkout makes the commit fail instead of being overwritten for every file the job
+   rewrote.
+3. Otherwise the branch head, read just before the commit. A push between the checkout and that read goes undetected,
+   and the step says so in a warning.
+
 <!-- docs:generated reference -->
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-commit-changes.yaml`](../../../.github/workflows/verify-action-common-commit-changes.yaml)
+- End-to-end tests: [`.github/verify/common-commit-changes.yaml`](../../../.github/verify/common-commit-changes.yaml)
 - Called from this repository by:
-  - [`.github/workflows/verify-action-helm-update-chart-version.yaml`](../../../.github/workflows/verify-action-helm-update-chart-version.yaml)
+  - [`.github/verify/helm-update-chart-version.yaml`](../../../.github/verify/helm-update-chart-version.yaml)
   - [`actions/common/create-pull-request/action.yaml`](../../../actions/common/create-pull-request/action.yaml)
   - [`actions/common/render-template-and-commit/action.yaml`](../../../actions/common/render-template-and-commit/action.yaml)
   - [`actions/terrace/helm-sync/action.yaml`](../../../actions/terrace/helm-sync/action.yaml)

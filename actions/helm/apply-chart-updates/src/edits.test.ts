@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { parseDocument } from 'yaml';
 
 import { MissingKeysError, NonScalarTargetError, planYamlEdits, writeEditPlan } from './edits.js';
 
@@ -121,6 +122,42 @@ describe('planYamlEdits', () => {
     );
 
     expect(await readFile(chart, 'utf8')).toBe('version: 1.2.4\nappVersion: "18"\n');
+  });
+
+  // Each case below was a reproduced corruption: the splice wrote text that parsed differently, or
+  // not at all, and nothing checked it.
+  describe('splices that used to change the meaning of the file', () => {
+    async function edited(yaml: string, key: string, value: string): Promise<unknown> {
+      await writeFile(file, yaml, 'utf8');
+      const document = parseDocument((await planYamlEdits(file, [{ key, value }])).content);
+      expect(document.errors).toEqual([]);
+
+      return document.toJS();
+    }
+
+    it('writes a tag into an empty node instead of replacing its map', async () => {
+      expect(await edited('image:\n  tag:\n  repository: x\n', 'image.tag', 'v2')).toEqual({
+        image: { tag: 'v2', repository: 'x' },
+      });
+    });
+
+    it('keeps a tag with a comma one entry of a flow map', async () => {
+      expect(await edited('image: { tag: v1, repository: x }\n', 'image.tag', 'v2,extra')).toEqual({
+        image: { tag: 'v2,extra', repository: 'x' },
+      });
+    });
+
+    it('keeps the key after a block scalar it replaces', async () => {
+      expect(await edited('tag: |\n  v1\nnext: 2\n', 'tag', 'v2')).toEqual({ tag: 'v2', next: 2 });
+    });
+
+    it('keeps a long value on its own line, under its key', async () => {
+      const long = Array.from({ length: 30 }, (_, index) => `w${index}`).join(' ');
+
+      expect(await edited('a:\n  b:\n    tag: v1\n  c: 1\n', 'a.b.tag', long)).toEqual({
+        a: { b: { tag: long }, c: 1 },
+      });
+    });
   });
 
   it('fails on a file that is not there', async () => {
