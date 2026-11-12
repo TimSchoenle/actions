@@ -143,7 +143,18 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            tuf-repo-cdn.sigstore.dev:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
 
       - name: Setup E2E Test Environment
         id: setup
@@ -359,7 +370,18 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            tuf-repo-cdn.sigstore.dev:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
 
       - name: Setup E2E Test Environment
         id: setup
@@ -569,7 +591,18 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            tuf-repo-cdn.sigstore.dev:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
 
       - name: Setup E2E Test Environment
         id: setup
@@ -749,7 +782,18 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            tuf-repo-cdn.sigstore.dev:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
 
       - name: Setup E2E Test Environment
         id: setup
@@ -897,7 +941,18 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            tuf-repo-cdn.sigstore.dev:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
 
       - name: Setup E2E Test Environment
         id: setup
@@ -1050,7 +1105,18 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            tuf-repo-cdn.sigstore.dev:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
 
       - name: Setup E2E Test Environment
         id: setup
@@ -1236,7 +1302,18 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+            tuf-repo-cdn.sigstore.dev:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
 
       - name: Setup E2E Test Environment
         id: setup
