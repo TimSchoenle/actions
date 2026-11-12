@@ -90,7 +90,7 @@ jobs:
 <!-- /docs:generated permissions -->
 
 `contents: read` is used only when there is something to commit, to fetch the head. `pull-requests: read` is used
-only on a fork's pull request, where the job token reads the open pull requests: a public repository needs no
+only on a fork's pull request with something to commit, where the job token reads the open pull requests: a public repository needs no
 permission for that, a private one does, or every fork is skipped. The commit itself is made with the App token, whose
 installation needs `contents: write`.
 
@@ -116,7 +116,9 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
   whenever there is something to commit.
 - **A fork's branch is committed to while its pull request allows edits by maintainers.** GitHub lets the App push
   there then, with the token it mints for this repository. A fork that does not allow it, which includes every fork
-  owned by an organization, is skipped, and the verdict tells the contributor to push the files. The decision is
+  owned by an organization, is skipped, and the verdict tells the contributor to push the files. The pull requests are
+  read only once the run's merged patch has changes, so a fork run with nothing to commit costs no listing. The
+  decision is
   `check-fork.sh`, over the pull requests `read-pulls.sh` reads in full (the list endpoint omits the flag), both
   driven through every case. The run on the bot commit may wait for a maintainer's approval, as GitHub asks for
   first-time contributors. Callers must not exclude forks in their own job-level `if:`.
