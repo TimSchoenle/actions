@@ -30,7 +30,7 @@
         "src/errors.ts": "97d25f316f4cc38f351d317a58392e6aec01efd4bcd7425fef7979a0580526c6",
         "src/git-command.ts": "71442d45ce39338ce1b98b7fb675c42e88d511255d1238aca4e4ea40a52ddf29",
         "src/github-branches.ts": "8214c922c3055673b0c47981f7093c08e82edb0d742ef3821db3b59f96eedb48",
-        "src/github-client.ts": "a66b5b7e2a811698c4ac699f66784feb94d458a165cbd6d1f79f1b328d507b68",
+        "src/github-client.ts": "e3aa6c634a5088a090d8362bc6d8247fac4a066ea2c73e0b66b5bce47b05bc18",
         "src/github-commit-on-branch.ts": "ca7d26932c38b1cd391b789d5abd0754b5dea6fc820394175d08857e7ea499b2",
         "src/github-commits.ts": "5ef76dc20f2b4b6ada2f9436b14f0a21d2b21a37d5f948f9d9c3e4985a14acb9",
         "src/github-identity.ts": "c205083bbc659c09744d2c83bef81c1d2b26ce7bff70e0c7cf2a62e29f35b0be",
