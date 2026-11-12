@@ -8,6 +8,10 @@ inputs:
   checks:
     description: 'List of checks to verify. One pattern per line.'
     required: true
+  required:
+    description: 'Checks that must have a run, one pattern per line, read like checks. A pattern that matches no check run fails verification instead of counting as not started, which keeps the gate from passing before a check was created. The runs it matches are verified like those of checks. Empty requires none.'
+    required: false
+    default: ''
   match_mode:
     description: 'How to interpret each check matcher: exact, regex, or auto (/regex/ => regex, otherwise exact).'
     required: false
@@ -27,9 +31,9 @@ inputs:
 
 outputs:
   matched_checks_count:
-    description: 'How many unique checks matched at least one matcher.'
+    description: 'How many check runs matched at least one matcher. Runs that share a name but come from different check suites or apps count separately; re-runs within one suite count once.'
   failed_checks_count:
-    description: 'How many matched checks failed verification.'
+    description: 'How many matched check runs failed verification, plus how many required patterns matched no check run.'
 
 runs:
   using: 'node24'

@@ -40,13 +40,20 @@ function setInputs(overrides: Inputs = {}): void {
   }
 }
 
+/** Check run IDs are unique on GitHub, so a fixture gets a fresh one unless a test sets it. */
+let nextId = 1000;
+
 function checkRun(name: string, overrides: Partial<CheckRun> = {}): CheckRun {
+  nextId += 1;
+
   return {
+    appId: 15_368,
     conclusion: 'success',
     detailsUrl: `https://github.com/owner/repo/runs/${name}`,
-    id: 1,
+    id: nextId,
     name,
     status: 'completed',
+    suiteId: 1,
     ...overrides,
   };
 }
@@ -105,6 +112,52 @@ describe('ensure-actions-are-executed action', () => {
 
     expect(output('failed_checks_count')).toBe('0');
     expect(core.setFailed).not.toHaveBeenCalled();
+  });
+
+  it('fails the step when a same-named check in another suite succeeded after this one failed', async () => {
+    await run(
+      fakeApi([
+        checkRun('build', { conclusion: 'failure', id: 1, suiteId: 1 }),
+        checkRun('build', { id: 2, suiteId: 2 }),
+        checkRun('lint', { id: 3 }),
+      ]),
+    );
+
+    expect(output('matched_checks_count')).toBe('3');
+    expect(output('failed_checks_count')).toBe('1');
+    expect(core.setFailed).toHaveBeenCalled();
+  });
+
+  it('fails the step when a required matcher matches no check run', async () => {
+    setInputs({ required: 'deploy' });
+
+    await run(fakeApi([checkRun('build'), checkRun('lint')]));
+
+    expect(output('failed_checks_count')).toBe('1');
+    expect(core.error).toHaveBeenCalledWith(
+      'Required matcher "deploy" did not match any check run. It has not started, or it has not been created yet.',
+    );
+    expect(core.setFailed).toHaveBeenCalled();
+  });
+
+  it('verifies the checks a required matcher selects, and passes once they succeeded', async () => {
+    setInputs({ checks: 'lint', required: '/^build/' });
+
+    await run(
+      fakeApi([checkRun('build (a)', { id: 1 }), checkRun('build (b)', { id: 2 }), checkRun('lint', { id: 3 })]),
+    );
+
+    expect(output('matched_checks_count')).toBe('3');
+    expect(output('failed_checks_count')).toBe('0');
+    expect(core.setFailed).not.toHaveBeenCalled();
+  });
+
+  it('fails a required check that matched but did not succeed once, not twice', async () => {
+    setInputs({ required: 'build' });
+
+    await run(fakeApi([checkRun('build', { conclusion: 'failure' }), checkRun('lint', { id: 2 })]));
+
+    expect(output('failed_checks_count')).toBe('1');
   });
 
   it('fails the step when a matched check did not succeed and error_on_failure is true', async () => {

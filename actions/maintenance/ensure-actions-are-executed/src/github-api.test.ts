@@ -32,6 +32,8 @@ function rawCheckRun(id: number) {
   return {
     conclusion: 'success',
     details_url: `https://github.com/owner/repo/runs/${id}`,
+    app: { id: 15_368 },
+    check_suite: { id: 77 },
     id,
     name: `check-${id}`,
     status: 'completed',
@@ -72,11 +74,13 @@ describe('createCheckRunsApi', () => {
 
     await expect(createCheckRunsApi('token').listCheckRunsForRef(repository, 'sha')).resolves.toEqual([
       {
+        appId: 15_368,
         conclusion: 'success',
         detailsUrl: 'https://github.com/owner/repo/runs/1',
         id: 1,
         name: 'check-1',
         status: 'completed',
+        suiteId: 77,
       },
     ]);
 
@@ -117,16 +121,28 @@ describe('createCheckRunsApi', () => {
     expect(octokit.rest.checks.listForRef).toHaveBeenCalledTimes(1);
   });
 
+  it('maps a check run without an app or a suite to null for both', async () => {
+    octokit.rest.checks.listForRef.mockResolvedValue({
+      data: { check_runs: [{ ...rawCheckRun(1), app: null, check_suite: null }], total_count: 1 },
+    });
+
+    await expect(createCheckRunsApi('token').listCheckRunsForRef(repository, 'sha')).resolves.toMatchObject([
+      { appId: null, suiteId: null },
+    ]);
+  });
+
   it('maps a workflow job onto the domain model, using its html_url as the details link', async () => {
     octokit.rest.actions.listJobsForWorkflowRun.mockResolvedValue({ data: { jobs: [rawJob(5)], total_count: 1 } });
 
     await expect(createCheckRunsApi('token').listWorkflowRunJobs(repository, 9)).resolves.toEqual([
       {
+        appId: null,
         conclusion: null,
         detailsUrl: 'https://github.com/owner/repo/actions/runs/9/job/5',
         id: 5,
         name: 'job-5',
         status: 'in_progress',
+        suiteId: null,
       },
     ]);
 
