@@ -278,7 +278,7 @@ differences, all of which this repository's own
   `build-command` runs once in each build directory. Pass `exclude` for template directories that hold
   an `action.yml` that is not a real action.
 
-- `allowed-paths` keeps its default, `actions/**/dist/**`, or names wherever the bundles live.
+- `allowed-paths` keeps its default, `actions/*/**/dist/**/*`, or names wherever the bundles live.
 - `consumer-tag-pattern` on every `plan-release-please` step narrows the accepted consumer tags, such
   as `'^actions-[a-z0-9-]+-v\d+\.\d+\.\d+$'`.
 - `release-assets: bundles` attaches to each Release only the bundles below that package's path.
