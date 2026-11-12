@@ -145,6 +145,9 @@ A manifest with `[package]` is read from it, and a field written `field.workspac
 alone, so `repo.package` is omitted. A member manifest whose version is inherited from a workspace it does not define
 fails with a message naming the workspace root, rather than reporting a bare absence.
 
+A manifest over 1 MiB is refused before it is read. A pull request controls the file, and no manifest this action reads
+comes near that size.
+
 Gradle reads `gradle.properties` and not `build.gradle`, because the build script is a program and the version in it can
 be computed. A project that computes its version writes it to the properties file for this action to read.
 
@@ -153,7 +156,8 @@ be computed. A project that computes its version writes it to the properties fil
 Every file under `docs-dir`, depth-first and sorted, so the rendered table cannot reorder itself between runners.
 Markdown is indexed by its own first heading and first paragraph. Front matter, fenced blocks and the HTML comment
 banner that opens every generated file are all skipped. Anything else is indexed by path with no summary, because
-`docs/config.contract.json` is a document a reader follows a link to and leaving it out would make the table lie.
+`docs/config.contract.json` is a document a reader follows a link to and leaving it out would make the table lie. A Markdown
+file over 1 MiB is indexed the same way, without being read.
 
 Both are reduced to plain text for a table cell: a link keeps its text, and emphasis and code-span delimiters are
 dropped. The characters inside a code span are kept, and so is an underscore inside a word, so `TANKOVAULT_*` and

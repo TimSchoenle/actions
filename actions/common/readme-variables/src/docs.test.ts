@@ -2,9 +2,10 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
+import fc from 'fast-check';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { buildDocsIndex, summarise } from './docs.js';
+import { buildDocsIndex, readAtxHeading, replaceLinks, summarise } from './docs.js';
 
 describe('summarise', () => {
   it('takes the first heading as the title and the first paragraph as the summary', () => {
@@ -216,6 +217,15 @@ describe('buildDocsIndex', () => {
     ]);
   });
 
+  // P14l: a pull request controls what is under docs/, and the whole file was read into memory.
+  it('indexes a Markdown file over the size limit by path, without reading it', async () => {
+    await write('docs/HUGE.md', `# Huge\n\n${'word '.repeat(220_000)}\n`);
+
+    await expect(buildDocsIndex(workspace, 'docs')).resolves.toEqual([
+      { path: 'docs/HUGE.md', title: 'docs/HUGE.md', summary: '' },
+    ]);
+  });
+
   // A contract a reader follows a link to is part of what the directory holds.
   it('indexes a non-Markdown document by path, with no summary', async () => {
     await write('docs/config.contract.json', '{"terrace_contract":1}');
@@ -259,5 +269,106 @@ describe('buildDocsIndex', () => {
     await expect(buildDocsIndex(workspace, 'documentation')).resolves.toEqual([
       { path: 'documentation/GUIDE.md', title: 'Guide', summary: 'How to.' },
     ]);
+  });
+});
+
+/**
+ * P14l: the heading and link patterns these scanners replace, kept as the reference the scanners
+ * must agree with. Each backtracks super-linearly on a line a pull request controls, so the
+ * comparison runs on short lines only.
+ */
+const REFERENCE_ATX_HEADING = /^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$/;
+const REFERENCE_LINK = /!?\[([^\]]*)\]\([^)]*\)/g;
+
+/** Characters that exercise every branch of the heading and link grammars. */
+const markupLine = fc.string({
+  unit: fc.constantFrom(' ', '\t', '\r', ' ', ' ', '#', 'a', 'b', '[', ']', '(', ')', '!'),
+  maxLength: 24,
+});
+
+/** How long a scan of one hostile line may take. The patterns it replaced took seconds or longer. */
+const LINEAR_BUDGET_MS = 250;
+
+function elapsed(run: () => void): number {
+  const start = performance.now();
+  run();
+
+  return performance.now() - start;
+}
+
+describe('readAtxHeading', () => {
+  it('agrees with the heading pattern it replaced', () => {
+    fc.assert(
+      fc.property(markupLine, (line) => {
+        expect(readAtxHeading(line)).toBe(REFERENCE_ATX_HEADING.exec(line)?.[1]);
+      }),
+      { numRuns: 20_000 },
+    );
+  });
+
+  it.each([
+    ['a closing sequence', '## Title ##', 'Title'],
+    ['a closing sequence with no space before it', '# Title#', 'Title'],
+    ['nothing but hashes after the marker', '# ###', '#'],
+    ['indentation of three spaces', '   # Title', 'Title'],
+    ['a carriage return at the end', '# Title\r', 'Title'],
+  ])('reads a heading with %s', (_label, line, expected) => {
+    expect(readAtxHeading(line)).toBe(expected);
+  });
+
+  it.each([
+    ['indentation of four spaces', '    # Title'],
+    ['seven hashes', '####### Title'],
+    ['no space after the marker', '#Title'],
+    ['a marker and one space', '# '],
+  ])('refuses a line with %s', (_label, line) => {
+    expect(readAtxHeading(line)).toBeUndefined();
+  });
+
+  it('reads a heading padded with a long run of spaces in linear time', () => {
+    const line = `# a${' '.repeat(100_000)}b`;
+
+    expect(elapsed(() => expect(readAtxHeading(line)).toBe(`a${' '.repeat(100_000)}b`))).toBeLessThan(LINEAR_BUDGET_MS);
+  });
+});
+
+describe('replaceLinks', () => {
+  it('agrees with the link pattern it replaced', () => {
+    fc.assert(
+      fc.property(markupLine, (text) => {
+        expect(replaceLinks(text)).toBe(text.replaceAll(REFERENCE_LINK, '$1'));
+      }),
+      { numRuns: 20_000 },
+    );
+  });
+
+  it.each([
+    ['a link', 'see [the guide](docs/guide.md) first', 'see the guide first'],
+    ['an image', '![logo](logo.svg) Title', 'logo Title'],
+    ['an opening bracket inside the text', '[a [b](c)', 'a [b'],
+    ['brackets that are not a link', '[a] (b) [c](d)', '[a] (b) c'],
+    ['a link with no closing parenthesis', '[a](b [c](d', '[a](b [c](d'],
+  ])('reduces %s to its text', (_label, text, expected) => {
+    expect(replaceLinks(text)).toBe(expected);
+  });
+
+  it.each([
+    ['opening brackets', '['.repeat(200_000)],
+    ['unclosed link destinations', '[]('.repeat(100_000)],
+    ['brackets never followed by a destination', '[a]'.repeat(100_000)],
+  ])('scans a line of %s in linear time', (_label, text) => {
+    expect(elapsed(() => replaceLinks(text))).toBeLessThan(LINEAR_BUDGET_MS);
+  });
+});
+
+describe('summarise on hostile input', () => {
+  it('summarises a paragraph of unclosed code spans in linear time', () => {
+    const runs = Array.from({ length: 1_400 }, (_, index) => '`'.repeat(index + 1)).join('x');
+    let result: { title: string; summary: string } | undefined;
+
+    expect(elapsed(() => (result = summarise(`# T\n\n${'word '.repeat(40)}${runs}\n`, 'x')))).toBeLessThan(
+      LINEAR_BUDGET_MS,
+    );
+    expect(result?.summary).toMatch(/^word(?: word)*/);
   });
 });

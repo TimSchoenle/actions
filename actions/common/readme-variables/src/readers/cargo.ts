@@ -228,7 +228,8 @@ function multilineOpeningAt(line: string, index: number): Multiline | undefined 
  * The multiline string still open at the end of `line`, given the one open at its start.
  *
  * Single-line strings are stepped over whole, so a quote inside one opens nothing, and a `#`
- * outside any string ends the scan as a comment.
+ * outside any string ends the scan as a comment. An unterminated single-line string ends the scan
+ * too: it is invalid TOML, and reading a delimiter inside it would swallow the lines after it.
  */
 function multilineOpenAfter(line: string, open: Multiline | undefined): Multiline | undefined {
   let index = 0;
@@ -247,7 +248,18 @@ function multilineOpenAfter(line: string, open: Multiline | undefined): Multilin
     const opening = multilineOpeningAt(line, index);
 
     if (opening === undefined) {
-      index = readQuoted(line, index)?.end ?? index + 1;
+      const quoted = readQuoted(line, index);
+
+      if (quoted !== undefined) {
+        index = quoted.end;
+      } else if (line[index] === '"' || line[index] === "'") {
+        // An unterminated string runs to the end of the line, so nothing after its quote opens a
+        // string. Stepping past the quote instead rescanned the rest of the line from every quote
+        // in it, which took quadratic time on a line of them.
+        return undefined;
+      } else {
+        index++;
+      }
       continue;
     }
 
