@@ -193,6 +193,8 @@ async function measure(dependencies: ActionDependencies): Promise<void> {
   setOutput(ActionOutput.ignore_unfixed, String(options.ignoreUnfixed));
   setOutput(ActionOutput.ignore_file, options.ignoreFile);
   setOutput(ActionOutput.sarif_path, location.sarifPath);
+  setOutput(ActionOutput.trivy_config, location.trivyConfigPath);
+  setOutput(ActionOutput.empty_ignore_file, location.emptyIgnorePath);
   setOutput(ActionOutput.sarif_category, options.sarifCategory);
   setOutput(ActionOutput.upload_sarif, String(publish.uploadSarif));
   setOutput(ActionOutput.comment_identifier, options.commentIdentifier);

@@ -26,9 +26,9 @@ egress:
   - endpoint: api.github.com:443
     for: the SARIF upload and the comment
   - endpoint: '*.actions.githubusercontent.com:443'
-    for: the Actions cache and the summary artifact
+    for: the summary artifact
   - endpoint: '*.blob.core.windows.net:443'
-    for: the Actions cache and the summary artifact
+    for: the summary artifact
 
 requires: [docker]
 

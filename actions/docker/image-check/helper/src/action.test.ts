@@ -186,6 +186,23 @@ describe('measure', () => {
     expect(path.relative(deps.context.runnerTemp, sarifPath).startsWith('..')).toBe(false);
   });
 
+  it("points Trivy at a config and an ignore file of its own, never the workspace's", async () => {
+    const deps = await dependencies();
+    await writeFile(path.join(deps.context.workspace, 'trivy.yaml'), 'severity: [LOW]\n');
+    await writeFile(path.join(deps.context.workspace, '.trivyignore'), 'CVE-2024-0001\n');
+    setInputs({ ...MEASURE_INPUTS, phase: 'measure' });
+
+    await run(deps);
+
+    const { trivy_config: config = '', empty_ignore_file: ignore = '' } = outputs();
+    for (const file of [config, ignore]) {
+      expect(path.isAbsolute(file)).toBe(true);
+      expect(path.relative(deps.context.runnerTemp, file).startsWith('..')).toBe(false);
+    }
+    expect(await readFile(config, 'utf8')).toBe('{}\n');
+    expect(await readFile(ignore, 'utf8')).toBe('');
+  });
+
   it('fails before the scan on an invalid input, and runs nothing', async () => {
     const deps = await dependencies();
     setInputs({ ...MEASURE_INPUTS, size_warning_mib: '150MB', phase: 'measure' });
