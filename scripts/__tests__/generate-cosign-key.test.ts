@@ -4,19 +4,48 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { generateCosignMaterial, parseArgs, saveMaterialToDisk } from '../generate-cosign-key.js';
+import {
+  formatHumanReadableResult,
+  formatJsonResult,
+  generateCosignMaterial,
+  parseArgs,
+  saveMaterialToDisk,
+  shouldPrintSecrets,
+} from '../generate-cosign-key.js';
 import { decryptCosignPrivateKey } from '../lib/cosign-key.js';
 
 describe('generate-cosign-key', () => {
   describe('parseArgs', () => {
     it('applies defaults', () => {
-      expect(parseArgs([])).toEqual({ help: false, json: false, nonInteractive: false, passwordBytes: 64 });
+      expect(parseArgs([])).toEqual({
+        help: false,
+        json: false,
+        nonInteractive: false,
+        passwordBytes: 64,
+        printSecrets: false,
+      });
     });
 
     it('reads every option', () => {
-      expect(parseArgs(['--output-dir', 'out', '--password-bytes', '32', '--json', '--non-interactive', '-h'])).toEqual(
-        { help: true, json: true, nonInteractive: true, outputDir: 'out', passwordBytes: 32 },
-      );
+      expect(
+        parseArgs([
+          '--output-dir',
+          'out',
+          '--password-bytes',
+          '32',
+          '--json',
+          '--non-interactive',
+          '--print-secrets',
+          '-h',
+        ]),
+      ).toEqual({
+        help: true,
+        json: true,
+        nonInteractive: true,
+        outputDir: 'out',
+        passwordBytes: 32,
+        printSecrets: true,
+      });
     });
 
     it.each([['15'], ['1025'], ['64abc']])('rejects --password-bytes %s', (value) => {
@@ -35,6 +64,35 @@ describe('generate-cosign-key', () => {
 
     expect(Buffer.from(material.password, 'base64url')).toHaveLength(32);
     expect(() => decryptCosignPrivateKey(material.privateKey, material.password)).not.toThrow();
+  });
+
+  // S16h: the key and password were printed even when they had just been written to owner-only
+  // files, leaving a copy in the terminal scrollback or a CI log.
+  describe('printing the secrets', () => {
+    const material = generateCosignMaterial(16);
+
+    it('prints them only without an output directory, unless asked to', () => {
+      expect(shouldPrintSecrets({ outputDir: undefined, printSecrets: false })).toBe(true);
+      expect(shouldPrintSecrets({ outputDir: 'out', printSecrets: false })).toBe(false);
+      expect(shouldPrintSecrets({ outputDir: 'out', printSecrets: true })).toBe(true);
+    });
+
+    it('leaves the password and private key out of both reports when they are on disk', () => {
+      for (const report of [
+        formatHumanReadableResult(material, 'out', false),
+        formatJsonResult(material, 'out', false),
+      ]) {
+        expect(report).not.toContain(material.password);
+        expect(report).not.toContain(material.privateKey.trim());
+        expect(report).toContain(material.publicKey.trim().split('\n')[1]);
+        expect(report).toContain(path.resolve('out'));
+      }
+    });
+
+    it('includes them when printing is on', () => {
+      expect(formatHumanReadableResult(material, undefined, true)).toContain(material.password);
+      expect(JSON.parse(formatJsonResult(material, undefined, true))).toEqual(material);
+    });
   });
 
   describe('saveMaterialToDisk', () => {

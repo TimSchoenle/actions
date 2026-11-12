@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -10,6 +10,7 @@ import {
   main,
   parseArgs,
   redactSecrets,
+  saveMaterialToDisk,
   shouldPrintSecrets,
   type SigningKeyMaterial,
 } from '../generate-maven-central-signing-key.js';
@@ -49,6 +50,41 @@ function expectAllSecrets(output: string): void {
     expect(output).toContain(secret);
   }
 }
+
+// S16i: writeSecureFile replaced an existing key file, and the new secret sat in it under the file's
+// old, possibly world-readable mode until the chmod that followed.
+describe('saveMaterialToDisk', () => {
+  let directory: string;
+
+  beforeEach(async () => {
+    directory = await mkdtemp(path.join(os.tmpdir(), 'maven-key-save-'));
+  });
+
+  afterEach(async () => {
+    await rm(directory, { recursive: true, force: true });
+  });
+
+  it('writes the key set in owner-only files', async () => {
+    await saveMaterialToDisk(directory, material);
+
+    expect((await readdir(directory)).sort()).toEqual([
+      'credentials.json',
+      'private.asc',
+      'public.asc',
+      'revocation.asc',
+    ]);
+    expect((await stat(path.join(directory, 'private.asc'))).mode & 0o777).toBe(0o600);
+  });
+
+  it('refuses to overwrite an existing file, and writes nothing', async () => {
+    await writeFile(path.join(directory, 'revocation.asc'), 'earlier', { mode: 0o644 });
+
+    await expect(saveMaterialToDisk(directory, material)).rejects.toThrow(/Refusing to overwrite existing file/);
+
+    expect(await readdir(directory)).toEqual(['revocation.asc']);
+    expect(await readFile(path.join(directory, 'revocation.asc'), 'utf8')).toBe('earlier');
+  });
+});
 
 describe('parseArgs', () => {
   it('defaults to not forcing the secrets onto stdout', () => {

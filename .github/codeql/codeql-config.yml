@@ -1,7 +1,6 @@
 name: 'CodeQL Config'
 
 paths-ignore:
-  - scripts/generate-maven-central-signing-key.ts
   # A catalogue of hostile inputs, so its contents are the very things a scanner is built to report.
   # The `js/redos` patterns in it are catastrophic by construction — that is what they are for — and
   # the only code that compiles one is the assertion that it is a valid regular expression; nothing
