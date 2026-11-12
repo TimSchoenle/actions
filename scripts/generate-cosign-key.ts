@@ -13,9 +13,10 @@ type CliOptions = {
   nonInteractive: boolean;
   outputDir?: string;
   passwordBytes: number;
+  printSecrets: boolean;
 };
 
-type CosignKeyMaterial = {
+export type CosignKeyMaterial = {
   createdAt: string;
   password: string;
   privateKey: string;
@@ -35,7 +36,10 @@ Usage:
   bun scripts/generate-cosign-key.ts [options]
 
 Options:
-  --output-dir <path>       Write cosign.key, cosign.pub and credentials.json to secure files
+  --output-dir <path>       Write cosign.key, cosign.pub and credentials.json to secure files;
+                            the password and private key are then not printed to stdout
+                            unless --print-secrets is also given
+  --print-secrets           Print the password and private key even with --output-dir
   --password-bytes <value>  Random bytes for password entropy (default: ${DEFAULT_PASSWORD_BYTES})
   --json                    Output JSON instead of human-readable sections
   --non-interactive         Do not prompt for missing inputs
@@ -61,6 +65,7 @@ export function parseArgs(argv: string[]): CliOptions {
     json: false,
     nonInteractive: false,
     passwordBytes: DEFAULT_PASSWORD_BYTES,
+    printSecrets: false,
   };
 
   const valueHandlers: Record<string, (value: string) => void> = {
@@ -81,6 +86,9 @@ export function parseArgs(argv: string[]): CliOptions {
     },
     '--non-interactive': () => {
       options.nonInteractive = true;
+    },
+    '--print-secrets': () => {
+      options.printSecrets = true;
     },
     '-h': () => {
       options.help = true;
@@ -200,30 +208,81 @@ async function pathExists(filePath: string): Promise<boolean> {
   }
 }
 
-function renderHumanReadableResult(material: CosignKeyMaterial, outputDir?: string): void {
-  const sections = [
+/** Cosign key material without the password and private key, safe to print. */
+export type PublicCosignKeyMaterial = Omit<CosignKeyMaterial, 'password' | 'privateKey'>;
+
+/**
+ * Whether the secrets may be written to stdout.
+ *
+ * Without an output directory, stdout is the only copy the caller gets, so the secrets have to be
+ * printed or the key is unusable. With one, they are already on disk in owner-only files, and
+ * printing them as well only adds a copy in the terminal scrollback, a shell log or a CI log that
+ * nobody intended to keep. `--print-secrets` prints them anyway. Mirrors the Maven Central script.
+ */
+export function shouldPrintSecrets(options: Pick<CliOptions, 'outputDir' | 'printSecrets'>): boolean {
+  return options.printSecrets || !options.outputDir;
+}
+
+/** Copies the fields that are safe to show, as an allow-list, so a secret field added later stays out. */
+function redactSecrets(material: CosignKeyMaterial): PublicCosignKeyMaterial {
+  return { createdAt: material.createdAt, publicKey: material.publicKey };
+}
+
+/** The JSON document `--json` prints: the full material, or the redacted one plus where the secrets went. */
+export function formatJsonResult(
+  material: CosignKeyMaterial,
+  outputDir: string | undefined,
+  printSecrets: boolean,
+): string {
+  if (printSecrets) {
+    return JSON.stringify(material, undefined, 2);
+  }
+
+  return JSON.stringify(
+    { ...redactSecrets(material), secretsRedacted: true, secretsWrittenTo: outputDir ? path.resolve(outputDir) : null },
+    undefined,
+    2,
+  );
+}
+
+/** The human-readable report, with the secrets in it only when `printSecrets` is true. */
+export function formatHumanReadableResult(
+  material: CosignKeyMaterial,
+  outputDir: string | undefined,
+  printSecrets: boolean,
+): string {
+  const location = outputDir ? path.resolve(outputDir) : undefined;
+  const secrets = printSecrets
+    ? [
+        'COSIGN_PASSWORD:',
+        material.password,
+        SECTION_DIVIDER,
+        'COSIGN_PRIVATE_KEY (cosign.key):',
+        material.privateKey.trimEnd(),
+        SECTION_DIVIDER,
+      ]
+    : [
+        'SECRETS:     not printed. The password and private key are in',
+        `             ${location ?? '(none)'} (credentials.json holds both). Pass --print-secrets to print them.`,
+        SECTION_DIVIDER,
+      ];
+
+  return [
     SECTION_DIVIDER,
     'COSIGN SIGNING KEY GENERATED',
     SECTION_DIVIDER,
     'ALGORITHM:   ECDSA P-256',
     `CREATED AT:  ${material.createdAt}`,
-    outputDir ? `OUTPUT DIR:  ${path.resolve(outputDir)}` : 'OUTPUT DIR:  (none)',
-    SECTION_DIVIDER,
-    'COSIGN_PASSWORD:',
-    material.password,
+    location ? `OUTPUT DIR:  ${location}` : 'OUTPUT DIR:  (none)',
     SECTION_DIVIDER,
     'COSIGN_PUBLIC_KEY (cosign.pub):',
     material.publicKey.trimEnd(),
     SECTION_DIVIDER,
-    'COSIGN_PRIVATE_KEY (cosign.key):',
-    material.privateKey.trimEnd(),
-    SECTION_DIVIDER,
+    ...secrets,
     'Store password and private key in a secret manager immediately.',
     'Do not commit these values to source control or CI logs.',
     SECTION_DIVIDER,
-  ];
-
-  console.log(sections.join('\n'));
+  ].join('\n');
 }
 
 async function main() {
@@ -250,12 +309,12 @@ async function main() {
       await saveMaterialToDisk(options.outputDir, material);
     }
 
-    if (options.json) {
-      console.log(JSON.stringify(material, undefined, 2));
-      return;
-    }
-
-    renderHumanReadableResult(material, options.outputDir);
+    const printSecrets = shouldPrintSecrets(options);
+    console.log(
+      options.json
+        ? formatJsonResult(material, options.outputDir, printSecrets)
+        : formatHumanReadableResult(material, options.outputDir, printSecrets),
+    );
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
