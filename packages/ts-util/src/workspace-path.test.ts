@@ -63,6 +63,48 @@ describe('resolveWithinWorkspace', () => {
   it('accepts the workspace root itself', () => {
     expect(resolveIn('.')).toBe(WORKSPACE);
   });
+
+  // `..config` is a file name, not a step upwards; only a whole `..` segment leaves the directory.
+  it.each(['..config', 'docs/..hidden', '...'])('accepts %s, a name that only starts with two dots', (value) => {
+    expect(resolveIn(value)).toBe(path.resolve(WORKSPACE, value));
+  });
+
+  // Git runs whatever .git/config names, `core.fsmonitor` among them, on the next git command. A path
+  // into .git turns a file write into code execution, so it is refused however it is spelled: Windows
+  // matches names case-insensitively, ignores trailing dots and spaces, and answers to 8.3 names.
+  it.each([
+    '.git/config',
+    '.git',
+    'sub/.git/hooks/pre-commit',
+    '.GIT/config',
+    '.Git',
+    '.git./config',
+    '.git /config',
+    'GIT~1/config',
+    'docs/../.git/config',
+  ])('rejects %s, which reaches a git directory', (value) => {
+    expect(() => resolveIn(value)).toThrow(UnsafePathError);
+  });
+
+  // The trailing-character strip runs on every segment of workflow input, so it must stay linear.
+  it('checks a segment holding a long run of spaces in linear time', () => {
+    const started = performance.now();
+
+    expect(resolveIn(`a${' '.repeat(100_000)}b/file`)).toBe(path.resolve(WORKSPACE, `a${' '.repeat(100_000)}b/file`));
+    expect(() => resolveIn(`.git${' .'.repeat(100_000)}/config`)).toThrow(UnsafePathError);
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
+
+  it('says why a path into .git is refused, naming the input', () => {
+    expect(() => resolveIn('.git/config')).toThrow(/^output must not reach into a \.git directory/);
+  });
+
+  it.each(['.github/workflows/ci.yml', '.gitignore', '.gitattributes', 'my.git/x', '.git-blame-ignore-revs'])(
+    'accepts %s, which only looks like a git directory',
+    (value) => {
+      expect(resolveIn(value)).toBe(path.resolve(WORKSPACE, value));
+    },
+  );
 });
 
 /** Probed, not assumed: Windows creates links only under developer mode or an elevated session. */
@@ -137,6 +179,23 @@ describe.runIf(await canSymlink())('resolveRealWithinWorkspace', () => {
     await expect(resolveReal(value)).rejects.toThrow(UnsafePathError);
     await expect(resolveReal(value)).rejects.toThrow(
       /^template resolves outside the workspace through a symbolic link/,
+    );
+  });
+
+  // The S5 attack: README.md committed as a link to .git/config, then rendered over. The path as
+  // written is spotless; only where it lands shows it.
+  it.each([
+    { name: 'a file linked into .git', link: 'README.md', target: '.git/config' },
+    { name: 'a directory linked to .git', link: 'meta', target: '.git' },
+  ])('rejects $name', async ({ link, target }) => {
+    await mkdir(path.join(workspace, '.git'), { recursive: true });
+    await writeFile(path.join(workspace, '.git', 'config'), '[core]\n');
+    await symlink(path.join(workspace, target), path.join(workspace, link));
+
+    const value = link === 'meta' ? 'meta/config' : link;
+
+    await expect(resolveReal(value)).rejects.toThrow(
+      /^template resolves into a \.git directory through a symbolic link/,
     );
   });
 

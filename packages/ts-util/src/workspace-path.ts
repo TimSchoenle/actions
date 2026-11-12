@@ -24,6 +24,44 @@ export class UnsafePathError extends Error {
 const DRIVE_PREFIX = /^[A-Za-z]:/;
 
 /**
+ * Whether a path relative to the workspace root leaves it: a whole `..` segment first, or a path on
+ * another drive. A name such as `..config` only starts with two dots and stays inside.
+ */
+function leavesRoot(fromRoot: string): boolean {
+  return fromRoot === '..' || /^\.\.[/\\]/.test(fromRoot) || isAbsolute(fromRoot);
+}
+
+/**
+ * Whether a path relative to the workspace root names a `.git` directory or something inside one.
+ *
+ * Git runs whatever `.git/config` names on the next git command, `core.fsmonitor` among them, so a
+ * write there is code execution. The match is the one Windows applies, which is the loosest: case
+ * ignored, trailing dots and spaces dropped, and the 8.3 short name `GIT~1`.
+ */
+function reachesGitDirectory(fromRoot: string): boolean {
+  return fromRoot.split(/[/\\]/).some((segment) => {
+    const name = withoutTrailingDotsAndSpaces(segment).toLowerCase();
+
+    return name === '.git' || name === 'git~1';
+  });
+}
+
+/**
+ * Drops trailing dots and spaces with a scan from the end. The regex `/[. ]+$/` does the same in
+ * quadratic time on a segment holding a long run of spaces followed by any other character, and the
+ * segment is workflow input.
+ */
+function withoutTrailingDotsAndSpaces(segment: string): string {
+  let end = segment.length;
+
+  while (end > 0 && (segment[end - 1] === '.' || segment[end - 1] === ' ')) {
+    end -= 1;
+  }
+
+  return segment.slice(0, end);
+}
+
+/**
  * Resolves `value` beneath `workspace`, refusing anything that leaves it.
  *
  * Three checks rather than one, and deliberately so:
@@ -39,7 +77,8 @@ const DRIVE_PREFIX = /^[A-Za-z]:/;
  * @param inputName the action input being validated, named in every message so the workflow author
  * knows which of several paths to fix.
  * @returns the absolute resolved path, for callers that need it.
- * @throws {UnsafePathError} if the value is empty, absolute, or resolves outside the workspace.
+ * @throws {UnsafePathError} if the value is empty, absolute, resolves outside the workspace, or names
+ * a `.git` directory or anything inside one.
  */
 export function resolveWithinWorkspace(value: string, workspace: string, inputName: string): string {
   const trimmed = value.trim();
@@ -60,8 +99,12 @@ export function resolveWithinWorkspace(value: string, workspace: string, inputNa
   const resolved = resolve(root, trimmed);
   const fromRoot = relative(root, resolved);
 
-  if (fromRoot.startsWith('..') || isAbsolute(fromRoot)) {
+  if (leavesRoot(fromRoot)) {
     throw new UnsafePathError(`${inputName} resolves outside the workspace: ${quoteForLog(value)}`);
+  }
+
+  if (reachesGitDirectory(fromRoot)) {
+    throw new UnsafePathError(`${inputName} must not reach into a .git directory, got ${quoteForLog(value)}`);
   }
 
   return resolved;
@@ -128,16 +171,22 @@ function isMissing(error: unknown): boolean {
  * @returns the absolute resolved path, as {@link resolveWithinWorkspace} does — unrewritten, so
  * error messages and reported paths keep naming what the caller wrote.
  * @throws {UnsafePathError} on anything {@link resolveWithinWorkspace} rejects, on a path that a link
- * carries outside the workspace, and on a dangling link.
+ * carries outside the workspace or into a `.git` directory, and on a dangling link.
  */
 export async function resolveRealWithinWorkspace(value: string, workspace: string, inputName: string): Promise<string> {
   const resolved = resolveWithinWorkspace(value, workspace, inputName);
   const realRoot = await realpath(resolve(workspace));
   const fromRoot = relative(realRoot, await realpathOfExisting(resolved, value, inputName));
 
-  if (fromRoot.startsWith('..') || isAbsolute(fromRoot)) {
+  if (leavesRoot(fromRoot)) {
     throw new UnsafePathError(
       `${inputName} resolves outside the workspace through a symbolic link: ${quoteForLog(value)}`,
+    );
+  }
+
+  if (reachesGitDirectory(fromRoot)) {
+    throw new UnsafePathError(
+      `${inputName} resolves into a .git directory through a symbolic link: ${quoteForLog(value)}`,
     );
   }
 
