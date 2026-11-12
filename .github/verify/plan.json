@@ -8,11 +8,12 @@
     "scripts/verify-plan.ts"
   ],
   "ignore": ["**/CHANGELOG.md", "actions/*/*/README.md", "actions/*/*/examples/**", "actions/*/*/docs.yaml"],
-  "sharedJobsSha256": "dd20348f5883cb6086508a087736bc23d7bf19dd664336894cffe0585c41d32a",
+  "sharedJobsSha256": "739258addba14a434f3f16c6035492a9831d3cf3e8e3487f46052fe29f0cd0f4",
   "targets": [
     {
       "id": "bun/setup-cached",
       "shard": "verify-bun",
+      "e2eGroup": null,
       "inputs": [
         ".github/testdata/bun-setup-cached",
         ".github/verify/bun-setup-cached.yaml",
@@ -27,7 +28,8 @@
     },
     {
       "id": "common/close-pull-request",
-      "shard": "verify-common",
+      "shard": null,
+      "e2eGroup": "e2e-contents-write-pull-requests-write",
       "inputs": [
         ".bun-version",
         ".github/verify/common-close-pull-request.yaml",
@@ -52,11 +54,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/close-pull-request"],
       "schedule": false,
-      "jobsSha256": "45acb9a97a35804a467e19f966d36206908986c25d97a0ac3f59fc4e87c1d69b"
+      "jobsSha256": "264838ebd141c4ef9d95e241f838c7827614a59272c45f037552a41806af6ab6"
     },
     {
       "id": "common/commit-changes",
-      "shard": "verify-common",
+      "shard": null,
+      "e2eGroup": "e2e-contents-write",
       "inputs": [
         ".bun-version",
         ".github/verify/common-commit-changes.yaml",
@@ -81,11 +84,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/commit-changes"],
       "schedule": false,
-      "jobsSha256": "35612ebef7e88ae18b4fd816d9f2f6d120623b5304145bfee9318d7e9c068c6e"
+      "jobsSha256": "2890c623e0df80c4e3dc1f65ee556110a86cf39f435b20449429dfec550d0d59"
     },
     {
       "id": "common/commit-generated-files",
       "shard": "verify-common",
+      "e2eGroup": null,
       "inputs": [".github/verify/common-commit-generated-files.yaml", "actions/common/commit-generated-files"],
       "buildDirs": [],
       "install": false,
@@ -97,6 +101,7 @@
     {
       "id": "common/commit-patch",
       "shard": "verify-common",
+      "e2eGroup": "e2e-contents-write",
       "inputs": [
         ".bun-version",
         ".github/verify/common-commit-patch.yaml",
@@ -122,11 +127,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/commit-patch"],
       "schedule": false,
-      "jobsSha256": "25e6d85ed7801c08e64f143d6497a978a726d716a85439b04f22f6387e676c4c"
+      "jobsSha256": "5ef979a4c2e5a99cfd0943f10f4026a21148571f8db0f5cdf60090109fb3fa2e"
     },
     {
       "id": "common/create-branch",
-      "shard": "verify-common",
+      "shard": null,
+      "e2eGroup": "e2e-contents-write",
       "inputs": [
         ".bun-version",
         ".github/verify/common-create-branch.yaml",
@@ -151,11 +157,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/create-branch"],
       "schedule": false,
-      "jobsSha256": "8a7052defef2edff7018d3ad836ba62fdb1bb26a8cbf481b9d94746683995eec"
+      "jobsSha256": "2890c623e0df80c4e3dc1f65ee556110a86cf39f435b20449429dfec550d0d59"
     },
     {
       "id": "common/create-patch",
-      "shard": "verify-common",
+      "shard": null,
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/common-create-patch.yaml",
@@ -180,11 +187,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/create-patch"],
       "schedule": false,
-      "jobsSha256": "35a0f35fd15cc400b8f6915c264fa5942cfb90d941ad5b40f3b527c2b51e93c4"
+      "jobsSha256": "fb5404f48f0b51deefa4500d91a6b9728da5804198fa002ac218537d37927620"
     },
     {
       "id": "common/create-pull-request",
       "shard": "verify-common",
+      "e2eGroup": null,
       "inputs": [".github/verify/common-create-pull-request.yaml", "actions/common/create-pull-request"],
       "buildDirs": [],
       "install": false,
@@ -195,7 +203,8 @@
     },
     {
       "id": "common/delete-branch",
-      "shard": "verify-common",
+      "shard": null,
+      "e2eGroup": "e2e-contents-write",
       "inputs": [
         ".bun-version",
         ".github/verify/common-delete-branch.yaml",
@@ -220,11 +229,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/delete-branch"],
       "schedule": false,
-      "jobsSha256": "835ad373f430897c3892df613e087713d0f7ab6a127ada8895ed3d3bc440a687"
+      "jobsSha256": "2890c623e0df80c4e3dc1f65ee556110a86cf39f435b20449429dfec550d0d59"
     },
     {
       "id": "common/download-release-asset",
       "shard": "verify-common",
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/common-download-release-asset.yaml",
@@ -249,11 +259,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/download-release-asset"],
       "schedule": false,
-      "jobsSha256": "aa87cfb110cd2c0b8007d50949635fef43d9d0f507f61720cdef15eacc56dca1"
+      "jobsSha256": "3e832ea56086e6f2191441b3b3dfefba3b5b8c0943682bf55e3a9f89ec258359"
     },
     {
       "id": "common/fetch-head",
       "shard": "verify-common",
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/common-fetch-head.yaml",
@@ -278,11 +289,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/fetch-head"],
       "schedule": false,
-      "jobsSha256": "9d18c50a55d98c82cd11593aebc3f2fa3f2530d90a94bd14d18594a3e6fb3387"
+      "jobsSha256": "f7bc81d799042c5f59a8d6710600da5124f8791e7a21c87d391740e029f91cee"
     },
     {
       "id": "common/find-patch",
       "shard": "verify-common",
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/common-find-patch.yaml",
@@ -308,11 +320,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/find-patch"],
       "schedule": false,
-      "jobsSha256": "4babf73a2e54d7570f3c24cf5a24b12747d6a2164058eeff7e30c6b76756e645"
+      "jobsSha256": "2183b40e2ac720e7057448709c34a486deb74a48949e3316307f38f596749d6a"
     },
     {
       "id": "common/generated-files-verdict",
       "shard": "verify-common",
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/common-generated-files-verdict.yaml",
@@ -343,11 +356,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/generated-files-verdict"],
       "schedule": false,
-      "jobsSha256": "cd424e19c067973e693cbd3db0a9c0ef1e3a56c3f87d1fc1206da4589849a182"
+      "jobsSha256": "a7c23c529a58efe9127f3560a6dd3609ad043dc83d88fc408234f5e33599a287"
     },
     {
       "id": "common/get-app-git-identity",
-      "shard": "verify-common",
+      "shard": null,
+      "e2eGroup": "e2e-metadata-read",
       "inputs": [
         ".bun-version",
         ".github/verify/common-get-app-git-identity.yaml",
@@ -372,11 +386,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/get-app-git-identity"],
       "schedule": false,
-      "jobsSha256": "964b59dfc010bd0ee787177f8b1464abc2d1c58918efb5acd28b652ab9e6e9c9"
+      "jobsSha256": "2d45428144e0150482e49ba9a7afbde039cc2c16199cd46b1e468157aaf78253"
     },
     {
       "id": "common/modify-yaml",
-      "shard": "verify-common",
+      "shard": null,
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/common-modify-yaml.yaml",
@@ -401,11 +416,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/modify-yaml"],
       "schedule": false,
-      "jobsSha256": "97560dc69d1b3dd50eeb248144f5d2395bb070906534dc20f270e79a9e4a2b34"
+      "jobsSha256": "fb5404f48f0b51deefa4500d91a6b9728da5804198fa002ac218537d37927620"
     },
     {
       "id": "common/read-yaml",
-      "shard": "verify-common",
+      "shard": null,
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/common-read-yaml.yaml",
@@ -430,11 +446,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/read-yaml"],
       "schedule": false,
-      "jobsSha256": "6d470fbe9d554be8a7596caf06cf292a143cb0f078c3b3245813dd4ff692c95e"
+      "jobsSha256": "fb5404f48f0b51deefa4500d91a6b9728da5804198fa002ac218537d37927620"
     },
     {
       "id": "common/readme-variables",
-      "shard": "verify-common",
+      "shard": null,
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/common-readme-variables.yaml",
@@ -459,11 +476,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/readme-variables"],
       "schedule": false,
-      "jobsSha256": "7c4758d9fadab4068e8c5df92c7427396baf91c745522fdd45d35f180a0e2d96"
+      "jobsSha256": "fb5404f48f0b51deefa4500d91a6b9728da5804198fa002ac218537d37927620"
     },
     {
       "id": "common/render-readme",
       "shard": "verify-common",
+      "e2eGroup": null,
       "inputs": [".github/verify/common-render-readme.yaml", "actions/common/render-readme"],
       "buildDirs": [],
       "install": false,
@@ -474,7 +492,8 @@
     },
     {
       "id": "common/render-template",
-      "shard": "verify-common",
+      "shard": null,
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/common-render-template.yaml",
@@ -499,11 +518,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/render-template"],
       "schedule": false,
-      "jobsSha256": "c4a71c848a291bcb0a9fe4441119a582ee2aa92f5a20f377831342275d751d03"
+      "jobsSha256": "fb5404f48f0b51deefa4500d91a6b9728da5804198fa002ac218537d37927620"
     },
     {
       "id": "common/render-template-and-commit",
       "shard": "verify-common",
+      "e2eGroup": null,
       "inputs": [".github/verify/common-render-template-and-commit.yaml", "actions/common/render-template-and-commit"],
       "buildDirs": [],
       "install": false,
@@ -514,7 +534,8 @@
     },
     {
       "id": "common/setup-app-git-identity",
-      "shard": "verify-common",
+      "shard": null,
+      "e2eGroup": "e2e-metadata-read",
       "inputs": [
         ".bun-version",
         ".github/verify/common-setup-app-git-identity.yaml",
@@ -539,11 +560,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/setup-app-git-identity"],
       "schedule": false,
-      "jobsSha256": "30983d3b234c8a92fab2c07c26e115c53d4bfdfec4aad3b12413b33babea6ef2"
+      "jobsSha256": "2d45428144e0150482e49ba9a7afbde039cc2c16199cd46b1e468157aaf78253"
     },
     {
       "id": "common/upsert-issue",
-      "shard": "verify-common",
+      "shard": null,
+      "e2eGroup": "e2e-issues-write",
       "inputs": [
         ".bun-version",
         ".github/verify/common-upsert-issue.yaml",
@@ -568,11 +590,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/upsert-issue"],
       "schedule": false,
-      "jobsSha256": "badc31a8290fc5bc8aa84267eea9516f1403c3ae885fccc187bb397391e230c0"
+      "jobsSha256": "9f1f8a1f67965948b3c479489b3b001d2ce260b82718660d4404e19639343b51"
     },
     {
       "id": "common/upsert-pr-comment",
-      "shard": "verify-common",
+      "shard": null,
+      "e2eGroup": "e2e-contents-write-pull-requests-write",
       "inputs": [
         ".bun-version",
         ".github/verify/common-upsert-pr-comment.yaml",
@@ -597,11 +620,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/upsert-pr-comment"],
       "schedule": false,
-      "jobsSha256": "e7cbfddf9f9e48331f4e6d9f645254bc8a2c1075327ac659ff6da1c912d0af8c"
+      "jobsSha256": "264838ebd141c4ef9d95e241f838c7827614a59272c45f037552a41806af6ab6"
     },
     {
       "id": "configs/checkstyle",
       "shard": "verify-configs",
+      "e2eGroup": null,
       "inputs": [".github/verify/configs-checkstyle.yaml", "configs/checkstyle", "jitpack.yml"],
       "buildDirs": [],
       "install": false,
@@ -613,6 +637,7 @@
     {
       "id": "configs/renovate",
       "shard": "verify-configs",
+      "e2eGroup": null,
       "inputs": [
         ".github/tools/renovate",
         ".github/verify/configs-renovate.yaml",
@@ -634,6 +659,7 @@
     {
       "id": "docker/image-check",
       "shard": "verify-docker",
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/docker-image-check.yaml",
@@ -659,11 +685,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/docker/image-check"],
       "schedule": false,
-      "jobsSha256": "0e9b1abe357649272f74ae3c4e4bb038791391e90c667acc32e65e096908702b"
+      "jobsSha256": "abee34a0ba39db4804ab27795f337c352fe5bff2a8934bd4a4925e707d263f10"
     },
     {
       "id": "docker/image-check-summary",
-      "shard": "verify-docker",
+      "shard": null,
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/docker-image-check-summary.yaml",
@@ -688,11 +715,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/docker/image-check-summary"],
       "schedule": false,
-      "jobsSha256": "f90f9fb7ded029e269f7af05197efc050456b9d7a0977a6e442e77a7fafae163"
+      "jobsSha256": "fb5404f48f0b51deefa4500d91a6b9728da5804198fa002ac218537d37927620"
     },
     {
       "id": "helm/apply-chart-updates",
-      "shard": "verify-helm",
+      "shard": null,
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/helm-apply-chart-updates.yaml",
@@ -717,11 +745,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/helm/apply-chart-updates"],
       "schedule": false,
-      "jobsSha256": "2681ecf6023921cc6e367957d54882088e7fabeffd1ee696db27f3e46b761702"
+      "jobsSha256": "fb5404f48f0b51deefa4500d91a6b9728da5804198fa002ac218537d37927620"
     },
     {
       "id": "helm/update-chart-version",
       "shard": "verify-helm",
+      "e2eGroup": null,
       "inputs": [
         ".github/testdata/terrace-helm",
         ".github/verify/helm-update-chart-version.yaml",
@@ -736,7 +765,8 @@
     },
     {
       "id": "helper/resolve-base-branch",
-      "shard": "verify-helper",
+      "shard": null,
+      "e2eGroup": "e2e-contents-write",
       "inputs": [
         ".bun-version",
         ".github/verify/helper-resolve-base-branch.yaml",
@@ -761,11 +791,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/helper/resolve-base-branch"],
       "schedule": false,
-      "jobsSha256": "fff215d0188c175924e589a3e29f3f4e46d69c83d8c903aee67b03c15d058e49"
+      "jobsSha256": "2890c623e0df80c4e3dc1f65ee556110a86cf39f435b20449429dfec550d0d59"
     },
     {
       "id": "helper/verify-branch-name",
       "shard": "verify-helper",
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/helper-verify-branch-name.yaml",
@@ -790,11 +821,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/helper/verify-branch-name"],
       "schedule": false,
-      "jobsSha256": "57083af6a5873f19c5033bc01430860a7881a8fda304a78f7d9be7d5da2f6c9b"
+      "jobsSha256": "195bdee9522f6bb9f060b89da8f7e66864d4f2d24d536760539e05861ff1c3ec"
     },
     {
       "id": "helper/verify-commit-authors",
-      "shard": "verify-helper",
+      "shard": null,
+      "e2eGroup": "e2e-contents-write-pull-requests-write",
       "inputs": [
         ".bun-version",
         ".github/verify/helper-verify-commit-authors.yaml",
@@ -819,11 +851,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/helper/verify-commit-authors"],
       "schedule": false,
-      "jobsSha256": "d8fd844083a1a3a4cb88ad379d21230fee75c0aa1ef3a4eb4c96770743f41c2b"
+      "jobsSha256": "264838ebd141c4ef9d95e241f838c7827614a59272c45f037552a41806af6ab6"
     },
     {
       "id": "java-gradle/auto-spotless",
       "shard": "verify-java-gradle",
+      "e2eGroup": null,
       "inputs": [
         ".bun-version",
         ".github/verify/java-gradle-auto-spotless.yaml",
@@ -850,6 +883,7 @@
     {
       "id": "java-gradle/coverage-codecov",
       "shard": "verify-java-gradle",
+      "e2eGroup": null,
       "inputs": [".github/verify/java-gradle-coverage-codecov.yaml", "actions/java-gradle/coverage-codecov"],
       "buildDirs": [],
       "install": false,
@@ -861,6 +895,7 @@
     {
       "id": "java-gradle/setup-base-environment",
       "shard": "verify-java-gradle",
+      "e2eGroup": null,
       "inputs": [
         ".github/verify/java-gradle-setup-base-environment.yaml",
         "actions/java-gradle/setup-base-environment"
@@ -874,7 +909,8 @@
     },
     {
       "id": "maintenance/auto-approve-pr",
-      "shard": "verify-maintenance",
+      "shard": null,
+      "e2eGroup": "e2e-contents-write-pull-requests-write-as-pull-requests-write",
       "inputs": [
         ".bun-version",
         ".github/verify/maintenance-auto-approve-pr.yaml",
@@ -899,11 +935,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/maintenance/auto-approve-pr"],
       "schedule": false,
-      "jobsSha256": "584ef3b52345d873fcd1a5b6df62f873ba60fb3ac06981939b8de29734dc05dd"
+      "jobsSha256": "19badb3fad1e2b445d6c9de96b5f689565bfcf6f0d29029198b8347a98080628"
     },
     {
       "id": "maintenance/auto-rebase",
-      "shard": "verify-maintenance",
+      "shard": null,
+      "e2eGroup": "e2e-contents-write-issues-write-pull-requests-write",
       "inputs": [
         ".bun-version",
         ".github/verify/maintenance-auto-rebase.yaml",
@@ -928,11 +965,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/maintenance/auto-rebase"],
       "schedule": false,
-      "jobsSha256": "2576f7765479d656a8eaa12717c19fa642cb061c1e3bbd32cb7fdb2c99ca981e"
+      "jobsSha256": "ae3ad62de83abf718be0eee47ca0a6f32b10e486e92d748378bed06c315b0d0f"
     },
     {
       "id": "maintenance/ensure-actions-are-executed",
-      "shard": "verify-maintenance",
+      "shard": null,
+      "e2eGroup": "e2e-checks-write-contents-write",
       "inputs": [
         ".bun-version",
         ".github/verify/maintenance-ensure-actions-are-executed.yaml",
@@ -957,11 +995,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/maintenance/ensure-actions-are-executed"],
       "schedule": false,
-      "jobsSha256": "5f9ea0bde50bbf53a3c1154ad6e4e89f57a1fdf949ce254511a0cbbbaf279d6e"
+      "jobsSha256": "38f3ded34d52d5a5e7d733d004b21f4d7636802a18f55c36cb4204bfb273fecd"
     },
     {
       "id": "maintenance/timed-auto-merge",
-      "shard": "verify-maintenance",
+      "shard": null,
+      "e2eGroup": "e2e-contents-write-pull-requests-write",
       "inputs": [
         ".bun-version",
         ".github/verify/maintenance-timed-auto-merge.yaml",
@@ -986,11 +1025,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/maintenance/timed-auto-merge"],
       "schedule": false,
-      "jobsSha256": "3844261932c39a964c7fe1281236fca200a93cdb6d43351a92276dcf859424c8"
+      "jobsSha256": "264838ebd141c4ef9d95e241f838c7827614a59272c45f037552a41806af6ab6"
     },
     {
       "id": "maintenance/trigger-coderabbit-review",
-      "shard": "verify-maintenance",
+      "shard": null,
+      "e2eGroup": "e2e-contents-write-pull-requests-write",
       "inputs": [
         ".bun-version",
         ".github/verify/maintenance-trigger-coderabbit-review.yaml",
@@ -1015,11 +1055,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/maintenance/trigger-coderabbit-review"],
       "schedule": false,
-      "jobsSha256": "3199b94f0ba30eded2f6fbd0c3acbe24186f29a7bc909c0367e951292f36b1bf"
+      "jobsSha256": "264838ebd141c4ef9d95e241f838c7827614a59272c45f037552a41806af6ab6"
     },
     {
       "id": "maintenance/wipe-cache",
-      "shard": "verify-maintenance",
+      "shard": null,
+      "e2eGroup": "e2e-metadata-read",
       "inputs": [
         ".bun-version",
         ".github/verify/maintenance-wipe-cache.yaml",
@@ -1044,11 +1085,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/maintenance/wipe-cache"],
       "schedule": false,
-      "jobsSha256": "0898263bea42c285cd245731eb3ed191da48609ac723d6d8d5a1b6353d52fcc0"
+      "jobsSha256": "2d45428144e0150482e49ba9a7afbde039cc2c16199cd46b1e468157aaf78253"
     },
     {
       "id": "release/build-actions",
       "shard": "verify-release",
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/release-build-actions.yaml",
@@ -1074,11 +1116,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/release/build-actions"],
       "schedule": false,
-      "jobsSha256": "20823813fe31bad15f73bb1aa8124a54f99df1c4d9f81a0da4cafc8609d1d7f7"
+      "jobsSha256": "8d8ce2c473fcbfdff16196287c1c71865ab7789766e408d9874bcfe3a9a93b58"
     },
     {
       "id": "release/install-built-actions",
       "shard": "verify-release",
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/release-install-built-actions.yaml",
@@ -1104,11 +1147,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/release/install-built-actions"],
       "schedule": false,
-      "jobsSha256": "32bc93ef9418cc89f60aeb44e70008acd8eb9d2972c5f6beefef37f2177c5d10"
+      "jobsSha256": "710660eda67080ed2f7c62500e46ddd395cecb0bcb51088b346dcf3518cc128a"
     },
     {
       "id": "release/plan-release-please",
-      "shard": "verify-release",
+      "shard": null,
+      "e2eGroup": "e2e-contents-write-pull-requests-read",
       "inputs": [
         ".bun-version",
         ".github/verify/release-plan-release-please.yaml",
@@ -1133,11 +1177,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/release/plan-release-please"],
       "schedule": false,
-      "jobsSha256": "e4c9ff620dca33ed9cec348155f8b2116f1d9d9b794757f44f67a983fa812b09"
+      "jobsSha256": "902f7807817ace610aaf8953f87b45e6d4e99d2ca5f13f1cc05a96b4307bf116"
     },
     {
       "id": "release/publish-build-commit",
       "shard": "verify-release",
+      "e2eGroup": "e2e-contents-write",
       "inputs": [
         ".bun-version",
         ".github/verify/release-publish-build-commit.yaml",
@@ -1163,11 +1208,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/release/publish-build-commit"],
       "schedule": false,
-      "jobsSha256": "8e01b09d921a0dd45513c0d5b100004bc2d5f46045e461fcd68c62d4149bc856"
+      "jobsSha256": "dcbb9186fca3b731cddbea434be4a44944658d85d6c6c067f223371b9c8b21e2"
     },
     {
       "id": "release/resolve-actions",
-      "shard": "verify-release",
+      "shard": null,
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/release-resolve-actions.yaml",
@@ -1192,11 +1238,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/release/resolve-actions"],
       "schedule": false,
-      "jobsSha256": "d1fa4dd6becf0c516334c6f2f8defd4e086c28c6260ca5b77500670c711a91bd"
+      "jobsSha256": "fb5404f48f0b51deefa4500d91a6b9728da5804198fa002ac218537d37927620"
     },
     {
       "id": "rust/auto-format",
       "shard": "verify-rust",
+      "e2eGroup": null,
       "inputs": [
         ".bun-version",
         ".github/verify/rust-auto-format.yaml",
@@ -1223,6 +1270,7 @@
     {
       "id": "rust/cargo-check",
       "shard": "verify-rust",
+      "e2eGroup": null,
       "inputs": [".github/verify/rust-cargo-check.yaml", "actions/rust/cargo-check"],
       "buildDirs": [],
       "install": false,
@@ -1234,6 +1282,7 @@
     {
       "id": "rust/clippy",
       "shard": "verify-rust",
+      "e2eGroup": null,
       "inputs": [".github/verify/rust-clippy.yaml", "actions/rust/clippy"],
       "buildDirs": [],
       "install": false,
@@ -1244,7 +1293,8 @@
     },
     {
       "id": "rust/config-contract",
-      "shard": "verify-rust",
+      "shard": null,
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/rust-config-contract.yaml",
@@ -1269,11 +1319,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/rust/config-contract"],
       "schedule": false,
-      "jobsSha256": "1d1dcdfc02e55124de0e6af0b77bd438d8341f8bb5f1b5678f075f62c2d806f2"
+      "jobsSha256": "fb5404f48f0b51deefa4500d91a6b9728da5804198fa002ac218537d37927620"
     },
     {
       "id": "rust/coverage-codecov",
       "shard": "verify-rust",
+      "e2eGroup": null,
       "inputs": [".github/verify/rust-coverage-codecov.yaml", "actions/rust/coverage-codecov"],
       "buildDirs": [],
       "install": false,
@@ -1285,6 +1336,7 @@
     {
       "id": "rust/test",
       "shard": "verify-rust",
+      "e2eGroup": null,
       "inputs": [".github/verify/rust-test.yaml", "actions/rust/test"],
       "buildDirs": [],
       "install": false,
@@ -1296,6 +1348,7 @@
     {
       "id": "security/codeql",
       "shard": "verify-security",
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/security-codeql.yaml",
@@ -1320,11 +1373,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/security/codeql"],
       "schedule": false,
-      "jobsSha256": "feafd7a5885c815e8d8202cb0018d1735ee2dac07d9e137917c8ecc2e87154d3"
+      "jobsSha256": "cfe6f53dec3004ecf0d58084f3d3567c025d6e0a3e334080a50877bae4c0829e"
     },
     {
       "id": "security/jactionlint",
       "shard": "verify-security",
+      "e2eGroup": null,
       "inputs": [".github/verify/security-jactionlint.yaml", "actions/security/jactionlint"],
       "buildDirs": [],
       "install": false,
@@ -1336,6 +1390,7 @@
     {
       "id": "security/zizmor",
       "shard": "verify-security",
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/security-zizmor.yaml",
@@ -1360,11 +1415,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/security/zizmor"],
       "schedule": false,
-      "jobsSha256": "f3d678a40f74d15b71d7e0cb1a29fee5ebaab5cef813c4310e2cb36c881ae7e4"
+      "jobsSha256": "2fccb42ec6542f1227d0280e4b39b55282b802307f6f34b73f4cd97f11d38ad5"
     },
     {
       "id": "terrace/helm-check",
       "shard": "verify-terrace",
+      "e2eGroup": null,
       "inputs": [
         ".github/testdata/terrace-helm",
         ".github/verify/terrace-helm-check.yaml",
@@ -1380,6 +1436,7 @@
     {
       "id": "terrace/helm-diff",
       "shard": "verify-terrace",
+      "e2eGroup": null,
       "inputs": [".github/testdata/terrace-helm", ".github/verify/terrace-helm-diff.yaml", "actions/terrace/helm-diff"],
       "buildDirs": [],
       "install": false,
@@ -1391,6 +1448,7 @@
     {
       "id": "terrace/helm-sync",
       "shard": "verify-terrace",
+      "e2eGroup": null,
       "inputs": [".github/testdata/terrace-helm", ".github/verify/terrace-helm-sync.yaml", "actions/terrace/helm-sync"],
       "buildDirs": [],
       "install": false,
@@ -1402,6 +1460,7 @@
     {
       "id": "terrace/image",
       "shard": "verify-terrace",
+      "e2eGroup": null,
       "inputs": [".github/testdata/terrace-image", ".github/verify/terrace-image.yaml", "actions/terrace/image"],
       "buildDirs": [],
       "install": false,
@@ -1413,6 +1472,7 @@
     {
       "id": "terrace/setup",
       "shard": "verify-terrace",
+      "e2eGroup": "e2e-tokenless",
       "inputs": [
         ".bun-version",
         ".github/verify/terrace-setup.yaml",
@@ -1437,11 +1497,12 @@
       "pullRequestBranches": null,
       "pushBranches": ["feature/terrace/setup"],
       "schedule": false,
-      "jobsSha256": "45224f349b8ddad54e742c5366624da4a514ebe5748da12dced11b016eaf27af"
+      "jobsSha256": "d468d5f831cd8de03e8feddfbeb9b5df7430c72272e0f21c5f6385d72bd28421"
     },
     {
       "id": "test/setup-e2e",
       "shard": "verify-test",
+      "e2eGroup": null,
       "inputs": [".github/verify/test-setup-e2e.yaml", "actions/test/setup-e2e"],
       "buildDirs": [],
       "install": false,

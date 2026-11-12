@@ -20,6 +20,7 @@ function target(id: string, inputs: string[], overrides: Partial<PlannedTarget> 
   return {
     id,
     shard: `verify-${id.split('/')[0]}`,
+    e2eGroup: null,
     inputs,
     buildDirs: [],
     install: (overrides.buildDirs?.length ?? 0) > 0,
@@ -72,8 +73,32 @@ describe('selectTargets', () => {
       targets: ['common/create-patch', 'common/find-patch'],
       shards: ['verify-common'],
       buildDirs: ['actions/common/create-patch/helper', 'actions/common/find-patch/helper'],
+      e2eGroups: [],
+      e2e: {},
       install: true,
       seedCache: false,
+    });
+  });
+
+  // P8: one verify.yaml job per token scope set runs the suites, so the plan lists their directories.
+  it('lists the selected end-to-end suites by group, and no shard for a target without own jobs', () => {
+    const plan: PlanFile = {
+      ...PLAN,
+      targets: [
+        target('common/a', ['actions/common/a'], { e2eGroup: 'e2e-contents-write', shard: null }),
+        target('common/b', ['actions/common/b'], { e2eGroup: 'e2e-contents-write' }),
+        target('common/c', ['actions/common/c'], { e2eGroup: 'e2e-tokenless', shard: null }),
+        target('common/d', ['actions/common/d'], { e2eGroup: 'e2e-tokenless', shard: null }),
+      ],
+    };
+
+    const result = selectTargets(plan, PR, ['actions/common/b/x.ts', 'actions/common/a/x.ts', 'actions/common/c/x.ts']);
+
+    expect(result.shards).toEqual(['verify-common']);
+    expect(result.e2eGroups).toEqual(['e2e-contents-write', 'e2e-tokenless']);
+    expect(result.e2e).toEqual({
+      'e2e-contents-write': ['actions/common/a', 'actions/common/b'],
+      'e2e-tokenless': ['actions/common/c'],
     });
   });
 
@@ -101,7 +126,15 @@ describe('selectTargets', () => {
       'actions/common/create-patch/CHANGELOG.md',
     ]);
 
-    expect(result).toEqual({ targets: [], shards: [], buildDirs: [], install: false, seedCache: false });
+    expect(result).toEqual({
+      targets: [],
+      shards: [],
+      buildDirs: [],
+      install: false,
+      seedCache: false,
+      e2eGroups: [],
+      e2e: {},
+    });
   });
 
   it('still selects a target for a README below the action root, which the action may read', () => {
@@ -251,28 +284,60 @@ describe('readEvent', () => {
 describe('formatOutputs', () => {
   it('writes JSON lists and a heredoc of build directories', () => {
     expect(
-      formatOutputs({ targets: ['a/b'], shards: ['verify-a'], buildDirs: ['x', 'y'], install: true, seedCache: false }),
+      formatOutputs({
+        targets: ['a/b'],
+        shards: ['verify-a'],
+        buildDirs: ['x', 'y'],
+        install: true,
+        seedCache: false,
+        e2eGroups: [],
+        e2e: {},
+      }),
     ).toBe(
-      'targets=["a/b"]\nshards=["verify-a"]\ninstall=true\nseed-cache=false\nbuild=true\nbuild-dirs<<VERIFY_PLAN_EOF\nx\ny\nVERIFY_PLAN_EOF\n',
+      'targets=["a/b"]\nshards=["verify-a"]\ninstall=true\nseed-cache=false\nbuild=true\ne2e-groups=[]\ne2e={}\nbuild-dirs<<VERIFY_PLAN_EOF\nx\ny\nVERIFY_PLAN_EOF\n',
     );
   });
 
   it('reports no build when nothing is built', () => {
-    expect(formatOutputs({ targets: [], shards: [], buildDirs: [], install: false, seedCache: false })).toContain(
-      'build=false\n',
-    );
+    expect(
+      formatOutputs({
+        targets: [],
+        shards: [],
+        buildDirs: [],
+        install: false,
+        seedCache: false,
+        e2eGroups: [],
+        e2e: {},
+      }),
+    ).toContain('build=false\n');
   });
 
   it('reports no install when no selected target reads the dependency tree', () => {
     expect(
-      formatOutputs({ targets: ['a/b'], shards: ['verify-a'], buildDirs: [], install: false, seedCache: false }),
+      formatOutputs({
+        targets: ['a/b'],
+        shards: ['verify-a'],
+        buildDirs: [],
+        install: false,
+        seedCache: false,
+        e2eGroups: [],
+        e2e: {},
+      }),
     ).toContain('install=false\n');
   });
 
   it('reports a cache seed apart from install', () => {
-    expect(formatOutputs({ targets: [], shards: [], buildDirs: [], install: false, seedCache: true })).toContain(
-      'install=false\nseed-cache=true\n',
-    );
+    expect(
+      formatOutputs({
+        targets: [],
+        shards: [],
+        buildDirs: [],
+        install: false,
+        seedCache: true,
+        e2eGroups: [],
+        e2e: {},
+      }),
+    ).toContain('install=false\nseed-cache=true\n');
   });
 });
 
@@ -284,6 +349,8 @@ describe('parsePlanFile', () => {
   it('refuses a plan without targets or with a malformed entry', () => {
     expect(() => parsePlanFile(JSON.stringify({ ...PLAN, targets: [] }))).toThrow(/no targets/);
     expect(() => parsePlanFile(JSON.stringify({ ...PLAN, targets: [{ id: 'a/b' }] }))).toThrow(/malformed/);
+    const { e2eGroup: _dropped, ...withoutGroup } = PLAN.targets[0];
+    expect(() => parsePlanFile(JSON.stringify({ ...PLAN, targets: [withoutGroup] }))).toThrow(/malformed/);
     const { install: _install, ...withoutInstall } = target('a/b', ['a']);
     expect(() => parsePlanFile(JSON.stringify({ ...PLAN, targets: [withoutInstall] }))).toThrow(/malformed/);
     expect(() => parsePlanFile('null')).toThrow(/global and ignore/);

@@ -146,6 +146,8 @@ export async function plan(
           targets: [],
           shards: [],
           buildDirs: [],
+          e2eGroups: [],
+          e2e: {},
           install: false,
           seedCache: changed === 'all' || changed.includes(LOCKFILE),
         },
