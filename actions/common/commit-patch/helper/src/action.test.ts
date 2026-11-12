@@ -21,6 +21,7 @@ vi.mock('actions-util/core', async (importOriginal) => ({
 }));
 
 const SHA = 'a'.repeat(40);
+const OTHER_SHA = 'b'.repeat(40);
 const BLOB = 'b'.repeat(40);
 
 let root: string;
@@ -73,6 +74,8 @@ beforeEach(async () => {
   vi.stubEnv('INPUT_REPOSITORY', 'owner/repo');
   vi.stubEnv('INPUT_BRANCH', 'feature');
   vi.stubEnv('INPUT_EXPECTED_HEAD_SHA', SHA);
+  vi.stubEnv('INPUT_EVENT_BRANCH', 'main');
+  vi.stubEnv('INPUT_EVENT_HEAD_SHA', OTHER_SHA);
   vi.stubEnv('INPUT_MAX_PATCH_BYTES', '10485760');
   vi.stubEnv('INPUT_RUN_ID', '');
 });
@@ -88,6 +91,48 @@ describe('prepare', () => {
     vi.stubEnv('INPUT_MODE', 'prepare');
     vi.stubEnv('INPUT_DIRECTORY', '');
     vi.stubEnv('INPUT_TOKEN', '');
+  });
+
+  // In a workflow_run job the event values name the default branch and its tip, not the pull request
+  // the artifact came from. Falling back to them would commit an untrusted patch to the default branch.
+  it.each([
+    ['branch', 'INPUT_BRANCH'],
+    ['expected_head_sha', 'INPUT_EXPECTED_HEAD_SHA'],
+  ])('requires %s when run_id is set, instead of falling back to the event', async (input, variable) => {
+    vi.stubEnv('INPUT_RUN_ID', '19284756301');
+    vi.stubEnv(variable, '');
+
+    await run({ temp, workspace: root });
+
+    expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining(`${input} must be set when run_id is set`));
+    expect(await readdir(temp)).toEqual([]);
+  });
+
+  it('falls back to the event branch and head when run_id is empty', async () => {
+    vi.stubEnv('INPUT_BRANCH', '');
+    vi.stubEnv('INPUT_EXPECTED_HEAD_SHA', '');
+
+    await run({ temp, workspace: root });
+
+    expect(core.setFailed).not.toHaveBeenCalled();
+  });
+
+  it('fails when neither the input nor the event names a branch', async () => {
+    vi.stubEnv('INPUT_BRANCH', '');
+    vi.stubEnv('INPUT_EVENT_BRANCH', '');
+
+    await run({ temp, workspace: root });
+
+    expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('branch'));
+  });
+
+  it('validates an event branch like an explicit one', async () => {
+    vi.stubEnv('INPUT_BRANCH', '');
+    vi.stubEnv('INPUT_EVENT_BRANCH', 'refs/heads/main');
+
+    await run({ temp, workspace: root });
+
+    expect(core.setFailed).toHaveBeenCalledWith(expect.stringMatching(/branch must be a branch name/));
   });
 
   it('accepts a run ID from another run', async () => {
@@ -123,6 +168,8 @@ describe('prepare', () => {
     ['a whitespace-only run_id', 'INPUT_RUN_ID', ' ', /run_id must be/],
     ['a run_id with a trailing newline', 'INPUT_RUN_ID', '123\n', /run_id must be/],
     ['an expression that did not resolve to a number', 'INPUT_RUN_ID', '${{ github.run_id }}', /run_id must be/],
+    ['a full ref name as the branch', 'INPUT_BRANCH', 'refs/heads/main', /branch must be a branch name/],
+    ['a branch git would refuse', 'INPUT_BRANCH', 'a..b', /branch must be a branch name/],
   ])('fails on %s before anything is downloaded', async (_name, variable, value, message) => {
     vi.stubEnv(variable, value);
 
