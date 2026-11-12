@@ -632,7 +632,7 @@
       "pullRequestBranches": null,
       "pushBranches": [],
       "schedule": false,
-      "jobsSha256": "0cfb308d62f37b164de4b7ac52ac7ab48a28e3a01a0e62f22e159b50d8251bc9"
+      "jobsSha256": "5622f12f84381191363fac703ccd826c921f2ca2861cb5f2916064d797fb4eb1"
     },
     {
       "id": "configs/renovate",
