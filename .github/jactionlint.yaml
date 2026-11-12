@@ -37,13 +37,6 @@ ignores:
     file: .github/workflows/verify-bun.yaml
     step: Generate Lockfile & Clean
     reason: generates the fixture's lockfile on purpose
-  # commit-changes has never had an `empty` input, so create-pull-request's empty_commit input is a
-  # known no-op. Accepted until commit-changes gains the input. An ignore cannot name the input, so
-  # this covers every input of the step: recheck it whenever commit-changes is bumped.
-  - rule: unknown-action-input
-    file: actions/common/create-pull-request/action.yaml
-    step: Commit Changes
-    reason: known no-op, empty_commit does nothing until commit-changes supports empty commits
   # dist/ is not committed. These verify jobs run the action from the workspace after their Install
   # Built Actions step has put the bundles the shared build job built from this commit into it, which
   # a static check of the checkout cannot see. Each entry names one shard and one action, so the

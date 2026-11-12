@@ -76,7 +76,7 @@ jobs:
 | `commit_changes` | no       | `true`                     | Whether to commit local changes to the branch before creating PR              |
 | `commit_message` | no       |                            | Commit message for changes (required if commit_changes is true)               |
 | `file_pattern`   | no       | `.`                        | File pattern to commit (used when commit_changes is true)                     |
-| `empty_commit`   | no       | `false`                    | Allow making an empty commit if there are no changes                          |
+| `empty_commit`   | no       | `false`                    | Ignored. It never had an effect: commit-changes cannot make an empty commit.  |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
