@@ -1,0 +1,26 @@
+{
+  "description": "This repository's own config moves the pins of two different internal actions, each in the action.yaml of a different published composite, on one branch: the internal action pins group. Without the group each pinned action gets a branch of its own. A major stays on a branch of its own by design, so only non-major updates are asserted.",
+  "repositoryConfig": true,
+  "files": {
+    "actions/demo/patch/action.yaml": "patch.yaml",
+    "actions/demo/fetch/action.yaml": "fetch.yaml"
+  },
+  "dependencies": [
+    {
+      "manager": "regex",
+      "depName": "TimSchoenle/actions/actions/common/create-patch",
+      "updateTypes": ["minor", "patch"],
+      "minUpdates": 1,
+      "newValue": "^actions-common-create-patch-v2\\.\\d+\\.\\d+$",
+      "branchName": "renovate/internal-actions"
+    },
+    {
+      "manager": "regex",
+      "depName": "TimSchoenle/actions/actions/common/fetch-head",
+      "updateTypes": ["minor", "patch"],
+      "minUpdates": 1,
+      "newValue": "^actions-common-fetch-head-v2\\.\\d+\\.\\d+$",
+      "branchName": "renovate/internal-actions"
+    }
+  ]
+}
