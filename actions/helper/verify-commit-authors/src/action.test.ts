@@ -24,6 +24,7 @@ function mockInputs(overrides: Inputs = {}): void {
 function commit(overrides: Partial<CommitRecord> = {}): CommitRecord {
   return {
     authorIds: [12345],
+    committedDate: '2026-11-01T00:00:00Z',
     committerId: 12345,
     oid: 'abc1234',
     signatureState: 'VALID',
@@ -49,7 +50,15 @@ describe('verify-commit-authors action', () => {
   });
 
   it('verifies a pull request whose commits all pass', async () => {
-    await run(fetcher({ commits: [commit()], headOid: 'abc1234', totalCount: 1 }));
+    await run(
+      fetcher({
+        commits: [commit()],
+        headOid: 'abc1234',
+        headRepository: 'owner/repo',
+        isCrossRepository: false,
+        totalCount: 1,
+      }),
+    );
 
     expect(outputs()).toEqual({ invalid_commits: '', verified: 'true' });
     expect(core.setFailed).not.toHaveBeenCalled();
@@ -57,7 +66,13 @@ describe('verify-commit-authors action', () => {
   });
 
   it('passes the token and URL to the fetcher', async () => {
-    const fetchCommits = fetcher({ commits: [commit()], headOid: 'abc1234', totalCount: 1 });
+    const fetchCommits = fetcher({
+      commits: [commit()],
+      headOid: 'abc1234',
+      headRepository: 'owner/repo',
+      isCrossRepository: false,
+      totalCount: 1,
+    });
 
     await run(fetchCommits);
 
@@ -70,7 +85,9 @@ describe('verify-commit-authors action', () => {
       commit({ oid: 'bad2', signatureState: 'UNSIGNED', signatureValid: false }),
     ];
 
-    await run(fetcher({ commits, headOid: 'abc1234', totalCount: 2 }));
+    await run(
+      fetcher({ commits, headOid: 'abc1234', headRepository: 'owner/repo', isCrossRepository: false, totalCount: 2 }),
+    );
 
     expect(outputs()).toEqual({ invalid_commits: 'bad1\nbad2', verified: 'false' });
     expect(core.error).toHaveBeenCalledWith(expect.stringContaining('bad1'));
@@ -81,7 +98,13 @@ describe('verify-commit-authors action', () => {
 
   it('rejects an accepted author forged onto a commit signed with a foreign key, naming the signer', async () => {
     await run(
-      fetcher({ commits: [commit({ committerId: 99999, signerId: 99999 })], headOid: 'abc1234', totalCount: 1 }),
+      fetcher({
+        commits: [commit({ committerId: 99999, signerId: 99999 })],
+        headOid: 'abc1234',
+        headRepository: 'owner/repo',
+        isCrossRepository: false,
+        totalCount: 1,
+      }),
     );
 
     expect(outputs()).toEqual({ invalid_commits: 'abc1234', verified: 'false' });
@@ -91,7 +114,15 @@ describe('verify-commit-authors action', () => {
   });
 
   it('refuses to verify a pull request without commits', async () => {
-    await run(fetcher({ commits: [], headOid: 'abc1234', totalCount: 0 }));
+    await run(
+      fetcher({
+        commits: [],
+        headOid: 'abc1234',
+        headRepository: 'owner/repo',
+        isCrossRepository: false,
+        totalCount: 0,
+      }),
+    );
 
     expect(outputs()).toEqual({ invalid_commits: '', verified: 'false' });
     expect(core.warning).toHaveBeenCalledWith(expect.stringContaining('no commits'));
@@ -100,7 +131,15 @@ describe('verify-commit-authors action', () => {
   it('fails the step on an invalid user ID rather than reporting an unverified pull request', async () => {
     mockInputs({ user_ids: '12345, not-an-id' });
 
-    await run(fetcher({ commits: [commit()], headOid: 'abc1234', totalCount: 1 }));
+    await run(
+      fetcher({
+        commits: [commit()],
+        headOid: 'abc1234',
+        headRepository: 'owner/repo',
+        isCrossRepository: false,
+        totalCount: 1,
+      }),
+    );
 
     expect(core.setFailed).toHaveBeenCalledWith(
       "Invalid user ID 'not-an-id'. Expected a positive integer GitHub user database ID.",
@@ -111,7 +150,15 @@ describe('verify-commit-authors action', () => {
   it('fails the step when no user ID is provided', async () => {
     mockInputs({ user_ids: ' , ' });
 
-    await run(fetcher({ commits: [commit()], headOid: 'abc1234', totalCount: 1 }));
+    await run(
+      fetcher({
+        commits: [commit()],
+        headOid: 'abc1234',
+        headRepository: 'owner/repo',
+        isCrossRepository: false,
+        totalCount: 1,
+      }),
+    );
 
     expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('at least one user database ID'));
   });
@@ -134,7 +181,15 @@ describe('verify-commit-authors action', () => {
   });
 
   it('logs the pull request and the accepted IDs', async () => {
-    await run(fetcher({ commits: [commit()], headOid: 'abc1234', totalCount: 1 }));
+    await run(
+      fetcher({
+        commits: [commit()],
+        headOid: 'abc1234',
+        headRepository: 'owner/repo',
+        isCrossRepository: false,
+        totalCount: 1,
+      }),
+    );
 
     expect(core.info).toHaveBeenCalledWith('Verifying commits for PR: "https://github.com/owner/repo/pull/1"');
     expect(core.info).toHaveBeenCalledWith('Accepted User IDs: 12345, 67890');

@@ -34,6 +34,7 @@ function pullRequest(overrides: Partial<OpenPullRequest> = {}): OpenPullRequest 
 function commit(oid: string, overrides: Partial<CommitRecord> = {}): CommitRecord {
   return {
     authorIds: [TRUSTED],
+    committedDate: '2026-11-01T00:00:00Z',
     committerId: TRUSTED,
     oid,
     signatureState: 'VALID',
@@ -70,7 +71,13 @@ function fakeApi(
     fetchCommits: vi.fn<TimedAutoMergeApi['fetchCommits']>(async (url) => {
       const commits = commitsByUrl[url] ?? [commit(OLDER), commit(HEAD)];
 
-      return { commits, headOid: headOidByUrl[url] ?? HEAD, totalCount: commits.length };
+      return {
+        commits,
+        headOid: headOidByUrl[url] ?? HEAD,
+        headRepository: 'owner/repo',
+        isCrossRepository: false,
+        totalCount: commits.length,
+      };
     }),
     listOpenPullRequests: vi.fn<TimedAutoMergeApi['listOpenPullRequests']>(async () => pullRequests),
   };
