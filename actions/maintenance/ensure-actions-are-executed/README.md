@@ -57,23 +57,24 @@ jobs:
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input              | Required | Default                                                     | Description                                                                                     |
-| ------------------ | -------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `token`            | yes      |                                                             | GitHub token with checks:read permission.                                                       |
-| `checks`           | yes      |                                                             | List of checks to verify. One pattern per line.                                                 |
-| `match_mode`       | no       | `auto`                                                      | How to interpret each check matcher: exact, regex, or auto (/regex/ => regex, otherwise exact). |
-| `repository`       | no       | `${{ github.repository }}`                                  | Repository to inspect in owner/repo format.                                                     |
-| `ref`              | no       | `${{ github.event.pull_request.head.sha \|\| github.sha }}` | Git reference (usually SHA) to inspect.                                                         |
-| `error_on_failure` | no       | `true`                                                      | Whether to fail this action if matched checks failed verification.                              |
+| Input              | Required | Default                                                     | Description                                                                                                                                                                                                                                                                                               |
+| ------------------ | -------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `token`            | yes      |                                                             | GitHub token with checks:read permission.                                                                                                                                                                                                                                                                 |
+| `checks`           | yes      |                                                             | List of checks to verify. One pattern per line.                                                                                                                                                                                                                                                           |
+| `required`         | no       |                                                             | Checks that must have a run, one pattern per line, read like checks. A pattern that matches no check run fails verification instead of counting as not started, which keeps the gate from passing before a check was created. The runs it matches are verified like those of checks. Empty requires none. |
+| `match_mode`       | no       | `auto`                                                      | How to interpret each check matcher: exact, regex, or auto (/regex/ => regex, otherwise exact).                                                                                                                                                                                                           |
+| `repository`       | no       | `${{ github.repository }}`                                  | Repository to inspect in owner/repo format.                                                                                                                                                                                                                                                               |
+| `ref`              | no       | `${{ github.event.pull_request.head.sha \|\| github.sha }}` | Git reference (usually SHA) to inspect.                                                                                                                                                                                                                                                                   |
+| `error_on_failure` | no       | `true`                                                      | Whether to fail this action if matched checks failed verification.                                                                                                                                                                                                                                        |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
 ## Outputs
 
-| Output                 | Description                                          |
-| ---------------------- | ---------------------------------------------------- |
-| `matched_checks_count` | How many unique checks matched at least one matcher. |
-| `failed_checks_count`  | How many matched checks failed verification.         |
+| Output                 | Description                                                                                                                                                                  |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `matched_checks_count` | How many check runs matched at least one matcher. Runs that share a name but come from different check suites or apps count separately; re-runs within one suite count once. |
+| `failed_checks_count`  | How many matched check runs failed verification, plus how many required patterns matched no check run.                                                                       |
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
@@ -94,6 +95,20 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 | -------------------- | -------------------------------------------------------------------------------- |
 | `api.github.com:443` | listing the check runs of the ref, and the jobs of the current run as a fallback |
 <!-- /docs:generated egress -->
+
+## Checks that share a name
+
+Two workflows, two events, two apps or a matrix can report checks under one name. Each is verified on its own: a check
+is identified by the app that reported it, its check suite and its name, and only re-runs within one suite collapse to
+their latest attempt. A failed `Build` in one workflow therefore fails the gate even when a `Build` in another workflow
+succeeded later. `matched_checks_count` counts check runs, so a name reported twice counts twice.
+
+## Required checks
+
+A pattern in `checks` that matches nothing is read as a check that never started, and is tolerated. That also holds for
+a check whose run has not been created yet, such as a job of another workflow that is still queued, so the gate could
+pass before that check fails. List such checks under `required`: a pattern there that matches no check run fails
+verification, and the runs it matches are verified like those of `checks`.
 
 <!-- docs:generated reference -->
 ## Reference

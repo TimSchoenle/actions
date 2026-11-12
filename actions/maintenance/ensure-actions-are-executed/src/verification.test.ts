@@ -5,7 +5,7 @@ import { verifyCheckRun, verifyCheckRuns } from './verification.js';
 import type { CheckRun } from './checks.js';
 
 function checkRun(status: string, conclusion: string | null, name = 'build'): CheckRun {
-  return { conclusion, detailsUrl: null, id: 1, name, status };
+  return { appId: 15_368, conclusion, detailsUrl: null, id: 1, name, status, suiteId: 1 };
 }
 
 describe('verifyCheckRun', () => {

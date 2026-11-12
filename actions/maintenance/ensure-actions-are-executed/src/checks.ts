@@ -18,6 +18,16 @@ export interface CheckRun {
   conclusion: string | null;
   /** Link to the run, surfaced in the failure log so a human can jump straight to it. */
   detailsUrl: string | null;
+  /**
+   * ID of the GitHub App that reported the check, or `null` when GitHub names none. Always `null` for
+   * a workflow job, which the fallback reads from one run of one app.
+   */
+  appId: number | null;
+  /**
+   * ID of the check suite the check belongs to, or `null` when GitHub names none. A workflow run is
+   * one suite, and a re-run adds attempts to that same suite. Always `null` for a workflow job.
+   */
+  suiteId: number | null;
 }
 
 /** Where a set of check runs came from. */
@@ -112,21 +122,34 @@ export async function collectCheckRuns(api: CheckRunsApi, request: CollectReques
     : { checkRuns: [], fallbackFailure: fallback.failure, source: COMMIT_CHECK_RUNS };
 }
 
+/** Orders check runs by name, then by id, so the snapshot and the log read the same on every run. */
+export function compareCheckRuns(left: CheckRun, right: CheckRun): number {
+  return left.name.localeCompare(right.name) || left.id - right.id;
+}
+
+/** The identity of a check across its attempts: who reported it, in which suite, under which name. */
+function attemptKey({ appId, name, suiteId }: CheckRun): string {
+  return JSON.stringify([appId, suiteId, name]);
+}
+
 /**
- * Reduces the check runs to the latest attempt per name, ordered by name.
+ * Reduces the check runs to the latest attempt of each check, ordered by name and then id.
  *
- * A re-run of a check keeps its name and gets a new, higher id, so a failed first attempt and its
- * successful re-run both appear in the response. Verifying the older one would fail a commit that has
- * since gone green.
+ * A re-run of a check keeps its name and suite and gets a new, higher id, so a failed first attempt
+ * and its successful re-run both appear in the response. Verifying the older one would fail a commit
+ * that has since gone green.
+ *
+ * The name alone is not the identity. Two workflows, two events or two apps can report a check under
+ * the same name, and keying on the name would let whichever got the higher id stand for both. A pull
+ * request author could then add a same-named job, ordered behind `needs:`, to mask a failed one.
  */
 export function latestCheckRuns(checkRuns: CheckRun[]): CheckRun[] {
-  const latestByName = new Map<string, CheckRun>();
+  const latestByAttempt = new Map<string, CheckRun>();
 
-  // `sort` is stable, so among equal ids the last one wins — the same tie-break as the shell
-  // predecessor's `sort_by(.id) | group_by(.name) | map(.[-1])`.
+  // `sort` is stable, so among equal ids the last one wins.
   for (const checkRun of [...checkRuns].sort((left, right) => left.id - right.id)) {
-    latestByName.set(checkRun.name, checkRun);
+    latestByAttempt.set(attemptKey(checkRun), checkRun);
   }
 
-  return [...latestByName.values()].sort((left, right) => left.name.localeCompare(right.name));
+  return [...latestByAttempt.values()].sort(compareCheckRuns);
 }
