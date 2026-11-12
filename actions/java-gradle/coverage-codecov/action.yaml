@@ -235,6 +235,8 @@ runs:
       if: ${{ inputs.dry_run != 'true' }}
       uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
       with:
+        # renovate: datasource=github-releases depName=codecov/codecov-cli
+        version: 'v11.3.2'
         files: ${{ steps.reports.outputs.coverage_files }}
         disable_search: true
         disable_telem: true
@@ -248,6 +250,8 @@ runs:
       if: ${{ !cancelled() && inputs.dry_run != 'true' && inputs.test_results == 'true' && steps.reports.outputs.test_results_files != '' }}
       uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
       with:
+        # renovate: datasource=github-releases depName=codecov/codecov-cli
+        version: 'v11.3.2'
         report_type: test_results
         files: ${{ steps.reports.outputs.test_results_files }}
         disable_search: true

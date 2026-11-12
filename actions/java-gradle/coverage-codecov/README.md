@@ -98,7 +98,7 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 | `repo.maven.apache.org:443`                | the JaCoCo agent and the build's dependencies, when the build resolves from Maven Central                |
 | `*.actions.githubusercontent.com:443`      | the Gradle cache, when `cache` resolves to true, and the OIDC token                                      |
 | `*.blob.core.windows.net:443`              | the Gradle cache, when `cache` resolves to true                                                          |
-| `cli.codecov.io:443`                       | the Codecov CLI download                                                                                 |
+| `cli.codecov.io:443`                       | the Codecov CLI download, at the version the action pins                                                 |
 | `keybase.io:443`                           | the key that verifies the Codecov CLI                                                                    |
 | `ingest.codecov.io:443`                    | the coverage and test result uploads                                                                     |
 | `storage.googleapis.com:443`               | the report storage Codecov hands the upload to                                                           |

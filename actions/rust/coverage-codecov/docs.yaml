@@ -24,7 +24,7 @@ egress:
   - endpoint: '*.blob.core.windows.net:443'
     for: the Rust cache, when `cache` resolves to true
   - endpoint: cli.codecov.io:443
-    for: the Codecov CLI download
+    for: the Codecov CLI download, at the version the action pins
   - endpoint: keybase.io:443
     for: the key that verifies the Codecov CLI
   - endpoint: ingest.codecov.io:443
