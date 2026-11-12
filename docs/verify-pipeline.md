@@ -31,13 +31,13 @@ Scripts CI fails while a generated file differs from what the generator writes.
 
 ## Jobs
 
-| Job                 | Runs when                                         | Does                                                                                       |
-| ------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `plan`              | always                                            | diffs with git, selects the affected targets, the shards to call and the build list        |
-| `install`           | a selected target has end-to-end cases or a build | installs the workspace once and saves the dependency cache; the only job with the registry |
-| `build`             | a selected target runs a bundle                   | builds the union of the selected targets' build directories with `release/build-actions`   |
-| `verify-<category>` | the shard holds a selected target                 | calls the shard; each of its jobs runs only when its target is selected                    |
-| `verify`            | always                                            | fails when any job above failed or was cancelled                                           |
+| Job                 | Runs when                                                                              | Does                                                                                       |
+| ------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `plan`              | always                                                                                 | diffs with git, selects the affected targets, the shards to call and the build list        |
+| `install`           | a selected target has end-to-end cases or a build, or `plan` asks it to seed the cache | installs the workspace once and saves the dependency cache; the only job with the registry |
+| `build`             | a selected target runs a bundle                                                        | builds the union of the selected targets' build directories with `release/build-actions`   |
+| `verify-<category>` | the shard holds a selected target                                                      | calls the shard; each of its jobs runs only when its target is selected                    |
+| `verify`            | always                                                                                 | fails when any job above failed or was cancelled                                           |
 
 A shard call waits on `install` and `build` and accepts either as skipped. A target with neither
 end-to-end cases nor build directories runs only hand-written jobs that set themselves up, so a run
@@ -128,15 +128,34 @@ file of the base commit (`git show <base>:.github/verify/plan.json`), with no RE
 runs when its jobs hash changed or is new; every target that installs or builds runs when the shared
 jobs hash changed:
 
-| Event               | Changed files                        | Targets                                               |
-| ------------------- | ------------------------------------ | ----------------------------------------------------- |
-| `pull_request`      | merge base of base and head, to head | those whose inputs changed and whose base rule allows |
-| `push`              | `before..after`; all on a new branch | on `main` and on a target's own push branch           |
-| `schedule`          | not compared                         | the targets with `schedule: true`                     |
-| `workflow_dispatch` | not compared                         | every target                                          |
+| Event               | Changed files                        | Targets                                                                                                                      |
+| ------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `pull_request`      | merge base of base and head, to head | those whose inputs changed and whose base rule allows                                                                        |
+| `push`              | `before..after`; all on a new branch | on `main` and on a target's own push branch; none on `main` when the pushed tree is a pull request head that passed `Verify` |
+| `schedule`          | not compared                         | the targets with `schedule: true`                                                                                            |
+| `workflow_dispatch` | not compared                         | every target                                                                                                                 |
 
-A change to the planner (`scripts/lib/verify/affected.ts`, `plan-step.ts`, `target-inputs.ts` or
-`scripts/verify-plan.ts`) selects every target. A diff git cannot compute, or a base plan git cannot
+A push to `main` selects nothing when it lands a tree `Verify` already passed. The repository merges
+by squash only and requires an up-to-date branch, so the squash commit's tree is the pull request
+head's tree. `plan` reads the pull request number from the end of the commit subject (`(#123)`),
+fetches `refs/pull/123/head` and requires three things:
+
+- the head's tree equals the pushed tree
+- the head contains the commit `main` was at before the push
+- the latest `Verify` check run of GitHub Actions on the head completed with success, read with one
+  REST call; this catches an administrator merging past a failing or missing check
+
+When any of them fails, or cannot be established, the push plans as usual and the job summary says
+why. When the push changed `bun.lock`, `plan` sets `seed-cache` and `install` still runs, so pull
+requests restore the new dependency cache from `main`. The token for the check-runs call reaches the
+plan step on a push to `main` only, and the plan job holds `checks: read` for it.
+
+A newer run cancels an older one only on `pull_request`. A push run on `main` or a `feature/**`
+branch runs to completion, so a cancelled run cannot strand scratch refs or kill the install job
+that seeds the cache.
+
+A change to the planner (`scripts/lib/verify/affected.ts`, `merged-head.ts`, `plan-step.ts`,
+`target-inputs.ts` or `scripts/verify-plan.ts`) selects every target. A diff git cannot compute, or a base plan git cannot
 read, selects every target. Changed names are read with `git diff -z`, so a name
 with a non-ASCII character or a leading space matches its inputs as committed.
 `**/CHANGELOG.md` and each action's top-level `README.md` select nothing.
