@@ -66,6 +66,7 @@ function pullRequest(number: number, overrides: Partial<OpenPullRequest> = {}): 
     nodeId: `PR_${number}`,
     number,
     url: `https://github.com/owner/repo/pull/${number}`,
+    autoMergeEnabled: false,
     ...overrides,
   };
 }
@@ -74,7 +75,12 @@ function fakeApi(pullRequests: OpenPullRequest[]): TimedAutoMergeApi {
   return {
     approve: vi.fn(async () => {}),
     enableAutoMerge: vi.fn(async () => {}),
-    getMergeState: vi.fn(async () => ({ headOid: HEAD, status: 'BLOCKED' })),
+    getMergeState: vi.fn(async () => ({
+      autoMergeEnabled: false,
+      headOid: HEAD,
+      status: 'BLOCKED',
+      viewerApprovedOid: null,
+    })),
     merge: vi.fn(async () => {}),
     fetchCommits: vi.fn(async () => ({
       commits: [
@@ -161,7 +167,12 @@ describe('timed-auto-merge action', () => {
     setInputs();
     const api = fakeApi([pullRequest(1)]);
     vi.mocked(api.enableAutoMerge).mockRejectedValueOnce(new Error('Pull request Pull request is in clean status'));
-    vi.mocked(api.getMergeState).mockResolvedValueOnce({ headOid: HEAD, status: 'CLEAN' });
+    vi.mocked(api.getMergeState).mockResolvedValueOnce({
+      autoMergeEnabled: false,
+      headOid: HEAD,
+      status: 'CLEAN',
+      viewerApprovedOid: null,
+    });
 
     await run({ api, now: () => NOW });
 
