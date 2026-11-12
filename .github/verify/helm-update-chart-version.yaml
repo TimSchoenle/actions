@@ -1054,7 +1054,10 @@ jobs:
 
           # Should contain the SECOND digest, not the first (branch was reset)
           echo "$VALUES_CONTENT" | grep -qF "sha256:5ec0" || { echo "::error::Second digest not found — branch was not reset"; exit 1; }
-          echo "$VALUES_CONTENT" | grep -qvF "sha256:f115" || { echo "::error::First digest still present — branch was not reset"; exit 1; }
+          if grep -qF "sha256:f115" <<< "$VALUES_CONTENT"; then
+            echo "::error::First digest still present — branch was not reset"
+            exit 1
+          fi
           echo "✅ Branch was correctly reset; second run digest is present"
 
       # Runs before the base branch is deleted, for the same reason as in the jobs above.

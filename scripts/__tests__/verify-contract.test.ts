@@ -19,7 +19,7 @@ import {
   workspaceModulePaths,
 } from '../lib/verify/jobs.js';
 import { shardFile, SUMMARY_JOB_NAME, VERIFY_WORKFLOW } from '../lib/verify/render.js';
-import { readSources } from '../lib/verify/source.js';
+import { jobValue, readSources } from '../lib/verify/source.js';
 import { E2E_DIRECTORY, hasE2eCases } from '../lib/verify/target-inputs.js';
 
 import type { PlanEvent } from '../lib/verify/affected.js';
@@ -152,6 +152,16 @@ const AUDITING_SOURCES: Readonly<Record<string, number>> = {
 };
 
 const SOURCES = readSources(ROOT_DIR);
+
+/** How many steps of a source's jobs set harden-runner's `egress-policy` to `audit`, read as parsed YAML. */
+function auditSteps(source: (typeof SOURCES)[number]): number {
+  return source.jobIds
+    .flatMap((id) => {
+      const steps = jobValue(source, id)['steps'];
+      return Array.isArray(steps) ? (steps as { with?: Record<string, unknown> }[]) : [];
+    })
+    .filter((step) => step.with?.['egress-policy'] === 'audit').length;
+}
 const GENERATED = generate(ROOT_DIR);
 
 /** Each action's token-input scopes from `docs.yaml` that its end-to-end token lacks. */
@@ -311,9 +321,7 @@ describe('generated Verify workflows', () => {
     }
 
     const auditing = Object.fromEntries(
-      SOURCES.map((source) => [source.file, source.text.split('egress-policy: audit').length - 1]).filter(
-        ([, count]) => (count as number) > 0,
-      ),
+      SOURCES.map((source) => [source.file, auditSteps(source)]).filter(([, count]) => (count as number) > 0),
     );
 
     expect(
@@ -423,9 +431,10 @@ describe('affected-target detection against this repository', () => {
     expect(plan.targets.filter((target) => target.pullRequestBranches !== null).map((target) => target.id)).toEqual(
       restricted,
     );
-    expect(selectTargets(plan, { name: 'pull_request', baseRef: 'release' }, ['bun.lock']).targets).not.toEqual(
-      expect.arrayContaining(restricted),
-    );
+    const selected = selectTargets(plan, { name: 'pull_request', baseRef: 'release' }, ['bun.lock']).targets;
+    for (const target of restricted) {
+      expect(selected).not.toContain(target);
+    }
   });
 
   it('runs a target for a change to its own source file', () => {

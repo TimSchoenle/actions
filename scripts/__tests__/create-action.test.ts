@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import path from 'node:path';
 import * as createAction from '../create-action';
-import { ACTIONS_DIR, Sys, createFromTemplate } from '../lib/utils';
+import { ACTIONS_DIR, ROOT_DIR, Sys, createFromTemplate } from '../lib/utils';
 import { selectPackage, registerActionInReleasePlease, createVerifySource } from '../lib/action-utils';
 import { input } from '@inquirer/prompts';
 import { main as generateDocs } from '../generate-docs';
@@ -26,6 +26,7 @@ vi.mock('../lib/action-utils', () => ({
   selectPackage: vi.fn(),
   registerActionInReleasePlease: vi.fn(),
   createVerifySource: vi.fn(),
+  verifySourcePath: (pkg: string, sub: string) => `.github/verify/${pkg}-${sub}.yaml`,
 }));
 
 vi.mock('@inquirer/prompts', () => ({
@@ -110,5 +111,19 @@ describe('create-action', () => {
 
     expect(createFromTemplate).not.toHaveBeenCalled();
     expect(generateDocs).not.toHaveBeenCalled();
+  });
+
+  it('refuses to scaffold over an existing verify source, before writing anything', async () => {
+    vi.mocked(selectPackage).mockResolvedValue('configs');
+    vi.mocked(input).mockResolvedValueOnce('checkstyle').mockResolvedValueOnce('desc');
+    vi.mocked(Sys.exists).mockImplementation(
+      (target) => target === path.join(ROOT_DIR, '.github/verify/configs-checkstyle.yaml'),
+    );
+
+    await expect(createAction.main()).rejects.toThrow('configs-checkstyle.yaml already exists');
+
+    expect(Sys.mkdir).not.toHaveBeenCalled();
+    expect(createFromTemplate).not.toHaveBeenCalled();
+    expect(createVerifySource).not.toHaveBeenCalled();
   });
 });

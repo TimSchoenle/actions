@@ -6,7 +6,12 @@ import chalk from 'chalk';
 import { main as generateCodecovComponents } from './generate-codecov-components.js';
 import { main as generateDocs } from './generate-docs.js';
 import { DOCS_FILE_NAME } from './lib/action-docs/docs-file.js';
-import { createVerifySource, registerActionInReleasePlease, selectPackage } from './lib/action-utils.js';
+import {
+  createVerifySource,
+  registerActionInReleasePlease,
+  selectPackage,
+  verifySourcePath,
+} from './lib/action-utils.js';
 import { ACTIONS_DIR, capitalize, createFromTemplate, ROOT_DIR, Sys } from './lib/utils.js';
 import { writeGenerated as generateVerify } from './lib/verify/generate.js';
 
@@ -34,6 +39,13 @@ export async function main() {
   // a false claim that still passes validation.
   if (Sys.exists(actionPath)) {
     throw new Error(`${actionPath} already exists; remove it first or pick another name.`);
+  }
+
+  // A target need not be an action: configs/checkstyle has a source and no directory under actions/.
+  // Checked before anything is written, so a refused name leaves nothing behind.
+  const sourcePath = path.join(ROOT_DIR, verifySourcePath(packageName, subAction));
+  if (Sys.exists(sourcePath)) {
+    throw new Error(`${sourcePath} already exists; remove it first or pick another name.`);
   }
 
   // 1. Create Directory Structure
