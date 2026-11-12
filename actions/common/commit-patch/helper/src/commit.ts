@@ -1,4 +1,4 @@
-import { parseRepository, quoteForLog } from 'actions-util';
+import { hasStatus, parseRepository, quoteForLog } from 'actions-util';
 import { readPatchArtifact } from 'actions-util/patch-reader';
 
 import { findViolations } from './path-policy.js';
@@ -15,6 +15,27 @@ export interface CommitPatchDeps {
   /** Reports a skip the workflow author should see without the step failing. */
   notice(message: string): void;
   info(message: string): void;
+}
+
+/**
+ * Reads the branch head, or `undefined` when the branch is gone: a pull request merged or closed, and
+ * its branch deleted, between the run that made the patch and this one. Any other failure propagates.
+ * The branch existed when the patch was made, so a 404 here is not replication lag and is not retried.
+ */
+async function readBranchHead(
+  deps: CommitPatchDeps,
+  coordinates: ReturnType<typeof parseRepository>,
+  branch: string,
+): Promise<string | undefined> {
+  try {
+    return await deps.api.getHeadOid(coordinates, branch);
+  } catch (error) {
+    if (hasStatus(error, 404)) {
+      return undefined;
+    }
+
+    throw error;
+  }
 }
 
 /** Everything read from the inputs that the commit needs. */
@@ -171,7 +192,12 @@ export async function commitPatch(deps: CommitPatchDeps, request: CommitPatchReq
     throw new PatchPolicyError(violations);
   }
 
-  const currentHead = await deps.api.getHeadOid(coordinates, request.branch);
+  const currentHead = await readBranchHead(deps, coordinates, request.branch);
+  if (currentHead === undefined) {
+    deps.notice(`Branch '${request.branch}' no longer exists. Skipping; there is nothing left to commit to.`);
+    return { outcome: 'branch_moved' };
+  }
+
   if (currentHead !== expectedHeadSha) {
     deps.notice(
       `Branch '${request.branch}' is at ${currentHead}, no longer at ${expectedHeadSha}. Skipping; the run for ` +

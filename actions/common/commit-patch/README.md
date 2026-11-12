@@ -163,12 +163,12 @@ files and no other workflow.
 <!-- docs:generated outputs -->
 ## Outputs
 
-| Output              | Description                                                                                                                   |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `changes_committed` | true when a commit was created.                                                                                               |
-| `commit_sha`        | SHA of the created commit, when one was created.                                                                              |
-| `commit_url`        | URL of the created commit, when one was created.                                                                              |
-| `outcome`           | committed; no_changes when the patch is empty; branch_moved when the patch or the branch no longer matches expected_head_sha. |
+| Output              | Description                                                                                                                                              |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `changes_committed` | true when a commit was created.                                                                                                                          |
+| `commit_sha`        | SHA of the created commit, when one was created.                                                                                                         |
+| `commit_url`        | URL of the created commit, when one was created.                                                                                                         |
+| `outcome`           | committed; no_changes when the patch is empty; branch_moved when the patch or the branch no longer matches expected_head_sha, or the branch was deleted. |
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
@@ -227,6 +227,8 @@ The policy judges git's view of the result: the patch is applied to a throwaway 
 - **A stale patch is skipped, not committed.** When the artifact's base is not `expected_head_sha`, or the branch has
   moved past it by the time of the commit, the step ends with a notice and `outcome: branch_moved`. The run for the new
   head redoes the work. The commit carries `expectedHeadOid`, so a push that lands in between makes GitHub refuse it.
+  A branch deleted in the meantime, because its pull request was merged or closed, ends the same way, with a notice
+  that says so.
 - **A checkout at another commit fails the step.** It means the workflow checked out something other than
   `expected_head_sha`, and applying the patch there would commit against a tree it was not made from.
 - **The artifact is validated before git sees it:** exactly `changes.patch` and `metadata.json`, both regular files
