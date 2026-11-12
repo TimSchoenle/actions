@@ -6,9 +6,8 @@
 # is covered by e2e/verify-branch-name.e2e.test.ts.
 
 target: helper/verify-branch-name
-e2e:
-  token-permissions:
-    metadata: read
+# The cases never reach GitHub, so the job holds no token and no App key.
+e2e: {}
 
 jobs:
   verify-payload-fallback:
