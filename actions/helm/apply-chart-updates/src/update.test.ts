@@ -172,8 +172,9 @@ describe('applyUpdate', () => {
   }
 
   it('updates every managed image and the chart version', async () => {
-    const { imageEdits, chartEdits } = await applyUpdate(request());
+    const { changed, imageEdits, chartEdits } = await applyUpdate(request());
 
+    expect(changed).toBe(true);
     expect(imageEdits).toHaveLength(3);
     expect(chartEdits).toEqual([{ key: 'version', old: '1.2.3', new: '1.2.4' }]);
 
@@ -201,6 +202,53 @@ describe('applyUpdate', () => {
 
     expect(chartEdits).toHaveLength(2);
     expect(await readFile(chartFile, 'utf8')).toContain('appVersion: v1.0.0');
+  });
+
+  // A re-run of the same release finds every image already at its target. Bumping the chart version
+  // anyway would publish a new chart that ships nothing new, and open a pull request for it.
+  it('changes nothing, the chart version included, when every image is already at its target', async () => {
+    await applyUpdate(request());
+    const chart = await readFile(chartFile, 'utf8');
+    const values = await readFile(valuesFile, 'utf8');
+
+    const rerun = await applyUpdate(request({ previousChartVersion: '1.2.4', chartVersion: '1.2.5' }));
+
+    expect(rerun).toEqual({ changed: false, imageEdits: [], chartEdits: [] });
+    expect(await readFile(chartFile, 'utf8')).toBe(chart);
+    expect(await readFile(valuesFile, 'utf8')).toBe(values);
+  });
+
+  it('reports only the images that moved', async () => {
+    await applyUpdate(request());
+
+    const { changed, imageEdits } = await applyUpdate(
+      request({
+        images: parseImages(
+          JSON.stringify({
+            'services.api.image.tag': { tag: 'v1.0.0', digest: digest('1') },
+            'services.worker.image.tag': { tag: 'v0.9.5', digest: digest('4') },
+          }),
+        ),
+        previousChartVersion: '1.2.4',
+        chartVersion: '1.2.5',
+      }),
+    );
+
+    expect(changed).toBe(true);
+    expect(imageEdits.map((edit) => edit.key)).toEqual(['services.worker.image.tag']);
+    expect(await readFile(chartFile, 'utf8')).toContain('version: 1.2.5');
+  });
+
+  it('still bumps the chart when only appVersion moves', async () => {
+    await applyUpdate(request());
+
+    const { changed, imageEdits, chartEdits } = await applyUpdate(
+      request({ previousChartVersion: '1.2.4', chartVersion: '1.2.5', appVersion: 'v2.0.0' }),
+    );
+
+    expect(changed).toBe(true);
+    expect(imageEdits).toEqual([]);
+    expect(chartEdits.map((edit) => edit.key)).toEqual(['version', 'appVersion']);
   });
 
   // The atomicity guarantee: one bad key means an untouched checkout, not a bumped chart pointing at

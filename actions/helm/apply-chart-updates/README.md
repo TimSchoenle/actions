@@ -61,15 +61,16 @@ Applies a set of templated image updates to a Helm chart's values.yaml and bumps
 <!-- docs:generated outputs -->
 ## Outputs
 
-| Output                   | Description                                                                                                                                                                                         |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `chart-version`          | The chart version written to Chart.yaml                                                                                                                                                             |
-| `previous-chart-version` | The chart version that was in Chart.yaml before the update                                                                                                                                          |
-| `updated-count`          | Number of image keys updated in values.yaml                                                                                                                                                         |
-| `changes`                | JSON array of {key, old, new} for every image key updated, in input order                                                                                                                           |
-| `summary-markdown`       | Markdown table of the applied image updates, safe to embed in a pull request body                                                                                                                   |
-| `changelog-markdown`     | The sanitized changelog wrapped in a collapsed <details> section, safe to embed in a pull request body. Empty when no changelog was given, so embedding it unconditionally leaves no empty heading. |
-| `files`                  | Space-separated paths of the files written, for use as a commit file pattern                                                                                                                        |
+| Output                   | Description                                                                                                                                                                                                                                                 |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `changed`                | true when an image or the app version moved and both files were written. false when every image and the app version were already at their targets: nothing is written, the chart version is kept, and the pull request steps of a caller should be skipped. |
+| `chart-version`          | The chart version written to Chart.yaml, or the unchanged version when changed is false                                                                                                                                                                     |
+| `previous-chart-version` | The chart version that was in Chart.yaml before the update                                                                                                                                                                                                  |
+| `updated-count`          | Number of image keys whose value changed in values.yaml. A key already at its target is not counted.                                                                                                                                                        |
+| `changes`                | JSON array of {key, old, new} for every image key whose value changed, in input order                                                                                                                                                                       |
+| `summary-markdown`       | Markdown table of the applied image updates, safe to embed in a pull request body                                                                                                                                                                           |
+| `changelog-markdown`     | The sanitized changelog wrapped in a collapsed <details> section, safe to embed in a pull request body. Empty when no changelog was given, so embedding it unconditionally leaves no empty heading.                                                         |
+| `files`                  | Space-separated paths of the files written, for use as a commit file pattern. Empty when changed is false.                                                                                                                                                  |
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
