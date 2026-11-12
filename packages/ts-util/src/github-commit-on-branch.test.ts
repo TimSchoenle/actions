@@ -92,11 +92,24 @@ describe('createCommitApi', () => {
         .mockRejectedValueOnce(httpError(404))
         .mockResolvedValueOnce({ data: { object: { sha: 'headsha' } } });
 
-      const pending = createCommitApi('token').getHeadOid({ owner: 'o', repo: 'r' }, 'fresh-branch');
+      const pending = createCommitApi('token').getHeadOid({ owner: 'o', repo: 'r' }, 'fresh-branch', {
+        justCreated: true,
+      });
       await vi.advanceTimersByTimeAsync(1_000);
 
       await expect(pending).resolves.toBe('headsha');
       expect(octokit.rest.git.getRef).toHaveBeenCalledTimes(2);
+    });
+
+    // P14b: every read used to wait out the 404 loop, so a deleted PR branch cost five calls and 7.5s
+    // before failing. Only a caller that has just created the branch knows the 404 is lag.
+    it('takes a 404 at face value unless the branch was just created', async () => {
+      octokit.rest.git.getRef.mockRejectedValue(httpError(404));
+
+      await expect(createCommitApi('token').getHeadOid({ owner: 'o', repo: 'r' }, 'deleted')).rejects.toThrow(
+        'HTTP 404',
+      );
+      expect(octokit.rest.git.getRef).toHaveBeenCalledTimes(1);
     });
 
     it('does not retry a failure that is not a missing ref', async () => {
