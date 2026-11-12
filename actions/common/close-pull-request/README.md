@@ -68,9 +68,9 @@ jobs:
 <!-- docs:generated outputs -->
 ## Outputs
 
-| Output   | Description                                                                                                                                  |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `closed` | Whether the pull request was closed (true) or does not exist (false). Closing an already-closed pull request is idempotent and reports true. |
+| Output   | Description                                                                                                                                                              |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `closed` | Whether the pull request was closed (true) or does not exist (false). An already-closed pull request reports true and is left as it is: the comment is not posted again. |
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
