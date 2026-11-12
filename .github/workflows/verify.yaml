@@ -429,8 +429,12 @@ jobs:
       ACTIONS_TEST_BOT_APP_ID: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
       ACTIONS_TEST_BOT_PRIVATE_KEY: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
 
+  # Reports as the required check 'Verify' only on pull_request. A push run attaches its own
+  # check to the commit, the pull request head included when it is a feature/** branch; under the
+  # same name, a push that selects no target would report a vacuous success on that head, and
+  # re-running it after a failed pull_request run would put a newer success there.
   verify:
-    name: 'Verify'
+    name: ${{ github.event_name == 'pull_request' && 'Verify' || format('Verify ({0})', github.event_name) }}
     if: ${{ always() }}
     needs:
       - plan

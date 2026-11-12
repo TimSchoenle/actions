@@ -45,7 +45,10 @@ that selects only such targets skips `install` instead of waiting on it; the pla
 whenever any selected target reads the tree.
 
 The `verify` job reports as `Verify`, the one verify context branch protection requires
-(`scripts/lib/required-checks.ts`). The pull request's own copy of the workflow decides it, as it
+(`scripts/lib/required-checks.ts`), on `pull_request` runs only. Push, schedule and dispatch runs
+report as `Verify (<event>)`: a push to a `feature/**` branch attaches its check to the same commit as
+the pull request, and under the same name a push that selected nothing would report a vacuous success
+there. The pull request's own copy of the workflow decides it, as it
 does for `Lint & Test`. Never require a shard call or a job inside a shard: those report under nested
 names while they run, and not at all when their target is not selected.
 

@@ -18,7 +18,7 @@ import {
   workspaceMemberDirectories,
   workspaceModulePaths,
 } from '../lib/verify/jobs.js';
-import { shardFile, SUMMARY_JOB_NAME, VERIFY_WORKFLOW } from '../lib/verify/render.js';
+import { shardFile, SUMMARY_JOB_ID, SUMMARY_JOB_NAME, VERIFY_WORKFLOW } from '../lib/verify/render.js';
 import { jobValue, readSources } from '../lib/verify/source.js';
 import { E2E_DIRECTORY, hasE2eCases } from '../lib/verify/target-inputs.js';
 
@@ -304,9 +304,12 @@ describe('generated Verify workflows', () => {
 
   it('end verify.yaml with the summary job, which needs every other job', () => {
     const jobs = jobsOf(VERIFY_WORKFLOW);
-    const summary = Object.values(jobs).find((job) => job['name'] === SUMMARY_JOB_NAME);
+    const summary = jobs[SUMMARY_JOB_ID];
 
     expect(summary).toBeDefined();
+    expect(summary?.['name']).toBe(
+      `\${{ github.event_name == 'pull_request' && '${SUMMARY_JOB_NAME}' || format('${SUMMARY_JOB_NAME} ({0})', github.event_name) }}`,
+    );
     expect(summary?.['if']).toBe('${{ always() }}');
     expect(summary?.['needs']).toEqual(Object.keys(jobs).filter((id) => jobs[id] !== summary));
   });
