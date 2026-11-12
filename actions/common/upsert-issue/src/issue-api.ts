@@ -19,6 +19,11 @@ export interface ExistingIssue extends IssueRef {
   labels: string[];
   /** Login of whoever opened it, e.g. `my-app[bot]`. */
   author: string;
+  /**
+   * Whether a GitHub App opened it: as its bot user, which is how `GITHUB_TOKEN` and an installation
+   * token post, or on a user's behalf, which GitHub records in `performed_via_github_app`.
+   */
+  postedByApp: boolean;
 }
 
 /** The fields a write may change. Only the fields present are touched -- a reopen sends `state` alone. */

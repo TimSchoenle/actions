@@ -33,6 +33,7 @@ function issue(overrides: Partial<ExistingIssue> = {}): ExistingIssue {
     body: composed,
     labels: [],
     number: 1,
+    postedByApp: true,
     state: 'open',
     title: 'Repo state',
     url: 'https://github.com/owner/repo/issues/1',
@@ -199,6 +200,30 @@ describe('upsertIssue', () => {
 
     await expect(upsertIssue(api, request({ author: 'app[bot]' }))).resolves.toMatchObject({ operation: 'created' });
     expect(api.updateIssue).not.toHaveBeenCalled();
+  });
+
+  it('skips a marked issue a person opened when no author is required', async () => {
+    const api = fakeApi([[issue({ author: 'someone', body: `${marker}\n\nforged`, number: 4, postedByApp: false })]]);
+
+    await expect(upsertIssue(api, request())).resolves.toMatchObject({ operation: 'created' });
+    expect(api.updateIssue).not.toHaveBeenCalled();
+  });
+
+  it('adopts the issue an App opened behind one a person planted', async () => {
+    const api = fakeApi([
+      [
+        issue({ author: 'someone', body: `${marker}\n\nforged`, number: 4, postedByApp: false }),
+        issue({ body: `${marker}\n\nold`, number: 7 }),
+      ],
+    ]);
+
+    await expect(upsertIssue(api, request())).resolves.toMatchObject({ issue: { number: 7 }, operation: 'updated' });
+  });
+
+  it('adopts an issue a person opened when that person is the required author', async () => {
+    const api = fakeApi([[issue({ author: 'tim', body: `${marker}\n\nold`, number: 4, postedByApp: false })]]);
+
+    await expect(upsertIssue(api, request({ author: 'tim' }))).resolves.toMatchObject({ operation: 'updated' });
   });
 
   it('updates a marked issue opened by the required author', async () => {

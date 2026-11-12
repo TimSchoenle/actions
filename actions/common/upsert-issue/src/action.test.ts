@@ -95,6 +95,7 @@ describe('upsert-issue action', () => {
         body: '<!-- timschoenle/actions:issue:repo-state -->\n\nan older report',
         labels: [],
         number: 5,
+        postedByApp: true,
         state: 'open',
         title: 'Repo state',
         url: 'https://example.test/5',

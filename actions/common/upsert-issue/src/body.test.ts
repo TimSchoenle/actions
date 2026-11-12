@@ -14,6 +14,7 @@ describe('resolveBody', () => {
     workspace = await mkdtemp(path.join(tmpdir(), 'upsert-issue-'));
     await writeFile(path.join(workspace, 'report.md'), '| image | size |\n', 'utf8');
     await writeFile(path.join(workspace, 'blank.md'), '  \n\n', 'utf8');
+    await writeFile(path.join(workspace, 'planted.md'), '| a |\n<!-- timschoenle/actions:issue:other -->\n', 'utf8');
   });
 
   afterAll(() => rm(workspace, { force: true, recursive: true }));
@@ -32,6 +33,22 @@ describe('resolveBody', () => {
 
   it('refuses neither input', async () => {
     await expect(resolveBody({ body: '', bodyFile: '' }, workspace)).rejects.toThrow("one of 'body' and 'body_file'");
+  });
+
+  it('refuses an inline body carrying a marker on a line of its own', async () => {
+    await expect(
+      resolveBody({ body: 'report\n<!-- timschoenle/actions:issue:other -->', bodyFile: '' }, workspace),
+    ).rejects.toThrow('marker on a line of its own');
+  });
+
+  it('refuses a file carrying a marker on a line of its own', async () => {
+    await expect(resolveBody({ body: '', bodyFile: 'planted.md' }, workspace)).rejects.toThrow(BodySourceError);
+  });
+
+  it('accepts a marker inside a line of prose, which no run would find', async () => {
+    const body = 'see <!-- timschoenle/actions:issue:other --> above';
+
+    await expect(resolveBody({ body, bodyFile: '' }, workspace)).resolves.toBe(body);
   });
 
   it('refuses a file that holds nothing but whitespace', async () => {
