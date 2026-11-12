@@ -1,4 +1,4 @@
-import { quoteForLog, runAction } from 'actions-util';
+import { quoteForLog, resolveRealWithinWorkspace, runAction, workspaceRoot } from 'actions-util';
 import * as core from 'actions-util/core';
 
 import { getInput, setOutput } from './generated/action-io.js';
@@ -10,15 +10,21 @@ import { readYaml } from './read.js';
  * The value is published through `core.setOutput`, which encodes multi-line values with a delimiter.
  * The bash predecessor appended `value=$VALUE` to `$GITHUB_OUTPUT` directly and corrupted the file
  * whenever the value spanned more than one line, so maps and sequences are only now readable.
+ *
+ * `file` must resolve inside the workspace, links included. The value lands in the log and in an
+ * output, so a committed link or a `..` path would otherwise publish any YAML or JSON file the
+ * runner can read.
  */
 export function run(): Promise<void> {
   return runAction(async () => {
     const file = getInput('file', { required: true });
     const key = getInput('key', { required: true });
 
+    const filePath = await resolveRealWithinWorkspace(file, workspaceRoot(), 'file');
+
     core.info(`Reading ${quoteForLog(key)} from ${quoteForLog(file)}...`);
 
-    const value = await readYaml(file, key);
+    const value = await readYaml(filePath, key);
 
     setOutput('value', value);
 
