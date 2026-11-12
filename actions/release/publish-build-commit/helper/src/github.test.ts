@@ -213,3 +213,24 @@ describe('createPublishApi release lookups', () => {
     expect(query).toBe('?recursive=1');
   });
 });
+
+describe('createPublishApi matchingRefs', () => {
+  it('reads every page of a ref family, without the refs/ prefix', async () => {
+    const base = process.env['GITHUB_API_URL'] as string;
+    const ref = (name: string, type = 'commit') => ({ ref: `refs/tags/${name}`, object: { sha: SHA, type } });
+    handler = (request, response) => {
+      const page = new URL(request.url ?? '', base).searchParams.get('page') ?? '1';
+      const headers: Record<string, string> = { 'content-type': 'application/json' };
+      if (page === '1') {
+        headers['link'] = `<${base}/repos/o/r/git/matching-refs/tags/a-?per_page=100&page=2>; rel="next"`;
+      }
+      response.writeHead(200, headers);
+      response.end(JSON.stringify(page === '1' ? [ref('a-v1')] : [ref('a-v2', 'tag')]));
+    };
+
+    await expect(createPublishApi('token', { owner: 'o', repo: 'r' }).matchingRefs('tags/a-')).resolves.toEqual([
+      { ref: 'tags/a-v1', sha: SHA, type: 'commit' },
+      { ref: 'tags/a-v2', sha: SHA, type: 'tag' },
+    ]);
+  });
+});
