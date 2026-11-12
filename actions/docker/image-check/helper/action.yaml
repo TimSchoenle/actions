@@ -75,6 +75,10 @@ outputs:
     description: 'trivy_ignore_file, validated, or empty.'
   sarif_path:
     description: 'Absolute path Trivy writes the SARIF to.'
+  trivy_config:
+    description: 'Absolute path of an empty Trivy config under RUNNER_TEMP, for TRIVY_CONFIG.'
+  empty_ignore_file:
+    description: 'Absolute path of an empty ignore file under RUNNER_TEMP, for TRIVY_IGNOREFILE.'
   sarif_category:
     description: "Resolved code scanning category, or empty to keep upload-sarif's default."
   upload_sarif:

@@ -61,6 +61,10 @@ export interface PlanLocation {
   readonly planPath: string;
   readonly sarifPath: string;
   readonly fragmentPath: string;
+  /** An empty Trivy config, passed as `TRIVY_CONFIG` so Trivy never reads `trivy.yaml` from the workspace. */
+  readonly trivyConfigPath: string;
+  /** An empty ignore file, passed as `TRIVY_IGNOREFILE` unless the caller names one, for `.trivyignore`. */
+  readonly emptyIgnorePath: string;
 }
 
 /**
@@ -69,17 +73,29 @@ export interface PlanLocation {
  * Under `RUNNER_TEMP` and never the workspace, so a later `git add` or `commit-changes` cannot pick
  * up the SARIF. Unique per call, so two checks in one job — two platforms built side by side —
  * never write over each other's files.
+ *
+ * Trivy reads `trivy.yaml` and `.trivyignore` from its working directory, the workspace, which on a
+ * pull request holds the pull request's files. A config there could lower the severities or skip
+ * the scanners, and an ignore file could list the very CVEs the pull request brings in. The empty
+ * files written here stand in for both, so only what the caller names reaches Trivy.
  */
 export async function createPlanLocation(runnerTemp: string, slug: string): Promise<PlanLocation> {
   const directory = await mkdtemp(path.join(runnerTemp, 'image-check-'));
   const fragmentDirectory = path.join(directory, 'fragment');
 
+  const trivyConfigPath = path.join(directory, 'trivy.yaml');
+  const emptyIgnorePath = path.join(directory, 'trivyignore');
+
   await mkdir(fragmentDirectory);
+  await writeFile(trivyConfigPath, '{}\n', { encoding: 'utf8', flag: 'wx' });
+  await writeFile(emptyIgnorePath, '', { encoding: 'utf8', flag: 'wx' });
 
   return {
     planPath: path.join(directory, PLAN_FILE),
     sarifPath: path.join(directory, `trivy-${slug === '' ? 'image' : slug}.sarif`),
     fragmentPath: path.join(fragmentDirectory, 'fragment.json'),
+    trivyConfigPath,
+    emptyIgnorePath,
   };
 }
 
