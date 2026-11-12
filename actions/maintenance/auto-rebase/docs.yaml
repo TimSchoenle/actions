@@ -10,7 +10,7 @@ permissions:
 
 egress:
   - endpoint: api.github.com:443
-    for: the REST calls that list, read, compare and update pull requests
+    for: the GraphQL query that lists pull requests and the REST calls that read, compare and update them
 
 examples:
   - title: Update dependency pull requests on every push to main

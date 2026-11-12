@@ -7,13 +7,14 @@ outside the markers.
 <!-- docs:generated header -->
 # Maintenance Auto-rebase
 
-Updates every open pull request carrying a label with the latest commits of its base branch, through the update-branch API, which merges the base into the head.
+Updates open pull requests carrying a label with the latest commits of their base branch, oldest first, through the update-branch API, which merges the base into the head.
 
 [actions-maintenance-auto-rebase-v3.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-rebase-v3.0.5) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
-Each open pull request carrying `label` gets a call to
-`PUT /repos/{owner}/{repo}/pulls/{pull_number}/update-branch`, the API behind the "Update branch" button.
+Each open pull request carrying `label` that is behind its base gets a call to
+`PUT /repos/{owner}/{repo}/pulls/{pull_number}/update-branch`, the API behind the "Update branch" button. Pull
+requests are taken oldest first.
 
 Despite the name, that API merges the base branch into the head branch; it does not rebase.
 
@@ -62,23 +63,25 @@ jobs:
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input           | Required | Default                    | Description                                                                                                                                                                                                                            |
-| --------------- | -------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `token`         | yes      |                            | GitHub token with contents: write and pull-requests: write on the repository. A pushed update only triggers workflows when the token is not github.token.                                                                              |
-| `label`         | yes      |                            | Label that marks a pull request for updating. Compared case-insensitively, as GitHub compares label names: a repository cannot hold both `Dependencies` and `dependencies`.                                                            |
-| `repository`    | no       | `${{ github.repository }}` | Repository whose pull requests are updated, in owner/repo format.                                                                                                                                                                      |
-| `skip_drafts`   | no       | `false`                    | Leave draft pull requests alone even when they carry the label.                                                                                                                                                                        |
-| `fail_on_error` | no       | `true`                     | Fail the step when a pull request could not be updated for a reason other than GitHub rejecting the update (a merge conflict, a moved head). `false` logs a warning instead. Those rejections are always warnings. See Failures below. |
+| Input             | Required | Default                    | Description                                                                                                                                                                                                                                                                                                                                                                             |
+| ----------------- | -------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `token`           | yes      |                            | GitHub token with contents: write and pull-requests: write on the repository. A pushed update only triggers workflows when the token is not github.token.                                                                                                                                                                                                                               |
+| `label`           | yes      |                            | Label that marks a pull request for updating. Compared case-insensitively, as GitHub compares label names: a repository cannot hold both `Dependencies` and `dependencies`.                                                                                                                                                                                                             |
+| `repository`      | no       | `${{ github.repository }}` | Repository whose pull requests are updated, in owner/repo format.                                                                                                                                                                                                                                                                                                                       |
+| `skip_drafts`     | no       | `false`                    | Leave draft pull requests alone even when they carry the label.                                                                                                                                                                                                                                                                                                                         |
+| `only_auto_merge` | no       | `false`                    | Leave pull requests alone unless auto-merge is on for them. With `limit`, this keeps the slots for pull requests that merge on their own once they are current.                                                                                                                                                                                                                         |
+| `limit`           | no       |                            | How many of the oldest qualifying pull requests to bring up to date, as a positive whole number. A pull request takes a slot when it is updated or already up to date; skipped and rejected ones do not. Empty means no limit. Under a ruleset that requires up-to-date branches only one pull request can merge next, so `1` updates that one instead of re-running CI on every other. |
+| `fail_on_error`   | no       | `true`                     | Fail the step when a pull request could not be updated for a reason other than GitHub rejecting the update (a merge conflict, a moved head). `false` logs a warning instead. Those rejections are always warnings. See Failures below.                                                                                                                                                  |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
 ## Outputs
 
-| Output    | Description                                                                                                                                                                                 |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `updated` | JSON array of the pull request numbers an update was requested for, for `fromJSON()` in a later step.                                                                                       |
-| `skipped` | JSON array of the pull request numbers left alone: closed, unlabelled, draft, already up to date, or on a fork the token cannot write to. The job log and summary give the reason for each. |
-| `failed`  | JSON array of the pull request numbers whose update GitHub rejected or that failed with an unexpected error.                                                                                |
+| Output    | Description                                                                                                                                                                                                                                                                  |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `updated` | JSON array of the pull request numbers an update was requested for, for `fromJSON()` in a later step.                                                                                                                                                                        |
+| `skipped` | JSON array of the pull request numbers left alone: closed, unlabelled, draft, auto-merge off under `only_auto_merge`, reported as conflicting, beyond `limit`, already up to date, or on a fork the token cannot write to. The job log and summary give the reason for each. |
+| `failed`  | JSON array of the pull request numbers whose update GitHub rejected or that failed with an unexpected error.                                                                                                                                                                 |
 <!-- /docs:generated outputs -->
 
 <!-- docs:generated permissions -->
@@ -99,14 +102,24 @@ the updated pull requests would sit without CI.
 
 A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
 
-| Endpoint             | For                                                              |
-| -------------------- | ---------------------------------------------------------------- |
-| `api.github.com:443` | the REST calls that list, read, compare and update pull requests |
+| Endpoint             | For                                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------ |
+| `api.github.com:443` | the GraphQL query that lists pull requests and the REST calls that read, compare and update them |
 <!-- /docs:generated egress -->
 
 ## What happens to each pull request
 
-The list of open pull requests is a snapshot, so each labelled one is read again just before its turn and skipped when:
+One GraphQL query per 100 open pull requests lists them oldest first, with their labels, draft flag, head commit,
+auto-merge state and GitHub's merge state. A labelled pull request is skipped without a further call when:
+
+| Reason           | Condition                                                                                    |
+| ---------------- | -------------------------------------------------------------------------------------------- |
+| `auto-merge-off` | `only_auto_merge` is `true` and auto-merge is off for it.                                    |
+| `draft`          | It is a draft and `skip_drafts` is `true`.                                                   |
+| `conflicting`    | GitHub reports its merge state as `DIRTY`: it conflicts with its base, so an update would fail. |
+| `limit-reached`  | Older pull requests already took every slot `limit` allows.                                  |
+
+The listing is a snapshot, so every other labelled pull request is read again just before its turn and skipped when:
 
 | Reason                    | Condition                                                   |
 | ------------------------- | ----------------------------------------------------------- |
@@ -121,8 +134,30 @@ Otherwise the update is requested with `expected_head_sha` set to the head commi
 that lands between the read and the request makes GitHub reject the update, so it never merges over a commit nobody
 looked at.
 
-The `up-to-date` check compares the base branch with the head commit. When that comparison fails, the update is
-requested anyway and GitHub decides.
+The `up-to-date` check needs no call when the listing reported the merge state `BEHIND` for the same head commit.
+Any other merge state decides nothing: a repository that does not require up-to-date branches reports a behind head
+as `CLEAN`, and a pending review or check reports `BLOCKED`. Those heads are compared with the base branch. When that
+comparison fails, the update is requested anyway and GitHub decides. GitHub computes the merge state in the
+background, so a pull request pushed moments before the run reports `UNKNOWN` and is compared too.
+
+### Updating one pull request at a time
+
+Under a ruleset that requires branches to be up to date, each merge to the base puts every other open pull request
+behind again. Updating all of them on every push re-runs their CI each time, so draining L pull requests that
+auto-merge costs L(L+1)/2 CI rounds. Only one of them can merge next:
+
+```yaml
+with:
+  token: ${{ steps.token.outputs.token }}
+  label: dependencies
+  only_auto_merge: 'true'
+  limit: '1'
+```
+
+A pull request takes a slot when it is updated or already up to date, so the oldest auto-merging pull request is kept
+current until it merges, closes or loses its label, and the next one follows. Skipped and rejected pull requests take
+no slot. A pull request at the front whose checks keep failing holds the slot; remove its label or turn off its
+auto-merge to let the next one through.
 
 ## Failures
 

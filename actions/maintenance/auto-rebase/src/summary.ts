@@ -14,10 +14,13 @@ function cell(value: string): string {
 }
 
 const SKIP_DESCRIPTIONS: Record<SkipReason, string> = {
+  'auto-merge-off': 'auto-merge is off, and only_auto_merge is set',
+  conflicting: 'GitHub reports a conflict with its base',
   draft: 'draft, and skip_drafts is set',
   'fork-not-writable': 'fork does not allow maintainers to push',
   'head-repository-deleted': 'head repository was deleted',
   'label-removed': 'label removed before its turn',
+  'limit-reached': 'older pull requests took every slot limit allows',
   'not-open': 'closed before its turn',
   'up-to-date': 'already contains its base',
 };

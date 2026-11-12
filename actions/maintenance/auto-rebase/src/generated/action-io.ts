@@ -18,6 +18,8 @@ export const ActionInput = {
   label: 'label',
   repository: 'repository',
   skip_drafts: 'skip_drafts',
+  only_auto_merge: 'only_auto_merge',
+  limit: 'limit',
   fail_on_error: 'fail_on_error',
 } as const;
 
