@@ -122,6 +122,33 @@ jobs:
           branch: round-trip-never-written
           expected_head_sha: ${{ steps.empty.outputs.base_sha }}
 
+      # run_id without branch: in a workflow_run job the event branch is the default branch, so the
+      # action must refuse instead of falling back to it.
+      - name: Commit By Run ID Without Branch
+        id: commit-run-no-branch
+        continue-on-error: true
+        uses: ./actions/common/commit-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          token: placeholder-never-sent
+          run_id: ${{ github.run_id }}
+          artifact_name: ${{ steps.empty.outputs.artifact_name }}
+          allowed_paths: README.md
+          commit_message: 'test: never committed'
+          expected_head_sha: ${{ steps.empty.outputs.base_sha }}
+
+      # A branch literally named refs/heads/<x> passes a string comparison with the default branch name.
+      - name: Commit To A Full Ref Name
+        id: commit-full-ref
+        continue-on-error: true
+        uses: ./actions/common/commit-patch # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          token: placeholder-never-sent
+          artifact_name: ${{ steps.empty.outputs.artifact_name }}
+          allowed_paths: README.md
+          commit_message: 'test: never committed'
+          branch: refs/heads/round-trip-never-written
+          expected_head_sha: ${{ steps.empty.outputs.base_sha }}
+
       - name: Commit Refused Patch
         id: commit-refused
         continue-on-error: true
@@ -141,6 +168,8 @@ jobs:
           BY_RUN_OUTCOME: ${{ steps.commit-empty-by-run.outputs.outcome }}
           OTHER_RUN_OUTCOME: ${{ steps.commit-other-run.outcome }}
           REFUSED_OUTCOME: ${{ steps.commit-refused.outcome }}
+          RUN_NO_BRANCH_OUTCOME: ${{ steps.commit-run-no-branch.outcome }}
+          FULL_REF_OUTCOME: ${{ steps.commit-full-ref.outcome }}
         run: |
           set -euo pipefail
 
@@ -149,5 +178,7 @@ jobs:
           [ "$BY_RUN_OUTCOME" = "no_changes" ] || { echo "::error::outcome '$BY_RUN_OUTCOME' for the empty patch downloaded by run ID"; exit 1; }
           [ "$OTHER_RUN_OUTCOME" = "failure" ] || { echo "::error::a download from a run without the artifact did not fail ($OTHER_RUN_OUTCOME), so run_id did not select the run"; exit 1; }
           [ "$REFUSED_OUTCOME" = "failure" ] || { echo "::error::a patch adding round-trip.txt outside allowed_paths was not refused ($REFUSED_OUTCOME)"; exit 1; }
+          [ "$RUN_NO_BRANCH_OUTCOME" = "failure" ] || { echo "::error::run_id without branch did not fail ($RUN_NO_BRANCH_OUTCOME)"; exit 1; }
+          [ "$FULL_REF_OUTCOME" = "failure" ] || { echo "::error::a branch named refs/heads/... was not refused ($FULL_REF_OUTCOME)"; exit 1; }
 
-          echo "The empty patch ended as no_changes from both download steps, run_id selected the run, and the out-of-policy patch failed, all before any commit API call"
+          echo "The empty patch ended as no_changes from both download steps, run_id selected the run, the out-of-policy patch failed, and run_id without branch and a full ref name were refused, all before any commit API call"

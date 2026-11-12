@@ -41,7 +41,7 @@ jobs:
           artifact_name: format-patch
           allowed_paths: 'src/** README.md'
           commit_message: 'style: auto-format code'
-          # Both have to be set: their defaults read the pull_request and push payloads, which a
-          # workflow_run event does not carry.
+          # Both are required with run_id: the event of a workflow_run job names the default branch
+          # and its tip, so the step fails rather than fall back to them.
           branch: ${{ github.event.workflow_run.head_branch }}
           expected_head_sha: ${{ github.event.workflow_run.head_sha }}
