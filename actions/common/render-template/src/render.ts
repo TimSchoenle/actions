@@ -49,6 +49,9 @@ const RUNTIME_OPTIONS: Readonly<Handlebars.RuntimeOptions> = Object.freeze({
 function compileOptions(request: RenderRequest): CompileOptions {
   return {
     compat: false,
+    // `log` is a known helper by default, which compiles `{{log ...}}` into a direct call that bypasses
+    // the environment's registry; unknown, it is looked up there, where prepareEnvironment removed it.
+    knownHelpers: { log: false },
     noEscape: !request.escapeHtml,
     preventIndent: true,
     strict: request.strict,
@@ -130,6 +133,13 @@ const HELPER_NAMES: ReadonlySet<string> = new Set(Object.keys(HELPERS));
  */
 function prepareEnvironment(request: RenderRequest): HandlebarsEnvironment {
   const environment = Handlebars.create();
+  // Handlebars registers a `log` helper that writes its arguments to the console, which on a runner is
+  // the step's log and so a channel for workflow commands: `{{log "::add-mask::x"}}` or a forged
+  // `::error::` annotation from a template or partial a pull request supplied. Removing the helper
+  // makes such a call a missing-helper error; replacing the logger silences anything else that
+  // reaches it.
+  environment.unregisterHelper('log');
+  environment.log = () => undefined;
   registerHelpers(environment);
 
   const options = compileOptions(request);
