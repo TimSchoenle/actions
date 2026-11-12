@@ -32,7 +32,9 @@ const defaultInputs: Record<string, string> = {
   working_directory: '.',
   oras: 'false',
   cosign_version: 'v3.1.3',
+  cosign_checksums_sha256: GOOD,
   oras_version: '1.3.4',
+  oras_checksums_sha256: GOOD,
   github_token: 'token',
 };
 
@@ -157,6 +159,9 @@ describe('terrace setup action', () => {
     [{ version: '0.8.0', cosign_version: '3.1.3' }, /cosign_version: must be vMAJOR.MINOR.PATCH/],
     [{ version: '0.8.0', cosign_version: 'v3.1.3/../../evil' }, /cosign_version: must be vMAJOR.MINOR.PATCH/],
     [{ version: '0.8.0', oras: 'true', oras_version: 'v1.3.4' }, /oras_version: must be MAJOR.MINOR.PATCH/],
+    [{ version: '0.8.0', cosign_checksums_sha256: '' }, /cosign_checksums_sha256: must be a SHA-256/],
+    [{ version: '0.8.0', cosign_checksums_sha256: 'a'.repeat(63) }, /cosign_checksums_sha256: must be a SHA-256/],
+    [{ version: '0.8.0', oras: 'true', oras_checksums_sha256: 'z'.repeat(64) }, /oras_checksums_sha256: must be/],
   ])('fails on %j before downloading anything', async (overrides, reason) => {
     setInputs(overrides);
     const deps = dependencies();
@@ -167,8 +172,8 @@ describe('terrace setup action', () => {
     expect(deps.ports.download).not.toHaveBeenCalled();
   });
 
-  it('ignores oras_version when oras is not requested', async () => {
-    setInputs({ version: '0.8.0', oras_version: 'not a version' });
+  it('ignores oras_version and oras_checksums_sha256 when oras is not requested', async () => {
+    setInputs({ version: '0.8.0', oras_version: 'not a version', oras_checksums_sha256: '' });
 
     await run(dependencies());
 
