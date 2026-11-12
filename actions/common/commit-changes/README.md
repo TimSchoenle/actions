@@ -66,13 +66,14 @@ jobs:
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input            | Required | Default                                       | Description                                                                      |
-| ---------------- | -------- | --------------------------------------------- | -------------------------------------------------------------------------------- |
-| `commit_message` | yes      |                                               | The commit message                                                               |
-| `token`          | yes      |                                               | The GitHub token to use (must be an App installation token for verified commits) |
-| `repository`     | no       | `${{ github.repository }}`                    | Repository name to commit to (e.g. owner/repo)                                   |
-| `branch`         | no       | `${{ github.head_ref \|\| github.ref_name }}` | Branch to commit to                                                              |
-| `file_pattern`   | no       | `.`                                           | File pattern to commit                                                           |
+| Input               | Required | Default                                       | Description                                                                                                                                                                                                                                                                                                                               |
+| ------------------- | -------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `commit_message`    | yes      |                                               | The commit message                                                                                                                                                                                                                                                                                                                        |
+| `token`             | yes      |                                               | The GitHub token to use (must be an App installation token for verified commits)                                                                                                                                                                                                                                                          |
+| `repository`        | no       | `${{ github.repository }}`                    | Repository name to commit to (e.g. owner/repo)                                                                                                                                                                                                                                                                                            |
+| `branch`            | no       | `${{ github.head_ref \|\| github.ref_name }}` | Branch to commit to                                                                                                                                                                                                                                                                                                                       |
+| `expected_head_sha` | no       |                                               | The commit the branch must still point at; GitHub refuses the commit when it moved on. Empty uses the checked-out commit when branch is the checked-out branch, so a push that landed after the checkout is never overwritten. Otherwise the branch head is read just before the commit, with a warning, and such a push goes undetected. |
+| `file_pattern`      | no       | `.`                                           | File pattern to commit                                                                                                                                                                                                                                                                                                                    |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
@@ -110,6 +111,18 @@ when it is gone. The commit API records regular files only, so the step fails on
 link, a directory or any other entry, and on a regular file reached through a linked directory that leaves the
 working tree. Before this, a link was followed and its target committed as a file: a generator that left
 `generated/env.txt` pointing at `/proc/self/environ` committed the step's environment, `INPUT_TOKEN` included.
+
+## Which head the commit applies to
+
+The commit is made through the GraphQL API with an expected head, and GitHub refuses it when the branch no longer
+points there. The expected head is, in order:
+
+1. `expected_head_sha`, when it is set.
+2. The checked-out commit, when `branch` is the checked-out branch. The files were rewritten on top of that commit, so a
+   push that landed after the checkout makes the commit fail instead of being overwritten for every file the job
+   rewrote.
+3. Otherwise the branch head, read just before the commit. A push between the checkout and that read goes undetected,
+   and the step says so in a warning.
 
 <!-- docs:generated reference -->
 ## Reference

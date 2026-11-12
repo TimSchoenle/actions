@@ -7,9 +7,13 @@ import type { CommitChangesDeps, CommitChangesRequest } from './commit.js';
 import type { Git } from './git.js';
 import type { CommitApi, CreateCommitRequest } from 'actions-util/commit-on-branch';
 
-function fakeGit(status = ''): Git & { statusArgs: (readonly string[] | undefined)[] } {
+const LOCAL = 'c'.repeat(40);
+const GIVEN = 'd'.repeat(40);
+
+function fakeGit(status = '', checkedOut?: string): Git & { statusArgs: (readonly string[] | undefined)[] } {
   const statusArgs: (readonly string[] | undefined)[] = [];
   return {
+    checkedOutHead: vi.fn(async () => checkedOut),
     ignoreFileModeChanges: vi.fn(async () => {}),
     status: vi.fn(async (pathspecs?: readonly string[]) => {
       statusArgs.push(pathspecs);
@@ -40,6 +44,7 @@ function fakeApi(oid = 'headsha'): CommitApi & { created: CreateCommitRequest[] 
 
 const baseRequest: CommitChangesRequest = {
   branch: 'main',
+  expectedHeadSha: '',
   filePattern: '.',
   message: 'chore: update',
   repository: 'owner/repo',
@@ -87,6 +92,7 @@ describe('commitChanges', () => {
       commitHash: 'newsha',
       commitUrl: 'https://github.com/o/r/commit/newsha',
       committed: true,
+      expectedHeadSource: 'remote',
       hasChanges: true,
     });
     expect(api.getHeadOid).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo' }, 'main');
@@ -101,6 +107,59 @@ describe('commitChanges', () => {
       message: 'chore: update',
     });
   });
+
+  // The files were rewritten on top of the checkout. Reading the remote head at commit time would
+  // overwrite a push that landed in between for every file the job rewrote.
+  it('expects the checked-out head when the target branch is checked out', async () => {
+    const git = fakeGit(' M kept.ts\0', LOCAL);
+    const api = fakeApi('remote-moved-on');
+
+    const result = await commitChanges(deps({ api, git, workspace: fakeWorkspace({ 'kept.ts': 'x' }) }), baseRequest);
+
+    expect(git.checkedOutHead).toHaveBeenCalledWith('main');
+    expect(api.getHeadOid).not.toHaveBeenCalled();
+    expect(api.created[0].expectedHeadOid).toBe(LOCAL);
+    expect(result.expectedHeadSource).toBe('checkout');
+  });
+
+  it('expects expected_head_sha when it is given, over the checkout and the remote', async () => {
+    const git = fakeGit(' M kept.ts\0', LOCAL);
+    const api = fakeApi();
+
+    const result = await commitChanges(deps({ api, git, workspace: fakeWorkspace({ 'kept.ts': 'x' }) }), {
+      ...baseRequest,
+      expectedHeadSha: GIVEN,
+    });
+
+    expect(git.checkedOutHead).not.toHaveBeenCalled();
+    expect(api.getHeadOid).not.toHaveBeenCalled();
+    expect(api.created[0].expectedHeadOid).toBe(GIVEN);
+    expect(result.expectedHeadSource).toBe('input');
+  });
+
+  it('falls back to the remote head when another branch, or none, is checked out', async () => {
+    const api = fakeApi('abc123');
+
+    const result = await commitChanges(
+      deps({ api, git: fakeGit(' M kept.ts\0'), workspace: fakeWorkspace({ 'kept.ts': 'x' }) }),
+      baseRequest,
+    );
+
+    expect(api.created[0].expectedHeadOid).toBe('abc123');
+    expect(result.expectedHeadSource).toBe('remote');
+  });
+
+  it.each(['abc1234', 'D'.repeat(40), `${'d'.repeat(40)}\n`])(
+    'rejects an expected_head_sha that is not a full lowercase SHA (%j) before touching git',
+    async (value) => {
+      const git = fakeGit();
+
+      await expect(commitChanges(deps({ git }), { ...baseRequest, expectedHeadSha: value })).rejects.toThrow(
+        'expected_head_sha must be a full lowercase commit SHA',
+      );
+      expect(git.status).not.toHaveBeenCalled();
+    },
+  );
 
   it('scopes the status to the built pathspecs when a file pattern is given', async () => {
     const git = fakeGit('');
