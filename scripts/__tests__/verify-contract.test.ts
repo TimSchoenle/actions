@@ -407,6 +407,21 @@ describe('affected-target detection against this repository', () => {
     expect(select(['actions/common/find-patch/README.md', 'actions/release/build-actions/CHANGELOG.md'])).toEqual([]);
   });
 
+  it('runs nothing for a generated-docs change to examples and docs.yaml', () => {
+    expect(
+      select([
+        'actions/common/find-patch/README.md',
+        'actions/common/find-patch/docs.yaml',
+        'actions/common/find-patch/examples/workflow-run-commit.yaml',
+        'actions/common/delete-branch/examples/delete-closed-branch.yaml',
+      ]),
+    ).toEqual([]);
+  });
+
+  it('still runs the target for a file that only looks like an example', () => {
+    expect(select(['actions/common/find-patch/helper/src/examples.ts'])).toContain('common/find-patch');
+  });
+
   it('runs the targets that read the terrace-helm fixture for a change to it, through extra-inputs', () => {
     expect(select(['.github/testdata/terrace-helm/terrace.yaml'])).toEqual([
       'helm/update-chart-version',

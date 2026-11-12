@@ -46,8 +46,18 @@ export const DEFAULT_BRANCH = 'main';
  * README.md on the same pull request; nothing reads either, so a release pull request that touches
  * every one of them must not run every suite. Matches the negations the path-filtered workflows
  * carried before.
+ *
+ * The example workflows under `examples/` and each action's `docs.yaml` feed only the docs generator,
+ * which runs in Update Files, not here: no action, suite or Verify job reads them at run time. Before
+ * they were listed, a generated-docs commit that re-pinned the examples selected the targets of every
+ * action it touched (4 of 49 commits on main, 159 legs).
  */
-export const IGNORED_FILES: readonly string[] = ['**/CHANGELOG.md', 'actions/*/*/README.md'];
+export const IGNORED_FILES: readonly string[] = [
+  '**/CHANGELOG.md',
+  'actions/*/*/README.md',
+  'actions/*/*/examples/**',
+  'actions/*/*/docs.yaml',
+];
 
 /** The changed files of a run, or `all` when they cannot be known and every target must run. */
 export type ChangedFiles = readonly string[] | 'all';
