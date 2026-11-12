@@ -49,7 +49,7 @@ inputs:
 outputs:
   outcome:
     description: 'committed, branch_moved, no_changes or missing as common/commit-patch and common/find-patch report them; skipped when the triggering run is not one to commit for, including a fork pull request that does not allow edits by maintainers; failed when the commit step failed.'
-    value: ${{ steps.commit.outcome == 'failure' && 'failed' || steps.commit.outputs.outcome || steps.find.outputs.outcome || steps.fork.outputs.outcome || steps.event.outputs.outcome }}
+    value: ${{ steps.commit.outcome == 'failure' && 'failed' || steps.commit.outputs.outcome || steps.fork.outputs.outcome || steps.find.outputs.outcome || steps.event.outputs.outcome }}
   commit_sha:
     description: 'SHA of the commit made, when one was.'
     value: ${{ steps.commit.outputs.commit_sha }}
@@ -75,13 +75,24 @@ runs:
         EXCLUDED_BRANCHES: ${{ inputs.excluded_branches }}
       run: bash "$GITHUB_ACTION_PATH/check-event.sh"
 
+    - name: Find The Merged Patch
+      id: find
+      if: steps.event.outputs.proceed == 'true'
+      uses: TimSchoenle/actions/actions/common/find-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-find-patch-v1.1.3
+      with:
+        run_id: ${{ github.event.workflow_run.id }}
+        artifact_name: ${{ inputs.artifact_name }}
+        expected_head_sha: ${{ github.event.workflow_run.head_sha }}
+        max_patch_bytes: ${{ inputs.max_patch_bytes }}
+
     # A fork's branch only while its pull request allows edits by maintainers, which is what lets
-    # the App push there. The job token reads the open pull requests of a public repository without
+    # the App push there. Read only once there is a patch to commit, so a fork run without one costs
+    # no listing. The job token reads the open pull requests of a public repository without
     # a pull-requests permission, each in full, since only that carries the flag; a failed read skips
     # the commit.
     - name: Check The Fork Allows Edits
       id: fork
-      if: steps.event.outputs.fork == 'true'
+      if: steps.find.outputs.has_changes == 'true' && steps.event.outputs.fork == 'true'
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
@@ -97,27 +108,18 @@ runs:
         fi
         bash "$GITHUB_ACTION_PATH/check-fork.sh"
 
-    - name: Find The Merged Patch
-      id: find
-      if: steps.event.outputs.proceed == 'true' && (steps.event.outputs.fork != 'true' || steps.fork.outputs.proceed == 'true')
-      uses: TimSchoenle/actions/actions/common/find-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-find-patch-v1.1.3
-      with:
-        run_id: ${{ github.event.workflow_run.id }}
-        artifact_name: ${{ inputs.artifact_name }}
-        expected_head_sha: ${{ github.event.workflow_run.head_sha }}
-        max_patch_bytes: ${{ inputs.max_patch_bytes }}
-
     # commit-patch needs the head commit's objects to apply the patch to, and reads nothing else, so
     # the head is fetched without a checkout and none of the branch's files reach the workspace.
     - name: Fetch The Pull Request Head
-      if: steps.find.outputs.has_changes == 'true'
+      id: fetch
+      if: steps.find.outputs.has_changes == 'true' && (steps.event.outputs.fork != 'true' || steps.fork.outputs.proceed == 'true')
       uses: TimSchoenle/actions/actions/common/fetch-head@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-fetch-head-v2.0.1
       with:
         sha: ${{ github.event.workflow_run.head_sha }}
 
     - name: Generate App Token
       id: token
-      if: steps.find.outputs.has_changes == 'true'
+      if: steps.find.outputs.has_changes == 'true' && (steps.event.outputs.fork != 'true' || steps.fork.outputs.proceed == 'true')
       uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
       with:
         client-id: ${{ inputs.client_id }}
@@ -126,7 +128,7 @@ runs:
 
     - name: Commit The Generated Files
       id: commit
-      if: steps.find.outputs.has_changes == 'true'
+      if: steps.find.outputs.has_changes == 'true' && (steps.event.outputs.fork != 'true' || steps.fork.outputs.proceed == 'true')
       uses: TimSchoenle/actions/actions/common/commit-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-commit-patch-v2.0.1
       with:
         token: ${{ steps.token.outputs.token }}
@@ -140,8 +142,9 @@ runs:
         commit_message: ${{ inputs.commit_message }}
         max_patch_bytes: ${{ inputs.max_patch_bytes }}
 
+    # A refused fork has already written its reason to the summary.
     - name: Summarise
-      if: steps.event.outputs.proceed == 'true' && (steps.event.outputs.fork != 'true' || steps.fork.outputs.proceed == 'true')
+      if: steps.event.outputs.proceed == 'true' && steps.fork.outputs.proceed != 'false'
       shell: bash
       env:
         FIND_OUTCOME: ${{ steps.find.outputs.outcome }}
