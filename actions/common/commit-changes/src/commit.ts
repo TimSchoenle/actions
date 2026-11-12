@@ -99,7 +99,8 @@ async function resolveExpectedHead(
     return { oid: checkedOut, source: 'checkout' };
   }
 
-  return { oid: await deps.api.getHeadOid(coordinates, request.branch), source: 'remote' };
+  // create-pull-request creates the branch in the step before this one, so a 404 may be lag.
+  return { oid: await deps.api.getHeadOid(coordinates, request.branch, { justCreated: true }), source: 'remote' };
 }
 
 /**
