@@ -29,6 +29,13 @@ export const LOCKFILES: readonly string[] = [
 export const TOOLCHAIN_FILES: readonly string[] = ['.bun-version', '.node-version', '.nvmrc', '.tool-versions'];
 
 /**
+ * Build configuration at the repository root. Whichever exist count as build inputs: the bundler
+ * resolves `actions-util/*` through the `paths` of the root `tsconfig.json`, because the package's
+ * `exports` point at a `dist/` that a checkout does not have, so a change there can change every bundle.
+ */
+export const BUILD_CONFIG_FILES: readonly string[] = ['tsconfig.json'];
+
+/**
  * The fields of a `package.json` whose workspace dependencies can end up in a bundle.
  * `devDependencies` are left out: every action lists the test harness there, and a harness change
  * does not change a bundle. A workspace package a build runs as a tool belongs in `dependencies`.
@@ -106,16 +113,18 @@ export function workspacePackages(root: string): Map<string, string> {
   return packages;
 }
 
-/** Root files of {@link LOCKFILES} and {@link TOOLCHAIN_FILES} that exist. */
+/** Root files of {@link LOCKFILES}, {@link TOOLCHAIN_FILES} and {@link BUILD_CONFIG_FILES} that exist. */
 export function rootBuildInputs(root: string): string[] {
-  return [...LOCKFILES, ...TOOLCHAIN_FILES].filter((file) => fs.existsSync(toAbsolute(root, file)));
+  return [...LOCKFILES, ...TOOLCHAIN_FILES, ...BUILD_CONFIG_FILES].filter((file) =>
+    fs.existsSync(toAbsolute(root, file)),
+  );
 }
 
 /**
  * The repository paths whose change can change the bundles of `actionDirectories`.
  *
  * Each action directory, the directory of every workspace package its `package.json` reaches through
- * `workspace:` dependencies (transitively), and the root lockfile and toolchain pins. Directories are
+ * `workspace:` dependencies (transitively), and the root lockfile, toolchain pins and build configuration. Directories are
  * returned as they are; turn them into globs where a glob is needed.
  *
  * @param root - absolute path of the repository root

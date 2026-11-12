@@ -30,7 +30,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/close-pull-request"],
       "install": true,
@@ -50,7 +51,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/commit-changes"],
       "install": true,
@@ -85,7 +87,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/commit-patch/helper", "actions/common/create-patch/helper"],
       "install": true,
@@ -105,7 +108,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/create-branch"],
       "install": true,
@@ -125,7 +129,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/create-patch/helper"],
       "install": true,
@@ -159,7 +164,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/delete-branch"],
       "install": true,
@@ -179,7 +185,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/download-release-asset"],
       "install": true,
@@ -199,7 +206,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/fetch-head"],
       "install": true,
@@ -220,7 +228,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/create-patch/helper", "actions/common/find-patch/helper"],
       "install": true,
@@ -242,7 +251,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": [
         "actions/common/create-patch/helper",
@@ -266,7 +276,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/get-app-git-identity"],
       "install": true,
@@ -286,7 +297,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/modify-yaml"],
       "install": true,
@@ -306,7 +318,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/read-yaml"],
       "install": true,
@@ -326,7 +339,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/readme-variables"],
       "install": true,
@@ -360,7 +374,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/render-template"],
       "install": true,
@@ -394,7 +409,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/setup-app-git-identity"],
       "install": true,
@@ -414,7 +430,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/upsert-issue"],
       "install": true,
@@ -434,7 +451,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/upsert-pr-comment"],
       "install": true,
@@ -491,7 +509,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/docker/image-check-summary/helper", "actions/docker/image-check/helper"],
       "install": true,
@@ -511,7 +530,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/docker/image-check-summary/helper"],
       "install": true,
@@ -531,7 +551,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/helm/apply-chart-updates"],
       "install": true,
@@ -566,7 +587,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/helper/resolve-base-branch"],
       "install": true,
@@ -586,7 +608,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/helper/verify-branch-name"],
       "install": true,
@@ -606,7 +629,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/helper/verify-commit-authors"],
       "install": true,
@@ -626,7 +650,8 @@
         "actions/java-gradle/auto-spotless",
         "bun.lock",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/commit-changes", "actions/common/commit-patch/helper"],
       "install": true,
@@ -674,7 +699,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/maintenance/auto-approve-pr"],
       "install": true,
@@ -694,7 +720,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/maintenance/auto-rebase"],
       "install": true,
@@ -714,7 +741,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/maintenance/ensure-actions-are-executed"],
       "install": true,
@@ -734,7 +762,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/maintenance/timed-auto-merge"],
       "install": true,
@@ -754,7 +783,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/maintenance/trigger-coderabbit-review"],
       "install": true,
@@ -774,7 +804,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/maintenance/wipe-cache"],
       "install": true,
@@ -795,7 +826,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/release/build-actions/helper", "actions/release/install-built-actions/helper"],
       "install": true,
@@ -816,7 +848,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/release/build-actions/helper", "actions/release/install-built-actions/helper"],
       "install": true,
@@ -836,7 +869,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/release/plan-release-please"],
       "install": true,
@@ -857,7 +891,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/release/build-actions/helper", "actions/release/publish-build-commit/helper"],
       "install": true,
@@ -877,7 +912,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/release/resolve-actions"],
       "install": true,
@@ -897,7 +933,8 @@
         "actions/rust/auto-format",
         "bun.lock",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/common/commit-changes", "actions/common/commit-patch/helper"],
       "install": true,
@@ -941,7 +978,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/rust/config-contract"],
       "install": true,
@@ -985,7 +1023,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/security/codeql/helper"],
       "install": true,
@@ -1019,7 +1058,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/security/zizmor/helper"],
       "install": true,
@@ -1099,7 +1139,8 @@
         "packages/action-graph",
         "packages/e2e",
         "packages/ts-util",
-        "scripts/build-action.ts"
+        "scripts/build-action.ts",
+        "tsconfig.json"
       ],
       "buildDirs": ["actions/terrace/setup"],
       "install": true,
