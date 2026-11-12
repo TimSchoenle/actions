@@ -9,7 +9,7 @@ outside the markers.
 
 Fails a pull request while a generator job failed or left changes uncommitted, and merges every pending generator patch into one artifact for common/commit-patch.
 
-[actions-common-generated-files-verdict-v1.2.4](https://github.com/TimSchoenle/actions/releases/tag/actions-common-generated-files-verdict-v1.2.4) · Composite action
+[actions-common-generated-files-verdict-v1.2.5](https://github.com/TimSchoenle/actions/releases/tag/actions-common-generated-files-verdict-v1.2.5) · Composite action
 <!-- /docs:generated header -->
 
 The required check of a repository's Generate workflow. It fails a pull request while any generator job failed or
@@ -68,7 +68,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: TimSchoenle/actions/actions/common/generated-files-verdict@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-common-generated-files-verdict-v1.2.4
+      - uses: TimSchoenle/actions/actions/common/generated-files-verdict@actions-common-generated-files-verdict-v1.2.5 # tag=actions-common-generated-files-verdict-v1.2.5
         with:
           needs: ${{ toJSON(needs) }}
 ```
