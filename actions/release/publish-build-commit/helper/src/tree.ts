@@ -96,13 +96,52 @@ function placeFile(
   return 'identical';
 }
 
+/** Reads the entries of the directory at `path`, whose tree object is `treeSha`. */
+type DirectoryReader = (treeSha: string, path: string) => Promise<readonly GitTreeItem[]>;
+
+/** The parent directory of a path from the root tree, `''` for an entry of the root. */
+function parentOf(path: string): string {
+  const slash = path.lastIndexOf('/');
+
+  return slash === -1 ? '' : path.slice(0, slash);
+}
+
+/**
+ * A reader over the whole of `rootTree`, listed in one request. A directory is answered from the
+ * listing only when its tree id is the one the listing recorded for its path; anything else, and every
+ * directory of a listing the API truncated, is read on its own.
+ */
+async function directoryReader(api: Pick<PublishApi, 'getTree' | 'getTreeRecursive'>, rootTree: string) {
+  const perDirectory: DirectoryReader = (treeSha) => api.getTree(treeSha);
+  const listing = await api.getTreeRecursive(rootTree);
+  if (listing.truncated) {
+    return perDirectory;
+  }
+
+  const treeIds = new Map<string, string>([['', rootTree]]);
+  const entries = new Map<string, GitTreeItem[]>();
+  for (const item of listing.items) {
+    if (item.type === 'tree') {
+      treeIds.set(item.name, item.sha);
+    }
+    const parent = parentOf(item.name);
+    const name = item.name.slice(parent === '' ? 0 : parent.length + 1);
+    const siblings = entries.get(parent) ?? [];
+    siblings.push({ ...item, name });
+    entries.set(parent, siblings);
+  }
+
+  return (treeSha: string, path: string): Promise<readonly GitTreeItem[]> =>
+    treeIds.get(path) === treeSha ? Promise.resolve(entries.get(path) ?? []) : perDirectory(treeSha, path);
+}
+
 /** Computes the tree of the build commit; see {@link planTree}. */
 class TreePlanner {
   readonly additions: PlannedFile[] = [];
   readonly identical: string[] = [];
 
   constructor(
-    private readonly api: Pick<PublishApi, 'getTree'>,
+    private readonly read: DirectoryReader,
     private readonly policy: ExistingFilesPolicy,
   ) {}
 
@@ -141,7 +180,7 @@ class TreePlanner {
   /** The id of the directory `node` describes, laid over the source directory `treeSha` (absent: empty). */
   async directory(node: DirectoryNode, treeSha: string | undefined, prefix: string): Promise<string> {
     const existing = new Map(
-      (treeSha === undefined ? [] : await this.api.getTree(treeSha)).map((item) => [item.name, item]),
+      (treeSha === undefined ? [] : await this.read(treeSha, prefix)).map((item) => [item.name, item]),
     );
     const entries = new Map<string, GitTreeEntry>(
       [...existing.values()].map((item) => [item.name, { name: item.name, mode: modeOf(item), sha: item.sha }]),
@@ -164,8 +203,9 @@ class TreePlanner {
 /**
  * Computes the tree of the build commit: the source tree with every bundle added.
  *
- * Only the directories on a bundle's path are read, one tree object each, and the new tree ids are
- * computed locally with git's own encoding. The result is known before anything is written, which is
+ * The source tree is listed recursively in one request; only when the API truncates that listing are
+ * the directories on a bundle's path read one tree object each. The new tree ids are computed locally
+ * with git's own encoding. The result is known before anything is written, which is
  * what a dry run reports, and the id GitHub returns for the created tree can be checked against it.
  *
  * Invariant: the build commit only adds files. A path that exists as a directory or a link, or exists
@@ -174,12 +214,12 @@ class TreePlanner {
  * @throws an `Error` naming the first path that breaks the invariant
  */
 export async function planTree(
-  api: Pick<PublishApi, 'getTree'>,
+  api: Pick<PublishApi, 'getTree' | 'getTreeRecursive'>,
   sourceTree: string,
   files: readonly PlannedFile[],
   policy: ExistingFilesPolicy,
 ): Promise<TreePlan> {
-  const planner = new TreePlanner(api, policy);
+  const planner = new TreePlanner(await directoryReader(api, sourceTree), policy);
   const treeSha = await planner.directory(buildTrie(files), sourceTree, '');
 
   return { treeSha, additions: planner.additions, identical: planner.identical };

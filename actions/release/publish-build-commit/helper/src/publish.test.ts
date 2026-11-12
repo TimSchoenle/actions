@@ -2,7 +2,14 @@ import { renderChecksums, sha256Hex } from 'action-graph';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { GitBackedApi } from './git-backed-api.js';
-import { buildCommitMessage, CHECKSUMS_ASSET, commentMarker, Publisher, releaseAssets } from './publish.js';
+import {
+  buildCommitMessage,
+  CHECKSUMS_ASSET,
+  commentMarker,
+  Publisher,
+  releaseAssets,
+  tagListingPrefixes,
+} from './publish.js';
 
 import type { PublishRequest, ReleaseSpec } from './publish.js';
 import type { BundleFile } from 'action-graph';
@@ -319,6 +326,100 @@ describe('Publisher', () => {
 
       await expect(publish()).rejects.toThrow(/actions\/a\/dist exists in the source commit as a file/);
     });
+  });
+});
+
+describe('Publisher API work', () => {
+  // P12: a release's requests must grow with the release, not with the repository's history.
+  const NEXT_A = { ...RELEASES[0], consumerTag: 'actions-a-v1.2.0', sourceTag: 'src-actions-a-v1.2.0' };
+
+  it('reads the source tree in one request', async () => {
+    await publish();
+
+    expect(api.reads.filter((read) => read.startsWith('tree'))).toEqual([
+      `tree-recursive:${(await api.getCommit(source)).tree}`,
+    ]);
+  });
+
+  it('reads one tree per directory when the recursive listing is truncated, with the same result', async () => {
+    const expected = (await publish({ dryRun: true })).treeSha;
+    api.truncateRecursiveTrees = true;
+    api.reads.length = 0;
+
+    const result = await publish();
+
+    expect(result.treeSha).toBe(expected);
+    expect(api.reads.filter((read) => read.startsWith('tree:')).length).toBeGreaterThan(1);
+  });
+
+  it('uploads only the bundles the releases branch does not store yet', async () => {
+    await publish();
+    source = api.commitFiles({ ...SOURCE_FILES, 'README.md': 'changed\n' }, source);
+    api.writes.length = 0;
+    const bundles = { ...BUNDLES, 'actions/a/dist/index.js': 'a2();\n' };
+
+    const result = await publish({ releases: [NEXT_A] }, bundles);
+
+    expect(api.writes.filter((write) => write === 'blob')).toHaveLength(1);
+    expect(api.show(result.buildSha as string, 'actions/a/dist/index.js')).toBe('a2();');
+    expect(api.show(result.buildSha as string, 'actions/b/helper/dist/index.js')).toBe('b();');
+  });
+
+  it('reads the tags with one listing per tag family instead of one lookup per tag', async () => {
+    await publish();
+
+    expect(api.reads.filter((read) => read.startsWith('matching-refs:'))).toEqual([
+      'matching-refs:tags/actions-',
+      'matching-refs:tags/src-actions-',
+    ]);
+    expect(api.reads.filter((read) => read.startsWith('ref:tags/'))).toEqual([]);
+  });
+
+  it('follows an annotated tag to its commit', async () => {
+    const build = (await publish()).buildSha as string;
+    api.git(['tag', '-f', '-a', '-m', 'annotated', 'actions-a-v1.1.0', build]);
+    api.writes.length = 0;
+
+    const again = await publish();
+
+    expect(again.created).toEqual([]);
+    expect(api.writes).toEqual([]);
+  });
+
+  it('finds published releases by tag without listing the releases', async () => {
+    await publish();
+    api.reads.length = 0;
+
+    await publish();
+
+    expect(api.reads.filter((read) => read.startsWith('releases-since:'))).toEqual([]);
+    expect(api.reads.filter((read) => read.startsWith('release-by-tag:'))).toHaveLength(RELEASES.length);
+  });
+
+  it('looks for drafts only among releases created since a day before the source commit', async () => {
+    await publish();
+
+    const committed = Date.parse((await api.getCommit(source)).committedAt);
+    const cutoff = new Date(committed - 24 * 60 * 60 * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z');
+    expect(api.reads.filter((read) => read.startsWith('releases-since:'))).toEqual([`releases-since:${cutoff}`]);
+  });
+});
+
+describe('tagListingPrefixes', () => {
+  it.each([
+    [
+      'one prefix per family',
+      [
+        ['actions-a-v1', 'actions-b-v2'],
+        ['src-actions-a-v1', 'src-actions-b-v2'],
+      ],
+      ['actions-', 'src-actions-'],
+    ],
+    ['a family covered by another dropped', [['a-v1'], ['a-v1-src']], ['a-v1']],
+    ['an empty family ignored', [['x-v1'], []], ['x-v1']],
+    ['nothing in common as the empty prefix', [['a', 'b'], []], ['']],
+  ])('gives %s', (_name, families, expected) => {
+    expect(tagListingPrefixes(families)).toEqual(expected);
   });
 });
 

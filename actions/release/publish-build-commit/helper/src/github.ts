@@ -10,6 +10,8 @@ export interface GitCommit {
   readonly sha: string;
   readonly tree: string;
   readonly parents: readonly string[];
+  /** The committer date, ISO-8601. */
+  readonly committedAt: string;
 }
 
 /** One entry of a tree object, as the Git Data API returns it. */
@@ -18,6 +20,21 @@ export interface GitTreeItem {
   readonly mode: string;
   readonly type: 'blob' | 'tree' | 'commit';
   readonly sha: string;
+}
+
+/** Every entry below a tree, with `name` holding the path from that tree. */
+export interface RecursiveTree {
+  readonly items: readonly GitTreeItem[];
+  /** True when the API left entries out; `items` then lists real entries, but not all of them. */
+  readonly truncated: boolean;
+}
+
+/** One ref as `matching-refs` lists it, `ref` without the `refs/` prefix. */
+export interface RefEntry {
+  readonly ref: string;
+  readonly sha: string;
+  /** `tag` for an annotated tag, whose `sha` is the tag object rather than the commit. */
+  readonly type: string;
 }
 
 export interface ReleaseAsset {
@@ -31,6 +48,7 @@ export interface Release {
   readonly draft: boolean;
   readonly htmlUrl: string;
   readonly uploadUrl: string;
+  readonly createdAt: string;
   readonly assets: readonly ReleaseAsset[];
 }
 
@@ -50,8 +68,12 @@ export interface PublishApi {
   getCommit(sha: string): Promise<GitCommit>;
   /** The entries of one tree object, not recursive. */
   getTree(sha: string): Promise<GitTreeItem[]>;
+  /** Every entry below a tree object, in one request. */
+  getTreeRecursive(sha: string): Promise<RecursiveTree>;
   /** The commit a ref (`heads/x`, `tags/x`) points at, following an annotated tag; `undefined` when absent. */
   resolveRef(ref: string): Promise<string | undefined>;
+  /** Every ref whose name starts with `prefix` (`tags/x-`), without following annotated tags. */
+  matchingRefs(prefix: string): Promise<RefEntry[]>;
   createBlob(content: Uint8Array): Promise<string>;
   /** Creates a tree from `baseTree` with each file set to its blob. */
   createTree(baseTree: string, files: ReadonlyArray<{ path: string; sha: string }>): Promise<string>;
@@ -62,8 +84,13 @@ export interface PublishApi {
   /** Moves `refs/<ref>` without force; `not-fast-forward` when the move is not one. */
   updateRef(ref: string, sha: string): Promise<'updated' | 'not-fast-forward'>;
   compare(base: string, head: string): Promise<CompareStatus>;
-  /** Every release, drafts included. */
-  listReleases(): Promise<Release[]>;
+  /** The published release of `tag`; `undefined` when there is none. Drafts are never returned. */
+  getReleaseByTag(tag: string): Promise<Release | undefined>;
+  /**
+   * The releases, drafts included, created at or after `since` (ISO-8601). May also return older
+   * ones; never leaves out a newer one.
+   */
+  listReleasesSince(since: string): Promise<Release[]>;
   createDraftRelease(tagName: string, name: string, body: string): Promise<Release>;
   publishRelease(id: number, name: string, body: string, makeLatest: MakeLatest): Promise<Release>;
   uploadAsset(release: Release, name: string, content: Uint8Array): Promise<ReleaseAsset>;
@@ -94,6 +121,7 @@ function toRelease(data: {
   draft: boolean;
   html_url: string;
   upload_url: string;
+  created_at: string;
   assets: ReadonlyArray<{ id: number; name: string }>;
 }): Release {
   return {
@@ -102,6 +130,7 @@ function toRelease(data: {
     draft: data.draft,
     htmlUrl: data.html_url,
     uploadUrl: data.upload_url,
+    createdAt: data.created_at,
     assets: data.assets.map((asset) => ({ id: asset.id, name: asset.name })),
   };
 }
@@ -176,7 +205,12 @@ export function createPublishApi(token: string, repository: RepositoryCoordinate
         repo,
       });
 
-      return { sha: data.sha, tree: data.tree.sha, parents: data.parents.map((parent) => parent.sha) };
+      return {
+        sha: data.sha,
+        tree: data.tree.sha,
+        parents: data.parents.map((parent) => parent.sha),
+        committedAt: data.committer.date,
+      };
     },
 
     async getTree(sha) {
@@ -194,6 +228,39 @@ export function createPublishApi(token: string, repository: RepositoryCoordinate
         mode: item.mode,
         sha: item.sha,
         type: item.type as GitTreeItem['type'],
+      }));
+    },
+
+    async getTreeRecursive(sha) {
+      const { data } = await octokit.request('GET /repos/{owner}/{repo}/git/trees/{tree_sha}', {
+        owner,
+        recursive: '1',
+        repo,
+        tree_sha: sha,
+      });
+
+      return {
+        truncated: data.truncated,
+        items: data.tree.flatMap((item) =>
+          item.path === undefined || item.sha === undefined || item.mode === undefined || item.type === undefined
+            ? []
+            : [{ name: item.path, mode: item.mode, sha: item.sha, type: item.type as GitTreeItem['type'] }],
+        ),
+      };
+    },
+
+    async matchingRefs(prefix) {
+      // The endpoint answers with every matching ref in one response; it takes no page parameters.
+      const { data } = await octokit.request('GET /repos/{owner}/{repo}/git/matching-refs/{ref}', {
+        owner,
+        ref: prefix,
+        repo,
+      });
+
+      return data.map((entry) => ({
+        ref: entry.ref.replace(/^refs\//, ''),
+        sha: entry.object.sha,
+        type: entry.object.type,
       }));
     },
 
@@ -291,12 +358,32 @@ export function createPublishApi(token: string, repository: RepositoryCoordinate
       return data.status;
     },
 
-    async listReleases() {
-      const releases = await octokit.paginate('GET /repos/{owner}/{repo}/releases', {
-        owner,
-        per_page: PER_PAGE,
-        repo,
-      });
+    async getReleaseByTag(tag) {
+      try {
+        const { data } = await octokit.request('GET /repos/{owner}/{repo}/releases/tags/{tag}', { owner, repo, tag });
+
+        return data.draft ? undefined : toRelease(data);
+      } catch (error) {
+        if (hasStatus(error, 404)) {
+          return undefined;
+        }
+        throw error;
+      }
+    },
+
+    async listReleasesSince(since) {
+      // GitHub lists releases newest first, so paging stops at the first page that reaches back past
+      // `since`. Timestamps are compared as strings: both are UTC ISO-8601 in the same format.
+      const releases = await octokit.paginate(
+        'GET /repos/{owner}/{repo}/releases',
+        { owner, per_page: PER_PAGE, repo },
+        (response, done) => {
+          if (response.data.some((release) => release.created_at < since)) {
+            done();
+          }
+          return response.data;
+        },
+      );
 
       return releases.map(toRelease);
     },
