@@ -906,6 +906,20 @@
       "schedule": false
     },
     {
+      "id": "rust/cargo-check",
+      "shard": "verify-rust",
+      "inputs": [
+        ".github/verify/rust-cargo-check.yaml",
+        ".github/workflows/verify-rust.yaml",
+        "actions/rust/cargo-check"
+      ],
+      "buildDirs": [],
+      "install": false,
+      "pullRequestBranches": null,
+      "pushBranches": ["feature/rust/cargo-check"],
+      "schedule": false
+    },
+    {
       "id": "rust/config-contract",
       "shard": "verify-rust",
       "inputs": [
