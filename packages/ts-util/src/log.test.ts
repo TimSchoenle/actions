@@ -1,3 +1,4 @@
+import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 
 import { quoteAllForLog, quoteForLog, quoteUrlForLog } from './log.js';
@@ -51,6 +52,43 @@ describe('quoteForLog', () => {
     { name: 'the paragraph separator', codePoint: 0x20_29, expected: String.raw`"\u2029"` },
   ])('escapes $name, which JSON leaves literal', ({ codePoint, expected }) => {
     expect(quoteForLog(unit(codePoint))).toBe(expected);
+  });
+
+  // S16a: these reorder or hide text in the rendered log, so a value can read as something it is not.
+  it.each([
+    { name: 'a zero-width space', codePoint: 0x20_0b, expected: String.raw`"\u200b"` },
+    { name: 'a right-to-left mark', codePoint: 0x20_0f, expected: String.raw`"\u200f"` },
+    { name: 'a right-to-left override', codePoint: 0x20_2e, expected: String.raw`"\u202e"` },
+    { name: 'a word joiner', codePoint: 0x20_60, expected: String.raw`"\u2060"` },
+    { name: 'a first-strong isolate', codePoint: 0x20_68, expected: String.raw`"\u2068"` },
+    { name: 'the Arabic letter mark', codePoint: 0x06_1c, expected: String.raw`"\u061c"` },
+    { name: 'a byte order mark', codePoint: 0xfe_ff, expected: String.raw`"\ufeff"` },
+  ])('escapes $name, which reorders or hides text', ({ codePoint, expected }) => {
+    expect(quoteForLog(unit(codePoint))).toBe(expected);
+  });
+
+  // S16a: the runner's legacy `##[command]` syntax may be honoured mid-line, where quoting alone does
+  // not reach. Breaking the prefix costs nothing whether or not it is.
+  it('breaks a legacy ##[ command prefix, wherever it appears', () => {
+    expect(quoteForLog('x ##[add-mask]hunter2')).toBe(String.raw`"x #\u0023[add-mask]hunter2"`);
+    expect(quoteForLog('###[error]x')).not.toContain('##[');
+  });
+
+  it('round-trips through JSON.parse, never yields ##[ or a second line, whatever it is given', () => {
+    const tricky = fc.constantFrom('#', '[', '##[', '\n', '\r', '\u2028', '\u202e', '\u200b', '"', '\\');
+    fc.assert(
+      fc.property(
+        fc.array(fc.oneof(fc.string(), fc.string({ unit: 'binary' }), tricky)).map((parts) => parts.join('')),
+        (value) => {
+          const quoted = quoteForLog(value);
+
+          expect(JSON.parse(quoted)).toBe(value);
+          expect(quoted).not.toContain('##[');
+          expect(quoted).not.toMatch(/[\n\r\u2028\u2029\u200b-\u200f\u202a-\u202e\u2066-\u2069]/u);
+        },
+      ),
+      { numRuns: 1000 },
+    );
   });
 
   it('leaves printable non-ASCII text alone', () => {
