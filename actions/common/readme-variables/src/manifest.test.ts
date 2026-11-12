@@ -103,6 +103,17 @@ describe('readManifest', () => {
     await expect(readManifest(file, 'pyproject.toml')).rejects.toThrow(ManifestUnreadableError);
   });
 
+  // P14l: a pull request controls the manifest, and the whole file was read into memory.
+  it('refuses a manifest over the size limit without reading it', async () => {
+    const file = path.join(workspace, 'Cargo.toml');
+
+    await writeFile(file, `[package]\nname = "x"\nversion = "1.2.3"\n${'#'.repeat(1024 * 1024)}\n`, 'utf8');
+
+    await expect(readManifest(file, 'Cargo.toml')).rejects.toThrow(
+      /^Cargo\.toml: larger than 1 MiB, which no manifest this action reads needs to be\.$/,
+    );
+  });
+
   it('reports an unreadable file with its path', async () => {
     await expect(readManifest(path.join(workspace, 'Cargo.toml'), 'Cargo.toml')).rejects.toThrow(
       /^Cargo\.toml: manifest not found or not readable\.$/,

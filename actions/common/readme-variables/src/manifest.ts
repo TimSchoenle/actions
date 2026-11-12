@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { ManifestNotFoundError, ManifestUnreadableError } from './errors.js';
+import { ManifestNotFoundError, ManifestParseError, ManifestUnreadableError } from './errors.js';
 import { readCargoManifest } from './readers/cargo.js';
 import { readChartManifest } from './readers/chart.js';
 import { readGradleManifest } from './readers/gradle.js';
@@ -24,6 +24,9 @@ export interface ManifestFacts {
    */
   toolchain: Readonly<Record<string, string>>;
 }
+
+/** The largest manifest read. A manifest holds a few kilobytes of metadata. */
+const MANIFEST_SIZE_LIMIT = 1024 * 1024;
 
 /** A reader, keyed by the basename it claims. */
 type ManifestReader = (source: string, manifestPath: string) => ManifestFacts;
@@ -95,13 +98,37 @@ export async function detectManifest(workspace: string): Promise<string> {
 }
 
 /**
+ * Reads a manifest's text, refusing one over {@link MANIFEST_SIZE_LIMIT} before reading it: a pull
+ * request controls the manifest, and nothing else bounds what the read pulls into memory.
+ */
+async function readSource(absolutePath: string, reportedPath: string): Promise<string> {
+  let size: number;
+
+  try {
+    ({ size } = await fs.stat(absolutePath));
+  } catch (error) {
+    throw new ManifestUnreadableError(reportedPath, error);
+  }
+
+  if (size > MANIFEST_SIZE_LIMIT) {
+    throw new ManifestParseError(reportedPath, 'larger than 1 MiB, which no manifest this action reads needs to be.');
+  }
+
+  try {
+    return await fs.readFile(absolutePath, 'utf8');
+  } catch (error) {
+    throw new ManifestUnreadableError(reportedPath, error);
+  }
+}
+
+/**
  * Reads one manifest into the facts the payload needs.
  *
  * A path whose basename is not one of {@link MANIFEST_CANDIDATES} is refused here rather than parsed
  * on a guess: a reader picked by content sniffing would report a syntax error from the wrong parser.
  *
  * @throws {ManifestUnreadableError} if the file cannot be read, or names a form with no reader.
- * @throws {ManifestParseError} if the file is not the shape its name promises.
+ * @throws {ManifestParseError} if the file is larger than 1 MiB, or not the shape its name promises.
  * @throws {ManifestFieldMissingError} if a required field is absent.
  */
 export async function readManifest(absolutePath: string, reportedPath: string): Promise<ManifestFacts> {
@@ -114,13 +141,5 @@ export async function readManifest(absolutePath: string, reportedPath: string): 
     );
   }
 
-  let source: string;
-
-  try {
-    source = await fs.readFile(absolutePath, 'utf8');
-  } catch (error) {
-    throw new ManifestUnreadableError(reportedPath, error);
-  }
-
-  return reader(source, reportedPath);
+  return reader(await readSource(absolutePath, reportedPath), reportedPath);
 }
