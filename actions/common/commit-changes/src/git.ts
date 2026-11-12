@@ -16,6 +16,11 @@ export interface Git {
    * output is a flat list of `XY <path>` records.
    */
   status(pathspecs?: readonly string[]): Promise<string>;
+  /**
+   * The commit `HEAD` points at when `branch` is the checked-out branch, or `undefined` when another
+   * branch is checked out or `HEAD` is detached.
+   */
+  checkedOutHead(branch: string): Promise<string | undefined>;
 }
 
 /** Binds {@link Git} to the `git` executable in the workspace. */
@@ -35,6 +40,22 @@ export function createGit(): Git {
       const { stdout } = await getExecOutput('git', args, { silent: true });
 
       return stdout;
+    },
+
+    async checkedOutHead(branch: string): Promise<string | undefined> {
+      // Exit status 1 with --quiet means HEAD is detached, which is no checked-out branch.
+      const symbolic = await getExecOutput('git', ['symbolic-ref', '--quiet', 'HEAD'], {
+        ignoreReturnCode: true,
+        silent: true,
+      });
+
+      if (symbolic.exitCode !== 0 || symbolic.stdout.trim() !== `refs/heads/${branch}`) {
+        return undefined;
+      }
+
+      const { stdout } = await getExecOutput('git', ['rev-parse', '--verify', 'HEAD^{commit}'], { silent: true });
+
+      return stdout.trim();
     },
   };
 }
