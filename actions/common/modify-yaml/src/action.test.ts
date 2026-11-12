@@ -51,7 +51,7 @@ describe('modify-yaml action', () => {
     outside = realpathSync(mkdtempSync(path.join(tmpdir(), 'modify-yaml-outside-')));
     vi.stubEnv('GITHUB_WORKSPACE', workspace);
     setInputs();
-    vi.mocked(modifyYaml).mockResolvedValue('1.0.0');
+    vi.mocked(modifyYaml).mockResolvedValue({ oldValue: '1.0.0', newValue: '2.0.0' });
   });
 
   afterEach(() => {
@@ -71,11 +71,20 @@ describe('modify-yaml action', () => {
   // An absent key and a key that was empty are different outcomes, so the output is omitted rather
   // than published as an empty string.
   it('omits old-value when the key did not exist', async () => {
-    vi.mocked(modifyYaml).mockResolvedValue(undefined);
+    vi.mocked(modifyYaml).mockResolvedValue({ oldValue: undefined, newValue: '2.0.0' });
 
     await run();
 
     expect(outputs()).toEqual({ 'new-value': '2.0.0' });
+  });
+
+  it('publishes the value that was written, not the input', async () => {
+    setInputs({ value: '+Infinity' });
+    vi.mocked(modifyYaml).mockResolvedValue({ oldValue: '1.0.0', newValue: 'Infinity' });
+
+    await run();
+
+    expect(outputs()).toEqual({ 'new-value': 'Infinity', 'old-value': '1.0.0' });
   });
 
   it.each(['file', 'key', 'value'])('fails when the required input %s is empty', async (name) => {
