@@ -134,7 +134,7 @@ describe('installCosign', () => {
   it('checks the binary against cosign_checksums.txt and caches it executable', async () => {
     const { ports, downloaded } = fakePorts({ lists: { 'cosign_checksums.txt': `${GOOD}  cosign-linux-amd64\n` } });
 
-    const installed = await installCosign(ports, LINUX, 'v3.1.3');
+    const installed = await installCosign(ports, LINUX, 'v3.1.3', GOOD);
 
     expect(downloaded).toEqual([
       'sigstore/cosign@v3.1.3/cosign-linux-amd64',
@@ -148,8 +148,31 @@ describe('installCosign', () => {
   it('refuses a binary the list does not record', async () => {
     const { ports } = fakePorts({ lists: { 'cosign_checksums.txt': `${GOOD}  cosign-darwin-arm64\n` } });
 
-    await expect(installCosign(ports, LINUX, 'v3.1.3')).rejects.toThrow(/does not list cosign-linux-amd64/);
+    await expect(installCosign(ports, LINUX, 'v3.1.3', GOOD)).rejects.toThrow(/does not list cosign-linux-amd64/);
     expect(ports.cacheFile).not.toHaveBeenCalled();
+  });
+
+  // The binary and the list come from the same release, so whoever can replace one can replace
+  // both. The pinned digest of the list is what ties the install to the release the pin names.
+  it('refuses a list that matches the binary but not the pin', async () => {
+    const { ports } = fakePorts({
+      lists: { 'cosign_checksums.txt': `${GOOD}  cosign-linux-amd64\n` },
+      digests: { 'cosign_checksums.txt': 'b'.repeat(64) },
+    });
+
+    await expect(installCosign(ports, LINUX, 'v3.1.3', GOOD)).rejects.toThrow(VerificationError);
+    await expect(installCosign(ports, LINUX, 'v3.1.3', GOOD)).rejects.toThrow(
+      /cosign_checksums\.txt has SHA-256 b{64}, but cosign_checksums_sha256 pins a{64}/,
+    );
+    expect(ports.cacheFile).not.toHaveBeenCalled();
+  });
+
+  it('accepts the pin in upper case', async () => {
+    const { ports } = fakePorts({ lists: { 'cosign_checksums.txt': `${GOOD}  cosign-linux-amd64\n` } });
+
+    await expect(installCosign(ports, LINUX, 'v3.1.3', GOOD.toUpperCase())).resolves.toMatchObject({
+      version: '3.1.3',
+    });
   });
 });
 
@@ -158,13 +181,25 @@ describe('installOras', () => {
     const name = 'oras_1.3.4_linux_amd64.tar.gz';
     const { ports, downloaded } = fakePorts({ lists: { 'oras_1.3.4_checksums.txt': `${GOOD}  ${name}\n` } });
 
-    const installed = await installOras(ports, LINUX, '1.3.4');
+    const installed = await installOras(ports, LINUX, '1.3.4', GOOD);
 
     expect(downloaded).toEqual([
       `oras-project/oras@v1.3.4/${name}`,
       'oras-project/oras@v1.3.4/oras_1.3.4_checksums.txt',
     ]);
     expect(installed).toEqual({ version: '1.3.4', path: path.join('/cache/oras/1.3.4', 'oras') });
+  });
+
+  it('refuses a list that matches the archive but not the pin', async () => {
+    const name = 'oras_1.3.4_linux_amd64.tar.gz';
+    const { ports } = fakePorts({
+      lists: { 'oras_1.3.4_checksums.txt': `${GOOD}  ${name}\n` },
+      digests: { 'oras_1.3.4_checksums.txt': 'b'.repeat(64) },
+    });
+
+    await expect(installOras(ports, LINUX, '1.3.4', GOOD)).rejects.toThrow(/oras_checksums_sha256 pins a{64}/);
+    expect(ports.extract).not.toHaveBeenCalled();
+    expect(ports.cacheDirectory).not.toHaveBeenCalled();
   });
 });
 

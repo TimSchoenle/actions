@@ -773,3 +773,74 @@ jobs:
           set -euo pipefail
           test "$OUTCOME" = failure
           test -z "$TERRACE_PATH"
+
+  # cosign and its checksum list come from the same release, so the pinned digest of the list is
+  # the only thing tying the install to the release that was pinned. A digest that does not match
+  # the list must stop the install before anything reaches the tool cache or PATH, and so must a
+  # changed cosign_version that keeps the default digest.
+  install-wrong-pin:
+    name: 'Terrace Setup: A checksum list that does not match its pin fails the step (${{ matrix.case }})'
+    if: ${{ contains(fromJSON(inputs.targets), 'terrace/setup') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - case: wrong digest
+            cosign_version: 'v3.1.4'
+            cosign_checksums_sha256: '0000000000000000000000000000000000000000000000000000000000000000'
+          # The digest of v3.1.4's list, which is what a caller who changes only the version sends.
+          - case: changed version, old digest
+            cosign_version: 'v3.1.3'
+            cosign_checksums_sha256: 'e70e59b328d52949b3a9ae3e0d04721ea8f380c4e91c28197aa91df02afbf4c0'
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Installs the bundles the build job built from this commit; dist/ is not committed.
+      - name: Install Built Actions
+        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        with:
+          artifact-id: ${{ inputs.artifact-id }}
+          expected-manifest-sha256: ${{ inputs.manifest-sha256 }}
+
+      - name: Install
+        id: setup
+        continue-on-error: true
+        uses: ./actions/terrace/setup # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          version: '0.8.0'
+          cosign_version: ${{ matrix.cosign_version }}
+          cosign_checksums_sha256: ${{ matrix.cosign_checksums_sha256 }}
+
+      - name: Verify the step failed and put nothing on PATH
+        env:
+          OUTCOME: ${{ steps.setup.outcome }}
+          COSIGN_PATH: ${{ steps.setup.outputs.cosign_path }}
+          TERRACE_PATH: ${{ steps.setup.outputs.path }}
+        run: |
+          set -euo pipefail
+          test "$OUTCOME" = failure
+          test -z "$COSIGN_PATH"
+          test -z "$TERRACE_PATH"
+          if find "$RUNNER_TOOL_CACHE/cosign" -mindepth 1 -maxdepth 1 2>/dev/null | grep -q .; then
+            echo "::error::cosign reached the tool cache"
+            exit 1
+          fi
