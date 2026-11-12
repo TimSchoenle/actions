@@ -9,12 +9,54 @@ jobs:
     timeout-minutes: 15
     strategy:
       fail-fast: false
+      # Every pair of values across the five inputs, in 8 legs instead of the 64 of the full product
+      # (4 x 2 x 2 x 2 x 2), which was about a third of all Verify legs. Each Java version appears
+      # twice with complementary values of the four binary inputs, so it meets both values of each;
+      # the four base rows (0000, 0011, 0101, 0110) give every two binary inputs all four
+      # combinations. The inputs do not interact beyond pairs: each is passed straight to
+      # actions/setup-java or to the wrapper permission step.
       matrix:
-        java-version: ['11', '17', '21', '25']
-        java-package: ['jre', 'jdk']
-        java-distribution: ['temurin', 'zulu']
-        gradle-setup-version: ['9.3.1', '8.14.3']
-        gradle-wrapper-permission-set: ['read-only', 'read-write']
+        include:
+          - java-version: '11'
+            java-package: 'jre'
+            java-distribution: 'temurin'
+            gradle-setup-version: '9.3.1'
+            gradle-wrapper-permission-set: 'read-only'
+          - java-version: '11'
+            java-package: 'jdk'
+            java-distribution: 'zulu'
+            gradle-setup-version: '8.14.3'
+            gradle-wrapper-permission-set: 'read-write'
+          - java-version: '17'
+            java-package: 'jre'
+            java-distribution: 'temurin'
+            gradle-setup-version: '8.14.3'
+            gradle-wrapper-permission-set: 'read-write'
+          - java-version: '17'
+            java-package: 'jdk'
+            java-distribution: 'zulu'
+            gradle-setup-version: '9.3.1'
+            gradle-wrapper-permission-set: 'read-only'
+          - java-version: '21'
+            java-package: 'jre'
+            java-distribution: 'zulu'
+            gradle-setup-version: '9.3.1'
+            gradle-wrapper-permission-set: 'read-write'
+          - java-version: '21'
+            java-package: 'jdk'
+            java-distribution: 'temurin'
+            gradle-setup-version: '8.14.3'
+            gradle-wrapper-permission-set: 'read-only'
+          - java-version: '25'
+            java-package: 'jre'
+            java-distribution: 'zulu'
+            gradle-setup-version: '8.14.3'
+            gradle-wrapper-permission-set: 'read-only'
+          - java-version: '25'
+            java-package: 'jdk'
+            java-distribution: 'temurin'
+            gradle-setup-version: '9.3.1'
+            gradle-wrapper-permission-set: 'read-write'
     permissions:
       contents: read # to fetch code
     steps:
