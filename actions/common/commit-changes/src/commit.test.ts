@@ -95,7 +95,8 @@ describe('commitChanges', () => {
       expectedHeadSource: 'remote',
       hasChanges: true,
     });
-    expect(api.getHeadOid).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo' }, 'main');
+    // The branch is often created by the step before (create-pull-request), so a 404 may be lag.
+    expect(api.getHeadOid).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo' }, 'main', { justCreated: true });
     expect(api.created[0]).toEqual({
       branch: 'main',
       coordinates: { owner: 'owner', repo: 'repo' },
