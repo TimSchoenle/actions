@@ -40,10 +40,25 @@ function leavesRoot(fromRoot: string): boolean {
  */
 function reachesGitDirectory(fromRoot: string): boolean {
   return fromRoot.split(/[/\\]/).some((segment) => {
-    const name = segment.replace(/[. ]+$/, '').toLowerCase();
+    const name = withoutTrailingDotsAndSpaces(segment).toLowerCase();
 
     return name === '.git' || name === 'git~1';
   });
+}
+
+/**
+ * Drops trailing dots and spaces with a scan from the end. The regex `/[. ]+$/` does the same in
+ * quadratic time on a segment holding a long run of spaces followed by any other character, and the
+ * segment is workflow input.
+ */
+function withoutTrailingDotsAndSpaces(segment: string): string {
+  let end = segment.length;
+
+  while (end > 0 && (segment[end - 1] === '.' || segment[end - 1] === ' ')) {
+    end -= 1;
+  }
+
+  return segment.slice(0, end);
 }
 
 /**
