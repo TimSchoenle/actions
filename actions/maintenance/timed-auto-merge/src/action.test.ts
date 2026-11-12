@@ -87,6 +87,8 @@ function fakeApi(pullRequests: OpenPullRequest[]): TimedAutoMergeApi {
         },
       ],
       headOid: HEAD,
+      headRepository: 'owner/repo',
+      isCrossRepository: false,
       totalCount: 1,
     })),
     listOpenPullRequests: vi.fn(async () => pullRequests),

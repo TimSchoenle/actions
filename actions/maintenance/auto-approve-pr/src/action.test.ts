@@ -54,7 +54,13 @@ const signedCommit: CommitRecord = {
 function fakeApi(info: PullRequestInfo = validPr): AutoApproveApi & { approve: ReturnType<typeof vi.fn> } {
   return {
     approve: vi.fn(async () => {}),
-    fetchCommits: vi.fn(async () => ({ commits: [signedCommit], headOid: 'abc1234', totalCount: 1 })),
+    fetchCommits: vi.fn(async () => ({
+      commits: [signedCommit],
+      headOid: 'abc1234',
+      headRepository: 'owner/repo',
+      isCrossRepository: false,
+      totalCount: 1,
+    })),
     getPullRequest: vi.fn(async () => info),
   };
 }
@@ -123,7 +129,13 @@ describe('auto-approve-pr action', () => {
   it('fails with the API error when a request fails', async () => {
     const api: AutoApproveApi = {
       approve: vi.fn(async () => {}),
-      fetchCommits: vi.fn(async () => ({ commits: [signedCommit], headOid: 'abc1234', totalCount: 1 })),
+      fetchCommits: vi.fn(async () => ({
+        commits: [signedCommit],
+        headOid: 'abc1234',
+        headRepository: 'owner/repo',
+        isCrossRepository: false,
+        totalCount: 1,
+      })),
       getPullRequest: vi.fn(async () => {
         throw new Error('Bad credentials');
       }),
