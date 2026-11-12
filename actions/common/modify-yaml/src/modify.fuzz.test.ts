@@ -7,22 +7,24 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 
 /**
- * Independent oracle for the documented inference contract: YAML 1.2 core schema scalars
- * (decimal/float with exponent, unsigned hex/octal, .inf/.nan, booleans, null) plus the signed
- * hex/octal extension. Anything else stays a string.
+ * Independent oracle for the documented inference contract: a decimal number only when it writes back
+ * as exactly the text given (and, for an integer, is a safe integer), .inf/.nan in their YAML and
+ * JavaScript spellings, booleans and null. Anything else stays a string, so `1.10` is never written as
+ * `1.1` and `0123` never as `123`.
  *
  * Deliberately reimplemented rather than delegating to `inferValueType`, so a regression in the
  * implementation cannot make the tests agree with it.
  */
 function expectedInference(input: string): string | number | boolean | null {
-  const isNegated = input.startsWith('-');
-  const magnitude = isNegated ? input.slice(1) : input;
-
-  if (/^0x[\da-fA-F]+$/i.test(magnitude) || /^0o[0-7]+$/.test(magnitude)) {
-    return isNegated ? -Number(magnitude) : Number(magnitude);
+  const asNumber = Number(input);
+  if (
+    /^-?[\d.eE+-]+$/.test(input) &&
+    Number.isFinite(asNumber) &&
+    `${asNumber}` === input &&
+    (!Number.isInteger(asNumber) || Number.isSafeInteger(asNumber))
+  ) {
+    return asNumber;
   }
-  // eslint-disable-next-line security/detect-unsafe-regex
-  if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(input)) return Number(input);
   if (input === 'Infinity' || input === '+Infinity' || input === '.inf') return Infinity;
   if (input === '-Infinity' || input === '-.inf') return -Infinity;
   if (input === '.nan') return Number.NaN;
@@ -105,8 +107,8 @@ describe('modifyYaml Fuzzing', () => {
               resultValue = resultValue?.[segment];
             }
 
-            // 3. The written value is inferred, not stored verbatim, so the round-trip lands on the
-            // inferred scalar — `0x0` comes back as the number 0, `1e5` as 100000, and so on.
+            // 3. The written value is inferred, not stored verbatim: a number only when it writes back
+            // as the same text, so `1.10` and `0x0` come back as the strings they were.
             expect(resultValue).toEqual(expectedInference(newValue));
           });
         },
@@ -122,7 +124,8 @@ describe('Primitive Persistence Fuzzing', () => {
       fc.asyncProperty(
         fc.oneof(
           fc.integer(),
-          fc.float({ noNaN: true }), // YAML supports .nan but our regex might not. Let's focus on standard numbers.
+          // An integer past 2^53 is left out: it may round to a neighbour, so it stays a string by design.
+          fc.float({ noNaN: true }).filter((value) => !Number.isInteger(value) || Number.isSafeInteger(value)),
           fc.boolean(),
           fc.constant(null),
         ),
@@ -132,9 +135,10 @@ describe('Primitive Persistence Fuzzing', () => {
         ),
         async (originalValue, pathSegments) => {
           const keyPath = pathSegments.join('.');
-          // Simulate action input: everything comes in as string
-          // Special case: String(-0) is "0", but we want to test "-0" input preservation
-          const inputString = Object.is(originalValue, -0) ? '-0' : String(originalValue);
+          // Simulate action input: everything comes in as string. String(-0) is "0", which is written
+          // as 0; the text "-0" itself stays a string, because no number writes back as it.
+          const inputString = String(originalValue);
+          const expectedValue = Object.is(originalValue, -0) ? 0 : originalValue;
 
           // Initial file state: empty object or specific path
           const initialObj = {};
@@ -157,7 +161,7 @@ describe('Primitive Persistence Fuzzing', () => {
             let val = parse(await fs.readFile(filePath, 'utf-8'));
             for (const seg of pathSegments) val = val[seg];
 
-            expect(val).toBe(originalValue);
+            expect(val).toBe(expectedValue);
             if (originalValue !== null) {
               expect(typeof val).toBe(typeof originalValue);
             } else {

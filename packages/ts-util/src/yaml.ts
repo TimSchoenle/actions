@@ -65,25 +65,36 @@ export function formatValue(value: unknown): string {
   return String(value);
 }
 
+/** A decimal number as YAML writes one: optional minus, digits, optional fraction and exponent. */
+// eslint-disable-next-line security/detect-unsafe-regex
+const DECIMAL = /^-?\d+(\.\d+)?([eE][+-]?\d+)?$/;
+
 /**
- * Infers the type of a string value for YAML.
+ * Whether `text` is a number that writes back as exactly `text`.
+ *
+ * Anything else would change the value on the way to the file: `1.10` would become `1.1`, `0123` would
+ * become `123`, and an integer past 2^53 would round to a neighbour. Such text stays a string, which the
+ * serializer quotes.
  */
-export function inferValueType(newValue: string): string | number | boolean | null {
-  if (/^0x[\da-fA-F]+$/i.test(newValue)) {
-    return Number(newValue);
-  }
-  if (/^-0x[\da-fA-F]+$/i.test(newValue)) {
-    return -Number(newValue.substring(1));
-  }
-  if (/^0o[0-7]+$/.test(newValue)) {
-    return Number(newValue);
-  }
-  if (/^-0o[0-7]+$/.test(newValue)) {
-    return -Number(newValue.substring(1));
+function isLosslessNumber(text: string): boolean {
+  if (!DECIMAL.test(text)) {
+    return false;
   }
 
-  // eslint-disable-next-line security/detect-unsafe-regex
-  if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(newValue)) {
+  const value = Number(text);
+
+  return String(value) === text && (!Number.isInteger(value) || Number.isSafeInteger(value));
+}
+
+/**
+ * Infers the type of a string value for YAML.
+ *
+ * A number is inferred only when it writes back as the same text (see {@link isLosslessNumber}); hex,
+ * octal, exponent and leading-zero forms stay strings. `.inf`, `.nan`, `true`, `false` and `null` keep
+ * their YAML meaning.
+ */
+export function inferValueType(newValue: string): string | number | boolean | null {
+  if (isLosslessNumber(newValue)) {
     return Number(newValue);
   }
   if (newValue === 'Infinity' || newValue === '+Infinity' || newValue === '.inf') {
@@ -111,9 +122,9 @@ export function inferValueType(newValue: string): string | number | boolean | nu
  * Helper to generate context-aware YAML string using a temporary document.
  */
 export function generateYamlString(value: string | number | boolean | null): string {
-  // The serializer renders negative zero as `0`, dropping the sign. `inferValueType` preserves it, so
-  // without this a caller writing `-0` would silently get `0` back — the one number where JavaScript
-  // distinguishes a value the YAML round-trip does not.
+  // The serializer renders negative zero as `0`, dropping the sign, so a caller writing `-0` would
+  // silently get `0` back — the one number where JavaScript distinguishes a value the YAML round-trip
+  // does not.
   if (Object.is(value, -0)) {
     return '-0';
   }

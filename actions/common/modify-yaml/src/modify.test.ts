@@ -244,23 +244,18 @@ level1:
     expect(doc.count).toBe(42);
   });
 
-  // Regression: these all reach the file as numbers, not as the literal text that was passed in.
-  // The fuzz test's expectation used to cover only plain decimals, so `0x0` silently disagreed with
-  // the implementation until a seed happened to generate it.
-  it.each([
-    ['0x0', 0],
-    ['0xFF', 255],
-    ['-0x1f', -31],
-    ['0o777', 511],
-    ['1e5', 100_000],
-  ])('should infer %s as the number %s', async (input, expected) => {
-    await fs.writeFile(tmpFile, 'count: initial\n');
-    await modifyYaml(tmpFile, 'count', input);
-    const { parse } = await import('yaml');
-    const doc = parse(await fs.readFile(tmpFile, 'utf-8'));
-    expect(doc.count).toBe(expected);
-    expect(typeof doc.count).toBe('number');
-  });
+  // K1: these used to reach the file as numbers, so a tag of 1.10 deployed image 1.1. Text that no
+  // number writes back as is a version or an identifier, and stays exactly what was passed in.
+  it.each(['1.10', '1.0', '0123', '0x0', '0xFF', '-0x1f', '0o777', '1e5', '12e4567', '-0'])(
+    'should write %s as the string it is',
+    async (input) => {
+      await fs.writeFile(tmpFile, 'image:\n  tag: initial\n');
+      await modifyYaml(tmpFile, 'image.tag', input);
+      const { parse } = await import('yaml');
+      const doc = parse(await fs.readFile(tmpFile, 'utf-8'));
+      expect(doc.image.tag).toBe(input);
+    },
+  );
 
   it('should handle array index access', async () => {
     await fs.writeFile(tmpFile, 'items:\n  - one\n  - two\n');
@@ -386,17 +381,19 @@ describe('inferValueType', () => {
     expect(inferValueType('-10')).toBe(-10);
   });
 
-  it('should infer floats, hex, octal, infinity, and NaN', () => {
+  it('should infer floats, infinity, and NaN', () => {
     expect(inferValueType('12.34')).toBe(12.34);
     expect(inferValueType('-0.5')).toBe(-0.5);
-    expect(inferValueType('1e10')).toBe(1e10);
-    expect(inferValueType('-1.5E-5')).toBe(-1.5e-5);
-    expect(inferValueType('0xFF')).toBe(255);
-    expect(inferValueType('-0x1')).toBe(-1);
-    expect(inferValueType('0o777')).toBe(511);
     expect(inferValueType('.inf')).toBe(Infinity);
     expect(inferValueType('-.inf')).toBe(-Infinity);
     expect(inferValueType('.nan')).toBeNaN();
+  });
+
+  // A number is inferred only when it writes back as the same text; anything else would change the value.
+  it('should keep number-like strings that no number writes back as', () => {
+    for (const value of ['1.10', '1.0', '0123', '1e10', '-1.5E-5', '0xFF', '-0x1', '0o777', '12e4567', '-0']) {
+      expect(inferValueType(value)).toBe(value);
+    }
   });
 
   it('should infer booleans', () => {
@@ -411,10 +408,6 @@ describe('inferValueType', () => {
   it('should keep other strings as is', () => {
     expect(inferValueType('hello')).toBe('hello');
     expect(inferValueType('123a')).toBe('123a');
-    expect(inferValueType('0123')).toBe(123); // Standard JS Number('0123') is 123. If checking for OCTAL, regex might differ? Regex `^\d+` Matches 0123.
-    // Wait, yaml 1.2 doesn't octal with leading 0 usually?
-    // JS Number('0123') -> 123.
-    // If user expected string '0123', strict logic might be needed, but current logic is Number().
   });
 });
 
