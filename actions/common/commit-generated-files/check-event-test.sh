@@ -17,7 +17,7 @@ run_case() {
   env -i PATH="${PATH}" GITHUB_OUTPUT="${scratch}/output" GITHUB_STEP_SUMMARY="${scratch}/summary" \
     EVENT_NAME=workflow_run RUN_EVENT=pull_request RUN_CONCLUSION=success \
     HEAD_REPOSITORY=owner/repo REPOSITORY=owner/repo HEAD_BRANCH=feature DEFAULT_BRANCH=main \
-    HEAD_AUTHOR_EMAIL=someone@example.com \
+    HEAD_AUTHOR_EMAIL=someone@example.com EXCLUDED_BRANCHES= \
     "$@" bash "${script}" > /dev/null 2>&1 || status=$?
 
   local proceed outcome fork
@@ -52,6 +52,17 @@ run_case 'no head branch' 0 false skipped '' HEAD_BRANCH=
 run_case 'cancelled run' 0 false skipped '' RUN_CONCLUSION=cancelled
 run_case 'skipped run' 0 false skipped '' RUN_CONCLUSION=skipped
 run_case 'timed out run' 0 false skipped '' RUN_CONCLUSION=timed_out
+run_case 'branch named like a full ref' 0 false skipped '' HEAD_BRANCH=refs/heads/main
+run_case 'fork branch named like a full ref' 0 false skipped '' HEAD_REPOSITORY=someone/repo HEAD_BRANCH=refs/heads/main
+run_case 'branch git refuses' 0 false skipped '' HEAD_BRANCH='a..b'
+run_case 'branch starting with a dash' 0 false skipped '' HEAD_BRANCH='-x'
+run_case 'excluded branch, exact' 0 false skipped '' HEAD_BRANCH=develop EXCLUDED_BRANCHES='develop'
+run_case 'excluded branch, glob across a slash' 0 false skipped '' HEAD_BRANCH=release/1.x/hotfix \
+  EXCLUDED_BRANCHES=$'develop\nrelease/*'
+run_case 'branch outside the excluded patterns' 0 true '' false HEAD_BRANCH=feature/release EXCLUDED_BRANCHES='release/* develop'
+run_case 'excluded patterns do not apply to a fork' 0 true '' true HEAD_REPOSITORY=someone/repo HEAD_BRANCH=develop \
+  EXCLUDED_BRANCHES='develop'
+run_case 'a pattern is not expanded against files' 0 true '' false HEAD_BRANCH=feature EXCLUDED_BRANCHES='*.sh'
 
 if [ "${failures}" -ne 0 ]; then
   echo "::error::${failures} event filter case(s) failed."

@@ -13,6 +13,30 @@ if [ "${EVENT_NAME}" != "workflow_run" ]; then
   exit 1
 fi
 
+# Whether the branch matches one of EXCLUDED_BRANCHES: whitespace-separated shell patterns, in which
+# * also matches "/". Pathname expansion is off while splitting, so a pattern is never matched
+# against files in the working directory.
+is_excluded() {
+  local patterns pattern
+  set -f
+  read -r -d '' -a patterns <<< "${EXCLUDED_BRANCHES:-}" || true
+  set +f
+  for pattern in "${patterns[@]}"; do
+    # shellcheck disable=SC2053 # the right-hand side is a pattern on purpose
+    if [[ "${HEAD_BRANCH}" == ${pattern} ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+# Whether the branch is a plain branch name. A name starting with refs/ passes the string comparison
+# with the default branch below while it may resolve to that branch on the write, and any name
+# git check-ref-format --branch refuses is no branch the commit can address safely.
+is_plain_branch() {
+  [[ "${HEAD_BRANCH}" != refs/* ]] && git check-ref-format --branch "${HEAD_BRANCH}" > /dev/null 2>&1
+}
+
 fork=false
 if [ -n "${HEAD_REPOSITORY}" ] && [ "${HEAD_REPOSITORY}" != "${REPOSITORY}" ]; then
   fork=true
@@ -30,8 +54,12 @@ elif [ -z "${HEAD_REPOSITORY}" ]; then
   reason="the run names no head repository"
 elif [ -z "${HEAD_BRANCH}" ]; then
   reason="the run names no branch"
+elif ! is_plain_branch; then
+  reason="the branch name is not a plain branch name git accepts"
 elif [ "${fork}" = "false" ] && [ "${HEAD_BRANCH}" = "${DEFAULT_BRANCH}" ]; then
   reason="the run is for the default branch"
+elif [ "${fork}" = "false" ] && is_excluded; then
+  reason="the branch matches excluded_branches"
 elif [ "${fork}" = "true" ] && [[ "${HEAD_AUTHOR_EMAIL:-}" == *"[bot]@users.noreply.github.com" ]]; then
   reason="the fork's head commit is already a bot's"
 elif [ "${RUN_CONCLUSION}" != "success" ] && [ "${RUN_CONCLUSION}" != "failure" ]; then
