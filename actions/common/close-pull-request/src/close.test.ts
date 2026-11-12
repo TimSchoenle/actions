@@ -17,8 +17,8 @@ function fakeApi(existingPullRequests: number[] = [42]): PullRequestApi {
   return {
     closePullRequest: vi.fn(async () => undefined),
     commentOnPullRequest: vi.fn(async () => undefined),
-    pullRequestExists: vi.fn(async (_repository, pullRequestNumber: number) =>
-      existingPullRequests.includes(pullRequestNumber),
+    pullRequestState: vi.fn(async (_repository, pullRequestNumber: number) =>
+      existingPullRequests.includes(pullRequestNumber) ? ('open' as const) : undefined,
     ),
   };
 }
@@ -84,7 +84,7 @@ describe('closePullRequestIfPresent', () => {
       commentOnPullRequest: vi.fn(async () => {
         order.push('comment');
       }),
-      pullRequestExists: vi.fn(async () => true),
+      pullRequestState: vi.fn(async () => 'open' as const),
     };
 
     const result = await closePullRequestIfPresent(recording, {
@@ -96,6 +96,21 @@ describe('closePullRequestIfPresent', () => {
     expect(result).toEqual({ closed: true, commented: true, pullRequestNumber: 42 });
     expect(order).toEqual(['comment', 'close']);
     expect(recording.commentOnPullRequest).toHaveBeenCalledWith(coordinates, 42, 'Superseded by #43');
+  });
+
+  // P14g: a re-run commented and PATCHed a pull request it had already closed.
+  it('reports an already closed pull request as closed, without commenting or closing it again', async () => {
+    const api: PullRequestApi = { ...fakeApi(), pullRequestState: vi.fn(async () => 'closed' as const) };
+
+    const result = await closePullRequestIfPresent(api, {
+      comment: 'Superseded by #43',
+      pullRequestId: '42',
+      repository: 'owner/repo',
+    });
+
+    expect(result).toEqual({ closed: true, commented: false, pullRequestNumber: 42 });
+    expect(api.commentOnPullRequest).not.toHaveBeenCalled();
+    expect(api.closePullRequest).not.toHaveBeenCalled();
   });
 
   it('reports a pull request that does not exist as not closed, without calling the API further', async () => {
@@ -146,7 +161,7 @@ describe('closePullRequestIfPresent', () => {
   it('propagates a probe failure instead of reporting a missing pull request', async () => {
     const failing: PullRequestApi = {
       ...fakeApi(),
-      pullRequestExists: vi.fn(async () => {
+      pullRequestState: vi.fn(async () => {
         throw new Error('Bad credentials');
       }),
     };
@@ -161,7 +176,7 @@ describe('closePullRequestIfPresent', () => {
       closePullRequestIfPresent(api, { comment: '', pullRequestId: '42', repository: 'not-a-repo' }),
     ).rejects.toThrow("Invalid repository 'not-a-repo'");
 
-    expect(api.pullRequestExists).not.toHaveBeenCalled();
+    expect(api.pullRequestState).not.toHaveBeenCalled();
   });
 
   it('rejects an invalid pull request id before making any API call', async () => {
@@ -169,6 +184,6 @@ describe('closePullRequestIfPresent', () => {
       "Invalid pull_request_id 'abc'. Expected a positive integer.",
     );
 
-    expect(api.pullRequestExists).not.toHaveBeenCalled();
+    expect(api.pullRequestState).not.toHaveBeenCalled();
   });
 });

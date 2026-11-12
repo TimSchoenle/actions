@@ -45,17 +45,17 @@ describe('createPullRequestApi', () => {
     octokit = mockOctokit();
   });
 
-  it('reports an existing pull request', async () => {
-    octokit.rest.pulls.get.mockResolvedValue({ data: { number: 42, state: 'open' } });
+  it.each(['open', 'closed'])('reports the state of an existing %s pull request', async (state) => {
+    octokit.rest.pulls.get.mockResolvedValue({ data: { number: 42, state } });
 
-    await expect(createPullRequestApi('token').pullRequestExists(repository, 42)).resolves.toBe(true);
+    await expect(createPullRequestApi('token').pullRequestState(repository, 42)).resolves.toBe(state);
     expect(octokit.rest.pulls.get).toHaveBeenCalledWith({ ...repository, pull_number: 42 });
   });
 
   it('translates a 404 into a missing pull request', async () => {
     octokit.rest.pulls.get.mockRejectedValue(httpError(404, 'Not Found'));
 
-    await expect(createPullRequestApi('token').pullRequestExists(repository, 42)).resolves.toBe(false);
+    await expect(createPullRequestApi('token').pullRequestState(repository, 42)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -65,13 +65,13 @@ describe('createPullRequestApi', () => {
   ])('propagates a %i response instead of reporting a missing pull request', async (status, message) => {
     octokit.rest.pulls.get.mockRejectedValue(httpError(status, message));
 
-    await expect(createPullRequestApi('token').pullRequestExists(repository, 42)).rejects.toThrow(message);
+    await expect(createPullRequestApi('token').pullRequestState(repository, 42)).rejects.toThrow(message);
   });
 
   it('propagates a transport error without a status', async () => {
     octokit.rest.pulls.get.mockRejectedValue(new Error('socket hang up'));
 
-    await expect(createPullRequestApi('token').pullRequestExists(repository, 42)).rejects.toThrow('socket hang up');
+    await expect(createPullRequestApi('token').pullRequestState(repository, 42)).rejects.toThrow('socket hang up');
   });
 
   it('closes the pull request by setting its state', async () => {

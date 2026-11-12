@@ -38,8 +38,8 @@ function fakeApi(existingPullRequests: number[] = [42]): PullRequestApi {
   return {
     closePullRequest: vi.fn(async () => undefined),
     commentOnPullRequest: vi.fn(async () => undefined),
-    pullRequestExists: vi.fn(async (_repository, pullRequestNumber: number) =>
-      existingPullRequests.includes(pullRequestNumber),
+    pullRequestState: vi.fn(async (_repository, pullRequestNumber: number) =>
+      existingPullRequests.includes(pullRequestNumber) ? ('open' as const) : undefined,
     ),
   };
 }
@@ -132,7 +132,7 @@ describe('close-pull-request action', () => {
   it('fails the step on a probe error that is not a missing pull request', async () => {
     const api: PullRequestApi = {
       ...fakeApi(),
-      pullRequestExists: vi.fn(async () => {
+      pullRequestState: vi.fn(async () => {
         throw new Error('Bad credentials');
       }),
     };
@@ -152,7 +152,7 @@ describe('close-pull-request action', () => {
     expect(core.setFailed).toHaveBeenCalledWith(
       `Invalid pull_request_id '${pull_request_id}'. Expected a positive integer.`,
     );
-    expect(api.pullRequestExists).not.toHaveBeenCalled();
+    expect(api.pullRequestState).not.toHaveBeenCalled();
     expect(core.setOutput).not.toHaveBeenCalled();
   });
 
