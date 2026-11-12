@@ -222,13 +222,11 @@ function outermost(paths: readonly string[]): string[] {
  *
  * @param root - absolute path of the repository root
  * @param source - the target's source
- * @param workflowFile - repository-relative path of the generated workflow that holds its jobs
  * @param packages - the result of `workspacePackages`, passed in because it walks the repository
  */
 export function deriveTargetInputs(
   root: string,
   source: VerifySource,
-  workflowFile: string,
   packages: ReadonlyMap<string, string>,
 ): TargetInputs {
   const own = targetAction(root, source.target);
@@ -246,7 +244,6 @@ export function deriveTargetInputs(
       ...(builds || source.e2e !== undefined ? scriptImportClosure(root, SHARED_BUILD_SCRIPT, packages) : []),
       ...(source.e2e === undefined ? [] : E2E_RUNNER_FILES),
       source.file,
-      workflowFile,
       ...source.extraInputs,
     ]),
   };

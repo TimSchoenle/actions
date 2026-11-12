@@ -117,9 +117,16 @@ the graph the release uses:
 - the shared build script `scripts/build-action.ts` and every file and workspace package it imports
 - for a target with cases, the harness package `packages/e2e` and the files the end-to-end run reads
   first: `vitest.e2e.config.ts`, `vitest.e2e.setup.ts`, `vitest.aliases.ts` and the root `package.json`
-- its source file, its shard file and its `extra-inputs`
+- its source file and its `extra-inputs`
 
-`plan` intersects those with the changed files from git, with no REST call:
+Its shard file is not an input: the shard file changes whenever any target in it changes, so it
+would select every shard-mate. Instead `plan.json` records a SHA-256 of each target's rendered jobs,
+pins resolved, and one of the `plan`, `install` and `build` jobs of `verify.yaml`.
+
+`plan` intersects the inputs with the changed files from git, and compares the hashes with the plan
+file of the base commit (`git show <base>:.github/verify/plan.json`), with no REST call. A target also
+runs when its jobs hash changed or is new; every target that installs or builds runs when the shared
+jobs hash changed:
 
 | Event               | Changed files                        | Targets                                               |
 | ------------------- | ------------------------------------ | ----------------------------------------------------- |
@@ -128,8 +135,9 @@ the graph the release uses:
 | `schedule`          | not compared                         | the targets with `schedule: true`                     |
 | `workflow_dispatch` | not compared                         | every target                                          |
 
-A change to `verify.yaml`, to `scripts/lib/verify/` or to `scripts/verify-plan.ts` selects every target.
-A diff git cannot compute selects every target. Changed names are read with `git diff -z`, so a name
+A change to the planner (`scripts/lib/verify/affected.ts`, `plan-step.ts`, `target-inputs.ts` or
+`scripts/verify-plan.ts`) selects every target. A diff git cannot compute, or a base plan git cannot
+read, selects every target. Changed names are read with `git diff -z`, so a name
 with a non-ASCII character or a leading space matches its inputs as committed.
 `**/CHANGELOG.md` and each action's top-level `README.md` select nothing.
 
