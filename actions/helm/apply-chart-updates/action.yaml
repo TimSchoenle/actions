@@ -3,7 +3,7 @@ description: "Applies a set of templated image updates to a Helm chart's values.
   preserving comments and structure. Every image carries its own version and digest."
 inputs:
   chart-path:
-    description: 'Path of the chart inside the workspace (e.g. charts/my-app). Chart.yaml and values.yaml are resolved beneath it.'
+    description: 'Path of the chart inside the workspace (e.g. charts/my-app). Chart.yaml and values.yaml are resolved beneath it. It must not contain whitespace, because the files output is a space-separated file pattern.'
     required: true
   images:
     description: 'JSON object mapping a dot-notation key in values.yaml to that image''s own variables,
