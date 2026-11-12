@@ -1,0 +1,15 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "bun-setup-cached-fixture",
+      "dependencies": {
+        "fixture-dep": "file:./dep",
+      },
+    },
+  },
+  "packages": {
+    "fixture-dep": ["fixture-dep@file:dep", {}],
+  }
+}
