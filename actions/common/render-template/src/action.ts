@@ -1,4 +1,6 @@
-import { quoteForLog, resolveRealWithinWorkspace, runAction, workspaceRoot } from 'actions-util';
+import { lstat } from 'node:fs/promises';
+
+import { quoteForLog, resolveRealWithinWorkspace, runAction, UnsafePathError, workspaceRoot } from 'actions-util';
 import * as core from 'actions-util/core';
 
 import { generateFile } from './generate.js';
@@ -15,6 +17,26 @@ import { getBooleanInput, getInput, setOutput } from './generated/action-io.js';
  * wrote them is what keeps every downstream error message about `README.hbs` and not about
  * `/home/runner/work/repo/repo/README.hbs`.
  */
+/**
+ * Fails when the output is a symbolic link. Writing goes through a link, so even one that stays in the
+ * workspace makes the render overwrite a file other than the one named; a missing output is fine.
+ */
+async function refuseLinkedOutput(resolved: string, outputPath: string): Promise<void> {
+  const stats = await lstat(resolved).catch((error: unknown) => {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return undefined;
+    }
+
+    throw error;
+  });
+
+  if (stats?.isSymbolicLink() === true) {
+    throw new UnsafePathError(
+      `output is a symbolic link; refusing to write through it: ${quoteForLog(outputPath)}. Commit the file itself.`,
+    );
+  }
+}
+
 async function assertPathsWithinWorkspace(
   templatePath: string,
   outputPath: string,
@@ -23,7 +45,7 @@ async function assertPathsWithinWorkspace(
   const workspace = workspaceRoot();
 
   await resolveRealWithinWorkspace(templatePath, workspace, 'template');
-  await resolveRealWithinWorkspace(outputPath, workspace, 'output');
+  await refuseLinkedOutput(await resolveRealWithinWorkspace(outputPath, workspace, 'output'), outputPath);
 
   // An empty `partials-dir` means "no partials", which is not a path at all.
   if (partialsDir.trim() !== '') {

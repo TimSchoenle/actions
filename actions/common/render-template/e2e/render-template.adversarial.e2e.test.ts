@@ -220,6 +220,22 @@ describe('render-template under hostile input', () => {
 
       await expect(workspace.read(OUTPUT)).resolves.toBe('shared\n');
     });
+
+    // The output is the exception: writing goes through a link, so an output linked to another file
+    // overwrites that file. The attack this blocks commits README.md as a link to .git/config and
+    // renders a core.fsmonitor command into it; a link to an ordinary file is refused just the same.
+    it.each([
+      { name: 'into .git', target: '.git/config', reason: /output resolves into a \.git directory/ },
+      { name: 'to another file in the workspace', target: 'docs/other.md', reason: /output is a symbolic link/ },
+    ])('refuses an output that links $name, and leaves the target untouched', async ({ target, reason }) => {
+      workspace = await Workspace.create({ [TEMPLATE]: '[core]\n\tfsmonitor = touch pwned\n', [target]: 'original\n' });
+      await workspace.symlink(OUTPUT, path.join(workspace.path, target));
+
+      const result = await render({}, 'failure');
+
+      expectCleanRejection(result, reason);
+      await expect(workspace.read(target), 'the link target must be untouched').resolves.toBe('original\n');
+    });
   });
 
   describe('workflow command injection', () => {

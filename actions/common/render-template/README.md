@@ -216,6 +216,14 @@ Templates and partials are read with their line endings normalized to LF and a l
 output is written the same way. Neither is content, but both would otherwise reach the output file and make a checkout on
 a different machine look like a change.
 
+## Paths and symbolic links
+
+`template`, `output` and `partials-dir` must stay inside the workspace, and none of them may reach into a `.git`
+directory, directly or through a symbolic link. A template or partials directory that links to another place inside the
+workspace is followed. The output may not be a link at all, because writing goes through it: a `README.md` committed as a
+link to another file makes the render overwrite that file instead, and the step fails before rendering anything. Commit
+the output as a regular file.
+
 <!-- docs:generated reference -->
 ## Reference
 
