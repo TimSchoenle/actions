@@ -88,6 +88,20 @@ describe('timed-auto-merge', () => {
     await expect(scratch.reviewStates(number)).resolves.toEqual([]);
   });
 
+  it('skips a pull request opened by an account outside pr_author_ids before reading its commits', async () => {
+    const { branch, number } = await openPullRequest('foreign-author');
+
+    const result = await run({
+      branch_pattern: `${branch}%`,
+      minimum_age: '0s',
+      pr_author_ids: '1',
+      time_elapsed: '0s',
+    });
+
+    expect(JSON.parse(result.outputs.skipped ?? '')).toEqual([{ number, reason: 'author-untrusted' }]);
+    await expect(scratch.reviewStates(number)).resolves.toEqual([]);
+  });
+
   it('refuses a pull request whose commits are not by a trusted author', async () => {
     const { branch, number } = await openPullRequest('untrusted');
 
@@ -95,8 +109,10 @@ describe('timed-auto-merge', () => {
       branch_pattern: `${branch}%`,
       minimum_age: '0s',
       time_elapsed: '0s',
-      // A real account that is not the one that wrote the fixture's commit.
+      // A real account that is not the one that wrote the fixture's commit. The pull request's own
+      // author stays accepted, so the commit check is the one that refuses it.
       trusted_authors: '1',
+      pr_author_ids: authorId,
     });
 
     expect(JSON.parse(result.outputs.skipped ?? '')).toEqual([{ number, reason: 'commits-unverified' }]);

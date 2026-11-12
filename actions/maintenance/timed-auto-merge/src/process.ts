@@ -9,9 +9,16 @@ import type { RepositoryCoordinates } from 'actions-util';
 export interface TimedAutoMergeRequest {
   repository: RepositoryCoordinates;
   matcher: BranchMatcher;
-  /** How long a pull request must have been open, in milliseconds. */
+  /**
+   * The soak time, in milliseconds: how long ago the pull request must have been opened and its
+   * newest commit made.
+   */
   minimumOpenMs: number;
   trustedAuthorIds: readonly number[];
+  /** Database IDs of the accounts a pull request may be opened by. */
+  prAuthorIds: readonly number[];
+  /** The base branch a pull request must target, or empty for any. */
+  baseBranch: string;
   mergeMethod: MergeMethod;
   approveMessage: string;
   /** The current time in epoch milliseconds, injected so tests need no clock. */
@@ -22,7 +29,14 @@ export interface TimedAutoMergeRequest {
  * Why a matching pull request was left alone. None of these is an error: each is a check that did
  * not pass, and the next scheduled run looks at the pull request again.
  */
-export type SkipReason = 'commits-unverified' | 'draft' | 'fork' | 'head-moved' | 'too-young';
+export type SkipReason =
+  | 'author-untrusted'
+  | 'base-mismatch'
+  | 'commits-unverified'
+  | 'draft'
+  | 'fork'
+  | 'head-moved'
+  | 'too-young';
 
 interface OutcomeBase {
   number: number;
@@ -78,9 +92,24 @@ function formatAge(milliseconds: number): string {
   return hours < 48 ? `${hours}h` : `${Math.floor(hours / 24)}d`;
 }
 
+/** Parses a timestamp GitHub returned, naming `what` it was when it cannot be read. */
+function parseTimestamp(value: string, what: string): number {
+  const milliseconds = Date.parse(value);
+
+  if (Number.isNaN(milliseconds)) {
+    throw new TypeError(`GitHub returned an unreadable ${what} ${JSON.stringify(value)}.`);
+  }
+
+  return milliseconds;
+}
+
 /**
- * Checks that need no further API call: the pull request is from this repository, ready for review
- * and old enough.
+ * Checks that need no further API call: the pull request is from this repository, opened by an
+ * accepted account, into the expected base, ready for review and opened long enough ago.
+ *
+ * The age checked here is from creation only, which no later commit can make older. It keeps the
+ * commit query off a pull request that is too young anyway; the head age is checked after the commits
+ * are read.
  *
  * A fork is never eligible. Its branch name is chosen by whoever owns the fork, so the branch pattern
  * says nothing about it, and this action exists to merge branches that automation in the base
@@ -93,16 +122,23 @@ function precheck(pullRequest: OpenPullRequest, request: TimedAutoMergeRequest):
     return skipped(pullRequest, 'fork', `head repository is ${pullRequest.headRepoFullName ?? 'a deleted fork'}`);
   }
 
+  if (pullRequest.authorId === null || !request.prAuthorIds.includes(pullRequest.authorId)) {
+    return skipped(
+      pullRequest,
+      'author-untrusted',
+      `opened by ${pullRequest.authorId === null ? 'a deleted account' : String(pullRequest.authorId)}`,
+    );
+  }
+
+  if (request.baseBranch !== '' && pullRequest.baseRef !== request.baseBranch) {
+    return skipped(pullRequest, 'base-mismatch', `targets ${pullRequest.baseRef}, not ${request.baseBranch}`);
+  }
+
   if (pullRequest.draft) {
     return skipped(pullRequest, 'draft', 'pull request is a draft');
   }
 
-  const createdMs = Date.parse(pullRequest.createdAt);
-
-  if (Number.isNaN(createdMs)) {
-    throw new TypeError(`GitHub returned an unreadable creation time ${JSON.stringify(pullRequest.createdAt)}.`);
-  }
-
+  const createdMs = parseTimestamp(pullRequest.createdAt, 'creation time');
   const ageMs = request.nowMs - createdMs;
 
   if (ageMs < request.minimumOpenMs) {
@@ -158,6 +194,19 @@ async function processOne(
     const reasons = verification.failures.map((failure) => `${failure.oid}: ${failure.reasons.join('; ')}`);
 
     return skipped(pullRequest, 'commits-unverified', reasons.join(' | '));
+  }
+
+  // Checked only once every commit is verified: the committer sets the date, so it is a trusted
+  // account's statement only then. A fresh head on an old pull request waits the full time again.
+  const newestMs = Math.max(...commits.map((commit) => parseTimestamp(commit.committedDate, 'commit date')));
+  const headAgeMs = request.nowMs - newestMs;
+
+  if (headAgeMs < request.minimumOpenMs) {
+    return skipped(
+      pullRequest,
+      'too-young',
+      `newest commit is ${formatAge(Math.max(headAgeMs, 0))} old, needs ${formatAge(request.minimumOpenMs)}`,
+    );
   }
 
   await api.approve(request.repository, pullRequest.number, pullRequest.headSha, request.approveMessage);

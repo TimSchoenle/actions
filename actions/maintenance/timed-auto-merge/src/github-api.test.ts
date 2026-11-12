@@ -32,13 +32,14 @@ const repository = { owner: 'owner', repo: 'repo' };
 
 function listItem(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
-    base: { repo: { full_name: 'owner/repo' } },
+    base: { ref: 'main', repo: { full_name: 'owner/repo' } },
     created_at: '2026-10-20T08:00:00Z',
     draft: false,
     head: { ref: 'release-please--branches--main', repo: { full_name: 'owner/repo' }, sha: HEAD },
     html_url: 'https://github.com/owner/repo/pull/7',
     node_id: 'PR_kwDO',
     number: 7,
+    user: { id: 29_139_614, login: 'renovate[bot]' },
     ...overrides,
   };
 }
@@ -72,6 +73,8 @@ describe('createTimedAutoMergeApi', () => {
 
       await expect(createTimedAutoMergeApi('token').listOpenPullRequests(repository)).resolves.toEqual([
         {
+          authorId: 29_139_614,
+          baseRef: 'main',
           baseRepoFullName: 'owner/repo',
           createdAt: '2026-10-20T08:00:00Z',
           draft: false,
@@ -92,6 +95,14 @@ describe('createTimedAutoMergeApi', () => {
 
       expect(pullRequest.headRepoFullName).toBeNull();
       expect(pullRequest.draft).toBe(false);
+    });
+
+    it('reads a deleted author as a null author ID', async () => {
+      octokit.paginate.mockResolvedValue([listItem({ user: null })]);
+
+      const [pullRequest] = await createTimedAutoMergeApi('token').listOpenPullRequests(repository);
+
+      expect(pullRequest.authorId).toBeNull();
     });
   });
 
