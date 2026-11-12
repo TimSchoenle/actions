@@ -3,7 +3,7 @@ description: 'Verify the head branch of a pull request matches a pattern and che
 
 inputs:
   branch_pattern:
-    description: 'Regex pattern to match branch names (e.g. "^release-please--branches--.*$"). POSIX extended regex syntax, unanchored and case-sensitive. An empty pattern skips the check.'
+    description: 'Regex pattern to match branch names (e.g. "^release-please--branches--.*$"). POSIX extended regex syntax, unanchored and case-sensitive. An empty pattern fails the step; pass ".*" to accept any branch name.'
     required: true
   reject_forks:
     description: 'Reject PRs from forked repositories. When true, only PRs from branches in the same repository will be approved.'
