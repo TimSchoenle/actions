@@ -30,6 +30,17 @@ function report(result: CommitChangesResult): void {
 }
 
 /**
+ * One path per line of `literal_paths`, kept as written apart from a Windows line ending. Blank lines
+ * are skipped, so a block scalar's trailing newline adds nothing.
+ */
+export function parseLiteralPaths(value: string): string[] {
+  return value
+    .split('\n')
+    .map((line) => line.replace(/\r$/, ''))
+    .filter((line) => line.trim() !== '');
+}
+
+/**
  * Reads the action inputs, commits the matching working-tree changes and publishes the results.
  *
  * @param overrides injection seam for tests; each collaborator defaults to the real git executable,
@@ -44,6 +55,7 @@ export function run(overrides: Partial<CommitChangesDeps> = {}): Promise<void> {
     const repository = getInput(ActionInput.repository);
     const branch = getInput(ActionInput.branch);
     const filePattern = getInput(ActionInput.file_pattern);
+    const literalPaths = parseLiteralPaths(getInput(ActionInput.literal_paths));
     const expectedHeadSha = getInput(ActionInput.expected_head_sha);
 
     const deps: CommitChangesDeps = {
@@ -52,7 +64,14 @@ export function run(overrides: Partial<CommitChangesDeps> = {}): Promise<void> {
       workspace: overrides.workspace ?? createWorkspace(),
     };
 
-    const result = await commitChanges(deps, { branch, expectedHeadSha, filePattern, message, repository });
+    const result = await commitChanges(deps, {
+      branch,
+      expectedHeadSha,
+      filePattern,
+      literalPaths,
+      message,
+      repository,
+    });
 
     report(result);
   });

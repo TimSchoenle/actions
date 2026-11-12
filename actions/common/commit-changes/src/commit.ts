@@ -6,6 +6,7 @@ import { classifyChanges, parseChangedPaths } from './changes.js';
 import type { WorkspaceReader } from './changes.js';
 import type { Git } from './git.js';
 import type { CommitApi } from 'actions-util/commit-on-branch';
+import type { Pathspecs } from 'actions-util/patch';
 
 /** The collaborators {@link commitChanges} drives, each faked independently in tests. */
 export interface CommitChangesDeps {
@@ -26,6 +27,11 @@ export interface CommitChangesRequest {
   message: string;
   /** Space-separated `file_pattern` scoping which changes are committed. */
   filePattern: string;
+  /**
+   * Paths taken literally, whitespace and glob characters included, in place of {@link filePattern}.
+   * Empty or absent uses `filePattern`.
+   */
+  literalPaths?: readonly string[];
 }
 
 /**
@@ -46,6 +52,28 @@ export interface CommitChangesResult {
   commitUrl?: string;
   /** Where the expected head came from, when a commit was attempted. */
   expectedHeadSource?: ExpectedHeadSource;
+}
+
+/**
+ * The pathspecs scoping the commit: each literal path as one `:(literal)` pathspec when any is given,
+ * otherwise `file_pattern`, which splits on whitespace and so cannot name a path that contains a space.
+ *
+ * @throws when both are set, since one of them would be ignored.
+ */
+function pathspecsFor(request: CommitChangesRequest): Pathspecs {
+  const literalPaths = request.literalPaths ?? [];
+
+  if (literalPaths.length === 0) {
+    return buildPathspecs(request.filePattern);
+  }
+
+  if (request.filePattern !== '' && request.filePattern !== '.') {
+    throw new Error(
+      `Set file_pattern or literal_paths, not both; got file_pattern ${JSON.stringify(request.filePattern)}.`,
+    );
+  }
+
+  return { specs: literalPaths.map((literalPath) => `:(literal)${literalPath}`), useFilter: true };
 }
 
 /**
@@ -101,10 +129,10 @@ export async function commitChanges(
   }
 
   const coordinates = parseRepository(request.repository);
+  const { specs, useFilter } = pathspecsFor(request);
 
   await deps.git.ignoreFileModeChanges();
 
-  const { specs, useFilter } = buildPathspecs(request.filePattern);
   const status = await deps.git.status(useFilter ? specs : undefined);
   const changedPaths = parseChangedPaths(status);
   const hasChanges = changedPaths.length > 0;
