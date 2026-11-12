@@ -79,6 +79,13 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 | `*.blob.core.windows.net:443`         | the Rust cache                                                  |
 <!-- /docs:generated egress -->
 
+## Cache
+
+`actions-rust-lang/setup-rust-toolchain` restores the Rust cache on every run but saves it only on the default branch,
+and on a schedule, which always runs there. GitHub scopes a cache to the ref that saved it, so a cache saved from a
+pull request could not be restored on the default branch, yet it counted against the repository's cache quota and
+evicted the default branch's entries.
+
 <!-- docs:generated reference -->
 ## Reference
 
