@@ -1,3 +1,7 @@
+import { mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+
 import * as core from 'actions-util/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -37,21 +41,29 @@ function outputs(): Record<string, string> {
   return Object.fromEntries(vi.mocked(core.setOutput).mock.calls as [string, string][]);
 }
 
+let workspace: string;
+let outside: string;
+
 describe('modify-yaml action', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    workspace = realpathSync(mkdtempSync(path.join(tmpdir(), 'modify-yaml-workspace-')));
+    outside = realpathSync(mkdtempSync(path.join(tmpdir(), 'modify-yaml-outside-')));
+    vi.stubEnv('GITHUB_WORKSPACE', workspace);
     setInputs();
     vi.mocked(modifyYaml).mockResolvedValue('1.0.0');
   });
 
   afterEach(() => {
     vi.unstubAllEnvs();
+    rmSync(workspace, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
   });
 
   it('applies the change and publishes both outputs', async () => {
     await run();
 
-    expect(modifyYaml).toHaveBeenCalledWith('config.yaml', 'version', '2.0.0');
+    expect(modifyYaml).toHaveBeenCalledWith(path.join(workspace, 'config.yaml'), 'version', '2.0.0');
     expect(outputs()).toEqual({ 'new-value': '2.0.0', 'old-value': '1.0.0' });
     expect(core.setFailed).not.toHaveBeenCalled();
   });
@@ -82,5 +94,38 @@ describe('modify-yaml action', () => {
 
     expect(core.setFailed).toHaveBeenCalledWith('config.yaml: not found');
     expect(core.setOutput).not.toHaveBeenCalled();
+  });
+
+  // The action reads and rewrites the file, so a committed link or a `..` path would both leak the
+  // target into the old-value output and overwrite it.
+  describe('workspace containment', () => {
+    it.each(['../config.yaml', 'nested/../../config.yaml'])('refuses %s, which leaves the workspace', async (file) => {
+      setInputs({ file });
+
+      await run();
+
+      expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('file'));
+      expect(modifyYaml).not.toHaveBeenCalled();
+    });
+
+    it('refuses an absolute path', async () => {
+      setInputs({ file: path.join(outside, 'config.yaml') });
+
+      await run();
+
+      expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('must be relative'));
+      expect(modifyYaml).not.toHaveBeenCalled();
+    });
+
+    it('refuses a committed symbolic link to a file outside the workspace, and leaves the target alone', async () => {
+      writeFileSync(path.join(outside, 'config.yaml'), 'version: 1.0.0\n');
+      symlinkSync(path.join(outside, 'config.yaml'), path.join(workspace, 'config.yaml'));
+
+      await run();
+
+      expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('symbolic link'));
+      expect(modifyYaml).not.toHaveBeenCalled();
+      expect(readFileSync(path.join(outside, 'config.yaml'), 'utf8')).toBe('version: 1.0.0\n');
+    });
   });
 });

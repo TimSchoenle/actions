@@ -4,9 +4,12 @@ import {
   commandInjectionPayload,
   expectCleanRejection,
   expectNoInjection,
+  expectSecretNotLeaked,
   fileCommandInjectionPayload,
   INPUT_HOSTILE_CHARACTERS,
   LARGEST_DELIVERABLE_INPUT,
+  linkOutside,
+  OUTSIDE_SECRET,
   oversized,
   runAction,
   TRAVERSAL_PATHS,
@@ -17,7 +20,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 
 import type { ActionInput, ActionOutput } from '../src/generated/action-io.js';
-import type { ExpectedOutcome } from 'actions-e2e';
+import type { ExpectedOutcome, OutsideTarget } from 'actions-e2e';
 
 /**
  * Hostile cases for `actions/common/modify-yaml`.
@@ -42,9 +45,12 @@ replicas: 2
 
 describe('modify-yaml under hostile input', () => {
   let workspace: Workspace;
+  let outside: OutsideTarget | undefined;
 
   afterEach(async () => {
     await workspace.dispose();
+    await outside?.dispose();
+    outside = undefined;
   });
 
   async function modify(
@@ -189,10 +195,33 @@ describe('modify-yaml under hostile input', () => {
         expect: 'failure',
       });
 
-      expectCleanRejection(result);
+      expectCleanRejection(result, /file (must|resolves)/);
       expectNoInjection(result);
       // The strong assertion: not "the fixture is unchanged" but "the workspace gained nothing".
       await expect(workspace.entries()).resolves.toEqual([FIXTURE_PATH]);
+    });
+
+    // The path is spotless, so only the real-path check sees where it lands.
+    it('refuses a committed link to a file outside the workspace, and neither reads nor writes it', async () => {
+      if (!(await Workspace.symlinksSupported())) {
+        return;
+      }
+
+      workspace = await Workspace.create({});
+      const original = `image:\n  tag: ${OUTSIDE_SECRET}\n`;
+      outside = await linkOutside(workspace, FIXTURE_PATH, original);
+
+      const result = await runAction<ActionInput, ActionOutput>({
+        actionDirectory: ACTION_DIRECTORY,
+        inputs: { file: FIXTURE_PATH, key: 'image.tag', value: 'v9' },
+        workspace,
+        expect: 'failure',
+      });
+
+      expectCleanRejection(result, /file resolves outside the workspace through a symbolic link/);
+      expect(result.outputs).toEqual({});
+      expectSecretNotLeaked(result, OUTSIDE_SECRET);
+      await expect(outside.read('target')).resolves.toBe(original);
     });
 
     it('carries a value far larger than any real image tag', async () => {

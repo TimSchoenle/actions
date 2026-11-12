@@ -37,11 +37,11 @@ A action to modify a value in a YAML file while strictly preserving comments and
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input   | Required | Default | Description           |
-| ------- | -------- | ------- | --------------------- |
-| `file`  | yes      |         | Path to the YAML file |
-| `key`   | yes      |         | Dot-notation key path |
-| `value` | yes      |         | Value to set          |
+| Input   | Required | Default | Description                                                                                                      |
+| ------- | -------- | ------- | ---------------------------------------------------------------------------------------------------------------- |
+| `file`  | yes      |         | Path to the YAML file, relative to the workspace. It must resolve inside the workspace, symbolic links included. |
+| `key`   | yes      |         | Dot-notation key path                                                                                            |
+| `value` | yes      |         | Value to set                                                                                                     |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
