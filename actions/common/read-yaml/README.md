@@ -34,10 +34,10 @@ A action to read a value from a YAML file using dot notation
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input  | Required | Default | Description                            |
-| ------ | -------- | ------- | -------------------------------------- |
-| `file` | yes      |         | Path to the YAML file                  |
-| `key`  | yes      |         | Dot-notation key path (e.g. image.tag) |
+| Input  | Required | Default | Description                                                                                                      |
+| ------ | -------- | ------- | ---------------------------------------------------------------------------------------------------------------- |
+| `file` | yes      |         | Path to the YAML file, relative to the workspace. It must resolve inside the workspace, symbolic links included. |
+| `key`  | yes      |         | Dot-notation key path (e.g. image.tag)                                                                           |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
