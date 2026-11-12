@@ -112,8 +112,11 @@ the graph the release uses:
 
 - the actions its jobs run (`uses: ./...`, also under `tmp/actions-code` and `source`), the actions
   its end-to-end cases load, its `build` entries, and the build set of all of them
-- the workspace packages, lockfiles and toolchain pins those build directories read
-- the harness package `packages/e2e`, for a target with cases, and the shared build script
+- the workspace packages, lockfiles, toolchain pins and root `tsconfig.json` those build directories
+  read
+- the shared build script `scripts/build-action.ts` and every file and workspace package it imports
+- for a target with cases, the harness package `packages/e2e` and the files the end-to-end run reads
+  first: `vitest.e2e.config.ts`, `vitest.e2e.setup.ts`, `vitest.aliases.ts` and the root `package.json`
 - its source file, its shard file and its `extra-inputs`
 
 `plan` intersects those with the changed files from git, with no REST call:
@@ -125,7 +128,9 @@ the graph the release uses:
 | `schedule`          | not compared                         | the targets with `schedule: true`                     |
 | `workflow_dispatch` | not compared                         | every target                                          |
 
-A change to `verify.yaml` selects every target. A diff git cannot compute selects every target.
+A change to `verify.yaml`, to `scripts/lib/verify/` or to `scripts/verify-plan.ts` selects every target.
+A diff git cannot compute selects every target. Changed names are read with `git diff -z`, so a name
+with a non-ASCII character or a leading space matches its inputs as committed.
 `**/CHANGELOG.md` and each action's top-level `README.md` select nothing.
 
 ## Limits
