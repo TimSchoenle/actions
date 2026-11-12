@@ -43,7 +43,7 @@ jobs:
       - run: ./scripts/update-data.sh
 
       - id: pr
-        uses: TimSchoenle/actions/actions/common/create-pull-request@actions-common-create-pull-request-v1.0.31 # tag=actions-common-create-pull-request-v1.0.31
+        uses: TimSchoenle/actions/actions/common/create-pull-request@1eb4e7b5a5b5cf51d4a387c8b37dd6592d8d188a # tag=actions-common-create-pull-request-v1.0.31
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}

@@ -40,7 +40,7 @@ over unchanged inputs makes no commit and no API call.
     private-key: ${{ secrets.BOT_PRIVATE_KEY }}
     permission-contents: write
 
-- uses: TimSchoenle/actions/actions/common/render-template-and-commit@actions-common-render-template-and-commit-v1.1.22 # tag=actions-common-render-template-and-commit-v1.1.22
+- uses: TimSchoenle/actions/actions/common/render-template-and-commit@1eb4e7b5a5b5cf51d4a387c8b37dd6592d8d188a # tag=actions-common-render-template-and-commit-v1.1.22
   id: docs
   with:
     template: docs/README.hbs
