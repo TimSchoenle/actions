@@ -157,7 +157,13 @@
       "groupSlug": "docs-pins"
     },
     {
-      "description": "One pull request for every non-major pin of this repository's own actions inside a published composite under actions/. The shared preset's action group matches only the github-actions manager, which is disabled for these pins, and its ci group stops at .github/, so each pinned action got a branch of its own: a release batch opened up to one pull request per pinned action, each with a full CI round, a Release run and, through renovate-auto-rebase, a rebase of every other open dependency pull request. This rule sits before the examples rules so that they, coming later and therefore winning, keep the example workflows in documentation pins. Majors stay outside the group so they arrive alone and are not auto-merged.",
+      "description": "The branch half of the rule below. The shared preset sets separateMinorPatch: true, which puts a patch update on a patch- prefixed branch of its own, so without this a release batch of internal pins splits across renovate/internal-actions and renovate/patch-internal-actions. It lives in a rule of its own because Renovate refuses separateMinorPatch next to matchUpdateTypes.",
+      "matchPackageNames": ["TimSchoenle/actions"],
+      "matchFileNames": ["actions/**"],
+      "separateMinorPatch": false
+    },
+    {
+      "description": "The group half of the rule above: one pull request for every non-major pin of this repository's own actions inside a published composite under actions/. The shared preset's action group matches only the github-actions manager, which is disabled for these pins, and its ci group stops at .github/, so each pinned action got a branch of its own: a release batch opened up to one pull request per pinned action, each with a full CI round, a Release run and, through renovate-auto-rebase, a rebase of every other open dependency pull request. This rule sits before the examples rules so that they, coming later and therefore winning, keep the example workflows in documentation pins. Majors stay outside the group so they arrive alone and are not auto-merged.",
       "matchPackageNames": ["TimSchoenle/actions"],
       "matchFileNames": ["actions/**"],
       "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
