@@ -1,3 +1,7 @@
+import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+
 import * as core from 'actions-util/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -181,5 +185,51 @@ describe('render-template action', () => {
 
     expect(core.setFailed).toHaveBeenCalledWith('README.hbs: template file not found or not readable.');
     expect(core.setOutput).not.toHaveBeenCalled();
+  });
+
+  // The S5 attack wrote through a link: README.md committed as a link to .git/config, then rendered
+  // over with a template naming core.fsmonitor. Even a link that stays in the workspace makes the
+  // render overwrite a file other than the one named, so the output must be a file or nothing.
+  describe('an output that is a symbolic link', () => {
+    let workspace: string;
+
+    beforeEach(async () => {
+      workspace = await mkdtemp(path.join(tmpdir(), 'render-template-link-'));
+      await mkdir(path.join(workspace, 'docs'));
+      await mkdir(path.join(workspace, '.git'));
+      await writeFile(path.join(workspace, 'README.hbs'), '{{title}}\n');
+      await writeFile(path.join(workspace, 'docs', 'other.md'), 'other\n');
+      await writeFile(path.join(workspace, '.git', 'config'), '[core]\n');
+      vi.stubEnv('GITHUB_WORKSPACE', workspace);
+    });
+
+    afterEach(async () => {
+      await rm(workspace, { recursive: true, force: true });
+    });
+
+    it.each([
+      {
+        name: 'a link to another file in the workspace',
+        target: 'docs/other.md',
+        reason: /^output is a symbolic link/,
+      },
+      { name: 'a link into .git', target: '.git/config', reason: /^output resolves into a \.git directory/ },
+    ])('refuses $name before rendering anything', async ({ target, reason }) => {
+      await symlink(path.join(workspace, target), path.join(workspace, 'README.md'));
+
+      await run();
+
+      expect(vi.mocked(core.setFailed).mock.calls[0]?.[0]).toMatch(reason);
+      expect(generateFile).not.toHaveBeenCalled();
+    });
+
+    it('renders to an ordinary file as before', async () => {
+      await writeFile(path.join(workspace, 'README.md'), 'old\n');
+
+      await run();
+
+      expect(core.setFailed).not.toHaveBeenCalled();
+      expect(generateFile).toHaveBeenCalled();
+    });
   });
 });
