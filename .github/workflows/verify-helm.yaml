@@ -204,16 +204,14 @@ jobs:
       # update-chart-version checks out the charts repo over the workspace, so the local action's own
       # directory is gone by the time its post step runs. Restoring it is `always()` on purpose: when
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
+      # A plain checkout of this repository restores it without minting another token or cloning the
+      # test repository again.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
+          persist-credentials: false
+          path: tmp/actions-code
 
       - name: Verify PR Output
         shell: bash
@@ -447,16 +445,14 @@ jobs:
       # update-chart-version checks out the charts repo over the workspace, so the local action's own
       # directory is gone by the time its post step runs. Restoring it is `always()` on purpose: when
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
+      # A plain checkout of this repository restores it without minting another token or cloning the
+      # test repository again.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
+          persist-credentials: false
+          path: tmp/actions-code
 
       - name: Verify Each Image Got Its Own Version
         shell: bash
@@ -647,16 +643,14 @@ jobs:
       # update-chart-version checks out the charts repo over the workspace, so the local action's own
       # directory is gone by the time its post step runs. Restoring it is `always()` on purpose: when
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
+      # A plain checkout of this repository restores it without minting another token or cloning the
+      # test repository again.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
+          persist-credentials: false
+          path: tmp/actions-code
 
       - name: Verify Branch Name Uses Custom Prefix And The Chart Version
         shell: bash
@@ -710,44 +704,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # One leg: it proves the version-bump input reaches the bump. Every bump rule, the prerelease
+        # one included, is covered by actions/helm/apply-chart-updates/src/chart-version.test.ts against
+        # the code under test; each extra leg here cost a token, a pull request and two branches.
         include:
-          - name: patch-increment
-            initial_version: '2.5.9'
-            expected_version: '2.5.10'
-            bump: patch
-            app_version: v1.0.0-bump1
-
-          - name: zero-patch
-            initial_version: '1.0.0'
-            expected_version: '1.0.1'
-            bump: patch
-            app_version: v1.0.0-bump2
-
-          - name: high-numbers
-            initial_version: '10.20.99'
-            expected_version: '10.20.100'
-            bump: patch
-            app_version: v1.0.0-bump3
-
-          # Bumps the awk predecessor could not express at all.
           - name: minor-bump
             initial_version: '1.2.3'
             expected_version: '1.3.0'
             bump: minor
             app_version: v1.0.0-bump4
-
-          - name: major-bump
-            initial_version: '1.2.3'
-            expected_version: '2.0.0'
-            bump: major
-            app_version: v1.0.0-bump5
-
-          # `1.2.3-rc.1` used to become `1.2.3-rc.2`, which releases nothing.
-          - name: prerelease-is-released
-            initial_version: '1.2.3-rc.1'
-            expected_version: '1.2.3'
-            bump: patch
-            app_version: v1.0.0-bump6
 
     permissions:
       contents: read
@@ -841,16 +806,14 @@ jobs:
       # update-chart-version checks out the charts repo over the workspace, so the local action's own
       # directory is gone by the time its post step runs. Restoring it is `always()` on purpose: when
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
+      # A plain checkout of this repository restores it without minting another token or cloning the
+      # test repository again.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
+          persist-credentials: false
+          path: tmp/actions-code
 
       - name: Verify Version Bump
         shell: bash
@@ -997,16 +960,14 @@ jobs:
       # update-chart-version checks out the charts repo over the workspace, so the local action's own
       # directory is gone by the time its post step runs. Restoring it is `always()` on purpose: when
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
+      # A plain checkout of this repository restores it without minting another token or cloning the
+      # test repository again.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
+          persist-credentials: false
+          path: tmp/actions-code
 
       - name: Verify Nested Chart Updated
         shell: bash
@@ -1168,16 +1129,14 @@ jobs:
       # update-chart-version checks out the charts repo over the workspace, so the local action's own
       # directory is gone by the time its post step runs. Restoring it is `always()` on purpose: when
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
+      # A plain checkout of this repository restores it without minting another token or cloning the
+      # test repository again.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
+          persist-credentials: false
+          path: tmp/actions-code
 
       # The branch is derived from the chart version, which is deterministic for a given base, so a
       # re-run targets the same branch and must reset it.
@@ -1197,16 +1156,14 @@ jobs:
       # update-chart-version checks out the charts repo over the workspace, so the local action's own
       # directory is gone by the time its post step runs. Restoring it is `always()` on purpose: when
       # the action fails, the post step still runs and would otherwise add a second, unrelated failure.
+      # A plain checkout of this repository restores it without minting another token or cloning the
+      # test repository again.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
+          persist-credentials: false
+          path: tmp/actions-code
 
       - name: Verify Second Run Used Updated Digest
         shell: bash
@@ -1373,14 +1330,10 @@ jobs:
 
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          test_owner: ${{ env.TEST_OWNER }}
-          test_repo: ${{ env.TEST_REPO }}
-          test_repo_name: ${{ env.TEST_REPO_NAME }}
-          current_repo_checkout_path: 'tmp/actions-code'
+          persist-credentials: false
+          path: tmp/actions-code
 
       - name: Verify The Pulled Contract Reached The PR
         shell: bash
