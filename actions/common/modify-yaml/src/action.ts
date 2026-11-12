@@ -25,13 +25,13 @@ export function run(): Promise<void> {
 
     core.info(`Modifying ${quoteForLog(key)} in ${quoteForLog(file)}...`);
 
-    const oldValue = await modifyYaml(filePath, key, value);
+    const { oldValue, newValue } = await modifyYaml(filePath, key, value);
 
     if (oldValue !== undefined) {
       setOutput('old-value', oldValue);
     }
-    setOutput('new-value', value);
+    setOutput('new-value', newValue);
 
-    core.info(`✅ Modified ${quoteForLog(key)} to: ${quoteForLog(value)}`);
+    core.info(`✅ Modified ${quoteForLog(key)} to: ${quoteForLog(newValue)}`);
   });
 }
