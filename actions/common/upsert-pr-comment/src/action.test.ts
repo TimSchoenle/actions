@@ -93,6 +93,7 @@ describe('upsert-pr-comment action', () => {
         author: 'app[bot]',
         body: '<!-- timschoenle/actions:pr-comment:docker-image-size -->\n\nan older report',
         id: 5,
+        postedByApp: true,
         url: 'https://example.test/5',
       },
     ]);
@@ -200,6 +201,7 @@ describe('upsert-pr-comment action', () => {
         author: 'app[bot]',
         body: '<!-- timschoenle/actions:pr-comment:docker-image-size -->\n\nan older report',
         id: 5,
+        postedByApp: true,
         url: 'https://example.test/5',
       },
     ]);

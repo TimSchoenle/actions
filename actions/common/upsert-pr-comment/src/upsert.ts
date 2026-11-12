@@ -16,7 +16,7 @@ export interface UpsertRequest {
   updateExisting: boolean;
   /** Whether a comment is posted when there is none to update. */
   createNew: boolean;
-  /** Login the previous comment must have been posted by; empty accepts any author. */
+  /** Login the previous comment must have been posted by; empty accepts only a comment a GitHub App posted. */
   author: string;
 }
 
@@ -34,6 +34,19 @@ export interface UpsertOutcome {
 }
 
 /**
+ * Whether the run may adopt this comment as its own.
+ *
+ * The marker is derivable from the workflow file, so anyone who can comment can plant it before the
+ * first run, and a token with `pull-requests: write` may edit their comment. Adopting it would let
+ * them edit the report between runs. With no `author`, only a comment a GitHub App posted is
+ * adopted, which covers `GITHUB_TOKEN` and App installation tokens; a workflow that posts with a
+ * personal access token names its login in `author`.
+ */
+function isOwnCandidate(comment: ExistingComment, author: string): boolean {
+  return author === '' ? comment.postedByApp : comment.author === author;
+}
+
+/**
  * The first comment carrying the marker, or `undefined`.
  *
  * *First*, not *best*: the comments arrive oldest first, so this is the earliest one carrying the
@@ -48,7 +61,7 @@ async function findMarked(
   author: string,
 ): Promise<ExistingComment | undefined> {
   for await (const comment of api.comments(target)) {
-    if (hasMarker(comment.body, marker) && (author === '' || comment.author === author)) {
+    if (hasMarker(comment.body, marker) && isOwnCandidate(comment, author)) {
       return comment;
     }
   }
