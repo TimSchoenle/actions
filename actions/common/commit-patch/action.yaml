@@ -54,7 +54,7 @@ outputs:
     description: 'URL of the created commit, when one was created.'
     value: ${{ steps.commit.outputs.commit_url }}
   outcome:
-    description: 'committed; no_changes when the patch is empty; branch_moved when the patch or the branch no longer matches expected_head_sha.'
+    description: 'committed; no_changes when the patch is empty; branch_moved when the patch or the branch no longer matches expected_head_sha, or the branch was deleted.'
     value: ${{ steps.commit.outputs.outcome }}
 
 runs:

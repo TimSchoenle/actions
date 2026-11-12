@@ -288,6 +288,34 @@ describe('commitPatch', () => {
       expect(api.createCommit).not.toHaveBeenCalled();
     });
 
+    // P14b: a branch deleted before the commit (the PR was merged or closed) failed the run in red after
+    // 7.5s of 404 retries. It is the furthest a branch can move, and the same skip applies.
+    it('skips with a notice when the branch no longer exists', async () => {
+      await seed({ 'a.txt': 'a\n' });
+      await write(producer, { 'a.txt': 'b\n' });
+      await artifact(await producedPatch());
+      api = fakeApi(() => {
+        throw Object.assign(new Error('Not Found'), { status: 404 });
+      });
+
+      await expect(commitPatch(deps(), request())).resolves.toEqual({ outcome: 'branch_moved' });
+      expect(notices).toEqual([expect.stringContaining('no longer exists')]);
+      expect(api.getHeadOid).toHaveBeenCalledTimes(1);
+      expect(api.createCommit).not.toHaveBeenCalled();
+    });
+
+    it('still fails on a head read refused for another reason', async () => {
+      await seed({ 'a.txt': 'a\n' });
+      await write(producer, { 'a.txt': 'b\n' });
+      await artifact(await producedPatch());
+      api = fakeApi(() => {
+        throw Object.assign(new Error('Resource not accessible by integration'), { status: 403 });
+      });
+
+      await expect(commitPatch(deps(), request())).rejects.toThrow('Resource not accessible by integration');
+      expect(notices).toEqual([]);
+    });
+
     it('fails when the checkout is not at the expected head', async () => {
       await seed({ 'a.txt': 'a\n' });
       await write(producer, { 'a.txt': 'b\n' });
