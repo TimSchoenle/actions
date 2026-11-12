@@ -378,7 +378,7 @@ describe('affected-target detection against this repository', () => {
       .filter((target) => target.inputs.includes('packages/ts-util'))
       .map((target) => target.id);
 
-    expect(expected.length).toBeGreaterThan(30);
+    expect(expected.length).toBeGreaterThan(40);
     expect(select(['packages/ts-util/src/index.ts'])).toEqual(expected.sort());
   });
 
@@ -397,6 +397,35 @@ describe('affected-target detection against this repository', () => {
 
   it('runs nothing for a README-only change', () => {
     expect(select(['actions/common/find-patch/README.md', 'actions/release/build-actions/CHANGELOG.md'])).toEqual([]);
+  });
+
+  it('runs the targets that read the terrace-helm fixture for a change to it, through extra-inputs', () => {
+    expect(select(['.github/testdata/terrace-helm/terrace.yaml'])).toEqual([
+      'helm/update-chart-version',
+      'terrace/helm-check',
+      'terrace/helm-diff',
+      'terrace/helm-sync',
+    ]);
+  });
+
+  it('runs only the scheduled targets on the weekly schedule', () => {
+    expect(selectTargets(plan, { name: 'schedule' }, 'all').targets).toEqual(['configs/renovate']);
+  });
+
+  it('keeps the targets restricted to main off a pull request against another base', () => {
+    const restricted = [
+      'bun/setup-cached',
+      'common/create-pull-request',
+      'common/render-template-and-commit',
+      'helm/update-chart-version',
+    ];
+
+    expect(plan.targets.filter((target) => target.pullRequestBranches !== null).map((target) => target.id)).toEqual(
+      restricted,
+    );
+    expect(selectTargets(plan, { name: 'pull_request', baseRef: 'release' }, ['bun.lock']).targets).not.toEqual(
+      expect.arrayContaining(restricted),
+    );
   });
 
   it('runs a target for a change to its own source file', () => {

@@ -163,8 +163,8 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
 - End-to-end tests: [`.github/verify/release-install-built-actions.yaml`](../../../.github/verify/release-install-built-actions.yaml)
 - Called from this repository by:
+  - [`.github/verify/java-gradle-auto-spotless.yaml`](../../../.github/verify/java-gradle-auto-spotless.yaml)
   - [`.github/verify/release-build-actions.yaml`](../../../.github/verify/release-build-actions.yaml)
+  - [`.github/verify/rust-auto-format.yaml`](../../../.github/verify/rust-auto-format.yaml)
   - [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
-  - [`.github/workflows/verify-action-java-gradle-auto-spotless.yaml`](../../../.github/workflows/verify-action-java-gradle-auto-spotless.yaml)
-  - [`.github/workflows/verify-action-rust-auto-format.yaml`](../../../.github/workflows/verify-action-rust-auto-format.yaml)
 <!-- /docs:generated reference -->

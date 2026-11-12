@@ -39,8 +39,8 @@ Scripts CI fails while a generated file differs from what the generator writes.
 | `verify-<category>` | the shard holds a selected target | calls the shard; each of its jobs runs only when its target is selected                    |
 | `verify`            | always                            | fails when any job above failed or was cancelled                                           |
 
-The `verify` job, named `CI Summary: Verify` while CI Required still aggregates the remaining
-hand-written workflows, is the check branch protection requires. The pull request's own copy of the
+The `verify` job, named `CI Summary: Verify` while CI Required still publishes the required status,
+is the check branch protection requires. The pull request's own copy of the
 workflow decides it, as it does for `Lint & Test`.
 
 A shard receives `targets`, `cache-key`, `artifact-id` and `manifest-sha256` as inputs, and only the
@@ -81,7 +81,12 @@ The jobs follow this contract, which the generator enforces:
   `inputs.cache-key`, never through `needs.build` or `needs.install`.
 - A job that runs a bundled local action installs the build first with
   `uses: pinned:installBuiltActions`, and its egress allowlist lets the artifact download through.
-- A pinned action is written `uses: pinned:<key>`, a key of `PINNED`; local actions as `./...`.
+- A remote action is written `uses: pinned:<key>`, a key of `PINNED`, or pinned by a 40-character
+  digest with its version comment. Renovate's `github-actions` manager claims `.github/verify/`, so
+  it moves a digest pin in the source and in the generated copy on one branch. Local actions are
+  written `./...`.
+- A source has no workflow-level `env`, `permissions`, `concurrency` or `defaults`: a job states
+  what it needs, because a called workflow has nothing to inherit from the target.
 
 ## Selecting targets
 

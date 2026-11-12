@@ -181,6 +181,4 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
   - [`.github/verify/release-install-built-actions.yaml`](../../../.github/verify/release-install-built-actions.yaml)
   - [`.github/verify/release-publish-build-commit.yaml`](../../../.github/verify/release-publish-build-commit.yaml)
   - [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
-  - [`.github/workflows/verify-action-java-gradle-auto-spotless.yaml`](../../../.github/workflows/verify-action-java-gradle-auto-spotless.yaml)
-  - [`.github/workflows/verify-action-rust-auto-format.yaml`](../../../.github/workflows/verify-action-rust-auto-format.yaml)
 <!-- /docs:generated reference -->

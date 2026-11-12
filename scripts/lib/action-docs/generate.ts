@@ -254,22 +254,11 @@ function descriptionProblems(file: string, manifest: ActionManifest): string[] {
   ];
 }
 
-/**
- * The file that holds an action's verify jobs: its source under `.github/verify/`, or, until every
- * target has moved there, its hand-written `verify-action-*` workflow.
- */
+/** The verify source of an action under `.github/verify/`, when it has one. */
 async function verifySourceOf(io: DocsIo, category: string, name: string): Promise<string | undefined> {
-  const candidates = [
-    `${SOURCES_DIR}/${sourceFileName(`${category}/${name}`)}`,
-    `.github/workflows/verify-action-${category}-${name}.yaml`,
-  ];
-  for (const candidate of candidates) {
-    if ((await io.read(candidate)) !== undefined) {
-      return candidate;
-    }
-  }
+  const candidate = `${SOURCES_DIR}/${sourceFileName(`${category}/${name}`)}`;
 
-  return undefined;
+  return (await io.read(candidate)) === undefined ? undefined : candidate;
 }
 
 /** Generates one README into `report`. Writes nothing for an action that has an error. */

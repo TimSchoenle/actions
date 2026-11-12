@@ -211,7 +211,7 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-security-jactionlint.yaml`](../../../.github/workflows/verify-action-security-jactionlint.yaml)
+- End-to-end tests: [`.github/verify/security-jactionlint.yaml`](../../../.github/verify/security-jactionlint.yaml)
 - Called from this repository by:
   - [`.github/workflows/security.yml`](../../../.github/workflows/security.yml)
 <!-- /docs:generated reference -->

@@ -13,12 +13,12 @@ bun install --frozen-lockfile
 ## Adding and removing components
 
 Two interactive generators own the scaffolding. `create-action` writes the directory and its
-`action.yaml`, the `verify-action-*` workflow, the `ci-required` entry that watches it, the
-release-please package and manifest entries, and then regenerates the docs. It does all of that in
-one run because those five have to agree.
+`action.yaml`, its verify source under `.github/verify/` and the Verify workflows generated from it,
+the release-please package and manifest entries, and then regenerates the docs. It does all of that
+in one run because those five have to agree.
 
 ```bash
-bun run create-action     # actions/<category>/<name>/, action.yaml, verify workflow
+bun run create-action     # actions/<category>/<name>/, action.yaml, verify source
 bun run remove-action     # the same set, deleted together
 ```
 
@@ -122,8 +122,8 @@ context is safe to require, and neither is visible in the workflow that produces
   checks are named `<caller job> / <called job>` while the call runs, and only `<caller job>` while
   it is skipped, so neither name is always there. A plain job is safe — a skipped one still reports,
   and branch protection accepts it.
-- **It must report after the work it gates.** `ci-required` aggregates the path-filtered
-  `verify-action-*` and `verify-config-*` workflows, and it does so from a `workflow_run` trigger, whose check runs land on
+- **It must report after the work it gates.** `ci-required` aggregates the generated
+  `Verify` workflow and Scripts CI, and it does so from a `workflow_run` trigger, whose check runs land on
   the default branch rather than on the pull request head. Only the commit status it POSTs reaches
   the pull request, so `ci-required` is the context to require — never the `Aggregate verify checks`
   job name, whose check runs never reach the pull request at all.

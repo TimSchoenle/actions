@@ -1,9 +1,9 @@
 # Verify jobs of actions/{{packageName}}/{{subAction}}. Ordinary workflow jobs; the generator gates
 # each on this target and prefixes its name. See docs/verify-pipeline.md for the format, then run
 # 'bun run generate-verify'.
-target: {{packageName}}/{{subAction}}
+target: '{{packageName}}/{{subAction}}'
 jobs:
-  {{packageName}}-{{subAction}}-verify:
+  verify-{{packageName}}-{{subAction}}:
     name: Verify {{capitalizedSubAction}}
     runs-on: ubuntu-latest
     timeout-minutes: 20
