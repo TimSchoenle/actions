@@ -2,9 +2,9 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { formatOutputs, formatSummary, parsePlanFile, readEvent, selectTargets } from './affected.js';
+import { formatOutputs, formatSummary, jobChanges, parsePlanFile, readEvent, selectTargets } from './affected.js';
 
-import type { ChangedFiles, DiffRequest, PlanEnvironment, PlanResult } from './affected.js';
+import type { ChangedFiles, DiffRequest, PlanEnvironment, PlanFile, PlanResult } from './affected.js';
 
 /**
  * The `plan` step of `.github/workflows/verify.yaml`: reads the event, diffs with git, selects the
@@ -55,7 +55,7 @@ function nulSeparated(output: string): string[] {
  * every target rather than none: running too much costs minutes, running too little lets a change
  * merge untested. The note says why, for the job summary.
  */
-export function changedFiles(git: Git, diff: DiffRequest): { changed: ChangedFiles; note?: string } {
+export function changedFiles(git: Git, diff: DiffRequest): { changed: ChangedFiles; note?: string; base?: string } {
   switch (diff.kind) {
     case 'none': {
       return { changed: 'all' };
@@ -71,14 +71,30 @@ export function changedFiles(git: Git, diff: DiffRequest): { changed: ChangedFil
         if (from === undefined) {
           throw new Error('git merge-base printed nothing');
         }
-        return { changed: nulSeparated(git(['diff', '--name-only', '-z', '--no-renames', from, to])) };
+        return { changed: nulSeparated(git(['diff', '--name-only', '-z', '--no-renames', from, to])), base: from };
       } catch (error) {
         return {
           changed: 'all',
-          note: `Every target runs: git could not compute the changed files (${(error as Error).message.split('\n')[0]}).`,
+          note: `Every target runs: git could not compute the changed files (${firstLine(error)}).`,
         };
       }
     }
+  }
+}
+
+function firstLine(error: unknown): string {
+  return (error as Error).message.split('\n')[0] ?? '';
+}
+
+/**
+ * The plan file as the base commit has it, or `undefined` with the reason when it cannot be read or
+ * parsed, in which case every target counts as changed.
+ */
+export function basePlan(git: Git, base: string): { plan?: PlanFile; note?: string } {
+  try {
+    return { plan: parsePlanFile(git(['show', `${base}:${PLAN_FILE}`])) };
+  } catch (error) {
+    return { note: `Every target runs: the base plan could not be read (${firstLine(error)}).` };
   }
 }
 
@@ -90,9 +106,16 @@ export function plan(
 ): { result: PlanResult; changed: ChangedFiles; note?: string } {
   const planFile = parsePlanFile(fs.readFileSync(path.join(root, PLAN_FILE), 'utf8'));
   const { event, diff } = readEvent(env);
-  const { changed, note } = changedFiles(git, diff);
+  const { changed, note: diffNote, base } = changedFiles(git, diff);
+  const { plan: previous, note: baseNote } =
+    changed === 'all' || base === undefined ? { plan: planFile } : basePlan(git, base);
+  const note = diffNote ?? baseNote;
 
-  return { result: selectTargets(planFile, event, changed), changed, ...(note === undefined ? {} : { note }) };
+  return {
+    result: selectTargets(planFile, event, changed, jobChanges(planFile, previous)),
+    changed,
+    ...(note === undefined ? {} : { note }),
+  };
 }
 
 /** Entry point: plans, then appends to `GITHUB_OUTPUT` and `GITHUB_STEP_SUMMARY` when they are set. */

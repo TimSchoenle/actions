@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   formatOutputs,
   IGNORED_FILES,
+  jobChanges,
   matchesGlob,
   NULL_SHA,
   parsePlanFile,
@@ -25,13 +26,15 @@ function target(id: string, inputs: string[], overrides: Partial<PlannedTarget> 
     pullRequestBranches: null,
     pushBranches: [`feature/${id}`],
     schedule: false,
+    jobsSha256: `jobs-of-${id}`,
     ...overrides,
   };
 }
 
 const PLAN: PlanFile = {
-  global: ['.github/workflows/verify.yaml'],
+  global: ['scripts/verify-plan.ts'],
   ignore: IGNORED_FILES,
+  sharedJobsSha256: 'shared-jobs',
   targets: [
     target(
       'common/find-patch',
@@ -107,7 +110,7 @@ describe('selectTargets', () => {
   });
 
   it('selects every target the event allows for a change to a global input', () => {
-    expect(selectTargets(PLAN, PR, ['.github/workflows/verify.yaml']).targets).toEqual([
+    expect(selectTargets(PLAN, PR, ['scripts/verify-plan.ts']).targets).toEqual([
       'bun/setup-cached',
       'common/create-patch',
       'common/find-patch',
@@ -148,6 +151,61 @@ describe('selectTargets', () => {
     expect(selectTargets(PLAN, { name: 'push', branch: 'feature/common/find-patch' }, 'all').targets).toEqual([
       'common/find-patch',
     ]);
+  });
+});
+
+// P1: a target's shard file was one of its inputs, so editing one source selected every target in
+// the shard. A target is now selected for its own jobs changing, compared by hash with the base plan.
+describe('jobChanges', () => {
+  const ids = (changes: ReturnType<typeof jobChanges>): string[] | 'all' =>
+    changes === 'all' ? 'all' : [...changes].sort();
+
+  it('names nothing when no job changed', () => {
+    expect(ids(jobChanges(PLAN, PLAN))).toEqual([]);
+  });
+
+  it('names a target whose jobs changed, and only that one', () => {
+    const base: PlanFile = {
+      ...PLAN,
+      targets: PLAN.targets.map((entry) =>
+        entry.id === 'bun/setup-cached' ? { ...entry, jobsSha256: 'older' } : entry,
+      ),
+    };
+
+    expect(ids(jobChanges(PLAN, base))).toEqual(['bun/setup-cached']);
+  });
+
+  it('names a target the base plan does not have', () => {
+    const base: PlanFile = { ...PLAN, targets: PLAN.targets.filter((entry) => entry.id !== 'configs/renovate') };
+
+    expect(ids(jobChanges(PLAN, base))).toEqual(['configs/renovate']);
+  });
+
+  it('names every target that installs or builds when the shared plan, install or build jobs changed', () => {
+    expect(ids(jobChanges(PLAN, { ...PLAN, sharedJobsSha256: 'older' }))).toEqual([
+      'common/create-patch',
+      'common/find-patch',
+    ]);
+  });
+
+  it('names every target when there is no base plan to compare with', () => {
+    expect(jobChanges(PLAN, undefined)).toBe('all');
+  });
+});
+
+describe('selectTargets with job changes', () => {
+  it('selects a target whose jobs changed though none of its inputs did', () => {
+    expect(selectTargets(PLAN, PR, ['README.md'], new Set(['bun/setup-cached'])).targets).toEqual(['bun/setup-cached']);
+  });
+
+  it('still lets the event rule veto a target whose jobs changed', () => {
+    const other: PlanEvent = { name: 'pull_request', baseRef: 'release' };
+
+    expect(selectTargets(PLAN, other, [], new Set(['bun/setup-cached'])).targets).toEqual([]);
+  });
+
+  it('selects every target the event allows when job changes are unknown', () => {
+    expect(selectTargets(PLAN, PR, [], 'all').targets).toHaveLength(4);
   });
 });
 
@@ -218,5 +276,8 @@ describe('parsePlanFile', () => {
     const { install: _install, ...withoutInstall } = target('a/b', ['a']);
     expect(() => parsePlanFile(JSON.stringify({ ...PLAN, targets: [withoutInstall] }))).toThrow(/malformed/);
     expect(() => parsePlanFile('null')).toThrow(/global and ignore/);
+    expect(() => parsePlanFile(JSON.stringify({ ...PLAN, sharedJobsSha256: 1 }))).toThrow(/sharedJobsSha256/);
+    const withoutHash = { ...PLAN.targets[0], jobsSha256: undefined };
+    expect(() => parsePlanFile(JSON.stringify({ ...PLAN, targets: [withoutHash] }))).toThrow(/malformed/);
   });
 });
