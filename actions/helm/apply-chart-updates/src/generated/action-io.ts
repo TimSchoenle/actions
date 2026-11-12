@@ -31,6 +31,7 @@ export type ActionInput = (typeof ActionInput)[keyof typeof ActionInput];
 
 /** Every output declared in `action.yaml`. Usable as a value (`ActionOutput.x`) and as a type. */
 export const ActionOutput = {
+  changed: 'changed',
   'chart-version': 'chart-version',
   'previous-chart-version': 'previous-chart-version',
   'updated-count': 'updated-count',

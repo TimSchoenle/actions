@@ -34,6 +34,7 @@ export interface AppliedEdit {
 export interface EditPlan {
   readonly filePath: string;
   readonly content: string;
+  /** The edits that change a value. An edit whose key already holds the same string is left out. */
   readonly applied: readonly AppliedEdit[];
 }
 
@@ -74,6 +75,8 @@ interface ResolvedTarget {
   readonly edit: PlannedEdit;
   readonly keys: readonly string[];
   readonly old: string;
+  /** The value as parsed, to tell an edit that changes nothing from one that does. */
+  readonly current: unknown;
   /** Source range of the scalar token, absent for a node the parser did not attribute one to. */
   readonly range: readonly [number, number] | undefined;
 }
@@ -109,7 +112,9 @@ function resolveTargets(document: Document, edits: readonly PlannedEdit[], fileP
     // rather than read, which is exactly the case the re-serialization fallback exists for.
     const range = node.range == null ? undefined : ([node.range[0], node.range[1]] as const);
 
-    targets.push({ edit, keys, old: formatValue(document.getIn(keys)), range });
+    const current: unknown = document.getIn(keys);
+
+    targets.push({ edit, keys, old: formatValue(current), current, range });
   }
 
   if (missing.length > 0) {
@@ -161,7 +166,14 @@ export async function planYamlEdits(filePath: string, edits: readonly PlannedEdi
 
   assertNoOverlap(targets);
 
-  const applied = targets.map(({ edit, old }) => ({ key: edit.key, old, new: edit.value }));
+  // A key that already holds the new value as a string is left out, so a re-run reports, and writes,
+  // nothing for it. A number that reads the same is not equal: writing the string changes its type.
+  const changing = targets.filter((target) => target.current !== target.edit.value);
+  const applied = changing.map(({ edit, old }) => ({ key: edit.key, old, new: edit.value }));
+
+  if (changing.length === 0) {
+    return { filePath, content: source, applied };
+  }
 
   // Splices every value into the original bytes when each target is a plain or quoted scalar and the
   // result means what `setIn` would; otherwise re-serializes the whole file, which keeps the meaning
@@ -169,7 +181,7 @@ export async function planYamlEdits(filePath: string, edits: readonly PlannedEdi
   const content = applyYamlEdits(
     source,
     document,
-    targets.map(({ keys, edit }) => ({ keys, value: edit.value })),
+    changing.map(({ keys, edit }) => ({ keys, value: edit.value })),
   );
 
   return { filePath, content, applied };

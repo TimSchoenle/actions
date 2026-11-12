@@ -96,7 +96,11 @@ export function run(): Promise<void> {
 
     core.info(`Updating ${request.images.length} image value(s) in ${quoteForLog(request.valuesFile)}`);
 
-    const { imageEdits } = await applyUpdate(request);
+    const { changed, imageEdits } = await applyUpdate(request);
+
+    if (!changed) {
+      core.info('Every image, and the app version, is already at its target: nothing written, chart version kept.');
+    }
 
     // Both sides of every edit are repository content: the key and the previous value come out of
     // `values.yaml`, and a chart carrying a multi-line tag would otherwise reach stdout unescaped.
@@ -104,14 +108,17 @@ export function run(): Promise<void> {
       core.info(`  ${quoteForLog(edit.key)}: ${quoteForLog(edit.old)} -> ${quoteForLog(edit.new)}`);
     }
 
-    core.info(`Chart version: ${quoteForLog(request.previousChartVersion)} -> ${quoteForLog(request.chartVersion)}`);
+    const chartVersion = changed ? request.chartVersion : request.previousChartVersion;
 
-    setOutput(CHART_VERSION, request.chartVersion);
+    core.info(`Chart version: ${quoteForLog(request.previousChartVersion)} -> ${quoteForLog(chartVersion)}`);
+
+    setOutput('changed', String(changed));
+    setOutput(CHART_VERSION, chartVersion);
     setOutput('previous-chart-version', request.previousChartVersion);
     setOutput('updated-count', String(imageEdits.length));
     setOutput('changes', JSON.stringify(imageEdits));
     setOutput('summary-markdown', renderSummaryTable(imageEdits));
     setOutput('changelog-markdown', renderChangelogSection(changelog));
-    setOutput('files', relativePaths.join(' '));
+    setOutput('files', changed ? relativePaths.join(' ') : '');
   });
 }
