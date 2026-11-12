@@ -197,12 +197,11 @@ export function selectTargets(
     changed === 'all' ? 'all' : changed.filter((file) => !plan.ignore.some((pattern) => matchesGlob(pattern, file)));
   const touches = (inputs: readonly string[]): boolean =>
     relevant === 'all' || relevant.some((file) => inputs.some((input) => isWithin(input, file)));
-  const everything = runsRegardlessOfChanges(event) || changedJobs === 'all' || touches(plan.global);
+  const jobsChanged = (id: string): boolean => changedJobs === 'all' || changedJobs.has(id);
+  const everything = runsRegardlessOfChanges(event) || touches(plan.global);
 
   const selected = plan.targets.filter(
-    (target) =>
-      eventAllows(target, event) &&
-      (everything || (changedJobs !== 'all' && changedJobs.has(target.id)) || touches(target.inputs)),
+    (target) => eventAllows(target, event) && (everything || jobsChanged(target.id) || touches(target.inputs)),
   );
 
   return {
