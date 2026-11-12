@@ -58,15 +58,16 @@ jobs:
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input             | Required | Default                         | Description                                                                                                                                                        |
-| ----------------- | -------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `client_id`       | yes      |                                 | Client ID of the GitHub App that commits. Its installation needs contents: write on this repository.                                                               |
-| `private_key`     | yes      |                                 | Private key of that GitHub App.                                                                                                                                    |
-| `allowed_paths`   | yes      |                                 | Space- or newline-separated paths and globs the merged patch may change, as common/commit-patch takes them. Cover every generator: anything else fails the commit. |
-| `allow_binary`    | no       | `false`                         | Accept binary changes in the merged patch, as common/commit-patch takes it. Off, a binary change fails the commit.                                                 |
-| `commit_message`  | no       | `chore: update generated files` | Message of the commit.                                                                                                                                             |
-| `artifact_name`   | no       | `generated-files`               | Name of the merged patch artifact, as given to common/generated-files-verdict.                                                                                     |
-| `max_patch_bytes` | no       | `10485760`                      | Largest patch, in bytes. Keep it equal to max_patch_bytes on common/generated-files-verdict.                                                                       |
+| Input               | Required | Default                         | Description                                                                                                                                                                                                                                                                                |
+| ------------------- | -------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `client_id`         | yes      |                                 | Client ID of the GitHub App that commits. Its installation needs contents: write on this repository.                                                                                                                                                                                       |
+| `private_key`       | yes      |                                 | Private key of that GitHub App.                                                                                                                                                                                                                                                            |
+| `allowed_paths`     | yes      |                                 | Space- or newline-separated paths and globs the merged patch may change, as common/commit-patch takes them. Cover every generator: anything else fails the commit.                                                                                                                         |
+| `allow_binary`      | no       | `false`                         | Accept binary changes in the merged patch, as common/commit-patch takes it. Off, a binary change fails the commit.                                                                                                                                                                         |
+| `commit_message`    | no       | `chore: update generated files` | Message of the commit.                                                                                                                                                                                                                                                                     |
+| `artifact_name`     | no       | `generated-files`               | Name of the merged patch artifact, as given to common/generated-files-verdict.                                                                                                                                                                                                             |
+| `excluded_branches` | no       |                                 | Whitespace-separated shell patterns of this repository's branches never to commit to, e.g. "release/* develop". * also matches "/". List every protected branch the App can push to: a pull request may name any branch of this repository as its head. A fork's branches are not matched. |
+| `max_patch_bytes`   | no       | `10485760`                      | Largest patch, in bytes. Keep it equal to max_patch_bytes on common/generated-files-verdict.                                                                                                                                                                                               |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
@@ -111,9 +112,17 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 
 - **Only from `workflow_run`.** Started by any other event, the step fails before it looks for a patch.
 - **Skipped, without touching the key,** when the triggering run was not a pull request's, ran on this repository's
-  default branch, or ended other than `success` or `failure` (cancelled, skipped, timed out). The filter is
+  default branch or on a branch matching `excluded_branches`, names a branch that is not a plain branch name (one
+  starting with `refs/`, or one `git check-ref-format --branch` refuses), or ended other than `success` or `failure`
+  (cancelled, skipped, timed out). The filter is
   `check-event.sh`, which the verify workflow drives through every case. A failed run still commits: the verdict job fails
   whenever there is something to commit.
+- **Every other branch of this repository is committed to, protected ones included.** A pull request can name any
+  branch of this repository as its head, and the `pull_request` run then executes the base branch's copy of the
+  workflow, which the author may have written. The App must therefore not be able to bypass protection on any branch,
+  or `excluded_branches` has to list every protected branch, for example `release/*`. Keep the App's secrets in an
+  environment whose deployment branches allow only the default branch, so a `pull_request` job that names the
+  environment gets nothing either.
 - **A fork's branch is committed to while its pull request allows edits by maintainers.** GitHub lets the App push
   there then, with the token it mints for this repository. A fork that does not allow it, which includes every fork
   owned by an organization, is skipped, and the verdict tells the contributor to push the files. The decision is
