@@ -18,7 +18,9 @@ export const ActionInput = {
   working_directory: 'working_directory',
   oras: 'oras',
   cosign_version: 'cosign_version',
+  cosign_checksums_sha256: 'cosign_checksums_sha256',
   oras_version: 'oras_version',
+  oras_checksums_sha256: 'oras_checksums_sha256',
   github_token: 'github_token',
 } as const;
 
