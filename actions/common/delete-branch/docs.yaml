@@ -9,5 +9,5 @@ egress:
     for: the REST calls that read and delete the branch ref
 
 examples:
-  - title: Delete a pull request's branch once it is closed
+  - title: Delete a pull request's branch once it is merged
     file: examples/delete-closed-branch.yaml

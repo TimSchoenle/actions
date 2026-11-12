@@ -15,7 +15,7 @@ Deletes a branch from a repository. Fails gracefully if the branch does not exis
 <!-- docs:generated usage -->
 ## Usage
 
-### Delete a pull request's branch once it is closed
+### Delete a pull request's branch once it is merged
 
 ```yaml
 name: Delete Closed Branch
@@ -28,8 +28,12 @@ permissions: {}
 
 jobs:
   delete-branch:
-    # A fork's branch is not in this repository, and a fork run's token is read-only anyway.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # Only a merged pull request: a pull request whose head is a long-lived branch, such as develop
+    # or gh-pages, would otherwise delete that branch when someone closes it unmerged. A fork's
+    # branch is not in this repository, and a fork run's token is read-only anyway.
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: write # to delete the branch
