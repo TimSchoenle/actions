@@ -169,6 +169,48 @@ describe('commitChanges', () => {
     expect(git.statusArgs[0]).toEqual([':(glob)src/*.ts', 'Chart.yaml']);
   });
 
+  // file_pattern splits on whitespace, so a path with a space in it could not be named at all:
+  // `docs/my page.md` became the two pathspecs `docs/my` and `page.md`, which match nothing.
+  it('passes each literal path as one literal pathspec, spaces included', async () => {
+    const git = fakeGit('');
+
+    await commitChanges(deps({ git }), { ...baseRequest, literalPaths: ['docs/my page.md', 'a*b.txt'] });
+
+    expect(git.statusArgs[0]).toEqual([':(literal)docs/my page.md', ':(literal)a*b.txt']);
+  });
+
+  it('commits the change at a literal path with a space in it', async () => {
+    const api = fakeApi();
+    const git = fakeGit('?? docs/my page.md\0');
+
+    const result = await commitChanges(
+      deps({ api, git, workspace: fakeWorkspace({ 'docs/my page.md': 'rendered' }) }),
+      { ...baseRequest, literalPaths: ['docs/my page.md'] },
+    );
+
+    expect(result.committed).toBe(true);
+    expect(api.createCommit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fileChanges: expect.objectContaining({
+          additions: [expect.objectContaining({ path: 'docs/my page.md' })],
+        }),
+      }),
+    );
+  });
+
+  it.each(['src/*.ts', 'Chart.yaml'])(
+    'refuses literal_paths together with file_pattern %j before touching git',
+    async (filePattern) => {
+      const git = fakeGit();
+
+      await expect(
+        commitChanges(deps({ git }), { ...baseRequest, filePattern, literalPaths: ['a.txt'] }),
+      ).rejects.toThrow('Set file_pattern or literal_paths, not both');
+      expect(git.ignoreFileModeChanges).not.toHaveBeenCalled();
+      expect(git.status).not.toHaveBeenCalled();
+    },
+  );
+
   it('scans the whole tree (no pathspecs) for the whole-tree pattern', async () => {
     const git = fakeGit('');
 
