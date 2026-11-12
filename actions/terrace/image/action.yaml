@@ -63,7 +63,7 @@ inputs:
     default: 'false'
   signer:
     description: 'Also verify the image signature, keyless, against this identity regular expression, before anything
-      else is read. Empty skips signature verification.'
+      is attached, signed or read from the image. Empty skips signature verification.'
     required: false
     default: ''
   github_token:
@@ -122,6 +122,23 @@ runs:
         working_directory: ${{ inputs.working_directory }}
         oras: ${{ inputs.image != '' }}
         github_token: ${{ inputs.github_token }}
+
+    # The signer check comes before anything is attached, signed or read from the image: a referrer
+    # attached to, and signed for, an image from another signer would otherwise be published before
+    # the final verification refused that image.
+    - name: Verify the image signature
+      if: ${{ inputs.signer != '' }}
+      shell: bash
+      env:
+        IMAGE: ${{ inputs.image }}
+        SIGNER: ${{ inputs.signer }}
+      run: |
+        set -euo pipefail
+
+        cosign verify \
+          --certificate-identity-regexp "$SIGNER" \
+          --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+          "$IMAGE" > /dev/null
 
     # Every input reaches the shell through the environment and an array, so no path is ever
     # expanded or word-split as code. `generate` is the one input run as a command, by design: it
