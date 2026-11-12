@@ -336,7 +336,7 @@ jobs:
           set -euo pipefail
 
           case "$EVENT_NAME" in
-            push | schedule | workflow_dispatch | merge_group) expected=read-write ;;
+            push | schedule | workflow_dispatch) expected=read-write ;;
             *) expected=read-only ;;
           esac
           if [ "$CACHE_MODE" != "$expected" ]; then
