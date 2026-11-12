@@ -17,6 +17,7 @@ export const ActionInput = {
   pr_url: 'pr_url',
   github_token: 'github_token',
   user_ids: 'user_ids',
+  reject_forks: 'reject_forks',
 } as const;
 
 export type ActionInput = (typeof ActionInput)[keyof typeof ActionInput];
@@ -25,6 +26,7 @@ export type ActionInput = (typeof ActionInput)[keyof typeof ActionInput];
 export const ActionOutput = {
   verified: 'verified',
   invalid_commits: 'invalid_commits',
+  head_sha: 'head_sha',
 } as const;
 
 export type ActionOutput = (typeof ActionOutput)[keyof typeof ActionOutput];
