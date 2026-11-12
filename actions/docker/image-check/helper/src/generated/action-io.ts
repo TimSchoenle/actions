@@ -42,6 +42,8 @@ export const ActionOutput = {
   ignore_unfixed: 'ignore_unfixed',
   ignore_file: 'ignore_file',
   sarif_path: 'sarif_path',
+  trivy_config: 'trivy_config',
+  empty_ignore_file: 'empty_ignore_file',
   sarif_category: 'sarif_category',
   upload_sarif: 'upload_sarif',
   comment_identifier: 'comment_identifier',

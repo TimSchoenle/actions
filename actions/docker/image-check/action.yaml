@@ -104,11 +104,20 @@ runs:
     # SARIF output and every LOW and MEDIUM finding reaches code scanning. The database cache sits
     # under RUNNER_TEMP rather than trivy-action's default inside the workspace, for the same reason
     # the SARIF does: a later `git add` must not be able to pick it up.
+    #
+    # The workspace holds the pull request's files, and Trivy reads trivy.yaml and .trivyignore from
+    # it. TRIVY_CONFIG and TRIVY_IGNOREFILE point at empty files the helper wrote under RUNNER_TEMP
+    # instead; trivy-action overrides TRIVY_IGNOREFILE with trivy-ignore-file when the caller names
+    # one. cache: 'false' turns off trivy-action's Actions cache for the binary and the database: its
+    # prefix restore-keys hand this job whatever any branch saved under cache-trivy-, a pull request
+    # branch included, so both are downloaded fresh on every run.
     - name: Scan Image
       uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
       env:
         TRIVY_SKIP_VERSION_CHECK: 'true'
         TRIVY_DISABLE_TELEMETRY: 'true'
+        TRIVY_CONFIG: ${{ steps.measure.outputs.trivy_config }}
+        TRIVY_IGNOREFILE: ${{ steps.measure.outputs.empty_ignore_file }}
       with:
         scan-type: image
         image-ref: ${{ steps.measure.outputs.image }}
@@ -119,6 +128,7 @@ runs:
         ignore-unfixed: ${{ steps.measure.outputs.ignore_unfixed }}
         trivyignores: ${{ steps.measure.outputs.ignore_file }}
         exit-code: '0'
+        cache: 'false'
         cache-dir: ${{ runner.temp }}/trivy-cache
 
     - name: Upload SARIF
