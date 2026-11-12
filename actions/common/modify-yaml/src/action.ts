@@ -1,4 +1,4 @@
-import { quoteForLog, runAction } from 'actions-util';
+import { quoteForLog, resolveRealWithinWorkspace, runAction, workspaceRoot } from 'actions-util';
 import * as core from 'actions-util/core';
 
 import { getInput, setOutput } from './generated/action-io.js';
@@ -10,6 +10,10 @@ import { modifyYaml } from './modify.js';
  * `old-value` is only published when the key existed: an absent key and a key that was previously
  * empty are different situations, and collapsing them would leave a caller unable to tell whether it
  * added the key or overwrote it.
+ *
+ * `file` must resolve inside the workspace, links included. The action reads the file into an output
+ * and writes it back, so a committed link or a `..` path would otherwise leak and overwrite any file
+ * the runner can reach.
  */
 export function run(): Promise<void> {
   return runAction(async () => {
@@ -17,9 +21,11 @@ export function run(): Promise<void> {
     const key = getInput('key', { required: true });
     const value = getInput('value', { required: true });
 
+    const filePath = await resolveRealWithinWorkspace(file, workspaceRoot(), 'file');
+
     core.info(`Modifying ${quoteForLog(key)} in ${quoteForLog(file)}...`);
 
-    const oldValue = await modifyYaml(file, key, value);
+    const oldValue = await modifyYaml(filePath, key, value);
 
     if (oldValue !== undefined) {
       setOutput('old-value', oldValue);

@@ -2,7 +2,7 @@ name: 'Common Modify YAML'
 description: 'A action to modify a value in a YAML file while strictly preserving comments and structure'
 inputs:
   file:
-    description: 'Path to the YAML file'
+    description: 'Path to the YAML file, relative to the workspace. It must resolve inside the workspace, symbolic links included.'
     required: true
   key:
     description: 'Dot-notation key path'
