@@ -1,0 +1,57 @@
+target: configs/renovate
+title: Config Renovate
+extra-inputs:
+  - 'configs/renovate'
+  - 'renovate.json'
+  - 'scripts/__fixtures__/renovate'
+  - 'scripts/check-renovate-configs.ts'
+  - 'scripts/check-renovate-lookups.ts'
+  - 'scripts/lib/renovate-lookup.ts'
+  - 'scripts/lib/renovate-tool.ts'
+  - '.github/tools/renovate'
+rules:
+  # Only pushes to main ran this workflow before it moved into Verify.
+  push-branches: []
+  schedule: true
+jobs:
+  renovate:
+    name: Validate and dry-run Renovate presets
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # Renovate's `engines` field requires Node 24. The runner image's default Node is not pinned.
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+
+      # Installs only the pinned Renovate in .github/tools/renovate, not the root workspace: the
+      # scripts below import nothing outside the Node and Bun standard libraries.
+      - name: Setup Bun and Renovate
+        uses: TimSchoenle/actions/actions/bun/setup-cached@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-bun-setup-cached-v3.1.0
+        with:
+          bun-version: ''
+          bun-version-file: '.bun-version'
+          working-directory: .github/tools/renovate
+          cache-key-prefix: renovate-
+
+      - name: Validate
+        run: bun scripts/check-renovate-configs.ts
+
+      # Lookups read public GitHub releases and tags; the job token only lifts the anonymous rate limit.
+      - name: Lookups
+        env:
+          GITHUB_COM_TOKEN: ${{ github.token }}
+        run: bun scripts/check-renovate-lookups.ts

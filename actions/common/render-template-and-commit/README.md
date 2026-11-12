@@ -138,6 +138,6 @@ Nothing is reached when the render changed nothing, because the commit step is s
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-render-template-and-commit.yaml`](../../../.github/workflows/verify-action-common-render-template-and-commit.yaml)
+- End-to-end tests: [`.github/verify/common-render-template-and-commit.yaml`](../../../.github/verify/common-render-template-and-commit.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

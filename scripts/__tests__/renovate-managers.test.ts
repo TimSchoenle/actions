@@ -139,14 +139,14 @@ describe('Renovate coverage of the workflow generator', () => {
 /**
  * Contract between a Verify source and the same managers.
  *
- * A source is copied into its generated workflow verbatim, and lives under `.github/verify/`, which no
- * manager in `renovate.json` reads. A ref written out in full there is therefore a pin Renovate
- * updates in the generated copy and nowhere else, and the drift check then fails on every pull request
- * until someone reverts the bump by hand, because the regenerate job's answer to drift is to rewrite
- * the workflow from the source. That is how `harden-runner` once sat two minor versions behind in one
- * generated workflow while every other job in it moved.
+ * A source is copied into its generated workflow verbatim. A ref written out in full there is a pin
+ * Renovate has to update in the source and in the generated copy on the same branch, or the drift
+ * check fails on every pull request until someone reverts the bump by hand. That is how
+ * `harden-runner` once sat two minor versions behind in one generated workflow while every other job
+ * in it moved.
  *
- * So sources name a `PINNED` key instead, and that is what is enforced here.
+ * So a source either names a `PINNED` key, or pins by digest in a file the github-actions manager
+ * claims, so the same branch moves both copies. Both are enforced here.
  */
 describe('Renovate coverage of the Verify sources', () => {
   const sourcePattern = `${SOURCES_DIR}/*.yaml`;
@@ -171,21 +171,32 @@ describe('Renovate coverage of the Verify sources', () => {
     expect(await scanSorted(sourcePattern)).not.toEqual([]);
   });
 
-  it('lets no source pin an action itself', async () => {
+  it('pins every action a source runs where Renovate moves it', async () => {
+    const config = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'renovate.json'), 'utf8')) as {
+      'github-actions'?: { managerFilePatterns?: string[] };
+    };
+    const claimed = (file: string): boolean =>
+      (config['github-actions']?.managerFilePatterns ?? []).some(
+        (pattern) => pattern.startsWith('/') && pattern.endsWith('/') && new RegExp(pattern.slice(1, -1)).test(file),
+      );
+
     for (const sourcePath of await scanSorted(sourcePattern)) {
       const source = fs.readFileSync(path.join(ROOT_DIR, sourcePath), 'utf8');
 
       for (const { line, value } of usesIn(source)) {
         // A local action carries no version, so there is nothing for Renovate to update.
-        if (value.startsWith('./')) {
+        if (value.startsWith('./') || /^pinned:\w+$/.test(value)) {
           continue;
         }
 
+        expect(value, `${sourcePath}:${line} must pin by a 40-character digest`).toMatch(
+          /^[\w.-]+\/[\w./-]+@[a-f0-9]{40}$/,
+        );
         expect(
-          value,
-          `${sourcePath}:${line} pins an action Renovate cannot see here. Write 'uses: pinned:<key>' ` +
-            'and add the ref to PINNED in scripts/lib/verify/pins.ts, where the customManagers read it.',
-        ).toMatch(/^pinned:\w+$/);
+          claimed(sourcePath),
+          `${sourcePath}:${line} pins an action, but no github-actions managerFilePatterns entry claims the file. ` +
+            "Write 'uses: pinned:<key>', or claim .github/verify/ in renovate.json.",
+        ).toBe(true);
       }
     }
   });

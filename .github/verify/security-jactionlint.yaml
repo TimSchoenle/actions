@@ -1,36 +1,9 @@
-name: Verify Security Jactionlint
-
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'actions/security/jactionlint/**'
-      - '!actions/security/jactionlint/CHANGELOG.md'
-      - '!actions/security/jactionlint/README.md'
-      - '.github/workflows/verify-action-security-jactionlint.yaml'
-  pull_request:
-    paths:
-      - 'actions/security/jactionlint/**'
-      - '!actions/security/jactionlint/CHANGELOG.md'
-      - '!actions/security/jactionlint/README.md'
-      - '.github/workflows/verify-action-security-jactionlint.yaml'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions: {}
-
-# Every case sets upload: false: the fixtures plant findings, and this repository's code scanning is
-# for its own code. Every case that runs jactionlint passes a config-file, so the
-# .github/jactionlint.yaml of the repository the workflow runs in cannot change a result. A case that
-# must fail sets continue-on-error, and the step after it asserts the outcome. harden-runner enforces
-# the egress allowlist on the Linux runners only. api.github.com and codeload.github.com let the runner
-# fetch common/download-release-asset, which the local composite action names, when its step starts.
-
+target: security/jactionlint
+rules:
+  # Only pushes to main ran this workflow before it moved into Verify.
+  push-branches: []
 jobs:
-  install:
+  jactionlint-install:
     name: 'Install and check a clean file (${{ matrix.os }})'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
@@ -306,20 +279,3 @@ jobs:
             || { echo "::error::a files line starting with - was not refused"; exit 1; }
 
           echo "✅ Invalid inputs were refused before jactionlint ran"
-
-  # <<< generated: summary (run 'bun run generate-ci-required' to update)
-  summary:
-    name: 'CI Summary: Security Jactionlint'
-    if: ${{ always() }}
-    needs:
-      - install
-      - fallback
-      - cases
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions: {}
-    steps:
-      - name: Fail if any verify job did not succeed
-        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
-        run: exit 1
-  # >>> generated: summary

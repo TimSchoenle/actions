@@ -10,8 +10,8 @@
     "**/__fixtures__/**"
   ],
   "github-actions": {
-    "description": "The example workflows each action README embeds, under actions/<category>/<name>/examples/. The shared preset reads only workflow directories and action.yaml, so without this the third-party pins in them go stale while every workflow moves. Their pins of this repository's own actions are written by bun run generate-docs, which pins them to the latest release with a # tag= comment; the actions preset leaves them to the generator. A contract test in scripts/__tests__ fails an example this pattern does not claim.",
-    "managerFilePatterns": ["/^actions/[^/]+/[^/]+/examples/[^/]+\\.ya?ml$/"]
+    "description": "The example workflows each action README embeds, under actions/<category>/<name>/examples/. The shared preset reads only workflow directories and action.yaml, so without this the third-party pins in them go stale while every workflow moves. Their pins of this repository's own actions are written by bun run generate-docs, which pins them to the latest release with a # tag= comment; the actions preset leaves them to the generator. A contract test in scripts/__tests__ fails an example this pattern does not claim. The Verify sources under .github/verify/ are workflow jobs the generator copies into .github/workflows/verify-*.yaml; claiming them here lets Renovate move a third-party pin in the source and its generated copy on one branch, which keeps the Verify drift check green.",
+    "managerFilePatterns": ["/^actions/[^/]+/[^/]+/examples/[^/]+\\.ya?ml$/", "/^\\.github/verify/[^/]+\\.ya?ml$/"]
   },
   "customManagers": [
     {

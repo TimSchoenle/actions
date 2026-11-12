@@ -4,6 +4,19 @@
   "ignore": ["**/CHANGELOG.md", "actions/*/*/README.md"],
   "targets": [
     {
+      "id": "bun/setup-cached",
+      "shard": "verify-bun",
+      "inputs": [
+        ".github/verify/bun-setup-cached.yaml",
+        ".github/workflows/verify-bun.yaml",
+        "actions/bun/setup-cached"
+      ],
+      "buildDirs": [],
+      "pullRequestBranches": ["main"],
+      "pushBranches": [],
+      "schedule": false
+    },
+    {
       "id": "common/close-pull-request",
       "shard": "verify-common",
       "inputs": [
@@ -39,6 +52,19 @@
       "buildDirs": ["actions/common/commit-changes"],
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/commit-changes"],
+      "schedule": false
+    },
+    {
+      "id": "common/commit-generated-files",
+      "shard": "verify-common",
+      "inputs": [
+        ".github/verify/common-commit-generated-files.yaml",
+        ".github/workflows/verify-common.yaml",
+        "actions/common/commit-generated-files"
+      ],
+      "buildDirs": [],
+      "pullRequestBranches": null,
+      "pushBranches": [],
       "schedule": false
     },
     {
@@ -97,6 +123,19 @@
       "buildDirs": ["actions/common/create-patch/helper"],
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/create-patch"],
+      "schedule": false
+    },
+    {
+      "id": "common/create-pull-request",
+      "shard": "verify-common",
+      "inputs": [
+        ".github/verify/common-create-pull-request.yaml",
+        ".github/workflows/verify-common.yaml",
+        "actions/common/create-pull-request"
+      ],
+      "buildDirs": [],
+      "pullRequestBranches": ["main"],
+      "pushBranches": [],
       "schedule": false
     },
     {
@@ -278,6 +317,19 @@
       "schedule": false
     },
     {
+      "id": "common/render-readme",
+      "shard": "verify-common",
+      "inputs": [
+        ".github/verify/common-render-readme.yaml",
+        ".github/workflows/verify-common.yaml",
+        "actions/common/render-readme"
+      ],
+      "buildDirs": [],
+      "pullRequestBranches": null,
+      "pushBranches": [],
+      "schedule": false
+    },
+    {
       "id": "common/render-template",
       "shard": "verify-common",
       "inputs": [
@@ -294,6 +346,19 @@
       "buildDirs": ["actions/common/render-template"],
       "pullRequestBranches": null,
       "pushBranches": ["feature/common/render-template"],
+      "schedule": false
+    },
+    {
+      "id": "common/render-template-and-commit",
+      "shard": "verify-common",
+      "inputs": [
+        ".github/verify/common-render-template-and-commit.yaml",
+        ".github/workflows/verify-common.yaml",
+        "actions/common/render-template-and-commit"
+      ],
+      "buildDirs": [],
+      "pullRequestBranches": ["main"],
+      "pushBranches": [],
       "schedule": false
     },
     {
@@ -354,6 +419,40 @@
       "schedule": false
     },
     {
+      "id": "configs/checkstyle",
+      "shard": "verify-configs",
+      "inputs": [
+        ".github/verify/configs-checkstyle.yaml",
+        ".github/workflows/verify-configs.yaml",
+        "configs/checkstyle",
+        "jitpack.yml"
+      ],
+      "buildDirs": [],
+      "pullRequestBranches": null,
+      "pushBranches": [],
+      "schedule": false
+    },
+    {
+      "id": "configs/renovate",
+      "shard": "verify-configs",
+      "inputs": [
+        ".github/tools/renovate",
+        ".github/verify/configs-renovate.yaml",
+        ".github/workflows/verify-configs.yaml",
+        "configs/renovate",
+        "renovate.json",
+        "scripts/__fixtures__/renovate",
+        "scripts/check-renovate-configs.ts",
+        "scripts/check-renovate-lookups.ts",
+        "scripts/lib/renovate-lookup.ts",
+        "scripts/lib/renovate-tool.ts"
+      ],
+      "buildDirs": [],
+      "pullRequestBranches": null,
+      "pushBranches": [],
+      "schedule": true
+    },
+    {
       "id": "docker/image-check",
       "shard": "verify-docker",
       "inputs": [
@@ -412,6 +511,20 @@
       "schedule": false
     },
     {
+      "id": "helm/update-chart-version",
+      "shard": "verify-helm",
+      "inputs": [
+        ".github/testdata/terrace-helm",
+        ".github/verify/helm-update-chart-version.yaml",
+        ".github/workflows/verify-helm.yaml",
+        "actions/helm/update-chart-version"
+      ],
+      "buildDirs": [],
+      "pullRequestBranches": ["main"],
+      "pushBranches": [],
+      "schedule": false
+    },
+    {
       "id": "helper/resolve-base-branch",
       "shard": "verify-helper",
       "inputs": [
@@ -466,6 +579,51 @@
       "buildDirs": ["actions/helper/verify-commit-authors"],
       "pullRequestBranches": null,
       "pushBranches": ["feature/helper/verify-commit-authors"],
+      "schedule": false
+    },
+    {
+      "id": "java-gradle/auto-spotless",
+      "shard": "verify-java-gradle",
+      "inputs": [
+        ".bun-version",
+        ".github/verify/java-gradle-auto-spotless.yaml",
+        ".github/workflows/verify-java-gradle.yaml",
+        "actions/common/commit-changes",
+        "actions/common/commit-patch",
+        "actions/java-gradle/auto-spotless",
+        "bun.lock",
+        "packages/ts-util",
+        "scripts/build-action.ts"
+      ],
+      "buildDirs": ["actions/common/commit-changes", "actions/common/commit-patch/helper"],
+      "pullRequestBranches": null,
+      "pushBranches": [],
+      "schedule": false
+    },
+    {
+      "id": "java-gradle/coverage-codecov",
+      "shard": "verify-java-gradle",
+      "inputs": [
+        ".github/verify/java-gradle-coverage-codecov.yaml",
+        ".github/workflows/verify-java-gradle.yaml",
+        "actions/java-gradle/coverage-codecov"
+      ],
+      "buildDirs": [],
+      "pullRequestBranches": null,
+      "pushBranches": [],
+      "schedule": false
+    },
+    {
+      "id": "java-gradle/setup-base-environment",
+      "shard": "verify-java-gradle",
+      "inputs": [
+        ".github/verify/java-gradle-setup-base-environment.yaml",
+        ".github/workflows/verify-java-gradle.yaml",
+        "actions/java-gradle/setup-base-environment"
+      ],
+      "buildDirs": [],
+      "pullRequestBranches": null,
+      "pushBranches": [],
       "schedule": false
     },
     {
@@ -681,6 +839,25 @@
       "schedule": false
     },
     {
+      "id": "rust/auto-format",
+      "shard": "verify-rust",
+      "inputs": [
+        ".bun-version",
+        ".github/verify/rust-auto-format.yaml",
+        ".github/workflows/verify-rust.yaml",
+        "actions/common/commit-changes",
+        "actions/common/commit-patch",
+        "actions/rust/auto-format",
+        "bun.lock",
+        "packages/ts-util",
+        "scripts/build-action.ts"
+      ],
+      "buildDirs": ["actions/common/commit-changes", "actions/common/commit-patch/helper"],
+      "pullRequestBranches": null,
+      "pushBranches": [],
+      "schedule": false
+    },
+    {
       "id": "rust/config-contract",
       "shard": "verify-rust",
       "inputs": [
@@ -697,6 +874,19 @@
       "buildDirs": ["actions/rust/config-contract"],
       "pullRequestBranches": null,
       "pushBranches": ["feature/rust/config-contract"],
+      "schedule": false
+    },
+    {
+      "id": "rust/coverage-codecov",
+      "shard": "verify-rust",
+      "inputs": [
+        ".github/verify/rust-coverage-codecov.yaml",
+        ".github/workflows/verify-rust.yaml",
+        "actions/rust/coverage-codecov"
+      ],
+      "buildDirs": [],
+      "pullRequestBranches": null,
+      "pushBranches": [],
       "schedule": false
     },
     {
@@ -719,6 +909,19 @@
       "schedule": false
     },
     {
+      "id": "security/jactionlint",
+      "shard": "verify-security",
+      "inputs": [
+        ".github/verify/security-jactionlint.yaml",
+        ".github/workflows/verify-security.yaml",
+        "actions/security/jactionlint"
+      ],
+      "buildDirs": [],
+      "pullRequestBranches": null,
+      "pushBranches": [],
+      "schedule": false
+    },
+    {
       "id": "security/zizmor",
       "shard": "verify-security",
       "inputs": [
@@ -738,6 +941,62 @@
       "schedule": false
     },
     {
+      "id": "terrace/helm-check",
+      "shard": "verify-terrace",
+      "inputs": [
+        ".github/testdata/terrace-helm",
+        ".github/verify/terrace-helm-check.yaml",
+        ".github/workflows/verify-terrace.yaml",
+        "actions/terrace/helm-check"
+      ],
+      "buildDirs": [],
+      "pullRequestBranches": null,
+      "pushBranches": [],
+      "schedule": false
+    },
+    {
+      "id": "terrace/helm-diff",
+      "shard": "verify-terrace",
+      "inputs": [
+        ".github/testdata/terrace-helm",
+        ".github/verify/terrace-helm-diff.yaml",
+        ".github/workflows/verify-terrace.yaml",
+        "actions/terrace/helm-diff"
+      ],
+      "buildDirs": [],
+      "pullRequestBranches": null,
+      "pushBranches": [],
+      "schedule": false
+    },
+    {
+      "id": "terrace/helm-sync",
+      "shard": "verify-terrace",
+      "inputs": [
+        ".github/testdata/terrace-helm",
+        ".github/verify/terrace-helm-sync.yaml",
+        ".github/workflows/verify-terrace.yaml",
+        "actions/terrace/helm-sync"
+      ],
+      "buildDirs": [],
+      "pullRequestBranches": null,
+      "pushBranches": [],
+      "schedule": false
+    },
+    {
+      "id": "terrace/image",
+      "shard": "verify-terrace",
+      "inputs": [
+        ".github/testdata/terrace-image",
+        ".github/verify/terrace-image.yaml",
+        ".github/workflows/verify-terrace.yaml",
+        "actions/terrace/image"
+      ],
+      "buildDirs": [],
+      "pullRequestBranches": null,
+      "pushBranches": [],
+      "schedule": false
+    },
+    {
       "id": "terrace/setup",
       "shard": "verify-terrace",
       "inputs": [
@@ -754,6 +1013,15 @@
       "buildDirs": ["actions/terrace/setup"],
       "pullRequestBranches": null,
       "pushBranches": ["feature/terrace/setup"],
+      "schedule": false
+    },
+    {
+      "id": "test/setup-e2e",
+      "shard": "verify-test",
+      "inputs": [".github/verify/test-setup-e2e.yaml", ".github/workflows/verify-test.yaml", "actions/test/setup-e2e"],
+      "buildDirs": [],
+      "pullRequestBranches": null,
+      "pushBranches": [],
       "schedule": false
     }
   ]

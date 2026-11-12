@@ -207,6 +207,6 @@ v1 was one step that checked out, formatted, committed and commented. v2 is the 
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-java-gradle-auto-spotless.yaml`](../../../.github/workflows/verify-action-java-gradle-auto-spotless.yaml)
+- End-to-end tests: [`.github/verify/java-gradle-auto-spotless.yaml`](../../../.github/verify/java-gradle-auto-spotless.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

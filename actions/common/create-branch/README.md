@@ -99,9 +99,9 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
 - End-to-end tests: [`.github/verify/common-create-branch.yaml`](../../../.github/verify/common-create-branch.yaml)
 - Called from this repository by:
-  - [`.github/workflows/verify-action-common-render-template-and-commit.yaml`](../../../.github/workflows/verify-action-common-render-template-and-commit.yaml)
-  - [`.github/workflows/verify-action-helm-update-chart-version.yaml`](../../../.github/workflows/verify-action-helm-update-chart-version.yaml)
-  - [`.github/workflows/verify-action-java-gradle-auto-spotless.yaml`](../../../.github/workflows/verify-action-java-gradle-auto-spotless.yaml)
-  - [`.github/workflows/verify-action-rust-auto-format.yaml`](../../../.github/workflows/verify-action-rust-auto-format.yaml)
+  - [`.github/verify/common-render-template-and-commit.yaml`](../../../.github/verify/common-render-template-and-commit.yaml)
+  - [`.github/verify/helm-update-chart-version.yaml`](../../../.github/verify/helm-update-chart-version.yaml)
+  - [`.github/verify/java-gradle-auto-spotless.yaml`](../../../.github/verify/java-gradle-auto-spotless.yaml)
+  - [`.github/verify/rust-auto-format.yaml`](../../../.github/verify/rust-auto-format.yaml)
   - [`actions/common/create-pull-request/action.yaml`](../../../actions/common/create-pull-request/action.yaml)
 <!-- /docs:generated reference -->

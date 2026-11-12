@@ -19,7 +19,7 @@ import {
   workspaceModulePaths,
 } from '../lib/verify/jobs.js';
 import { shardFile, SUMMARY_JOB_NAME, VERIFY_WORKFLOW } from '../lib/verify/render.js';
-import { readSources } from '../lib/verify/source.js';
+import { jobValue, readSources } from '../lib/verify/source.js';
 import { E2E_DIRECTORY, hasE2eCases } from '../lib/verify/target-inputs.js';
 
 import type { PlanEvent } from '../lib/verify/affected.js';
@@ -130,7 +130,38 @@ function docsOf(actionPath: string): ActionDocs | undefined {
   return result.docs;
 }
 
+/**
+ * Sources whose jobs run harden-runner in audit mode, with how many such steps each has. They moved
+ * from hand-written workflows that already audited. THIS LIST MAY ONLY SHRINK: lower a count when a
+ * job starts blocking, and delete the entry at zero.
+ */
+const AUDITING_SOURCES: Readonly<Record<string, number>> = {
+  '.github/verify/bun-setup-cached.yaml': 3,
+  '.github/verify/common-create-pull-request.yaml': 4,
+  '.github/verify/common-render-template-and-commit.yaml': 4,
+  '.github/verify/configs-checkstyle.yaml': 1,
+  '.github/verify/configs-renovate.yaml': 1,
+  '.github/verify/helm-update-chart-version.yaml': 7,
+  '.github/verify/java-gradle-auto-spotless.yaml': 1,
+  '.github/verify/java-gradle-coverage-codecov.yaml': 4,
+  '.github/verify/java-gradle-setup-base-environment.yaml': 1,
+  '.github/verify/rust-auto-format.yaml': 1,
+  '.github/verify/rust-coverage-codecov.yaml': 3,
+  '.github/verify/terrace-helm-sync.yaml': 1,
+  '.github/verify/test-setup-e2e.yaml': 1,
+};
+
 const SOURCES = readSources(ROOT_DIR);
+
+/** How many steps of a source's jobs set harden-runner's `egress-policy` to `audit`, read as parsed YAML. */
+function auditSteps(source: (typeof SOURCES)[number]): number {
+  return source.jobIds
+    .flatMap((id) => {
+      const steps = jobValue(source, id)['steps'];
+      return Array.isArray(steps) ? (steps as { with?: Record<string, unknown> }[]) : [];
+    })
+    .filter((step) => step.with?.['egress-policy'] === 'audit').length;
+}
 const GENERATED = generate(ROOT_DIR);
 
 /** Each action's token-input scopes from `docs.yaml` that its end-to-end token lacks. */
@@ -268,15 +299,35 @@ describe('generated Verify workflows', () => {
     expect(summary?.['needs']).toEqual(Object.keys(jobs).filter((id) => jobs[id] !== summary));
   });
 
-  it('block egress in every generated job that has an allowlist, never merely audit it', () => {
+  // The jobs the generator writes hold the scratch-repository token, so they block. A source job may
+  // still audit, where it installs toolchains from hosts nobody has listed yet; AUDITING_SOURCES
+  // records those, and may only shrink.
+  it('block egress in every job the generator writes, and audit only where a source is recorded', () => {
     for (const file of GENERATED.files.keys()) {
       if (!file.endsWith('.yaml')) {
         continue;
       }
-      const content = fs.readFileSync(path.join(ROOT_DIR, file), 'utf8');
-
-      expect(content, `${file} must not fall back to auditing`).not.toContain('egress-policy: audit');
+      const jobs = jobsOf(file);
+      for (const shard of GENERATED.shards.filter((candidate) => shardFile(candidate.id) === file)) {
+        for (const target of shard.targets.filter((candidate) => candidate.source.e2e !== undefined)) {
+          expect(JSON.stringify(jobs[e2eJobId(target.source.target)]), `${file}: the e2e job must block`).toContain(
+            '"egress-policy":"block"',
+          );
+        }
+      }
+      if (file === VERIFY_WORKFLOW) {
+        expect(fs.readFileSync(path.join(ROOT_DIR, file), 'utf8')).not.toContain('egress-policy: audit');
+      }
     }
+
+    const auditing = Object.fromEntries(
+      SOURCES.map((source) => [source.file, auditSteps(source)]).filter(([, count]) => (count as number) > 0),
+    );
+
+    expect(
+      auditing,
+      'a source audits egress where AUDITING_SOURCES does not record it; block, or lower the count',
+    ).toEqual(AUDITING_SOURCES);
   });
 
   // The whole reason the install is a separate job: harden-runner sets one policy per job, so the
@@ -335,7 +386,7 @@ describe('affected-target detection against this repository', () => {
       .filter((target) => target.inputs.includes('packages/ts-util'))
       .map((target) => target.id);
 
-    expect(expected.length).toBeGreaterThan(30);
+    expect(expected.length).toBeGreaterThan(40);
     expect(select(['packages/ts-util/src/index.ts'])).toEqual(expected.sort());
   });
 
@@ -354,6 +405,36 @@ describe('affected-target detection against this repository', () => {
 
   it('runs nothing for a README-only change', () => {
     expect(select(['actions/common/find-patch/README.md', 'actions/release/build-actions/CHANGELOG.md'])).toEqual([]);
+  });
+
+  it('runs the targets that read the terrace-helm fixture for a change to it, through extra-inputs', () => {
+    expect(select(['.github/testdata/terrace-helm/terrace.yaml'])).toEqual([
+      'helm/update-chart-version',
+      'terrace/helm-check',
+      'terrace/helm-diff',
+      'terrace/helm-sync',
+    ]);
+  });
+
+  it('runs only the scheduled targets on the weekly schedule', () => {
+    expect(selectTargets(plan, { name: 'schedule' }, 'all').targets).toEqual(['configs/renovate']);
+  });
+
+  it('keeps the targets restricted to main off a pull request against another base', () => {
+    const restricted = [
+      'bun/setup-cached',
+      'common/create-pull-request',
+      'common/render-template-and-commit',
+      'helm/update-chart-version',
+    ];
+
+    expect(plan.targets.filter((target) => target.pullRequestBranches !== null).map((target) => target.id)).toEqual(
+      restricted,
+    );
+    const selected = selectTargets(plan, { name: 'pull_request', baseRef: 'release' }, ['bun.lock']).targets;
+    for (const target of restricted) {
+      expect(selected).not.toContain(target);
+    }
   });
 
   it('runs a target for a change to its own source file', () => {

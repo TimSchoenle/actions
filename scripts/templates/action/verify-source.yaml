@@ -1,0 +1,26 @@
+# Verify jobs of actions/{{packageName}}/{{subAction}}. Ordinary workflow jobs; the generator gates
+# each on this target and prefixes its name. See docs/verify-pipeline.md for the format, then run
+# 'bun run generate-verify'.
+target: '{{packageName}}/{{subAction}}'
+jobs:
+  verify-{{packageName}}-{{subAction}}:
+    name: Verify {{capitalizedSubAction}}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # to fetch code
+    steps:
+      - name: Harden Runner
+        uses: pinned:hardenRunner
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+
+      - name: Checkout
+        uses: pinned:checkout
+        with:
+          persist-credentials: false
+
+      - name: Test {{subAction}}
+        uses: ./actions/{{packageName}}/{{subAction}}

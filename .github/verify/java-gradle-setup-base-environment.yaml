@@ -1,29 +1,9 @@
-name: Verify Java-gradle Setup-base-environment
-
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'actions/java-gradle/setup-base-environment/**'
-      - '!actions/java-gradle/setup-base-environment/CHANGELOG.md'
-      - '!actions/java-gradle/setup-base-environment/README.md'
-      - '.github/workflows/verify-action-java-gradle-setup-base-environment.yaml'
-  pull_request:
-    paths:
-      - 'actions/java-gradle/setup-base-environment/**'
-      - '!actions/java-gradle/setup-base-environment/CHANGELOG.md'
-      - '!actions/java-gradle/setup-base-environment/README.md'
-      - '.github/workflows/verify-action-java-gradle-setup-base-environment.yaml'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions: {}
-
+target: java-gradle/setup-base-environment
+rules:
+  # Only pushes to main ran this workflow before it moved into Verify.
+  push-branches: []
 jobs:
-  verify:
+  setup-base-environment-verify:
     name: Verify Setup-base-environment
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -135,18 +115,3 @@ jobs:
 
           echo "gradlew is executable"
         shell: bash
-
-  # <<< generated: summary (run 'bun run generate-ci-required' to update)
-  summary:
-    name: 'CI Summary: Java-gradle Setup-base-environment'
-    if: ${{ always() }}
-    needs:
-      - verify
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions: {}
-    steps:
-      - name: Fail if any verify job did not succeed
-        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
-        run: exit 1
-  # >>> generated: summary

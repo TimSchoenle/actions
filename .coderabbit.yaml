@@ -107,7 +107,7 @@ reviews:
     - path: 'scripts/templates/**'
       instructions: |
         Sources for the root README.md and SECURITY.md and scaffolding for every new action and its
-        verify workflow. Defects here propagate into each new component; apply the action and workflow
+        verify source. Defects here propagate into each new component; apply the action and workflow
         rules.
     - path: '.github/workflows/**'
       instructions: |

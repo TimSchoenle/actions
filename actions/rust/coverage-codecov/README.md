@@ -102,6 +102,6 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-rust-coverage-codecov.yaml`](../../../.github/workflows/verify-action-rust-coverage-codecov.yaml)
+- End-to-end tests: [`.github/verify/rust-coverage-codecov.yaml`](../../../.github/verify/rust-coverage-codecov.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

@@ -5,7 +5,7 @@ import chalk from 'chalk';
 
 import { sourceComponentFor } from './release-tags.js';
 import { ACTIONS_DIR, capitalize, createFromTemplate, ROOT_DIR, START_VERSION, Sys } from './utils.js';
-import { PINNED } from './verify/pins.js';
+import { sourceFileName, SOURCES_DIR } from './verify/source.js';
 
 // Naming Conventions Helpers
 /** The action's directory relative to the repository root, which is also its release-please package key. */
@@ -174,59 +174,50 @@ export async function removeActionFromReleasePlease(packageName: string, subActi
   }
 }
 
-// Verify Workflow Helpers
-function verifyWorkflowName(packageName: string, subAction: string): string {
-  return `verify-action-${packageName}-${subAction}.yaml`;
-}
+// Verify Source Helpers
 
-/** Template the verify workflow is rendered from, relative to `scripts/templates`. */
-export const VERIFY_WORKFLOW_TEMPLATE = 'action/verify-workflow.yaml';
+/** Template the verify source is rendered from, relative to `scripts/templates`. */
+export const VERIFY_SOURCE_TEMPLATE = 'action/verify-source.yaml';
 
-/**
- * The part of a `PINNED` entry after `@`: the digest and its ` # vX.Y.Z` comment.
- *
- * The template writes the action name itself and takes only this part as a placeholder, because a
- * bare `{{placeholder}}` as a YAML value is a flow mapping and the formatter rewrites it. The
- * parameter type rejects, at compile time, a `PINNED` entry without an `@`.
- */
-function pinnedRef(pin: `${string}@${string}`): string {
-  return pin.slice(pin.indexOf('@') + 1);
+/** Repository-relative path of an action's verify source. */
+export function verifySourcePath(packageName: string, subAction: string): string {
+  return `${SOURCES_DIR}/${sourceFileName(`${packageName}/${subAction}`)}`;
 }
 
 /**
- * Values substituted into the verify workflow template.
- *
- * The action refs come from `PINNED` rather than being written into the template: no Renovate
- * manager reads `scripts/templates`, so a ref hard-coded there never moves, while `PINNED` is kept
- * current by the custom managers in `renovate.json`.
+ * Values substituted into the verify source template. The template reaches pinned actions through
+ * `uses: pinned:<key>`, which the generator resolves from `PINNED`, so no ref is substituted here.
  */
-export function verifyWorkflowReplacements(packageName: string, subAction: string): Record<string, string> {
+export function verifySourceReplacements(packageName: string, subAction: string): Record<string, string> {
   return {
     packageName,
     subAction,
     capitalizedPackageName: capitalize(packageName),
     capitalizedSubAction: capitalize(subAction),
-    hardenRunnerRef: pinnedRef(PINNED.hardenRunner),
-    checkoutRef: pinnedRef(PINNED.checkout),
   };
 }
 
-export async function createVerifyWorkflow(packageName: string, subAction: string) {
-  const workflowName = verifyWorkflowName(packageName, subAction);
-  const workflowPath = path.join(ROOT_DIR, '.github', 'workflows', workflowName);
+/** Writes the action's verify source under `.github/verify/`. */
+export async function createVerifySource(packageName: string, subAction: string) {
+  const sourcePath = verifySourcePath(packageName, subAction);
 
-  await createFromTemplate(VERIFY_WORKFLOW_TEMPLATE, workflowPath, verifyWorkflowReplacements(packageName, subAction));
-  console.log(chalk.green(`Created verify workflow: .github/workflows/${workflowName}`));
+  await createFromTemplate(
+    VERIFY_SOURCE_TEMPLATE,
+    path.join(ROOT_DIR, sourcePath),
+    verifySourceReplacements(packageName, subAction),
+  );
+  console.log(chalk.green(`Created verify source: ${sourcePath}`));
 }
 
-export async function removeVerifyWorkflow(packageName: string, subAction: string) {
-  const workflowName = verifyWorkflowName(packageName, subAction);
-  const workflowPath = path.join(ROOT_DIR, '.github', 'workflows', workflowName);
+/** Removes the action's verify source, when it has one. */
+export async function removeVerifySource(packageName: string, subAction: string) {
+  const sourcePath = verifySourcePath(packageName, subAction);
+  const absolute = path.join(ROOT_DIR, sourcePath);
 
-  if (Sys.exists(workflowPath)) {
-    await Sys.rm(workflowPath);
-    console.log(chalk.green(`Removed verify workflow: .github/workflows/${workflowName}`));
+  if (Sys.exists(absolute)) {
+    await Sys.rm(absolute);
+    console.log(chalk.green(`Removed verify source: ${sourcePath}`));
   } else {
-    console.log(chalk.blue(`Verify workflow not found: .github/workflows/${workflowName}`));
+    console.log(chalk.blue(`Verify source not found: ${sourcePath}`));
   }
 }

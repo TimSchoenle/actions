@@ -1,41 +1,11 @@
-name: Verify Helm Update Chart Version
-
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'actions/helm/update-chart-version/**'
-      - '!actions/helm/update-chart-version/CHANGELOG.md'
-      - '!actions/helm/update-chart-version/README.md'
-      - '.github/testdata/terrace-helm/**'
-      - '.github/workflows/verify-action-helm-update-chart-version.yaml'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'actions/helm/update-chart-version/**'
-      - '!actions/helm/update-chart-version/CHANGELOG.md'
-      - '!actions/helm/update-chart-version/README.md'
-      - '.github/testdata/terrace-helm/**'
-      - '.github/workflows/verify-action-helm-update-chart-version.yaml'
-  workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read # to read content
-
-env:
-  TEST_OWNER: TimSchoenle
-  TEST_REPO_NAME: actions-testing
-  TEST_REPO: TimSchoenle/actions-testing
-  TEST_ID: helm-update-test-${{ github.run_number }}-${{ github.run_attempt }}
-  # A chart with one image still goes through the templated surface: it is a one-entry map.
-  SINGLE_IMAGE: '{"image.tag": {"tag": "v2.0.0", "digest": "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"}}'
-
+target: helm/update-chart-version
+title: Helm Update Chart Version
+extra-inputs:
+  - '.github/testdata/terrace-helm'
+rules:
+  pull-request-branches: [main]
+  # Only pushes to main ran this workflow before it moved into Verify.
+  push-branches: []
 jobs:
   test-full-update:
     environment:
@@ -44,6 +14,15 @@ jobs:
     name: 'Test: full chart version update and PR creation'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: helm-update-test-${{ github.run_number }}-${{ github.run_attempt }}
+      # A chart with one image still goes through the templated surface: it is a one-entry map.
+      SINGLE_IMAGE: '{"image.tag": {"tag": "v2.0.0", "digest": "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"}}'
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -250,6 +229,15 @@ jobs:
     name: 'Test: many images at differing versions, with a changelog'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: helm-update-test-${{ github.run_number }}-${{ github.run_attempt }}
+      # A chart with one image still goes through the templated surface: it is a one-entry map.
+      SINGLE_IMAGE: '{"image.tag": {"tag": "v2.0.0", "digest": "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"}}'
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -450,6 +438,15 @@ jobs:
     name: 'Test: custom PR branch prefix'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: helm-update-test-${{ github.run_number }}-${{ github.run_attempt }}
+      # A chart with one image still goes through the templated surface: it is a one-entry map.
+      SINGLE_IMAGE: '{"image.tag": {"tag": "v2.0.0", "digest": "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"}}'
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -620,6 +617,15 @@ jobs:
             bump: patch
             app_version: v1.0.0-bump6
 
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: helm-update-test-${{ github.run_number }}-${{ github.run_attempt }}
+      # A chart with one image still goes through the templated surface: it is a one-entry map.
+      SINGLE_IMAGE: '{"image.tag": {"tag": "v2.0.0", "digest": "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"}}'
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -758,6 +764,15 @@ jobs:
     name: 'Test: nested chart path'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: helm-update-test-${{ github.run_number }}-${{ github.run_attempt }}
+      # A chart with one image still goes through the templated surface: it is a one-entry map.
+      SINGLE_IMAGE: '{"image.tag": {"tag": "v2.0.0", "digest": "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"}}'
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -901,6 +916,15 @@ jobs:
     name: 'Test: idempotent re-run resets branch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: helm-update-test-${{ github.run_number }}-${{ github.run_attempt }}
+      # A chart with one image still goes through the templated surface: it is a one-entry map.
+      SINGLE_IMAGE: '{"image.tag": {"tag": "v2.0.0", "digest": "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"}}'
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -1030,7 +1054,10 @@ jobs:
 
           # Should contain the SECOND digest, not the first (branch was reset)
           echo "$VALUES_CONTENT" | grep -qF "sha256:5ec0" || { echo "::error::Second digest not found — branch was not reset"; exit 1; }
-          echo "$VALUES_CONTENT" | grep -qvF "sha256:f115" || { echo "::error::First digest still present — branch was not reset"; exit 1; }
+          if grep -qF "sha256:f115" <<< "$VALUES_CONTENT"; then
+            echo "::error::First digest still present — branch was not reset"
+            exit 1
+          fi
           echo "✅ Branch was correctly reset; second run digest is present"
 
       # Runs before the base branch is deleted, for the same reason as in the jobs above.
@@ -1072,9 +1099,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: helm-update-test-${{ github.run_number }}-${{ github.run_attempt }}
+      # A chart with one image still goes through the templated surface: it is a one-entry map.
+      SINGLE_IMAGE: '{"image.tag": {"tag": "v2.0.0", "digest": "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"}}'
       FIXTURE: tmp/actions-code/.github/testdata/terrace-helm
       CHART: charts/mp-stats-legacy-viewer
       FIXTURE_IMAGE: '{"image.tag": {"tag": "v0.21.5", "digest": "sha256:b219ff217a3ef8453ca059871fe24ab7f3ece8d185c1027d2e9e701d52e90ddc"}}'
+    permissions:
+      contents: read
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -1214,24 +1249,3 @@ jobs:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           branch_name: test/helm-update/${{ env.TEST_ID }}/mp-stats-legacy-viewer/${{ steps.update.outputs.chart-version }}
-
-  # <<< generated: summary (run 'bun run generate-ci-required' to update)
-  summary:
-    name: 'CI Summary: Helm Update Chart Version'
-    if: ${{ always() }}
-    needs:
-      - test-full-update
-      - test-multi-image
-      - test-custom-branch-prefix
-      - test-version-bump
-      - test-nested-chart-path
-      - test-idempotent-rerun
-      - test-pull-contracts
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions: {}
-    steps:
-      - name: Fail if any verify job did not succeed
-        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
-        run: exit 1
-  # >>> generated: summary

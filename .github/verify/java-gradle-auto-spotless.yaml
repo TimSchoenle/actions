@@ -1,103 +1,12 @@
-name: Verify Java-gradle Auto-spotless
-
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'actions/java-gradle/auto-spotless/**'
-      - 'actions/common/commit-changes/**'
-      - 'actions/common/commit-patch/**'
-      - 'packages/ts-util/**'
-      - 'bun.lock'
-      - '.bun-version'
-      - 'scripts/build-action.ts'
-      - '.github/workflows/verify-action-java-gradle-auto-spotless.yaml'
-      - '!actions/java-gradle/auto-spotless/CHANGELOG.md'
-      - '!actions/java-gradle/auto-spotless/README.md'
-      - '!actions/common/commit-changes/CHANGELOG.md'
-      - '!actions/common/commit-changes/README.md'
-      - '!actions/common/commit-patch/CHANGELOG.md'
-      - '!actions/common/commit-patch/README.md'
-  pull_request:
-    paths:
-      - 'actions/java-gradle/auto-spotless/**'
-      - 'actions/common/commit-changes/**'
-      - 'actions/common/commit-patch/**'
-      - 'packages/ts-util/**'
-      - 'bun.lock'
-      - '.bun-version'
-      - 'scripts/build-action.ts'
-      - '.github/workflows/verify-action-java-gradle-auto-spotless.yaml'
-      - '!actions/java-gradle/auto-spotless/CHANGELOG.md'
-      - '!actions/java-gradle/auto-spotless/README.md'
-      - '!actions/common/commit-changes/CHANGELOG.md'
-      - '!actions/common/commit-changes/README.md'
-      - '!actions/common/commit-patch/CHANGELOG.md'
-      - '!actions/common/commit-patch/README.md'
-  workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read # to read content
-
-env:
-  TEST_OWNER: TimSchoenle
-  TEST_REPO_NAME: actions-testing
-  TEST_REPO: TimSchoenle/actions-testing
-  TEST_ID: auto-spotless-test-${{ github.run_number }}-${{ github.run_attempt }}
-
+target: java-gradle/auto-spotless
+build:
+  - actions/common/commit-changes
+  - actions/common/commit-patch/helper
+rules:
+  # Only pushes to main ran this workflow before it moved into Verify.
+  push-branches: []
 jobs:
-  # Builds the bundles the test job runs from the tmp/actions-code checkout, from the commit under
-  # test, so the job never runs a committed bundle. Holds no secret.
-  build:
-    name: Build Actions
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read # to fetch code
-    outputs:
-      artifact-id: ${{ steps.build.outputs.artifact-id }}
-      manifest-sha256: ${{ steps.build.outputs.manifest-sha256 }}
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
-        with:
-          egress-policy: block
-          allowed-endpoints: >
-            github.com:443
-            objects.githubusercontent.com:443
-            *.actions.githubusercontent.com:443
-            *.blob.core.windows.net:443
-            registry.npmjs.org:443
-
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      # An empty bun-version makes setup-bun fall through to bun-version-file.
-      - name: Setup Bun And Install
-        uses: TimSchoenle/actions/actions/bun/setup-cached@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-bun-setup-cached-v3.1.0
-        with:
-          bun-version: ''
-          bun-version-file: '.bun-version'
-
-      - name: Build Actions
-        id: build
-        uses: TimSchoenle/actions/actions/release/build-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-build-actions-v1.1.0
-        with:
-          build-dirs: |
-            actions/common/commit-changes
-            actions/common/commit-patch/helper
-          build-command: bun run build
-          artifact-name: built-actions-${{ github.run_attempt }}
-
   test-spotless-formats-and-commits:
-    needs: build
     environment:
       name: ci-e2e
       deployment: false
@@ -123,6 +32,13 @@ jobs:
             java_distribution: 'zulu'
             gradle_version: '9.3.1'
 
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: auto-spotless-test-${{ github.run_number }}-${{ github.run_attempt }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -144,8 +60,8 @@ jobs:
       - name: Install Built Actions
         uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
         with:
-          artifact-id: ${{ needs.build.outputs.artifact-id }}
-          expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
+          artifact-id: ${{ inputs.artifact-id }}
+          expected-manifest-sha256: ${{ inputs.manifest-sha256 }}
           path: tmp/actions-code
 
       - name: Create Test Branch
@@ -358,19 +274,3 @@ jobs:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           branch_name: ${{ steps.branch.outputs.branch }}
-
-  # <<< generated: summary (run 'bun run generate-ci-required' to update)
-  summary:
-    name: 'CI Summary: Java-gradle Auto-spotless'
-    if: ${{ always() }}
-    needs:
-      - build
-      - test-spotless-formats-and-commits
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions: {}
-    steps:
-      - name: Fail if any verify job did not succeed
-        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
-        run: exit 1
-  # >>> generated: summary

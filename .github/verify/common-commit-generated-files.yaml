@@ -1,32 +1,12 @@
-name: Verify Common Commit-generated-files
-
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'actions/common/commit-generated-files/**'
-      - '!actions/common/commit-generated-files/CHANGELOG.md'
-      - '!actions/common/commit-generated-files/README.md'
-      - '.github/workflows/verify-action-common-commit-generated-files.yaml'
-  pull_request:
-    paths:
-      - 'actions/common/commit-generated-files/**'
-      - '!actions/common/commit-generated-files/CHANGELOG.md'
-      - '!actions/common/commit-generated-files/README.md'
-      - '.github/workflows/verify-action-common-commit-generated-files.yaml'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions: {}
-
+target: common/commit-generated-files
+rules:
+  # Only pushes to main ran this workflow before it moved into Verify.
+  push-branches: []
 jobs:
   # The action commits only from a workflow_run job, which runs the default branch's copy of the
   # workflow. Started by anything else it must stop before it looks for a patch or touches the App
   # key, so the inputs here are placeholders that are never read.
-  verify:
+  commit-generated-files-verify:
     name: 'Test Commit Generated Files: refuses a non-workflow_run event'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -156,21 +136,3 @@ jobs:
             exit 1
           fi
           echo "Pull request ${number} read in full carries maintainer_can_modify."
-
-  # <<< generated: summary (run 'bun run generate-ci-required' to update)
-  summary:
-    name: 'CI Summary: Common Commit-generated-files'
-    if: ${{ always() }}
-    needs:
-      - verify
-      - check-event
-      - check-fork
-      - fork-read
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions: {}
-    steps:
-      - name: Fail if any verify job did not succeed
-        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
-        run: exit 1
-  # >>> generated: summary

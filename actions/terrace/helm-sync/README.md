@@ -120,6 +120,6 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-terrace-helm-sync.yaml`](../../../.github/workflows/verify-action-terrace-helm-sync.yaml)
+- End-to-end tests: [`.github/verify/terrace-helm-sync.yaml`](../../../.github/verify/terrace-helm-sync.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

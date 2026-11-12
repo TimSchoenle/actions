@@ -115,6 +115,6 @@ Neither is reached with `check: true`, which uploads nothing.
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-common-render-readme.yaml`](../../../.github/workflows/verify-action-common-render-readme.yaml)
+- End-to-end tests: [`.github/verify/common-render-readme.yaml`](../../../.github/verify/common-render-readme.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

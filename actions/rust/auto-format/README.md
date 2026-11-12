@@ -186,6 +186,6 @@ v1 was one step that checked out, formatted and committed. v2 is the first job o
 ## Reference
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
-- End-to-end tests: [`.github/workflows/verify-action-rust-auto-format.yaml`](../../../.github/workflows/verify-action-rust-auto-format.yaml)
+- End-to-end tests: [`.github/verify/rust-auto-format.yaml`](../../../.github/verify/rust-auto-format.yaml)
 - Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

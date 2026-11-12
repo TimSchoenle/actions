@@ -1,37 +1,9 @@
-name: Verify Common Create Pull Request
-
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'actions/common/create-pull-request/**'
-      - '!actions/common/create-pull-request/CHANGELOG.md'
-      - '!actions/common/create-pull-request/README.md'
-      - '.github/workflows/verify-action-common-create-pull-request.yaml'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'actions/common/create-pull-request/**'
-      - '!actions/common/create-pull-request/CHANGELOG.md'
-      - '!actions/common/create-pull-request/README.md'
-      - '.github/workflows/verify-action-common-create-pull-request.yaml'
-  workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read # to read content
-
-env:
-  TEST_OWNER: TimSchoenle
-  TEST_REPO_NAME: actions-testing
-  TEST_REPO: TimSchoenle/actions-testing
-  TEST_ID: create-pr-test-${{ github.run_number }}-${{ github.run_attempt }}
-
+target: common/create-pull-request
+title: Common Create Pull Request
+rules:
+  pull-request-branches: [main]
+  # Only pushes to main ran this workflow before it moved into Verify.
+  push-branches: []
 jobs:
   test-with-changes:
     environment:
@@ -40,6 +12,13 @@ jobs:
     name: Test PR Creation with Changes
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: create-pr-test-${{ github.run_number }}-${{ github.run_attempt }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -182,6 +161,13 @@ jobs:
     name: Test PR Skip with Identical Branches
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: create-pr-test-${{ github.run_number }}-${{ github.run_attempt }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -254,6 +240,13 @@ jobs:
     name: Test Commit Skip with No Changes
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: create-pr-test-${{ github.run_number }}-${{ github.run_attempt }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -328,6 +321,13 @@ jobs:
     name: Test Branch Reset Behavior
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TEST_OWNER: TimSchoenle
+      TEST_REPO_NAME: actions-testing
+      TEST_REPO: TimSchoenle/actions-testing
+      TEST_ID: create-pr-test-${{ github.run_number }}-${{ github.run_attempt }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -475,21 +475,3 @@ jobs:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
           branch_name: 'test/create-pr-branch-reset/${{ env.TEST_ID }}'
-
-  # <<< generated: summary (run 'bun run generate-ci-required' to update)
-  summary:
-    name: 'CI Summary: Common Create Pull Request'
-    if: ${{ always() }}
-    needs:
-      - test-with-changes
-      - test-without-changes
-      - test-commit-skip
-      - test-branch-reset
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions: {}
-    steps:
-      - name: Fail if any verify job did not succeed
-        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
-        run: exit 1
-  # >>> generated: summary

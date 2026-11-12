@@ -298,7 +298,7 @@ describe('the verify workflows on disk', () => {
     expect(registration.applicable).toContain(file);
   });
 
-  it('applies to a change of an action only the workflows that verify it', () => {
+  it('applies only Verify to a change of an action, which selects its own targets', () => {
     const registration = evaluateRegistration({
       event: 'pull_request',
       workflows: workflowsOnDisk,
@@ -307,10 +307,7 @@ describe('the verify workflows on disk', () => {
     });
 
     // Verify runs on every pull request and selects its own targets, so the barrier always waits for it.
-    expect(registration.applicable).toEqual([
-      '.github/workflows/verify-action-bun-setup-cached.yaml',
-      '.github/workflows/verify.yaml',
-    ]);
+    expect(registration.applicable).toEqual(['.github/workflows/verify.yaml']);
   });
 
   // The bundled release-please pull request rewrites every action's changelog, and the docs generator
