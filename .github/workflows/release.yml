@@ -589,10 +589,20 @@ jobs:
     permissions:
       contents: read # to fetch code and tags
     steps:
+      # Blocked: this job runs the repository's scripts at release time. github.com for the clone, the
+      # ref check and the tag fetches, the release asset hosts for the Bun download, the npm registry
+      # for the install, and the artifact hosts for the patch upload.
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            registry.npmjs.org:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -620,6 +630,10 @@ jobs:
         if: steps.head.outputs.current == 'true'
         uses: TimSchoenle/actions/actions/bun/setup-cached@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-bun-setup-cached-v3.1.0
         with:
+          # The Bun in .bun-version, as every other job here, rather than setup-cached's default of
+          # 'latest', whose lookup would need another host on the allowlist above.
+          bun-version: ''
+          bun-version-file: '.bun-version'
           cache-mode: none
 
       # publish has created every consumer tag through the API before it succeeds, but git can trail
