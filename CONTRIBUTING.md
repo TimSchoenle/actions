@@ -37,7 +37,6 @@ because CI regenerates it and commits the result back to the branch.
 | `README.md`, `SECURITY.md`                                   | `scripts/templates/`, plus every `action.yaml` and `configs/*.json` | `bun run generate-docs`           |
 | `actions/*/*/src/generated/action-io.ts`                     | that action's `action.yaml`                                         | `bun run generate-action-sources` |
 | `.github/workflows/verify*.yaml`, `.github/verify/plan.json` | `.github/verify/*.yaml`, `scripts/lib/verify/`                      | `bun run generate-verify`         |
-| `.github/workflows/ci-required.yaml`                         | the workflow files themselves                                       | `bun run generate-ci-required`    |
 
 The pre-commit hook regenerates `action-io.ts` for the staged `action.yaml` files, and Scripts CI fails
 a pull request whose committed copies have drifted. The rest are checked in CI and committed back to
@@ -122,22 +121,17 @@ context is safe to require, and neither is visible in the workflow that produces
   checks are named `<caller job> / <called job>` while the call runs, and only `<caller job>` while
   it is skipped, so neither name is always there. A plain job is safe — a skipped one still reports,
   and branch protection accepts it.
-- **It must report after the work it gates.** `ci-required` aggregates the generated
-  `Verify` workflow and Scripts CI, and it does so from a `workflow_run` trigger, whose check runs land on
-  the default branch rather than on the pull request head. Only the commit status it POSTs reaches
-  the pull request, so `ci-required` is the context to require — never the `Aggregate verify checks`
-  job name, whose check runs never reach the pull request at all.
+- **It must report after the work it gates.** A job that runs alongside the work, rather than after it,
+  reports before the work has failed.
 
-`ci-required` also has to be posted by code the pull request cannot rewrite. A `pull_request` run
-executes the pull request's own copy of the workflow, so the workflow has no `pull_request` trigger:
-the `workflow_run` evaluation, which always runs the copy on `main`, is its only publisher. Because the verify workflows are path-filtered, the watch list also holds
-anchor workflows that run on every pull request (`ANCHOR_WORKFLOW_FILES` in
-[`scripts/lib/ci-required.ts`](scripts/lib/ci-required.ts)), so a pull request that starts no verify
-workflow still gets an evaluation. An anchor can finish before GitHub has created a verify run, so
-each evaluation also works out which verify workflows apply to the pull request's changed files and
-stays pending until every one of them has a run
-([`scripts/lib/ci-required-registration.ts`](scripts/lib/ci-required-registration.ts)). The header of
-[`ci-required.yaml`](.github/workflows/ci-required.yaml) states the full trust model and its limits.
+`Verify`, the final job of the generated [`verify.yaml`](.github/workflows/verify.yaml), meets both.
+The workflow runs on every pull request without a path filter; its `plan` job selects the targets
+the change affects, and the `Verify` job needs `plan`, `install`, `build` and every shard call and
+fails when any of them failed or was cancelled. It reports whether the change selects every target
+or none. Require `Verify`, never a shard call or a job inside a shard: those report under nested
+names, or not at all when their target is not selected. Like `Lint & Test`, the pull request's own
+copy of the workflow decides the verdict, so review covers a change to it. See
+[docs/verify-pipeline.md](docs/verify-pipeline.md).
 
 [`scripts/lib/required-checks.ts`](scripts/lib/required-checks.ts) lists the required contexts and
 the reason for each. Its contract test proves every listed context is produced unconditionally by the

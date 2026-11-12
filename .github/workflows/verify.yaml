@@ -411,7 +411,7 @@ jobs:
       ACTIONS_TEST_BOT_PRIVATE_KEY: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
 
   verify:
-    name: 'CI Summary: Verify'
+    name: 'Verify'
     if: ${{ always() }}
     needs:
       - plan

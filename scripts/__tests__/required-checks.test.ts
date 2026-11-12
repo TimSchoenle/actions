@@ -13,6 +13,7 @@ import {
   REQUIRED_CHECKS,
   type RequiredCheck,
 } from '../lib/required-checks.js';
+import { SUMMARY_JOB_NAME } from '../lib/verify/render.js';
 import { enforcedContexts, reconcileStatusChecks } from '../check-required-checks.js';
 
 // Integration-style guard over branch protection. A required context that never reports wedges every
@@ -56,15 +57,16 @@ describe('required status checks', () => {
     });
   });
 
-  // The verify workflows are path-filtered by design, so their own checks can never be required.
-  // ci-required.yaml exists to collapse them into one always-reported context; requiring anything
-  // else from that workflow re-opens the hole it was built to close.
-  it('gates the verify workflows through the ci-required commit status', () => {
-    const ciRequired = REQUIRED_CHECKS.filter((check) => check.workflow === 'ci-required.yaml');
+  // Every verify target runs inside the generated Verify workflow, whose final job is the one verdict.
+  // Requiring anything else from it, a shard call or a job inside a shard, re-opens the hole the
+  // summary job closes: those report under nested names, or not at all when their target is not
+  // selected.
+  it('gates the verify targets through the Verify job alone', () => {
+    const verify = REQUIRED_CHECKS.filter((check) => check.workflow === 'verify.yaml');
 
-    expect(ciRequired).toHaveLength(1);
-    expect(ciRequired[0]?.kind).toBe('status');
-    expect(ciRequired[0]?.context).toBe('ci-required');
+    expect(verify).toHaveLength(1);
+    expect(verify[0]?.kind).toBe('job');
+    expect(verify[0]?.context).toBe(SUMMARY_JOB_NAME);
   });
 
   it('lists no context known to gate nothing', () => {
@@ -152,7 +154,7 @@ describe('required status check rules', () => {
     expect(problemsFor(content, { kind: 'status' })).toEqual([]);
   });
 
-  // ci-required's shape: the status is POSTed to the pull request head by the default-branch copy.
+  // The shape of a gate whose default-branch copy POSTs the status to the pull request head.
   it('accepts a status context posted from a workflow_run trigger alone', () => {
     const content =
       'on:\n  workflow_run:\n    workflows: [\'Scripts CI\']\njobs:\n  gate:\n    steps:\n      - run: gh api -f context="Gate"\n';

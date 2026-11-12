@@ -121,7 +121,7 @@ jobs:
           branch: ${{ github.event.workflow_run.head_branch }}
           expected_head_sha: ${{ github.event.workflow_run.head_sha }}
           artifact_name: update-files-workflows
-          allowed_paths: '.github/workflows/verify*.yaml .github/verify/plan.json .github/workflows/ci-required.yaml .github/codecov.yml'
+          allowed_paths: '.github/workflows/verify*.yaml .github/verify/plan.json .github/codecov.yml'
           allow_workflow_changes: 'true'
           commit_message: 'ci: auto-update generated workflows'
 
@@ -137,7 +137,7 @@ jobs:
           author: '${{ steps.generate_token.outputs.app-slug }}[bot]'
           pr_url: ${{ github.server_url }}/${{ github.repository }}/pull/${{ github.event.workflow_run.pull_requests[0].number }}
           identifier: 'update-generated-workflows'
-          body: 'The generated Verify workflows, `.github/verify/plan.json`, `ci-required.yaml` and the Codecov components in `.github/codecov.yml` have been rebuilt.'
+          body: 'The generated Verify workflows, `.github/verify/plan.json` and the Codecov components in `.github/codecov.yml` have been rebuilt.'
 
   # Holds no secret and no environment. The pull_request run uploads the patch empty when nothing
   # changed and not at all when the job making it was skipped; in both cases there is nothing to

@@ -99,8 +99,8 @@ reviews:
         actor, weakened required review/signature/status-check rule, or widened ref include pattern.
     - path: 'scripts/**/*.ts'
       instructions: |
-        Repository tooling and generators (action sources, docs, e2e workflows, codecov components,
-        ci-required). Output must be deterministic and idempotent, and the CI drift checks must keep
+        Repository tooling and generators (action sources, docs, the Verify workflows, codecov
+        components). Output must be deterministic and idempotent, and the CI drift checks must keep
         covering every generated file. `scripts/lib/verify/` and the sources in `.github/verify/` are the source of
         the generated Verify workflows: apply the workflow hardening rules to the YAML they emit, and keep
         the pin string format in `scripts/lib/verify/pins.ts` matching the regex managers in `renovate.json`.

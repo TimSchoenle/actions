@@ -100,6 +100,5 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
 - End-to-end tests: [`.github/verify/maintenance-ensure-actions-are-executed.yaml`](../../../.github/verify/maintenance-ensure-actions-are-executed.yaml)
-- Called from this repository by:
-  - [`.github/workflows/ci-required.yaml`](../../../.github/workflows/ci-required.yaml)
+- Not called from anywhere else in this repository.
 <!-- /docs:generated reference -->

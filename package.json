@@ -9,8 +9,6 @@
     "generate-maven-central-signing-key": "bun scripts/generate-maven-central-signing-key.ts",
     "generate-cosign-key": "bun scripts/generate-cosign-key.ts",
     "generate-docs": "bun scripts/generate-docs.ts",
-    "generate-ci-required": "bun scripts/generate-ci-required.ts",
-    "ci-required-registration": "bun scripts/ci-required-registration.ts",
     "generate-codecov-components": "bun scripts/generate-codecov-components.ts",
     "check-required-checks": "bun scripts/check-required-checks.ts",
     "generate-verify": "bun scripts/generate-verify.ts",

@@ -68,14 +68,12 @@ jobs:
           bun-version-file: '.bun-version'
           cache-mode: none
 
-      # ci-required watches the verify workflows by name, so a regenerated workflow that was added or
-      # renamed leaves the required-check list stale unless both run together. The Codecov
-      # component list is generated from the same actions/ tree, so it is rebuilt in the same pass.
+      # The Codecov component list is generated from the same actions/ tree as the Verify plan, so it
+      # is rebuilt in the same pass.
       - name: Regenerate
         run: |
           set -euo pipefail
           bun run generate-verify
-          bun run generate-ci-required
           bun run generate-codecov-components
 
       - name: Create Patch
@@ -83,7 +81,7 @@ jobs:
         uses: TimSchoenle/actions/actions/common/create-patch@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-common-create-patch-v2.0.2
         with:
           artifact_name: update-files-workflows
-          paths: '.github/workflows/verify*.yaml .github/verify/plan.json .github/workflows/ci-required.yaml .github/codecov.yml'
+          paths: '.github/workflows/verify*.yaml .github/verify/plan.json .github/codecov.yml'
 
   generate-docs:
     name: Generate Docs
