@@ -147,6 +147,8 @@ runs:
         # from a same-named branch into the same base could be reported, and a caller that labels,
         # approves or merges pr_number would act on the fork's code.
         OWNER="${REPO%%/*}"
+        # $ENV.REPO is jq's environment lookup, so the single quotes are intended.
+        # shellcheck disable=SC2016
         EXISTING=$(gh api -X GET "repos/$REPO/pulls" \
           -f head="$OWNER:$HEAD_BRANCH" -f base="$BASE_BRANCH" -f state=open \
           --jq '[.[] | select(.head.repo.full_name == $ENV.REPO)] | first // empty | "\(.number) \(.html_url)"')
