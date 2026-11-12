@@ -24,8 +24,9 @@ inputs:
     description: 'What the step does with the node_modules cache. "read-write" restores it and saves it on a miss,
       "read-only" restores it and never saves, "none" neither restores nor saves. "auto" is "read-write" on push,
       schedule, workflow_dispatch and merge_group, and "read-only" on every other event, pull_request and
-      pull_request_target among them. A restored cache is code the job runs: use "none" in any job that holds secrets,
-      an App token or write permissions. Any other value fails the step. See Cache modes below.'
+      pull_request_target among them. setup-bun''s own cache of the Bun executable is used only in "read-write"; the
+      other modes download Bun. A restored cache is code the job runs: use "none" in any job that holds secrets, an App
+      token or write permissions. Any other value fails the step. See Cache modes below.'
     required: false
     default: 'auto'
   cache-key-prefix:
@@ -44,6 +45,10 @@ outputs:
   cache-mode:
     description: 'The cache mode the step ran with: "read-write", "read-only" or "none", with "auto" resolved.'
     value: ${{ steps.mode.outputs.value }}
+  bun-cache-hit:
+    description: 'Whether setup-bun skipped the Bun download: it restored the executable from its own cache, which only
+      the "read-write" cache mode uses, or found the same version already installed by an earlier step of the job.'
+    value: ${{ steps.setup-bun.outputs.cache-hit == 'true' }}
 
 runs:
   using: 'composite'
@@ -152,10 +157,15 @@ runs:
         echo "Bun ${version}, from ${source}."
         echo "value=${version}" >> "$GITHUB_OUTPUT"
 
+    # setup-bun keeps its own Actions cache of the Bun executable and runs whatever it restores, so
+    # cache-mode has to govern that cache too: without no-cache, a job in "none" ran a Bun binary
+    # from the cache it was told to stay away from. no-cache stops both the restore and the save.
     - name: Setup Bun
+      id: setup-bun
       uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       with:
         bun-version: ${{ steps.version.outputs.value }}
+        no-cache: ${{ steps.mode.outputs.value != 'read-write' }}
 
     # The `v2` segment keeps this release from restoring entries that earlier releases saved from
     # any event, pull_request_target among them. The architecture is part of the key because
