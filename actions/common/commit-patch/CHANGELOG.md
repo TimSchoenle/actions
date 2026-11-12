@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.0](https://github.com/TimSchoenle/actions/compare/src-actions-common-commit-patch-v3.0.0...src-actions-common-commit-patch-v3.1.0) (2026-11-12)
+
+
+### Features
+
+* **commit-patch:** commit a patch from a directory that already holds it ([#2279](https://github.com/TimSchoenle/actions/issues/2279)) ([2248c59](https://github.com/TimSchoenle/actions/commit/2248c59449bdf7c4464f5969fff717541fbc5bc4))
+
 ## [3.0.0](https://github.com/TimSchoenle/actions/compare/src-actions-common-commit-patch-v2.0.1...src-actions-common-commit-patch-v3.0.0) (2026-11-12)
 
 

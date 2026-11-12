@@ -52,7 +52,7 @@ jobs:
           persist-credentials: false
       - run: ./scripts/render-docs.sh
       - id: patch
-        uses: TimSchoenle/actions/actions/common/create-patch@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-common-create-patch-v2.0.3
+        uses: TimSchoenle/actions/actions/common/create-patch@actions-common-create-patch-v2.1.0 # tag=actions-common-create-patch-v2.1.0
         with:
           artifact_name: docs
           paths: README.md docs
