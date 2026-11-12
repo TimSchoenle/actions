@@ -7,7 +7,7 @@ outside the markers.
 <!-- docs:generated header -->
 # Maintenance Wipe-cache
 
-Deletes every GitHub Actions cache entry recorded for one branch. Refuses the default branch unless allow_default_branch is true.
+Deletes every GitHub Actions cache entry recorded for one branch or one pull request merge ref. Refuses the default branch unless allow_default_branch is true.
 
 [actions-maintenance-wipe-cache-v3.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-wipe-cache-v3.0.5) · JavaScript action (node24)
 <!-- /docs:generated header -->
@@ -62,27 +62,53 @@ payload also carries a `ref`, but it names a branch that is still in use, so on 
 fails the step and `branch` has to be passed explicitly. The job-level `if:` keeps the job from starting for a deleted
 tag. The action also skips a tag deletion on its own, with a notice, in case the `if:` is left out.
 
+### Pull request caches
+
+A `pull_request` run saves its caches under the pull request's merge ref, `refs/pull/<number>/merge`, not under the
+head branch. Deleting the head branch therefore leaves them in place, and a pull request from a branch that is never
+deleted, or from a fork, leaves them too. Pass the merge ref when the pull request closes:
+
+```yaml
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  wipe-cache:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write # to list and delete caches
+    steps:
+      - uses: TimSchoenle/actions/actions/maintenance/wipe-cache@<sha> # tag=actions-maintenance-wipe-cache-v<version>
+        with:
+          token: ${{ github.token }}
+          branch: refs/pull/${{ github.event.number }}/merge
+```
+
+Only the `merge` ref is accepted, with a number that has no leading zero. A merge ref can never be the default branch,
+so no default-branch lookup is made for it.
+
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input                  | Required | Default                    | Description                                                                                                                                                                   |
-| ---------------------- | -------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `token`                | yes      |                            | GitHub token with actions: write. In a workflow that runs on the repository itself, github.token is enough.                                                                   |
-| `repository`           | no       | `${{ github.repository }}` | Repository whose caches are deleted, in owner/repo format.                                                                                                                    |
-| `branch`               | no       |                            | Branch whose caches are deleted, as a name (feature/x) or a full ref (refs/heads/feature/x). Empty takes the deleted branch of a delete event; any other trigger must set it. |
-| `allow_default_branch` | no       | `false`                    | Allow wiping the caches of the repository default branch. Off by default, because every other branch restores from those entries.                                             |
-| `dry_run`              | no       | `false`                    | List the cache entries that would be deleted without deleting any.                                                                                                            |
-| `fail_on_error`        | no       | `true`                     | Fail the step when any cache entry could not be deleted. When false, the failures are reported as warnings and in failed_count.                                               |
+| Input                  | Required | Default                    | Description                                                                                                                                                                                                                                                                      |
+| ---------------------- | -------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `token`                | yes      |                            | GitHub token with actions: write. In a workflow that runs on the repository itself, github.token is enough.                                                                                                                                                                      |
+| `repository`           | no       | `${{ github.repository }}` | Repository whose caches are deleted, in owner/repo format.                                                                                                                                                                                                                       |
+| `branch`               | no       |                            | Branch whose caches are deleted, as a name (feature/x) or a full ref (refs/heads/feature/x), or a pull request merge ref (refs/pull/12/merge), which pull_request runs save their caches under. Empty takes the deleted branch of a delete event; any other trigger must set it. |
+| `allow_default_branch` | no       | `false`                    | Allow wiping the caches of the repository default branch. Off by default, because every other branch restores from those entries.                                                                                                                                                |
+| `dry_run`              | no       | `false`                    | List the cache entries that would be deleted without deleting any.                                                                                                                                                                                                               |
+| `fail_on_error`        | no       | `true`                     | Fail the step when any cache entry could not be deleted. When false, the failures are reported as warnings and in failed_count.                                                                                                                                                  |
 <!-- /docs:generated inputs -->
 
 <!-- docs:generated outputs -->
 ## Outputs
 
-| Output          | Description                                                                            |
-| --------------- | -------------------------------------------------------------------------------------- |
-| `matched_count` | How many distinct cache entries were found for the branch, across every listing round. |
-| `deleted_count` | How many cache entries this run deleted. Always 0 on a dry run.                        |
-| `failed_count`  | How many cache entries could not be deleted.                                           |
+| Output          | Description                                                                         |
+| --------------- | ----------------------------------------------------------------------------------- |
+| `matched_count` | How many distinct cache entries were found for the ref, across every listing round. |
+| `deleted_count` | How many cache entries this run deleted. Always 0 on a dry run.                     |
+| `failed_count`  | How many cache entries could not be deleted.                                        |
 <!-- /docs:generated outputs -->
 
 The same counts, the space freed and every entry that survived are written to the job summary.
@@ -116,8 +142,8 @@ The step fails before listing anything when:
 
 - `branch` is empty and the trigger is not a branch `delete` event. The action does not take the branch from any other
   event's payload, and wiping "no branch" is a wiring mistake, not a no-op.
-- `branch` is a full ref outside `refs/heads/`, such as `refs/tags/v1` or `refs/pull/12/merge`. Prefixing it with
-  `refs/heads/` would target a branch nobody named.
+- `branch` is a full ref outside `refs/heads/` other than `refs/pull/<number>/merge`, such as `refs/tags/v1` or
+  `refs/pull/12/head`. Prefixing it with `refs/heads/` would target a branch nobody named.
 - `branch` is not a valid git branch name, per the rules of `git check-ref-format`.
 - `branch` is the repository default branch and `allow_default_branch` is not `true`. Every other branch restores from
   the default branch's caches, so wiping them slows every job until they are rebuilt. A `delete` event cannot name

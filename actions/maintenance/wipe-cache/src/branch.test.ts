@@ -12,13 +12,13 @@ describe('resolveBranch', () => {
     ['refs/heads/feature/x', 'feature/x'],
     ['release-please--branches--main', 'release-please--branches--main'],
   ])('resolves %j to the branch %j', (input, name) => {
-    expect(resolveBranch(input)).toEqual({ name, ref: `refs/heads/${name}` });
+    expect(resolveBranch(input)).toEqual({ kind: 'branch', name, ref: `refs/heads/${name}` });
   });
 
   // A branch may itself be called `refs/heads/...` only after the namespace prefix, which is why the
   // prefix is stripped once and not repeatedly.
   it('strips the namespace prefix once', () => {
-    expect(resolveBranch('refs/heads/heads/x')).toEqual({ name: 'heads/x', ref: 'refs/heads/heads/x' });
+    expect(resolveBranch('refs/heads/heads/x')).toEqual({ kind: 'branch', name: 'heads/x', ref: 'refs/heads/heads/x' });
   });
 
   it.each(['', ' ', '\n'])('refuses the empty branch %j and names the fix', (input) => {
@@ -30,12 +30,25 @@ describe('resolveBranch', () => {
   });
 
   // Nesting these under refs/heads/ would silently target a branch nobody named.
-  it.each(['refs/tags/v1.0.0', 'refs/pull/12/merge', 'refs/remotes/origin/main', 'refs/heads/refs/tags/v1'])(
-    'refuses the non-branch ref %j',
-    (input) => {
-      expect(() => resolveBranch(input)).toThrow('only branches can be wiped');
-    },
-  );
+  it.each([
+    'refs/tags/v1.0.0',
+    'refs/remotes/origin/main',
+    'refs/heads/refs/tags/v1',
+    'refs/pull/12/head',
+    'refs/pull/0/merge',
+    'refs/pull/012/merge',
+    'refs/pull/x/merge',
+    'refs/pull/12/merge/x',
+    'refs/pull/12/merge\n',
+    'refs/heads/refs/pull/12/merge',
+  ])('refuses the ref %j', (input) => {
+    expect(() => resolveBranch(input)).toThrow('only branches and pull request merge refs can be wiped');
+  });
+
+  // A pull_request run saves its caches under the merge ref, which a delete event never names.
+  it.each(['refs/pull/1/merge', 'refs/pull/2276/merge'])('resolves the pull request merge ref %j', (input) => {
+    expect(resolveBranch(input)).toEqual({ kind: 'pull-request', name: input, ref: input });
+  });
 
   it.each([
     ['feature x', 'whitespace'],

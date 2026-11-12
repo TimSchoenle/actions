@@ -22,7 +22,7 @@ const baseOptions: WipeOptions = {
   allowDefaultBranch: false,
   dryRun: false,
   repository: { owner: 'owner', repo: 'repo' },
-  target: { name: 'feature/x', ref: REF },
+  target: { kind: 'branch', name: 'feature/x', ref: REF },
 };
 
 /**
@@ -103,6 +103,21 @@ describe('wipeBranchCaches', () => {
       const api = fakeStore([entry(1)], { defaultBranch: 'Feature/X' });
 
       await expect(wipeBranchCaches(api, baseOptions)).resolves.toMatchObject({ stopReason: 'empty' });
+    });
+
+    // A pull request's merge ref cannot be the default branch, so the lookup would be a wasted call.
+    it('wipes a pull request merge ref without looking up the default branch', async () => {
+      const pullRef = 'refs/pull/12/merge';
+      const api = fakeStore([entry(1, pullRef)]);
+
+      const result = await wipeBranchCaches(api, {
+        ...baseOptions,
+        target: { kind: 'pull-request', name: pullRef, ref: pullRef },
+      });
+
+      expect(result.deleted).toHaveLength(1);
+      expect(api.listCaches).toHaveBeenCalledWith(baseOptions.repository, pullRef);
+      expect(api.getDefaultBranch).not.toHaveBeenCalled();
     });
 
     it('propagates a failing default-branch lookup instead of assuming it is safe', async () => {

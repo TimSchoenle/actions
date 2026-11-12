@@ -1,5 +1,5 @@
 name: 'Maintenance Wipe-cache'
-description: 'Deletes every GitHub Actions cache entry recorded for one branch. Refuses the default branch unless allow_default_branch is true.'
+description: 'Deletes every GitHub Actions cache entry recorded for one branch or one pull request merge ref. Refuses the default branch unless allow_default_branch is true.'
 
 inputs:
   token:
@@ -10,7 +10,7 @@ inputs:
     required: false
     default: ${{ github.repository }}
   branch:
-    description: 'Branch whose caches are deleted, as a name (feature/x) or a full ref (refs/heads/feature/x). Empty takes the deleted branch of a delete event; any other trigger must set it.'
+    description: 'Branch whose caches are deleted, as a name (feature/x) or a full ref (refs/heads/feature/x), or a pull request merge ref (refs/pull/12/merge), which pull_request runs save their caches under. Empty takes the deleted branch of a delete event; any other trigger must set it.'
     required: false
     default: ''
   allow_default_branch:
@@ -28,7 +28,7 @@ inputs:
 
 outputs:
   matched_count:
-    description: 'How many distinct cache entries were found for the branch, across every listing round.'
+    description: 'How many distinct cache entries were found for the ref, across every listing round.'
   deleted_count:
     description: 'How many cache entries this run deleted. Always 0 on a dry run.'
   failed_count:
