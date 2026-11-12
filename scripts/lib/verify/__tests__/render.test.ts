@@ -206,7 +206,9 @@ describe('renderShard and renderVerifyWorkflow', () => {
     expect(Object.keys(workflow.jobs)).toEqual(['plan', 'install', 'build', 'verify-common', 'verify']);
     expect(workflow.jobs['verify-common'].uses).toBe('./.github/workflows/verify-common.yaml');
     expect(workflow.jobs['verify-common'].secrets).toEqual({ S: '${{ secrets.S }}' });
-    expect(workflow.jobs['verify'].name).toBe(SUMMARY_JOB_NAME);
+    expect(workflow.jobs['verify'].name).toBe(
+      `\${{ github.event_name == 'pull_request' && '${SUMMARY_JOB_NAME}' || format('${SUMMARY_JOB_NAME} ({0})', github.event_name) }}`,
+    );
     expect(workflow.jobs['verify'].needs).toEqual(['plan', 'install', 'build', 'verify-common']);
   });
 });
