@@ -36,7 +36,7 @@
         "src/release-download.ts": "6e45f0df87dea5b52d29fd74bc8c2174c521af5eec307b81fee25318614ef06e",
         "src/summary.ts": "6e9f0efa52e50b674c0c7363b1b0999144e358caee4d849df3e0b9227737dfd5",
         "src/workflow-commands.ts": "3ca62a800dd22efaf0cce48cebba3b1a4648360c4891b94abead60d00be885e3",
-        "src/workspace-path.ts": "cbacfa1859d0d47c37e33969cccc9692601cc7dd7daa2977143045e94d95ec18",
+        "src/workspace-path.ts": "cd787219d1d608b768ee119301b83f3ba0a435cbc1a4930acb6a0d67e8807601",
         "src/yaml-document.ts": "298340b14316f62b49bad97c81f1108764c813cf2ea1c826f2f06d887b55d3ac",
         "src/yaml-index.ts": "1a215c2fe124102f334f584bf92d98053f65f4d73e9782749319af706b60325a",
         "src/yaml.ts": "e3b10913271dac2b0048588a204270a59fcf73479435b4aeee0d760991762ec0"
