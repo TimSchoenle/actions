@@ -396,6 +396,7 @@ describe('generated Verify workflows', () => {
           expect(job).not.toContain('api.github.com');
         } else {
           expect(job).toMatch(/permission-[\w-]+/);
+          expect(job, 'a job that holds the App key disables sudo').toContain('"disable-sudo-and-containers":true');
         }
         expect(job).toContain(`bun run e2e actions/${target.source.target}`);
       }
