@@ -12,7 +12,7 @@
  */
 import { writeFile } from 'node:fs/promises';
 
-import { formatValue, generateYamlString, loadYaml, splitKeyPath } from 'actions-util/yaml';
+import { applyYamlEdits, formatValue, loadYaml, splitKeyPath } from 'actions-util/yaml';
 import { isScalar } from 'yaml';
 
 import type { Document } from 'yaml';
@@ -124,17 +124,14 @@ function resolveTargets(document: Document, edits: readonly PlannedEdit[], fileP
 }
 
 /**
- * Splices every new value into the original source, highest offset first so the offsets still ahead
- * stay valid.
+ * Fails when two keys reach overlapping source ranges, which two distinct dot-paths should never do.
  *
- * @throws {OverlappingEditsError} when two keys reach the same token — which two distinct dot-paths
- * should never do, and which would otherwise corrupt the file.
+ * @throws {OverlappingEditsError} naming the two keys.
  */
-function spliceAll(
-  source: string,
-  targets: readonly (ResolvedTarget & { range: readonly [number, number] })[],
-): string {
-  const ordered = [...targets].sort((a, b) => b.range[0] - a.range[0]);
+function assertNoOverlap(targets: readonly ResolvedTarget[]): void {
+  const ordered = targets
+    .filter((target): target is ResolvedTarget & { range: readonly [number, number] } => target.range !== undefined)
+    .sort((a, b) => b.range[0] - a.range[0]);
 
   for (let index = 1; index < ordered.length; index++) {
     const later = ordered[index - 1];
@@ -144,24 +141,6 @@ function spliceAll(
       throw new OverlappingEditsError(earlier.edit.key, later.edit.key);
     }
   }
-
-  let content = source;
-
-  for (const target of ordered) {
-    const [start, end] = target.range;
-    content = content.slice(0, start) + generateYamlString(target.edit.value) + content.slice(end);
-  }
-
-  return content;
-}
-
-/** Re-serializes the whole document. Loses nothing semantically, but does not preserve every comment. */
-function reserializeAll(document: Document, targets: readonly ResolvedTarget[]): string {
-  for (const target of targets) {
-    document.setIn(target.keys, target.edit.value);
-  }
-
-  return document.toString();
 }
 
 /**
@@ -180,14 +159,18 @@ export async function planYamlEdits(filePath: string, edits: readonly PlannedEdi
 
   const targets = resolveTargets(document, edits, filePath);
 
+  assertNoOverlap(targets);
+
   const applied = targets.map(({ edit, old }) => ({ key: edit.key, old, new: edit.value }));
 
-  // Mixing the two strategies would be incoherent — a splice works on the original bytes and a
-  // `setIn` on the parsed tree — so an unattributed node demotes the whole file to re-serialization.
-  const hasRange = (target: ResolvedTarget): target is ResolvedTarget & { range: readonly [number, number] } =>
-    target.range !== undefined;
-
-  const content = targets.every(hasRange) ? spliceAll(source, targets) : reserializeAll(document, targets);
+  // Splices every value into the original bytes when each target is a plain or quoted scalar and the
+  // result means what `setIn` would; otherwise re-serializes the whole file, which keeps the meaning
+  // but not every comment. Mixing the two would be incoherent, so one target demotes the whole file.
+  const content = applyYamlEdits(
+    source,
+    document,
+    targets.map(({ keys, edit }) => ({ keys, value: edit.value })),
+  );
 
   return { filePath, content, applied };
 }
