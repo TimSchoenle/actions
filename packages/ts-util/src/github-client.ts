@@ -65,9 +65,6 @@ const REAL_CLOCK: RetryClock = {
   random: () => Math.random(),
 };
 
-/** The statuses GitHub uses to refuse a request for rate limiting; every retry decision starts here. */
-const RATE_LIMIT_STATUSES = new Set([403, 429]);
-
 /** Floor on any wait, so a reset already in the past becomes a brief pause rather than a busy loop. */
 const MIN_DELAY_MS = 1_000;
 
@@ -199,11 +196,26 @@ function isGraphqlRateLimited(error: unknown): boolean {
   });
 }
 
+/**
+ * Whether a 403 carries a sign of rate limiting: a `Retry-After`, a spent primary budget, or a
+ * secondary-limit message. GitHub also answers a missing permission with a bare 403, and calling that
+ * a rate limit sends whoever reads the annotation after the wrong fix.
+ */
+function isRateLimited403(error: unknown): boolean {
+  const headers = httpHeaders(error);
+
+  return (
+    nonNegativeInt(headers['retry-after']) !== undefined ||
+    headers['x-ratelimit-remaining'] === '0' ||
+    isSecondaryRateLimit(error)
+  );
+}
+
 /** Whether GitHub refused this request for rate limiting, over either the REST or the GraphQL path. */
 export function isRateLimitError(error: unknown): boolean {
   const status = httpStatus(error);
 
-  return (status !== undefined && RATE_LIMIT_STATUSES.has(status)) || isGraphqlRateLimited(error);
+  return status === 429 || (status === 403 && isRateLimited403(error)) || isGraphqlRateLimited(error);
 }
 
 /** Exponential backoff, capped at the policy ceiling. */
@@ -255,7 +267,8 @@ function chosenDelay(attempt: number, policy: RetryPolicy, random: () => number)
  *     window to reopen.
  *  3. A GraphQL rate-limit payload, a secondary-limit message, or a bare 429 — no time was given, so
  *     back off exponentially.
- * A 403 carrying none of these is a permission or availability error, which retrying cannot mend.
+ * A 403 carrying none of these is a permission or availability error, which retrying cannot mend;
+ * {@link isRateLimitError} already rejects it, so it is never reported as a rate limit.
  *
  * Whether to retry at all is decided on the *unjittered* wait, so the answer does not turn on a coin
  * flip; the jitter is applied only to the wait that decision keeps.

@@ -249,6 +249,24 @@ describe('isRateLimitError', () => {
   });
 
   it.each([
+    ['a 403 with a retry-after header', httpError(403, { headers: { 'retry-after': '5' } })],
+    [
+      'a 403 with a secondary-limit message',
+      httpError(403, { data: { message: 'You have exceeded a secondary rate limit' } }),
+    ],
+  ])('recognises %s', (_label, error) => {
+    expect(isRateLimitError(error)).toBe(true);
+  });
+
+  // K3i: every 403 used to count, so a missing permission was annotated as a rate limit.
+  it.each([
+    ['a 403 for a missing permission', httpError(403, { data: { message: 'Resource not accessible by integration' } })],
+    ['a 403 with budget left', httpError(403, { headers: { 'x-ratelimit-remaining': '4999' } })],
+  ])('does not mistake %s for one', (_label, error) => {
+    expect(isRateLimitError(error)).toBe(false);
+  });
+
+  it.each([
     ['a plain error', new Error('socket hang up')],
     ['a 404', httpError(404)],
     ['a GraphQL validation error', graphqlError('Field "oid" does not exist.')],
@@ -337,6 +355,17 @@ describe('requestWithRateLimitRetry', () => {
     expect(clock.sleeps).toEqual([3_000]);
     expect(perform).toHaveBeenCalledTimes(2);
     expect(vi.mocked(core.error).mock.calls[0][0]).toContain('total wait budget');
+  });
+
+  it('rethrows a permission 403 at once, without calling it a rate limit', async () => {
+    const clock = fakeClock();
+    const error = httpError(403, { data: { message: 'Resource not accessible by integration' } });
+    const perform = vi.fn().mockRejectedValue(error);
+
+    await expect(requestWithRateLimitRetry(perform, POLICY, clock)).rejects.toBe(error);
+    expect(perform).toHaveBeenCalledTimes(1);
+    expect(clock.sleeps).toEqual([]);
+    expect(core.error).not.toHaveBeenCalled();
   });
 
   it('names the rate limit it gave up on under a stable annotation title', async () => {
