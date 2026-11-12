@@ -6,6 +6,7 @@
 # Targets:
 #   rust/auto-format (.github/verify/rust-auto-format.yaml)
 #   rust/cargo-check (.github/verify/rust-cargo-check.yaml)
+#   rust/clippy (.github/verify/rust-clippy.yaml)
 #   rust/config-contract (.github/verify/rust-config-contract.yaml)
 #   rust/coverage-codecov (.github/verify/rust-coverage-codecov.yaml)
 name: Verify Rust
@@ -264,6 +265,55 @@ jobs:
         with:
           source_directory: ${{ env.FIXTURE }}
           check_arguments: '--all-targets --all-features'
+
+      - name: Verify the action built the event's commit
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          if [[ "${actual}" != "${EXPECTED_SHA}" ]]; then
+            echo "::error::The action checked out ${actual}, not the event's commit ${EXPECTED_SHA}"
+            exit 1
+          fi
+
+  rust-clippy-event-commit:
+    name: "Rust Clippy: Verify Clippy (builds the event's commit)"
+    if: ${{ contains(fromJSON(inputs.targets), 'rust/clippy') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # to fetch code
+    env:
+      FIXTURE: actions/rust/coverage-codecov/fixture
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            static.rust-lang.org:443
+            index.crates.io:443
+            static.crates.io:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run Clippy
+        uses: ./actions/rust/clippy # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          source_directory: ${{ env.FIXTURE }}
+          clippy_arguments: '--all-features --all-targets'
 
       - name: Verify the action built the event's commit
         shell: bash

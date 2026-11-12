@@ -7,9 +7,9 @@ inputs:
     required: false
     default: ${{ github.repository }}
   branch:
-    description: 'Target branch to checkout. Defaults to the current branch.'
+    description: 'Branch, tag or SHA to check out. Empty checks out the commit of the triggering event: the merge commit on pull_request, the pushed commit on push.'
     required: false
-    default: ${{ github.head_ref || github.ref_name }}
+    default: ''
   source_directory:
     description: 'Directory containing the Rust project'
     required: false
@@ -27,7 +27,6 @@ runs:
       with:
         repository: ${{ inputs.repository }}
         persist-credentials: false
-        fetch-depth: 0
         ref: ${{ inputs.branch }}
 
     - name: Install stable toolchain
