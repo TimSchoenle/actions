@@ -1,7 +1,7 @@
 import { fc, test } from '@fast-check/vitest';
 import { describe, expect, it } from 'vitest';
 
-import { formatVersion, isExact, parseReleaseTag, parseVersionRequest, selectRelease } from './version.js';
+import { formatVersion, isExact, parseReleaseTag, parseVersionRequest } from './version.js';
 
 import type { ReleaseVersion } from './version.js';
 
@@ -42,28 +42,7 @@ describe('parseReleaseTag', () => {
   );
 });
 
-describe('selectRelease', () => {
-  const available: ReleaseVersion[] = [
-    { major: 0, minor: 7, patch: 3 },
-    { major: 0, minor: 8, patch: 0 },
-    { major: 0, minor: 8, patch: 2 },
-    { major: 0, minor: 8, patch: 1 },
-    { major: 0, minor: 9, patch: 0 },
-  ];
-
-  it('takes the newest patch of a line, never a later minor', () => {
-    expect(selectRelease({ major: 0, minor: 8 }, available)).toEqual({ major: 0, minor: 8, patch: 2 });
-  });
-
-  it('takes exactly the named release', () => {
-    expect(selectRelease({ major: 0, minor: 8, patch: 1 }, available)).toEqual({ major: 0, minor: 8, patch: 1 });
-  });
-
-  it('finds nothing for an unpublished line or release', () => {
-    expect(selectRelease({ major: 1, minor: 0 }, available)).toBeUndefined();
-    expect(selectRelease({ major: 0, minor: 8, patch: 9 }, available)).toBeUndefined();
-  });
-
+describe('isExact', () => {
   it('marks only a patch-bearing request as exact', () => {
     expect(isExact({ major: 0, minor: 8, patch: 0 })).toBe(true);
     expect(isExact({ major: 0, minor: 8 })).toBe(false);

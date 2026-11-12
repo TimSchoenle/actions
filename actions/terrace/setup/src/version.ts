@@ -84,24 +84,3 @@ export function formatVersion(version: VersionRequest): string {
 export function isExact(request: VersionRequest): request is ReleaseVersion {
   return request.patch !== undefined;
 }
-
-/** The newest of `available` that satisfies `request`, or `undefined` when none does. */
-export function selectRelease(
-  request: VersionRequest,
-  available: readonly ReleaseVersion[],
-): ReleaseVersion | undefined {
-  let newest: ReleaseVersion | undefined;
-
-  for (const release of available) {
-    const satisfies =
-      release.major === request.major &&
-      release.minor === request.minor &&
-      (request.patch === undefined || release.patch === request.patch);
-
-    if (satisfies && (newest === undefined || release.patch > newest.patch)) {
-      newest = release;
-    }
-  }
-
-  return newest;
-}
