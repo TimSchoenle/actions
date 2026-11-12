@@ -6,7 +6,16 @@ import path from 'node:path';
 import { workspacePackages } from 'action-graph';
 
 import { IGNORED_FILES } from './affected.js';
-import { buildJob, installJob, planJob, workspaceMemberDirectories, workspaceModulePaths } from './jobs.js';
+import {
+  buildJob,
+  e2eGroupId,
+  e2eGroupJob,
+  e2eGroups,
+  installJob,
+  planJob,
+  workspaceMemberDirectories,
+  workspaceModulePaths,
+} from './jobs.js';
 import { resolvePins } from './pins.js';
 import { PLAN_FILE } from './plan-step.js';
 import {
@@ -24,6 +33,7 @@ import { readSources } from './source.js';
 import { deriveTargetInputs } from './target-inputs.js';
 
 import type { PlanFile, PlannedTarget } from './affected.js';
+import type { E2eGroup } from './jobs.js';
 import type { RenderedTarget, Shard } from './render.js';
 
 /**
@@ -67,11 +77,15 @@ function format(root: string, file: string, text: string): string {
   return result.stdout;
 }
 
-/** The plan entry of one target. */
+/**
+ * The plan entry of one target. Its jobs hash covers its own jobs and its end-to-end group's job, so a
+ * change to either selects it.
+ */
 function plannedTarget(
   root: string,
   target: RenderedTarget,
-  shard: Shard,
+  shard: Shard | undefined,
+  group: { id: string; text: string } | undefined,
   packages: ReadonlyMap<string, string>,
 ): PlannedTarget {
   const { source } = target;
@@ -79,14 +93,15 @@ function plannedTarget(
 
   return {
     id: source.target,
-    shard: shard.id,
+    shard: shard?.id ?? null,
+    e2eGroup: group?.id ?? null,
     inputs: derived.inputs,
     buildDirs: derived.buildDirs,
     install: source.e2e !== undefined || derived.buildDirs.length > 0,
     pullRequestBranches: source.rules.pullRequestBranches ?? null,
     pushBranches: source.rules.pushBranches,
     schedule: source.rules.schedule,
-    jobsSha256: sha256(resolvePins(target.text)),
+    jobsSha256: sha256(resolvePins(target.text + (group?.text ?? ''))),
   };
 }
 
@@ -100,10 +115,11 @@ export function generate(root: string): { files: GeneratedFiles; shards: readonl
 
   const packages = workspacePackages(root);
   const modulePaths = workspaceModulePaths(workspaceMemberDirectories(root));
-  const rendered = sources.map((source) =>
-    renderTarget(source, deriveTargetInputs(root, source, packages).buildDirs.length > 0, modulePaths),
-  );
-  const shards = assignShards(rendered);
+  const rendered = sources.map((source) => renderTarget(source));
+  // A target whose only job is its end-to-end suite has nothing to put in a shard.
+  const shards = assignShards(rendered.filter((target) => target.jobIds.length > 0));
+  const groups: readonly E2eGroup[] = e2eGroups(sources);
+  const groupText = new Map(groups.map((group) => [group.id, e2eGroupJob(group, modulePaths)]));
 
   const files = new Map<string, string>();
   const secretsByShard = new Map<string, string[]>();
@@ -112,13 +128,28 @@ export function generate(root: string): { files: GeneratedFiles; shards: readonl
     secretsByShard.set(shard.id, shardSecrets(text));
     files.set(shardFile(shard.id), format(root, shardFile(shard.id), text));
   }
-  files.set(VERIFY_WORKFLOW, format(root, VERIFY_WORKFLOW, renderVerifyWorkflow(shards, modulePaths, secretsByShard)));
+  files.set(
+    VERIFY_WORKFLOW,
+    format(root, VERIFY_WORKFLOW, renderVerifyWorkflow(shards, groups, modulePaths, secretsByShard)),
+  );
 
+  const shardOf = new Map(shards.flatMap((shard) => shard.targets.map((target) => [target.source.target, shard])));
+  const groupOf = (source: RenderedTarget['source']): { id: string; text: string } | undefined => {
+    if (source.e2e === undefined) {
+      return undefined;
+    }
+    const id = e2eGroupId(source.e2e);
+    return { id, text: groupText.get(id) ?? '' };
+  };
   const plan: PlanFile = {
     global: PLANNER_INPUTS,
     ignore: IGNORED_FILES,
     sharedJobsSha256: sha256(planJob() + installJob(modulePaths) + buildJob(modulePaths)),
-    targets: shards.flatMap((shard) => shard.targets.map((target) => plannedTarget(root, target, shard, packages))),
+    targets: [...rendered]
+      .sort((a, b) => a.source.target.localeCompare(b.source.target))
+      .map((target) =>
+        plannedTarget(root, target, shardOf.get(target.source.target), groupOf(target.source), packages),
+      ),
   };
   const planText = JSON.stringify(
     { $comment: `${GENERATED_HEADER.slice(2)} Run 'bun run generate-verify' to rebuild it.`, ...plan },

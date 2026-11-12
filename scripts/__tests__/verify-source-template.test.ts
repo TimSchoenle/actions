@@ -48,7 +48,7 @@ describe('verify source template', () => {
 
   it('keeps the contract the generator enforces, and renders', () => {
     expect(() => validateSources(ROOT_DIR, [source])).not.toThrow();
-    expect(() => renderTarget(source, false, ['node_modules'])).not.toThrow();
+    expect(() => renderTarget(source)).not.toThrow();
   });
 
   it('blocks egress rather than auditing it', () => {

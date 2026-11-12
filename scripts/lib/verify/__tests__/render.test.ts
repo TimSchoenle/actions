@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 
 import { ROOT_DIR } from '../../utils.js';
+import { e2eGroups } from '../jobs.js';
 import { PINNED } from '../pins.js';
 import {
   assignShards,
@@ -49,7 +50,7 @@ describe('renderTarget', () => {
       ...PERMISSIONS,
     ]);
 
-    const rendered = renderTarget(source, false, ['node_modules']);
+    const rendered = renderTarget(source);
     const jobs = (parse(`jobs:\n${rendered.text}`) as { jobs: Record<string, Record<string, unknown>> }).jobs;
 
     expect(rendered.jobIds).toEqual(['first', 'second']);
@@ -64,7 +65,8 @@ describe('renderTarget', () => {
     );
   });
 
-  it('puts the generated end-to-end job first', () => {
+  // P8: the end-to-end suite runs in a group job of verify.yaml, so a shard holds only own jobs.
+  it('renders only the source jobs, leaving the end-to-end suite to its group job', () => {
     const source = sourceOf('common/x', [
       'e2e:',
       '  token-permissions:',
@@ -74,13 +76,13 @@ describe('renderTarget', () => {
       ...PERMISSIONS,
     ]);
 
-    expect(renderTarget(source, true, ['node_modules']).jobIds).toEqual(['e2e-common-x', 'extra']);
+    expect(renderTarget(source).jobIds).toEqual(['extra']);
+    expect(renderTarget(sourceOf('common/y', ['e2e: {}'])).jobIds).toEqual([]);
   });
 
   it('quotes a display name that holds a quote', () => {
     const source = sourceOf('common/x', ['jobs:', '  a:', '    name: "It\'s"', ...PERMISSIONS]);
-    const jobs = (parse(`jobs:\n${renderTarget(source, false, []).text}`) as { jobs: Record<string, { name: string }> })
-      .jobs;
+    const jobs = (parse(`jobs:\n${renderTarget(source).text}`) as { jobs: Record<string, { name: string }> }).jobs;
 
     expect(jobs['a'].name).toBe("Common X: It's");
   });
@@ -89,8 +91,8 @@ describe('renderTarget', () => {
     const block = sourceOf('common/x', ['jobs:', '  a:', '    if: >-', '      always()', ...PERMISSIONS]);
     const split = sourceOf('common/x', ['jobs:', '  a:', '    if: ${{ a }} && ${{ b }}', ...PERMISSIONS]);
 
-    expect(() => renderTarget(block, false, [])).toThrow(/on one line/);
-    expect(() => renderTarget(split, false, [])).toThrow(/one expression/);
+    expect(() => renderTarget(block)).toThrow(/on one line/);
+    expect(() => renderTarget(split)).toThrow(/one expression/);
   });
 });
 
@@ -133,14 +135,8 @@ describe('shardPermissions and shardSecrets', () => {
         '      contents: read',
         '      security-events: write',
       ]),
-      false,
-      [],
     );
-    const b = renderTarget(
-      sourceOf('docker/b', ['jobs:', '  b:', '    permissions:', '      contents: write']),
-      false,
-      [],
-    );
+    const b = renderTarget(sourceOf('docker/b', ['jobs:', '  b:', '    permissions:', '      contents: write']));
 
     expect(shardPermissions({ id: 'verify-docker', title: 'Docker', targets: [a, b] })).toEqual({
       contents: 'write',
@@ -149,7 +145,7 @@ describe('shardPermissions and shardSecrets', () => {
   });
 
   it('refuses a job without a permissions mapping', () => {
-    const a = renderTarget(sourceOf('docker/a', ['jobs:', '  a:', '    permissions: read-all']), false, []);
+    const a = renderTarget(sourceOf('docker/a', ['jobs:', '  a:', '    permissions: read-all']));
 
     expect(() => shardPermissions({ id: 'verify-docker', title: 'Docker', targets: [a] })).toThrow(/as a mapping/);
   });
@@ -173,9 +169,8 @@ describe('renderShard and renderVerifyWorkflow', () => {
       ...PERMISSIONS,
       '    steps:',
       '      - uses: pinned:checkout',
+      '      - run: echo ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}',
     ]),
-    false,
-    ['node_modules'],
   );
   const shard = { id: 'verify-common', title: 'Common', targets: [target] };
 
@@ -191,25 +186,32 @@ describe('renderShard and renderVerifyWorkflow', () => {
       'artifact-id',
       'manifest-sha256',
     ]);
-    expect(Object.keys(workflow.on.workflow_call.secrets)).toEqual([
-      'ACTIONS_TEST_BOT_APP_ID',
-      'ACTIONS_TEST_BOT_PRIVATE_KEY',
-    ]);
+    expect(Object.keys(workflow.on.workflow_call.secrets)).toEqual(['ACTIONS_TEST_BOT_APP_ID']);
     expect(workflow.jobs['x-job'].steps[0].uses).toBe(PINNED.checkout.split(' ')[0]);
   });
 
-  it('calls each shard and ends with the summary job that needs every job', () => {
-    const workflow = parse(renderVerifyWorkflow([shard], ['node_modules'], new Map([['verify-common', ['S']]]))) as {
+  it('calls each shard, runs each end-to-end group, and ends with the summary job that needs every job', () => {
+    const groups = e2eGroups([target.source]);
+    const workflow = parse(
+      renderVerifyWorkflow([shard], groups, ['node_modules'], new Map([['verify-common', ['S']]])),
+    ) as {
       jobs: Record<string, { name?: string; needs?: string[]; uses?: string; secrets?: Record<string, string> }>;
     };
 
-    expect(Object.keys(workflow.jobs)).toEqual(['plan', 'install', 'build', 'verify-common', 'verify']);
+    expect(Object.keys(workflow.jobs)).toEqual([
+      'plan',
+      'install',
+      'build',
+      'e2e-metadata-read',
+      'verify-common',
+      'verify',
+    ]);
     expect(workflow.jobs['verify-common'].uses).toBe('./.github/workflows/verify-common.yaml');
     expect(workflow.jobs['verify-common'].secrets).toEqual({ S: '${{ secrets.S }}' });
     expect(workflow.jobs['verify'].name).toBe(
       `\${{ github.event_name == 'pull_request' && '${SUMMARY_JOB_NAME}' || format('${SUMMARY_JOB_NAME} ({0})', github.event_name) }}`,
     );
-    expect(workflow.jobs['verify'].needs).toEqual(['plan', 'install', 'build', 'verify-common']);
+    expect(workflow.jobs['verify'].needs).toEqual(['plan', 'install', 'build', 'e2e-metadata-read', 'verify-common']);
   });
 });
 
