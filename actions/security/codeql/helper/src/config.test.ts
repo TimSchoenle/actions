@@ -41,6 +41,13 @@ describe('excludedPaths', () => {
     expect(excludedPaths(options({ pathsIgnore: ['**/tests/**'] }))).toEqual([...TEST_PATHS]);
   });
 
+  // S16g: `**/*.test.*` also matched workflows such as `ci.test.yml`, so turning test paths on left
+  // those workflows unanalysed by the actions language, which has no tests to exclude.
+  it('excludes no test path for the actions language, only the caller patterns', () => {
+    expect(excludedPaths(options({ language: 'actions', pathsIgnore: ['vendor/**'] }))).toEqual(['vendor/**']);
+    expect(buildConfig(options({ language: 'actions' }))).not.toHaveProperty('paths-ignore');
+  });
+
   it('excludes only the caller patterns when the test paths are off', () => {
     expect(excludedPaths(options({ excludeTestPaths: false, pathsIgnore: ['vendor/**'] }))).toEqual(['vendor/**']);
   });

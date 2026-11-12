@@ -65,13 +65,13 @@ Turn default setup off before the first run. GitHub rejects an advanced-setup up
 <!-- docs:generated inputs -->
 ## Inputs
 
-| Input                | Required | Default | Description                                                                                                                                                                                                         |
-| -------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `language`           | yes      |         | CodeQL language identifier, one per job: actions, c-cpp, csharp, java-kotlin, javascript-typescript, python, ruby or rust. Languages that need a build (go, swift) are refused. See Languages below.                |
-| `exclude-test-paths` | no       | `true`  | Exclude the shared test locations: Cargo tests and benches, Rust test modules in their own file, Gradle and Maven test source sets, and Vitest and Jest suites. The patterns are listed under Excluded paths below. |
-| `paths-ignore`       | no       |         | Additional glob patterns to exclude, one per line, relative to the repository root. Blank lines and lines starting with # are skipped.                                                                              |
-| `category`           | no       |         | Code scanning category. Defaults to /language:<language>, the category default setup writes, so switching from default setup keeps one analysis per language.                                                       |
-| `upload`             | no       | `true`  | Upload the SARIF to code scanning. Needs security-events: write.                                                                                                                                                    |
+| Input                | Required | Default | Description                                                                                                                                                                                                                                                               |
+| -------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `language`           | yes      |         | CodeQL language identifier, one per job: actions, c-cpp, csharp, java-kotlin, javascript-typescript, python, ruby or rust. Languages that need a build (go, swift) are refused. See Languages below.                                                                      |
+| `exclude-test-paths` | no       | `true`  | Exclude the shared test locations: Cargo tests and benches, Rust test modules in their own file, Gradle and Maven test source sets, and Vitest and Jest suites. The patterns are listed under Excluded paths below. Ignored for actions, whose workflows are never tests. |
+| `paths-ignore`       | no       |         | Additional glob patterns to exclude, one per line, relative to the repository root. Blank lines and lines starting with # are skipped.                                                                                                                                    |
+| `category`           | no       |         | Code scanning category. Defaults to /language:<language>, the category default setup writes, so switching from default setup keeps one analysis per language.                                                                                                             |
+| `upload`             | no       | `true`  | Upload the SARIF to code scanning. Needs security-events: write.                                                                                                                                                                                                          |
 <!-- /docs:generated inputs -->
 
 ### Languages
@@ -86,7 +86,8 @@ builds nothing.
 
 ### Excluded paths
 
-With `exclude-test-paths` on, these are excluded before any `paths-ignore` pattern:
+With `exclude-test-paths` on, these are excluded before any `paths-ignore` pattern. For `actions` none
+of them is: `**/*.test.*` would match a workflow named `ci.test.yml`, and a workflow is never a test.
 
 | Pattern                                         | Covers                                                      |
 | ----------------------------------------------- | ----------------------------------------------------------- |

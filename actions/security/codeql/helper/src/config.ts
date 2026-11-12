@@ -18,9 +18,18 @@ export interface CodeqlConfig {
 /** Name the configuration is reported under in the CodeQL log. */
 const CONFIG_NAME = 'TimSchoenle/actions security/codeql';
 
-/** The excluded patterns: the shared test paths when enabled, then the caller's, each kept once. */
+/**
+ * Languages whose sources are never tests. The `actions` language analyses workflows and action
+ * manifests, and `**\/*.test.*` would match a workflow named `ci.test.yml`, leaving it unanalysed.
+ */
+const LANGUAGES_WITHOUT_TESTS: readonly string[] = ['actions'];
+
+/**
+ * The excluded patterns: the shared test paths when enabled for a language that has tests, then the
+ * caller's, each kept once.
+ */
 export function excludedPaths(options: AnalysisOptions): string[] {
-  const paths = options.excludeTestPaths ? [...TEST_PATHS] : [];
+  const paths = options.excludeTestPaths && !LANGUAGES_WITHOUT_TESTS.includes(options.language) ? [...TEST_PATHS] : [];
 
   for (const pattern of options.pathsIgnore) {
     if (!paths.includes(pattern)) {
