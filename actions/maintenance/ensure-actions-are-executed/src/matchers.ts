@@ -1,5 +1,7 @@
 import { compilePosixRegex, errorMessage, PATTERN_MATCH_TIMEOUT_MS, testPatterns } from 'actions-util';
 
+import { compareCheckRuns } from './checks.js';
+
 import type { CheckRun } from './checks.js';
 
 /** How a configured matcher is interpreted. `auto` decides per matcher; the others force one. */
@@ -31,7 +33,10 @@ export interface MatcherOutcome {
 export interface Selection {
   /** One entry per configured matcher, in configuration order, for logging and diagnostics. */
   outcomes: MatcherOutcome[];
-  /** The checks selected by at least one matcher, deduplicated by name and ordered by name. */
+  /**
+   * The check runs selected by at least one matcher, each once, ordered by name and then id. Runs that
+   * share a name are all kept: each is a check that started.
+   */
   selected: CheckRun[];
 }
 
@@ -181,7 +186,7 @@ export function matchesCheckName(matcher: Matcher, checkName: string): boolean {
  * checks that did start.
  */
 export function selectChecks(checkRuns: CheckRun[], matchers: Matcher[]): Selection {
-  const selectedByName = new Map<string, CheckRun>();
+  const selectedById = new Map<number, CheckRun>();
   const outcomes: MatcherOutcome[] = [];
   const checkNames = checkRuns.map((checkRun) => checkRun.name);
 
@@ -190,14 +195,11 @@ export function selectChecks(checkRuns: CheckRun[], matchers: Matcher[]): Select
     const matched = checkRuns.filter((_, index) => matches[index]);
 
     for (const checkRun of matched) {
-      selectedByName.set(checkRun.name, checkRun);
+      selectedById.set(checkRun.id, checkRun);
     }
 
-    outcomes.push({ matchedNames: matched.map((checkRun) => checkRun.name), matcher });
+    outcomes.push({ matchedNames: [...new Set(matched.map((checkRun) => checkRun.name))], matcher });
   }
 
-  return {
-    outcomes,
-    selected: [...selectedByName.values()].sort((left, right) => left.name.localeCompare(right.name)),
-  };
+  return { outcomes, selected: [...selectedById.values()].sort(compareCheckRuns) };
 }

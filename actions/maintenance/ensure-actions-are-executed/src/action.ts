@@ -8,7 +8,7 @@ import { normalizeMatchers, parseMatchMode, resolveMatcher, selectChecks } from 
 import { verifyCheckRuns } from './verification.js';
 
 import type { CheckRun, CheckRunCollection, CheckRunsApi } from './checks.js';
-import type { Matcher, Selection } from './matchers.js';
+import type { Matcher, MatcherOutcome, Selection } from './matchers.js';
 import type { VerificationSummary } from './verification.js';
 
 /** Emits a collapsible log group, closing it even when the body throws. */
@@ -55,18 +55,40 @@ function logSnapshot(collection: CheckRunCollection, checkRuns: CheckRun[]): voi
   });
 }
 
-function logSelection(selection: Selection): void {
+/**
+ * The required matchers that matched no check run.
+ *
+ * A required check without a run has either not started or not been created yet. Treating it as "not
+ * started", as an optional matcher is, would let the gate pass before the check was even queued.
+ */
+function missingRequired(requiredOutcomes: readonly MatcherOutcome[]): MatcherOutcome[] {
+  return requiredOutcomes.filter((outcome) => outcome.matchedNames.length === 0);
+}
+
+function logSelection(selection: Selection, requiredOutcomes: readonly MatcherOutcome[]): void {
   group('Matcher Evaluation', () => {
     for (const { matcher, matchedNames } of selection.outcomes) {
-      core.info(`Matcher ${quoteForLog(matcher.raw)} mode=${matcher.mode} matched=${matchedNames.length}`);
+      const kind = requiredOutcomes.some((outcome) => outcome.matcher === matcher) ? ' required' : '';
+
+      core.info(`Matcher ${quoteForLog(matcher.raw)}${kind} mode=${matcher.mode} matched=${matchedNames.length}`);
     }
   });
 
-  for (const { matcher, matchedNames } of selection.outcomes) {
+  for (const outcome of selection.outcomes) {
+    const { matcher, matchedNames } = outcome;
+
+    if (requiredOutcomes.includes(outcome) && matchedNames.length === 0) {
+      core.error(
+        `Required matcher ${quoteForLog(matcher.raw)} did not match any check run. ` +
+          'It has not started, or it has not been created yet.',
+      );
+      continue;
+    }
+
     core.notice(
       matchedNames.length === 0
         ? `Matcher ${quoteForLog(matcher.raw)} did not match any check run. This is treated as not started.`
-        : `Matcher ${quoteForLog(matcher.raw)} matched ${matchedNames.length} check run(s).`,
+        : `Matcher ${quoteForLog(matcher.raw)} matched ${matchedNames.length} check name(s).`,
     );
   }
 
@@ -104,12 +126,18 @@ function logVerification(summary: VerificationSummary): void {
   });
 }
 
-function logSummary(summary: VerificationSummary, matchedCount: number, errorOnFailure: boolean): void {
+function logSummary(
+  summary: VerificationSummary,
+  matchedCount: number,
+  missingCount: number,
+  errorOnFailure: boolean,
+): void {
   group('Final Summary', () => {
     core.info(`Matched checks: ${matchedCount}`);
     core.info(`Successful checks: ${summary.succeededCount}`);
     core.info(`Skipped checks: ${summary.skippedCount}`);
     core.info(`Failed checks: ${summary.failedCount}`);
+    core.info(`Required checks without a run: ${missingCount}`);
     core.info(`Error on failure: ${String(errorOnFailure)}`);
   });
 }
@@ -117,9 +145,9 @@ function logSummary(summary: VerificationSummary, matchedCount: number, errorOnF
 /**
  * Reads the action inputs, verifies every check the matchers select and publishes the counts.
  *
- * The contract is "checks that started must have succeeded": a matcher selecting nothing is a check
- * that never started, which is tolerated, while a selected check that is unfinished or unsuccessful is
- * a failure. `error_on_failure=false` downgrades that failure to a warning, leaving the counts for the
+ * The contract is "checks that started must have succeeded": a matcher in `checks` selecting nothing
+ * is a check that never started, which is tolerated, while a selected check that is unfinished or
+ * unsuccessful is a failure. A matcher in `required` selecting nothing is a failure too. `error_on_failure=false` downgrades that failure to a warning, leaving the counts for the
  * caller to act on.
  *
  * @param api injection seam for tests; defaults to the GitHub REST API bound to the `token` input.
@@ -131,6 +159,7 @@ export function run(api?: CheckRunsApi): Promise<void> {
     const matchMode = parseMatchMode(getInput(ActionInput.match_mode));
     const repository = parseRepository(getInput(ActionInput.repository));
     const ref = getInput(ActionInput.ref);
+    const requiredInput = getInput(ActionInput.required);
     const errorOnFailure = getBooleanInput(ActionInput.error_on_failure);
 
     if (ref === '') {
@@ -138,6 +167,8 @@ export function run(api?: CheckRunsApi): Promise<void> {
     }
 
     const matchers: Matcher[] = normalizeMatchers(checks).map((raw) => resolveMatcher(raw, matchMode));
+    const requiredMatchers: Matcher[] =
+      requiredInput === '' ? [] : normalizeMatchers(requiredInput).map((raw) => resolveMatcher(raw, matchMode));
 
     group('Configuration', () => {
       core.info(`Repository: ${repository.owner}/${repository.repo}`);
@@ -145,6 +176,7 @@ export function run(api?: CheckRunsApi): Promise<void> {
       core.info(`Match mode: ${matchMode}`);
       core.info(`Error on failure: ${String(errorOnFailure)}`);
       core.info(`Matchers: ${quoteAllForLog(matchers.map((matcher) => matcher.raw))}`);
+      core.info(`Required matchers: ${quoteAllForLog(requiredMatchers.map((matcher) => matcher.raw))}`);
     });
 
     const collection = await collectCheckRuns(api ?? createCheckRunsApi(token), {
@@ -162,27 +194,33 @@ export function run(api?: CheckRunsApi): Promise<void> {
       );
     }
 
-    const selection = selectChecks(checkRuns, matchers);
-    logSelection(selection);
+    // One evaluation for both lists, so the pattern budget is spent once and a run selected by both is
+    // verified once. The required outcomes are the trailing ones.
+    const selection = selectChecks(checkRuns, [...matchers, ...requiredMatchers]);
+    const requiredOutcomes = selection.outcomes.slice(matchers.length);
+    const missing = missingRequired(requiredOutcomes);
+    logSelection(selection, requiredOutcomes);
 
     const summary = verifyCheckRuns(selection.selected);
     logVerification(summary);
-    logSummary(summary, selection.selected.length, errorOnFailure);
+    logSummary(summary, selection.selected.length, missing.length, errorOnFailure);
+
+    const failedCount = summary.failedCount + missing.length;
 
     setOutput(ActionOutput.matched_checks_count, String(selection.selected.length));
-    setOutput(ActionOutput.failed_checks_count, String(summary.failedCount));
+    setOutput(ActionOutput.failed_checks_count, String(failedCount));
 
-    if (summary.failedCount === 0) {
+    if (failedCount === 0) {
       return;
     }
 
-    const failure = `Verification failed because ${summary.failedCount} check(s) did not pass`;
+    const failure = `Verification failed because ${failedCount} check(s) did not pass`;
 
     if (errorOnFailure) {
       core.setFailed(`${failure} and error_on_failure=true.`);
       return;
     }
 
-    core.warning(`Found ${summary.failedCount} failing check(s), but continuing because error_on_failure=false.`);
+    core.warning(`Found ${failedCount} failing check(s), but continuing because error_on_failure=false.`);
   });
 }

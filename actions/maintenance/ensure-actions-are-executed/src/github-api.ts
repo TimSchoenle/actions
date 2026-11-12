@@ -44,11 +44,13 @@ export function createCheckRunsApi(token: string): CheckRunsApi {
         const { data } = await octokit.rest.checks.listForRef({ owner, page, per_page: PER_PAGE, ref, repo });
 
         return data.check_runs.map((checkRun) => ({
+          appId: checkRun.app?.id ?? null,
           conclusion: checkRun.conclusion,
           detailsUrl: checkRun.details_url,
           id: checkRun.id,
           name: checkRun.name,
           status: checkRun.status,
+          suiteId: checkRun.check_suite?.id ?? null,
         }));
       });
     },
@@ -66,11 +68,13 @@ export function createCheckRunsApi(token: string): CheckRunsApi {
         // A job carries the same status/conclusion vocabulary as a check run; `html_url` is the
         // equivalent of a check run's `details_url`.
         return data.jobs.map((job) => ({
+          appId: null,
           conclusion: job.conclusion,
           detailsUrl: job.html_url,
           id: job.id,
           name: job.name,
           status: job.status,
+          suiteId: null,
         }));
       });
     },

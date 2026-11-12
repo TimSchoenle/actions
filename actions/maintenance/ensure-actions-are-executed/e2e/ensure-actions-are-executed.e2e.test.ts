@@ -75,6 +75,13 @@ describe('ensure-actions-are-executed', () => {
     expect(result.warnings.join('\n')).toContain('error_on_failure=false');
   });
 
+  it('fails a required pattern that matches no check run, instead of reading it as not started', async () => {
+    const result = await run({ checks: SUCCEEDED, required: '/^never-created$/', error_on_failure: 'true' }, 'failure');
+
+    expect(result.outputs).toEqual({ matched_checks_count: '1', failed_checks_count: '1' });
+    expect(result.errors.join('\n')).toContain('never-created');
+  });
+
   it('ignores a skipped check, which is not a failure', async () => {
     const result = await run({ checks: `${SUCCEEDED}\n/^${SKIPPED}$/`, error_on_failure: 'true' });
 

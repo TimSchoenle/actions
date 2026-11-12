@@ -15,8 +15,8 @@ import {
 import type { CheckRun } from './checks.js';
 import type { MatchMode } from './matchers.js';
 
-function checkRun(name: string, id = 1): CheckRun {
-  return { conclusion: 'success', detailsUrl: null, id, name, status: 'completed' };
+function checkRun(name: string, id = 1, suiteId = 1): CheckRun {
+  return { appId: 15_368, conclusion: 'success', detailsUrl: null, id, name, status: 'completed', suiteId };
 }
 
 function matchers(raws: string[], mode: MatchMode = 'auto') {
@@ -188,6 +188,15 @@ describe('selectChecks', () => {
     const selection = selectChecks(checkRuns, matchers(['/build/', '/^build \\(18/', 'lint']));
 
     expect(selection.selected.map((check) => check.name)).toEqual(['build (18.x)', 'build (20.x)', 'lint']);
+  });
+
+  // Two workflows, two events or two matrix legs can report a check under one name. Each is a
+  // separate check that started, so each is verified.
+  it('keeps every check run that shares a name, ordered by name and then id', () => {
+    const selection = selectChecks([checkRun('build', 7, 2), checkRun('build', 3, 1)], matchers(['build']));
+
+    expect(selection.selected.map((check) => check.id)).toEqual([3, 7]);
+    expect(selection.outcomes[0].matchedNames).toEqual(['build']);
   });
 
   // A check that never started produces no check run. That is exactly the condition this action

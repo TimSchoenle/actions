@@ -8,9 +8,11 @@ const repository = { owner: 'owner', repo: 'repo' };
 
 function checkRun(overrides: Partial<CheckRun> & Pick<CheckRun, 'id' | 'name'>): CheckRun {
   return {
+    appId: 15_368,
     conclusion: 'success',
     detailsUrl: `https://github.com/owner/repo/runs/${overrides.id}`,
     status: 'completed',
+    suiteId: 1,
     ...overrides,
   };
 }
@@ -109,6 +111,29 @@ describe('latestCheckRuns', () => {
       ['build', 10, 'success'],
       ['lint', 1, 'success'],
     ]);
+  });
+
+  // A failed check in one suite must not be masked by a passing check of the same name in another:
+  // a pull request author can add a same-named job to a second workflow to win the highest id.
+  it('keeps the latest attempt per suite, so a same-named check elsewhere cannot mask a failure', () => {
+    const runs = [
+      checkRun({ conclusion: 'failure', id: 3, name: 'build', suiteId: 1 }),
+      checkRun({ id: 10, name: 'build', suiteId: 2 }),
+    ];
+
+    expect(latestCheckRuns(runs).map((run) => [run.id, run.conclusion])).toEqual([
+      [3, 'failure'],
+      [10, 'success'],
+    ]);
+  });
+
+  it('keeps checks of the same name and suite from different apps apart', () => {
+    const runs = [
+      checkRun({ appId: 1, conclusion: 'failure', id: 3, name: 'build' }),
+      checkRun({ appId: 2, id: 10, name: 'build' }),
+    ];
+
+    expect(latestCheckRuns(runs)).toHaveLength(2);
   });
 
   it('orders the snapshot by name', () => {
