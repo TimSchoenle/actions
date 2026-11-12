@@ -12,9 +12,8 @@
 # entry, so Rekor itself is never contacted. harden-runner enforces this on the Linux runners only.
 
 target: terrace/setup
-e2e:
-  token-permissions:
-    metadata: read
+# The cases never reach GitHub, so the job holds no token and no App key.
+e2e: {}
 
 jobs:
   install-exact:

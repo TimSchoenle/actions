@@ -6,7 +6,7 @@ import { sortedUnique, workspacePackages } from 'action-graph';
 import { PINNED } from './pins.js';
 
 import type { Permission } from '../action-docs/docs-file.js';
-import type { TokenPermissions, VerifySource } from './source.js';
+import type { E2eSettings, TokenPermissions, VerifySource } from './source.js';
 
 /**
  * The jobs the generator writes itself: `plan`, `install` and `build` of `verify.yaml`, and the job
@@ -57,9 +57,11 @@ export const ARTIFACT_ENDPOINTS: readonly string[] = [
   '*.blob.core.windows.net:443',
 ];
 
-/** The allowlist of a target's end-to-end job. */
+/** The allowlist of a target's end-to-end job: the GitHub API only when the job holds a token. */
 export function e2eEndpoints(source: VerifySource): readonly string[] {
-  return [...E2E_ALLOWED_ENDPOINTS, ...(source.e2e?.extraEndpoints ?? [])];
+  const base = source.e2e?.tokenPermissions === undefined ? BASE_ENDPOINTS : E2E_ALLOWED_ENDPOINTS;
+
+  return [...base, ...(source.e2e?.extraEndpoints ?? [])];
 }
 
 /** Renders a harden-runner step with the allowlist for one job, indented to sit under `steps:`. */
@@ -315,11 +317,53 @@ ${permissionInputs(permissions)}
 `;
 }
 
+/** The token steps and the environment of the cases' run step, for a suite that reaches GitHub. */
+function tokenSteps(permissions: TokenPermissions, secondary: TokenPermissions | undefined): string {
+  return `      # The cases run \`dist/index.js\`, the bundle GitHub itself would run: the one the install step
+      # above put there, which the harness checks against BUILT_ACTIONS_MANIFEST before it runs it.
+      - name: Generate Token
+        id: token
+        uses: ${PINNED.createAppToken}
+        with:
+          client-id: \${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: \${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          owner: ${TEST_OWNER}
+          repositories: ${TEST_REPO_NAME}
+${permissionInputs(permissions)}
+${secondary === undefined ? '' : secondaryTokenStep(secondary)}`;
+}
+
+/** The `env:` of the run step: the token and the scratch repository, or the tokenless flag. */
+function runEnvironment(settings: E2eSettings): string {
+  if (settings.tokenPermissions === undefined) {
+    // No token was minted, so the setup must not insist on one. ScratchRepo still does, so a case
+    // that starts reaching GitHub fails here instead of passing without credentials.
+    return `          E2E_TOKENLESS: '1'`;
+  }
+
+  const secondary = settings.secondaryTokenPermissions;
+
+  return `          E2E_GITHUB_TOKEN: \${{ steps.token.outputs.token }}
+          # An installation token cannot call \`GET /user\`, so the suite resolves its own account by
+          # app slug instead. Without this a case matching commit authors fails only in CI.
+          E2E_APP_SLUG: \${{ steps.token.outputs.app-slug }}${
+            secondary === undefined
+              ? ''
+              : '\n          E2E_GITHUB_TOKEN_SECONDARY: ${{ steps.secondary-token.outputs.token }}' +
+                '\n          E2E_APP_SLUG_SECONDARY: ${{ steps.secondary-token.outputs.app-slug }}'
+          }
+          E2E_TEST_REPOSITORY: ${TEST_OWNER}/${TEST_REPO_NAME}`;
+}
+
 /**
- * The job that runs `bun run e2e actions/<target>`, with a token scoped to the scratch repository.
+ * The job that runs `bun run e2e actions/<target>`.
  *
- * It restores the install job's tree and never installs, so the job holding the token has no route to
- * a package registry. The target gate and the display-name prefix are added later, as for every job.
+ * A suite with `token-permissions` gets a token scoped to the scratch repository, minted in the
+ * `ci-e2e` environment. A suite without one gets neither: no App key, no environment and no route to
+ * the GitHub API, because a job that holds the key while it runs code under test exposes the key.
+ *
+ * It restores the install job's tree and never installs, so the job has no route to a package
+ * registry. The target gate and the display-name prefix are added later, as for every job.
  *
  * @param builds - whether the target runs any bundle, so the job installs the shared build's artifact
  */
@@ -329,14 +373,18 @@ export function e2eJob(source: VerifySource, builds: boolean, modulePaths: reado
     throw new Error(`${source.file} has no e2e block.`);
   }
   const actionPath = `actions/${source.target}`;
-  const secondary = settings.secondaryTokenPermissions;
+  const permissions = settings.tokenPermissions;
+  const environment =
+    permissions === undefined
+      ? ''
+      : `    environment:
+      name: ci-e2e
+      deployment: false
+`;
 
   return `  ${e2eJobId(source.target)}:
     name: End-to-end
-    environment:
-      name: ci-e2e
-      deployment: false
-    runs-on: ubuntu-latest
+${environment}    runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read # to fetch code
@@ -371,31 +419,10 @@ ${builds ? `\n${installStepLines('      ').join('\n')}\n` : ''}
 ${cachePathsInput(modulePaths)}
           key: \${{ inputs.cache-key }}
           fail-on-cache-miss: true
-
-      # The cases run \`dist/index.js\`, the bundle GitHub itself would run: the one the install step
-      # above put there, which the harness checks against BUILT_ACTIONS_MANIFEST before it runs it.
-      - name: Generate Token
-        id: token
-        uses: ${PINNED.createAppToken}
-        with:
-          client-id: \${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: \${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          owner: ${TEST_OWNER}
-          repositories: ${TEST_REPO_NAME}
-${permissionInputs(settings.tokenPermissions)}
-${secondary === undefined ? '' : secondaryTokenStep(secondary)}
+${permissions === undefined ? '' : `\n${tokenSteps(permissions, settings.secondaryTokenPermissions)}`}
       - name: Run End-to-end Cases
         env:
-          E2E_GITHUB_TOKEN: \${{ steps.token.outputs.token }}
-          # An installation token cannot call \`GET /user\`, so the suite resolves its own account by
-          # app slug instead. Without this a case matching commit authors fails only in CI.
-          E2E_APP_SLUG: \${{ steps.token.outputs.app-slug }}${
-            secondary === undefined
-              ? ''
-              : '\n          E2E_GITHUB_TOKEN_SECONDARY: ${{ steps.secondary-token.outputs.token }}' +
-                '\n          E2E_APP_SLUG_SECONDARY: ${{ steps.secondary-token.outputs.app-slug }}'
-          }
-          E2E_TEST_REPOSITORY: ${TEST_OWNER}/${TEST_REPO_NAME}
+${runEnvironment(settings)}
         run: bun run e2e ${actionPath}
 `;
 }

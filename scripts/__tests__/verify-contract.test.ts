@@ -80,11 +80,6 @@ const NARROWER_TOKEN_SUITES: Record<string, { missing: string[]; reason: string 
     reason:
       'only the jobs fallback reads actions, and it needs GITHUB_RUN_ID, which the harness does not pass, so every case reads check runs alone',
   },
-  'actions/release/install-built-actions': {
-    missing: ['actions: read (input github-token)'],
-    reason:
-      'the cases drive the helper over a staged directory; the artifact record lookup runs in the Install And Refuse extra job, with the job token and actions: read',
-  },
   'actions/release/publish-build-commit': {
     missing: [
       'actions: read (input github-token)',
@@ -168,7 +163,8 @@ const GENERATED = generate(ROOT_DIR);
 function tokenScopeGaps(): Record<string, string[]> {
   const gaps: Record<string, string[]> = {};
 
-  for (const source of SOURCES.filter((candidate) => candidate.e2e !== undefined)) {
+  // A tokenless suite hands the action no token at all, so it has no token scope to compare.
+  for (const source of SOURCES.filter((candidate) => candidate.e2e?.tokenPermissions !== undefined)) {
     const actionPath = `actions/${source.target}`;
     const docs = docsOf(actionPath);
     const missing = docs === undefined ? [] : missingTokenInputScopes(actionTokenPermissions(source), docs.permissions);
@@ -253,6 +249,29 @@ describe('end-to-end contract', () => {
     expect(tokenScopeGaps(), 'grant the missing scopes in the source, or record them in NARROWER_TOKEN_SUITES').toEqual(
       explained,
     );
+  });
+
+  // C1: the job that mints a token holds the App's private key while it runs code under test, so a
+  // suite gets one only when its cases reach GitHub, and every suite whose cases do gets one.
+  it('gives a suite a token if and only if its cases reach the scratch repository', () => {
+    const reachesGitHub = (source: (typeof SOURCES)[number]): boolean =>
+      fs
+        .readdirSync(path.join(ROOT_DIR, 'actions', source.target, E2E_DIRECTORY), {
+          recursive: true,
+          withFileTypes: true,
+        })
+        .filter((entry) => entry.isFile() && entry.name.endsWith('.ts'))
+        .some((entry) =>
+          /\bScratchRepo\b|\bE2E_GITHUB_TOKEN\b/.test(fs.readFileSync(path.join(entry.parentPath, entry.name), 'utf8')),
+        );
+
+    const mismatched = SOURCES.filter((source) => source.e2e !== undefined)
+      .filter((source) => (source.e2e?.tokenPermissions !== undefined) !== reachesGitHub(source))
+      .map(
+        (source) => `${source.file}: ${reachesGitHub(source) ? 'needs token-permissions' : 'remove token-permissions'}`,
+      );
+
+    expect(mismatched).toEqual([]);
   });
 
   it('widens an e2e allowlist never to a package registry', () => {
@@ -356,7 +375,12 @@ describe('generated Verify workflows', () => {
         expect(job).not.toContain('registry.npmjs.org');
         expect(job).not.toContain('bun/setup-cached@');
         expect(job).toContain('fail-on-cache-miss');
-        expect(job).toMatch(/permission-[\w-]+/);
+        if (target.source.e2e?.tokenPermissions === undefined) {
+          expect(job, 'a tokenless suite holds no secret').not.toContain('secrets.');
+          expect(job).not.toContain('api.github.com');
+        } else {
+          expect(job).toMatch(/permission-[\w-]+/);
+        }
         expect(job).toContain(`bun run e2e actions/${target.source.target}`);
       }
     }

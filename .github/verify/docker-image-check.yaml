@@ -16,9 +16,8 @@
 # flip to the skip path: no SARIF upload, no fragment, no comment.
 
 target: docker/image-check
-e2e:
-  token-permissions:
-    metadata: read
+# The cases never reach GitHub, so the job holds no token and no App key.
+e2e: {}
 
 jobs:
   image-check-composite:

@@ -672,9 +672,6 @@ jobs:
   e2e-common-create-patch:
     name: 'Common Create-patch: End-to-end'
     if: ${{ contains(fromJSON(inputs.targets), 'common/create-patch') }}
-    environment:
-      name: ci-e2e
-      deployment: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -689,7 +686,6 @@ jobs:
             objects.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
-            api.github.com:443
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -731,25 +727,9 @@ jobs:
           key: ${{ inputs.cache-key }}
           fail-on-cache-miss: true
 
-      # The cases run `dist/index.js`, the bundle GitHub itself would run: the one the install step
-      # above put there, which the harness checks against BUILT_ACTIONS_MANIFEST before it runs it.
-      - name: Generate Token
-        id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          owner: TimSchoenle
-          repositories: actions-testing
-          permission-metadata: read
-
       - name: Run End-to-end Cases
         env:
-          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
-          # An installation token cannot call `GET /user`, so the suite resolves its own account by
-          # app slug instead. Without this a case matching commit authors fails only in CI.
-          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
-          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+          E2E_TOKENLESS: '1'
         run: bun run e2e actions/common/create-patch
 
   test-with-changes:
@@ -1313,9 +1293,6 @@ jobs:
   e2e-common-download-release-asset:
     name: 'Common Download-release-asset: End-to-end'
     if: ${{ contains(fromJSON(inputs.targets), 'common/download-release-asset') }}
-    environment:
-      name: ci-e2e
-      deployment: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -1330,7 +1307,6 @@ jobs:
             objects.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
-            api.github.com:443
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1372,25 +1348,9 @@ jobs:
           key: ${{ inputs.cache-key }}
           fail-on-cache-miss: true
 
-      # The cases run `dist/index.js`, the bundle GitHub itself would run: the one the install step
-      # above put there, which the harness checks against BUILT_ACTIONS_MANIFEST before it runs it.
-      - name: Generate Token
-        id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          owner: TimSchoenle
-          repositories: actions-testing
-          permission-metadata: read
-
       - name: Run End-to-end Cases
         env:
-          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
-          # An installation token cannot call `GET /user`, so the suite resolves its own account by
-          # app slug instead. Without this a case matching commit authors fails only in CI.
-          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
-          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+          E2E_TOKENLESS: '1'
         run: bun run e2e actions/common/download-release-asset
 
   download-direct:
@@ -1662,9 +1622,6 @@ jobs:
   e2e-common-fetch-head:
     name: 'Common Fetch-head: End-to-end'
     if: ${{ contains(fromJSON(inputs.targets), 'common/fetch-head') }}
-    environment:
-      name: ci-e2e
-      deployment: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -1679,7 +1636,6 @@ jobs:
             objects.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
-            api.github.com:443
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1721,25 +1677,9 @@ jobs:
           key: ${{ inputs.cache-key }}
           fail-on-cache-miss: true
 
-      # The cases run `dist/index.js`, the bundle GitHub itself would run: the one the install step
-      # above put there, which the harness checks against BUILT_ACTIONS_MANIFEST before it runs it.
-      - name: Generate Token
-        id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          owner: TimSchoenle
-          repositories: actions-testing
-          permission-metadata: read
-
       - name: Run End-to-end Cases
         env:
-          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
-          # An installation token cannot call `GET /user`, so the suite resolves its own account by
-          # app slug instead. Without this a case matching commit authors fails only in CI.
-          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
-          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+          E2E_TOKENLESS: '1'
         run: bun run e2e actions/common/fetch-head
 
   verify-github-fetch:
@@ -1841,9 +1781,6 @@ jobs:
   e2e-common-find-patch:
     name: 'Common Find-patch: End-to-end'
     if: ${{ contains(fromJSON(inputs.targets), 'common/find-patch') }}
-    environment:
-      name: ci-e2e
-      deployment: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -1858,7 +1795,6 @@ jobs:
             objects.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
-            api.github.com:443
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1900,25 +1836,9 @@ jobs:
           key: ${{ inputs.cache-key }}
           fail-on-cache-miss: true
 
-      # The cases run `dist/index.js`, the bundle GitHub itself would run: the one the install step
-      # above put there, which the harness checks against BUILT_ACTIONS_MANIFEST before it runs it.
-      - name: Generate Token
-        id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          owner: TimSchoenle
-          repositories: actions-testing
-          permission-metadata: read
-
       - name: Run End-to-end Cases
         env:
-          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
-          # An installation token cannot call `GET /user`, so the suite resolves its own account by
-          # app slug instead. Without this a case matching commit authors fails only in CI.
-          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
-          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+          E2E_TOKENLESS: '1'
         run: bun run e2e actions/common/find-patch
 
   find-patch-composite:
@@ -2052,9 +1972,6 @@ jobs:
   e2e-common-generated-files-verdict:
     name: 'Common Generated-files-verdict: End-to-end'
     if: ${{ contains(fromJSON(inputs.targets), 'common/generated-files-verdict') }}
-    environment:
-      name: ci-e2e
-      deployment: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -2069,7 +1986,6 @@ jobs:
             objects.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
-            api.github.com:443
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -2111,25 +2027,9 @@ jobs:
           key: ${{ inputs.cache-key }}
           fail-on-cache-miss: true
 
-      # The cases run `dist/index.js`, the bundle GitHub itself would run: the one the install step
-      # above put there, which the harness checks against BUILT_ACTIONS_MANIFEST before it runs it.
-      - name: Generate Token
-        id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          owner: TimSchoenle
-          repositories: actions-testing
-          permission-metadata: read
-
       - name: Run End-to-end Cases
         env:
-          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
-          # An installation token cannot call `GET /user`, so the suite resolves its own account by
-          # app slug instead. Without this a case matching commit authors fails only in CI.
-          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
-          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+          E2E_TOKENLESS: '1'
         run: bun run e2e actions/common/generated-files-verdict
 
   verdict-generate-docs:
@@ -2769,9 +2669,6 @@ jobs:
   e2e-common-modify-yaml:
     name: 'Common Modify-yaml: End-to-end'
     if: ${{ contains(fromJSON(inputs.targets), 'common/modify-yaml') }}
-    environment:
-      name: ci-e2e
-      deployment: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -2786,7 +2683,6 @@ jobs:
             objects.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
-            api.github.com:443
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -2828,33 +2724,14 @@ jobs:
           key: ${{ inputs.cache-key }}
           fail-on-cache-miss: true
 
-      # The cases run `dist/index.js`, the bundle GitHub itself would run: the one the install step
-      # above put there, which the harness checks against BUILT_ACTIONS_MANIFEST before it runs it.
-      - name: Generate Token
-        id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          owner: TimSchoenle
-          repositories: actions-testing
-          permission-metadata: read
-
       - name: Run End-to-end Cases
         env:
-          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
-          # An installation token cannot call `GET /user`, so the suite resolves its own account by
-          # app slug instead. Without this a case matching commit authors fails only in CI.
-          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
-          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+          E2E_TOKENLESS: '1'
         run: bun run e2e actions/common/modify-yaml
 
   e2e-common-read-yaml:
     name: 'Common Read-yaml: End-to-end'
     if: ${{ contains(fromJSON(inputs.targets), 'common/read-yaml') }}
-    environment:
-      name: ci-e2e
-      deployment: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -2869,7 +2746,6 @@ jobs:
             objects.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
-            api.github.com:443
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -2911,33 +2787,14 @@ jobs:
           key: ${{ inputs.cache-key }}
           fail-on-cache-miss: true
 
-      # The cases run `dist/index.js`, the bundle GitHub itself would run: the one the install step
-      # above put there, which the harness checks against BUILT_ACTIONS_MANIFEST before it runs it.
-      - name: Generate Token
-        id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          owner: TimSchoenle
-          repositories: actions-testing
-          permission-metadata: read
-
       - name: Run End-to-end Cases
         env:
-          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
-          # An installation token cannot call `GET /user`, so the suite resolves its own account by
-          # app slug instead. Without this a case matching commit authors fails only in CI.
-          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
-          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+          E2E_TOKENLESS: '1'
         run: bun run e2e actions/common/read-yaml
 
   e2e-common-readme-variables:
     name: 'Common Readme-variables: End-to-end'
     if: ${{ contains(fromJSON(inputs.targets), 'common/readme-variables') }}
-    environment:
-      name: ci-e2e
-      deployment: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -2952,7 +2809,6 @@ jobs:
             objects.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
-            api.github.com:443
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -2994,25 +2850,9 @@ jobs:
           key: ${{ inputs.cache-key }}
           fail-on-cache-miss: true
 
-      # The cases run `dist/index.js`, the bundle GitHub itself would run: the one the install step
-      # above put there, which the harness checks against BUILT_ACTIONS_MANIFEST before it runs it.
-      - name: Generate Token
-        id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          owner: TimSchoenle
-          repositories: actions-testing
-          permission-metadata: read
-
       - name: Run End-to-end Cases
         env:
-          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
-          # An installation token cannot call `GET /user`, so the suite resolves its own account by
-          # app slug instead. Without this a case matching commit authors fails only in CI.
-          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
-          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+          E2E_TOKENLESS: '1'
         run: bun run e2e actions/common/readme-variables
 
   # The fixture's committed output matches its template: check mode passes and render mode uploads
@@ -3128,9 +2968,6 @@ jobs:
   e2e-common-render-template:
     name: 'Common Render-template: End-to-end'
     if: ${{ contains(fromJSON(inputs.targets), 'common/render-template') }}
-    environment:
-      name: ci-e2e
-      deployment: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -3145,7 +2982,6 @@ jobs:
             objects.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
-            api.github.com:443
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -3187,25 +3023,9 @@ jobs:
           key: ${{ inputs.cache-key }}
           fail-on-cache-miss: true
 
-      # The cases run `dist/index.js`, the bundle GitHub itself would run: the one the install step
-      # above put there, which the harness checks against BUILT_ACTIONS_MANIFEST before it runs it.
-      - name: Generate Token
-        id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
-          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
-          owner: TimSchoenle
-          repositories: actions-testing
-          permission-metadata: read
-
       - name: Run End-to-end Cases
         env:
-          E2E_GITHUB_TOKEN: ${{ steps.token.outputs.token }}
-          # An installation token cannot call `GET /user`, so the suite resolves its own account by
-          # app slug instead. Without this a case matching commit authors fails only in CI.
-          E2E_APP_SLUG: ${{ steps.token.outputs.app-slug }}
-          E2E_TEST_REPOSITORY: TimSchoenle/actions-testing
+          E2E_TOKENLESS: '1'
         run: bun run e2e actions/common/render-template
 
   # The whole point of the action: a template plus variables becomes a signed commit containing

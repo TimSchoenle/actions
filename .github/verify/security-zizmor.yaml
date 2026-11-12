@@ -12,9 +12,8 @@
 # container sees. A committed BOM would trip the next guard anyone adds against them.
 
 target: security/zizmor
-e2e:
-  token-permissions:
-    metadata: read
+# The cases never reach GitHub, so the job holds no token and no App key.
+e2e: {}
 
 jobs:
   zizmor-composite:
