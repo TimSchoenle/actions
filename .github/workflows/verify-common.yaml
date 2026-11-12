@@ -914,6 +914,37 @@ jobs:
           fi
           echo "✅ File content verified"
 
+      # A second run for the same branch finds the open pull request through the owner-qualified
+      # lookup and reports that one, instead of creating another or picking any same-named head.
+      - name: Change Test File Again
+        env:
+          TEST_ID: ${{ env.TEST_ID }}
+        run: echo "Second run for $TEST_ID" >> test-pr-output/test-file.txt
+
+      - name: Run create-pull-request (existing pull request)
+        id: create-pr-again
+        uses: ./tmp/actions-code/actions/common/create-pull-request # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          app-id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
+          private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
+          repository: ${{ env.TEST_REPO }}
+          branch_name: test/create-pr-with-changes/${{ env.TEST_ID }}
+          title: '[TEST-CREATE-PR] With Changes - ${{ env.TEST_ID }}'
+          commit_message: 'test: second run of create-pull-request (${{ env.TEST_ID }})'
+          file_pattern: 'test-pr-output/test-file.txt'
+
+      - name: Verify The Existing Pull Request Is Reported
+        shell: bash
+        env:
+          FIRST_NUMBER: ${{ steps.create-pr.outputs.pr_number }}
+          SECOND_NUMBER: ${{ steps.create-pr-again.outputs.pr_number }}
+          SECOND_URL: ${{ steps.create-pr-again.outputs.pr_url }}
+        run: |
+          set -euo pipefail
+          [ "$SECOND_NUMBER" = "$FIRST_NUMBER" ] || { echo "::error::second run reported #$SECOND_NUMBER, expected #$FIRST_NUMBER"; exit 1; }
+          [[ "$SECOND_URL" == */pull/"$FIRST_NUMBER" ]] || { echo "::error::second run reported URL '$SECOND_URL'"; exit 1; }
+          echo "The second run reported the open pull request #$FIRST_NUMBER"
+
       # Guarded, not just `always()`: a run that opened no pull request — because it failed early, or
       # because skipping was the very thing under test — has no number to close, and closing "nothing"
       # would report a second, misleading failure on top of the real result.
@@ -1062,7 +1093,6 @@ jobs:
             - **Test ID**: `${{ env.TEST_ID }}`
           commit_message: 'test: this commit should not be created (${{ env.TEST_ID }})'
           commit_changes: 'true'
-          empty_commit: 'false'
 
       - name: Verify No PR Created
         shell: bash
