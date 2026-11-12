@@ -5,7 +5,10 @@ import {
   expectCleanRejection,
   expectNoInjection,
   fileCommandInjectionPayload,
+  expectSecretNotLeaked,
   HOSTILE_CHARACTERS,
+  linkOutside,
+  OUTSIDE_SECRET,
   oversized,
   runAction,
   TRAVERSAL_PATHS,
@@ -16,7 +19,7 @@ import {
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { ActionInput, ActionOutput } from '../src/generated/action-io.js';
-import type { ExpectedOutcome } from 'actions-e2e';
+import type { ExpectedOutcome, OutsideTarget } from 'actions-e2e';
 
 /**
  * Hostile cases for `actions/common/read-yaml`.
@@ -43,8 +46,12 @@ function blockScalar(value: string): string {
 describe('read-yaml under hostile input', () => {
   let workspace: Workspace;
 
+  let outside: OutsideTarget | undefined;
+
   afterEach(async () => {
     await workspace.dispose();
+    await outside?.dispose();
+    outside = undefined;
   });
 
   async function read(
@@ -194,26 +201,40 @@ describe('read-yaml under hostile input', () => {
   });
 
   describe('path handling', () => {
-    it.each(TRAVERSAL_PATHS)('fails legibly on $name rather than dumping what it found', async ({ value }) => {
+    it.each(TRAVERSAL_PATHS)('refuses $name, which leaves the workspace', async ({ value }) => {
       workspace = await Workspace.create({});
 
       const result = await runAction<ActionInput, ActionOutput>({
         actionDirectory: ACTION_DIRECTORY,
         inputs: { file: value, key: 'value' },
         workspace,
-        expect: 'any',
+        expect: 'failure',
       });
 
-      // The action is not confined to the workspace — `file` is a workflow-supplied path and an
-      // absolute one is a legitimate use. What must hold is that a path it cannot use fails with a
-      // message naming the path, and that a path it *can* use still publishes only the addressed key.
-      if (result.exitCode === 0) {
-        expect(Object.keys(result.outputs)).toEqual(['value']);
-      } else {
-        expectCleanRejection(result);
+      expectCleanRejection(result, /file (must|resolves)/);
+      expect(result.outputs).toEqual({});
+      expectNoInjection(result);
+    });
+
+    // The path is spotless, so only the real-path check sees where it lands.
+    it('refuses a committed link to a file outside the workspace, and publishes nothing it holds', async () => {
+      if (!(await Workspace.symlinksSupported())) {
+        return;
       }
 
-      expectNoInjection(result);
+      workspace = await Workspace.create({});
+      outside = await linkOutside(workspace, 'values.yaml', `value: ${OUTSIDE_SECRET}\n`);
+
+      const result = await runAction<ActionInput, ActionOutput>({
+        actionDirectory: ACTION_DIRECTORY,
+        inputs: { file: 'values.yaml', key: 'value' },
+        workspace,
+        expect: 'failure',
+      });
+
+      expectCleanRejection(result, /file resolves outside the workspace through a symbolic link/);
+      expect(result.outputs).toEqual({});
+      expectSecretNotLeaked(result, OUTSIDE_SECRET);
     });
 
     it('reads through a symbolic link without following it into a command', async () => {
