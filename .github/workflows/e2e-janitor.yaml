@@ -5,7 +5,10 @@ name: E2E Janitor
 # `test/**` branches, tags, releases and pull requests are stranded in the scratch repository. This
 # job is the unconditional backstop. Within the e2e namespace it judges purely by age, never by which
 # run created a ref, so it is safe to run at any time and converges on the same state however often
-# it runs. Nothing outside that namespace is ever a candidate: a pull request someone opened against
+# it runs. A ref the harness names reads its age from the creation time at the start of its run
+# segment (`test/<suite>/<epoch>-<run>/...`), not from the commit it points at: a case may branch from
+# an old commit, and judging that ref by its commit date would delete it while its run still uses it.
+# Nothing outside that namespace is ever a candidate: a pull request someone opened against
 # the scratch repository by hand, or one on a branch the harness did not create, is left alone.
 
 on:
@@ -15,7 +18,7 @@ on:
   workflow_dispatch:
     inputs:
       max-age-hours:
-        description: 'Sweep test refs and open pull requests whose last activity is older than this many hours.'
+        description: 'Sweep test refs, open pull requests and open issues older than this many hours.'
         required: false
         default: '2'
         type: string
@@ -75,9 +78,10 @@ jobs:
           private-key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
           owner: ${{ env.TEST_OWNER }}
           repositories: ${{ env.TEST_REPO_NAME }}
-          # Scoped to exactly what the two sweeps do — close pull requests, and read and delete refs.
-          # Without a `permission-*` input the token would inherit the whole installation.
+          # Scoped to exactly what the sweeps do: close pull requests and issues, and read and delete
+          # refs. Without a `permission-*` input the token would inherit the whole installation.
           permission-contents: write
+          permission-issues: write
           permission-pull-requests: write
 
       - name: Resolve Cutoff
@@ -92,8 +96,13 @@ jobs:
             exit 1
           fi
 
-          cutoff="$(date -u -d "${MAX_AGE_HOURS} hours ago" +%Y-%m-%dT%H:%M:%SZ)"
-          echo "at=${cutoff}" >> "$GITHUB_OUTPUT"
+          # One instant in both forms: ISO-8601 for API timestamps, epoch seconds for ref names.
+          epoch="$(date -u -d "${MAX_AGE_HOURS} hours ago" +%s)"
+          cutoff="$(date -u -d "@${epoch}" +%Y-%m-%dT%H:%M:%SZ)"
+          {
+            echo "at=${cutoff}"
+            echo "epoch=${epoch}"
+          } >> "$GITHUB_OUTPUT"
           echo "Sweeping everything last touched before ${cutoff} (dry-run: ${DRY_RUN})."
 
       # Pull requests are closed before their branches are deleted so the closure is recorded as a
@@ -185,14 +194,87 @@ jobs:
             exit 1
           fi
 
-      # Runs even when the pull-request sweep failed: the two sweeps are independent, and a backstop
-      # that skips half its work because of an unrelated fault is not a backstop.
+      # The e2e suites open issues too (common/upsert-issue). Teardown closes them, so an open one past
+      # the cutoff is the residue of a run that never reached its teardown. Runs even when an earlier
+      # sweep failed: the sweeps are independent, and a backstop that skips half its work because of
+      # an unrelated fault is not a backstop.
+      - name: Close Stale Issues
+        id: issues
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          CUTOFF: ${{ steps.cutoff.outputs.at }}
+          APP_SLUG: ${{ steps.token.outputs.app-slug }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$APP_SLUG" ]]; then
+            echo "::error::The token step reported no app slug; cannot identify e2e issues."
+            exit 1
+          fi
+          export E2E_AUTHOR="${APP_SLUG}[bot]"
+
+          # The issues endpoint lists pull requests as well; those belong to the pull-request sweep, so
+          # an entry that carries `pull_request` is dropped. Only issues the e2e app's bot account
+          # opened are candidates, so an issue a person filed in the scratch repository is never closed.
+          # shellcheck disable=SC2016
+          listing="$(
+            gh api --paginate -X GET "repos/${TEST_REPO}/issues" \
+              -f state=open -f creator="${E2E_AUTHOR}" -f per_page=100 \
+              --jq '.[]
+                | select(
+                    .pull_request == null
+                    and .user.type == "Bot"
+                    and .user.login == $ENV.E2E_AUTHOR
+                    and .updated_at < $ENV.CUTOFF
+                  )
+                | .number'
+          )"
+          mapfile -t stale < <(printf '%s' "$listing")
+
+          closed=0
+          failed=0
+
+          for number in "${stale[@]}"; do
+            if [[ "$DRY_RUN" == "true" ]]; then
+              echo "Would close issue #${number}."
+              closed=$((closed + 1))
+              continue
+            fi
+
+            if gh api -X PATCH "repos/${TEST_REPO}/issues/${number}" \
+              -f state=closed -f state_reason=not_planned --silent; then
+              echo "Closed issue #${number}."
+              closed=$((closed + 1))
+              continue
+            fi
+
+            state="$(gh api "repos/${TEST_REPO}/issues/${number}" --jq '.state' 2>/dev/null || true)"
+            if [[ "$state" == "closed" ]]; then
+              closed=$((closed + 1))
+            else
+              echo "::warning::Could not close issue #${number} (state: ${state:-unknown})."
+              failed=$((failed + 1))
+            fi
+          done
+
+          {
+            echo "stale=${#stale[@]}"
+            echo "closed=${closed}"
+          } >> "$GITHUB_OUTPUT"
+
+          if [[ "$failed" -gt 0 ]]; then
+            echo "::error::${failed} stale issue(s) could not be closed."
+            exit 1
+          fi
+
       - name: Delete Stale Test Branches
         id: branches
         if: ${{ !cancelled() }}
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           CUTOFF: ${{ steps.cutoff.outputs.at }}
+          CUTOFF_EPOCH: ${{ steps.cutoff.outputs.epoch }}
         run: |
           set -euo pipefail
 
@@ -220,26 +302,37 @@ jobs:
               continue
             fi
 
-            committed="$(gh api "repos/${TEST_REPO}/commits/${sha}" --jq '.commit.committer.date' 2>/dev/null || true)"
-            if [[ -z "$committed" ]]; then
-              echo "::warning::Could not read the commit date of ${ref}; leaving it in place."
-              failed=$((failed + 1))
-              continue
-            fi
-
-            if ! [[ "$committed" < "$CUTOFF" ]]; then
-              continue
+            # A harness-named ref carries its creation time, which is the right clock and costs no API
+            # call. A branch named before that convention, or by a workflow job rather than the
+            # harness, falls back to the date of the commit it points at.
+            if [[ "$ref" =~ ^refs/heads/test/[^/]+/([0-9]{10})- ]]; then
+              created="${BASH_REMATCH[1]}"
+              age="created $(date -u -d "@${created}" +%Y-%m-%dT%H:%M:%SZ)"
+              if (( created >= CUTOFF_EPOCH )); then
+                continue
+              fi
+            else
+              committed="$(gh api "repos/${TEST_REPO}/commits/${sha}" --jq '.commit.committer.date' 2>/dev/null || true)"
+              if [[ -z "$committed" ]]; then
+                echo "::warning::Could not read the commit date of ${ref}; leaving it in place."
+                failed=$((failed + 1))
+                continue
+              fi
+              age="last commit ${committed}"
+              if ! [[ "$committed" < "$CUTOFF" ]]; then
+                continue
+              fi
             fi
             stale=$((stale + 1))
 
             if [[ "$DRY_RUN" == "true" ]]; then
-              echo "Would delete ${ref} (last commit ${committed})."
+              echo "Would delete ${ref} (${age})."
               deleted=$((deleted + 1))
               continue
             fi
 
             if gh api -X DELETE "repos/${TEST_REPO}/git/refs/${ref#refs/}" --silent; then
-              echo "Deleted ${ref} (last commit ${committed})."
+              echo "Deleted ${ref} (${age})."
               deleted=$((deleted + 1))
               continue
             fi
@@ -325,13 +418,15 @@ jobs:
             exit 1
           fi
 
-      # Judged by the date of the commit a tag points at, as the branch sweep judges branches.
+      # Judged as the branch sweep judges branches: by the creation time in the name, otherwise by the
+      # date of the commit the tag points at.
       - name: Delete Stale Test Tags
         id: tags
         if: ${{ !cancelled() }}
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           CUTOFF: ${{ steps.cutoff.outputs.at }}
+          CUTOFF_EPOCH: ${{ steps.cutoff.outputs.epoch }}
         run: |
           set -euo pipefail
 
@@ -353,29 +448,37 @@ jobs:
               continue
             fi
 
-            if [[ "$type" == "tag" ]]; then
-              sha="$(gh api "repos/${TEST_REPO}/git/tags/${sha}" --jq '.object.sha' 2>/dev/null || true)"
-            fi
-            committed="$(gh api "repos/${TEST_REPO}/commits/${sha}" --jq '.commit.committer.date' 2>/dev/null || true)"
-            if [[ -z "$committed" ]]; then
-              echo "::warning::Could not read the commit date of ${ref}; leaving it in place."
-              failed=$((failed + 1))
-              continue
-            fi
-
-            if ! [[ "$committed" < "$CUTOFF" ]]; then
-              continue
+            if [[ "$ref" =~ ^refs/tags/test/[^/]+/([0-9]{10})- ]]; then
+              created="${BASH_REMATCH[1]}"
+              age="created $(date -u -d "@${created}" +%Y-%m-%dT%H:%M:%SZ)"
+              if (( created >= CUTOFF_EPOCH )); then
+                continue
+              fi
+            else
+              if [[ "$type" == "tag" ]]; then
+                sha="$(gh api "repos/${TEST_REPO}/git/tags/${sha}" --jq '.object.sha' 2>/dev/null || true)"
+              fi
+              committed="$(gh api "repos/${TEST_REPO}/commits/${sha}" --jq '.commit.committer.date' 2>/dev/null || true)"
+              if [[ -z "$committed" ]]; then
+                echo "::warning::Could not read the commit date of ${ref}; leaving it in place."
+                failed=$((failed + 1))
+                continue
+              fi
+              age="commit ${committed}"
+              if ! [[ "$committed" < "$CUTOFF" ]]; then
+                continue
+              fi
             fi
             stale=$((stale + 1))
 
             if [[ "$DRY_RUN" == "true" ]]; then
-              echo "Would delete ${ref} (commit ${committed})."
+              echo "Would delete ${ref} (${age})."
               deleted=$((deleted + 1))
               continue
             fi
 
             if gh api -X DELETE "repos/${TEST_REPO}/git/refs/${ref#refs/}" --silent; then
-              echo "Deleted ${ref} (commit ${committed})."
+              echo "Deleted ${ref} (${age})."
               deleted=$((deleted + 1))
             elif gh api "repos/${TEST_REPO}/git/ref/${ref#refs/}" --silent >/dev/null 2>&1; then
               echo "::warning::Could not delete ${ref}."
@@ -401,6 +504,8 @@ jobs:
           CUTOFF: ${{ steps.cutoff.outputs.at }}
           PULLS_STALE: ${{ steps.pulls.outputs.stale }}
           PULLS_CLOSED: ${{ steps.pulls.outputs.closed }}
+          ISSUES_STALE: ${{ steps.issues.outputs.stale }}
+          ISSUES_CLOSED: ${{ steps.issues.outputs.closed }}
           BRANCHES_STALE: ${{ steps.branches.outputs.stale }}
           BRANCHES_DELETED: ${{ steps.branches.outputs.deleted }}
           RELEASES_STALE: ${{ steps.releases.outputs.stale }}
@@ -428,6 +533,7 @@ jobs:
             echo '| Resource | Stale | Closed / deleted |'
             echo '| --- | ---: | ---: |'
             echo "| Open e2e pull requests | ${PULLS_STALE:-0} | ${PULLS_CLOSED:-0} |"
+            echo "| Open e2e issues | ${ISSUES_STALE:-0} | ${ISSUES_CLOSED:-0} |"
             echo "| Refs under \`${TEST_REF_PREFIX}\` | ${BRANCHES_STALE:-0} | ${BRANCHES_DELETED:-0} |"
             echo "| Releases on tags under \`${TEST_TAG_PREFIX#tags/}\` | ${RELEASES_STALE:-0} | ${RELEASES_DELETED:-0} |"
             echo "| Refs under \`${TEST_TAG_PREFIX}\` | ${TAGS_STALE:-0} | ${TAGS_DELETED:-0} |"

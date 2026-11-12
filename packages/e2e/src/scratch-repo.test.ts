@@ -47,11 +47,27 @@ describe('ScratchRepo.identifier', () => {
     vi.unstubAllEnvs();
   });
 
-  it('scopes a case name to the suite and the run', () => {
+  // C6: the janitor reads a ref's age from its name, so a branch created now at an old commit is not
+  // mistaken for a stale one and swept while its run is still going.
+  it('scopes a case name to the suite and the run, which starts with its creation time', () => {
+    vi.useFakeTimers({ now: Date.parse('2026-11-12T10:00:00Z') });
     vi.stubEnv('GITHUB_RUN_ID', '123');
     vi.stubEnv('GITHUB_RUN_ATTEMPT', '2');
 
-    expect(ScratchRepo.fromEnvironment('suite').identifier('create')).toBe('suite.123-2.create');
+    try {
+      const scratch = ScratchRepo.fromEnvironment('suite');
+
+      expect(scratch.identifier('create')).toBe('suite.1794477600-123-2.create');
+      expect(scratch.branch('create')).toBe('test/suite/1794477600-123-2/create');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('starts a local run with its creation time too', () => {
+    vi.stubEnv('GITHUB_RUN_ID', undefined);
+
+    expect(ScratchRepo.fromEnvironment('suite').branch('x')).toMatch(/^test\/suite\/\d{10}-local-[0-9a-f]{8}\/x$/);
   });
 
   // Two runs reusing one identifier is the collision this exists to prevent.
@@ -167,6 +183,7 @@ describe('ScratchRepo tags', () => {
     vi.stubEnv('E2E_TEST_REPOSITORY', 'owner/repo');
     vi.stubEnv('GITHUB_RUN_ID', '9');
     vi.stubEnv('GITHUB_RUN_ATTEMPT', '1');
+    vi.useFakeTimers({ now: 1_000_000_000_000, toFake: ['Date'] });
     octokit = Object.assign(mockOctokit(), { paginate: vi.fn(), request: vi.fn() });
     vi.mocked(createOctokit).mockReturnValue(octokit as unknown as ReturnType<typeof createOctokit>);
     scratch = ScratchRepo.fromEnvironment('unit');
@@ -174,10 +191,11 @@ describe('ScratchRepo tags', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.useRealTimers();
   });
 
   it('names a tag in the suite namespace', () => {
-    expect(scratch.tag('demo-v1.0.0')).toBe('test/unit/9-1/demo-v1.0.0');
+    expect(scratch.tag('demo-v1.0.0')).toBe('test/unit/1000000000-9-1/demo-v1.0.0');
   });
 
   it('deletes the releases on a reserved tag, then the tag, at teardown', async () => {
