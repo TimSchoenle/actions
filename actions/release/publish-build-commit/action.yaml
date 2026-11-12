@@ -26,9 +26,9 @@ inputs:
     required: false
     default: ''
   allowed-paths:
-    description: 'Space- or newline-separated globs every bundle path must match. ** matches any number of directories, * anything within one.'
+    description: 'Space- or newline-separated globs every bundle path must match. ** matches any number of directories, zero included, * anything within one. The default takes a file below a dist directory at least one directory under actions/, as the consumer check in SECURITY.md does; actions/dist/ itself is refused.'
     required: false
-    default: 'actions/**/dist/**'
+    default: 'actions/*/**/dist/**/*'
   existing-files:
     description: 'fail refuses a bundle path that already exists in the source commit, so B only adds files. require-identical accepts it when the bytes are identical, for a repository that still commits its bundles.'
     required: false
