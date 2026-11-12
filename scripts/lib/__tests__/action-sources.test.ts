@@ -16,6 +16,7 @@ import {
   renderEntryModule,
   renderModule,
 } from '../action-sources';
+import { collectSharedSources, renderSharedSources, SHARED_SOURCES_PATH } from '../shared-sources';
 
 import type { ActionDefinition, ActionPackage, GeneratedModule } from '../action-sources';
 
@@ -347,6 +348,26 @@ describe('the committed action sources', () => {
     expect(readFileSync(entryPath, 'utf8'), "Run 'bun run generate-action-sources' and commit the result").toBe(
       renderEntryModule(relativeDir(actionDir)),
     );
+  });
+
+  // A shared-package change reaches release-please only through this file, so a stale copy is a fix
+  // that ships in no release of this action.
+  it.each(nodeActionDirs)('%s has a shared-sources digest matching the packages it bundles', (actionDir) => {
+    const digestPath = path.join(actionDir, SHARED_SOURCES_PATH);
+
+    expect(existsSync(digestPath), `${digestPath} is missing — run 'bun run generate-action-sources'`).toBe(true);
+    expect(readFileSync(digestPath, 'utf8'), "Run 'bun run generate-action-sources' and commit the result").toBe(
+      renderSharedSources(relativeDir(actionDir), collectSharedSources(REPO_ROOT, relativeDir(actionDir))),
+    );
+  });
+
+  it('records actions-util in the digest of an action that bundles it', () => {
+    const digest = JSON.parse(
+      readFileSync(path.join(REPO_ROOT, 'actions/common/commit-changes', SHARED_SOURCES_PATH), 'utf8'),
+    ) as { packages: Record<string, { name: string; files: Record<string, string> }> };
+
+    expect(digest.packages['packages/ts-util']?.name).toBe('actions-util');
+    expect(Object.keys(digest.packages['packages/ts-util']?.files ?? {})).toContain('src/core.ts');
   });
 
   // The generated entry point imports `run` from here, so an action without it produces a bundle

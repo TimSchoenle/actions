@@ -19,7 +19,7 @@ async function write(module: GeneratedModule): Promise<void> {
 }
 
 /**
- * Generates the sources every Node action shares — its typed I/O module and its bundler entry point
+ * Generates the sources every Node action shares — its typed I/O module, its bundler entry point and the digest of the shared workspace sources it bundles
  * — from `action.yaml`, and validates that the action's manifest, package manifest and entry point
  * agree on the bundle GitHub runs.
  *
@@ -42,12 +42,12 @@ export async function main(argv: string[] = Bun.argv.slice(2)): Promise<number> 
   const stale = findStaleModules(modules);
 
   if (stale.length === 0) {
-    console.log(`✅ ${modules.length} generated action source(s) match their action.yaml.`);
+    console.log(`✅ ${modules.length} generated action source(s) match their sources.`);
     return 0;
   }
 
   if (check) {
-    console.error(`❌ ${stale.length} generated action source(s) do not match their action.yaml:`);
+    console.error(`❌ ${stale.length} generated action source(s) do not match their sources:`);
     for (const module of stale) {
       console.error(`  ${module.relativePath} is ${describe(module)}`);
     }

@@ -35,11 +35,13 @@ because CI regenerates it and commits the result back to the branch.
 | Output                                                       | Generated from                                                      | Command                           |
 | ------------------------------------------------------------ | ------------------------------------------------------------------- | --------------------------------- |
 | `README.md`, `SECURITY.md`                                   | `scripts/templates/`, plus every `action.yaml` and `configs/*.json` | `bun run generate-docs`           |
-| `actions/*/*/src/generated/action-io.ts`                     | that action's `action.yaml`                                         | `bun run generate-action-sources` |
+| `actions/*/*/src/generated/action-io.ts`, `index.ts`         | that action's `action.yaml`                                         | `bun run generate-action-sources` |
+| `actions/*/*/src/generated/shared-sources.json`              | the workspace packages that action bundles                          | `bun run generate-action-sources` |
 | `.github/workflows/verify*.yaml`, `.github/verify/plan.json` | `.github/verify/*.yaml`, `scripts/lib/verify/`                      | `bun run generate-verify`         |
 
-The pre-commit hook regenerates `action-io.ts` for the staged `action.yaml` files, and Scripts CI fails
-a pull request whose committed copies have drifted. The rest are checked in CI and committed back to
+The pre-commit hook regenerates these sources when a staged change touches an `action.yaml`, an
+action's `package.json` or a file under `packages/*/src/`, and Scripts CI fails a pull request whose
+committed copies have drifted. The rest are checked in CI and committed back to
 the branch when they drift.
 
 ## Action bundles
@@ -73,6 +75,21 @@ replacements honour `HTTPS_PROXY`, `HTTP_PROXY` and `NO_PROXY` as the toolkit di
 exposes the endpoints listed in `REST_ROUTES` (`packages/ts-util/src/octokit.ts`); add a route there
 to call another one. YAML helpers live behind `actions-util/yaml`, so actions that never parse YAML
 do not bundle the parser.
+
+### Releasing a change to a shared package
+
+release-please releases a component only for commits that touch its directory, and a change under
+`packages/` touches none. So each Node action commits `src/generated/shared-sources.json`, which holds
+the SHA-256 of every non-test source file in each workspace package that the action bundles. A change to
+one of those files changes the digest file of every action that bundles it. That puts the change
+inside each of those components, and the commit type decides their releases as usual.
+
+A `fix(ts-util)` commit therefore releases every action that bundles `actions-util`, which is most of
+them, and Renovate follows with pin bumps. Use `refactor`, `test` or `chore` for a shared-package
+change that does not change what an action does.
+
+The digest covers source files only. It leaves out tests, fixtures, the package's `package.json` and
+the root lockfile, so a dependency update of a shared package does not release the actions on its own.
 
 ## Before opening a pull request
 
@@ -160,7 +177,9 @@ only identity permitted to create a release tag or move the `releases` branch.
 
 Choose the type by what consumers get. A pull request that changes only workflows, tooling or
 generated files under component directories takes a type that releases nothing (`ci`, `chore`,
-`docs`, `test`); any other type releases every component whose directory it touches.
+`docs`, `test`); any other type releases every component whose directory it touches. That includes
+every action whose `shared-sources.json` a shared-package change regenerates; see
+[Releasing a change to a shared package](#releasing-a-change-to-a-shared-package).
 
 ## Prose
 
