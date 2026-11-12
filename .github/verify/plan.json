@@ -939,6 +939,16 @@
       "schedule": false
     },
     {
+      "id": "rust/test",
+      "shard": "verify-rust",
+      "inputs": [".github/verify/rust-test.yaml", ".github/workflows/verify-rust.yaml", "actions/rust/test"],
+      "buildDirs": [],
+      "install": false,
+      "pullRequestBranches": null,
+      "pushBranches": ["feature/rust/test"],
+      "schedule": false
+    },
+    {
       "id": "security/codeql",
       "shard": "verify-security",
       "inputs": [
