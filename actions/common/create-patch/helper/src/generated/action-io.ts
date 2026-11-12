@@ -16,6 +16,7 @@ import { createActionIo } from 'actions-util';
 export const ActionInput = {
   artifact_name: 'artifact_name',
   paths: 'paths',
+  empty_base_sha: 'empty_base_sha',
   max_patch_bytes: 'max_patch_bytes',
 } as const;
 
