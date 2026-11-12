@@ -32,6 +32,7 @@ const repository = { owner: 'owner', repo: 'repo' };
 
 function listItem(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
+    auto_merge: null,
     base: { ref: 'main', repo: { full_name: 'owner/repo' } },
     created_at: '2026-10-20T08:00:00Z',
     draft: false,
@@ -84,8 +85,17 @@ describe('createTimedAutoMergeApi', () => {
           nodeId: 'PR_kwDO',
           number: 7,
           url: 'https://github.com/owner/repo/pull/7',
+          autoMergeEnabled: false,
         },
       ]);
+    });
+
+    it('reads auto-merge as on when the listing carries an auto_merge object', async () => {
+      octokit.paginate.mockResolvedValue([listItem({ auto_merge: { merge_method: 'squash' } })]);
+
+      const [pullRequest] = await createTimedAutoMergeApi('token').listOpenPullRequests(repository);
+
+      expect(pullRequest.autoMergeEnabled).toBe(true);
     });
 
     it('reads a deleted fork as a null head repository and a missing draft flag as false', async () => {
@@ -145,13 +155,44 @@ describe('createTimedAutoMergeApi', () => {
     octokit.graphql.mockResolvedValue({ node: { headRefOid: HEAD, mergeStateStatus: 'CLEAN' } });
 
     await expect(createTimedAutoMergeApi('token').getMergeState('PR_kwDO')).resolves.toEqual({
+      autoMergeEnabled: false,
       headOid: HEAD,
       status: 'CLEAN',
+      viewerApprovedOid: null,
     });
     expect(octokit.graphql).toHaveBeenCalledWith(expect.stringContaining('mergeStateStatus'), {
       pullRequestId: 'PR_kwDO',
     });
   });
+
+  it('reads auto-merge and the commit this identity last approved', async () => {
+    octokit.graphql.mockResolvedValue({
+      node: {
+        autoMergeRequest: { enabledAt: '2026-10-20T08:00:00Z' },
+        headRefOid: HEAD,
+        mergeStateStatus: 'BLOCKED',
+        viewerLatestReview: { commit: { oid: HEAD }, state: 'APPROVED' },
+      },
+    });
+
+    await expect(createTimedAutoMergeApi('token').getMergeState('PR_kwDO')).resolves.toMatchObject({
+      autoMergeEnabled: true,
+      viewerApprovedOid: HEAD,
+    });
+  });
+
+  it.each(['DISMISSED', 'COMMENTED', 'CHANGES_REQUESTED'])(
+    'reads a latest review in state %s as no approval',
+    async (state) => {
+      octokit.graphql.mockResolvedValue({
+        node: { headRefOid: HEAD, mergeStateStatus: 'BLOCKED', viewerLatestReview: { commit: { oid: HEAD }, state } },
+      });
+
+      await expect(createTimedAutoMergeApi('token').getMergeState('PR_kwDO')).resolves.toMatchObject({
+        viewerApprovedOid: null,
+      });
+    },
+  );
 
   it('rejects a merge state response without a pull request', async () => {
     octokit.graphql.mockResolvedValue({ node: null });

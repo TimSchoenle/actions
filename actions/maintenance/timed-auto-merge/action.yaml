@@ -51,7 +51,7 @@ inputs:
 
 outputs:
   approved:
-    description: 'JSON array of the pull request numbers that were approved on this run and either had auto-merge enabled or, when already mergeable, were merged, e.g. `[12,15]`.'
+    description: 'JSON array of the pull request numbers that were approved on this run and either had auto-merge enabled or, when already mergeable, were merged, e.g. `[12,15]`. A pull request an earlier run already approved at its current head, with auto-merge still on, is listed too, though nothing was written to it.'
   skipped:
     description: 'JSON array of {"number", "reason"} for matching pull requests that were left alone, e.g. `[{"number":13,"reason":"too-young"}]`. The reasons are fork, author-untrusted, base-mismatch, draft, too-young, head-moved and commits-unverified.'
   failed:
