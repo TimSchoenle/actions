@@ -1,0 +1,58 @@
+# Runs the composite on the fixture crate of rust/coverage-codecov and checks that it built the
+# commit the event names. The action checks the repository out itself, so the checkout below only
+# provides the action's files; the action's own checkout replaces it.
+#
+# On a pull_request run github.sha is the merge commit. A default that checks out the head branch by
+# name builds that branch's tip instead, and on a fork pull request builds whichever branch of this
+# repository happens to share the fork branch's name.
+
+target: rust/cargo-check
+
+jobs:
+  rust-cargo-check-event-commit:
+    name: Verify Cargo-check (builds the event's commit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # to fetch code
+    env:
+      FIXTURE: actions/rust/coverage-codecov/fixture
+    steps:
+      - name: Harden Runner
+        uses: pinned:hardenRunner
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            static.rust-lang.org:443
+            index.crates.io:443
+            static.crates.io:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: pinned:checkout
+        with:
+          persist-credentials: false
+
+      - name: Run Cargo-check
+        uses: ./actions/rust/cargo-check # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          source_directory: ${{ env.FIXTURE }}
+          check_arguments: '--all-targets --all-features'
+
+      - name: Verify the action built the event's commit
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          if [[ "${actual}" != "${EXPECTED_SHA}" ]]; then
+            echo "::error::The action checked out ${actual}, not the event's commit ${EXPECTED_SHA}"
+            exit 1
+          fi
