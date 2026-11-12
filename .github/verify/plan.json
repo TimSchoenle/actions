@@ -24,7 +24,7 @@
       "pullRequestBranches": ["main"],
       "pushBranches": [],
       "schedule": false,
-      "jobsSha256": "ae231d2db1d15a7e30497d0920b441e5faebab4856d46c6264dd5dcdeba24c3b"
+      "jobsSha256": "de44f26b7031e7ca9fa51ff06918fc56af2cae594143f0829ff71d4a9b3a681d"
     },
     {
       "id": "common/close-pull-request",
