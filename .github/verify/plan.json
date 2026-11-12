@@ -920,6 +920,16 @@
       "schedule": false
     },
     {
+      "id": "rust/clippy",
+      "shard": "verify-rust",
+      "inputs": [".github/verify/rust-clippy.yaml", ".github/workflows/verify-rust.yaml", "actions/rust/clippy"],
+      "buildDirs": [],
+      "install": false,
+      "pullRequestBranches": null,
+      "pushBranches": ["feature/rust/clippy"],
+      "schedule": false
+    },
+    {
       "id": "rust/config-contract",
       "shard": "verify-rust",
       "inputs": [
