@@ -1,7 +1,9 @@
 import path from 'node:path';
 
+import { workspacePackages } from 'action-graph';
 import { parse } from 'yaml';
 
+import { collectSharedSources, renderSharedSources, SHARED_SOURCES_PATH } from './shared-sources.js';
 import { ROOT_DIR, Sys } from './utils.js';
 
 /**
@@ -328,7 +330,8 @@ async function generatedModule(actionDir: string, relativePath: string, expected
 }
 
 /**
- * Discovers every Node-based action and renders its generated sources, alongside what is on disk.
+ * Discovers every Node-based action and renders its generated sources, alongside what is on disk:
+ * the typed I/O module, the bundler entry point and the digest of the shared sources it bundles.
  *
  * Discovery is driven by the manifests themselves, so an action becomes covered the moment its
  * `action.yaml` declares a Node runtime — there is no list to keep in sync. The structure of each
@@ -338,6 +341,7 @@ async function generatedModule(actionDir: string, relativePath: string, expected
 export async function collectGeneratedModules(): Promise<GeneratedModule[]> {
   const modules: GeneratedModule[] = [];
   const problems: string[] = [];
+  const packages = workspacePackages(ROOT_DIR);
 
   for await (const manifest of Sys.glob(ACTION_MANIFEST_GLOB).scan({ cwd: ROOT_DIR })) {
     const manifestPath = toPosix(manifest);
@@ -364,6 +368,11 @@ export async function collectGeneratedModules(): Promise<GeneratedModule[]> {
     modules.push(
       await generatedModule(actionDir, `${actionDir}/${GENERATED_MODULE_PATH}`, renderModule(definition, actionDir)),
       await generatedModule(actionDir, `${actionDir}/${ENTRY_MODULE_PATH}`, renderEntryModule(actionDir)),
+      await generatedModule(
+        actionDir,
+        `${actionDir}/${SHARED_SOURCES_PATH}`,
+        renderSharedSources(actionDir, collectSharedSources(ROOT_DIR, actionDir, packages)),
+      ),
     );
   }
 
