@@ -1,5 +1,7 @@
 target: bun/setup-cached
 title: Bun Setup Cached
+extra-inputs:
+  - '.github/testdata/bun-setup-cached'
 rules:
   pull-request-branches: [main]
   # Only pushes to main ran this workflow before it moved into Verify.
@@ -183,6 +185,70 @@ jobs:
           # Check if the unique dependency is present (it might be symlinked or copied depending on bun)
           test -d "node_modules/$TEST_PKG" || (echo "::error::dependency $TEST_PKG not found" && exit 1)
           echo "Cache restored successfully"
+
+  # setup-bun keeps its own cache of the Bun executable and reuses a Bun already on PATH, so this job
+  # has no Setup Bun step of its own: the action under test is the first to install Bun. prime-cache's
+  # Setup Bun step has saved the executable of the pinned version by the time this job starts, so the
+  # read-write leg is the control that proves a hit is visible here.
+  verify-bun-cache:
+    name: Verify Bun Executable Cache (${{ matrix.cache-mode }})
+    needs: prime-cache
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # to fetch code
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cache-mode: read-write
+            expected-bun-cache-hit: 'true'
+          - cache-mode: read-only
+            expected-bun-cache-hit: 'false'
+          - cache-mode: none
+            expected-bun-cache-hit: 'false'
+    steps:
+      # The Bun download and the Actions cache. The fixture's one dependency is a local directory, so
+      # no registry is reached.
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # A committed project with a lockfile, so the job needs no Bun before the action runs. Its one
+      # dependency is a local directory, so the node_modules entry the read-write leg saves is tiny.
+      - name: Run Setup Cached
+        id: setup
+        uses: ./actions/bun/setup-cached # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          working-directory: .github/testdata/bun-setup-cached
+          bun-version-file: .bun-version
+          cache-mode: ${{ matrix.cache-mode }}
+          cache-key-prefix: 'verify-bun-cache-${{ needs.prime-cache.outputs.seed }}-'
+
+      - name: Verify Bun Executable Cache
+        env:
+          BUN_CACHE_HIT: ${{ steps.setup.outputs.bun-cache-hit }}
+          EXPECTED: ${{ matrix.expected-bun-cache-hit }}
+          CACHE_MODE: ${{ steps.setup.outputs.cache-mode }}
+        run: |
+          set -euo pipefail
+
+          if [ "$BUN_CACHE_HIT" != "$EXPECTED" ]; then
+            echo "::error::Expected bun-cache-hit '$EXPECTED' with cache-mode $CACHE_MODE, got '$BUN_CACHE_HIT'"
+            exit 1
+          fi
 
   verify-modes:
     name: Verify Cache Modes And Version Resolution

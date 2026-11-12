@@ -7,6 +7,7 @@
       "id": "bun/setup-cached",
       "shard": "verify-bun",
       "inputs": [
+        ".github/testdata/bun-setup-cached",
         ".github/verify/bun-setup-cached.yaml",
         ".github/workflows/verify-bun.yaml",
         "actions/bun/setup-cached"
