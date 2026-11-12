@@ -932,6 +932,9 @@ jobs:
           title: '[TEST-CREATE-PR] With Changes - ${{ env.TEST_ID }}'
           commit_message: 'test: second run of create-pull-request (${{ env.TEST_ID }})'
           file_pattern: 'test-pr-output/test-file.txt'
+          # The default resets the branch to its base first, and GitHub closes a pull request whose
+          # head stops differing from its base. Keeping the branch is how a caller updates its PR.
+          reset_branch: 'false'
 
       - name: Verify The Existing Pull Request Is Reported
         shell: bash
