@@ -69,6 +69,8 @@ interface CommitsPageFixture {
   endCursor?: string | null;
   nameWithOwner?: string;
   headRefOid?: string | null;
+  isCrossRepository?: boolean;
+  headRepository?: { nameWithOwner: string } | null;
 }
 
 /** A page of the `PullRequestCommits` query response. */
@@ -79,6 +81,8 @@ function commitsPage({
   endCursor = null,
   nameWithOwner = 'owner/repo',
   headRefOid = 'abc1234',
+  isCrossRepository = false,
+  headRepository = { nameWithOwner },
 }: CommitsPageFixture): unknown {
   return {
     resource: {
@@ -89,6 +93,8 @@ function commitsPage({
         totalCount: totalCount ?? nodes?.length ?? 0,
       },
       headRefOid,
+      headRepository,
+      isCrossRepository,
       repository: { nameWithOwner },
     },
   };
@@ -156,8 +162,53 @@ describe('fetchPullRequestCommits', () => {
         },
       ],
       headOid: 'sha1',
+      headRepository: 'owner/repo',
+      isCrossRepository: false,
       totalCount: 1,
     });
+  });
+
+  it('reports where the head lives, so a caller can refuse a fork', async () => {
+    mockGraphql([
+      commitsPage({ headRepository: { nameWithOwner: 'fork/repo' }, isCrossRepository: true, nodes: [commitNode()] }),
+    ]);
+
+    await expect(fetchPullRequestCommits('token', PR_URL)).resolves.toMatchObject({
+      headRepository: 'fork/repo',
+      isCrossRepository: true,
+    });
+  });
+
+  // GitHub answers null for headRepository once the fork a pull request came from is deleted.
+  it('reports a deleted head repository as null', async () => {
+    mockGraphql([commitsPage({ headRepository: null, isCrossRepository: true, nodes: [commitNode()] })]);
+
+    await expect(fetchPullRequestCommits('token', PR_URL)).resolves.toMatchObject({
+      headRepository: null,
+      isCrossRepository: true,
+    });
+  });
+
+  it('throws when the page omits isCrossRepository, instead of reading it as false', async () => {
+    const page = commitsPage({ nodes: [commitNode()] }) as { resource: Record<string, unknown> };
+    delete page.resource.isCrossRepository;
+    mockGraphql([page]);
+
+    await expect(fetchPullRequestCommits('token', PR_URL)).rejects.toThrow('no head repository data');
+  });
+
+  it('throws when the head repository changes between pages', async () => {
+    mockGraphql([
+      commitsPage({ endCursor: 'c1', hasNextPage: true, nodes: [commitNode()], totalCount: 2 }),
+      commitsPage({
+        headRepository: { nameWithOwner: 'fork/repo' },
+        isCrossRepository: true,
+        nodes: [commitNode({ oid: 'def5678' })],
+        totalCount: 2,
+      }),
+    ]);
+
+    await expect(fetchPullRequestCommits('token', PR_URL)).rejects.toThrow('head repository changed');
   });
 
   it('passes the pull request URL and a null starting cursor to the query', async () => {
@@ -186,6 +237,8 @@ describe('fetchPullRequestCommits', () => {
 
     const query = graphqlMock.mock.calls[0][0] as string;
     expect(query).toContain('headRefOid');
+    expect(query).toContain('isCrossRepository');
+    expect(query).toMatch(/headRepository \{\s*nameWithOwner/);
     expect(query).toMatch(/committer \{\s*user \{\s*databaseId/);
     expect(query).toMatch(/wasSignedByGitHub\s*signer \{\s*databaseId/);
   });

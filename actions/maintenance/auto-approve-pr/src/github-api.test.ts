@@ -114,7 +114,13 @@ describe('createAutoApproveApi', () => {
 
   describe('fetchCommits', () => {
     it('delegates to the shared pull-request commit fetch', async () => {
-      vi.mocked(fetchPullRequestCommits).mockResolvedValue({ commits: [], headOid: 'abc1234', totalCount: 0 });
+      vi.mocked(fetchPullRequestCommits).mockResolvedValue({
+        commits: [],
+        headOid: 'abc1234',
+        headRepository: 'owner/repo',
+        isCrossRepository: false,
+        totalCount: 0,
+      });
 
       await createAutoApproveApi('token').fetchCommits('https://github.com/owner/repo/pull/7');
 

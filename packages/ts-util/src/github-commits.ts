@@ -35,6 +35,10 @@ const PULL_REQUEST_COMMITS_QUERY = `query PullRequestCommits($prUrl: URI!, $curs
     __typename
     ... on PullRequest {
       headRefOid
+      isCrossRepository
+      headRepository {
+        nameWithOwner
+      }
       repository {
         nameWithOwner
       }
@@ -156,6 +160,8 @@ interface PullRequestCommitsResponse {
   resource: {
     __typename: string;
     headRefOid?: string | null;
+    isCrossRepository?: boolean;
+    headRepository?: { nameWithOwner: string } | null;
     repository?: { nameWithOwner: string };
     commits?: CommitConnection;
   } | null;
@@ -175,6 +181,16 @@ export interface PullRequestCommits {
    * one of {@link commits}, so a caller that acts on the pull request can bind the action to it.
    */
   headOid: string;
+  /**
+   * Whether the head branch lives in another repository than the base, which is the case for a pull
+   * request from a fork. Read with every page, like {@link headOid}.
+   */
+  isCrossRepository: boolean;
+  /**
+   * `owner/name` of the repository the head branch lives in, or `null` once that repository is
+   * deleted, as a fork can be after its pull request was opened.
+   */
+  headRepository: string | null;
   /** Number of commits the pull request has. Equal to the length of {@link commits}. */
   totalCount: number;
   /** Every commit of the pull request. */
@@ -296,6 +312,43 @@ function readHeadOid(reported: string | null | undefined, previous: string | und
   return reported;
 }
 
+/** Where a pull request's head lives, as one page reports it. */
+interface HeadLocation {
+  isCrossRepository: boolean;
+  headRepository: string | null;
+}
+
+/**
+ * Reads where the head lives from a page, requiring it to match every earlier page.
+ *
+ * A missing `isCrossRepository` is refused rather than read as `false`: a caller that rejects forks
+ * must not be told a pull request is not one because a field went missing.
+ *
+ * @throws if the page omits `isCrossRepository`, or reports a location other than `previous`.
+ */
+function readHeadLocation(
+  resource: NonNullable<PullRequestCommitsResponse['resource']>,
+  previous: HeadLocation | undefined,
+): HeadLocation {
+  if (typeof resource.isCrossRepository !== 'boolean') {
+    throw new Error('Pull request returned no head repository data. Refusing to verify.');
+  }
+
+  const location = {
+    headRepository: resource.headRepository?.nameWithOwner ?? null,
+    isCrossRepository: resource.isCrossRepository,
+  };
+
+  if (
+    previous !== undefined &&
+    (previous.headRepository !== location.headRepository || previous.isCrossRepository !== location.isCrossRepository)
+  ) {
+    throw new Error('Pull request head repository changed while its commits were read. Refusing to verify.');
+  }
+
+  return location;
+}
+
 /**
  * Walks every page of a pull request's commits.
  *
@@ -311,6 +364,7 @@ async function collectPullRequestCommits(graphql: GraphqlClient, prUrl: string):
   const commits: CommitRecord[] = [];
   let cursor: string | null = null;
   let headOid: string | undefined;
+  let head: HeadLocation | undefined;
   let totalCount: number;
 
   for (;;) {
@@ -322,6 +376,7 @@ async function collectPullRequestCommits(graphql: GraphqlClient, prUrl: string):
     }
 
     headOid = readHeadOid(resource.headRefOid, headOid);
+    head = readHeadLocation(resource, head);
 
     const { nameWithOwner } = resource.repository;
     const { nodes, pageInfo } = resource.commits;
@@ -351,7 +406,7 @@ async function collectPullRequestCommits(graphql: GraphqlClient, prUrl: string):
     throw new Error(`Pull request head ${headOid} is not among its commits. Refusing to verify.`);
   }
 
-  return { commits, headOid, totalCount };
+  return { commits, headOid, ...head, totalCount };
 }
 
 /**
