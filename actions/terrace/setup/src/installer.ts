@@ -7,9 +7,10 @@
  * - terrace-contract: cosign verifies the keyless signature over `SHA256SUMS` against the workflow
  *   identity that publishes it, then `SHA256SUMS` verifies the archive. What is pinned is the
  *   release workflow, not a key somebody holds.
- * - cosign and oras: their published checksum lists verify the download. That proves integrity, not
- *   authorship; the TLS connection to GitHub is the trust anchor for these two, as it is for every
- *   pinned tool a workflow downloads.
+ * - cosign and oras: the SHA-256 of each published checksum list is pinned next to the version, and
+ *   the list then verifies the download. The binary and its list come from the same release, so
+ *   whoever can replace one can replace both: the pin is what ties the install to the release that
+ *   was pinned, not to whatever that tag holds today.
  */
 import path from 'node:path';
 
@@ -83,14 +84,33 @@ function httpStatus(error: unknown): number | undefined {
 /** A release: the repository as `owner/repo` and the tag. */
 type Release = Omit<ReleaseAssetRef, 'name'>;
 
+/** A checksum list and the pinned SHA-256 of the list itself, under the input that pins it. */
+interface PinnedList {
+  readonly name: string;
+  readonly sha256: string;
+  readonly input: 'cosign_checksums_sha256' | 'oras_checksums_sha256';
+  readonly versionInput: 'cosign_version' | 'oras_version';
+}
+
 async function verifiedChecksums(
   ports: InstallPorts,
   file: string,
   asset: Asset,
   release: Release,
-  listName: string,
+  pinned: PinnedList,
 ): Promise<void> {
+  const listName = pinned.name;
   const list = await ports.download({ ...release, name: listName });
+  const listDigest = (await ports.sha256(list)).toLowerCase();
+
+  if (listDigest !== pinned.sha256.toLowerCase()) {
+    throw new VerificationError(
+      `${release.repository} ${release.tag}: ${listName} has SHA-256 ${listDigest}, but ${pinned.input} pins ` +
+        `${pinned.sha256.toLowerCase()}, so nothing from the release is installed. A changed ${pinned.versionInput} ` +
+        `needs ${pinned.input} set to the SHA-256 of that release's ${listName}.`,
+    );
+  }
+
   const digests = parseChecksums(await ports.readText(list), listName);
 
   assertListed(digests, listName, asset.name, await ports.sha256(file));
@@ -126,8 +146,16 @@ function fromCache(ports: InstallPorts, tool: string, version: string, binary: s
   return path.join(directory, binary);
 }
 
-/** Installs cosign `version` (with its leading `v`). */
-export async function installCosign(ports: InstallPorts, runner: Runner, version: string): Promise<Installed> {
+/**
+ * Installs cosign `version` (with its leading `v`), whose `cosign_checksums.txt` must hash to
+ * `checksumsSha256`.
+ */
+export async function installCosign(
+  ports: InstallPorts,
+  runner: Runner,
+  version: string,
+  checksumsSha256: string,
+): Promise<Installed> {
   const plain = version.replace(/^v/, '');
   const asset = cosignAsset(runner.platform, runner.arch);
   const hit = fromCache(ports, 'cosign', plain, asset.binary);
@@ -141,13 +169,23 @@ export async function installCosign(ports: InstallPorts, runner: Runner, version
   ports.info(`Downloading cosign ${version} (${asset.name}).`);
   const file = await ports.download({ ...release, name: asset.name });
 
-  await verifiedChecksums(ports, file, asset, release, COSIGN_CHECKSUMS);
+  await verifiedChecksums(ports, file, asset, release, {
+    name: COSIGN_CHECKSUMS,
+    sha256: checksumsSha256,
+    input: 'cosign_checksums_sha256',
+    versionInput: 'cosign_version',
+  });
 
   return { version: plain, path: await cached(ports, file, asset, 'cosign', plain) };
 }
 
-/** Installs oras `version` (without a leading `v`). */
-export async function installOras(ports: InstallPorts, runner: Runner, version: string): Promise<Installed> {
+/** Installs oras `version` (without a leading `v`), whose checksum list must hash to `checksumsSha256`. */
+export async function installOras(
+  ports: InstallPorts,
+  runner: Runner,
+  version: string,
+  checksumsSha256: string,
+): Promise<Installed> {
   const asset = orasAsset(version, runner.platform, runner.arch);
   const hit = fromCache(ports, 'oras', version, asset.binary);
 
@@ -160,7 +198,12 @@ export async function installOras(ports: InstallPorts, runner: Runner, version: 
   ports.info(`Downloading oras ${version} (${asset.name}).`);
   const file = await ports.download({ ...release, name: asset.name });
 
-  await verifiedChecksums(ports, file, asset, release, orasChecksums(version));
+  await verifiedChecksums(ports, file, asset, release, {
+    name: orasChecksums(version),
+    sha256: checksumsSha256,
+    input: 'oras_checksums_sha256',
+    versionInput: 'oras_version',
+  });
 
   return { version, path: await cached(ports, file, asset, 'oras', version) };
 }

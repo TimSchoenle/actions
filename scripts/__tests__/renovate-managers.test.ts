@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
 
 import { PINNED, resolvePins } from '../lib/verify/pins.js';
 import { SOURCES_DIR } from '../lib/verify/source.js';
@@ -799,5 +800,62 @@ describe('Renovate coverage of the README examples', () => {
       references.filter(({ line }) => !/@[0-9a-f]{40} # tag=actions-[\w-]+-v\d+\.\d+\.\d+$/.test(line)),
       'run bun run generate-docs to pin these',
     ).toEqual([]);
+  });
+});
+
+/**
+ * actions/terrace/setup pins each tool as two input defaults: `<tool>_version`, under a `# renovate:`
+ * comment, and `<tool>_checksums_sha256`, the SHA-256 of that release's checksum list, right after
+ * it. The list verifies the binary, so a version bump without its digest fails every install. One
+ * manager has to capture both, with the digest as `currentDigest`, so Renovate moves them together.
+ */
+describe('Renovate coverage of the checksum-pinned tool inputs of terrace/setup', () => {
+  const FILE = 'actions/terrace/setup/action.yaml';
+
+  interface Input {
+    default?: string;
+  }
+
+  function inputs(content: string): Record<string, Input> {
+    return (parse(content) as { inputs: Record<string, Input> }).inputs;
+  }
+
+  function captures(content: string): Record<string, string>[] {
+    return customManagers()
+      .filter((manager) =>
+        manager.managerFilePatterns.some(
+          (pattern) => pattern.startsWith('/') && pattern.endsWith('/') && new RegExp(pattern.slice(1, -1)).test(FILE),
+        ),
+      )
+      .flatMap((manager) =>
+        manager.matchStrings.flatMap((matchString) =>
+          [...content.matchAll(new RegExp(matchString, 'g'))].map((match) => ({ ...match.groups })),
+        ),
+      );
+  }
+
+  const content = fs.readFileSync(path.join(ROOT_DIR, FILE), 'utf8');
+  const tools = Object.keys(inputs(content))
+    .filter((name) => name.endsWith('_checksums_sha256'))
+    .map((name) => name.slice(0, -'_checksums_sha256'.length));
+
+  it('finds the cosign and oras pins, so the check below is not vacuous', () => {
+    expect(tools).toEqual(['cosign', 'oras']);
+  });
+
+  it.each(tools)('captures the %s version and the digest of its checksum list as one dependency', (tool) => {
+    const declared = inputs(content);
+    const version = declared[`${tool}_version`]?.default;
+    const digest = declared[`${tool}_checksums_sha256`]?.default;
+    const matching = captures(content).filter((capture) => capture['currentDigest'] === digest);
+
+    expect(digest).toMatch(/^[a-f0-9]{64}$/);
+    expect(matching).toHaveLength(1);
+    expect(matching[0]).toMatchObject({ datasource: 'github-release-attachments', currentValue: version });
+  });
+
+  it('captures nothing that is not a version and digest pair', () => {
+    expect(captures(content).every((capture) => /^[a-f0-9]{64}$/.test(capture['currentDigest'] ?? ''))).toBe(true);
+    expect(captures(content)).toHaveLength(tools.length);
   });
 });

@@ -20,7 +20,9 @@ const DEFAULTS = {
   working_directory: '.',
   oras: 'false',
   cosign_version: 'v3.1.3',
+  cosign_checksums_sha256: 'a'.repeat(64),
   oras_version: '1.3.4',
+  oras_checksums_sha256: 'a'.repeat(64),
   github_token: '',
 } as const;
 
@@ -54,6 +56,11 @@ describe('terrace setup', () => {
       reason: /must not traverse upwards/,
     },
     { description: 'no version and no terrace.yaml', inputs: {}, reason: /cannot be read/ },
+    {
+      description: 'a cosign pin that is not a SHA-256',
+      inputs: { version: '0.8.0', cosign_checksums_sha256: 'not-a-digest' },
+      reason: /cosign_checksums_sha256: must be a SHA-256/,
+    },
   ])('refuses $description', async ({ inputs, reason }) => {
     const result = await refused(inputs);
 

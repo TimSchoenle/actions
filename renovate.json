@@ -67,11 +67,11 @@
       "datasourceTemplate": "docker"
     },
     {
-      "description": "The cosign and oras releases actions/terrace/setup installs, pinned as input defaults in its action.yaml with a `# renovate:` comment naming the datasource. Neither the github-actions manager nor any other reads an input default, so without this Renovate would never update them. The bump ships as a release of the action.",
+      "description": "The cosign and oras releases actions/terrace/setup installs, pinned as two input defaults in its action.yaml: <tool>_version under a `# renovate:` comment naming the github-release-attachments datasource, and right after it <tool>_checksums_sha256, the SHA-256 of that release's checksum list. The datasource finds the asset whose own SHA-256 is the pin and hashes the asset of the same name in the new release, so version and digest move in one commit and the install keeps verifying. Neither the github-actions manager nor any other reads an input default, so without this Renovate would never update them. The bump ships as a release of the action. A contract test in scripts/__tests__ fails a pair this manager would not capture.",
       "customType": "regex",
       "managerFilePatterns": ["/^actions/terrace/setup/action\\.yaml$/"],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[\\w-]+) depName=(?<depName>[\\w./-]+)(?: extractVersion=(?<extractVersion>\\S+))?\\s+default: '(?<currentValue>[^']+)'"
+        "# renovate: datasource=(?<datasource>github-release-attachments) depName=(?<depName>[\\w.-]+\\/[\\w.-]+)(?: extractVersion=(?<extractVersion>\\S+))?\\s+default: '(?<currentValue>[^']+)'\\s+[a-z]+_checksums_sha256:\\s+description:[\\s\\S]*?\\s+required: false\\s+default: '(?<currentDigest>[a-f0-9]{64})'"
       ],
       "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>.*)${{/if}}"
     },
