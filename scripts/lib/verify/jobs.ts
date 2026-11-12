@@ -214,11 +214,14 @@ ${cachePathsInput(modulePaths)}
       # An empty bun-version makes setup-bun fall through to bun-version-file; setup-cached defaults
       # it to 'latest', which would win otherwise. It reinstalls on every run whatever the cache did,
       # which is what validates the restored tree against the lockfile before the next job trusts it.
+      # cache-mode none: the step above already restores and saves this tree under the key the test
+      # jobs read, and setup-cached's own cache of the same 313 MB was a second restore and save.
       - name: Setup Bun And Install
         uses: ${PINNED.setupBun}
         with:
           bun-version: ''
           bun-version-file: '.bun-version'
+          cache-mode: none
 `;
 }
 
