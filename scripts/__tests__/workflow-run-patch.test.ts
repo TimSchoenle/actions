@@ -75,16 +75,19 @@ describe('workflow_run commit workflows start only for a failed upstream run', (
 
     expect(job, 'the update-readme job').toBeDefined();
     expect(normalise(job?.if)).toBe('${{ !cancelled() }}');
-    expect([job?.needs].flat()).toEqual(['generate-workflows', 'generate-docs']);
+    expect([job?.needs].flat()).toEqual(['generate']);
     const step = (job?.steps ?? []).find(
       (candidate) => candidate.name === 'Fail Unless The Stages Left Nothing To Commit',
     );
     expect(step, 'the step that fails the run').toBeDefined();
     expect(step?.if).toBeUndefined();
-    expect(step?.env?.WORKFLOWS_CHANGES).toBe('${{ needs.generate-workflows.outputs.has_changes }}');
-    expect(step?.env?.DOCS_CHANGES).toBe('${{ needs.generate-docs.outputs.has_changes }}');
+    expect(step?.env?.GENERATE_RESULT).toBe('${{ needs.generate.result }}');
+    expect(step?.env?.WORKFLOWS_CHANGES).toBe('${{ needs.generate.outputs.workflows_has_changes }}');
+    expect(step?.env?.DOCS_CHANGES).toBe('${{ needs.generate.outputs.docs_has_changes }}');
     const script = step?.run ?? '';
+    expect(script).toMatch(/if \[ "\$GENERATE_RESULT" != "success" \]; then\n(?:.*\n)*?\s*exit 1/);
     expect(script).toMatch(/if \[ "\$WORKFLOWS_CHANGES" = "true" \]; then\n(?:.*\n)*?\s*exit 1/);
-    expect(script).toMatch(/if \[ "\$DOCS_CHANGES" = "true" \]; then\n(?:.*\n)*?\s*exit 1/);
+    // Fails closed: an empty output, from a skipped docs stage, is not "no changes".
+    expect(script).toMatch(/if \[ "\$DOCS_CHANGES" != "false" \]; then\n(?:.*\n)*?\s*exit 1/);
   });
 });
