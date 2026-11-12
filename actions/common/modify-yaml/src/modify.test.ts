@@ -159,6 +159,46 @@ level1:
     });
   });
 
+  // Each case below was a reproduced corruption: the splice wrote text that parsed differently, or
+  // not at all, and nothing checked it.
+  describe('Splices that used to change the meaning of the file', () => {
+    async function edited(yaml: string, keyPath: string, value: string): Promise<unknown> {
+      await fs.writeFile(tmpFile, yaml);
+      await modifyYaml(tmpFile, keyPath, value);
+      const { parseDocument } = await import('yaml');
+      const document = parseDocument(await fs.readFile(tmpFile, 'utf-8'));
+      expect(document.errors).toEqual([]);
+
+      return document.toJS();
+    }
+
+    const long = Array.from({ length: 30 }, (_, index) => `word${index}`).join(' ');
+
+    it('keeps a long value at a nested key under that key', async () => {
+      expect(await edited('a:\n  b:\n    c: short\n  d: 1\n', 'a.b.c', long)).toEqual({ a: { b: { c: long }, d: 1 } });
+    });
+
+    it('writes into an empty node instead of replacing its map', async () => {
+      expect(await edited('image:\n  tag:\n  repo: x\n', 'image.tag', 'v2')).toEqual({
+        image: { tag: 'v2', repo: 'x' },
+      });
+    });
+
+    it('keeps one flow entry one entry', async () => {
+      expect(await edited('args: [v1, --safe]\n', 'args.0', 'v2,--privileged')).toEqual({
+        args: ['v2,--privileged', '--safe'],
+      });
+    });
+
+    it('keeps the key after a block scalar it replaces', async () => {
+      expect(await edited('script: |\n  echo one\nnext: 2\n', 'script', 'two')).toEqual({ script: 'two', next: 2 });
+    });
+
+    it('keeps the key after a map it replaces', async () => {
+      expect(await edited('map:\n  k: v\nnext: 2\n', 'map', 'scalar')).toEqual({ map: 'scalar', next: 2 });
+    });
+  });
+
   it('should modify a simple key', async () => {
     await fs.writeFile(tmpFile, 'key: old_value\n');
     const old = await modifyYaml(tmpFile, 'key', 'new_value');
