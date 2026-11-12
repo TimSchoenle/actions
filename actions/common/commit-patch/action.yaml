@@ -31,13 +31,13 @@ inputs:
     required: false
     default: ${{ github.repository }}
   branch:
-    description: 'Branch to commit to.'
+    description: 'Branch to commit to, as a branch name: a value starting with refs/, or one git would refuse, fails the step. Empty uses the branch of the triggering event, github.head_ref || github.ref_name. With run_id set it must be given, since in a workflow_run job the event branch is the default branch.'
     required: false
-    default: ${{ github.head_ref || github.ref_name }}
+    default: ''
   expected_head_sha:
-    description: 'The commit the branch must still point at, and the one the checkout must be at. A patch made from any other commit is skipped with a notice.'
+    description: 'The commit the branch must still point at, and the one the checkout must be at. A patch made from any other commit is skipped with a notice. Empty uses the head of the triggering event, github.event.pull_request.head.sha || github.sha. With run_id set it must be given, since in a workflow_run job the event head is the tip of the default branch.'
     required: false
-    default: ${{ github.event.pull_request.head.sha || github.sha }}
+    default: ''
   max_patch_bytes:
     description: 'Largest patch accepted, in bytes. Keep it equal to max_patch_bytes on create-patch.'
     required: false
@@ -75,6 +75,8 @@ runs:
         INPUT_REPOSITORY: ${{ inputs.repository }}
         INPUT_BRANCH: ${{ inputs.branch }}
         INPUT_EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+        INPUT_EVENT_BRANCH: ${{ github.head_ref || github.ref_name }}
+        INPUT_EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         INPUT_MAX_PATCH_BYTES: ${{ inputs.max_patch_bytes }}
         INPUT_RUN_ID: ${{ inputs.run_id }}
       run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"
@@ -115,6 +117,8 @@ runs:
         INPUT_REPOSITORY: ${{ inputs.repository }}
         INPUT_BRANCH: ${{ inputs.branch }}
         INPUT_EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+        INPUT_EVENT_BRANCH: ${{ github.head_ref || github.ref_name }}
+        INPUT_EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         INPUT_MAX_PATCH_BYTES: ${{ inputs.max_patch_bytes }}
         INPUT_RUN_ID: ${{ inputs.run_id }}
       run: node "$GITHUB_ACTION_PATH/helper/dist/index.js"

@@ -34,11 +34,21 @@ inputs:
     description: 'owner/repo to commit to.'
     required: true
   branch:
-    description: 'Branch to commit to.'
-    required: true
+    description: 'Branch to commit to. Empty uses event_branch, which run_id forbids.'
+    required: false
+    default: ''
   expected_head_sha:
-    description: 'The commit the branch is expected to point at.'
-    required: true
+    description: 'The commit the branch is expected to point at. Empty uses event_head_sha, which run_id forbids.'
+    required: false
+    default: ''
+  event_branch:
+    description: 'The branch of the triggering event: github.head_ref || github.ref_name.'
+    required: false
+    default: ''
+  event_head_sha:
+    description: 'The head of the triggering event: github.event.pull_request.head.sha || github.sha.'
+    required: false
+    default: ''
   max_patch_bytes:
     description: 'Largest patch accepted, in bytes.'
     required: false

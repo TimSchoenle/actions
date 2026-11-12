@@ -7,6 +7,7 @@ import { createCommitApi } from 'actions-util/commit-on-branch';
 import * as core from 'actions-util/core';
 import { isCommitSha, parseByteLimit, validateArtifactName } from 'actions-util/patch';
 
+import { validateBranchName } from './branch-name.js';
 import { commitPatch } from './commit.js';
 import { ActionInput, ActionOutput, getBooleanInput, getInput, setOutput } from './generated/action-io.js';
 import { createPatchGit } from './git.js';
@@ -40,11 +41,42 @@ function validateRunId(value: string): void {
   }
 }
 
+/**
+ * An input whose default is a value of the triggering event.
+ *
+ * Without `run_id` the event is the one that produced the patch, so its value is the right default.
+ * With `run_id` the job is typically a `workflow_run` job, whose event values name the default branch
+ * and its tip: a fallback there would commit another run's patch to the default branch.
+ */
+function readEventDefault(input: ActionInput, eventInput: ActionInput, runId: string): string {
+  const explicit = getInput(input);
+
+  if (explicit !== '') {
+    return explicit;
+  }
+
+  if (runId !== '') {
+    throw new Error(
+      `${input} must be set when run_id is set: the triggering event does not describe the run the patch came from.`,
+    );
+  }
+
+  const fallback = getInput(eventInput);
+
+  if (fallback === '') {
+    throw new Error(`${input} is empty, and the triggering event names none.`);
+  }
+
+  return fallback;
+}
+
 /** The inputs both modes validate, so a misconfiguration fails before anything is downloaded. */
 function readRequest(directory: string): CommitPatchRequest {
-  validateRunId(getInput(ActionInput.run_id, { trimWhitespace: false }));
+  const runId = getInput(ActionInput.run_id, { trimWhitespace: false });
+  validateRunId(runId);
 
-  const expectedHeadSha = getInput(ActionInput.expected_head_sha, { required: true });
+  const branch = validateBranchName(readEventDefault(ActionInput.branch, ActionInput.event_branch, runId));
+  const expectedHeadSha = readEventDefault(ActionInput.expected_head_sha, ActionInput.event_head_sha, runId);
   if (!isCommitSha(expectedHeadSha)) {
     throw new Error(`expected_head_sha must be a full lowercase commit SHA; got ${JSON.stringify(expectedHeadSha)}.`);
   }
@@ -53,7 +85,7 @@ function readRequest(directory: string): CommitPatchRequest {
   parseRepository(repository);
 
   return {
-    branch: getInput(ActionInput.branch, { required: true }),
+    branch,
     directory,
     expectedHeadSha,
     maxPatchBytes: parseByteLimit(getInput(ActionInput.max_patch_bytes), ActionInput.max_patch_bytes),
