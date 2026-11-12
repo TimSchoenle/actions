@@ -438,6 +438,24 @@ describe('commit-changes', () => {
     });
   });
 
+  // The files were rewritten on top of the checkout. A push that lands before the commit must make it
+  // fail, not be overwritten for every file the job rewrote.
+  it('refuses to commit over a push that landed after the checkout', async () => {
+    await withCheckout('pushed-after-checkout', { 'shared.txt': 'seed\n' }, async ({ branch, workspace }) => {
+      const pushed = await scratch.commitFile(branch, 'shared.txt', 'pushed meanwhile\n', 'test: concurrent push');
+      await workspace.write({ 'shared.txt': 'rewritten by the job\n' });
+
+      const result = await run(
+        workspace,
+        { branch, commit_message: 'test: must not land', file_pattern: 'shared.txt' },
+        'failure',
+      );
+
+      expect(result.outputs['commit_hash']).toBeUndefined();
+      await expect(scratch.headOf(branch, pushed)).resolves.toBe(pushed);
+    });
+  });
+
   const messageCases = [
     { name: 'a single-line message', message: 'chore(test): verify the commit message' },
     // The GraphQL commit API takes a headline and a body separately, so a multi-line message only

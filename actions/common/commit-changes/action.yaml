@@ -16,6 +16,10 @@ inputs:
     description: 'Branch to commit to'
     required: false
     default: ${{ github.head_ref || github.ref_name }}
+  expected_head_sha:
+    description: 'The commit the branch must still point at; GitHub refuses the commit when it moved on. Empty uses the checked-out commit when branch is the checked-out branch, so a push that landed after the checkout is never overwritten. Otherwise the branch head is read just before the commit, with a warning, and such a push goes undetected.'
+    required: false
+    default: ''
   file_pattern:
     description: 'File pattern to commit'
     required: false
