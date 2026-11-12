@@ -146,6 +146,37 @@ jobs:
 
           echo "✅ The limit failed last, and a missing image failed first"
 
+      # Trivy reads trivy.yaml and .trivyignore from the workspace unless told otherwise, and on a pull
+      # request the workspace is the pull request. Both planted files are malformed, so Trivy fails
+      # the scan if it reads either one: the step passing shows it read the action's own files instead.
+      - name: Plant Workspace Trivy Files
+        run: |
+          set -euo pipefail
+          printf 'severity: [\n' > trivy.yaml
+          printf 'CVE-2024-0001 exp:not-a-date\n' > .trivyignore
+
+      - name: Run Test (Planted Workspace Files)
+        id: planted
+        continue-on-error: true
+        uses: ./actions/docker/image-check # zizmor: ignore[self-repository] -- actionlint rejects the $/ syntax as an action without a ref.
+        with:
+          image: image-check-e2e:test
+          upload-sarif: 'false'
+          comment: none
+
+      - name: Assert Planted Files Ignored
+        env:
+          PLANTED_OUTCOME: ${{ steps.planted.outcome }}
+          PLANTED_FINDINGS: ${{ steps.planted.outputs.findings }}
+        run: |
+          set -euo pipefail
+          rm -f trivy.yaml .trivyignore
+
+          [ "$PLANTED_OUTCOME" = "success" ] || { echo "::error::a trivy.yaml or .trivyignore in the workspace reached Trivy ($PLANTED_OUTCOME)"; exit 1; }
+          [[ "$PLANTED_FINDINGS" =~ ^[0-9]+$ ]] || { echo "::error::findings '$PLANTED_FINDINGS' is not a count"; exit 1; }
+
+          echo "✅ Trivy read neither the workspace trivy.yaml nor its .trivyignore"
+
   verify-summary-legs:
     name: Test Summary Leg (${{ matrix.platform }})
     runs-on: ubuntu-latest
