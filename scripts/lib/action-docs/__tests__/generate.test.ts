@@ -135,6 +135,34 @@ describe('generateActionReadmes', () => {
     expect(report.warnings).toEqual([]);
   });
 
+  it('lists a Verify source that names the action as a PINNED placeholder as a caller', async () => {
+    // PINNED refs name the real repository, so the placeholder resolves to a caller only under it.
+    const repo = 'TimSchoenle/actions';
+    const install = 'actions/release/install-built-actions';
+    const { io, files } = memoryIo({
+      '.release-please-manifest.json': JSON.stringify({ [install]: '1.1.0' }),
+      'release-please-config.json': JSON.stringify({
+        packages: { [install]: { component: 'actions-release-install-built-actions' } },
+      }),
+      [`${install}/action.yaml`]: MANIFEST,
+      [`${install}/docs.yaml`]: DOCS,
+      [`${install}/examples/security.yaml`]: `jobs:\n  i:\n    steps:\n      - uses: ${repo}/${install}@main\n`,
+      '.github/verify/rust-auto-format.yaml':
+        'target: rust/auto-format\njobs:\n  t:\n    steps:\n      - uses: pinned:installBuiltActions\n',
+      // Not a Verify source: a placeholder elsewhere is left as written and names no action.
+      '.github/workflows/other.yml': 'jobs:\n  o:\n    steps:\n      - uses: pinned:installBuiltActions\n',
+    });
+
+    const report = await generateActionReadmes(repo, io);
+
+    expect(report.errors).toEqual([]);
+    const readme = files.get(`${install}/README.md`) ?? '';
+    expect(readme).toContain(
+      '  - [`.github/verify/rust-auto-format.yaml`](../../../.github/verify/rust-auto-format.yaml)',
+    );
+    expect(readme).not.toContain('other.yml');
+  });
+
   it('pins every published action an example calls, not only the documented one', async () => {
     const OTHER = 'actions/common/commit-patch';
     const files = repository({
