@@ -9,7 +9,7 @@ outside the markers.
 
 Installs a signature-verified terrace-contract release on PATH, together with cosign and, when asked, oras. The version comes from the version input or from the cli pin in terrace.yaml.
 
-[actions-terrace-setup-v4.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-setup-v4.0.1) · JavaScript action (node24)
+[actions-terrace-setup-v4.0.2](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-setup-v4.0.2) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -28,7 +28,7 @@ steps:
       persist-credentials: false
 
   - id: terrace
-    uses: TimSchoenle/actions/actions/terrace/setup@e75e9ab1e1e9fa573051a901347e39ba23a45710 # tag=actions-terrace-setup-v4.0.1
+    uses: TimSchoenle/actions/actions/terrace/setup@actions-terrace-setup-v4.0.2 # tag=actions-terrace-setup-v4.0.2
 
   - run: terrace-contract doctor
 ```
@@ -38,7 +38,7 @@ steps:
 ```yaml
 # An exact version needs no release listing, so the run is reproducible and makes no API call
 # unless a download fails. oras is what terrace-contract pull fetches contracts from a registry with.
-- uses: TimSchoenle/actions/actions/terrace/setup@e75e9ab1e1e9fa573051a901347e39ba23a45710 # tag=actions-terrace-setup-v4.0.1
+- uses: TimSchoenle/actions/actions/terrace/setup@actions-terrace-setup-v4.0.2 # tag=actions-terrace-setup-v4.0.2
   with:
     version: '0.14.0'
     oras: 'true'

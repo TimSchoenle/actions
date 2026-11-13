@@ -9,7 +9,7 @@ outside the markers.
 
 Deletes every GitHub Actions cache entry recorded for one branch or one pull request merge ref. Refuses the default branch unless allow_default_branch is true.
 
-[actions-maintenance-wipe-cache-v3.1.0](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-wipe-cache-v3.1.0) · JavaScript action (node24)
+[actions-maintenance-wipe-cache-v3.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-wipe-cache-v3.1.1) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 The action works through the REST API: `GET /repos/{owner}/{repo}/actions/caches?ref=` to list the entries and
@@ -40,7 +40,7 @@ jobs:
     permissions:
       actions: write # to list and delete caches
     steps:
-      - uses: TimSchoenle/actions/actions/maintenance/wipe-cache@e75e9ab1e1e9fa573051a901347e39ba23a45710 # tag=actions-maintenance-wipe-cache-v3.1.0
+      - uses: TimSchoenle/actions/actions/maintenance/wipe-cache@actions-maintenance-wipe-cache-v3.1.1 # tag=actions-maintenance-wipe-cache-v3.1.1
         with:
           token: ${{ github.token }}
 ```
@@ -48,7 +48,7 @@ jobs:
 ### Another branch, or a dry run first
 
 ```yaml
-- uses: TimSchoenle/actions/actions/maintenance/wipe-cache@e75e9ab1e1e9fa573051a901347e39ba23a45710 # tag=actions-maintenance-wipe-cache-v3.1.0
+- uses: TimSchoenle/actions/actions/maintenance/wipe-cache@actions-maintenance-wipe-cache-v3.1.1 # tag=actions-maintenance-wipe-cache-v3.1.1
   with:
     token: ${{ github.token }}
     branch: ${{ inputs.branch }}
