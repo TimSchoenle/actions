@@ -159,7 +159,6 @@ one key, and `bun install --frozen-lockfile` exits 0 without pinning anything. A
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
 - End-to-end tests: [`.github/verify/bun-setup-cached.yaml`](../../../.github/verify/bun-setup-cached.yaml)
 - Called from this repository by:
-  - [`.github/verify/configs-renovate.yaml`](../../../.github/verify/configs-renovate.yaml)
   - [`.github/workflows/auto-format.yml`](../../../.github/workflows/auto-format.yml)
   - [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
   - [`.github/workflows/scripts-ci.yml`](../../../.github/workflows/scripts-ci.yml)
