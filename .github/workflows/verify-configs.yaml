@@ -124,7 +124,7 @@ jobs:
       # Installs only the pinned Renovate in .github/tools/renovate, not the root workspace: the
       # scripts below import nothing outside the Node and Bun standard libraries.
       - name: Setup Bun and Renovate
-        uses: TimSchoenle/actions/actions/bun/setup-cached@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-bun-setup-cached-v3.1.0
+        uses: TimSchoenle/actions/actions/bun/setup-cached@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-bun-setup-cached-v4.0.0
         with:
           bun-version: ''
           bun-version-file: '.bun-version'
