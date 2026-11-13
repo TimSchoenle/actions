@@ -45,7 +45,9 @@ function refusingCreate(lookup: 'present' | 'absent' | 'failing'): void {
       if (lookup === 'present') {
         reply(response, 200, { ref: 'refs/tags/v1', object: { type: 'commit', sha: SHA } });
       } else if (lookup === 'failing') {
-        reply(response, 500, { message: 'Server Error' });
+        // A failure the client does not retry: a transient 5xx on this read would be retried with real
+        // waits, and that retry is covered by the shared client's own tests.
+        reply(response, 403, { message: 'Resource not accessible by integration' });
       } else {
         reply(response, 404, { message: 'Not Found' });
       }
@@ -79,7 +81,7 @@ describe('createPublishApi createRef', () => {
     await expect(createPublishApi('token', { owner: 'o', repo: 'r' }).createRef('tags/v1', SHA)).rejects.toMatchObject({
       status: 422,
       message: expect.stringContaining('Object does not exist'),
-      cause: expect.objectContaining({ status: 500 }),
+      cause: expect.objectContaining({ status: 403 }),
     });
   });
 
