@@ -65,7 +65,7 @@ jobs:
 
       # Installs the bundles the build job built from this commit; dist/ is not committed.
       - name: Install Built Actions
-        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        uses: TimSchoenle/actions/actions/release/install-built-actions@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-release-install-built-actions-v1.1.1
         with:
           artifact-id: ${{ inputs.artifact-id }}
           expected-manifest-sha256: ${{ inputs.manifest-sha256 }}
@@ -445,7 +445,7 @@ jobs:
 
       # Installs the bundles the build job built from this commit; dist/ is not committed.
       - name: Install Built Actions
-        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        uses: TimSchoenle/actions/actions/release/install-built-actions@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-release-install-built-actions-v1.1.1
         with:
           artifact-id: ${{ inputs.artifact-id }}
           expected-manifest-sha256: ${{ inputs.manifest-sha256 }}
