@@ -34,7 +34,6 @@ function summary(
     draft: false,
     headSha: `sha-${number}`,
     labels,
-    mergeStateStatus: 'UNKNOWN',
     number,
     ...overrides,
   };
@@ -49,6 +48,7 @@ function detail(number: number, overrides: Partial<PullRequestDetail> = {}): Pul
     headSha: `sha-${number}`,
     labels: ['dependencies'],
     maintainerCanModify: false,
+    mergeableState: 'unknown',
     number,
     state: 'open',
     ...overrides,
@@ -214,44 +214,38 @@ describe('updateLabelledPullRequests', () => {
     });
   });
 
-  describe('merge state from the listing', () => {
-    it('skips a pull request GitHub reports as conflicting without reading it', async () => {
-      const api = fakeApi({ listed: [summary(1, ['dependencies'], { mergeStateStatus: 'DIRTY' }), summary(3)] });
+  describe('merge state from the re-read', () => {
+    it('skips a pull request GitHub reports as conflicting without comparing or updating it', async () => {
+      const api = fakeApi({
+        details: { 1: detail(1, { mergeableState: 'dirty' }) },
+        listed: [summary(1), summary(3)],
+      });
 
       const result = await updateLabelledPullRequests(api, options);
 
       expect(result.skipped).toEqual([{ number: 1, reason: 'conflicting' }]);
       expect(result.updated).toEqual([3]);
-      expect(api.getPullRequest).not.toHaveBeenCalledWith(repository, 1);
+      expect(api.commitsBehindBase).not.toHaveBeenCalledWith(repository, 'main', 'sha-1');
+      expect(api.updateBranch).not.toHaveBeenCalledWith(repository, 1, expect.anything());
     });
 
-    it('updates a BEHIND pull request without comparing when its head has not moved', async () => {
-      const api = fakeApi({ listed: [summary(1, ['dependencies'], { mergeStateStatus: 'BEHIND' })] });
+    it('updates a behind pull request without comparing', async () => {
+      const api = fakeApi({
+        details: { 1: detail(1, { headSha: 'fresh', mergeableState: 'behind' }) },
+        listed: [summary(1)],
+      });
 
       const result = await updateLabelledPullRequests(api, options);
 
       expect(result.updated).toEqual([1]);
       expect(api.commitsBehindBase).not.toHaveBeenCalled();
-      expect(api.updateBranch).toHaveBeenCalledWith(repository, 1, 'sha-1');
+      expect(api.updateBranch).toHaveBeenCalledWith(repository, 1, 'fresh');
     });
 
-    it('compares a BEHIND pull request whose head moved since the listing', async () => {
-      const api = fakeApi({
-        behind: 0,
-        details: { 1: detail(1, { headSha: 'fresh' }) },
-        listed: [summary(1, ['dependencies'], { mergeStateStatus: 'BEHIND' })],
-      });
-
-      const result = await updateLabelledPullRequests(api, options);
-
-      expect(api.commitsBehindBase).toHaveBeenCalledWith(repository, 'main', 'fresh');
-      expect(result.skipped).toEqual([{ number: 1, reason: 'up-to-date' }]);
-    });
-
-    it.each(['CLEAN', 'BLOCKED', 'UNSTABLE', 'HAS_HOOKS', 'UNKNOWN'])(
+    it.each(['clean', 'blocked', 'unstable', 'has_hooks', 'unknown'])(
       'compares a pull request whose merge state is %s',
-      async (mergeStateStatus) => {
-        const api = fakeApi({ listed: [summary(1, ['dependencies'], { mergeStateStatus })] });
+      async (mergeableState) => {
+        const api = fakeApi({ details: { 1: detail(1, { mergeableState }) }, listed: [summary(1)] });
 
         const result = await updateLabelledPullRequests(api, options);
 
@@ -330,10 +324,22 @@ describe('updateLabelledPullRequests', () => {
     });
 
     it('counts only pull requests that pass the listing rules', async () => {
-      const api = fakeApi({ listed: [summary(1, ['dependencies'], { mergeStateStatus: 'DIRTY' }), summary(2)] });
+      const api = fakeApi({ listed: [summary(1, ['dependencies'], { draft: true }), summary(2)] });
+
+      const result = await updateLabelledPullRequests(api, { ...options, limit: 1, skipDrafts: true });
+
+      expect(result.updated).toEqual([2]);
+    });
+
+    it('gives the slot of a conflicting pull request to the next one', async () => {
+      const api = fakeApi({
+        details: { 1: detail(1, { mergeableState: 'dirty' }) },
+        listed: [summary(1), summary(2)],
+      });
 
       const result = await updateLabelledPullRequests(api, { ...options, limit: 1 });
 
+      expect(result.skipped).toEqual([{ number: 1, reason: 'conflicting' }]);
       expect(result.updated).toEqual([2]);
     });
   });

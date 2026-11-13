@@ -109,36 +109,39 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 
 ## What happens to each pull request
 
-One GraphQL query per 100 open pull requests lists them oldest first, with their labels, draft flag, head commit,
-auto-merge state and GitHub's merge state. A labelled pull request is skipped without a further call when:
+One GraphQL query per 100 open pull requests lists them oldest first, with their labels, draft flag, head commit and
+auto-merge state. It does not ask for the merge state: GitHub would have to compute it for every pull request on the
+page before answering, and on a repository with many open pull requests that query times out. A labelled pull request
+is skipped without a further call when:
 
-| Reason           | Condition                                                                                    |
-| ---------------- | -------------------------------------------------------------------------------------------- |
-| `auto-merge-off` | `only_auto_merge` is `true` and auto-merge is off for it.                                    |
-| `draft`          | It is a draft and `skip_drafts` is `true`.                                                   |
-| `conflicting`    | GitHub reports its merge state as `DIRTY`: it conflicts with its base, so an update would fail. |
-| `limit-reached`  | Older pull requests already took every slot `limit` allows.                                  |
+| Reason           | Condition                                                   |
+| ---------------- | ----------------------------------------------------------- |
+| `auto-merge-off` | `only_auto_merge` is `true` and auto-merge is off for it.   |
+| `draft`          | It is a draft and `skip_drafts` is `true`.                  |
+| `limit-reached`  | Older pull requests already took every slot `limit` allows. |
 
 The listing is a snapshot, so every other labelled pull request is read again just before its turn and skipped when:
 
-| Reason                    | Condition                                                   |
-| ------------------------- | ----------------------------------------------------------- |
-| `not-open`                | It was closed, merged or deleted since the list was read.   |
-| `label-removed`           | The label came off since the list was read.                 |
-| `draft`                   | It is a draft and `skip_drafts` is `true`.                  |
-| `head-repository-deleted` | Its head is on a fork that no longer exists.                |
-| `fork-not-writable`       | Its head is on a fork that does not allow maintainer edits. |
-| `up-to-date`              | Its head already contains every commit of the base branch.  |
+| Reason                    | Condition                                                                                          |
+| ------------------------- | -------------------------------------------------------------------------------------------------- |
+| `not-open`                | It was closed, merged or deleted since the list was read.                                          |
+| `label-removed`           | The label came off since the list was read.                                                        |
+| `draft`                   | It is a draft and `skip_drafts` is `true`.                                                         |
+| `head-repository-deleted` | Its head is on a fork that no longer exists.                                                       |
+| `fork-not-writable`       | Its head is on a fork that does not allow maintainer edits.                                        |
+| `conflicting`             | GitHub reports its merge state as `dirty`: it conflicts with its base, so an update would fail. |
+| `up-to-date`              | Its head already contains every commit of the base branch.                                         |
 
 Otherwise the update is requested with `expected_head_sha` set to the head commit that second read returned. A push
 that lands between the read and the request makes GitHub reject the update, so it never merges over a commit nobody
 looked at.
 
-The `up-to-date` check needs no call when the listing reported the merge state `BEHIND` for the same head commit.
-Any other merge state decides nothing: a repository that does not require up-to-date branches reports a behind head
-as `CLEAN`, and a pending review or check reports `BLOCKED`. Those heads are compared with the base branch. When that
-comparison fails, the update is requested anyway and GitHub decides. GitHub computes the merge state in the
-background, so a pull request pushed moments before the run reports `UNKNOWN` and is compared too.
+The `up-to-date` check needs no call when that second read reports the merge state `behind`. Any other merge state
+decides nothing: a repository that does not require up-to-date branches reports a behind head as `clean`, and a
+pending review or check reports `blocked`. Those heads are compared with the base branch. When that comparison fails,
+the update is requested anyway and GitHub decides. GitHub computes the merge state in the background, so a pull request
+pushed moments before the run reports `unknown` and is compared too. A conflicting pull request in that state is not
+skipped as `conflicting`: its update is requested, and GitHub rejects it (see Failures below).
 
 ### Updating one pull request at a time
 

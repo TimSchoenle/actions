@@ -34,6 +34,7 @@ function pullData(overrides: Record<string, unknown> = {}): unknown {
     head: { repo: { full_name: 'owner/repo' }, sha: 'abc123' },
     labels: [{ name: 'dependencies' }],
     maintainer_can_modify: false,
+    mergeable_state: 'behind',
     number: 7,
     state: 'open',
     ...overrides,
@@ -57,7 +58,6 @@ describe('createUpdateBranchApi', () => {
         headRefOid: `sha-${number}`,
         isDraft: false,
         labels: { nodes: [] },
-        mergeStateStatus: 'CLEAN',
         number,
         ...overrides,
       };
@@ -79,6 +79,17 @@ describe('createUpdateBranchApi', () => {
       expect(variables).toEqual({ after: null, first: 100, owner: 'owner', repo: 'repo' });
     });
 
+    // Either field makes GitHub compute the merge state of every pull request on the page before it
+    // answers, which times out with 502 or 504 on a repository with many open pull requests.
+    it('does not ask for the merge state', async () => {
+      octokit.graphql.mockResolvedValue(page([]));
+
+      await createUpdateBranchApi('token').listOpenPullRequests(repository);
+
+      const [query] = octokit.graphql.mock.calls[0] as [string];
+      expect(query).not.toMatch(/\bmergeStateStatus\b|\bmergeable\b/);
+    });
+
     it('follows the cursor across pages and reduces each node', async () => {
       octokit.graphql.mockResolvedValueOnce(page([node(1)], 'cursor-1')).mockResolvedValueOnce(
         page([
@@ -87,7 +98,6 @@ describe('createUpdateBranchApi', () => {
             autoMergeRequest: { enabledAt: '2026-11-12T00:00:00Z' },
             isDraft: true,
             labels: { nodes: [{ name: 'dependencies' }, null, { name: 'bug' }] },
-            mergeStateStatus: 'BEHIND',
           }),
         ]),
       );
@@ -101,13 +111,12 @@ describe('createUpdateBranchApi', () => {
         repo: 'repo',
       });
       expect(pullRequests).toEqual([
-        { autoMergeEnabled: false, draft: false, headSha: 'sha-1', labels: [], mergeStateStatus: 'CLEAN', number: 1 },
+        { autoMergeEnabled: false, draft: false, headSha: 'sha-1', labels: [], number: 1 },
         {
           autoMergeEnabled: true,
           draft: true,
           headSha: 'sha-2',
           labels: ['dependencies', 'bug'],
-          mergeStateStatus: 'BEHIND',
           number: 2,
         },
       ]);
@@ -147,6 +156,7 @@ describe('createUpdateBranchApi', () => {
         headSha: 'abc123',
         labels: ['dependencies'],
         maintainerCanModify: false,
+        mergeableState: 'behind',
         number: 7,
         state: 'open',
       });

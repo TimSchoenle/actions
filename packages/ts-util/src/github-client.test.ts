@@ -476,6 +476,57 @@ describe('createOctokit', () => {
     expect(clock.sleeps).toEqual([1_000]);
   });
 
+  /** The request hook the plugin registered, as Octokit would call it. */
+  function requestHook(): (request: (options: unknown) => Promise<unknown>, options: unknown) => Promise<unknown> {
+    return client.hook.wrap.mock.calls[0][1] as (
+      request: (options: unknown) => Promise<unknown>,
+      options: unknown,
+    ) => Promise<unknown>;
+  }
+
+  it('retries a read that fails with a transient server error', async () => {
+    const clock = fakeClock();
+    createOctokit('token', {}, clock);
+    applyPlugin();
+
+    const request = vi.fn().mockRejectedValueOnce(httpError(502)).mockResolvedValueOnce('listed');
+    const options = { method: 'POST', query: 'query { viewer { login } }', url: '/graphql' };
+
+    await expect(requestHook()(request, options)).resolves.toBe('listed');
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(clock.sleeps).toEqual([1_000]);
+  });
+
+  it('never replays a write after a transient server error, since GitHub may have applied it', async () => {
+    const clock = fakeClock();
+    createOctokit('token', {}, clock);
+    applyPlugin();
+
+    const error = httpError(502);
+    const request = vi.fn().mockRejectedValue(error);
+    const options = { method: 'PUT', url: '/repos/o/r/pulls/1/update-branch' };
+
+    await expect(requestHook()(request, options)).rejects.toBe(error);
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(clock.sleeps).toEqual([]);
+  });
+
+  it('still rides out a rate limit on a read, with its own schedule', async () => {
+    const clock = fakeClock();
+    createOctokit('token', { maxDelayMs: 10_000, maxRetries: 1 }, clock);
+    applyPlugin();
+
+    const request = vi
+      .fn()
+      .mockRejectedValueOnce(httpError(503))
+      .mockRejectedValueOnce(httpError(403, { headers: { 'retry-after': '2' } }))
+      .mockResolvedValueOnce('read');
+
+    await expect(requestHook()(request, { method: 'GET', url: '/repos/o/r' })).resolves.toBe('read');
+    expect(request).toHaveBeenCalledTimes(3);
+    expect(clock.sleeps).toEqual([1_000, 2_000]);
+  });
+
   // The request hook cannot see this: `@octokit/graphql` raises the error only after the 200 response
   // has already travelled back through the hook.
   it('replaces graphql with one that retries a rate-limited GraphQL response', async () => {

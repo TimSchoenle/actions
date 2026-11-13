@@ -153,8 +153,9 @@ describe('auto-rebase', () => {
     }
   });
 
-  // GitHub computes the merge state in the background. Once it has, the conflicting pull request is
-  // skipped as `conflicting` without a call; before that, the update is sent and rejected with 422.
+  // GitHub computes the merge state in the background. Once it has, the re-read reports the
+  // conflicting pull request as `dirty` and it is skipped as `conflicting` without an update request;
+  // before that, the update is sent and rejected with 422.
   // Either way it is never updated and never fails the step.
   it('merges the base into a labelled pull request and leaves a conflicting one alone without failing', async () => {
     const result = await run();

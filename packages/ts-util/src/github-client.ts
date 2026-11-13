@@ -1,5 +1,10 @@
 import * as core from './core.js';
 import { errorMessage } from './errors.js';
+import {
+  DEFAULT_TRANSIENT_RETRY_POLICY,
+  isReplayableRequest,
+  requestWithTransientRetry,
+} from './github-transient-retry.js';
 import * as github from './octokit.js';
 
 /**
@@ -443,13 +448,18 @@ function withGraphqlRetry(graphqlApi: GraphqlApi, policy: RetryPolicy, clock: Re
 }
 
 /**
- * Binds an Octokit instance to a rate-limit retry policy.
+ * Binds an Octokit instance to the rate-limit retry policy and, for requests that are safe to replay,
+ * to the transient-failure retry policy.
  *
  * Delivered as an Octokit plugin rather than a post-construction tweak because `getOctokit` accepts
  * one, and because Octokit merges a plugin's return value onto the instance — which is the only
  * supported way to reach the second of the two seams this needs:
  *
- *  * `request` covers everything that fails as an HTTP error, REST and GraphQL transport alike;
+ *  * `request` covers everything that fails as an HTTP error, REST and GraphQL transport alike. It
+ *    also retries a transient 5xx or a dropped connection, but only for a read
+ *    ({@link isReplayableRequest}): such a failure leaves unknown whether GitHub acted on the request,
+ *    so a write is never replayed. The rate-limit loop runs inside the transient one, so each keeps
+ *    its own budget and neither retries an error the other owns;
  *  * `graphql` covers what `request` structurally cannot. GitHub answers a rate-limited GraphQL call
  *    with HTTP 200 and an `errors` payload, and `@octokit/graphql` raises that as an error only
  *    *after* the request hook has already returned the successful response — so a rate-limited
@@ -460,16 +470,21 @@ function withGraphqlRetry(graphqlApi: GraphqlApi, policy: RetryPolicy, clock: Re
  */
 function rateLimitRetryPlugin(policy: RetryPolicy, clock: RetryClock) {
   return (octokit: RetryableOctokit): { graphql: GraphqlApi } => {
-    octokit.hook.wrap('request', (request, options) =>
-      requestWithRateLimitRetry(() => Promise.resolve(request(options)), policy, clock),
-    );
+    octokit.hook.wrap('request', (request, options) => {
+      const perform = () => requestWithRateLimitRetry(() => Promise.resolve(request(options)), policy, clock);
+
+      return isReplayableRequest(options)
+        ? requestWithTransientRetry(perform, DEFAULT_TRANSIENT_RETRY_POLICY, clock)
+        : perform();
+    });
 
     return { graphql: withGraphqlRetry(octokit.graphql, policy, clock) };
   };
 }
 
 /**
- * Creates an Octokit that retries requests GitHub refuses for rate limiting, per {@link RetryPolicy}.
+ * Creates an Octokit that retries requests GitHub refuses for rate limiting, per {@link RetryPolicy},
+ * and reads that fail with a transient server error, per {@link DEFAULT_TRANSIENT_RETRY_POLICY}.
  *
  * This is the only Octokit factory the actions use, so the retry behaviour is defined in one place
  * and cannot drift between adapters. `overrides` merge onto {@link DEFAULT_RETRY_POLICY}.
