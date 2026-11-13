@@ -23,12 +23,15 @@ export const TEST_REPO_NAME = 'actions-testing';
  * Endpoints every generated job needs whatever else it does.
  *
  * `github.com` fetches the checkout and the tarball of every action a job `uses`;
- * `objects.githubusercontent.com` is where a GitHub release download redirects, which is how bun
- * itself arrives. The cache pair is the service and the blob storage it hands off to.
+ * `objects.githubusercontent.com` and `release-assets.githubusercontent.com` are where a GitHub
+ * release download redirects, which is how bun itself arrives whenever setup-bun's executable cache
+ * misses or is off (setup-cached turns it off under `cache-mode: none` and `read-only`). The cache
+ * pair is the service and the blob storage it hands off to.
  */
 export const BASE_ENDPOINTS: readonly string[] = [
   'github.com:443',
   'objects.githubusercontent.com:443',
+  'release-assets.githubusercontent.com:443',
   '*.actions.githubusercontent.com:443',
   '*.blob.core.windows.net:443',
 ];
