@@ -27,8 +27,8 @@ ID. A 404 is not retried that way: the asset does not exist. Both routes feed th
 # asset name is derived from the version rather than written out, so it never falls behind the tag.
 - id: release
   env:
-    JACTIONLINT_VERSION: 'v2.5.0'
-    JACTIONLINT_SHA256: '5cbf573f7d3828a6e679c35520f1bd00c512ec7bde31a281e40808ba68c8225c'
+    JACTIONLINT_VERSION: 'v2.6.0'
+    JACTIONLINT_SHA256: 'c3cb275623fc9daef0babb241e77b31fdc6852a591aae00db1bb7ba8949f962b'
   run: |
     {
       echo "tag=${JACTIONLINT_VERSION}"
@@ -54,8 +54,8 @@ ID. A 404 is not retried that way: the asset does not exist. Both routes feed th
 # pinned side by side, so an update changes both in one place.
 - id: release
   env:
-    JACTIONLINT_VERSION: 'v2.5.0'
-    JACTIONLINT_SHA256: '5cbf573f7d3828a6e679c35520f1bd00c512ec7bde31a281e40808ba68c8225c'
+    JACTIONLINT_VERSION: 'v2.6.0'
+    JACTIONLINT_SHA256: 'c3cb275623fc9daef0babb241e77b31fdc6852a591aae00db1bb7ba8949f962b'
   run: |
     version="${JACTIONLINT_VERSION#v}"
     {
