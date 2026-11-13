@@ -113,7 +113,7 @@ runs:
     - name: Fetch The Pull Request Head
       id: fetch
       if: steps.find.outputs.has_changes == 'true' && (steps.event.outputs.fork != 'true' || steps.fork.outputs.proceed == 'true')
-      uses: TimSchoenle/actions/actions/common/fetch-head@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-fetch-head-v2.0.1
+      uses: TimSchoenle/actions/actions/common/fetch-head@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-common-fetch-head-v2.0.2
       with:
         sha: ${{ github.event.workflow_run.head_sha }}
 
