@@ -146,26 +146,35 @@ describe('Renovate coverage of the workflow generator', () => {
  * `harden-runner` once sat two minor versions behind in one generated workflow while every other job
  * in it moved.
  *
- * So a source either names a `PINNED` key, or pins by digest in a file the github-actions manager
- * claims, so the same branch moves both copies. Both are enforced here.
+ * So a source either names a `PINNED` key, or pins by digest where a manager moves both copies on
+ * the same branch: a third-party action in a file the github-actions manager claims, an internal one
+ * through exactly one custom manager. The github-actions manager is no option for an internal action,
+ * because the shared preset disables it for `TimSchoenle/actions`. An internal action `PINNED`
+ * carries is always named by its key: the generator recognises the install step only by that pin, so
+ * a second copy that drifts from it fails the contract. All of this is enforced here.
  */
 describe('Renovate coverage of the Verify sources', () => {
   const sourcePattern = `${SOURCES_DIR}/*.yaml`;
 
-  /** `uses:` values a source states, with the line they are on for the failure message. */
-  function usesIn(source: string): { line: number; value: string }[] {
-    const uses: { line: number; value: string }[] = [];
+  /** `uses:` values a source states, with the line they are on and its text for the failure message. */
+  function usesIn(source: string): { line: number; text: string; value: string }[] {
+    const uses: { line: number; text: string; value: string }[] = [];
 
-    source.split(/\r?\n/).forEach((line, index) => {
-      const match = /^\s*(?:-\s*)?uses:\s*(\S+)/.exec(line);
+    source.split(/\r?\n/).forEach((text, index) => {
+      const match = /^\s*(?:-\s*)?uses:\s*(\S+)/.exec(text);
 
       if (match) {
-        uses.push({ line: index + 1, value: match[1] });
+        uses.push({ line: index + 1, text, value: match[1] });
       }
     });
 
     return uses;
   }
+
+  /** The `PINNED` key of each action `PINNED` carries, by its lower-cased path without the ref. */
+  const pinnedKeyByAction = new Map(
+    Object.entries(PINNED).map(([key, pin]) => [pin.split('@')[0].toLowerCase(), key] as const),
+  );
 
   it('finds the sources this suite is meant to cover', async () => {
     // A glob that silently matched nothing would make every assertion below vacuously true.
@@ -184,7 +193,7 @@ describe('Renovate coverage of the Verify sources', () => {
     for (const sourcePath of await scanSorted(sourcePattern)) {
       const source = fs.readFileSync(path.join(ROOT_DIR, sourcePath), 'utf8');
 
-      for (const { line, value } of usesIn(source)) {
+      for (const { line, text, value } of usesIn(source)) {
         // A local action carries no version, so there is nothing for Renovate to update.
         if (value.startsWith('./') || /^pinned:\w+$/.test(value)) {
           continue;
@@ -193,6 +202,30 @@ describe('Renovate coverage of the Verify sources', () => {
         expect(value, `${sourcePath}:${line} must pin by a 40-character digest`).toMatch(
           /^[\w.-]+\/[\w./-]+@[a-f0-9]{40}$/,
         );
+
+        const action = value.split('@')[0].toLowerCase();
+
+        if (action.startsWith('timschoenle/actions/')) {
+          const key = pinnedKeyByAction.get(action);
+
+          expect(
+            key,
+            `${sourcePath}:${line} writes out ${action}, which PINNED carries. Write 'uses: pinned:${key}'.`,
+          ).toBe(undefined);
+
+          const matches = managersFor(sourcePath)
+            .flatMap((manager) => manager.matchStrings)
+            .filter((matchString) => new RegExp(matchString).test(text)).length;
+
+          expect(
+            matches,
+            `${sourcePath}:${line} pins an internal action that ${matches} custom managers match, and the ` +
+              'github-actions manager is disabled for TimSchoenle/actions. Write it as ' +
+              "'TimSchoenle/actions/<path>@<40-char digest> # tag=actions-<component>-v<version>'.",
+          ).toBe(1);
+          continue;
+        }
+
         expect(
           claimed(sourcePath),
           `${sourcePath}:${line} pins an action, but no github-actions managerFilePatterns entry claims the file. ` +

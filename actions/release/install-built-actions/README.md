@@ -162,9 +162,25 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
 - End-to-end tests: [`.github/verify/release-install-built-actions.yaml`](../../../.github/verify/release-install-built-actions.yaml)
-- Called from this repository by:
-  - [`.github/verify/java-gradle-auto-spotless.yaml`](../../../.github/verify/java-gradle-auto-spotless.yaml)
-  - [`.github/verify/release-build-actions.yaml`](../../../.github/verify/release-build-actions.yaml)
-  - [`.github/verify/rust-auto-format.yaml`](../../../.github/verify/rust-auto-format.yaml)
-  - [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
+
+<details>
+<summary>Called from 15 files in this repository</summary>
+
+- [`.github/verify/common-commit-patch.yaml`](../../../.github/verify/common-commit-patch.yaml)
+- [`.github/verify/common-download-release-asset.yaml`](../../../.github/verify/common-download-release-asset.yaml)
+- [`.github/verify/common-fetch-head.yaml`](../../../.github/verify/common-fetch-head.yaml)
+- [`.github/verify/common-find-patch.yaml`](../../../.github/verify/common-find-patch.yaml)
+- [`.github/verify/common-generated-files-verdict.yaml`](../../../.github/verify/common-generated-files-verdict.yaml)
+- [`.github/verify/docker-image-check.yaml`](../../../.github/verify/docker-image-check.yaml)
+- [`.github/verify/helper-verify-branch-name.yaml`](../../../.github/verify/helper-verify-branch-name.yaml)
+- [`.github/verify/java-gradle-auto-spotless.yaml`](../../../.github/verify/java-gradle-auto-spotless.yaml)
+- [`.github/verify/release-build-actions.yaml`](../../../.github/verify/release-build-actions.yaml)
+- [`.github/verify/release-publish-build-commit.yaml`](../../../.github/verify/release-publish-build-commit.yaml)
+- [`.github/verify/rust-auto-format.yaml`](../../../.github/verify/rust-auto-format.yaml)
+- [`.github/verify/security-codeql.yaml`](../../../.github/verify/security-codeql.yaml)
+- [`.github/verify/security-zizmor.yaml`](../../../.github/verify/security-zizmor.yaml)
+- [`.github/verify/terrace-setup.yaml`](../../../.github/verify/terrace-setup.yaml)
+- [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
+
+</details>
 <!-- /docs:generated reference -->

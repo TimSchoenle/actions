@@ -67,7 +67,7 @@ jobs:
 
       # Replaces the committed bundles in tmp/actions-code with the ones the build job built.
       - name: Install Built Actions
-        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        uses: pinned:installBuiltActions
         with:
           artifact-id: ${{ inputs.artifact-id }}
           expected-manifest-sha256: ${{ inputs.manifest-sha256 }}
