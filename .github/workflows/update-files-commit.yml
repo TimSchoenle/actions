@@ -135,7 +135,7 @@ jobs:
           steps.commit.outputs.changes_committed == 'true' &&
           github.event.workflow_run.event == 'pull_request' &&
           github.event.workflow_run.pull_requests[0].number
-        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-upsert-pr-comment-v2.0.4
+        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-common-upsert-pr-comment-v3.0.0
         with:
           token: ${{ steps.generate_token.outputs.token }}
           # Only this App's own comment is updated; a pasted marker cannot redirect the edit.
@@ -245,7 +245,7 @@ jobs:
           steps.commit.outputs.changes_committed == 'true' &&
           github.event.workflow_run.event == 'pull_request' &&
           github.event.workflow_run.pull_requests[0].number
-        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-upsert-pr-comment-v2.0.4
+        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-common-upsert-pr-comment-v3.0.0
         with:
           token: ${{ steps.generate_token.outputs.token }}
           # Only this App's own comment is updated; a pasted marker cannot redirect the edit.
