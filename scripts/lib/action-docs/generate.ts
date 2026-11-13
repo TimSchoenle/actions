@@ -92,15 +92,15 @@ async function readJson(io: DocsIo, file: string): Promise<Record<string, unknow
 async function collectCallers(io: DocsIo, repoId: string): Promise<Map<string, string[]>> {
   const callers = new Map<string, string[]>();
   for (const file of await listAll(io, CALLER_PATTERNS)) {
-    const raw = (await io.read(file)) ?? '';
+    const content = (await io.read(file)) ?? '';
     // A generated Verify workflow repeats what its sources say; the sources are what a reader edits.
-    if (raw.startsWith(GENERATED_HEADER)) {
+    if (content.startsWith(GENERATED_HEADER)) {
       continue;
     }
     // A Verify source names a pinned action as `uses: pinned:<key>`, which says nothing about the
     // action until it is resolved the way the generator resolves it.
-    const content = file.startsWith(`${SOURCES_DIR}/`) ? resolvePins(raw) : raw;
-    for (const action of referencedActions(content, repoId)) {
+    const resolved = file.startsWith(`${SOURCES_DIR}/`) ? resolvePins(content) : content;
+    for (const action of referencedActions(resolved, repoId)) {
       if (file.startsWith(`${action}/`)) {
         continue;
       }
