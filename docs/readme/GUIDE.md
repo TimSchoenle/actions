@@ -262,7 +262,7 @@ jobs:
           permission-contents: write
 
       - name: Commit README.md
-        uses: TimSchoenle/actions/actions/common/commit-patch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-common-commit-patch-v2.0.1
+        uses: TimSchoenle/actions/actions/common/commit-patch@e75e9ab1e1e9fa573051a901347e39ba23a45710 # tag=actions-common-commit-patch-v3.1.0
         with:
           token: ${{ steps.generate_token.outputs.token }}
           artifact_name: readme
