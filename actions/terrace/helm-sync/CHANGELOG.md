@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.4](https://github.com/TimSchoenle/actions/compare/src-actions-terrace-helm-sync-v1.1.3...src-actions-terrace-helm-sync-v1.1.4) (2026-11-13)
+
+
+### Dependencies
+
+* **deps:** update internal action pins ([#2296](https://github.com/TimSchoenle/actions/issues/2296)) ([824ced1](https://github.com/TimSchoenle/actions/commit/824ced17427f0b74d5b82dadca737f43732def82))
+* **deps:** update timschoenle/actions/actions/terrace/setup to vactions-terrace-setup-v4.0.1 ([#2304](https://github.com/TimSchoenle/actions/issues/2304)) ([39f9ffe](https://github.com/TimSchoenle/actions/commit/39f9ffee759c9fbcc1d9a42f4bb61b6929ed70c1))
+
 ## [1.1.3](https://github.com/TimSchoenle/actions/compare/src-actions-terrace-helm-sync-v1.1.2...src-actions-terrace-helm-sync-v1.1.3) (2026-11-11)
 
 

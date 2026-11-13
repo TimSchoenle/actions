@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.1](https://github.com/TimSchoenle/actions/compare/src-actions-common-upsert-issue-v3.0.0...src-actions-common-upsert-issue-v3.0.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* stop the auto-rebase listing from timing out, and retry transient GitHub 5xx on reads ([#2310](https://github.com/TimSchoenle/actions/issues/2310)) ([be1dbca](https://github.com/TimSchoenle/actions/commit/be1dbcab18907c8eafd4243402a258ed8383fbe2))
+
 ## [3.0.0](https://github.com/TimSchoenle/actions/compare/src-actions-common-upsert-issue-v2.0.4...src-actions-common-upsert-issue-v3.0.0) (2026-11-12)
 
 

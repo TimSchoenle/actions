@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.2](https://github.com/TimSchoenle/actions/compare/src-actions-terrace-setup-v4.0.1...src-actions-terrace-setup-v4.0.2) (2026-11-13)
+
+
+### Bug Fixes
+
+* stop the auto-rebase listing from timing out, and retry transient GitHub 5xx on reads ([#2310](https://github.com/TimSchoenle/actions/issues/2310)) ([be1dbca](https://github.com/TimSchoenle/actions/commit/be1dbcab18907c8eafd4243402a258ed8383fbe2))
+
 ## [4.0.1](https://github.com/TimSchoenle/actions/compare/src-actions-terrace-setup-v4.0.0...src-actions-terrace-setup-v4.0.1) (2026-11-12)
 
 

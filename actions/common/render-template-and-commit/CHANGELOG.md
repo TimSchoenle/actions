@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.23](https://github.com/TimSchoenle/actions/compare/src-actions-common-render-template-and-commit-v1.1.22...src-actions-common-render-template-and-commit-v1.1.23) (2026-11-13)
+
+
+### Dependencies
+
+* **deps:** update internal action pins ([#2296](https://github.com/TimSchoenle/actions/issues/2296)) ([824ced1](https://github.com/TimSchoenle/actions/commit/824ced17427f0b74d5b82dadca737f43732def82))
+
 ## [1.1.22](https://github.com/TimSchoenle/actions/compare/src-actions-common-render-template-and-commit-v1.1.21...src-actions-common-render-template-and-commit-v1.1.22) (2026-11-12)
 
 
