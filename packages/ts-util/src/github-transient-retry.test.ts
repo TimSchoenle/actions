@@ -142,6 +142,10 @@ describe('isReplayableRequest', () => {
   it.each([undefined, null, 'GET'])('rejects the non-object %p', (value) => {
     expect(isReplayableRequest(value)).toBe(false);
   });
+
+  it('never replays a POST whose URL is not a string', () => {
+    expect(isReplayableRequest({ method: 'POST', query: 'query { a }', url: undefined })).toBe(false);
+  });
 });
 
 describe('transientDelayMs', () => {
@@ -226,6 +230,21 @@ describe('requestWithTransientRetry', () => {
     expect(perform).toHaveBeenCalledTimes(1);
     expect(clock.sleeps).toEqual([]);
     expect(core.info).not.toHaveBeenCalled();
+  });
+
+  it('waits on real timers when no clock is given', async () => {
+    vi.useFakeTimers();
+    try {
+      const perform = vi.fn().mockRejectedValueOnce(httpError(502)).mockResolvedValueOnce('ok');
+      const pending = requestWithTransientRetry(perform, POLICY);
+
+      await vi.advanceTimersByTimeAsync(POLICY.baseDelayMs * 2);
+
+      await expect(pending).resolves.toBe('ok');
+      expect(perform).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('falls back to Math.random when the clock supplies no jitter source', async () => {

@@ -53,6 +53,7 @@ function detail(number: number, overrides: Partial<PullRequestDetail> = {}): Pul
     headSha: `sha-${number}`,
     labels: ['dependencies'],
     maintainerCanModify: false,
+    mergeableState: 'unknown',
     number,
     state: 'open',
     ...overrides,
@@ -65,7 +66,6 @@ function summary(number: number, labels: string[]): PullRequestSummary {
     draft: number === 4,
     headSha: `sha-${number}`,
     labels,
-    mergeStateStatus: 'UNKNOWN',
     number,
   };
 }

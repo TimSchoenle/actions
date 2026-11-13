@@ -74,11 +74,11 @@ export interface UpdateOptions {
 /** GitHub's answer when a requested branch update cannot be applied. */
 const UNPROCESSABLE = 422;
 
-/** `MergeStateStatus` of a head that conflicts with its base. */
-const DIRTY = 'DIRTY';
+/** `mergeable_state` of a head that conflicts with its base. */
+const DIRTY = 'dirty';
 
-/** `MergeStateStatus` of a head that is missing base commits a ruleset requires it to have. */
-const BEHIND = 'BEHIND';
+/** `mergeable_state` of a head that is missing base commits a ruleset requires it to have. */
+const BEHIND = 'behind';
 
 /**
  * Whether a pull request's labels include `label`.
@@ -103,10 +103,6 @@ function listingSkipReason(pullRequest: PullRequestSummary, options: UpdateOptio
 
   if (options.skipDrafts && pullRequest.draft) {
     return 'draft';
-  }
-
-  if (pullRequest.mergeStateStatus === DIRTY) {
-    return 'conflicting';
   }
 
   return undefined;
@@ -134,15 +130,20 @@ function skipReason(pullRequest: PullRequestDetail, options: UpdateOptions): Ski
     return 'fork-not-writable';
   }
 
+  if (pullRequest.mergeableState === DIRTY) {
+    return 'conflicting';
+  }
+
   return undefined;
 }
 
 /**
  * Whether the head is missing commits from its base.
  *
- * `BEHIND` from the listing answers it without a call when the head has not moved since. Any other
- * status says nothing either way: a repository that does not require up-to-date branches reports a
- * behind head as `CLEAN`, and a pending review or check reports `BLOCKED`. Those are compared.
+ * `behind` from the re-read answers it without a call. Any other state says nothing either way: a
+ * repository that does not require up-to-date branches reports a behind head as `clean`, a pending
+ * review or check reports `blocked`, and a state GitHub has not computed yet reads `unknown`. Those
+ * are compared.
  *
  * Only an optimisation over sending the update and reading GitHub's 422, so a failed comparison is
  * answered with `true`: the update request is the authority, and it is sent regardless.
@@ -150,10 +151,9 @@ function skipReason(pullRequest: PullRequestDetail, options: UpdateOptions): Ski
 async function isBehind(
   api: UpdateBranchApi,
   options: UpdateOptions,
-  listed: PullRequestSummary,
   pullRequest: PullRequestDetail,
 ): Promise<boolean> {
-  if (listed.mergeStateStatus === BEHIND && listed.headSha === pullRequest.headSha) {
+  if (pullRequest.mergeableState === BEHIND) {
     return true;
   }
 
@@ -193,7 +193,7 @@ async function processPullRequest(
       return { kind: 'skipped', reason };
     }
 
-    if (!(await isBehind(api, options, listed, pullRequest))) {
+    if (!(await isBehind(api, options, pullRequest))) {
       return { kind: 'up-to-date' };
     }
 
@@ -246,10 +246,10 @@ function takesSlot(outcome: Outcome): boolean {
 /**
  * Requests an update for every open pull request carrying the label, oldest first.
  *
- * The listing is a snapshot, and the rules it can decide (`only_auto_merge`, `skip_drafts`, a
- * reported conflict, `limit`) cost no further call. Every other candidate is re-read before it is
- * touched, because by the time its turn comes it may be closed, unlabelled or pushed to. The update
- * is conditioned on the head commit that re-read returned.
+ * The listing is a snapshot, and the rules it can decide (`only_auto_merge`, `skip_drafts`, `limit`)
+ * cost no further call. Every other candidate is re-read before it is touched, because by the time
+ * its turn comes it may be closed, unlabelled, pushed to or in conflict. The update is conditioned on
+ * the head commit that re-read returned.
  *
  * A failure on one pull request is recorded and the rest are still processed; only a failure to
  * list the pull requests at all propagates.
