@@ -154,7 +154,7 @@ runs:
 
     - name: Resolve Base Branch
       id: resolve-base-branch
-      uses: TimSchoenle/actions/actions/helper/resolve-base-branch@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-helper-resolve-base-branch-v2.0.4
+      uses: TimSchoenle/actions/actions/helper/resolve-base-branch@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-helper-resolve-base-branch-v2.0.5
       with:
         repository: ${{ inputs.helm-repo }}
         token: ${{ steps.generate_token.outputs.token }}
@@ -218,7 +218,7 @@ runs:
     - name: Create Pull Request
       id: create-pr
       if: steps.apply.outputs.changed == 'true'
-      uses: TimSchoenle/actions/actions/common/create-pull-request@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-common-create-pull-request-v1.0.29
+      uses: TimSchoenle/actions/actions/common/create-pull-request@1eb4e7b5a5b5cf51d4a387c8b37dd6592d8d188a # tag=actions-common-create-pull-request-v1.0.31
       with:
         app-id: ${{ inputs.app-id }}
         private-key: ${{ inputs.private-key }}

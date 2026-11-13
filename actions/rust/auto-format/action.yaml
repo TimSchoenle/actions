@@ -65,7 +65,7 @@ runs:
 
     - name: Create Patch
       id: patch
-      uses: TimSchoenle/actions/actions/common/create-patch@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-common-create-patch-v2.0.2
+      uses: TimSchoenle/actions/actions/common/create-patch@e75e9ab1e1e9fa573051a901347e39ba23a45710 # tag=actions-common-create-patch-v2.1.0
       with:
         artifact_name: ${{ inputs.artifact_name }}
         paths: ${{ inputs.source_directory }}
