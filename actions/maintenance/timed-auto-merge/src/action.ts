@@ -8,6 +8,7 @@ import { createTimedAutoMergeApi } from './github-api.js';
 import { parseMergeMethod } from './merge-method.js';
 import { processPullRequests } from './process.js';
 import { renderSummary, toOutputs } from './report.js';
+import { parseSoakFrom } from './soak.js';
 
 import type { TimedAutoMergeApi } from './github-api.js';
 import type { PullRequestOutcome, TimedAutoMergeRequest } from './process.js';
@@ -37,6 +38,7 @@ function readRequest(nowMs: number): { token: string; failOnError: boolean; requ
   const patternMode = parsePatternMode(getInput(ActionInput.pattern_mode));
   const matcher = createBranchMatcher(getInput(ActionInput.branch_pattern), patternMode);
   const minimumOpen = resolveMinimumOpenTime(getInput(ActionInput.time_elapsed), getInput(ActionInput.minimum_age));
+  const soakFrom = parseSoakFrom(getInput(ActionInput.soak_from));
   const mergeMethod = parseMergeMethod(getInput(ActionInput.merge_method));
   const repository = parseRepository(getInput(ActionInput.repository));
   const approveMessage = getInput(ActionInput.approve_message);
@@ -50,7 +52,11 @@ function readRequest(nowMs: number): { token: string; failOnError: boolean; requ
   core.info(`Repository: ${repository.owner}/${repository.repo}`);
   core.info(`Branch pattern (${patternMode}): ${quoteForLog(matcher.source)}`);
   core.info(`Base branch: ${baseBranch === '' ? 'any' : quoteForLog(baseBranch)}`);
-  core.info(`Soak time since opening and since the newest commit: ${minimumOpen.text}`);
+  core.info(
+    soakFrom === 'opened'
+      ? `Open for at least: ${minimumOpen.text}`
+      : `Changes unchanged for at least: ${minimumOpen.text}`,
+  );
   core.info(`Merge method: ${mergeMethod}`);
   core.info(`Trusted authors: ${trustedAuthorIds.join(', ')}`);
   core.info(`Pull request authors: ${prAuthorIds.join(', ')}`);
@@ -67,6 +73,7 @@ function readRequest(nowMs: number): { token: string; failOnError: boolean; requ
       nowMs,
       prAuthorIds,
       repository,
+      soakFrom,
       trustedAuthorIds,
     },
     token,

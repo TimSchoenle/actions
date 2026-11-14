@@ -42,6 +42,7 @@ const defaultInputs: Record<string, string> = {
   minimum_age: '1h',
   pattern_mode: 'legacy',
   repository: 'owner/repo',
+  soak_from: 'opened',
   time_elapsed: '1d',
   token: 'ghs_test_token',
   trusted_authors: '1001',
@@ -57,6 +58,7 @@ function pullRequest(number: number, overrides: Partial<OpenPullRequest> = {}): 
   return {
     authorId: 1001,
     baseRef: 'main',
+    baseSha: 'c'.repeat(40),
     baseRepoFullName: 'owner/repo',
     createdAt: '2026-10-20T00:00:00Z',
     draft: false,
@@ -82,6 +84,10 @@ function fakeApi(pullRequests: OpenPullRequest[]): TimedAutoMergeApi {
       viewerApprovedOid: null,
     })),
     merge: vi.fn(async () => {}),
+    createComment: vi.fn(async () => {}),
+    updateComment: vi.fn(async () => {}),
+    fetchDiff: vi.fn(async () => ({ files: [], truncated: false })),
+    findOwnComment: vi.fn(async () => undefined),
     fetchCommits: vi.fn(async () => ({
       commits: [
         {
@@ -122,6 +128,18 @@ describe('timed-auto-merge action', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+  });
+
+  it('measures the wait from the content when soak_from is content', async () => {
+    setInputs({ soak_from: 'content' });
+    const api = fakeApi([pullRequest(1)]);
+
+    await run({ api, now: () => NOW });
+
+    expect(api.fetchDiff).toHaveBeenCalledTimes(1);
+    expect(api.createComment).toHaveBeenCalledTimes(1);
+    expect(output('skipped')).toBe('[{"number":1,"reason":"too-young"}]');
+    expect(vi.mocked(core.info)).toHaveBeenCalledWith('Changes unchanged for at least: 1d');
   });
 
   it('reads base_branch and pr_author_ids, falling back to trusted_authors for the latter', async () => {
@@ -222,6 +240,7 @@ describe('timed-auto-merge action', () => {
 
   it.each([
     ['an unknown merge method', { merge_method: 'admin' }, /Invalid 'merge_method' "admin"/],
+    ['an unknown soak_from', { soak_from: 'commit' }, /Invalid 'soak_from' "commit"/],
     [
       'time_elapsed below minimum_age',
       { time_elapsed: '0s' },

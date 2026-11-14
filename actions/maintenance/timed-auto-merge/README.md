@@ -12,9 +12,8 @@ Approve and enable auto-merge on aged pull requests whose head branch matches a 
 [actions-maintenance-timed-auto-merge-v3.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-timed-auto-merge-v3.0.1) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
-`time_elapsed` is a soak time: a pull request must have been opened at least that long ago, and its newest commit made
-at least that long ago. Renovate and release-please push new commits onto a pull request that is already open, and each
-such push starts the wait again. Every commit must be signed and authored only by `trusted_authors`, and the pull
+The pull requests must have been open for at least `time_elapsed`, measured from when they were opened, or, with
+`soak_from: content`, their changes must have stayed the same for that long (see [Soak time](#soak-time)). Every commit must be signed and authored only by `trusted_authors`, and the pull
 request must have been opened by one of `pr_author_ids`, which defaults to `trusted_authors`. A pull request that is already mergeable, so GitHub refuses auto-merge for it, is merged directly
 instead. The action is meant for a scheduled job that lets release-please or Renovate pull requests merge themselves after a
 waiting period in which a human can still intervene.
@@ -22,7 +21,7 @@ waiting period in which a human can still intervene.
 <!-- docs:generated usage -->
 ## Usage
 
-### Merge release pull requests a day after their newest commit
+### Merge release pull requests after a day
 
 ```yaml
 name: Timed Auto-merge
@@ -33,7 +32,7 @@ on:
   workflow_dispatch:
     inputs:
       time_elapsed:
-        description: 'Soak time since the pull request was opened and since its newest commit (e.g. "24h", "2d").'
+        description: 'How long a pull request must have been open (e.g. "24h", "2d").'
         required: false
         default: '1d'
 
@@ -82,13 +81,14 @@ takes a commit to the workflow file.
 
 | Input             | Required | Default                                                                                                     | Description                                                                                                                                                                                                                                                                                                                                                     |
 | ----------------- | -------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `token`           | yes      |                                                                                                             | GitHub token with contents: write and pull-requests: write. Must not belong to the author of the pull requests, since GitHub refuses a review from the author.                                                                                                                                                                                                  |
+| `token`           | yes      |                                                                                                             | GitHub token with contents: write and pull-requests: write, which also covers the comment soak_from: content writes. Must not belong to the author of the pull requests, since GitHub refuses a review from the author.                                                                                                                                         |
 | `trusted_authors` | yes      |                                                                                                             | Comma-separated list of GitHub user database IDs (e.g. "29139614, 123456"). Every author of every commit must be in this list, and every commit must carry a valid signature. A commit signed with a personal key must also have its committer and key owner in this list; a commit GitHub signed itself skips those two checks. See Commit verification below. |
 | `branch_pattern`  | no       | `release-please--branches--%`                                                                               | Pattern the head branch must match. Read according to pattern_mode. An empty pattern is rejected. See Branch pattern below.                                                                                                                                                                                                                                     |
 | `pattern_mode`    | no       | `legacy`                                                                                                    | How branch_pattern is read. "legacy": every "%" becomes ".*" and the pattern is anchored at the start of the branch name. "regex": a POSIX extended regular expression, unanchored. See Branch pattern below.                                                                                                                                                   |
 | `pr_author_ids`   | no       |                                                                                                             | Comma-separated list of GitHub user database IDs the pull request may be opened by. Empty uses trusted_authors.                                                                                                                                                                                                                                                 |
 | `base_branch`     | no       |                                                                                                             | Branch the pull request must target, e.g. "main". Empty accepts any base branch.                                                                                                                                                                                                                                                                                |
-| `time_elapsed`    | no       | `1d`                                                                                                        | Soak time: how long ago the pull request must have been opened and its newest commit made, as a whole number followed by s, m, h or d (e.g. "90m", "24h", "7d"). A new commit pushed onto an open pull request starts the wait again. Nothing else is accepted, including "1 day", "1d12h" or "01h".                                                            |
+| `time_elapsed`    | no       | `1d`                                                                                                        | How long a pull request must have been open, as a whole number followed by s, m, h or d (e.g. "90m", "24h", "7d"). Measured from when the pull request was opened; later commits do not restart the wait. Nothing else is accepted, including "1 day", "1d12h" or "01h".                                                                                        |
+| `soak_from`       | no       | `opened`                                                                                                    | What time_elapsed is measured from. "opened": when the pull request was opened. "content": the last time its changes changed, so a rebase or an update from the base branch that leaves the changes as they are does not restart the wait. "content" keeps its state in a comment on the pull request. See Soak time below.                                     |
 | `minimum_age`     | no       | `1h`                                                                                                        | Lower bound for time_elapsed, in the same format. A time_elapsed below it fails the step, so a dispatch input cannot shorten the wait.                                                                                                                                                                                                                          |
 | `merge_method`    | no       | `squash`                                                                                                    | Merge method for auto-merge: merge, squash or rebase.                                                                                                                                                                                                                                                                                                           |
 | `repository`      | no       | `${{ github.repository }}`                                                                                  | Repository to process, in owner/repo format.                                                                                                                                                                                                                                                                                                                    |
@@ -104,7 +104,7 @@ Every input is validated before the first API call, so a misconfigured workflow 
 | Output     | Description                                                                                                                                                                                                                                                                                                     |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `approved` | JSON array of the pull request numbers that were approved on this run and either had auto-merge enabled or, when already mergeable, were merged, e.g. `[12,15]`. A pull request an earlier run already approved at its current head, with auto-merge still on, is listed too, though nothing was written to it. |
-| `skipped`  | JSON array of {"number", "reason"} for matching pull requests that were left alone, e.g. `[{"number":13,"reason":"too-young"}]`. The reasons are fork, author-untrusted, base-mismatch, draft, too-young, head-moved and commits-unverified.                                                                    |
+| `skipped`  | JSON array of {"number", "reason"} for matching pull requests that were left alone, e.g. `[{"number":13,"reason":"too-young"}]`. The reasons are fork, author-untrusted, base-mismatch, draft, too-young, head-moved, commits-unverified and diff-unreadable.                                                   |
 | `failed`   | JSON array of {"number", "message"} for pull requests where an API call failed, with the error, e.g. `[{"number":14,"message":"..."}]`.                                                                                                                                                                         |
 <!-- /docs:generated outputs -->
 
@@ -120,7 +120,7 @@ skip, such as which commit failed verification and why.
 | `pull-requests: write` | the token in `token` | always      |
 <!-- /docs:generated permissions -->
 
-The job token needs no permissions: every call is made with the App token. `pull-requests: write` submits the review and `contents: write` enables auto-merge. The token must belong to an
+The job token needs no permissions: every call is made with the App token. `pull-requests: write` submits the review and, with `soak_from: content`, writes the comment that keeps the soak state; `contents: write` enables auto-merge. The token must belong to an
 identity that did not open the pull requests, because GitHub rejects a review from the pull request's author. The App
 that release-please or Renovate runs as cannot approve its own pull requests, so use a second App.
 
@@ -129,9 +129,9 @@ that release-please or Renovate runs as cannot approve its own pull requests, so
 
 A job that runs `step-security/harden-runner` with `egress-policy: block` has to allow:
 
-| Endpoint             | For                                                                              |
-| -------------------- | -------------------------------------------------------------------------------- |
-| `api.github.com:443` | the REST and GraphQL calls that list, review, auto-merge and merge pull requests |
+| Endpoint             | For                                                                                          |
+| -------------------- | -------------------------------------------------------------------------------------------- |
+| `api.github.com:443` | the REST and GraphQL calls that list, review, comment on, auto-merge and merge pull requests |
 <!-- /docs:generated egress -->
 
 ## What happens to each pull request
@@ -145,10 +145,11 @@ are not mentioned anywhere. Each one that matches is processed in turn:
 | It was opened by one of `pr_author_ids`                         | skipped, `author-untrusted`  |
 | It targets `base_branch`, when that is set                      | skipped, `base-mismatch`     |
 | The pull request is not a draft                                 | skipped, `draft`             |
-| It was opened at least `time_elapsed` ago                       | skipped, `too-young`         |
+| `opened` only: it was opened at least `time_elapsed` ago        | skipped, `too-young`         |
 | Its commits were read at the head SHA from the listing          | skipped, `head-moved`        |
 | It has commits, and every commit passes verification            | skipped, `commits-unverified` |
-| Its newest commit was made at least `time_elapsed` ago          | skipped, `too-young`         |
+| `content` only: GitHub returned the whole diff                  | skipped, `diff-unreadable`   |
+| `content` only: its changes have been the same for `time_elapsed` | skipped, `too-young`       |
 
 When every check passes, the pull request is approved with the review attached to that head SHA (`commit_id`), and
 auto-merge is enabled through the GraphQL `enablePullRequestAutoMerge` mutation with the same SHA as
@@ -179,6 +180,46 @@ GitHub keeps auto-merge enabled when a user with write access pushes to the bran
 to stop counting on a later push, enable **Dismiss stale pull request approvals when new commits are pushed** in the
 branch protection rule or ruleset of the base branch, together with a required approval. The pull request then waits
 until the next run has verified the new head and approved it again.
+
+## Soak time
+
+`soak_from` decides what `time_elapsed` is measured from.
+
+With `opened`, the default, it is measured from when the pull request was opened. Later commits do not restart the
+wait. Renovate and release-please rebase their pull requests whenever the base branch moves, so a wait measured from the
+newest commit would never end on an active repository.
+
+With `content`, it is measured from the last time the pull request's changes changed. A rebase or an update from the
+base branch that leaves the changes as they are keeps the wait running; any change to them restarts it. The action:
+
+1. reads the diff with the compare API, pinned to the base commit GitHub recorded for the pull request and the listed
+   head, so it is the same three-dot diff the pull request shows;
+2. fingerprints it: for every changed file, its path, old path, status and the added and removed lines of its patch,
+   sorted by path and hashed with SHA-256. Hunk line numbers and context lines are left out, since a rebase changes
+   both without changing the change. A file GitHub sends no patch for, such as a binary, is identified by its blob SHA;
+3. reads the fingerprint and the time it was first seen from a hidden marker in a comment on the pull request. Only a
+   comment written by the token's own identity is read, so nobody else can plant a marker;
+4. when the fingerprint differs, or there is no marker, records the current time with the new fingerprint, rewriting
+   the comment in place or creating it, and the wait starts over.
+
+The diff is read only after every commit passed verification, so a pull request that would be refused anyway gets no
+comment. The creation age is not checked separately in this mode: the recorded time is never earlier than the pull
+request's creation, so a new pull request waits once, not twice. A recorded time is also never later than now.
+
+Things to know before enabling it:
+
+- The first run after enabling it, or after the comment is deleted, starts every pull request's wait at that moment.
+- The time recorded is when a run first saw the change, so the wait can run up to one schedule interval longer.
+- A change is detected by its added and removed lines. Moving the same lines elsewhere in the same file is not seen as
+  a change; every commit is still verified, so this decides only how long to wait.
+- A release-please pull request gains a changelog entry for every commit merged into its base branch, which is a change
+  to its content. On a busy repository its wait restarts as often as with a wait measured from the newest commit.
+  `content` suits Renovate pull requests; `opened` suits release pull requests.
+- When Renovate regenerates a lock file on a rebase, the lock file's changed lines can differ and restart the wait.
+- GitHub lists at most 300 changed files for a comparison. A pull request at that limit, or with a file GitHub sends
+  neither a patch nor a blob SHA for, is skipped as `diff-unreadable`, since part of its change would go unseen.
+- Run the workflow with a `concurrency` group. Two runs at the same moment can each create a comment; only the first is
+  read after that.
 
 ## Branch pattern
 

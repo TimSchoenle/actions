@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       time_elapsed:
-        description: 'Soak time since the pull request was opened and since its newest commit (e.g. "24h", "2d").'
+        description: 'How long a pull request must have been open (e.g. "24h", "2d").'
         required: false
         default: '1d'
 

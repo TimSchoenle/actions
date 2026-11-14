@@ -2,6 +2,7 @@ import { createOctokit } from 'actions-util/client';
 import { fetchPullRequestCommits } from 'actions-util/commits';
 
 import type { MergeMethod } from './merge-method.js';
+import type { DiffFile } from './soak.js';
 import type { RepositoryCoordinates } from 'actions-util';
 import type { PullRequestCommits } from 'actions-util/commits';
 
@@ -12,6 +13,8 @@ export interface OpenPullRequest {
   authorId: number | null;
   /** Name of the branch it would merge into. */
   baseRef: string;
+  /** The base commit GitHub recorded for the pull request, which the diff is compared from. */
+  baseSha: string;
   /** GraphQL node ID, which `enablePullRequestAutoMerge` addresses the pull request by. */
   nodeId: string;
   /** `https://github.com/owner/repo/pull/N`, which the commit query resolves. */
@@ -46,7 +49,35 @@ export interface TimedAutoMergeApi {
   getMergeState(nodeId: string): Promise<MergeState>;
   /** Merges now, which GitHub refuses if the head is no longer `sha`. */
   merge(repository: RepositoryCoordinates, number: number, mergeMethod: MergeMethod, sha: string): Promise<void>;
+  /**
+   * Reads the files changed between the merge base of `baseSha` and `headSha`, the pull request's
+   * diff, pinned to both commits.
+   */
+  fetchDiff(repository: RepositoryCoordinates, baseSha: string, headSha: string): Promise<PullRequestDiff>;
+  /** Finds the first comment on the pull request written by this token's identity that `matches`. */
+  findOwnComment(nodeId: string, matches: (body: string) => boolean): Promise<OwnComment | undefined>;
+  /** Comments on the pull request. */
+  createComment(repository: RepositoryCoordinates, number: number, body: string): Promise<void>;
+  /** Replaces the body of a comment. */
+  updateComment(repository: RepositoryCoordinates, commentId: number, body: string): Promise<void>;
 }
+
+/** A pull request's changed files, and whether GitHub left any out. */
+export interface PullRequestDiff {
+  files: DiffFile[];
+  /** GitHub lists at most {@link MAX_COMPARE_FILES} files; more were changed when this is `true`. */
+  truncated: boolean;
+}
+
+/** A comment this token's identity wrote. */
+export interface OwnComment {
+  /** REST ID, which the update addresses the comment by. */
+  id: number;
+  body: string;
+}
+
+/** The most files GitHub returns for a comparison; it silently leaves out the rest. */
+export const MAX_COMPARE_FILES = 300;
 
 /** A pull request's head and merge state, as the GraphQL `PullRequest` reports them. */
 export interface MergeState {
@@ -96,6 +127,46 @@ const MERGE_STATE_QUERY = `query MergeState($pullRequestId: ID!) {
   }
 }`;
 
+/**
+ * `viewerDidAuthor` is what keeps anyone else's comment, including one that copies the marker, from
+ * being read as this action's state. The REST listing has no equivalent field.
+ */
+const COMMENTS_QUERY = `query Comments($pullRequestId: ID!, $cursor: String) {
+  node(id: $pullRequestId) {
+    ... on PullRequest {
+      comments(first: 100, after: $cursor) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          databaseId
+          body
+          viewerDidAuthor
+        }
+      }
+    }
+  }
+}`;
+
+interface CommentsResponse {
+  node: {
+    comments?: {
+      pageInfo: { hasNextPage: boolean; endCursor: string | null };
+      nodes: ({ databaseId: number | null; body: string; viewerDidAuthor: boolean } | null)[];
+    };
+  } | null;
+}
+
+/** The subset of a compare response file this adapter reads. */
+interface CompareFile {
+  filename: string;
+  previous_filename?: string;
+  status: string;
+  patch?: string;
+  sha: string | null;
+}
+
 interface MergeStateResponse {
   node: {
     headRefOid?: string;
@@ -116,7 +187,7 @@ interface PullRequestListItem {
   created_at: string;
   draft?: boolean;
   head: { ref: string; sha: string; repo: { full_name: string } | null };
-  base: { ref: string; repo: { full_name: string } };
+  base: { ref: string; sha: string; repo: { full_name: string } };
   user: { id: number } | null;
   auto_merge?: unknown;
 }
@@ -125,6 +196,7 @@ function toOpenPullRequest(item: PullRequestListItem): OpenPullRequest {
   return {
     authorId: item.user?.id ?? null,
     baseRef: item.base.ref,
+    baseSha: item.base.sha,
     baseRepoFullName: item.base.repo.full_name,
     createdAt: item.created_at,
     draft: item.draft === true,
@@ -187,6 +259,64 @@ export function createTimedAutoMergeApi(token: string): TimedAutoMergeApi {
 
     async merge({ owner, repo }, number, mergeMethod, sha) {
       await octokit.rest.pulls.merge({ merge_method: mergeMethod, owner, pull_number: number, repo, sha });
+    },
+
+    async createComment({ owner, repo }, number, body) {
+      await octokit.rest.issues.createComment({ body, issue_number: number, owner, repo });
+    },
+
+    async updateComment({ owner, repo }, commentId, body) {
+      await octokit.rest.issues.updateComment({ body, comment_id: commentId, owner, repo });
+    },
+
+    async fetchDiff({ owner, repo }, baseSha, headSha) {
+      // Any paging parameter limits the commit list to that page while the file list stays whole, so
+      // one commit per page keeps the response small.
+      const { data } = await octokit.rest.repos.compareCommitsWithBasehead({
+        basehead: `${baseSha}...${headSha}`,
+        owner,
+        page: 1,
+        per_page: 1,
+        repo,
+      });
+      const files = (data.files ?? []) as CompareFile[];
+
+      return {
+        files: files.map((file) => ({
+          filename: file.filename,
+          patch: file.patch ?? null,
+          previousFilename: file.previous_filename ?? null,
+          sha: file.sha ?? null,
+          status: file.status,
+        })),
+        truncated: files.length >= MAX_COMPARE_FILES,
+      };
+    },
+
+    async findOwnComment(nodeId, matches) {
+      let cursor: string | null = null;
+
+      do {
+        const response: CommentsResponse = await octokit.graphql<CommentsResponse>(COMMENTS_QUERY, {
+          cursor,
+          pullRequestId: nodeId,
+        });
+        const comments = response.node?.comments;
+
+        if (!comments) {
+          throw new Error(`Pull request ${nodeId} has no comment list.`);
+        }
+
+        for (const comment of comments.nodes) {
+          if (comment?.viewerDidAuthor && comment.databaseId !== null && matches(comment.body)) {
+            return { body: comment.body, id: comment.databaseId };
+          }
+        }
+
+        cursor = comments.pageInfo.hasNextPage ? comments.pageInfo.endCursor : null;
+      } while (cursor !== null);
+
+      return undefined;
     },
 
     fetchCommits(pullRequestUrl) {
