@@ -2,9 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createBranchMatcher } from './branch-pattern.js';
 import { processPullRequests } from './process.js';
+import { fingerprintDiff, renderSoakComment } from './soak.js';
 
 import type { OpenPullRequest, TimedAutoMergeApi } from './github-api.js';
 import type { TimedAutoMergeRequest } from './process.js';
+import type { DiffFile } from './soak.js';
 import type { CommitRecord } from 'actions-util';
 
 const TRUSTED = 1001;
@@ -13,6 +15,15 @@ const NOW = Date.parse('2026-10-26T12:00:00Z');
 const DAY = 86_400_000;
 const HEAD = 'a'.repeat(40);
 const OLDER = 'b'.repeat(40);
+const BASE = 'c'.repeat(40);
+
+const DIFF_FILE: DiffFile = {
+  filename: 'package.json',
+  patch: '@@ -1,3 +1,3 @@\n {\n-  "x": "1.0.0"\n+  "x": "1.1.0"\n }',
+  previousFilename: null,
+  sha: 'd'.repeat(40),
+  status: 'modified',
+};
 
 function pullRequest(overrides: Partial<OpenPullRequest> = {}): OpenPullRequest {
   const number = overrides.number ?? 7;
@@ -20,6 +31,7 @@ function pullRequest(overrides: Partial<OpenPullRequest> = {}): OpenPullRequest 
   return {
     authorId: TRUSTED,
     baseRef: 'main',
+    baseSha: BASE,
     baseRepoFullName: 'owner/repo',
     createdAt: new Date(NOW - 2 * DAY).toISOString(),
     draft: false,
@@ -55,6 +67,10 @@ interface FakeApi extends TimedAutoMergeApi {
   enableAutoMerge: ReturnType<typeof vi.fn<TimedAutoMergeApi['enableAutoMerge']>>;
   getMergeState: ReturnType<typeof vi.fn<TimedAutoMergeApi['getMergeState']>>;
   merge: ReturnType<typeof vi.fn<TimedAutoMergeApi['merge']>>;
+  fetchDiff: ReturnType<typeof vi.fn<TimedAutoMergeApi['fetchDiff']>>;
+  findOwnComment: ReturnType<typeof vi.fn<TimedAutoMergeApi['findOwnComment']>>;
+  createComment: ReturnType<typeof vi.fn<TimedAutoMergeApi['createComment']>>;
+  updateComment: ReturnType<typeof vi.fn<TimedAutoMergeApi['updateComment']>>;
 }
 
 /**
@@ -76,6 +92,10 @@ function fakeApi(
       viewerApprovedOid: null,
     })),
     merge: vi.fn<TimedAutoMergeApi['merge']>(async () => {}),
+    fetchDiff: vi.fn<TimedAutoMergeApi['fetchDiff']>(async () => ({ files: [DIFF_FILE], truncated: false })),
+    findOwnComment: vi.fn<TimedAutoMergeApi['findOwnComment']>(async () => undefined),
+    createComment: vi.fn<TimedAutoMergeApi['createComment']>(async () => {}),
+    updateComment: vi.fn<TimedAutoMergeApi['updateComment']>(async () => {}),
     fetchCommits: vi.fn<TimedAutoMergeApi['fetchCommits']>(async (url) => {
       const commits = commitsByUrl[url] ?? [commit(OLDER), commit(HEAD)];
 
@@ -101,6 +121,7 @@ function request(overrides: Partial<TimedAutoMergeRequest> = {}): TimedAutoMerge
     nowMs: NOW,
     prAuthorIds: [TRUSTED],
     repository: { owner: 'owner', repo: 'repo' },
+    soakFrom: 'opened',
     trustedAuthorIds: [TRUSTED],
     ...overrides,
   };
@@ -558,5 +579,155 @@ describe('processPullRequests', () => {
 
   it('reports nothing when no pull request is open', async () => {
     await expect(processPullRequests(fakeApi([]), request())).resolves.toEqual({ openCount: 0, outcomes: [] });
+  });
+});
+
+describe('processPullRequests with soakFrom: content', () => {
+  const FINGERPRINT = fingerprintDiff([DIFF_FILE]);
+  const contentRequest = (overrides: Partial<TimedAutoMergeRequest> = {}): TimedAutoMergeRequest =>
+    request({ soakFrom: 'content', ...overrides });
+  const markerComment = (fingerprint: string, sinceMs: number) => ({
+    body: renderSoakComment({ fingerprint, sinceMs }, '24h'),
+    id: 55,
+  });
+
+  it('starts the wait on first sight, records it in a new comment and skips', async () => {
+    const api = fakeApi([pullRequest()]);
+
+    const { outcomes } = await processPullRequests(api, contentRequest());
+
+    expect(api.fetchDiff).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo' }, BASE, HEAD);
+    expect(api.createComment).toHaveBeenCalledWith(
+      { owner: 'owner', repo: 'repo' },
+      7,
+      expect.stringContaining(`fingerprint=${FINGERPRINT} since=${new Date(NOW).toISOString()}`),
+    );
+    expect(outcomes).toEqual([
+      expect.objectContaining({
+        detail: 'changes unchanged for 0m, needs 24h',
+        reason: 'too-young',
+        status: 'skipped',
+      }),
+    ]);
+    expect(api.approve).not.toHaveBeenCalled();
+  });
+
+  it('approves once the recorded change has been unchanged long enough, writing no comment', async () => {
+    const api = fakeApi([pullRequest()]);
+    api.findOwnComment.mockResolvedValueOnce(markerComment(FINGERPRINT, NOW - DAY));
+
+    const { outcomes } = await processPullRequests(api, contentRequest());
+
+    expect(outcomes[0].status).toBe('approved');
+    expect(api.createComment).not.toHaveBeenCalled();
+    expect(api.updateComment).not.toHaveBeenCalled();
+  });
+
+  // A rebase changes the commits, their dates and the hunk line numbers, but not the changed lines.
+  it('keeps the wait across a rebase that leaves the changed lines as they are', async () => {
+    const api = fakeApi([pullRequest({ createdAt: new Date(NOW - 3 * DAY).toISOString() })], {
+      'https://github.com/owner/repo/pull/7': [commit(HEAD, { committedDate: new Date(NOW - 60_000).toISOString() })],
+    });
+    api.fetchDiff.mockResolvedValueOnce({
+      files: [{ ...DIFF_FILE, patch: '@@ -40,3 +40,3 @@\n "y": 2,\n-  "x": "1.0.0"\n+  "x": "1.1.0"\n }' }],
+      truncated: false,
+    });
+    api.findOwnComment.mockResolvedValueOnce(markerComment(FINGERPRINT, NOW - 2 * DAY));
+
+    const { outcomes } = await processPullRequests(api, contentRequest());
+
+    expect(outcomes[0].status).toBe('approved');
+  });
+
+  it('restarts the wait and rewrites its comment when the changed lines change', async () => {
+    const api = fakeApi([pullRequest()]);
+    api.fetchDiff.mockResolvedValueOnce({
+      files: [{ ...DIFF_FILE, patch: '@@ -1,3 +1,3 @@\n-  "x": "1.0.0"\n+  "x": "1.2.0"' }],
+      truncated: false,
+    });
+    api.findOwnComment.mockResolvedValueOnce(markerComment(FINGERPRINT, NOW - 5 * DAY));
+
+    const { outcomes } = await processPullRequests(api, contentRequest());
+
+    expect(api.updateComment).toHaveBeenCalledWith(
+      { owner: 'owner', repo: 'repo' },
+      55,
+      expect.stringContaining(`since=${new Date(NOW).toISOString()}`),
+    );
+    expect(api.createComment).not.toHaveBeenCalled();
+    expect(outcomes).toEqual([expect.objectContaining({ reason: 'too-young', status: 'skipped' })]);
+  });
+
+  it('rewrites a marker it cannot read rather than adding a second comment', async () => {
+    const api = fakeApi([pullRequest()]);
+    api.findOwnComment.mockResolvedValueOnce({ body: '<!-- timed-auto-merge:soak v1 broken -->', id: 55 });
+
+    await processPullRequests(api, contentRequest());
+
+    expect(api.updateComment).toHaveBeenCalledWith({ owner: 'owner', repo: 'repo' }, 55, expect.any(String));
+    expect(api.createComment).not.toHaveBeenCalled();
+  });
+
+  it('never counts the wait from before the pull request was opened', async () => {
+    const api = fakeApi([pullRequest({ createdAt: new Date(NOW - 60 * 60_000).toISOString() })]);
+    api.findOwnComment.mockResolvedValueOnce(markerComment(FINGERPRINT, NOW - 10 * DAY));
+
+    const { outcomes } = await processPullRequests(api, contentRequest());
+
+    expect(outcomes).toEqual([expect.objectContaining({ detail: 'changes unchanged for 60m, needs 24h' })]);
+  });
+
+  it('reads a recorded time in the future as now', async () => {
+    const api = fakeApi([pullRequest()]);
+    api.findOwnComment.mockResolvedValueOnce(markerComment(FINGERPRINT, NOW + DAY));
+
+    const { outcomes } = await processPullRequests(api, contentRequest());
+
+    expect(outcomes).toEqual([expect.objectContaining({ detail: 'changes unchanged for 0m, needs 24h' })]);
+    expect(api.updateComment).not.toHaveBeenCalled();
+  });
+
+  it('checks the content wait instead of the creation age, so a new pull request waits only once', async () => {
+    const api = fakeApi([pullRequest({ createdAt: new Date(NOW - 60_000).toISOString() })]);
+
+    await processPullRequests(api, contentRequest());
+
+    expect(api.fetchCommits).toHaveBeenCalledTimes(1);
+    expect(api.createComment).toHaveBeenCalledTimes(1);
+  });
+
+  it('writes no comment on a pull request whose commits fail verification', async () => {
+    const api = fakeApi([pullRequest()], {
+      'https://github.com/owner/repo/pull/7': [commit(HEAD, { authorIds: [STRANGER] })],
+    });
+
+    const { outcomes } = await processPullRequests(api, contentRequest());
+
+    expect(outcomes).toEqual([expect.objectContaining({ reason: 'commits-unverified' })]);
+    expect(api.fetchDiff).not.toHaveBeenCalled();
+    expect(api.createComment).not.toHaveBeenCalled();
+  });
+
+  it('skips a diff GitHub cut short, writing nothing', async () => {
+    const api = fakeApi([pullRequest()]);
+    api.fetchDiff.mockResolvedValueOnce({ files: [DIFF_FILE], truncated: true });
+
+    const { outcomes } = await processPullRequests(api, contentRequest());
+
+    expect(outcomes).toEqual([expect.objectContaining({ reason: 'diff-unreadable', status: 'skipped' })]);
+    expect(api.findOwnComment).not.toHaveBeenCalled();
+    expect(api.createComment).not.toHaveBeenCalled();
+  });
+
+  it('records a failed comment write as a failure, without approving', async () => {
+    const api = fakeApi([pullRequest()]);
+    api.createComment.mockRejectedValueOnce(new Error('Resource not accessible by integration'));
+
+    const { outcomes } = await processPullRequests(api, contentRequest());
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({ message: 'Resource not accessible by integration', status: 'failed' }),
+    ]);
+    expect(api.approve).not.toHaveBeenCalled();
   });
 });

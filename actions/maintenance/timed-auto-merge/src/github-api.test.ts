@@ -11,7 +11,9 @@ interface OctokitMock {
   graphql: ReturnType<typeof vi.fn>;
   paginate: ReturnType<typeof vi.fn>;
   rest: {
+    issues: { createComment: ReturnType<typeof vi.fn>; updateComment: ReturnType<typeof vi.fn> };
     pulls: { createReview: ReturnType<typeof vi.fn>; list: ReturnType<typeof vi.fn>; merge: ReturnType<typeof vi.fn> };
+    repos: { compareCommitsWithBasehead: ReturnType<typeof vi.fn> };
   };
 }
 
@@ -19,7 +21,11 @@ function mockOctokit(): OctokitMock {
   const octokit: OctokitMock = {
     graphql: vi.fn(),
     paginate: vi.fn(),
-    rest: { pulls: { createReview: vi.fn(), list: vi.fn(), merge: vi.fn() } },
+    rest: {
+      issues: { createComment: vi.fn(), updateComment: vi.fn() },
+      pulls: { createReview: vi.fn(), list: vi.fn(), merge: vi.fn() },
+      repos: { compareCommitsWithBasehead: vi.fn() },
+    },
   };
 
   vi.mocked(github.getOctokit).mockReturnValue(octokit as unknown as ReturnType<typeof github.getOctokit>);
@@ -28,12 +34,13 @@ function mockOctokit(): OctokitMock {
 }
 
 const HEAD = 'a'.repeat(40);
+const BASE = 'c'.repeat(40);
 const repository = { owner: 'owner', repo: 'repo' };
 
 function listItem(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     auto_merge: null,
-    base: { ref: 'main', repo: { full_name: 'owner/repo' } },
+    base: { ref: 'main', repo: { full_name: 'owner/repo' }, sha: BASE },
     created_at: '2026-10-20T08:00:00Z',
     draft: false,
     head: { ref: 'release-please--branches--main', repo: { full_name: 'owner/repo' }, sha: HEAD },
@@ -76,6 +83,7 @@ describe('createTimedAutoMergeApi', () => {
         {
           authorId: 29_139_614,
           baseRef: 'main',
+          baseSha: BASE,
           baseRepoFullName: 'owner/repo',
           createdAt: '2026-10-20T08:00:00Z',
           draft: false,
@@ -224,5 +232,112 @@ describe('createTimedAutoMergeApi', () => {
     await createTimedAutoMergeApi('ghs_token').fetchCommits('https://github.com/owner/repo/pull/7');
 
     expect(fetchPullRequestCommits).toHaveBeenCalledWith('ghs_token', 'https://github.com/owner/repo/pull/7');
+  });
+
+  describe('fetchDiff', () => {
+    it('compares the merge base of the listed base with the head, one commit per page', async () => {
+      octokit.rest.repos.compareCommitsWithBasehead.mockResolvedValue({
+        data: {
+          files: [
+            { filename: 'a.txt', patch: '+x', sha: 'd'.repeat(40), status: 'modified' },
+            { filename: 'b.bin', previous_filename: 'old.bin', sha: null, status: 'renamed' },
+          ],
+        },
+      });
+
+      const diff = await createTimedAutoMergeApi('token').fetchDiff(repository, BASE, HEAD);
+
+      expect(octokit.rest.repos.compareCommitsWithBasehead).toHaveBeenCalledWith({
+        basehead: `${BASE}...${HEAD}`,
+        owner: 'owner',
+        page: 1,
+        per_page: 1,
+        repo: 'repo',
+      });
+      expect(diff).toEqual({
+        files: [
+          { filename: 'a.txt', patch: '+x', previousFilename: null, sha: 'd'.repeat(40), status: 'modified' },
+          { filename: 'b.bin', patch: null, previousFilename: 'old.bin', sha: null, status: 'renamed' },
+        ],
+        truncated: false,
+      });
+    });
+
+    it("reports a list at GitHub's file limit as truncated", async () => {
+      const files = Array.from({ length: 300 }, (_, index) => ({
+        filename: `f${index}`,
+        patch: '+x',
+        sha: 'd'.repeat(40),
+        status: 'added',
+      }));
+      octokit.rest.repos.compareCommitsWithBasehead.mockResolvedValue({ data: { files } });
+
+      await expect(createTimedAutoMergeApi('token').fetchDiff(repository, BASE, HEAD)).resolves.toMatchObject({
+        truncated: true,
+      });
+    });
+  });
+
+  describe('findOwnComment', () => {
+    const page = (nodes: unknown[], endCursor: string | null) => ({
+      node: { comments: { nodes, pageInfo: { endCursor, hasNextPage: endCursor !== null } } },
+    });
+
+    it('returns only a matching comment this identity wrote, across pages', async () => {
+      octokit.graphql
+        .mockResolvedValueOnce(
+          page(
+            [
+              { body: 'marker', databaseId: 1, viewerDidAuthor: false },
+              { body: 'other', databaseId: 2, viewerDidAuthor: true },
+              null,
+            ],
+            'cursor-1',
+          ),
+        )
+        .mockResolvedValueOnce(page([{ body: 'marker', databaseId: 3, viewerDidAuthor: true }], null));
+
+      const comment = await createTimedAutoMergeApi('token').findOwnComment('PR_kwDO', (body) => body === 'marker');
+
+      expect(comment).toEqual({ body: 'marker', id: 3 });
+      expect(octokit.graphql).toHaveBeenLastCalledWith(expect.stringContaining('viewerDidAuthor'), {
+        cursor: 'cursor-1',
+        pullRequestId: 'PR_kwDO',
+      });
+    });
+
+    it('returns undefined when no comment matches', async () => {
+      octokit.graphql.mockResolvedValueOnce(page([], null));
+
+      await expect(createTimedAutoMergeApi('token').findOwnComment('PR_kwDO', () => true)).resolves.toBeUndefined();
+    });
+
+    it('fails when the node is not a pull request', async () => {
+      octokit.graphql.mockResolvedValueOnce({ node: null });
+
+      await expect(createTimedAutoMergeApi('token').findOwnComment('PR_kwDO', () => true)).rejects.toThrow(
+        /no comment list/,
+      );
+    });
+  });
+
+  it('creates and updates comments through the issues API', async () => {
+    const api = createTimedAutoMergeApi('token');
+
+    await api.createComment(repository, 7, 'hello');
+    await api.updateComment(repository, 55, 'again');
+
+    expect(octokit.rest.issues.createComment).toHaveBeenCalledWith({
+      body: 'hello',
+      issue_number: 7,
+      owner: 'owner',
+      repo: 'repo',
+    });
+    expect(octokit.rest.issues.updateComment).toHaveBeenCalledWith({
+      body: 'again',
+      comment_id: 55,
+      owner: 'owner',
+      repo: 'repo',
+    });
   });
 });

@@ -21,6 +21,7 @@ export const ActionInput = {
   pr_author_ids: 'pr_author_ids',
   base_branch: 'base_branch',
   time_elapsed: 'time_elapsed',
+  soak_from: 'soak_from',
   minimum_age: 'minimum_age',
   merge_method: 'merge_method',
   repository: 'repository',
