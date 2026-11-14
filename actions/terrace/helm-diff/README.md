@@ -39,7 +39,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: TimSchoenle/actions/actions/terrace/helm-diff@actions-terrace-helm-diff-v1.1.4 # tag=actions-terrace-helm-diff-v1.1.4
+      - uses: TimSchoenle/actions/actions/terrace/helm-diff@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-terrace-helm-diff-v1.1.4
         with:
           token: ${{ github.token }}
           # Only the comment this token posted is updated.

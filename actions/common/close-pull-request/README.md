@@ -39,7 +39,7 @@ jobs:
       pull-requests: write # to comment on and close the pull request
     steps:
       - id: close
-        uses: TimSchoenle/actions/actions/common/close-pull-request@actions-common-close-pull-request-v2.0.6 # tag=actions-common-close-pull-request-v2.0.6
+        uses: TimSchoenle/actions/actions/common/close-pull-request@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-close-pull-request-v2.0.6
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}

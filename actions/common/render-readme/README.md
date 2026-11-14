@@ -41,14 +41,14 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
       - id: readme
-        uses: TimSchoenle/actions/actions/common/render-readme@actions-common-render-readme-v1.1.3 # tag=actions-common-render-readme-v1.1.3
+        uses: TimSchoenle/actions/actions/common/render-readme@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-render-readme-v1.1.3
 ```
 
 ### Drift gate on the default branch
 
 ```yaml
 # The drift gate on the default branch. Give it the same inputs as the generator job.
-- uses: TimSchoenle/actions/actions/common/render-readme@actions-common-render-readme-v1.1.3 # tag=actions-common-render-readme-v1.1.3
+- uses: TimSchoenle/actions/actions/common/render-readme@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-render-readme-v1.1.3
   with:
     check: 'true'
 ```

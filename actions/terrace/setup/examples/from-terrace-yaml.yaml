@@ -8,6 +8,6 @@ steps:
       persist-credentials: false
 
   - id: terrace
-    uses: TimSchoenle/actions/actions/terrace/setup@e75e9ab1e1e9fa573051a901347e39ba23a45710 # tag=actions-terrace-setup-v4.0.1
+    uses: TimSchoenle/actions/actions/terrace/setup@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-terrace-setup-v4.0.2
 
   - run: terrace-contract doctor

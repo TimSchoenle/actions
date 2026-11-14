@@ -53,7 +53,7 @@ jobs:
           permission-contents: write
           permission-pull-requests: write
 
-      - uses: TimSchoenle/actions/actions/maintenance/auto-rebase@actions-maintenance-auto-rebase-v4.0.1 # tag=actions-maintenance-auto-rebase-v4.0.1
+      - uses: TimSchoenle/actions/actions/maintenance/auto-rebase@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-maintenance-auto-rebase-v4.0.1
         with:
           token: ${{ steps.token.outputs.token }}
           label: dependencies

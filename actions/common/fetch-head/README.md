@@ -16,7 +16,7 @@ Fetches one commit into an empty repository and points HEAD at it without checki
 ## Usage
 
 ```yaml
-- uses: TimSchoenle/actions/actions/common/fetch-head@actions-common-fetch-head-v2.0.3 # tag=actions-common-fetch-head-v2.0.3
+- uses: TimSchoenle/actions/actions/common/fetch-head@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-fetch-head-v2.0.3
   with:
     sha: # required, see Inputs
 ```

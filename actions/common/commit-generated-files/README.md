@@ -44,7 +44,7 @@ jobs:
       actions: read # to list and download the pull_request run's artifacts
       contents: read
     steps:
-      - uses: TimSchoenle/actions/actions/common/commit-generated-files@actions-common-commit-generated-files-v1.3.2 # tag=actions-common-commit-generated-files-v1.3.2
+      - uses: TimSchoenle/actions/actions/common/commit-generated-files@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-commit-generated-files-v1.3.2
         with:
           client_id: ${{ vars.BOT_CLIENT_ID }}
           private_key: ${{ secrets.BOT_PRIVATE_KEY }}

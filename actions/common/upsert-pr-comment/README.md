@@ -38,7 +38,7 @@ from the body alone.
     set -euo pipefail
     echo "bytes=$(docker image inspect api:${{ github.sha }} --format '{{ .Size }}')" >> "$GITHUB_OUTPUT"
 
-- uses: TimSchoenle/actions/actions/common/upsert-pr-comment@actions-common-upsert-pr-comment-v3.0.1 # tag=actions-common-upsert-pr-comment-v3.0.1
+- uses: TimSchoenle/actions/actions/common/upsert-pr-comment@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-upsert-pr-comment-v3.0.1
   with:
     token: ${{ steps.token.outputs.token }}
     identifier: docker-image-size
@@ -53,7 +53,7 @@ from the body alone.
 # no comment is posted.
 - name: Comment on PR
   if: github.event_name == 'pull_request'
-  uses: TimSchoenle/actions/actions/common/upsert-pr-comment@actions-common-upsert-pr-comment-v3.0.1 # tag=actions-common-upsert-pr-comment-v3.0.1
+  uses: TimSchoenle/actions/actions/common/upsert-pr-comment@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-upsert-pr-comment-v3.0.1
   with:
     token: ${{ steps.token.outputs.token }}
     identifier: render-generated-files

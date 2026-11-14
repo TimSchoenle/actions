@@ -56,7 +56,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - id: spotless
-        uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@actions-java-gradle-auto-spotless-v2.0.5 # tag=actions-java-gradle-auto-spotless-v2.0.5
+        uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-java-gradle-auto-spotless-v2.0.5
         with:
           java_version: '21'
           artifact_name: auto-spotless
@@ -86,7 +86,7 @@ jobs:
           permission-pull-requests: write # only for the comment below
 
       - id: commit
-        uses: TimSchoenle/actions/actions/common/commit-patch@actions-common-commit-patch-v3.1.1 # tag=actions-common-commit-patch-v3.1.1
+        uses: TimSchoenle/actions/actions/common/commit-patch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-commit-patch-v3.1.1
         with:
           token: ${{ steps.token.outputs.token }}
           artifact_name: auto-spotless
@@ -95,7 +95,7 @@ jobs:
 
       # Optional. v1 posted this comment itself.
       - if: steps.commit.outputs.changes_committed == 'true'
-        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@actions-common-upsert-pr-comment-v3.0.1 # tag=actions-common-upsert-pr-comment-v3.0.1
+        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-upsert-pr-comment-v3.0.1
         with:
           token: ${{ steps.token.outputs.token }}
           identifier: 'java-gradle-auto-spotless'
