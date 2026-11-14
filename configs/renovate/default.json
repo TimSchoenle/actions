@@ -59,6 +59,13 @@
       "automerge": true
     },
     {
+      "description": "Never move a GitHub Action digest under a floating tag such as `# v6` without also writing an exact release. helpers:pinGitHubActionDigestsToSemver above makes every version update write an exact `x.y.z`, but a digest update keeps the current value, so it would refresh the digest under `# v6` and leave a comment that goes stale the next time upstream moves the tag, which jactionlint reports as a version comment that does not match its pin. With digest updates off for these, a pin under a floating tag moves only through a version update, which rewrites the comment to the exact release of the new digest. A lookup fixture in scripts/__fixtures__/renovate/floating-action-pins fails if a floating value is ever proposed.",
+      "matchDepTypes": ["action", "workflow"],
+      "matchCurrentValue": "/^v?\\d+(?:\\.\\d+)?$/",
+      "matchUpdateTypes": ["digest"],
+      "enabled": false
+    },
+    {
       "description": "Disable dependency dashboard approval for all packages",
       "matchPackageNames": ["*"],
       "dependencyDashboardApproval": false
