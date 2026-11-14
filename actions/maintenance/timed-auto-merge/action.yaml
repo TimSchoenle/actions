@@ -3,7 +3,7 @@ description: 'Approve and enable auto-merge on aged pull requests whose head bra
 
 inputs:
   token:
-    description: 'GitHub token with contents: write and pull-requests: write. Must not belong to the author of the pull requests, since GitHub refuses a review from the author.'
+    description: 'GitHub token with contents: write and pull-requests: write, which also covers the comment soak_from: content writes. Must not belong to the author of the pull requests, since GitHub refuses a review from the author.'
     required: true
   trusted_authors:
     description: 'Comma-separated list of GitHub user database IDs (e.g. "29139614, 123456"). Every author of every commit must be in this list, and every commit must carry a valid signature. A commit signed with a personal key must also have its committer and key owner in this list; a commit GitHub signed itself skips those two checks. See Commit verification below.'
@@ -25,9 +25,13 @@ inputs:
     required: false
     default: ''
   time_elapsed:
-    description: 'Soak time: how long ago the pull request must have been opened and its newest commit made, as a whole number followed by s, m, h or d (e.g. "90m", "24h", "7d"). A new commit pushed onto an open pull request starts the wait again. Nothing else is accepted, including "1 day", "1d12h" or "01h".'
+    description: 'How long a pull request must have been open, as a whole number followed by s, m, h or d (e.g. "90m", "24h", "7d"). Measured from when the pull request was opened; later commits do not restart the wait. Nothing else is accepted, including "1 day", "1d12h" or "01h".'
     required: false
     default: '1d'
+  soak_from:
+    description: 'What time_elapsed is measured from. "opened": when the pull request was opened. "content": the last time its changes changed, so a rebase or an update from the base branch that leaves the changes as they are does not restart the wait. "content" keeps its state in a comment on the pull request. See Soak time below.'
+    required: false
+    default: 'opened'
   minimum_age:
     description: 'Lower bound for time_elapsed, in the same format. A time_elapsed below it fails the step, so a dispatch input cannot shorten the wait.'
     required: false
@@ -53,7 +57,7 @@ outputs:
   approved:
     description: 'JSON array of the pull request numbers that were approved on this run and either had auto-merge enabled or, when already mergeable, were merged, e.g. `[12,15]`. A pull request an earlier run already approved at its current head, with auto-merge still on, is listed too, though nothing was written to it.'
   skipped:
-    description: 'JSON array of {"number", "reason"} for matching pull requests that were left alone, e.g. `[{"number":13,"reason":"too-young"}]`. The reasons are fork, author-untrusted, base-mismatch, draft, too-young, head-moved and commits-unverified.'
+    description: 'JSON array of {"number", "reason"} for matching pull requests that were left alone, e.g. `[{"number":13,"reason":"too-young"}]`. The reasons are fork, author-untrusted, base-mismatch, draft, too-young, head-moved, commits-unverified and diff-unreadable.'
   failed:
     description: 'JSON array of {"number", "message"} for pull requests where an API call failed, with the error, e.g. `[{"number":14,"message":"..."}]`.'
 

@@ -88,6 +88,30 @@ describe('timed-auto-merge', () => {
     await expect(scratch.reviewStates(number)).resolves.toEqual([]);
   });
 
+  it('with soak_from content, records the change once and keeps it across runs', async () => {
+    const { branch, number } = await openPullRequest('content-soak');
+    const inputs = {
+      branch_pattern: `^${literal(branch)}$`,
+      pattern_mode: 'regex',
+      soak_from: 'content',
+      time_elapsed: '1d',
+    };
+
+    const first = await run(inputs);
+    const [recorded, ...extra] = await scratch.issueCommentRecords(number);
+
+    expect(JSON.parse(first.outputs.skipped ?? '')).toEqual([{ number, reason: 'too-young' }]);
+    expect(extra).toEqual([]);
+    expect(recorded.body).toMatch(/^<!-- timed-auto-merge:soak v1 fingerprint=[0-9a-f]{64} since=\S+ -->/);
+
+    // The same change on the second run is neither recorded again nor restarts the wait.
+    const second = await run(inputs);
+
+    expect(JSON.parse(second.outputs.skipped ?? '')).toEqual([{ number, reason: 'too-young' }]);
+    await expect(scratch.issueCommentRecords(number)).resolves.toEqual([recorded]);
+    await expect(scratch.reviewStates(number)).resolves.toEqual([]);
+  });
+
   it('skips a pull request opened by an account outside pr_author_ids before reading its commits', async () => {
     const { branch, number } = await openPullRequest('foreign-author');
 

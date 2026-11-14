@@ -36,19 +36,19 @@ jobs:
       has_changes: ${{ steps.readme.outputs.has_changes }}
       artifact_name: ${{ steps.readme.outputs.artifact_name }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
       - id: readme
-        uses: TimSchoenle/actions/actions/common/render-readme@actions-common-render-readme-v1.1.3 # tag=actions-common-render-readme-v1.1.3
+        uses: TimSchoenle/actions/actions/common/render-readme@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-render-readme-v1.1.3
 ```
 
 ### Drift gate on the default branch
 
 ```yaml
 # The drift gate on the default branch. Give it the same inputs as the generator job.
-- uses: TimSchoenle/actions/actions/common/render-readme@actions-common-render-readme-v1.1.3 # tag=actions-common-render-readme-v1.1.3
+- uses: TimSchoenle/actions/actions/common/render-readme@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-render-readme-v1.1.3
   with:
     check: 'true'
 ```

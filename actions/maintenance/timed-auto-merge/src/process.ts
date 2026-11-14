@@ -1,8 +1,11 @@
 import { errorMessage, verifyCommits } from 'actions-util';
 
+import { fingerprintDiff, hasSoakMarker, parseSoakMarker, renderSoakComment, unreadableDiffReason } from './soak.js';
+
 import type { BranchMatcher } from './branch-pattern.js';
 import type { OpenPullRequest, TimedAutoMergeApi } from './github-api.js';
 import type { MergeMethod } from './merge-method.js';
+import type { SoakFrom } from './soak.js';
 import type { RepositoryCoordinates } from 'actions-util';
 
 /** Everything read from the action inputs that the decision needs, already validated. */
@@ -10,10 +13,12 @@ export interface TimedAutoMergeRequest {
   repository: RepositoryCoordinates;
   matcher: BranchMatcher;
   /**
-   * The soak time, in milliseconds: how long ago the pull request must have been opened and its
-   * newest commit made.
+   * The wait, in milliseconds: how long ago the pull request must have been opened, or, with
+   * `soakFrom: 'content'`, how long its changes must have stayed the same.
    */
   minimumOpenMs: number;
+  /** What the wait is measured from. */
+  soakFrom: SoakFrom;
   trustedAuthorIds: readonly number[];
   /** Database IDs of the accounts a pull request may be opened by. */
   prAuthorIds: readonly number[];
@@ -33,6 +38,7 @@ export type SkipReason =
   | 'author-untrusted'
   | 'base-mismatch'
   | 'commits-unverified'
+  | 'diff-unreadable'
   | 'draft'
   | 'fork'
   | 'head-moved'
@@ -106,11 +112,14 @@ function parseTimestamp(value: string, what: string): number {
 
 /**
  * Checks that need no further API call: the pull request is from this repository, opened by an
- * accepted account, into the expected base, ready for review and opened long enough ago.
+ * accepted account, into the expected base, ready for review and, with `soakFrom: 'opened'`, opened
+ * long enough ago.
  *
- * The age checked here is from creation only, which no later commit can make older. It keeps the
- * commit query off a pull request that is too young anyway; the head age is checked after the commits
- * are read.
+ * The age is measured from creation, not from the newest commit. Renovate and release-please rebase
+ * their pull requests whenever the base branch moves, so a wait that restarted on every push would
+ * never end on an active repository. `soakFrom: 'content'` measures it from the last change to the
+ * diff instead, in {@link checkContentSoak}; the creation age is not checked then, since the content
+ * wait can only start after creation and checking both would make a new pull request wait twice.
  *
  * A fork is never eligible. Its branch name is chosen by whoever owns the fork, so the branch pattern
  * says nothing about it, and this action exists to merge branches that automation in the base
@@ -137,6 +146,10 @@ function precheck(pullRequest: OpenPullRequest, request: TimedAutoMergeRequest):
 
   if (pullRequest.draft) {
     return skipped(pullRequest, 'draft', 'pull request is a draft');
+  }
+
+  if (request.soakFrom === 'content') {
+    return undefined;
   }
 
   const createdMs = parseTimestamp(pullRequest.createdAt, 'creation time');
@@ -197,17 +210,12 @@ async function processOne(
     return skipped(pullRequest, 'commits-unverified', reasons.join(' | '));
   }
 
-  // Checked only once every commit is verified: the committer sets the date, so it is a trusted
-  // account's statement only then. A fresh head on an old pull request waits the full time again.
-  const newestMs = Math.max(...commits.map((commit) => parseTimestamp(commit.committedDate, 'commit date')));
-  const headAgeMs = request.nowMs - newestMs;
+  if (request.soakFrom === 'content') {
+    const notYet = await checkContentSoak(api, pullRequest, request);
 
-  if (headAgeMs < request.minimumOpenMs) {
-    return skipped(
-      pullRequest,
-      'too-young',
-      `newest commit is ${formatAge(Math.max(headAgeMs, 0))} old, needs ${formatAge(request.minimumOpenMs)}`,
-    );
+    if (notYet) {
+      return notYet;
+    }
   }
 
   const merge = (await isQueued(api, pullRequest))
@@ -221,6 +229,67 @@ async function processOne(
     number: pullRequest.number,
     status: 'approved',
   };
+}
+
+/**
+ * Measures the wait from the last time the pull request's changes changed, rather than from its
+ * creation or its newest commit.
+ *
+ * The diff is read pinned to the listed base and head, and fingerprinted with {@link fingerprintDiff}.
+ * The fingerprint and the time it was first seen are kept in a hidden marker in a comment this
+ * token's identity wrote. A different fingerprint, or no marker, starts the wait at `nowMs` and
+ * rewrites the marker; the same fingerprint keeps the recorded time. So a rebase or an update from
+ * the base branch that leaves the changes as they are does not restart the wait, and any change to
+ * them does.
+ *
+ * Run only after every commit is verified, so an untrusted pull request gets no comment. The recorded
+ * time is clamped to the creation time and to `nowMs`, so an edited marker cannot shorten the wait
+ * below what `soakFrom: 'opened'` would allow or place it in the future.
+ *
+ * @returns the skip when the wait is not over, otherwise `undefined`.
+ * @throws if a read or the comment write fails, which the caller records as a failure.
+ */
+async function checkContentSoak(
+  api: TimedAutoMergeApi,
+  pullRequest: OpenPullRequest,
+  request: TimedAutoMergeRequest,
+): Promise<SkippedOutcome | undefined> {
+  const diff = await api.fetchDiff(request.repository, pullRequest.baseSha, pullRequest.headSha);
+  const unreadable = unreadableDiffReason(diff.files, diff.truncated);
+
+  if (unreadable !== undefined) {
+    return skipped(pullRequest, 'diff-unreadable', unreadable);
+  }
+
+  const fingerprint = fingerprintDiff(diff.files);
+  const comment = await api.findOwnComment(pullRequest.nodeId, hasSoakMarker);
+  const recorded = comment ? parseSoakMarker(comment.body) : undefined;
+  let sinceMs: number;
+
+  if (recorded?.fingerprint === fingerprint) {
+    const createdMs = parseTimestamp(pullRequest.createdAt, 'creation time');
+
+    sinceMs = Math.min(Math.max(recorded.sinceMs, createdMs), request.nowMs);
+  } else {
+    sinceMs = request.nowMs;
+    const body = renderSoakComment({ fingerprint, sinceMs }, formatAge(request.minimumOpenMs));
+
+    await (comment
+      ? api.updateComment(request.repository, comment.id, body)
+      : api.createComment(request.repository, pullRequest.number, body));
+  }
+
+  const ageMs = request.nowMs - sinceMs;
+
+  if (ageMs < request.minimumOpenMs) {
+    return skipped(
+      pullRequest,
+      'too-young',
+      `changes unchanged for ${formatAge(ageMs)}, needs ${formatAge(request.minimumOpenMs)}`,
+    );
+  }
+
+  return undefined;
 }
 
 /**

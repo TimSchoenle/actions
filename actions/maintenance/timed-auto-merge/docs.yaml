@@ -10,8 +10,8 @@ permissions:
 
 egress:
   - endpoint: api.github.com:443
-    for: the REST and GraphQL calls that list, review, auto-merge and merge pull requests
+    for: the REST and GraphQL calls that list, review, comment on, auto-merge and merge pull requests
 
 examples:
-  - title: Merge release pull requests a day after their newest commit
+  - title: Merge release pull requests after a day
     file: examples/scheduled-release-merge.yaml
