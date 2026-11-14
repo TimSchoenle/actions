@@ -46,7 +46,7 @@ jobs:
       has_changes: ${{ steps.patch.outputs.has_changes }}
       artifact_name: ${{ steps.patch.outputs.artifact_name }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }} # the head, not the merge commit
           persist-credentials: false

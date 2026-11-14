@@ -1,0 +1,15 @@
+{
+  "description": "An action pinned by digest under a floating major tag such as # v4 is moved to an exact release such as # v4.3.1, never kept on the floating tag. A floating tag moves upstream while the pinned digest stays, so its comment goes stale until the next digest update, which jactionlint reports as a version comment that no longer matches the pin. helpers:pinGitHubActionDigestsToSemver in the default preset is what keeps every comment naming the exact release of its digest.",
+  "presets": ["default"],
+  "files": {
+    ".github/workflows/ci.yaml": "ci.yaml"
+  },
+  "dependencies": [
+    {
+      "manager": "github-actions",
+      "depName": "actions/checkout",
+      "minUpdates": 1,
+      "newValue": "^v\\d+\\.\\d+\\.\\d+$"
+    }
+  ]
+}

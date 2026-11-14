@@ -3,7 +3,7 @@
   "description": "Default configuration for Renovate",
   "extends": [
     "config:best-practices",
-    "helpers:pinGitHubActionDigests",
+    "helpers:pinGitHubActionDigestsToSemver",
     "workarounds:all",
     "github>TimSchoenle/actions//configs/renovate/base",
     "github>TimSchoenle/actions//configs/renovate/ci-automerge"

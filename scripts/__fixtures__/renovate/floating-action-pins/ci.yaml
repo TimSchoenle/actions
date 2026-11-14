@@ -1,0 +1,8 @@
+name: CI
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # A floating major tag pinned to an old digest: v4 has moved on since 4.0.0 was tagged.
+      - uses: actions/checkout@1e31de5234b9f8995739874a8ce0492dc87873e2 # v4

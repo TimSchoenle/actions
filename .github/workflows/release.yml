@@ -137,7 +137,7 @@ jobs:
             *.blob.core.windows.net:443
 
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           ref: ${{ github.sha }}
@@ -195,7 +195,7 @@ jobs:
             *.blob.core.windows.net:443
 
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           ref: ${{ github.sha }}
@@ -393,7 +393,7 @@ jobs:
       # bundles of every build commit among them; the rare path that reads the manifest at an old
       # commit fetches those few blobs on demand from github.com, which the allowlist carries.
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -567,7 +567,7 @@ jobs:
       # skip-github-release: the publish job creates the tags and Releases. release-please-config.json
       # sets it too, so a run without this input behaves the same.
       - name: Run release-please
-        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           token: ${{ steps.generate_token.outputs.token }}
           skip-github-release: true
@@ -610,7 +610,7 @@ jobs:
       # The docs generator resolves every consumer tag to the commit it points at and reads no file
       # from history, so blob:none leaves out the blobs of every earlier commit.
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0

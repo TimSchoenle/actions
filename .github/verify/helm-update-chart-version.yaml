@@ -112,7 +112,7 @@ jobs:
       # test repository again.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           path: tmp/actions-code
@@ -352,7 +352,7 @@ jobs:
       # test repository again.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           path: tmp/actions-code
@@ -549,7 +549,7 @@ jobs:
       # test repository again.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           path: tmp/actions-code
@@ -711,7 +711,7 @@ jobs:
       # test repository again.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           path: tmp/actions-code
@@ -864,7 +864,7 @@ jobs:
       # test repository again.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           path: tmp/actions-code
@@ -1032,7 +1032,7 @@ jobs:
       # test repository again.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           path: tmp/actions-code
@@ -1059,7 +1059,7 @@ jobs:
       # test repository again.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           path: tmp/actions-code
@@ -1101,7 +1101,7 @@ jobs:
       # Same reason as after the runs above.
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           path: tmp/actions-code
@@ -1268,7 +1268,7 @@ jobs:
 
       - name: Restore Workspace For The Post Action
         if: always()
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           path: tmp/actions-code
