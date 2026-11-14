@@ -263,6 +263,15 @@ describe('createTimedAutoMergeApi', () => {
       });
     });
 
+    it('reads a comparison without a file list as no changed files', async () => {
+      octokit.rest.repos.compareCommitsWithBasehead.mockResolvedValue({ data: {} });
+
+      await expect(createTimedAutoMergeApi('token').fetchDiff(repository, BASE, HEAD)).resolves.toEqual({
+        files: [],
+        truncated: false,
+      });
+    });
+
     it("reports a list at GitHub's file limit as truncated", async () => {
       const files = Array.from({ length: 300 }, (_, index) => ({
         filename: `f${index}`,

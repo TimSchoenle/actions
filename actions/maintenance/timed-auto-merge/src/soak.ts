@@ -77,7 +77,7 @@ export function fingerprintDiff(files: readonly DiffFile[]): string {
       previousFilename: file.previousFilename,
       status: file.status,
     }))
-    .sort((left, right) => (left.filename < right.filename ? -1 : left.filename > right.filename ? 1 : 0));
+    .sort((left, right) => (left.filename < right.filename ? -1 : Number(left.filename > right.filename)));
 
   return createHash('sha256').update(JSON.stringify(entries)).digest('hex');
 }
