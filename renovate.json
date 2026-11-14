@@ -46,6 +46,18 @@
       "datasourceTemplate": "github-tags"
     },
     {
+      "description": "Internal action refs written out in the Verify sources under .github/verify/, such as create-branch and delete-branch in the end-to-end jobs. The shared preset's regex manager reads only .github/workflows and .github/actions, and the actions preset disables the github-actions manager for TimSchoenle/actions, so without this Renovate bumps only the generated copy in .github/workflows/verify-*.yaml and the drift check fails. With it, one branch moves the source and its copy together. An action PINNED in scripts/lib/verify/pins.ts carries is written as 'uses: pinned:<key>' instead and never matched here. A contract test in scripts/__tests__ fails an internal pin in a source this manager would not match.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/verify/[^/]+\\.ya?ml$/"],
+      "matchStrings": [
+        "uses\\s*:\\s*['\"]?(?<depName>TimSchoenle\\/actions(?:\\/[^@'\"\\s#]+)?)@(?<currentDigest>[a-fA-F0-9]{40})['\"]?\\s*#\\s*(?:(?:renovate:\\s*)?tag\\s*=\\s*)?(?<currentValue>actions-[^\\s#'\"`]+)"
+      ],
+      "packageNameTemplate": "TimSchoenle/actions",
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "regex:^(?<compatibility>actions-.*)[-/]v?(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)?$",
+      "autoReplaceStringTemplate": "uses: {{{depName}}}@{{#if newDigest}}{{{newDigest}}}{{/if}}{{#unless newDigest}}{{{newValue}}}{{/unless}} # tag={{{newValue}}}"
+    },
+    {
       "description": "Internal action refs in the writing standards under docs/. The README guide's workflow and the Rust annex's clippy step are copied into other repositories, and no built-in manager reads Markdown, so without this the pins on those pages go stale while every workflow moves. Third-party pins on those pages are written as <sha> placeholders and are not matched. A contract test in scripts/__tests__ fails any internal pin under docs/ these managers would not match.",
       "customType": "regex",
       "managerFilePatterns": ["/^docs/.+\\.md$/"],

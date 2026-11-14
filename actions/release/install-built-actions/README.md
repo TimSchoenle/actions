@@ -9,7 +9,7 @@ outside the markers.
 
 Downloads a release/build-actions artifact by ID, verifies every file against the manifest hash the build job published, and copies the bundles into a checkout, so the actions there run on bundles built from that commit.
 
-[actions-release-install-built-actions-v1.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-release-install-built-actions-v1.1.1) · Composite action
+[actions-release-install-built-actions-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-release-install-built-actions-v1.1.2) · Composite action
 <!-- /docs:generated header -->
 
 The second half of [`release/build-actions`](../build-actions): run it after the checkout and before any step that
@@ -42,7 +42,7 @@ jobs:
         with:
           persist-credentials: false
       # Before any step that runs a local action with a bundle.
-      - uses: TimSchoenle/actions/actions/release/install-built-actions@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-release-install-built-actions-v1.1.1
+      - uses: TimSchoenle/actions/actions/release/install-built-actions@actions-release-install-built-actions-v1.1.2 # tag=actions-release-install-built-actions-v1.1.2
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -77,7 +77,7 @@ jobs:
         with:
           path: tmp/actions-code
           persist-credentials: false
-      - uses: TimSchoenle/actions/actions/release/install-built-actions@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-release-install-built-actions-v1.1.1
+      - uses: TimSchoenle/actions/actions/release/install-built-actions@actions-release-install-built-actions-v1.1.2 # tag=actions-release-install-built-actions-v1.1.2
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -162,9 +162,25 @@ A job that runs `step-security/harden-runner` with `egress-policy: block` has to
 
 - Changelog: [CHANGELOG.md](./CHANGELOG.md)
 - End-to-end tests: [`.github/verify/release-install-built-actions.yaml`](../../../.github/verify/release-install-built-actions.yaml)
-- Called from this repository by:
-  - [`.github/verify/java-gradle-auto-spotless.yaml`](../../../.github/verify/java-gradle-auto-spotless.yaml)
-  - [`.github/verify/release-build-actions.yaml`](../../../.github/verify/release-build-actions.yaml)
-  - [`.github/verify/rust-auto-format.yaml`](../../../.github/verify/rust-auto-format.yaml)
-  - [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
+
+<details>
+<summary>Called from 15 files in this repository</summary>
+
+- [`.github/verify/common-commit-patch.yaml`](../../../.github/verify/common-commit-patch.yaml)
+- [`.github/verify/common-download-release-asset.yaml`](../../../.github/verify/common-download-release-asset.yaml)
+- [`.github/verify/common-fetch-head.yaml`](../../../.github/verify/common-fetch-head.yaml)
+- [`.github/verify/common-find-patch.yaml`](../../../.github/verify/common-find-patch.yaml)
+- [`.github/verify/common-generated-files-verdict.yaml`](../../../.github/verify/common-generated-files-verdict.yaml)
+- [`.github/verify/docker-image-check.yaml`](../../../.github/verify/docker-image-check.yaml)
+- [`.github/verify/helper-verify-branch-name.yaml`](../../../.github/verify/helper-verify-branch-name.yaml)
+- [`.github/verify/java-gradle-auto-spotless.yaml`](../../../.github/verify/java-gradle-auto-spotless.yaml)
+- [`.github/verify/release-build-actions.yaml`](../../../.github/verify/release-build-actions.yaml)
+- [`.github/verify/release-publish-build-commit.yaml`](../../../.github/verify/release-publish-build-commit.yaml)
+- [`.github/verify/rust-auto-format.yaml`](../../../.github/verify/rust-auto-format.yaml)
+- [`.github/verify/security-codeql.yaml`](../../../.github/verify/security-codeql.yaml)
+- [`.github/verify/security-zizmor.yaml`](../../../.github/verify/security-zizmor.yaml)
+- [`.github/verify/terrace-setup.yaml`](../../../.github/verify/terrace-setup.yaml)
+- [`.github/workflows/release.yml`](../../../.github/workflows/release.yml)
+
+</details>
 <!-- /docs:generated reference -->

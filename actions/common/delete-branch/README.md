@@ -9,7 +9,7 @@ outside the markers.
 
 Deletes a branch from a repository. Fails gracefully if the branch does not exist.
 
-[actions-common-delete-branch-v2.0.6](https://github.com/TimSchoenle/actions/releases/tag/actions-common-delete-branch-v2.0.6) · JavaScript action (node24)
+[actions-common-delete-branch-v2.0.7](https://github.com/TimSchoenle/actions/releases/tag/actions-common-delete-branch-v2.0.7) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -38,7 +38,7 @@ jobs:
     permissions:
       contents: write # to delete the branch
     steps:
-      - uses: TimSchoenle/actions/actions/common/delete-branch@actions-common-delete-branch-v2.0.6 # tag=actions-common-delete-branch-v2.0.6
+      - uses: TimSchoenle/actions/actions/common/delete-branch@actions-common-delete-branch-v2.0.7 # tag=actions-common-delete-branch-v2.0.7
         with:
           token: ${{ github.token }}
           branch_name: ${{ github.event.pull_request.head.ref }}

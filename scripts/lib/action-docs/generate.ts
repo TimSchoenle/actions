@@ -6,6 +6,7 @@ import { parse } from 'yaml';
 import { getTagCommitSha } from '../readme/utils.js';
 import { consumerTag } from '../release-tags.js';
 import { ROOT_DIR, scanSorted } from '../utils.js';
+import { resolvePins } from '../verify/pins.js';
 import { GENERATED_HEADER } from '../verify/render.js';
 import { sourceFileName, SOURCES_DIR } from '../verify/source.js';
 import { DOCS_FILE_NAME, validateDocsFile } from './docs-file.js';
@@ -96,7 +97,10 @@ async function collectCallers(io: DocsIo, repoId: string): Promise<Map<string, s
     if (content.startsWith(GENERATED_HEADER)) {
       continue;
     }
-    for (const action of referencedActions(content, repoId)) {
+    // A Verify source names a pinned action as `uses: pinned:<key>`, which says nothing about the
+    // action until it is resolved the way the generator resolves it.
+    const resolved = file.startsWith(`${SOURCES_DIR}/`) ? resolvePins(content) : content;
+    for (const action of referencedActions(resolved, repoId)) {
       if (file.startsWith(`${action}/`)) {
         continue;
       }

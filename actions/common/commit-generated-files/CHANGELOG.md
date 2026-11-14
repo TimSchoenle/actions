@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/TimSchoenle/actions/compare/src-actions-common-commit-generated-files-v1.3.1...src-actions-common-commit-generated-files-v1.3.2) (2026-11-13)
+
+
+### Dependencies
+
+* **deps:** update internal action pins ([#2296](https://github.com/TimSchoenle/actions/issues/2296)) ([824ced1](https://github.com/TimSchoenle/actions/commit/824ced17427f0b74d5b82dadca737f43732def82))
+
 ## [1.3.1](https://github.com/TimSchoenle/actions/compare/src-actions-common-commit-generated-files-v1.3.0...src-actions-common-commit-generated-files-v1.3.1) (2026-11-12)
 
 

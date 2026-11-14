@@ -9,7 +9,7 @@ outside the markers.
 
 Renders README.md from its Handlebars template with the shared README payload, and either uploads the result as a create-patch artifact or fails when the committed file is stale.
 
-[actions-common-render-readme-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-readme-v1.1.2) · Composite action
+[actions-common-render-readme-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-readme-v1.1.3) · Composite action
 <!-- /docs:generated header -->
 
 It is the README job every repository repeats, in one step: [`common/readme-variables`](../readme-variables) collects
@@ -41,14 +41,14 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
       - id: readme
-        uses: TimSchoenle/actions/actions/common/render-readme@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-common-render-readme-v1.1.2
+        uses: TimSchoenle/actions/actions/common/render-readme@actions-common-render-readme-v1.1.3 # tag=actions-common-render-readme-v1.1.3
 ```
 
 ### Drift gate on the default branch
 
 ```yaml
 # The drift gate on the default branch. Give it the same inputs as the generator job.
-- uses: TimSchoenle/actions/actions/common/render-readme@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-common-render-readme-v1.1.2
+- uses: TimSchoenle/actions/actions/common/render-readme@actions-common-render-readme-v1.1.3 # tag=actions-common-render-readme-v1.1.3
   with:
     check: 'true'
 ```

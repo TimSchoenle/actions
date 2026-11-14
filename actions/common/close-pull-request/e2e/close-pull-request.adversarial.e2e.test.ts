@@ -106,12 +106,17 @@ describe('close-pull-request under hostile input', () => {
       });
     });
 
-    it('reports a number in another repository as not closed, without reaching it', async () => {
-      // A public pull request that exists but is not ours. The token cannot act on it, and the action
-      // must report that as `closed=false` rather than as success.
-      const result = await run({ repository: 'octocat/Hello-World', pull_request_id: '1' });
+    it('leaves an already closed pull request in another repository untouched', async () => {
+      // octocat/Hello-World#1 is public, closed and outside the token's reach: the token may read it, but
+      // any write to it (the comment or the close) is refused with a 403 and fails the step. A successful
+      // run reporting `closed=true` therefore proves the action settled on the state it read and sent
+      // no write to a repository it was never granted.
+      const result = await run(
+        { repository: 'octocat/Hello-World', pull_request_id: '1', comment: 'never posted' },
+        'success',
+      );
 
-      expect(result.outputs['closed']).not.toBe('true');
+      expect(result.outputs).toEqual({ closed: 'true' });
       expectNoInjection(result);
     });
 

@@ -9,7 +9,7 @@ outside the markers.
 
 Ensures selected checks completed successfully when they were started.
 
-[actions-maintenance-ensure-actions-are-executed-v2.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v2.0.5) · JavaScript action (node24)
+[actions-maintenance-ensure-actions-are-executed-v2.0.6](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-ensure-actions-are-executed-v2.0.6) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -45,7 +45,7 @@ jobs:
       checks: read # the check runs of the head commit
       actions: read # this run's jobs, the fallback when the commit has no check runs
     steps:
-      - uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-maintenance-ensure-actions-are-executed-v2.0.5
+      - uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@actions-maintenance-ensure-actions-are-executed-v2.0.6 # tag=actions-maintenance-ensure-actions-are-executed-v2.0.6
         with:
           token: ${{ github.token }}
           checks: |

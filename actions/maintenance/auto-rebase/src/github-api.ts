@@ -12,11 +12,6 @@ export interface PullRequestSummary {
   autoMergeEnabled: boolean;
   /** The head commit at the time of listing. */
   headSha: string;
-  /**
-   * GitHub's `MergeStateStatus` at the time of listing, such as `BEHIND`, `DIRTY` or `CLEAN`.
-   * GitHub computes it in the background, so a freshly pushed pull request reports `UNKNOWN`.
-   */
-  mergeStateStatus: string;
 }
 
 /** A pull request re-read just before it is updated. */
@@ -35,6 +30,11 @@ export interface PullRequestDetail {
   baseRef: string;
   /** Whether the base repository's maintainers may push to a fork's head branch. */
   maintainerCanModify: boolean;
+  /**
+   * GitHub's `mergeable_state`, such as `behind`, `dirty` or `clean`. GitHub computes it in the
+   * background, so a freshly pushed pull request reports `unknown` until it has.
+   */
+  mergeableState: string;
 }
 
 /** The GitHub operations this action needs, kept minimal so it can be faked in tests. */
@@ -61,6 +61,13 @@ const PAGE_SIZE = 100;
  * Lists open pull requests oldest first, with the fields the update decision reads from the
  * snapshot. The label filter stays on the client: GraphQL's `labels` argument compares names
  * exactly, and this action documents a case-insensitive match.
+ *
+ * Deliberately leaves out `mergeStateStatus` and `mergeable`. Asking for either makes GitHub work
+ * out the merge state of every pull request on the page before it answers, including pull requests
+ * that do not carry the label. On a repository with many open pull requests the query then exceeds
+ * GitHub's time limit and fails with 502 or 504 on every attempt. The merge state comes from the
+ * REST re-read instead, which answers `unknown` rather than blocking while GitHub computes it, and
+ * is made only for labelled pull requests.
  */
 const OPEN_PULL_REQUESTS_QUERY = `query OpenPullRequests($owner: String!, $repo: String!, $first: Int!, $after: String) {
   repository(owner: $owner, name: $repo) {
@@ -69,7 +76,6 @@ const OPEN_PULL_REQUESTS_QUERY = `query OpenPullRequests($owner: String!, $repo:
         number
         isDraft
         headRefOid
-        mergeStateStatus
         autoMergeRequest {
           enabledAt
         }
@@ -94,7 +100,6 @@ interface OpenPullRequestsResponse {
         number: number;
         isDraft: boolean;
         headRefOid: string;
-        mergeStateStatus: string;
         autoMergeRequest: { enabledAt: string | null } | null;
         labels: { nodes: ({ name: string } | null)[] | null } | null;
       } | null)[];
@@ -140,6 +145,7 @@ export function createUpdateBranchApi(token: string): UpdateBranchApi {
         headSha: data.head.sha,
         labels: data.labels.map((label) => label.name),
         maintainerCanModify: data.maintainer_can_modify,
+        mergeableState: data.mergeable_state,
         number: data.number,
         state: data.state,
       };
@@ -171,7 +177,6 @@ export function createUpdateBranchApi(token: string): UpdateBranchApi {
             draft: node.isDraft,
             headSha: node.headRefOid,
             labels: (node.labels?.nodes ?? []).flatMap((label) => (label === null ? [] : [label.name])),
-            mergeStateStatus: node.mergeStateStatus,
             number: node.number,
           });
         }

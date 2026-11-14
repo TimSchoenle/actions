@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.5](https://github.com/TimSchoenle/actions/compare/src-actions-terrace-image-v1.1.4...src-actions-terrace-image-v1.1.5) (2026-11-13)
+
+
+### Dependencies
+
+* **deps:** update timschoenle/actions/actions/terrace/setup to vactions-terrace-setup-v4.0.1 ([#2304](https://github.com/TimSchoenle/actions/issues/2304)) ([39f9ffe](https://github.com/TimSchoenle/actions/commit/39f9ffee759c9fbcc1d9a42f4bb61b6929ed70c1))
+
 ## [1.1.4](https://github.com/TimSchoenle/actions/compare/src-actions-terrace-image-v1.1.3...src-actions-terrace-image-v1.1.4) (2026-11-12)
 
 

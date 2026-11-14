@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.4](https://github.com/TimSchoenle/actions/compare/src-actions-security-jactionlint-v1.1.3...src-actions-security-jactionlint-v1.1.4) (2026-11-13)
+
+
+### Dependencies
+
+* **deps:** update dependency jdx/jactionlint to v2.6.0 ([#2314](https://github.com/TimSchoenle/actions/issues/2314)) ([42397e0](https://github.com/TimSchoenle/actions/commit/42397e014e65336cbfda2f8be6711f0b4dcf1f59))
+* **deps:** update internal action pins ([#2296](https://github.com/TimSchoenle/actions/issues/2296)) ([824ced1](https://github.com/TimSchoenle/actions/commit/824ced17427f0b74d5b82dadca737f43732def82))
+
 ## [1.1.3](https://github.com/TimSchoenle/actions/compare/src-actions-security-jactionlint-v1.1.2...src-actions-security-jactionlint-v1.1.3) (2026-11-11)
 
 

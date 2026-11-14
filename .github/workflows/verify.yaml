@@ -51,6 +51,7 @@ jobs:
           allowed-endpoints: >
             github.com:443
             objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
             api.github.com:443
@@ -103,6 +104,7 @@ jobs:
           allowed-endpoints: >
             github.com:443
             objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
             registry.npmjs.org:443
@@ -134,7 +136,7 @@ jobs:
       # cache-mode none: the step above already restores and saves this tree under the key the test
       # jobs read, and setup-cached's own cache of the same 313 MB was a second restore and save.
       - name: Setup Bun And Install
-        uses: TimSchoenle/actions/actions/bun/setup-cached@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-bun-setup-cached-v3.1.0
+        uses: TimSchoenle/actions/actions/bun/setup-cached@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-bun-setup-cached-v4.0.0
         with:
           bun-version: ''
           bun-version-file: '.bun-version'
@@ -159,6 +161,7 @@ jobs:
           allowed-endpoints: >
             github.com:443
             objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
 
@@ -186,7 +189,7 @@ jobs:
 
       - name: Build Actions
         id: build
-        uses: TimSchoenle/actions/actions/release/build-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-build-actions-v1.1.0
+        uses: TimSchoenle/actions/actions/release/build-actions@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-release-build-actions-v1.1.1
         with:
           build-dirs: ${{ needs.plan.outputs.build-dirs }}
           build-command: bun run build
@@ -215,6 +218,7 @@ jobs:
           allowed-endpoints: >
             github.com:443
             objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
             api.github.com:443
@@ -228,7 +232,7 @@ jobs:
       # selected no target with a bundle built nothing, and the suites run no bundle.
       - name: Install Built Actions
         if: ${{ needs.build.outputs.artifact-id != '' }}
-        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        uses: TimSchoenle/actions/actions/release/install-built-actions@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-release-install-built-actions-v1.1.1
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -311,6 +315,7 @@ jobs:
           allowed-endpoints: >
             github.com:443
             objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
             api.github.com:443
@@ -325,7 +330,7 @@ jobs:
       # selected no target with a bundle built nothing, and the suites run no bundle.
       - name: Install Built Actions
         if: ${{ needs.build.outputs.artifact-id != '' }}
-        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        uses: TimSchoenle/actions/actions/release/install-built-actions@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-release-install-built-actions-v1.1.1
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -407,6 +412,7 @@ jobs:
           allowed-endpoints: >
             github.com:443
             objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
             api.github.com:443
@@ -420,7 +426,7 @@ jobs:
       # selected no target with a bundle built nothing, and the suites run no bundle.
       - name: Install Built Actions
         if: ${{ needs.build.outputs.artifact-id != '' }}
-        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        uses: TimSchoenle/actions/actions/release/install-built-actions@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-release-install-built-actions-v1.1.1
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -504,6 +510,7 @@ jobs:
           allowed-endpoints: >
             github.com:443
             objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
             api.github.com:443
@@ -517,7 +524,7 @@ jobs:
       # selected no target with a bundle built nothing, and the suites run no bundle.
       - name: Install Built Actions
         if: ${{ needs.build.outputs.artifact-id != '' }}
-        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        uses: TimSchoenle/actions/actions/release/install-built-actions@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-release-install-built-actions-v1.1.1
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -600,6 +607,7 @@ jobs:
           allowed-endpoints: >
             github.com:443
             objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
             api.github.com:443
@@ -613,7 +621,7 @@ jobs:
       # selected no target with a bundle built nothing, and the suites run no bundle.
       - name: Install Built Actions
         if: ${{ needs.build.outputs.artifact-id != '' }}
-        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        uses: TimSchoenle/actions/actions/release/install-built-actions@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-release-install-built-actions-v1.1.1
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -696,6 +704,7 @@ jobs:
           allowed-endpoints: >
             github.com:443
             objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
             api.github.com:443
@@ -709,7 +718,7 @@ jobs:
       # selected no target with a bundle built nothing, and the suites run no bundle.
       - name: Install Built Actions
         if: ${{ needs.build.outputs.artifact-id != '' }}
-        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        uses: TimSchoenle/actions/actions/release/install-built-actions@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-release-install-built-actions-v1.1.1
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -804,6 +813,7 @@ jobs:
           allowed-endpoints: >
             github.com:443
             objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
             api.github.com:443
@@ -817,7 +827,7 @@ jobs:
       # selected no target with a bundle built nothing, and the suites run no bundle.
       - name: Install Built Actions
         if: ${{ needs.build.outputs.artifact-id != '' }}
-        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        uses: TimSchoenle/actions/actions/release/install-built-actions@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-release-install-built-actions-v1.1.1
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -899,6 +909,7 @@ jobs:
           allowed-endpoints: >
             github.com:443
             objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
             api.github.com:443
@@ -912,7 +923,7 @@ jobs:
       # selected no target with a bundle built nothing, and the suites run no bundle.
       - name: Install Built Actions
         if: ${{ needs.build.outputs.artifact-id != '' }}
-        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        uses: TimSchoenle/actions/actions/release/install-built-actions@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-release-install-built-actions-v1.1.1
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -990,6 +1001,7 @@ jobs:
           allowed-endpoints: >
             github.com:443
             objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             *.blob.core.windows.net:443
 
@@ -1002,7 +1014,7 @@ jobs:
       # selected no target with a bundle built nothing, and the suites run no bundle.
       - name: Install Built Actions
         if: ${{ needs.build.outputs.artifact-id != '' }}
-        uses: TimSchoenle/actions/actions/release/install-built-actions@7c1147cf1e275c068a8484fa9a2dcb38a8b1f92f # tag=actions-release-install-built-actions-v1.1.0
+        uses: TimSchoenle/actions/actions/release/install-built-actions@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-release-install-built-actions-v1.1.1
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}

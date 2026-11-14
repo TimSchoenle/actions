@@ -91,7 +91,7 @@ jobs:
 
       - name: Create Workflows Patch
         id: workflows-patch
-        uses: TimSchoenle/actions/actions/common/create-patch@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-common-create-patch-v2.0.2
+        uses: TimSchoenle/actions/actions/common/create-patch@e75e9ab1e1e9fa573051a901347e39ba23a45710 # tag=actions-common-create-patch-v2.1.0
         with:
           artifact_name: update-files-workflows
           paths: '.github/workflows/verify*.yaml .github/verify/plan.json .github/codecov.yml'
@@ -105,7 +105,7 @@ jobs:
       - name: Create Docs Patch
         id: docs-patch
         if: steps.workflows-patch.outputs.has_changes == 'false'
-        uses: TimSchoenle/actions/actions/common/create-patch@0701d3b35ad7e10e3159471c82f4743b67fdc01f # tag=actions-common-create-patch-v2.0.2
+        uses: TimSchoenle/actions/actions/common/create-patch@e75e9ab1e1e9fa573051a901347e39ba23a45710 # tag=actions-common-create-patch-v2.1.0
         with:
           artifact_name: update-files-docs
           paths: 'README.md SECURITY.md actions/*/*/README.md actions/*/*/examples/*.yaml actions/*/*/examples/*.yml'

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.1](https://github.com/TimSchoenle/actions/compare/src-actions-helm-update-chart-version-v1.8.0...src-actions-helm-update-chart-version-v1.8.1) (2026-11-13)
+
+
+### Dependencies
+
+* **deps:** update internal action pins ([#2296](https://github.com/TimSchoenle/actions/issues/2296)) ([824ced1](https://github.com/TimSchoenle/actions/commit/824ced17427f0b74d5b82dadca737f43732def82))
+* **deps:** update timschoenle/actions/actions/terrace/setup to vactions-terrace-setup-v4.0.1 ([#2304](https://github.com/TimSchoenle/actions/issues/2304)) ([39f9ffe](https://github.com/TimSchoenle/actions/commit/39f9ffee759c9fbcc1d9a42f4bb61b6929ed70c1))
+
 ## [1.8.0](https://github.com/TimSchoenle/actions/compare/src-actions-helm-update-chart-version-v1.7.6...src-actions-helm-update-chart-version-v1.8.0) (2026-11-12)
 
 

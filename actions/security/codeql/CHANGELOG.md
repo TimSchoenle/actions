@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.12](https://github.com/TimSchoenle/actions/compare/src-actions-security-codeql-v1.1.11...src-actions-security-codeql-v1.1.12) (2026-11-13)
+
+
+### Bug Fixes
+
+* stop the auto-rebase listing from timing out, and retry transient GitHub 5xx on reads ([#2310](https://github.com/TimSchoenle/actions/issues/2310)) ([be1dbca](https://github.com/TimSchoenle/actions/commit/be1dbcab18907c8eafd4243402a258ed8383fbe2))
+
 ## [1.1.11](https://github.com/TimSchoenle/actions/compare/src-actions-security-codeql-v1.1.10...src-actions-security-codeql-v1.1.11) (2026-11-12)
 
 
