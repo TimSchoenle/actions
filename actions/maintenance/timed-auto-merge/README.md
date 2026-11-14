@@ -12,9 +12,9 @@ Approve and enable auto-merge on aged pull requests whose head branch matches a 
 [actions-maintenance-timed-auto-merge-v3.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-timed-auto-merge-v3.0.1) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
-`time_elapsed` is a soak time: a pull request must have been opened at least that long ago, and its newest commit made
-at least that long ago. Renovate and release-please push new commits onto a pull request that is already open, and each
-such push starts the wait again. Every commit must be signed and authored only by `trusted_authors`, and the pull
+The pull requests must have been open for at least `time_elapsed`, measured from when they were opened. Later commits do
+not restart the wait: Renovate and release-please rebase their pull requests whenever the base branch moves, so a wait
+measured from the newest commit would never end on an active repository. Every commit must be signed and authored only by `trusted_authors`, and the pull
 request must have been opened by one of `pr_author_ids`, which defaults to `trusted_authors`. A pull request that is already mergeable, so GitHub refuses auto-merge for it, is merged directly
 instead. The action is meant for a scheduled job that lets release-please or Renovate pull requests merge themselves after a
 waiting period in which a human can still intervene.
@@ -22,7 +22,7 @@ waiting period in which a human can still intervene.
 <!-- docs:generated usage -->
 ## Usage
 
-### Merge release pull requests a day after their newest commit
+### Merge release pull requests after a day
 
 ```yaml
 name: Timed Auto-merge
@@ -33,7 +33,7 @@ on:
   workflow_dispatch:
     inputs:
       time_elapsed:
-        description: 'Soak time since the pull request was opened and since its newest commit (e.g. "24h", "2d").'
+        description: 'How long a pull request must have been open (e.g. "24h", "2d").'
         required: false
         default: '1d'
 
@@ -88,7 +88,7 @@ takes a commit to the workflow file.
 | `pattern_mode`    | no       | `legacy`                                                                                                    | How branch_pattern is read. "legacy": every "%" becomes ".*" and the pattern is anchored at the start of the branch name. "regex": a POSIX extended regular expression, unanchored. See Branch pattern below.                                                                                                                                                   |
 | `pr_author_ids`   | no       |                                                                                                             | Comma-separated list of GitHub user database IDs the pull request may be opened by. Empty uses trusted_authors.                                                                                                                                                                                                                                                 |
 | `base_branch`     | no       |                                                                                                             | Branch the pull request must target, e.g. "main". Empty accepts any base branch.                                                                                                                                                                                                                                                                                |
-| `time_elapsed`    | no       | `1d`                                                                                                        | Soak time: how long ago the pull request must have been opened and its newest commit made, as a whole number followed by s, m, h or d (e.g. "90m", "24h", "7d"). A new commit pushed onto an open pull request starts the wait again. Nothing else is accepted, including "1 day", "1d12h" or "01h".                                                            |
+| `time_elapsed`    | no       | `1d`                                                                                                        | How long a pull request must have been open, as a whole number followed by s, m, h or d (e.g. "90m", "24h", "7d"). Measured from when the pull request was opened; later commits do not restart the wait. Nothing else is accepted, including "1 day", "1d12h" or "01h".                                                                                        |
 | `minimum_age`     | no       | `1h`                                                                                                        | Lower bound for time_elapsed, in the same format. A time_elapsed below it fails the step, so a dispatch input cannot shorten the wait.                                                                                                                                                                                                                          |
 | `merge_method`    | no       | `squash`                                                                                                    | Merge method for auto-merge: merge, squash or rebase.                                                                                                                                                                                                                                                                                                           |
 | `repository`      | no       | `${{ github.repository }}`                                                                                  | Repository to process, in owner/repo format.                                                                                                                                                                                                                                                                                                                    |
@@ -148,7 +148,6 @@ are not mentioned anywhere. Each one that matches is processed in turn:
 | It was opened at least `time_elapsed` ago                       | skipped, `too-young`         |
 | Its commits were read at the head SHA from the listing          | skipped, `head-moved`        |
 | It has commits, and every commit passes verification            | skipped, `commits-unverified` |
-| Its newest commit was made at least `time_elapsed` ago          | skipped, `too-young`         |
 
 When every check passes, the pull request is approved with the review attached to that head SHA (`commit_id`), and
 auto-merge is enabled through the GraphQL `enablePullRequestAutoMerge` mutation with the same SHA as

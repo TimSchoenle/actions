@@ -9,10 +9,7 @@ import type { RepositoryCoordinates } from 'actions-util';
 export interface TimedAutoMergeRequest {
   repository: RepositoryCoordinates;
   matcher: BranchMatcher;
-  /**
-   * The soak time, in milliseconds: how long ago the pull request must have been opened and its
-   * newest commit made.
-   */
+  /** How long ago the pull request must have been opened, in milliseconds. */
   minimumOpenMs: number;
   trustedAuthorIds: readonly number[];
   /** Database IDs of the accounts a pull request may be opened by. */
@@ -108,9 +105,9 @@ function parseTimestamp(value: string, what: string): number {
  * Checks that need no further API call: the pull request is from this repository, opened by an
  * accepted account, into the expected base, ready for review and opened long enough ago.
  *
- * The age checked here is from creation only, which no later commit can make older. It keeps the
- * commit query off a pull request that is too young anyway; the head age is checked after the commits
- * are read.
+ * The age is measured from creation only, not from the newest commit. Renovate and release-please
+ * rebase their pull requests whenever the base branch moves, so a wait that restarted on every push
+ * would never end on an active repository.
  *
  * A fork is never eligible. Its branch name is chosen by whoever owns the fork, so the branch pattern
  * says nothing about it, and this action exists to merge branches that automation in the base
@@ -195,19 +192,6 @@ async function processOne(
     const reasons = verification.failures.map((failure) => `${failure.oid}: ${failure.reasons.join('; ')}`);
 
     return skipped(pullRequest, 'commits-unverified', reasons.join(' | '));
-  }
-
-  // Checked only once every commit is verified: the committer sets the date, so it is a trusted
-  // account's statement only then. A fresh head on an old pull request waits the full time again.
-  const newestMs = Math.max(...commits.map((commit) => parseTimestamp(commit.committedDate, 'commit date')));
-  const headAgeMs = request.nowMs - newestMs;
-
-  if (headAgeMs < request.minimumOpenMs) {
-    return skipped(
-      pullRequest,
-      'too-young',
-      `newest commit is ${formatAge(Math.max(headAgeMs, 0))} old, needs ${formatAge(request.minimumOpenMs)}`,
-    );
   }
 
   const merge = (await isQueued(api, pullRequest))

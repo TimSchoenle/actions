@@ -50,7 +50,7 @@ function readRequest(nowMs: number): { token: string; failOnError: boolean; requ
   core.info(`Repository: ${repository.owner}/${repository.repo}`);
   core.info(`Branch pattern (${patternMode}): ${quoteForLog(matcher.source)}`);
   core.info(`Base branch: ${baseBranch === '' ? 'any' : quoteForLog(baseBranch)}`);
-  core.info(`Soak time since opening and since the newest commit: ${minimumOpen.text}`);
+  core.info(`Open for at least: ${minimumOpen.text}`);
   core.info(`Merge method: ${mergeMethod}`);
   core.info(`Trusted authors: ${trustedAuthorIds.join(', ')}`);
   core.info(`Pull request authors: ${prAuthorIds.join(', ')}`);

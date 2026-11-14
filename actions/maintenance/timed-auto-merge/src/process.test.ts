@@ -233,9 +233,9 @@ describe('processPullRequests', () => {
     expect(outcomes).toEqual([expect.objectContaining({ detail: 'open for 0m, needs 24h', reason: 'too-young' })]);
   });
 
-  // Renovate and release-please push a fresh head onto an open pull request. The wait is a soak window
-  // for that head, so an old pull request with a new commit waits again.
-  it('skips an old pull request whose newest commit is younger than the minimum', async () => {
+  // Renovate and release-please rebase onto every base-branch change, so a fresh head must not
+  // restart the wait or the pull request would never merge.
+  it('approves an old pull request whose newest commit is younger than the minimum', async () => {
     const api = fakeApi([pullRequest()], {
       'https://github.com/owner/repo/pull/7': [
         commit(OLDER),
@@ -245,49 +245,8 @@ describe('processPullRequests', () => {
 
     const { outcomes } = await processPullRequests(api, request());
 
-    expect(outcomes).toEqual([
-      expect.objectContaining({ detail: 'newest commit is 5m old, needs 24h', reason: 'too-young', status: 'skipped' }),
-    ]);
-    expect(api.approve).not.toHaveBeenCalled();
-  });
-
-  it('measures from the newest commit whatever order the commits are listed in', async () => {
-    const api = fakeApi([pullRequest()], {
-      'https://github.com/owner/repo/pull/7': [
-        commit(OLDER, { committedDate: new Date(NOW - 60 * 60_000).toISOString() }),
-        commit(HEAD, { committedDate: new Date(NOW - 3 * DAY).toISOString() }),
-      ],
-    });
-
-    const { outcomes } = await processPullRequests(api, request());
-
-    expect(outcomes).toEqual([expect.objectContaining({ detail: 'newest commit is 60m old, needs 24h' })]);
-  });
-
-  it('approves when the newest commit is exactly the minimum age', async () => {
-    const api = fakeApi([pullRequest()], {
-      'https://github.com/owner/repo/pull/7': [
-        commit(OLDER),
-        commit(HEAD, { committedDate: new Date(NOW - DAY).toISOString() }),
-      ],
-    });
-
-    const { outcomes } = await processPullRequests(api, request());
-
     expect(outcomes[0].status).toBe('approved');
-  });
-
-  it('records an unreadable commit date as a failure, not as old enough', async () => {
-    const api = fakeApi([pullRequest()], {
-      'https://github.com/owner/repo/pull/7': [commit(HEAD, { committedDate: 'yesterday' })],
-    });
-
-    const { outcomes } = await processPullRequests(api, request());
-
-    expect(outcomes).toEqual([
-      expect.objectContaining({ message: expect.stringContaining('"yesterday"'), status: 'failed' }),
-    ]);
-    expect(api.approve).not.toHaveBeenCalled();
+    expect(api.approve).toHaveBeenCalledTimes(1);
   });
 
   it('skips a pull request opened by an account outside pr_author_ids, without fetching its commits', async () => {
