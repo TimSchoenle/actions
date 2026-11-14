@@ -1,5 +1,5 @@
 {
-  "description": "An action pinned by digest under a floating major tag such as # v4 is only ever moved to an exact release such as # v4.3.1; no update keeps the floating value. A floating tag moves upstream while the pinned digest stays, so a comment that keeps it goes stale, which jactionlint reports as a version comment that no longer matches the pin. The default preset's helpers:pinGitHubActionDigestsToSemver makes version updates write exact releases, and its rule disabling digest updates under a floating value stops a digest refresh from keeping # v4.",
+  "description": "An action pinned by digest under a floating major tag such as # v4 moves to an exact release such as # v4.3.1 on every version update. A floating tag moves upstream while the pinned digest stays, so a comment that keeps it goes stale, which jactionlint reports as a version comment that no longer matches the pin. helpers:pinGitHubActionDigestsToSemver in the default preset is what makes version updates write exact releases. Only version updates are asserted: the default preset also disables digest updates under a floating value, but Renovate applies update-level package rules and drops disabled updates after the extraction report this harness reads is written, so a disabled digest update that keeps # v4 still appears in it.",
   "presets": ["default"],
   "files": {
     ".github/workflows/ci.yaml": "ci.yaml"
@@ -9,7 +9,8 @@
       "manager": "github-actions",
       "depName": "actions/checkout",
       "minUpdates": 1,
-      "newValue": "^v\\d+\\.\\d+\\.\\d+$"
+      "newValue": "^v\\d+\\.\\d+\\.\\d+$",
+      "updateTypes": ["major", "minor", "patch"]
     }
   ]
 }
