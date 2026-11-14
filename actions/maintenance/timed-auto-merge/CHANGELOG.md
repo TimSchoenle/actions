@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.0](https://github.com/TimSchoenle/actions/compare/src-actions-maintenance-timed-auto-merge-v3.0.1...src-actions-maintenance-timed-auto-merge-v3.1.0) (2026-11-14)
+
+
+### Features
+
+* **timed-auto-merge:** soak from the opening again, or opt in to soak from the last change to the diff ([#2315](https://github.com/TimSchoenle/actions/issues/2315)) ([b2694e3](https://github.com/TimSchoenle/actions/commit/b2694e340b3ae14fd2704d76be4dc65749b61507))
+
 ## [3.0.1](https://github.com/TimSchoenle/actions/compare/src-actions-maintenance-timed-auto-merge-v3.0.0...src-actions-maintenance-timed-auto-merge-v3.0.1) (2026-11-13)
 
 
