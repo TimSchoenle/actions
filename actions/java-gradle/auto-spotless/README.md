@@ -9,7 +9,7 @@ outside the markers.
 
 Runs Gradle spotlessApply and uploads the changes as a patch artifact for common/commit-patch to commit from a separate job. Holds no token.
 
-[actions-java-gradle-auto-spotless-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v2.0.4) · Composite action
+[actions-java-gradle-auto-spotless-v2.0.5](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-auto-spotless-v2.0.5) · Composite action
 <!-- /docs:generated header -->
 
 The action runs `spotlessApply` in the caller's checkout and uploads what it changed as a
@@ -56,7 +56,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - id: spotless
-        uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-java-gradle-auto-spotless-v2.0.4
+        uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@actions-java-gradle-auto-spotless-v2.0.5 # tag=actions-java-gradle-auto-spotless-v2.0.5
         with:
           java_version: '21'
           artifact_name: auto-spotless
@@ -86,7 +86,7 @@ jobs:
           permission-pull-requests: write # only for the comment below
 
       - id: commit
-        uses: TimSchoenle/actions/actions/common/commit-patch@e75e9ab1e1e9fa573051a901347e39ba23a45710 # tag=actions-common-commit-patch-v3.1.0
+        uses: TimSchoenle/actions/actions/common/commit-patch@actions-common-commit-patch-v3.1.1 # tag=actions-common-commit-patch-v3.1.1
         with:
           token: ${{ steps.token.outputs.token }}
           artifact_name: auto-spotless
@@ -95,7 +95,7 @@ jobs:
 
       # Optional. v1 posted this comment itself.
       - if: steps.commit.outputs.changes_committed == 'true'
-        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-common-upsert-pr-comment-v3.0.0
+        uses: TimSchoenle/actions/actions/common/upsert-pr-comment@actions-common-upsert-pr-comment-v3.0.1 # tag=actions-common-upsert-pr-comment-v3.0.1
         with:
           token: ${{ steps.token.outputs.token }}
           identifier: 'java-gradle-auto-spotless'

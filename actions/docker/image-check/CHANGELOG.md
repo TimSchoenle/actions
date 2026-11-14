@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.17](https://github.com/TimSchoenle/actions/compare/src-actions-docker-image-check-v1.1.16...src-actions-docker-image-check-v1.1.17) (2026-11-13)
+
+
+### Bug Fixes
+
+* stop the auto-rebase listing from timing out, and retry transient GitHub 5xx on reads ([#2310](https://github.com/TimSchoenle/actions/issues/2310)) ([be1dbca](https://github.com/TimSchoenle/actions/commit/be1dbcab18907c8eafd4243402a258ed8383fbe2))
+
 ## [1.1.16](https://github.com/TimSchoenle/actions/compare/src-actions-docker-image-check-v1.1.15...src-actions-docker-image-check-v1.1.16) (2026-11-12)
 
 

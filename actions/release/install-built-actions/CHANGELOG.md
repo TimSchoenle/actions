@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.2](https://github.com/TimSchoenle/actions/compare/src-actions-release-install-built-actions-v1.1.1...src-actions-release-install-built-actions-v1.1.2) (2026-11-13)
+
+
+### Bug Fixes
+
+* stop the auto-rebase listing from timing out, and retry transient GitHub 5xx on reads ([#2310](https://github.com/TimSchoenle/actions/issues/2310)) ([be1dbca](https://github.com/TimSchoenle/actions/commit/be1dbcab18907c8eafd4243402a258ed8383fbe2))
+* **verify:** let Renovate move internal pins in the Verify sources ([#2293](https://github.com/TimSchoenle/actions/issues/2293)) ([f5456dc](https://github.com/TimSchoenle/actions/commit/f5456dcde1d750d41f64eb3642c2a77518eac70e))
+
 ## [1.1.1](https://github.com/TimSchoenle/actions/compare/src-actions-release-install-built-actions-v1.1.0...src-actions-release-install-built-actions-v1.1.1) (2026-11-12)
 
 

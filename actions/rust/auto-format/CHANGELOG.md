@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.5](https://github.com/TimSchoenle/actions/compare/src-actions-rust-auto-format-v2.0.4...src-actions-rust-auto-format-v2.0.5) (2026-11-13)
+
+
+### Dependencies
+
+* **deps:** update internal action pins ([#2296](https://github.com/TimSchoenle/actions/issues/2296)) ([824ced1](https://github.com/TimSchoenle/actions/commit/824ced17427f0b74d5b82dadca737f43732def82))
+
 ## [2.0.4](https://github.com/TimSchoenle/actions/compare/src-actions-rust-auto-format-v2.0.3...src-actions-rust-auto-format-v2.0.4) (2026-11-12)
 
 
