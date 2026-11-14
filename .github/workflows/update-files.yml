@@ -63,7 +63,7 @@ jobs:
       # earlier commit, the bundles of each build commit among them. The Verify and Codecov generators
       # read the working tree alone.
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0

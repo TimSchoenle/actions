@@ -37,7 +37,7 @@ jobs:
           egress-policy: audit
 
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -135,7 +135,7 @@ jobs:
       # to be present. It is only read: no step below runs anything from it, and the uploads pass
       # `plugins: noop`, which stops the CLI from running gcov, xcode or coverage.py over it.
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
