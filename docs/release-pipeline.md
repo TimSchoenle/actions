@@ -83,7 +83,7 @@ the workflow queue behind each other and are never cancelled.
   artifact with a manifest listing every bundle's SHA-256.
 - **attest** fails when the two manifests differ, verifies the build job's artifact against its
   manifest hash and archive digest with [`release/install-built-actions`](../actions/release/install-built-actions),
-  and signs SLSA build provenance for every bundle with `actions/attest-build-provenance`.
+  and signs SLSA build provenance for every bundle with `actions/attest`.
 - **publish** plans again (so its notes files exist in its job) and runs
   [`release/publish-build-commit`](../actions/release/publish-build-commit), which creates `B`, moves
   `releases`, creates the consumer and source tags, publishes one Release per consumer tag with
