@@ -174,7 +174,7 @@ jobs:
           artifact-ids: ${{ needs.build.outputs.artifact-id }}
           path: ${{ runner.temp }}/attest
           digest-mismatch: error
-      - uses: actions/attest-build-provenance@<sha> # v4
+      - uses: actions/attest@<sha> # v4
         with:
           subject-checksums: ${{ runner.temp }}/attest/bundles.sha256
 
