@@ -9,7 +9,10 @@
     "github>TimSchoenle/actions//configs/renovate/ci-automerge"
   ],
   "dependencyDashboardApproval": false,
-  "dependencyDashboard": true,
+  "dependencyDashboard": {
+    "enabled": true,
+    "osvVulnerabilitySummary": "all"
+  },
   "semanticCommits": "enabled",
   "semanticCommitType": "deps",
   "labels": ["dependencies"],
@@ -41,7 +44,6 @@
     "schedule": ["before 4am on monday"],
     "automerge": true
   },
-  "dependencyDashboardOSVVulnerabilitySummary": "all",
   "osvVulnerabilityAlerts": true,
   "commitHourlyLimit": 0,
   "prHourlyLimit": 2,
