@@ -126,7 +126,7 @@ runs:
     # With nothing pending, the empty patch for the head is written without a checkout.
     - name: Upload The Merged Patch
       id: merged
-      uses: TimSchoenle/actions/actions/common/create-patch@e75e9ab1e1e9fa573051a901347e39ba23a45710 # tag=actions-common-create-patch-v2.1.0
+      uses: TimSchoenle/actions/actions/common/create-patch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-create-patch-v2.1.1
       with:
         artifact_name: ${{ inputs.artifact_name }}
         empty_base_sha: ${{ steps.evaluate.outputs.has_pending != 'true' && (github.event.pull_request.head.sha || github.sha) || '' }}
@@ -137,7 +137,7 @@ runs:
     # head. It is written without reading the workspace, which may hold a partly applied merge.
     - name: Upload An Empty Patch After A Failure
       if: failure() && steps.merged.conclusion != 'success'
-      uses: TimSchoenle/actions/actions/common/create-patch@e75e9ab1e1e9fa573051a901347e39ba23a45710 # tag=actions-common-create-patch-v2.1.0
+      uses: TimSchoenle/actions/actions/common/create-patch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-create-patch-v2.1.1
       with:
         artifact_name: ${{ inputs.artifact_name }}
         empty_base_sha: ${{ github.event.pull_request.head.sha || github.sha }}
