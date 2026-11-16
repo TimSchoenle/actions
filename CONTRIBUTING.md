@@ -113,6 +113,15 @@ as a warning on each consumer's Dependency Dashboard. The `Verify Config Renovat
 change before it lands, with the Renovate release pinned in
 [`.github/tools/renovate`](.github/tools/renovate/package.json):
 
+That pin must never be newer than the release the Mend-hosted Renovate app runs the presets with.
+The validator runs with `--strict`, so a newer one demands migrations the hosted app cannot read
+yet: when Renovate 44.232.0 moved `dependencyDashboard` into an object, the hosted app on 44.228.0
+read the migrated preset as "no dashboard" and closed the Dependency Dashboard here and in every
+consumer. A `renovate.json` rule caps the pin with `allowedVersions`. The hosted release is the
+`updatedInVer` in the base64 `renovate-debug` comment at the end of any pull request Renovate opens;
+raise the cap to it when it moves, and Renovate moves the pin. A test in
+`scripts/__tests__/check-renovate-configs.test.ts` fails a pin above the cap.
+
 ```bash
 bun install --frozen-lockfile --cwd .github/tools/renovate
 bun run check-renovate-configs                       # renovate-config-validator --strict

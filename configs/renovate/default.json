@@ -9,10 +9,8 @@
     "github>TimSchoenle/actions//configs/renovate/ci-automerge"
   ],
   "dependencyDashboardApproval": false,
-  "dependencyDashboard": {
-    "enabled": true,
-    "osvVulnerabilitySummary": "all"
-  },
+  "dependencyDashboard": true,
+  "dependencyDashboardOSVVulnerabilitySummary": "all",
   "semanticCommits": "enabled",
   "semanticCommitType": "deps",
   "labels": ["dependencies"],
