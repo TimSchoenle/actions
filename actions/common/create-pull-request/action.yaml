@@ -180,7 +180,7 @@ runs:
     - name: Create Branch
       id: branch
       if: steps.local.outputs.proceed == 'true' && (steps.local.outputs.commit != 'true' || steps.local.outputs.has_changes == 'true')
-      uses: TimSchoenle/actions/actions/common/create-branch@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-common-create-branch-v2.0.5
+      uses: TimSchoenle/actions/actions/common/create-branch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-create-branch-v2.0.6
       with:
         token: ${{ steps.generate_token.outputs.token }}
         repository: ${{ inputs.repository }}
@@ -210,7 +210,7 @@ runs:
     - name: Commit Changes
       if: steps.local.outputs.has_changes == 'true'
       id: commit
-      uses: TimSchoenle/actions/actions/common/commit-changes@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-common-commit-changes-v3.1.0
+      uses: TimSchoenle/actions/actions/common/commit-changes@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-commit-changes-v3.1.1
       with:
         token: ${{ steps.generate_token.outputs.token }}
         repository: ${{ inputs.repository }}
@@ -256,7 +256,7 @@ runs:
 
     - name: Delete The Temporary Branch
       if: always() && steps.local.outputs.temporary != '' && steps.branch.outcome != 'skipped' && steps.generate_token.outcome == 'success'
-      uses: TimSchoenle/actions/actions/common/delete-branch@1eb4e7b5a5b5cf51d4a387c8b37dd6592d8d188a # tag=actions-common-delete-branch-v2.0.6
+      uses: TimSchoenle/actions/actions/common/delete-branch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-delete-branch-v2.0.7
       with:
         token: ${{ steps.generate_token.outputs.token }}
         repository: ${{ inputs.repository }}
