@@ -42,6 +42,39 @@ describe('configFiles', () => {
   });
 });
 
+describe('pinned Renovate', () => {
+  const readJson = (file: string): unknown => JSON.parse(fs.readFileSync(path.join(ROOT_DIR, file), 'utf8'));
+
+  const parseVersion = (version: string): number[] => {
+    expect(version).toMatch(/^\d+\.\d+\.\d+$/);
+    return version.split('.').map(Number);
+  };
+
+  const compareVersions = (a: number[], b: number[]): number =>
+    a.reduce((order, part, index) => order || part - b[index], 0);
+
+  it('never runs ahead of the cap that tracks the Mend-hosted release', () => {
+    const tool = readJson('.github/tools/renovate/package.json') as { devDependencies: Record<string, string> };
+    const config = readJson('renovate.json') as {
+      packageRules: { matchFileNames?: string[]; matchPackageNames?: string[]; allowedVersions?: string }[];
+    };
+
+    const caps = config.packageRules.filter(
+      (rule) =>
+        rule.matchFileNames?.includes('.github/tools/renovate/package.json') &&
+        rule.matchPackageNames?.includes('renovate') &&
+        rule.allowedVersions !== undefined,
+    );
+    expect(caps).toHaveLength(1);
+
+    const cap = /^<=(\d+\.\d+\.\d+)$/.exec(caps[0].allowedVersions ?? '');
+    expect(cap, 'allowedVersions must be an inclusive cap of the form <=x.y.z').not.toBeNull();
+
+    const pin = parseVersion(tool.devDependencies.renovate);
+    expect(compareVersions(pin, parseVersion(cap?.[1] ?? ''))).toBeLessThanOrEqual(0);
+  });
+});
+
 describe('main', () => {
   it('runs the validator strictly, as repository config, over every file', async () => {
     const run = vi.fn<CommandRunner>().mockResolvedValue({ exitCode: 0, output: '' });

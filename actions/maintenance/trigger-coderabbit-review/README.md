@@ -9,7 +9,7 @@ outside the markers.
 
 Posts a CodeRabbit review command on a pull request as a user account, for repositories CodeRabbit no longer reviews automatically. Skips drafts, closed pull requests, forks and bot authors, and refuses a token that is not a user token.
 
-[actions-maintenance-trigger-coderabbit-review-v2.0.3](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-trigger-coderabbit-review-v2.0.3) · JavaScript action (node24)
+[actions-maintenance-trigger-coderabbit-review-v2.0.4](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-trigger-coderabbit-review-v2.0.4) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 CodeRabbit does not review public repositories with fewer than 10 stars on its own. On every pull request it posts
@@ -65,7 +65,7 @@ jobs:
       deployment: false
     permissions: {}
     steps:
-      - uses: TimSchoenle/actions/actions/maintenance/trigger-coderabbit-review@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-maintenance-trigger-coderabbit-review-v2.0.3
+      - uses: TimSchoenle/actions/actions/maintenance/trigger-coderabbit-review@actions-maintenance-trigger-coderabbit-review-v2.0.4 # tag=actions-maintenance-trigger-coderabbit-review-v2.0.4
         with:
           token: ${{ secrets.CODERABBIT_TRIGGER_TOKEN }}
 ```
@@ -110,7 +110,7 @@ jobs:
       deployment: false
     permissions: {}
     steps:
-      - uses: TimSchoenle/actions/actions/maintenance/trigger-coderabbit-review@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-maintenance-trigger-coderabbit-review-v2.0.3
+      - uses: TimSchoenle/actions/actions/maintenance/trigger-coderabbit-review@actions-maintenance-trigger-coderabbit-review-v2.0.4 # tag=actions-maintenance-trigger-coderabbit-review-v2.0.4
         with:
           token: ${{ secrets.CODERABBIT_TRIGGER_TOKEN }}
 ```

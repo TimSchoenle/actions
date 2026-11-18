@@ -1,3 +1,4 @@
+import { toSafeId } from 'actions-util';
 import { createOctokit } from 'actions-util/client';
 
 import type { CheckRun, CheckRunsApi } from './checks.js';
@@ -47,7 +48,7 @@ export function createCheckRunsApi(token: string): CheckRunsApi {
           appId: checkRun.app?.id ?? null,
           conclusion: checkRun.conclusion,
           detailsUrl: checkRun.details_url,
-          id: checkRun.id,
+          id: toSafeId(checkRun.id),
           name: checkRun.name,
           status: checkRun.status,
           suiteId: checkRun.check_suite?.id ?? null,

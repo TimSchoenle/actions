@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 
-import { errorMessage, hasStatus, parseRepository, resolveOptional } from 'actions-util';
+import { errorMessage, hasStatus, parseRepository, resolveOptional, toSafeId } from 'actions-util';
 import { createOctokit } from 'actions-util/client';
 import { readAfterWrite } from 'actions-util/read-after-write';
 
@@ -216,12 +216,12 @@ export class ScratchRepo {
     if (slug !== undefined && slug !== '') {
       const { data } = await octokit.rest.users.getByUsername({ username: `${slug}[bot]` });
 
-      return data.id;
+      return toSafeId(data.id);
     }
 
     const { data } = await octokit.rest.users.getAuthenticated();
 
-    return data.id;
+    return toSafeId(data.id);
   }
 
   /** Reserves a branch name for a case and schedules it for teardown. */
@@ -733,7 +733,11 @@ export class ScratchRepo {
       per_page: MAX_PAGE_SIZE,
     });
 
-    return data.map((comment) => ({ id: comment.id, body: comment.body ?? '', author: comment.user?.login ?? '' }));
+    return data.map((comment) => ({
+      id: toSafeId(comment.id),
+      body: comment.body ?? '',
+      author: comment.user?.login ?? '',
+    }));
   }
 
   /**
@@ -750,7 +754,7 @@ export class ScratchRepo {
       body,
     });
 
-    return data.id;
+    return toSafeId(data.id);
   }
 
   /** Deletes a comment, for the case where an action has to cope with the one it wrote being gone. */
@@ -774,7 +778,7 @@ export class ScratchRepo {
       ...(conclusion === undefined ? {} : { conclusion }),
     });
 
-    return data.id;
+    return toSafeId(data.id);
   }
 
   /** Closes every tracked pull request, describing the ones that would not close. */

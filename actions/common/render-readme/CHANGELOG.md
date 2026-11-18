@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.4](https://github.com/TimSchoenle/actions/compare/src-actions-common-render-readme-v1.1.3...src-actions-common-render-readme-v1.1.4) (2026-11-18)
+
+
+### Dependencies
+
+* **deps:** update internal action pins ([#2323](https://github.com/TimSchoenle/actions/issues/2323)) ([0ea3603](https://github.com/TimSchoenle/actions/commit/0ea36037ebd58eea970a0a70786498717a2824f6))
+
 ## [1.1.3](https://github.com/TimSchoenle/actions/compare/src-actions-common-render-readme-v1.1.2...src-actions-common-render-readme-v1.1.3) (2026-11-13)
 
 

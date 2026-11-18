@@ -1,3 +1,4 @@
+import { toSafeId } from 'actions-util';
 import { createOctokit } from 'actions-util/client';
 import { fetchPullRequestCommits } from 'actions-util/commits';
 
@@ -66,7 +67,7 @@ export function createAutoApproveApi(token: string): AutoApproveApi {
       }
 
       return {
-        authorId: data.user.id,
+        authorId: toSafeId(data.user.id),
         baseRepoFullName,
         changedFiles: data.changed_files,
         headRef: data.head.ref,

@@ -1,4 +1,4 @@
-import { hasStatus } from 'actions-util';
+import { hasStatus, toSafeId } from 'actions-util';
 import { createOctokit } from 'actions-util/client';
 
 import type { ActivityComment, ActivityReview, ReviewActivity } from './activity.js';
@@ -197,7 +197,7 @@ export function createTriggerApi(token: string): TriggerApi {
     async postComment({ number, owner, repo }: PullRequestCoordinates, body: string): Promise<PostedComment> {
       const { data } = await octokit.rest.issues.createComment({ body, issue_number: number, owner, repo });
 
-      return { id: data.id, url: data.html_url };
+      return { id: toSafeId(data.id), url: data.html_url };
     },
   };
 }

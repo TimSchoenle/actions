@@ -204,7 +204,7 @@ describe('release workflow', () => {
   it('attests the artifact the build job verified, selected by ID', () => {
     const verify = stepUsing(jobs.attest, 'release/install-built-actions').with;
     const download = stepsOf(jobs.attest).find((step) => step.uses?.startsWith('actions/download-artifact@'));
-    const attest = stepsOf(jobs.attest).find((step) => step.uses?.startsWith('actions/attest-build-provenance@'));
+    const attest = stepsOf(jobs.attest).find((step) => step.uses?.startsWith('actions/attest@'));
 
     expect(verify?.['artifact-id']).toBe('${{ needs.build.outputs.artifact-id }}');
     expect(verify?.['expected-manifest-sha256']).toBe('${{ needs.build.outputs.manifest-sha256 }}');
@@ -215,6 +215,8 @@ describe('release workflow', () => {
     });
     expect(download?.with?.name).toBeUndefined();
     expect(attest?.with?.['subject-checksums']).toBe(`${download?.with?.path}/bundles.sha256`);
+    // actions/attest signs SLSA build provenance only while no SBOM or custom predicate input is set.
+    expect(Object.keys(attest?.with ?? {})).toEqual(['subject-checksums']);
     expect(jobs.attest.permissions).toEqual({
       actions: 'read',
       attestations: 'write',

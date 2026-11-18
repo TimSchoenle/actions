@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.13](https://github.com/TimSchoenle/actions/compare/src-actions-security-codeql-v1.1.12...src-actions-security-codeql-v1.1.13) (2026-11-18)
+
+
+### Bug Fixes
+
+* **deps:** narrow Octokit's bigint ids for the octokit major ([#2333](https://github.com/TimSchoenle/actions/issues/2333)) ([d7e7357](https://github.com/TimSchoenle/actions/commit/d7e73571086d85cbbf640a210e62ca4e52aecaa2))
+
 ## [1.1.12](https://github.com/TimSchoenle/actions/compare/src-actions-security-codeql-v1.1.11...src-actions-security-codeql-v1.1.12) (2026-11-13)
 
 

@@ -1,4 +1,4 @@
-import { hasStatus } from 'actions-util';
+import { hasStatus, toSafeId } from 'actions-util';
 import { createOctokit } from 'actions-util/client';
 
 import type { RepositoryCoordinates } from 'actions-util';
@@ -102,7 +102,7 @@ export function createReleaseStateApi(token: string, repository: RepositoryCoord
       });
 
       return pulls.map((pull) => ({
-        authorId: pull.user?.id,
+        authorId: pull.user ? toSafeId(pull.user.id) : undefined,
         baseRef: pull.base.ref,
         labels: pull.labels.map((label) => label.name),
         mergeCommitSha: pull.merge_commit_sha,
