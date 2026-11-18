@@ -1,5 +1,5 @@
 import { createOctokit } from './github-client.js';
-import { resolveOptional } from './github.js';
+import { resolveOptional, toSafeId } from './github.js';
 
 import type { AppUserApi } from './identity.js';
 
@@ -21,7 +21,7 @@ export function createAppUserApi(token: string): AppUserApi {
     async getUserId(username: string): Promise<number | undefined> {
       const response = await resolveOptional(octokit.rest.users.getByUsername({ username }));
 
-      return response?.data.id;
+      return response === undefined ? undefined : toSafeId(response.data.id);
     },
   };
 }

@@ -1,3 +1,4 @@
+import { toSafeId } from 'actions-util';
 import { createOctokit } from 'actions-util/client';
 import { fetchPullRequestCommits } from 'actions-util/commits';
 
@@ -188,13 +189,13 @@ interface PullRequestListItem {
   draft?: boolean;
   head: { ref: string; sha: string; repo: { full_name: string } | null };
   base: { ref: string; sha: string; repo: { full_name: string } };
-  user: { id: number } | null;
+  user: { id: number | bigint } | null;
   auto_merge?: unknown;
 }
 
 function toOpenPullRequest(item: PullRequestListItem): OpenPullRequest {
   return {
-    authorId: item.user?.id ?? null,
+    authorId: item.user ? toSafeId(item.user.id) : null,
     baseRef: item.base.ref,
     baseSha: item.base.sha,
     baseRepoFullName: item.base.repo.full_name,

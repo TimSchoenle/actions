@@ -70,3 +70,21 @@ export async function resolveOptional<T>(request: Promise<T>): Promise<T | undef
     throw error;
   }
 }
+
+/**
+ * Narrows a GitHub resource id, which Octokit types as `number | bigint`, to a `number`.
+ *
+ * Octokit widened ids to `bigint` for the day an id outgrows `Number.MAX_SAFE_INTEGER`. Every id
+ * this repository reads is still far below it, and the records it builds keep `number` so they
+ * stay JSON-serialisable. An id past the safe range throws rather than silently losing precision
+ * and addressing a different resource.
+ */
+export function toSafeId(id: number | bigint): number {
+  const value = typeof id === 'bigint' ? Number(id) : id;
+
+  if (!Number.isSafeInteger(value) || (typeof id === 'bigint' && BigInt(value) !== id)) {
+    throw new RangeError(`GitHub id ${String(id)} is outside the safe integer range.`);
+  }
+
+  return value;
+}
