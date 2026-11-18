@@ -216,6 +216,12 @@
       "enabled": false
     },
     {
+      "description": "The Node the Verify harness jobs set up is generated from scripts/lib/verify/jobs.ts and must match the major the action bundles target (runs.using: node24): the harness refuses any other major. Renovate would bump only the generated copy in .github/workflows/verify.yaml, which the Verify drift check then rejects, so the harness Node is moved by hand in the generator together with the bundles' runtime.",
+      "matchFileNames": [".github/workflows/verify.yaml"],
+      "matchDepNames": ["node"],
+      "enabled": false
+    },
+    {
       "description": "The Renovate that validates and dry-runs the presets in Verify Config Renovate must be the release the Mend-hosted app runs them with, never newer. The validator runs with --strict, which fails a config that only validates after migration, so a newer validator forces a migration that the hosted app does not understand yet: Renovate 44.232.0 moved dependencyDashboard into an object, the hosted app on 44.228.0 read the object as not true and closed the Dependency Dashboard of this repository and of every consumer. The hosted version is the updatedInVer in the base64 renovate-debug comment at the end of any pull request Renovate opens; raise this cap to it when it moves, and Renovate moves the pin up to the cap.",
       "matchFileNames": [".github/tools/renovate/package.json"],
       "matchPackageNames": ["renovate"],
