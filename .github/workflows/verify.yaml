@@ -250,7 +250,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24'
+          node-version: '26'
 
       # Restored, never installed, and never saved. `fail-on-cache-miss` is what keeps that honest:
       # without it a miss would leave the suites to fail later on a missing import.
@@ -348,7 +348,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24'
+          node-version: '26'
 
       # Restored, never installed, and never saved. `fail-on-cache-miss` is what keeps that honest:
       # without it a miss would leave the suites to fail later on a missing import.
@@ -444,7 +444,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24'
+          node-version: '26'
 
       # Restored, never installed, and never saved. `fail-on-cache-miss` is what keeps that honest:
       # without it a miss would leave the suites to fail later on a missing import.
@@ -542,7 +542,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24'
+          node-version: '26'
 
       # Restored, never installed, and never saved. `fail-on-cache-miss` is what keeps that honest:
       # without it a miss would leave the suites to fail later on a missing import.
@@ -639,7 +639,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24'
+          node-version: '26'
 
       # Restored, never installed, and never saved. `fail-on-cache-miss` is what keeps that honest:
       # without it a miss would leave the suites to fail later on a missing import.
@@ -736,7 +736,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24'
+          node-version: '26'
 
       # Restored, never installed, and never saved. `fail-on-cache-miss` is what keeps that honest:
       # without it a miss would leave the suites to fail later on a missing import.
@@ -845,7 +845,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24'
+          node-version: '26'
 
       # Restored, never installed, and never saved. `fail-on-cache-miss` is what keeps that honest:
       # without it a miss would leave the suites to fail later on a missing import.
@@ -941,7 +941,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24'
+          node-version: '26'
 
       # Restored, never installed, and never saved. `fail-on-cache-miss` is what keeps that honest:
       # without it a miss would leave the suites to fail later on a missing import.
@@ -1032,7 +1032,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24'
+          node-version: '26'
 
       # Restored, never installed, and never saved. `fail-on-cache-miss` is what keeps that honest:
       # without it a miss would leave the suites to fail later on a missing import.
