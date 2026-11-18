@@ -9,7 +9,7 @@ outside the markers.
 
 Setup Java and Gradle environment for building, with opinionated default settings
 
-[actions-java-gradle-setup-base-environment-v1.2.15](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.15) · Composite action
+[actions-java-gradle-setup-base-environment-v1.2.16](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-setup-base-environment-v1.2.16) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -24,7 +24,7 @@ Setup Java and Gradle environment for building, with opinionated default setting
   with:
     persist-credentials: false
 
-- uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@dc5b395636dc1954383f11af4062a08814e9b15a # tag=actions-java-gradle-setup-base-environment-v1.2.15
+- uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@actions-java-gradle-setup-base-environment-v1.2.16 # tag=actions-java-gradle-setup-base-environment-v1.2.16
   with:
     java_version: '21'
 

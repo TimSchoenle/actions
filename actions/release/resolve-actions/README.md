@@ -9,7 +9,7 @@ outside the markers.
 
 Resolves which actions of a checkout have to be built for a set of actions or workflows to run, or which a set of changed files affects: the build directories, the bundle paths and the source paths to filter triggers on.
 
-[actions-release-resolve-actions-v1.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-release-resolve-actions-v1.1.2) · JavaScript action (node24)
+[actions-release-resolve-actions-v1.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-release-resolve-actions-v1.1.3) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 A JavaScript action ships a bundle, and a composite action can run another action's bundle without naming it in a
@@ -62,7 +62,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - id: resolve
-        uses: TimSchoenle/actions/actions/release/resolve-actions@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-release-resolve-actions-v1.1.2
+        uses: TimSchoenle/actions/actions/release/resolve-actions@actions-release-resolve-actions-v1.1.3 # tag=actions-release-resolve-actions-v1.1.3
         with:
           mode: affected
           changed-files: ${{ steps.changed.outputs.files }}
@@ -79,7 +79,7 @@ jobs:
         with:
           persist-credentials: false
       # set up the toolchain and install dependencies here
-      - uses: TimSchoenle/actions/actions/release/build-actions@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-release-build-actions-v1.1.2
+      - uses: TimSchoenle/actions/actions/release/build-actions@actions-release-build-actions-v1.1.3 # tag=actions-release-build-actions-v1.1.3
         with:
           build-dirs: ${{ needs.resolve.outputs.build-dirs }}
           build-command: npm run build
