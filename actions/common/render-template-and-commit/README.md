@@ -9,7 +9,7 @@ outside the markers.
 
 Renders a Handlebars template to a file and commits the result as a verified bot commit, skipping the commit when the render changed nothing.
 
-[actions-common-render-template-and-commit-v1.1.23](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-and-commit-v1.1.23) · Composite action
+[actions-common-render-template-and-commit-v1.1.24](https://github.com/TimSchoenle/actions/releases/tag/actions-common-render-template-and-commit-v1.1.24) · Composite action
 <!-- /docs:generated header -->
 
 Regenerating a checked-in file always needs the same two steps, render and commit. This action is that pairing in
@@ -40,7 +40,7 @@ over unchanged inputs makes no commit and no API call.
     private-key: ${{ secrets.BOT_PRIVATE_KEY }}
     permission-contents: write
 
-- uses: TimSchoenle/actions/actions/common/render-template-and-commit@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-render-template-and-commit-v1.1.23
+- uses: TimSchoenle/actions/actions/common/render-template-and-commit@actions-common-render-template-and-commit-v1.1.24 # tag=actions-common-render-template-and-commit-v1.1.24
   id: docs
   with:
     template: docs/README.hbs

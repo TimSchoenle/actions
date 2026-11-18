@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.2](https://github.com/TimSchoenle/actions/compare/src-actions-helm-update-chart-version-v1.8.1...src-actions-helm-update-chart-version-v1.8.2) (2026-11-18)
+
+
+### Dependencies
+
+* **deps:** update internal action pins ([#2323](https://github.com/TimSchoenle/actions/issues/2323)) ([0ea3603](https://github.com/TimSchoenle/actions/commit/0ea36037ebd58eea970a0a70786498717a2824f6))
+
 ## [1.8.1](https://github.com/TimSchoenle/actions/compare/src-actions-helm-update-chart-version-v1.8.0...src-actions-helm-update-chart-version-v1.8.1) (2026-11-13)
 
 
