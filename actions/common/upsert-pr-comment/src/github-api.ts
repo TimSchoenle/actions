@@ -1,4 +1,4 @@
-import { hasStatus } from 'actions-util';
+import { hasStatus, toSafeId } from 'actions-util';
 import { createOctokit } from 'actions-util/client';
 
 import { CommentUnavailableError } from './comment-api.js';
@@ -55,7 +55,7 @@ export function createCommentApi(token: string): CommentApi {
           yield {
             author: comment.user?.login ?? '',
             body: comment.body ?? '',
-            id: comment.id,
+            id: toSafeId(comment.id),
             postedByApp: comment.user?.type === 'Bot' || Boolean(comment.performed_via_github_app),
             url: comment.html_url,
           };
@@ -66,14 +66,14 @@ export function createCommentApi(token: string): CommentApi {
     async createComment({ number, owner, repo }: PullRequestCoordinates, body: string): Promise<CommentRef> {
       const { data } = await octokit.rest.issues.createComment({ body, issue_number: number, owner, repo });
 
-      return { id: data.id, url: data.html_url };
+      return { id: toSafeId(data.id), url: data.html_url };
     },
 
     async updateComment({ owner, repo }: PullRequestCoordinates, commentId: number, body: string): Promise<CommentRef> {
       try {
         const { data } = await octokit.rest.issues.updateComment({ body, comment_id: commentId, owner, repo });
 
-        return { id: data.id, url: data.html_url };
+        return { id: toSafeId(data.id), url: data.html_url };
       } catch (error) {
         if (!isUnavailable(error)) {
           throw error;
