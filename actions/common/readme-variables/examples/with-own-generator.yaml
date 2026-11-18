@@ -9,6 +9,6 @@
 
 - name: Collect the README payload
   id: variables
-  uses: TimSchoenle/actions/actions/common/readme-variables@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-readme-variables-v2.1.6
+  uses: TimSchoenle/actions/actions/common/readme-variables@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-readme-variables-v2.1.7
   with:
     extra: ${{ steps.config.outputs.json }}

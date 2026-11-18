@@ -47,7 +47,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: TimSchoenle/actions/actions/terrace/helm-sync@actions-terrace-helm-sync-v1.1.5 # tag=actions-terrace-helm-sync-v1.1.5
+      - uses: TimSchoenle/actions/actions/terrace/helm-sync@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-terrace-helm-sync-v1.1.5
         with:
           token: ${{ steps.token.outputs.token }}
           file_pattern: charts
@@ -59,7 +59,7 @@ jobs:
 # Only the value schemas and README references are rewritten from the contracts already vendored,
 # and with no token nothing is committed: a later step decides what to do with changed.
 - id: sync
-  uses: TimSchoenle/actions/actions/terrace/helm-sync@actions-terrace-helm-sync-v1.1.5 # tag=actions-terrace-helm-sync-v1.1.5
+  uses: TimSchoenle/actions/actions/terrace/helm-sync@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-terrace-helm-sync-v1.1.5
   with:
     pull: 'false'
 

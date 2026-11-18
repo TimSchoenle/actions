@@ -42,7 +42,7 @@ jobs:
         with:
           persist-credentials: false
       # Before any step that runs a local action with a bundle.
-      - uses: TimSchoenle/actions/actions/release/install-built-actions@actions-release-install-built-actions-v1.1.3 # tag=actions-release-install-built-actions-v1.1.3
+      - uses: TimSchoenle/actions/actions/release/install-built-actions@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-release-install-built-actions-v1.1.3
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -77,7 +77,7 @@ jobs:
         with:
           path: tmp/actions-code
           persist-credentials: false
-      - uses: TimSchoenle/actions/actions/release/install-built-actions@actions-release-install-built-actions-v1.1.3 # tag=actions-release-install-built-actions-v1.1.3
+      - uses: TimSchoenle/actions/actions/release/install-built-actions@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-release-install-built-actions-v1.1.3
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}

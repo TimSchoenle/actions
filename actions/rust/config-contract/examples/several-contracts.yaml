@@ -8,7 +8,7 @@ strategy:
 
 steps:
   - name: Config contract
-    uses: TimSchoenle/actions/actions/rust/config-contract@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-rust-config-contract-v2.0.6
+    uses: TimSchoenle/actions/actions/rust/config-contract@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-rust-config-contract-v2.0.7
     with:
       bin: config-contract
       extra_args: --service ${{ matrix.service }}

@@ -26,7 +26,7 @@ on every run.
 ### Generate a file
 
 ```yaml
-- uses: TimSchoenle/actions/actions/common/render-template@actions-common-render-template-v3.0.7 # tag=actions-common-render-template-v3.0.7
+- uses: TimSchoenle/actions/actions/common/render-template@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-render-template-v3.0.7
   id: render
   with:
     template: docs/README.hbs
@@ -41,7 +41,7 @@ on every run.
         ]
       }
 
-- uses: TimSchoenle/actions/actions/common/commit-changes@actions-common-commit-changes-v3.1.2 # tag=actions-common-commit-changes-v3.1.2
+- uses: TimSchoenle/actions/actions/common/commit-changes@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-commit-changes-v3.1.2
   if: steps.render.outputs.changed == 'true'
   with:
     # A GitHub App installation token, so the commit is verified.
@@ -53,7 +53,7 @@ on every run.
 
 ```yaml
 # A CI gate: writes nothing and fails when README.md is missing or stale.
-- uses: TimSchoenle/actions/actions/common/render-template@actions-common-render-template-v3.0.7 # tag=actions-common-render-template-v3.0.7
+- uses: TimSchoenle/actions/actions/common/render-template@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-render-template-v3.0.7
   with:
     template: docs/README.hbs
     output: README.md
