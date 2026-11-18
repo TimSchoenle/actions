@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.6](https://github.com/TimSchoenle/actions/compare/src-actions-java-gradle-auto-spotless-v2.0.5...src-actions-java-gradle-auto-spotless-v2.0.6) (2026-11-18)
+
+
+### Dependencies
+
+* **deps:** update internal action pins ([#2323](https://github.com/TimSchoenle/actions/issues/2323)) ([0ea3603](https://github.com/TimSchoenle/actions/commit/0ea36037ebd58eea970a0a70786498717a2824f6))
+
 ## [2.0.5](https://github.com/TimSchoenle/actions/compare/src-actions-java-gradle-auto-spotless-v2.0.4...src-actions-java-gradle-auto-spotless-v2.0.5) (2026-11-13)
 
 

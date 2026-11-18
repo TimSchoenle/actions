@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.6](https://github.com/TimSchoenle/actions/compare/src-actions-terrace-image-v1.1.5...src-actions-terrace-image-v1.1.6) (2026-11-18)
+
+
+### Dependencies
+
+* **deps:** update internal action pins ([#2323](https://github.com/TimSchoenle/actions/issues/2323)) ([0ea3603](https://github.com/TimSchoenle/actions/commit/0ea36037ebd58eea970a0a70786498717a2824f6))
+
 ## [1.1.5](https://github.com/TimSchoenle/actions/compare/src-actions-terrace-image-v1.1.4...src-actions-terrace-image-v1.1.5) (2026-11-13)
 
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.7](https://github.com/TimSchoenle/actions/compare/src-actions-common-generated-files-verdict-v1.2.6...src-actions-common-generated-files-verdict-v1.2.7) (2026-11-18)
+
+
+### Bug Fixes
+
+* **deps:** narrow Octokit's bigint ids for the octokit major ([#2333](https://github.com/TimSchoenle/actions/issues/2333)) ([d7e7357](https://github.com/TimSchoenle/actions/commit/d7e73571086d85cbbf640a210e62ca4e52aecaa2))
+
+
+### Dependencies
+
+* **deps:** update internal action pins ([#2323](https://github.com/TimSchoenle/actions/issues/2323)) ([0ea3603](https://github.com/TimSchoenle/actions/commit/0ea36037ebd58eea970a0a70786498717a2824f6))
+
 ## [1.2.6](https://github.com/TimSchoenle/actions/compare/src-actions-common-generated-files-verdict-v1.2.5...src-actions-common-generated-files-verdict-v1.2.6) (2026-11-13)
 
 

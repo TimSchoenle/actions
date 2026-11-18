@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.7](https://github.com/TimSchoenle/actions/compare/src-actions-common-setup-app-git-identity-v2.0.6...src-actions-common-setup-app-git-identity-v2.0.7) (2026-11-18)
+
+
+### Bug Fixes
+
+* **deps:** narrow Octokit's bigint ids for the octokit major ([#2333](https://github.com/TimSchoenle/actions/issues/2333)) ([d7e7357](https://github.com/TimSchoenle/actions/commit/d7e73571086d85cbbf640a210e62ca4e52aecaa2))
+
 ## [2.0.6](https://github.com/TimSchoenle/actions/compare/src-actions-common-setup-app-git-identity-v2.0.5...src-actions-common-setup-app-git-identity-v2.0.6) (2026-11-13)
 
 

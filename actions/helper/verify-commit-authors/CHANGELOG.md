@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.2](https://github.com/TimSchoenle/actions/compare/src-actions-helper-verify-commit-authors-v4.0.1...src-actions-helper-verify-commit-authors-v4.0.2) (2026-11-18)
+
+
+### Bug Fixes
+
+* **deps:** narrow Octokit's bigint ids for the octokit major ([#2333](https://github.com/TimSchoenle/actions/issues/2333)) ([d7e7357](https://github.com/TimSchoenle/actions/commit/d7e73571086d85cbbf640a210e62ca4e52aecaa2))
+
 ## [4.0.1](https://github.com/TimSchoenle/actions/compare/src-actions-helper-verify-commit-authors-v4.0.0...src-actions-helper-verify-commit-authors-v4.0.1) (2026-11-13)
 
 
