@@ -632,7 +632,7 @@
       "pullRequestBranches": null,
       "pushBranches": [],
       "schedule": false,
-      "jobsSha256": "39a63eabf95c294272dfa9cc6e8b7ee1f79ebec419d6501dda17b4331220dfdc"
+      "jobsSha256": "fe9bc20754b7bc6eb768915eab02b61ce99f31baf072e3d15999280f855063e2"
     },
     {
       "id": "configs/renovate",
@@ -878,7 +878,7 @@
       "pullRequestBranches": null,
       "pushBranches": [],
       "schedule": false,
-      "jobsSha256": "f24f070df163ee31f581d69328ad182806866b47d0b49cf95a811e116b68d4e8"
+      "jobsSha256": "3a643f32a2c810570d4923571e166fe00104db02776599e796419e768d6d4e37"
     },
     {
       "id": "java-gradle/coverage-codecov",
@@ -905,7 +905,7 @@
       "pullRequestBranches": null,
       "pushBranches": [],
       "schedule": false,
-      "jobsSha256": "35497ff8e13f603d84f86c97f8a7c343e14fc1d0d96d3ea8dbe31070f7ce272f"
+      "jobsSha256": "915a2b2c165e6cc8fb5c50f83d8bd7d155bd950be6a4ccd02e4ad7d5172b55b8"
     },
     {
       "id": "maintenance/auto-approve-pr",
