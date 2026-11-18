@@ -9,7 +9,7 @@ outside the markers.
 
 Reports whether a run uploaded a non-empty common/create-patch artifact, without any secret, so a workflow_run job can skip minting a write token when there is nothing to commit.
 
-[actions-common-find-patch-v1.1.5](https://github.com/TimSchoenle/actions/releases/tag/actions-common-find-patch-v1.1.5) · Composite action
+[actions-common-find-patch-v1.1.6](https://github.com/TimSchoenle/actions/releases/tag/actions-common-find-patch-v1.1.6) · Composite action
 <!-- /docs:generated header -->
 
 The artifact is the one [`common/create-patch`](../create-patch) uploads. A `workflow_run` workflow runs this action
@@ -64,7 +64,7 @@ jobs:
       has_changes: ${{ steps.patch.outputs.has_changes }}
     steps:
       - id: patch
-        uses: TimSchoenle/actions/actions/common/find-patch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-find-patch-v1.1.5
+        uses: TimSchoenle/actions/actions/common/find-patch@actions-common-find-patch-v1.1.6 # tag=actions-common-find-patch-v1.1.6
         with:
           run_id: ${{ github.event.workflow_run.id }}
           artifact_name: format-patch

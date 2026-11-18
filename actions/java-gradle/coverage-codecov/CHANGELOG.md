@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1](https://github.com/TimSchoenle/actions/compare/src-actions-java-gradle-coverage-codecov-v1.2.0...src-actions-java-gradle-coverage-codecov-v1.2.1) (2026-11-18)
+
+
+### Dependencies
+
+* **deps:** update actions/setup-java action to v6.3.0 ([#2330](https://github.com/TimSchoenle/actions/issues/2330)) ([f81a2d9](https://github.com/TimSchoenle/actions/commit/f81a2d9482feca718ba67ba171f536ff1b721f56))
+* **deps:** update gradle to v9.9.1 ([#2322](https://github.com/TimSchoenle/actions/issues/2322)) ([91220ef](https://github.com/TimSchoenle/actions/commit/91220efb836262722547e1015b1265b82ab64528))
+
 ## [1.2.0](https://github.com/TimSchoenle/actions/compare/src-actions-java-gradle-coverage-codecov-v1.1.6...src-actions-java-gradle-coverage-codecov-v1.2.0) (2026-11-12)
 
 
