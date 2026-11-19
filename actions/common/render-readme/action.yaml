@@ -95,7 +95,7 @@ runs:
 
     - name: Collect The README Payload
       id: variables
-      uses: TimSchoenle/actions/actions/common/readme-variables@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-readme-variables-v2.1.6
+      uses: TimSchoenle/actions/actions/common/readme-variables@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-readme-variables-v2.1.7
       with:
         manifest: ${{ inputs.manifest }}
         docs-dir: ${{ inputs.docs-dir }}
@@ -103,7 +103,7 @@ runs:
         branch: ${{ steps.resolve.outputs.branch }}
 
     - name: Render The README
-      uses: TimSchoenle/actions/actions/common/render-template@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-render-template-v3.0.6
+      uses: TimSchoenle/actions/actions/common/render-template@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-render-template-v3.0.7
       with:
         template: ${{ inputs.template }}
         output: ${{ inputs.output }}
@@ -114,7 +114,7 @@ runs:
     - name: Create Patch
       id: patch
       if: steps.resolve.outputs.check == 'false'
-      uses: TimSchoenle/actions/actions/common/create-patch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-create-patch-v2.1.1
+      uses: TimSchoenle/actions/actions/common/create-patch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-create-patch-v2.1.2
       with:
         artifact_name: ${{ inputs.artifact_name }}
         paths: ${{ inputs.output }}
