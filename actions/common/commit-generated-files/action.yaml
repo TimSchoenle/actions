@@ -78,7 +78,7 @@ runs:
     - name: Find The Merged Patch
       id: find
       if: steps.event.outputs.proceed == 'true'
-      uses: TimSchoenle/actions/actions/common/find-patch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-find-patch-v1.1.5
+      uses: TimSchoenle/actions/actions/common/find-patch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-find-patch-v1.1.6
       with:
         run_id: ${{ github.event.workflow_run.id }}
         artifact_name: ${{ inputs.artifact_name }}
@@ -113,7 +113,7 @@ runs:
     - name: Fetch The Pull Request Head
       id: fetch
       if: steps.find.outputs.has_changes == 'true' && (steps.event.outputs.fork != 'true' || steps.fork.outputs.proceed == 'true')
-      uses: TimSchoenle/actions/actions/common/fetch-head@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-fetch-head-v2.0.3
+      uses: TimSchoenle/actions/actions/common/fetch-head@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-fetch-head-v2.0.4
       with:
         sha: ${{ github.event.workflow_run.head_sha }}
 
@@ -131,7 +131,7 @@ runs:
     - name: Commit The Generated Files
       id: commit
       if: steps.find.outputs.has_changes == 'true' && (steps.event.outputs.fork != 'true' || steps.fork.outputs.proceed == 'true')
-      uses: TimSchoenle/actions/actions/common/commit-patch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-commit-patch-v3.1.1
+      uses: TimSchoenle/actions/actions/common/commit-patch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-commit-patch-v3.1.2
       with:
         directory: ${{ steps.find.outputs.directory }}
         token: ${{ steps.token.outputs.token }}
