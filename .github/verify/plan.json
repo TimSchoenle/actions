@@ -199,7 +199,7 @@
       "pullRequestBranches": ["main"],
       "pushBranches": [],
       "schedule": false,
-      "jobsSha256": "dcf9775c41889783d3d232a4c44233ac166f3a5ed1629c1d115d820338479047"
+      "jobsSha256": "a5572304ada432a302a60bc399673c15a63c66b4b3832020d69f43559030a8b5"
     },
     {
       "id": "common/delete-branch",
@@ -488,7 +488,7 @@
       "pullRequestBranches": null,
       "pushBranches": [],
       "schedule": false,
-      "jobsSha256": "a57e3ba74887f638e7f0bba622fd6e44f221ce87540420e2ed124256f5dc715f"
+      "jobsSha256": "93477c73e295714cb8298fa70aaaa2feee3267a8e23b8965eedb3390f164101c"
     },
     {
       "id": "common/render-template",
@@ -530,7 +530,7 @@
       "pullRequestBranches": ["main"],
       "pushBranches": [],
       "schedule": false,
-      "jobsSha256": "6eb172524fa2c8f11d042a40faf149d6cc8a44aa10644d561d7fd6d7d5e0bb70"
+      "jobsSha256": "5fb0a2413f01395d9eac2346a04ef49e14cff0eb78af8105e9a3479f0fe171ab"
     },
     {
       "id": "common/setup-app-git-identity",
@@ -761,7 +761,7 @@
       "pullRequestBranches": ["main"],
       "pushBranches": [],
       "schedule": false,
-      "jobsSha256": "64c9bb48a7c6335f8a6e26586f8cb5cb36951a930dda4f4894c3e938aba12411"
+      "jobsSha256": "d944444efc71e94ab3a4bc7032e4a73e6d15dda53e439bd8ef800866afd7c681"
     },
     {
       "id": "helper/resolve-base-branch",
@@ -878,7 +878,7 @@
       "pullRequestBranches": null,
       "pushBranches": [],
       "schedule": false,
-      "jobsSha256": "3a643f32a2c810570d4923571e166fe00104db02776599e796419e768d6d4e37"
+      "jobsSha256": "be32147498cbae1f0c104b6c3ae310fa5af56eb02bece56f4975580f53544056"
     },
     {
       "id": "java-gradle/coverage-codecov",
@@ -1265,7 +1265,7 @@
       "pullRequestBranches": null,
       "pushBranches": [],
       "schedule": false,
-      "jobsSha256": "7c89f1554476d6b6ecfcf29328042ec1f631f7bd6c2b4f0cc6d0b69b02f32099"
+      "jobsSha256": "c2f434b1c4f23566de9f9801e6d139f2d76c074b5778f359c0f150451d378db4"
     },
     {
       "id": "rust/cargo-check",
