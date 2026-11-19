@@ -205,20 +205,20 @@ jobs:
 
       - name: Collect the README payload
         id: variables
-        uses: TimSchoenle/actions/actions/common/readme-variables@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-readme-variables-v2.1.6
+        uses: TimSchoenle/actions/actions/common/readme-variables@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-readme-variables-v2.1.7
         with:
           branch: ${{ github.event.repository.default_branch }}
           extra: ${{ steps.config.outputs.json }}
 
       - name: Render README.md
-        uses: TimSchoenle/actions/actions/common/render-template@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-render-template-v3.0.6
+        uses: TimSchoenle/actions/actions/common/render-template@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-render-template-v3.0.7
         with:
           template: .github/templates/README.md.hbs
           output: README.md
           variables: ${{ steps.variables.outputs.variables }}
 
       - name: Create Patch
-        uses: TimSchoenle/actions/actions/common/create-patch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-create-patch-v2.1.1
+        uses: TimSchoenle/actions/actions/common/create-patch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-create-patch-v2.1.2
         with:
           artifact_name: readme
           paths: README.md
@@ -262,7 +262,7 @@ jobs:
           permission-contents: write
 
       - name: Commit README.md
-        uses: TimSchoenle/actions/actions/common/commit-patch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-commit-patch-v3.1.1
+        uses: TimSchoenle/actions/actions/common/commit-patch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-commit-patch-v3.1.2
         with:
           token: ${{ steps.generate_token.outputs.token }}
           artifact_name: readme
@@ -295,13 +295,13 @@ jobs:
 
       - name: Collect the README payload
         id: variables
-        uses: TimSchoenle/actions/actions/common/readme-variables@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-readme-variables-v2.1.6
+        uses: TimSchoenle/actions/actions/common/readme-variables@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-readme-variables-v2.1.7
         with:
           branch: ${{ github.event.repository.default_branch }}
           extra: ${{ steps.config.outputs.json }}
 
       - name: Verify README.md is current
-        uses: TimSchoenle/actions/actions/common/render-template@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-render-template-v3.0.6
+        uses: TimSchoenle/actions/actions/common/render-template@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-render-template-v3.0.7
         with:
           template: .github/templates/README.md.hbs
           output: README.md
