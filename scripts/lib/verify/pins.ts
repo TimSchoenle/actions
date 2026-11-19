@@ -29,9 +29,9 @@ export const PINNED = {
   // The build and install steps run released versions, not this checkout's: the code that decides
   // which bundles a verdict runs must not come from the change under test.
   buildActions:
-    'TimSchoenle/actions/actions/release/build-actions@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-release-build-actions-v1.1.2',
+    'TimSchoenle/actions/actions/release/build-actions@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-release-build-actions-v1.1.3',
   installBuiltActions:
-    'TimSchoenle/actions/actions/release/install-built-actions@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-release-install-built-actions-v1.1.2',
+    'TimSchoenle/actions/actions/release/install-built-actions@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-release-install-built-actions-v1.1.3',
 } as const;
 
 /** A key of {@link PINNED}. */
