@@ -658,7 +658,7 @@ jobs:
       - name: Create Patch
         if: steps.head.outputs.current == 'true'
         id: patch
-        uses: TimSchoenle/actions/actions/common/create-patch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-create-patch-v2.1.1
+        uses: TimSchoenle/actions/actions/common/create-patch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-create-patch-v2.1.2
         with:
           artifact_name: release-docs
           paths: 'README.md SECURITY.md actions/*/*/README.md actions/*/*/examples/*.yaml actions/*/*/examples/*.yml'
@@ -692,7 +692,7 @@ jobs:
 
       # commit-patch reads only git objects, so the release commit is fetched without a checkout.
       - name: Fetch The Release Commit
-        uses: TimSchoenle/actions/actions/common/fetch-head@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-fetch-head-v2.0.3
+        uses: TimSchoenle/actions/actions/common/fetch-head@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-fetch-head-v2.0.4
         with:
           sha: ${{ github.sha }}
 
@@ -707,7 +707,7 @@ jobs:
       # `docs` is a hidden changelog section, so the release-please run this commit starts opens no
       # release pull request for it.
       - name: Commit Patch
-        uses: TimSchoenle/actions/actions/common/commit-patch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-commit-patch-v3.1.1
+        uses: TimSchoenle/actions/actions/common/commit-patch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-commit-patch-v3.1.2
         with:
           token: ${{ steps.generate_token.outputs.token }}
           branch: ${{ github.ref_name }}

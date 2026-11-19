@@ -117,7 +117,7 @@ jobs:
 
       - name: Create Test Branch
         id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-create-branch-v2.0.6
+        uses: TimSchoenle/actions/actions/common/create-branch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-create-branch-v2.0.7
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -320,7 +320,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-delete-branch-v2.0.7
+        uses: TimSchoenle/actions/actions/common/delete-branch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-delete-branch-v2.0.8
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
