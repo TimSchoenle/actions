@@ -9,7 +9,7 @@ outside the markers.
 
 Action that runs clippy to catch common mistakes and improve your Rust code.
 
-[actions-rust-clippy-v2.0.0](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-clippy-v2.0.0) · Composite action
+[actions-rust-clippy-v2.0.1](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-clippy-v2.0.1) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -35,7 +35,7 @@ jobs:
     permissions:
       contents: read # to fetch code
     steps:
-      - uses: TimSchoenle/actions/actions/rust/clippy@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-rust-clippy-v2.0.0
+      - uses: TimSchoenle/actions/actions/rust/clippy@actions-rust-clippy-v2.0.1 # tag=actions-rust-clippy-v2.0.1
         with:
           clippy_arguments: '--all-features --all-targets -- -D warnings'
 ```
