@@ -39,7 +39,7 @@ runs:
         components: clippy
 
     - name: Run clippy
-      uses: clechasseur/rs-clippy-check@ac75e246ebbd78d106ac9460c668ab7c8044ebe3 # v6.1.1
+      uses: clechasseur/rs-clippy-check@1f566b8b39778a3778838ac8350a1c1effd7b91c # v6.1.2
       with:
         args: ${{ inputs.clippy_arguments }}
         working-directory: ${{ inputs.source_directory }}
