@@ -40,7 +40,7 @@ jobs:
           releases="$(jq -cn --arg tag "v${VERSION}" --arg notes "$notes" '[{consumerTag: $tag, releaseName: $tag, notesFile: $notes}]')"
           echo "releases=${releases}" >> "$GITHUB_OUTPUT"
 
-      - uses: TimSchoenle/actions/actions/release/publish-build-commit@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-release-publish-build-commit-v2.0.1
+      - uses: TimSchoenle/actions/actions/release/publish-build-commit@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-release-publish-build-commit-v2.0.2
         with:
           token: ${{ steps.token.outputs.token }}
           source-sha: ${{ github.sha }}

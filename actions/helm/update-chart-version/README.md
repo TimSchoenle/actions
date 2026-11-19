@@ -48,7 +48,7 @@ jobs:
     steps:
       # The action checks the charts repository out over the workspace, so it needs no checkout of
       # its own and anything already in the workspace is replaced.
-      - uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.8.2 # tag=actions-helm-update-chart-version-v1.8.2
+      - uses: TimSchoenle/actions/actions/helm/update-chart-version@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-helm-update-chart-version-v1.8.2
         with:
           app-id: ${{ vars.CHARTS_BOT_APP_ID }}
           private-key: ${{ secrets.charts-bot-private-key }}
@@ -67,7 +67,7 @@ jobs:
 # With pull-contracts, the charts repository needs a terrace.yaml at its root and the images must be
 # pullable without credentials.
 - id: chart
-  uses: TimSchoenle/actions/actions/helm/update-chart-version@actions-helm-update-chart-version-v1.8.2 # tag=actions-helm-update-chart-version-v1.8.2
+  uses: TimSchoenle/actions/actions/helm/update-chart-version@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-helm-update-chart-version-v1.8.2
   with:
     app-id: ${{ vars.CHARTS_BOT_APP_ID }}
     private-key: ${{ secrets.CHARTS_BOT_PRIVATE_KEY }}

@@ -50,7 +50,7 @@ jobs:
           client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           permission-contents: write
-      - uses: TimSchoenle/actions/actions/common/commit-patch@actions-common-commit-patch-v3.1.2 # tag=actions-common-commit-patch-v3.1.2
+      - uses: TimSchoenle/actions/actions/common/commit-patch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-commit-patch-v3.1.2
         with:
           token: ${{ steps.token.outputs.token }}
           artifact_name: format-patch
@@ -97,7 +97,7 @@ jobs:
           client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           permission-contents: write
-      - uses: TimSchoenle/actions/actions/common/commit-patch@actions-common-commit-patch-v3.1.2 # tag=actions-common-commit-patch-v3.1.2
+      - uses: TimSchoenle/actions/actions/common/commit-patch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-commit-patch-v3.1.2
         with:
           token: ${{ steps.token.outputs.token }}
           run_id: ${{ github.event.workflow_run.id }}

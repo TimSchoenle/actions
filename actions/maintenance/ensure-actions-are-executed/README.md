@@ -45,7 +45,7 @@ jobs:
       checks: read # the check runs of the head commit
       actions: read # this run's jobs, the fallback when the commit has no check runs
     steps:
-      - uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@actions-maintenance-ensure-actions-are-executed-v2.0.7 # tag=actions-maintenance-ensure-actions-are-executed-v2.0.7
+      - uses: TimSchoenle/actions/actions/maintenance/ensure-actions-are-executed@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-maintenance-ensure-actions-are-executed-v2.0.7
         with:
           token: ${{ github.token }}
           checks: |
