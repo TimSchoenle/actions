@@ -182,7 +182,7 @@ jobs:
       # would report a second, misleading failure on top of the real result.
       - name: Cleanup Test Pull Request
         if: always() && steps.create-pr.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-close-pull-request-v2.0.6
+        uses: TimSchoenle/actions/actions/common/close-pull-request@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-close-pull-request-v2.0.7
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -190,7 +190,7 @@ jobs:
 
       - name: Cleanup Test Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-delete-branch-v2.0.7
+        uses: TimSchoenle/actions/actions/common/delete-branch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-delete-branch-v2.0.8
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -269,7 +269,7 @@ jobs:
       # would report a second, misleading failure on top of the real result.
       - name: Cleanup Test Pull Request
         if: always() && steps.create-pr.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-close-pull-request-v2.0.6
+        uses: TimSchoenle/actions/actions/common/close-pull-request@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-close-pull-request-v2.0.7
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -277,7 +277,7 @@ jobs:
 
       - name: Cleanup Test Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-delete-branch-v2.0.7
+        uses: TimSchoenle/actions/actions/common/delete-branch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-delete-branch-v2.0.8
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -357,7 +357,7 @@ jobs:
       # would report a second, misleading failure on top of the real result.
       - name: Cleanup Test Pull Request
         if: always() && steps.create-pr.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-close-pull-request-v2.0.6
+        uses: TimSchoenle/actions/actions/common/close-pull-request@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-close-pull-request-v2.0.7
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -365,7 +365,7 @@ jobs:
 
       - name: Cleanup Test Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-delete-branch-v2.0.7
+        uses: TimSchoenle/actions/actions/common/delete-branch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-delete-branch-v2.0.8
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -527,7 +527,7 @@ jobs:
       # would report a second, misleading failure on top of the real result.
       - name: Cleanup Test Pull Request
         if: always() && steps.create-pr-reset.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-close-pull-request-v2.0.6
+        uses: TimSchoenle/actions/actions/common/close-pull-request@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-close-pull-request-v2.0.7
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -535,7 +535,7 @@ jobs:
 
       - name: Cleanup Test Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-delete-branch-v2.0.7
+        uses: TimSchoenle/actions/actions/common/delete-branch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-delete-branch-v2.0.8
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -665,7 +665,7 @@ jobs:
       # would report a second, misleading failure on top of the real result.
       - name: Cleanup Test Pull Request
         if: always() && steps.create-pr.outputs.pr_number != ''
-        uses: TimSchoenle/actions/actions/common/close-pull-request@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-close-pull-request-v2.0.6
+        uses: TimSchoenle/actions/actions/common/close-pull-request@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-close-pull-request-v2.0.7
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -673,7 +673,7 @@ jobs:
 
       - name: Cleanup Test Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-delete-branch-v2.0.7
+        uses: TimSchoenle/actions/actions/common/delete-branch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-delete-branch-v2.0.8
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
