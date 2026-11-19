@@ -80,7 +80,7 @@ jobs:
       pending: ${{ steps.pending.outputs.pending }}
     steps:
       - id: plan
-        uses: TimSchoenle/actions/actions/release/plan-release-please@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-release-plan-release-please-v1.1.2
+        uses: TimSchoenle/actions/actions/release/plan-release-please@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-release-plan-release-please-v1.1.3
         with:
           mode: plan
           sha: ${{ github.sha }}
@@ -116,7 +116,7 @@ jobs:
           node-version-file: '.nvmrc'
       - run: npm ci --ignore-scripts
       - id: build
-        uses: TimSchoenle/actions/actions/release/build-actions@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-release-build-actions-v1.1.2
+        uses: TimSchoenle/actions/actions/release/build-actions@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-release-build-actions-v1.1.3
         with:
           build-dirs: .
           build-command: npm run build
@@ -141,7 +141,7 @@ jobs:
           node-version-file: '.nvmrc'
       - run: npm ci --ignore-scripts
       - id: build
-        uses: TimSchoenle/actions/actions/release/build-actions@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-release-build-actions-v1.1.2
+        uses: TimSchoenle/actions/actions/release/build-actions@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-release-build-actions-v1.1.3
         with:
           build-dirs: .
           build-command: npm run build
@@ -163,7 +163,7 @@ jobs:
           set -euo pipefail
           echo "::error::The two builds produced different bundles."
           exit 1
-      - uses: TimSchoenle/actions/actions/release/install-built-actions@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-release-install-built-actions-v1.1.2
+      - uses: TimSchoenle/actions/actions/release/install-built-actions@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-release-install-built-actions-v1.1.3
         with:
           artifact-id: ${{ needs.build.outputs.artifact-id }}
           expected-manifest-sha256: ${{ needs.build.outputs.manifest-sha256 }}
@@ -197,12 +197,12 @@ jobs:
           permission-issues: write
           permission-pull-requests: write
       - id: plan
-        uses: TimSchoenle/actions/actions/release/plan-release-please@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-release-plan-release-please-v1.1.2
+        uses: TimSchoenle/actions/actions/release/plan-release-please@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-release-plan-release-please-v1.1.3
         with:
           mode: plan
           sha: ${{ github.sha }}
           release-pr-author-id: '<your release App bot user ID>'
-      - uses: TimSchoenle/actions/actions/release/publish-build-commit@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-release-publish-build-commit-v2.0.1
+      - uses: TimSchoenle/actions/actions/release/publish-build-commit@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-release-publish-build-commit-v2.0.2
         with:
           token: ${{ steps.token.outputs.token }}
           source-sha: ${{ github.sha }}
@@ -225,7 +225,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: TimSchoenle/actions/actions/release/plan-release-please@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-release-plan-release-please-v1.1.2
+      - uses: TimSchoenle/actions/actions/release/plan-release-please@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-release-plan-release-please-v1.1.3
         with:
           mode: preflight
 
@@ -265,9 +265,9 @@ differences, all of which this repository's own
 
   ```yaml
   - id: resolve
-    uses: TimSchoenle/actions/actions/release/resolve-actions@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-release-resolve-actions-v1.1.2
+    uses: TimSchoenle/actions/actions/release/resolve-actions@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-release-resolve-actions-v1.1.3
   - id: build
-    uses: TimSchoenle/actions/actions/release/build-actions@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-release-build-actions-v1.1.2
+    uses: TimSchoenle/actions/actions/release/build-actions@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-release-build-actions-v1.1.3
     with:
       build-dirs: ${{ steps.resolve.outputs.build-dirs }}
       build-command: npm run build
