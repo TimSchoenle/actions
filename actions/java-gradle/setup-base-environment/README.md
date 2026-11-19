@@ -24,7 +24,7 @@ Setup Java and Gradle environment for building, with opinionated default setting
   with:
     persist-credentials: false
 
-- uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@actions-java-gradle-setup-base-environment-v1.2.16 # tag=actions-java-gradle-setup-base-environment-v1.2.16
+- uses: TimSchoenle/actions/actions/java-gradle/setup-base-environment@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-java-gradle-setup-base-environment-v1.2.16
   with:
     java_version: '21'
 

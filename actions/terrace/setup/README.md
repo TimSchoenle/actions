@@ -28,7 +28,7 @@ steps:
       persist-credentials: false
 
   - id: terrace
-    uses: TimSchoenle/actions/actions/terrace/setup@actions-terrace-setup-v4.0.3 # tag=actions-terrace-setup-v4.0.3
+    uses: TimSchoenle/actions/actions/terrace/setup@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-terrace-setup-v4.0.3
 
   - run: terrace-contract doctor
 ```
@@ -38,7 +38,7 @@ steps:
 ```yaml
 # An exact version needs no release listing, so the run is reproducible and makes no API call
 # unless a download fails. oras is what terrace-contract pull fetches contracts from a registry with.
-- uses: TimSchoenle/actions/actions/terrace/setup@actions-terrace-setup-v4.0.3 # tag=actions-terrace-setup-v4.0.3
+- uses: TimSchoenle/actions/actions/terrace/setup@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-terrace-setup-v4.0.3
   with:
     version: '0.14.0'
     oras: 'true'
