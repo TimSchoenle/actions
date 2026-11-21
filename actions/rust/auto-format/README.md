@@ -9,7 +9,7 @@ outside the markers.
 
 Runs cargo fmt and uploads the changes as a patch artifact for common/commit-patch to commit from a separate job. Holds no token.
 
-[actions-rust-auto-format-v2.0.6](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v2.0.6) · Composite action
+[actions-rust-auto-format-v2.0.7](https://github.com/TimSchoenle/actions/releases/tag/actions-rust-auto-format-v2.0.7) · Composite action
 <!-- /docs:generated header -->
 
 The action runs `cargo fmt` in the caller's checkout and uploads what it changed as a
@@ -56,7 +56,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - id: format
-        uses: TimSchoenle/actions/actions/rust/auto-format@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-rust-auto-format-v2.0.6
+        uses: TimSchoenle/actions/actions/rust/auto-format@actions-rust-auto-format-v2.0.7 # tag=actions-rust-auto-format-v2.0.7
         with:
           artifact_name: rust-auto-format
 
