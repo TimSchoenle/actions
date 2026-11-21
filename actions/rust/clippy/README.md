@@ -35,7 +35,7 @@ jobs:
     permissions:
       contents: read # to fetch code
     steps:
-      - uses: TimSchoenle/actions/actions/rust/clippy@actions-rust-clippy-v2.0.1 # tag=actions-rust-clippy-v2.0.1
+      - uses: TimSchoenle/actions/actions/rust/clippy@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-rust-clippy-v2.0.1
         with:
           clippy_arguments: '--all-features --all-targets -- -D warnings'
 ```

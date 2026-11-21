@@ -56,7 +56,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - id: format
-        uses: TimSchoenle/actions/actions/rust/auto-format@actions-rust-auto-format-v2.0.7 # tag=actions-rust-auto-format-v2.0.7
+        uses: TimSchoenle/actions/actions/rust/auto-format@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-rust-auto-format-v2.0.7
         with:
           artifact_name: rust-auto-format
 

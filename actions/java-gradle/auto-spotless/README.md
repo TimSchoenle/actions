@@ -56,7 +56,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - id: spotless
-        uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@actions-java-gradle-auto-spotless-v2.0.7 # tag=actions-java-gradle-auto-spotless-v2.0.7
+        uses: TimSchoenle/actions/actions/java-gradle/auto-spotless@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-java-gradle-auto-spotless-v2.0.7
         with:
           java_version: '21'
           artifact_name: auto-spotless

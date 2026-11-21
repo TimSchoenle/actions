@@ -68,7 +68,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: TimSchoenle/actions/actions/common/generated-files-verdict@actions-common-generated-files-verdict-v1.2.8 # tag=actions-common-generated-files-verdict-v1.2.8
+      - uses: TimSchoenle/actions/actions/common/generated-files-verdict@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-common-generated-files-verdict-v1.2.8
         with:
           needs: ${{ toJSON(needs) }}
 ```
