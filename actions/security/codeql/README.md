@@ -51,7 +51,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: TimSchoenle/actions/actions/security/codeql@actions-security-codeql-v1.1.13 # tag=actions-security-codeql-v1.1.13
+      - uses: TimSchoenle/actions/actions/security/codeql@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-security-codeql-v1.1.13
         with:
           language: ${{ matrix.language }}
           paths-ignore: |

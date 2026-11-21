@@ -86,7 +86,7 @@ jobs:
 
       - name: Find The Stale Patch
         id: find
-        uses: TimSchoenle/actions/actions/common/find-patch@0b3967d3d992d12aa88da1f8facf412b162d5ab2 # tag=actions-common-find-patch-v1.1.5
+        uses: TimSchoenle/actions/actions/common/find-patch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-find-patch-v1.1.6
         with:
           artifact_name: ${{ steps.stale.outputs.artifact_name }}
 

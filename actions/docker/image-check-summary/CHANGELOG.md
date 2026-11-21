@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.9](https://github.com/TimSchoenle/actions/compare/src-actions-docker-image-check-summary-v2.0.8...src-actions-docker-image-check-summary-v2.0.9) (2026-11-19)
+
+
+### Dependencies
+
+* **deps:** update internal action pins ([#2338](https://github.com/TimSchoenle/actions/issues/2338)) ([803464d](https://github.com/TimSchoenle/actions/commit/803464dece9ebdd3341948b1c3f93612cc1d0d43))
+
 ## [2.0.8](https://github.com/TimSchoenle/actions/compare/src-actions-docker-image-check-summary-v2.0.7...src-actions-docker-image-check-summary-v2.0.8) (2026-11-18)
 
 

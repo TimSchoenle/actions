@@ -31,7 +31,7 @@ jobs:
     permissions: {}
     steps:
       - id: bot
-        uses: TimSchoenle/actions/actions/common/get-app-git-identity@actions-common-get-app-git-identity-v2.0.7 # tag=actions-common-get-app-git-identity-v2.0.7
+        uses: TimSchoenle/actions/actions/common/get-app-git-identity@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-get-app-git-identity-v2.0.7
         with:
           app-slug: my-app
           token: ${{ github.token }}
