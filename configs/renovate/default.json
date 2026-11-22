@@ -113,6 +113,27 @@
       "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
       "groupName": "ci dependencies",
       "groupSlug": "ci"
+    },
+    {
+      "description": "Keeps a terrace pin under .github/, such as the terrace-contract version a workflow gives terrace/setup, in the terrace group above instead of the ci dependencies group, so a terrace-contract release reaches every workflow in the same pull request as the terrace-config crate and the other terrace pins. After the .github/ rules, because a later rule wins.",
+      "matchFileNames": [".github/**"],
+      "matchPackageNames": ["/^(?:https://github\\.com/)?TimSchoenle/terrace-(?:config|legal)(?:\\.git)?$/i"],
+      "groupName": "terrace-config and terrace-legal",
+      "groupSlug": "terrace"
+    }
+  ],
+  "customManagers": [
+    {
+      "description": "The terrace-contract version a workflow under .github/workflows/ or a local composite under .github/actions/ gives terrace/setup (or another terrace pin passed as a literal action input), under a `# renovate:` comment naming the datasource and depName TimSchoenle/terrace-config or TimSchoenle/terrace-legal on the line above, as the terrace/setup examples show. No built-in manager reads an input value, so without this the pin keeps the version it was written with. Limited to the terrace repositories on purpose: consumers already read their other `# renovate:` input pins with managers of their own, and a second manager matching the same line would extract it twice. Only lowercase keys match, which is how action inputs are spelled.",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/(^|/)\\.github/workflows/[^/]+\\.ya?ml$/",
+        "/(^|/)\\.github/actions/[^/]+/action\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>github-releases|github-tags|docker) depName=(?<depName>TimSchoenle/terrace-(?:config|legal))(?: extractVersion=(?<extractVersion>\\S+))?\\s+[a-z][a-z0-9_-]*: [\"']?(?<currentValue>[^\"'\\s]+)[\"']?"
+      ],
+      "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^(?<version>.*)${{/if}}"
     }
   ]
 }
