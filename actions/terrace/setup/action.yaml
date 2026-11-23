@@ -35,13 +35,13 @@ inputs:
     description: 'oras release to install when oras is true, as its release tag vMAJOR.MINOR.PATCH. MAJOR.MINOR.PATCH without the v is accepted too.'
     required: false
     # renovate: datasource=github-release-attachments depName=oras-project/oras
-    default: 'v1.3.6'
+    default: 'v1.4.0'
   oras_checksums_sha256:
     description: "SHA-256 of oras_version's oras_<version>_checksums.txt, which then verifies the oras archive. Read
       only when oras is true. Set it whenever oras_version is set: the default pins the default version's list, and
       any other release fails."
     required: false
-    default: '7c5fd385736ac5e9b0b2dc1053b232ffbd4d5bdabdf3af7e517ddef97abe8af9'
+    default: '64a3d1beff798f350115543f35316d80c8ec47d7a69bf3edda49fd5018849fe3'
   github_token:
     description: 'Token for api.github.com: for looking up the newest terrace-contract release of a line, needed
       only when the version is a MAJOR.MINOR line, and for the REST API fallback that runs when a release download
