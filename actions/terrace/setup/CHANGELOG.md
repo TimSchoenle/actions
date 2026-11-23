@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.0.4](https://github.com/TimSchoenle/actions/compare/src-actions-terrace-setup-v4.0.3...src-actions-terrace-setup-v4.0.4) (2026-11-23)
+
+
+### Dependencies
+
+* **deps:** update dependency fast-check to v4.10.3 ([#2346](https://github.com/TimSchoenle/actions/issues/2346)) ([ef73bb1](https://github.com/TimSchoenle/actions/commit/ef73bb1970caea1c0a83ac3852f254651a5a377f))
+* **deps:** update dependency oras-project/oras to v1.4.0 ([#2354](https://github.com/TimSchoenle/actions/issues/2354)) ([c00d886](https://github.com/TimSchoenle/actions/commit/c00d88618d1b6104d846f51296bde9ae0ad14ce5))
+
 ## [4.0.3](https://github.com/TimSchoenle/actions/compare/src-actions-terrace-setup-v4.0.2...src-actions-terrace-setup-v4.0.3) (2026-11-18)
 
 

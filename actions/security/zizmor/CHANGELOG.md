@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.9](https://github.com/TimSchoenle/actions/compare/src-actions-security-zizmor-v2.0.8...src-actions-security-zizmor-v2.0.9) (2026-11-23)
+
+
+### Dependencies
+
+* **deps:** update ghcr.io/zizmorcore/zizmor docker tag to v1.33.1 ([#2356](https://github.com/TimSchoenle/actions/issues/2356)) ([928b136](https://github.com/TimSchoenle/actions/commit/928b136ed20ef10add5d56270d8b9d839b245c69))
+
 ## [2.0.8](https://github.com/TimSchoenle/actions/compare/src-actions-security-zizmor-v2.0.7...src-actions-security-zizmor-v2.0.8) (2026-11-18)
 
 
