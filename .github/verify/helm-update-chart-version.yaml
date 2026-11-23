@@ -25,7 +25,7 @@ jobs:
       SINGLE_IMAGE: '{"image.tag": {"tag": "v2.0.0", "digest": "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"}}'
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -249,7 +249,7 @@ jobs:
       SINGLE_IMAGE: '{"image.tag": {"tag": "v2.0.0", "digest": "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"}}'
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -467,7 +467,7 @@ jobs:
       SINGLE_IMAGE: '{"image.tag": {"tag": "v2.0.0", "digest": "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"}}'
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -626,7 +626,7 @@ jobs:
       SINGLE_IMAGE: '{"image.tag": {"tag": "v2.0.0", "digest": "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"}}'
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -782,7 +782,7 @@ jobs:
       SINGLE_IMAGE: '{"image.tag": {"tag": "v2.0.0", "digest": "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"}}'
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -943,7 +943,7 @@ jobs:
       SINGLE_IMAGE: '{"image.tag": {"tag": "v2.0.0", "digest": "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"}}'
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -1176,7 +1176,7 @@ jobs:
       # service and the CDNs that serve the signature layers. Docker Hub redirects a blob to either
       # CDN; a blocked one makes cosign report "no signatures found", not a network error.
       - name: Harden Runner
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
         with:
           egress-policy: block
           allowed-endpoints: >

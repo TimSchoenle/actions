@@ -15,9 +15,9 @@
  */
 
 export const PINNED = {
-  hardenRunner: 'step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4',
+  hardenRunner: 'step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0',
   checkout: 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1',
-  createAppToken: 'actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0',
+  createAppToken: 'actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0',
   setupBun:
     'TimSchoenle/actions/actions/bun/setup-cached@49acdef9979f343817ec2a85ddd25e5f34befc8b # tag=actions-bun-setup-cached-v4.0.0',
   // Used only by the jobs that must not install anything. Kept at the same version `setup-cached`
