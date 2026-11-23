@@ -37,7 +37,7 @@ jobs:
       # An App token, so the commit is verified and starts workflows. github.token's would not.
       - name: Generate Token
         id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           client-id: ${{ secrets.MAINTENANCE_APP_CLIENT_ID }}
           private-key: ${{ secrets.MAINTENANCE_PRIVATE_KEY }}
