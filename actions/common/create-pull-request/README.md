@@ -9,7 +9,7 @@ outside the markers.
 
 Creates or updates a pull request using GitHub App authentication with optional branch reset.
 
-[actions-common-create-pull-request-v1.0.34](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-pull-request-v1.0.34) · Composite action
+[actions-common-create-pull-request-v1.0.35](https://github.com/TimSchoenle/actions/releases/tag/actions-common-create-pull-request-v1.0.35) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -43,7 +43,7 @@ jobs:
       - run: ./scripts/update-data.sh
 
       - id: pr
-        uses: TimSchoenle/actions/actions/common/create-pull-request@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-common-create-pull-request-v1.0.34
+        uses: TimSchoenle/actions/actions/common/create-pull-request@actions-common-create-pull-request-v1.0.35 # tag=actions-common-create-pull-request-v1.0.35
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
