@@ -2,7 +2,7 @@
 # precedence. Naming neither uses the example config-schema, which is what every workflow written
 # before bin existed relies on.
 - name: Config contract
-  uses: TimSchoenle/actions/actions/rust/config-contract@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-rust-config-contract-v2.0.7
+  uses: TimSchoenle/actions/actions/rust/config-contract@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-rust-config-contract-v2.0.8
   with:
     # A [[bin]], because other crates link it and the build runs the compiled artefact.
     bin: config-contract

@@ -40,7 +40,7 @@ jobs:
       # 29139614 is renovate[bot]. A commit pushed on top by anyone else, one without a valid
       # signature, or a pull request from a fork makes verified false.
       - id: authors
-        uses: TimSchoenle/actions/actions/helper/verify-commit-authors@actions-helper-verify-commit-authors-v4.0.3 # tag=actions-helper-verify-commit-authors-v4.0.3
+        uses: TimSchoenle/actions/actions/helper/verify-commit-authors@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-helper-verify-commit-authors-v4.0.3
         with:
           pr_url: ${{ github.event.pull_request.html_url }}
           github_token: ${{ github.token }}
