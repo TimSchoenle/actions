@@ -9,7 +9,7 @@ outside the markers.
 
 Resolves the git identity (username, email, user ID) for a GitHub App bot.
 
-[actions-common-get-app-git-identity-v2.0.7](https://github.com/TimSchoenle/actions/releases/tag/actions-common-get-app-git-identity-v2.0.7) · JavaScript action (node24)
+[actions-common-get-app-git-identity-v2.0.8](https://github.com/TimSchoenle/actions/releases/tag/actions-common-get-app-git-identity-v2.0.8) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -31,7 +31,7 @@ jobs:
     permissions: {}
     steps:
       - id: bot
-        uses: TimSchoenle/actions/actions/common/get-app-git-identity@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-get-app-git-identity-v2.0.7
+        uses: TimSchoenle/actions/actions/common/get-app-git-identity@actions-common-get-app-git-identity-v2.0.8 # tag=actions-common-get-app-git-identity-v2.0.8
         with:
           app-slug: my-app
           token: ${{ github.token }}

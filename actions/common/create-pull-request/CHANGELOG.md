@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.35](https://github.com/TimSchoenle/actions/compare/src-actions-common-create-pull-request-v1.0.34...src-actions-common-create-pull-request-v1.0.35) (2026-11-23)
+
+
+### Dependencies
+
+* **deps:** update actions/create-github-app-token action to v3.4.0 ([#2353](https://github.com/TimSchoenle/actions/issues/2353)) ([a115f35](https://github.com/TimSchoenle/actions/commit/a115f35c431e190fd4a657b85bd6def6e38bdd51))
+
 ## [1.0.34](https://github.com/TimSchoenle/actions/compare/src-actions-common-create-pull-request-v1.0.33...src-actions-common-create-pull-request-v1.0.34) (2026-11-19)
 
 

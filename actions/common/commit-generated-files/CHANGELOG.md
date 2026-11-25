@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.5](https://github.com/TimSchoenle/actions/compare/src-actions-common-commit-generated-files-v1.3.4...src-actions-common-commit-generated-files-v1.3.5) (2026-11-23)
+
+
+### Dependencies
+
+* **deps:** update actions/create-github-app-token action to v3.4.0 ([#2353](https://github.com/TimSchoenle/actions/issues/2353)) ([a115f35](https://github.com/TimSchoenle/actions/commit/a115f35c431e190fd4a657b85bd6def6e38bdd51))
+
 ## [1.3.4](https://github.com/TimSchoenle/actions/compare/src-actions-common-commit-generated-files-v1.3.3...src-actions-common-commit-generated-files-v1.3.4) (2026-11-19)
 
 

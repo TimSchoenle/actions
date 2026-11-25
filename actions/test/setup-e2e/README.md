@@ -9,7 +9,7 @@ outside the markers.
 
 Sets up the environment for E2E testing: generates token, checks out test repo, and checks out actions code.
 
-[actions-test-setup-e2e-v1.2.7](https://github.com/TimSchoenle/actions/releases/tag/actions-test-setup-e2e-v1.2.7) · Composite action
+[actions-test-setup-e2e-v1.2.8](https://github.com/TimSchoenle/actions/releases/tag/actions-test-setup-e2e-v1.2.8) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -41,7 +41,7 @@ jobs:
       contents: read # to fetch code
     steps:
       - id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        uses: TimSchoenle/actions/actions/test/setup-e2e@actions-test-setup-e2e-v1.2.8 # tag=actions-test-setup-e2e-v1.2.8
         with:
           app_id: ${{ secrets.TEST_APP_ID }}
           private_key: ${{ secrets.TEST_APP_PRIVATE_KEY }}
