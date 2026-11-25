@@ -21,7 +21,7 @@ A action to modify a value in a YAML file while strictly preserving comments and
 # Edits the file in the workspace only. Comments and quoting elsewhere in values.yaml survive.
 # Committing the change is a separate step.
 - id: tag
-  uses: TimSchoenle/actions/actions/common/modify-yaml@actions-common-modify-yaml-v3.0.3 # tag=actions-common-modify-yaml-v3.0.3
+  uses: TimSchoenle/actions/actions/common/modify-yaml@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-common-modify-yaml-v3.0.3
   with:
     file: charts/api/values.yaml
     key: image.tag

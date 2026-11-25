@@ -37,7 +37,7 @@ jobs:
       contents: read # to fetch code
       id-token: write # to authenticate the upload with OIDC
     steps:
-      - uses: TimSchoenle/actions/actions/rust/coverage-codecov@actions-rust-coverage-codecov-v2.1.2 # tag=actions-rust-coverage-codecov-v2.1.2
+      - uses: TimSchoenle/actions/actions/rust/coverage-codecov@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-rust-coverage-codecov-v2.1.2
         with:
           flags: unit
 ```

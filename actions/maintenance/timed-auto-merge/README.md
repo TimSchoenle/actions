@@ -59,7 +59,7 @@ jobs:
           permission-pull-requests: write
 
       - name: Approve and Auto-merge
-        uses: TimSchoenle/actions/actions/maintenance/timed-auto-merge@actions-maintenance-timed-auto-merge-v3.1.2 # tag=actions-maintenance-timed-auto-merge-v3.1.2
+        uses: TimSchoenle/actions/actions/maintenance/timed-auto-merge@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-maintenance-timed-auto-merge-v3.1.2
         with:
           token: ${{ steps.token.outputs.token }}
           # Database ID of the bot account that opens the release pull requests.

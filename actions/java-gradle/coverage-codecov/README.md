@@ -37,7 +37,7 @@ jobs:
       contents: read # to fetch code
       id-token: write # to authenticate the upload with OIDC
     steps:
-      - uses: TimSchoenle/actions/actions/java-gradle/coverage-codecov@actions-java-gradle-coverage-codecov-v1.2.2 # tag=actions-java-gradle-coverage-codecov-v1.2.2
+      - uses: TimSchoenle/actions/actions/java-gradle/coverage-codecov@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-java-gradle-coverage-codecov-v1.2.2
         with:
           java_version: '21'
           flags: unit
