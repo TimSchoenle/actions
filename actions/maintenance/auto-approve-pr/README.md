@@ -9,7 +9,7 @@ outside the markers.
 
 Auto approve Pull Requests with the given user ids and branches.
 
-[actions-maintenance-auto-approve-pr-v3.0.7](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v3.0.7) · JavaScript action (node24)
+[actions-maintenance-auto-approve-pr-v3.0.8](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-approve-pr-v3.0.8) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -40,7 +40,7 @@ jobs:
     permissions:
       pull-requests: write # read the pull request and its commits, and approve it
     steps:
-      - uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-maintenance-auto-approve-pr-v3.0.7
+      - uses: TimSchoenle/actions/actions/maintenance/auto-approve-pr@actions-maintenance-auto-approve-pr-v3.0.8 # tag=actions-maintenance-auto-approve-pr-v3.0.8
         with:
           token: ${{ github.token }}
           # Database IDs of the accounts whose pull requests may be approved; 29139614 is Renovate.

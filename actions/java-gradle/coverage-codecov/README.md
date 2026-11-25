@@ -9,7 +9,7 @@ outside the markers.
 
 Action that measures Java and Kotlin test coverage with JaCoCo through Gradle, and uploads the coverage reports and the JUnit test results to Codecov.
 
-[actions-java-gradle-coverage-codecov-v1.2.1](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-coverage-codecov-v1.2.1) · Composite action
+[actions-java-gradle-coverage-codecov-v1.2.2](https://github.com/TimSchoenle/actions/releases/tag/actions-java-gradle-coverage-codecov-v1.2.2) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -37,7 +37,7 @@ jobs:
       contents: read # to fetch code
       id-token: write # to authenticate the upload with OIDC
     steps:
-      - uses: TimSchoenle/actions/actions/java-gradle/coverage-codecov@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-java-gradle-coverage-codecov-v1.2.1
+      - uses: TimSchoenle/actions/actions/java-gradle/coverage-codecov@actions-java-gradle-coverage-codecov-v1.2.2 # tag=actions-java-gradle-coverage-codecov-v1.2.2
         with:
           java_version: '21'
           flags: unit

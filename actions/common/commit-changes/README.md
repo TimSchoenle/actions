@@ -9,7 +9,7 @@ outside the markers.
 
 Commits changes using the GitHub API to ensure verified bot commits.
 
-[actions-common-commit-changes-v3.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v3.1.2) · JavaScript action (node24)
+[actions-common-commit-changes-v3.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v3.1.3) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -50,7 +50,7 @@ jobs:
           permission-contents: write
 
       - id: commit
-        uses: TimSchoenle/actions/actions/common/commit-changes@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-commit-changes-v3.1.2
+        uses: TimSchoenle/actions/actions/common/commit-changes@actions-common-commit-changes-v3.1.3 # tag=actions-common-commit-changes-v3.1.3
         with:
           token: ${{ steps.token.outputs.token }}
           commit_message: 'chore: regenerate files'

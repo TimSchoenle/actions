@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.8](https://github.com/TimSchoenle/actions/compare/src-actions-test-setup-e2e-v1.2.7...src-actions-test-setup-e2e-v1.2.8) (2026-11-23)
+
+
+### Dependencies
+
+* **deps:** update actions/create-github-app-token action to v3.4.0 ([#2353](https://github.com/TimSchoenle/actions/issues/2353)) ([a115f35](https://github.com/TimSchoenle/actions/commit/a115f35c431e190fd4a657b85bd6def6e38bdd51))
+
 ## [1.2.7](https://github.com/TimSchoenle/actions/compare/src-actions-test-setup-e2e-v1.2.6...src-actions-test-setup-e2e-v1.2.7) (2026-11-10)
 
 
