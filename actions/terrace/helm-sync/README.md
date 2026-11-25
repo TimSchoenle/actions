@@ -37,7 +37,7 @@ jobs:
       # An App token, so the commit is verified and starts workflows. github.token's would not.
       - name: Generate Token
         id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           client-id: ${{ secrets.MAINTENANCE_APP_CLIENT_ID }}
           private-key: ${{ secrets.MAINTENANCE_PRIVATE_KEY }}
@@ -47,7 +47,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: TimSchoenle/actions/actions/terrace/helm-sync@actions-terrace-helm-sync-v1.1.6 # tag=actions-terrace-helm-sync-v1.1.6
+      - uses: TimSchoenle/actions/actions/terrace/helm-sync@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-terrace-helm-sync-v1.1.6
         with:
           token: ${{ steps.token.outputs.token }}
           file_pattern: charts
@@ -59,7 +59,7 @@ jobs:
 # Only the value schemas and README references are rewritten from the contracts already vendored,
 # and with no token nothing is committed: a later step decides what to do with changed.
 - id: sync
-  uses: TimSchoenle/actions/actions/terrace/helm-sync@actions-terrace-helm-sync-v1.1.6 # tag=actions-terrace-helm-sync-v1.1.6
+  uses: TimSchoenle/actions/actions/terrace/helm-sync@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-terrace-helm-sync-v1.1.6
   with:
     pull: 'false'
 

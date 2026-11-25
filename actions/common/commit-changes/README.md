@@ -9,7 +9,7 @@ outside the markers.
 
 Commits changes using the GitHub API to ensure verified bot commits.
 
-[actions-common-commit-changes-v3.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v3.1.2) · JavaScript action (node24)
+[actions-common-commit-changes-v3.1.3](https://github.com/TimSchoenle/actions/releases/tag/actions-common-commit-changes-v3.1.3) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -43,14 +43,14 @@ jobs:
       - run: ./scripts/generate.sh
 
       - id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           permission-contents: write
 
       - id: commit
-        uses: TimSchoenle/actions/actions/common/commit-changes@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-commit-changes-v3.1.2
+        uses: TimSchoenle/actions/actions/common/commit-changes@actions-common-commit-changes-v3.1.3 # tag=actions-common-commit-changes-v3.1.3
         with:
           token: ${{ steps.token.outputs.token }}
           commit_message: 'chore: regenerate files'

@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.2](https://github.com/TimSchoenle/actions/compare/src-actions-maintenance-timed-auto-merge-v3.1.1...src-actions-maintenance-timed-auto-merge-v3.1.2) (2026-11-23)
+
+
+### Dependencies
+
+* **deps:** update dependency fast-check to v4.10.3 ([#2346](https://github.com/TimSchoenle/actions/issues/2346)) ([ef73bb1](https://github.com/TimSchoenle/actions/commit/ef73bb1970caea1c0a83ac3852f254651a5a377f))
+
 ## [3.1.1](https://github.com/TimSchoenle/actions/compare/src-actions-maintenance-timed-auto-merge-v3.1.0...src-actions-maintenance-timed-auto-merge-v3.1.1) (2026-11-18)
 
 

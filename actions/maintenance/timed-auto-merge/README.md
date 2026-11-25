@@ -9,7 +9,7 @@ outside the markers.
 
 Approve and enable auto-merge on aged pull requests whose head branch matches a pattern and whose commits are all signed by trusted authors.
 
-[actions-maintenance-timed-auto-merge-v3.1.1](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-timed-auto-merge-v3.1.1) · JavaScript action (node24)
+[actions-maintenance-timed-auto-merge-v3.1.2](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-timed-auto-merge-v3.1.2) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 The pull requests must have been open for at least `time_elapsed`, measured from when they were opened, or, with
@@ -51,7 +51,7 @@ jobs:
       # A second App: the one release-please or Renovate runs as cannot approve its own pull requests.
       - name: Generate Bot Token
         id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           client-id: ${{ secrets.AUTO_MERGE_APP_CLIENT_ID }}
           private-key: ${{ secrets.AUTO_MERGE_PRIVATE_KEY }}
@@ -59,7 +59,7 @@ jobs:
           permission-pull-requests: write
 
       - name: Approve and Auto-merge
-        uses: TimSchoenle/actions/actions/maintenance/timed-auto-merge@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-maintenance-timed-auto-merge-v3.1.1
+        uses: TimSchoenle/actions/actions/maintenance/timed-auto-merge@actions-maintenance-timed-auto-merge-v3.1.2 # tag=actions-maintenance-timed-auto-merge-v3.1.2
         with:
           token: ${{ steps.token.outputs.token }}
           # Database ID of the bot account that opens the release pull requests.

@@ -9,7 +9,7 @@ outside the markers.
 
 Updates open pull requests carrying a label with the latest commits of their base branch, oldest first, through the update-branch API, which merges the base into the head.
 
-[actions-maintenance-auto-rebase-v4.0.2](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-rebase-v4.0.2) · JavaScript action (node24)
+[actions-maintenance-auto-rebase-v4.0.3](https://github.com/TimSchoenle/actions/releases/tag/actions-maintenance-auto-rebase-v4.0.3) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 Each open pull request carrying `label` that is behind its base gets a call to
@@ -46,14 +46,14 @@ jobs:
       # An app token, so the pushed merge commits start workflows. github.token's would not.
       - name: Generate Token
         id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           client-id: ${{ secrets.MAINTENANCE_APP_CLIENT_ID }}
           private-key: ${{ secrets.MAINTENANCE_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
 
-      - uses: TimSchoenle/actions/actions/maintenance/auto-rebase@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-maintenance-auto-rebase-v4.0.2
+      - uses: TimSchoenle/actions/actions/maintenance/auto-rebase@actions-maintenance-auto-rebase-v4.0.3 # tag=actions-maintenance-auto-rebase-v4.0.3
         with:
           token: ${{ steps.token.outputs.token }}
           label: dependencies

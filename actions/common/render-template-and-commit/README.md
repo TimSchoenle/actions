@@ -33,14 +33,14 @@ over unchanged inputs makes no commit and no API call.
 
 # The commit needs a GitHub App installation token with contents: write.
 - name: Create an app token
-  uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+  uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
   id: token
   with:
     client-id: ${{ secrets.BOT_APP_CLIENT_ID }}
     private-key: ${{ secrets.BOT_PRIVATE_KEY }}
     permission-contents: write
 
-- uses: TimSchoenle/actions/actions/common/render-template-and-commit@actions-common-render-template-and-commit-v1.1.25 # tag=actions-common-render-template-and-commit-v1.1.25
+- uses: TimSchoenle/actions/actions/common/render-template-and-commit@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-common-render-template-and-commit-v1.1.25
   id: docs
   with:
     template: docs/README.hbs

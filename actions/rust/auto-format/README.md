@@ -56,7 +56,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - id: format
-        uses: TimSchoenle/actions/actions/rust/auto-format@actions-rust-auto-format-v2.0.7 # tag=actions-rust-auto-format-v2.0.7
+        uses: TimSchoenle/actions/actions/rust/auto-format@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-rust-auto-format-v2.0.7
         with:
           artifact_name: rust-auto-format
 
@@ -77,13 +77,13 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           client-id: ${{ secrets.BOT_APP_CLIENT_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
           permission-contents: write
 
-      - uses: TimSchoenle/actions/actions/common/commit-patch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-commit-patch-v3.1.2
+      - uses: TimSchoenle/actions/actions/common/commit-patch@actions-common-commit-patch-v3.1.3 # tag=actions-common-commit-patch-v3.1.3
         with:
           token: ${{ steps.token.outputs.token }}
           artifact_name: rust-auto-format

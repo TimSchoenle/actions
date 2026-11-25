@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.8](https://github.com/TimSchoenle/actions/compare/src-actions-common-readme-variables-v2.1.7...src-actions-common-readme-variables-v2.1.8) (2026-11-23)
+
+
+### Dependencies
+
+* **deps:** update dependency fast-check to v4.10.3 ([#2346](https://github.com/TimSchoenle/actions/issues/2346)) ([ef73bb1](https://github.com/TimSchoenle/actions/commit/ef73bb1970caea1c0a83ac3852f254651a5a377f))
+
 ## [2.1.7](https://github.com/TimSchoenle/actions/compare/src-actions-common-readme-variables-v2.1.6...src-actions-common-readme-variables-v2.1.7) (2026-11-18)
 
 

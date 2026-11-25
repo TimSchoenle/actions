@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.4](https://github.com/TimSchoenle/actions/compare/src-actions-helm-update-chart-version-v1.8.3...src-actions-helm-update-chart-version-v1.8.4) (2026-11-23)
+
+
+### Dependencies
+
+* **deps:** update actions/create-github-app-token action to v3.4.0 ([#2353](https://github.com/TimSchoenle/actions/issues/2353)) ([a115f35](https://github.com/TimSchoenle/actions/commit/a115f35c431e190fd4a657b85bd6def6e38bdd51))
+* **deps:** update timschoenle/actions/actions/common/create-pull-request to vactions-common-create-pull-request-v1.0.34 ([#2349](https://github.com/TimSchoenle/actions/issues/2349)) ([303e0b2](https://github.com/TimSchoenle/actions/commit/303e0b2f2fee305602fc2ca56ed51f01afe1f7dd))
+
 ## [1.8.3](https://github.com/TimSchoenle/actions/compare/src-actions-helm-update-chart-version-v1.8.2...src-actions-helm-update-chart-version-v1.8.3) (2026-11-19)
 
 

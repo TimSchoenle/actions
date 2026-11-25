@@ -20,7 +20,7 @@ Holds a service image to the configuration contract its build produced, in any l
 ```yaml
 # No image: the committed document is held to what the configuration types print, to the
 # specification, and to the label block of the Dockerfile.
-- uses: TimSchoenle/actions/actions/terrace/image@actions-terrace-image-v1.1.7 # tag=actions-terrace-image-v1.1.7
+- uses: TimSchoenle/actions/actions/terrace/image@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-terrace-image-v1.1.7
   with:
     contract: config/contract.json
     generate: cargo run -q --example contract -- --format contract
@@ -35,7 +35,7 @@ Holds a service image to the configuration contract its build produced, in any l
     docker build --tag app:check .
     docker save app:check --output image.tar
 
-- uses: TimSchoenle/actions/actions/terrace/image@actions-terrace-image-v1.1.7 # tag=actions-terrace-image-v1.1.7
+- uses: TimSchoenle/actions/actions/terrace/image@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-terrace-image-v1.1.7
   with:
     contract: config/contract.json
     dockerfile: Dockerfile
@@ -56,7 +56,7 @@ permissions:
 
 steps:
   # ... build, log in and push, with the digest as steps.push.outputs.digest ...
-  - uses: TimSchoenle/actions/actions/terrace/image@actions-terrace-image-v1.1.7 # tag=actions-terrace-image-v1.1.7
+  - uses: TimSchoenle/actions/actions/terrace/image@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-terrace-image-v1.1.7
     with:
       contract: config/contract.json
       image: ghcr.io/${{ github.repository }}@${{ steps.push.outputs.digest }}
