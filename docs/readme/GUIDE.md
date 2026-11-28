@@ -205,13 +205,13 @@ jobs:
 
       - name: Collect the README payload
         id: variables
-        uses: TimSchoenle/actions/actions/common/readme-variables@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-readme-variables-v2.1.7
+        uses: TimSchoenle/actions/actions/common/readme-variables@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-common-readme-variables-v2.1.8
         with:
           branch: ${{ github.event.repository.default_branch }}
           extra: ${{ steps.config.outputs.json }}
 
       - name: Render README.md
-        uses: TimSchoenle/actions/actions/common/render-template@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-render-template-v3.0.7
+        uses: TimSchoenle/actions/actions/common/render-template@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-common-render-template-v3.0.8
         with:
           template: .github/templates/README.md.hbs
           output: README.md
@@ -262,7 +262,7 @@ jobs:
           permission-contents: write
 
       - name: Commit README.md
-        uses: TimSchoenle/actions/actions/common/commit-patch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-commit-patch-v3.1.2
+        uses: TimSchoenle/actions/actions/common/commit-patch@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-common-commit-patch-v3.1.3
         with:
           token: ${{ steps.generate_token.outputs.token }}
           artifact_name: readme
@@ -295,13 +295,13 @@ jobs:
 
       - name: Collect the README payload
         id: variables
-        uses: TimSchoenle/actions/actions/common/readme-variables@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-readme-variables-v2.1.7
+        uses: TimSchoenle/actions/actions/common/readme-variables@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-common-readme-variables-v2.1.8
         with:
           branch: ${{ github.event.repository.default_branch }}
           extra: ${{ steps.config.outputs.json }}
 
       - name: Verify README.md is current
-        uses: TimSchoenle/actions/actions/common/render-template@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-render-template-v3.0.7
+        uses: TimSchoenle/actions/actions/common/render-template@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-common-render-template-v3.0.8
         with:
           template: .github/templates/README.md.hbs
           output: README.md
