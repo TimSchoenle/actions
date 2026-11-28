@@ -24,13 +24,13 @@ inputs:
       terrace-contract release here and image signatures in terrace-contract pull.'
     required: false
     # renovate: datasource=github-release-attachments depName=sigstore/cosign
-    default: 'v3.1.4'
+    default: 'v3.1.5'
   cosign_checksums_sha256:
     description: "SHA-256 of cosign_version's cosign_checksums.txt, which then verifies the cosign binary. The
       binary and the list come from one release, so the pin is what ties the install to the release that was pinned.
       Set it whenever cosign_version is set: the default pins the default version's list, and any other release fails."
     required: false
-    default: 'e70e59b328d52949b3a9ae3e0d04721ea8f380c4e91c28197aa91df02afbf4c0'
+    default: '7f7a577e2c458185810c469936e75c9da48921f5a48d573ba15dba3a0d83788b'
   oras_version:
     description: 'oras release to install when oras is true, as its release tag vMAJOR.MINOR.PATCH. MAJOR.MINOR.PATCH without the v is accepted too.'
     required: false
