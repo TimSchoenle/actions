@@ -38,7 +38,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        uses: TimSchoenle/actions/actions/test/setup-e2e@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-test-setup-e2e-v1.2.8
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -49,7 +49,7 @@ jobs:
 
       - name: Create Test Branch
         id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-create-branch-v2.0.7
+        uses: TimSchoenle/actions/actions/common/create-branch@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-common-create-branch-v2.0.8
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -177,7 +177,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-delete-branch-v2.0.8
+        uses: TimSchoenle/actions/actions/common/delete-branch@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-common-delete-branch-v2.0.9
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -216,7 +216,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        uses: TimSchoenle/actions/actions/test/setup-e2e@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-test-setup-e2e-v1.2.8
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -227,7 +227,7 @@ jobs:
 
       - name: Create Test Branch
         id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-create-branch-v2.0.7
+        uses: TimSchoenle/actions/actions/common/create-branch@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-common-create-branch-v2.0.8
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -312,7 +312,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-delete-branch-v2.0.8
+        uses: TimSchoenle/actions/actions/common/delete-branch@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-common-delete-branch-v2.0.9
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -350,7 +350,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        uses: TimSchoenle/actions/actions/test/setup-e2e@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-test-setup-e2e-v1.2.8
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -361,7 +361,7 @@ jobs:
 
       - name: Create Test Branch
         id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-create-branch-v2.0.7
+        uses: TimSchoenle/actions/actions/common/create-branch@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-common-create-branch-v2.0.8
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -413,7 +413,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-delete-branch-v2.0.8
+        uses: TimSchoenle/actions/actions/common/delete-branch@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-common-delete-branch-v2.0.9
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -467,7 +467,7 @@ jobs:
 
       - name: Setup E2E Test Environment
         id: setup
-        uses: TimSchoenle/actions/actions/test/setup-e2e@daf766fd1ab9d48129210afc63b1a7353f6064fd # tag=actions-test-setup-e2e-v1.2.7
+        uses: TimSchoenle/actions/actions/test/setup-e2e@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-test-setup-e2e-v1.2.8
         with:
           app_id: ${{ secrets.ACTIONS_TEST_BOT_APP_ID }}
           private_key: ${{ secrets.ACTIONS_TEST_BOT_PRIVATE_KEY }}
@@ -478,7 +478,7 @@ jobs:
 
       - name: Create Test Branch
         id: branch
-        uses: TimSchoenle/actions/actions/common/create-branch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-create-branch-v2.0.7
+        uses: TimSchoenle/actions/actions/common/create-branch@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-common-create-branch-v2.0.8
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
@@ -540,7 +540,7 @@ jobs:
 
       - name: Cleanup Branch
         if: always()
-        uses: TimSchoenle/actions/actions/common/delete-branch@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-delete-branch-v2.0.8
+        uses: TimSchoenle/actions/actions/common/delete-branch@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-common-delete-branch-v2.0.9
         with:
           token: ${{ steps.setup.outputs.token }}
           repository: ${{ env.TEST_REPO }}
