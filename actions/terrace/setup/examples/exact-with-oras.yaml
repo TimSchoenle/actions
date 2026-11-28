@@ -3,5 +3,5 @@
 - uses: TimSchoenle/actions/actions/terrace/setup@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-terrace-setup-v4.0.4
   with:
     # renovate: datasource=github-releases depName=TimSchoenle/terrace-config extractVersion=^terrace-contract-v(?<version>.+)$
-    version: '0.14.1'
+    version: '0.14.2'
     oras: 'true'
