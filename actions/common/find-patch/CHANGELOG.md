@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.7](https://github.com/TimSchoenle/actions/compare/src-actions-common-find-patch-v1.1.6...src-actions-common-find-patch-v1.1.7) (2026-11-28)
+
+
+### Dependencies
+
+* **deps:** update dependency @types/node to v26.6.7 ([#2365](https://github.com/TimSchoenle/actions/issues/2365)) ([8d81c66](https://github.com/TimSchoenle/actions/commit/8d81c6693645bbe3c5f30af2db543abac3d7040f))
+* **deps:** update vitest monorepo to v5.1.1 ([#2351](https://github.com/TimSchoenle/actions/issues/2351)) ([68ba378](https://github.com/TimSchoenle/actions/commit/68ba3788d49ba495e68f65e1fed5bb3c7ee672b0))
+
 ## [1.1.6](https://github.com/TimSchoenle/actions/compare/src-actions-common-find-patch-v1.1.5...src-actions-common-find-patch-v1.1.6) (2026-11-18)
 
 
