@@ -9,7 +9,7 @@ outside the markers.
 
 Collects the fragments docker/image-check legs uploaded with comment: summary and posts one table of every image on the pull request.
 
-[actions-docker-image-check-summary-v2.0.9](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-summary-v2.0.9) · Composite action
+[actions-docker-image-check-summary-v2.0.10](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-summary-v2.0.10) · Composite action
 <!-- /docs:generated header -->
 
 The fragments come from [`docker/image-check`](../image-check) legs run with `comment: summary`. A matrix leg can only
@@ -30,7 +30,7 @@ jobs:
         platform: [linux/amd64, linux/arm64]
     steps:
       # ... build and load ...
-      - uses: TimSchoenle/actions/actions/docker/image-check@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-docker-image-check-v1.1.19
+      - uses: TimSchoenle/actions/actions/docker/image-check@actions-docker-image-check-v1.1.20 # tag=actions-docker-image-check-v1.1.20
         with:
           image: app:test
           platform: ${{ matrix.platform }}
@@ -45,7 +45,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: TimSchoenle/actions/actions/docker/image-check-summary@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-docker-image-check-summary-v2.0.9
+      - uses: TimSchoenle/actions/actions/docker/image-check-summary@actions-docker-image-check-summary-v2.0.10 # tag=actions-docker-image-check-summary-v2.0.10
 ```
 <!-- /docs:generated usage -->
 

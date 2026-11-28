@@ -9,7 +9,7 @@ outside the markers.
 
 Collect the standard README render payload — repository facts, release, toolchain and a docs index — as strict JSON for render-template
 
-[actions-common-readme-variables-v2.1.8](https://github.com/TimSchoenle/actions/releases/tag/actions-common-readme-variables-v2.1.8) · JavaScript action (node24)
+[actions-common-readme-variables-v2.1.9](https://github.com/TimSchoenle/actions/releases/tag/actions-common-readme-variables-v2.1.9) · JavaScript action (node24)
 <!-- /docs:generated header -->
 
 It is the input half of [Common Render Template](../render-template): this action produces the `variables` map, that one
@@ -28,10 +28,10 @@ suggestion.
 ```yaml
 - name: Collect the README payload
   id: variables
-  uses: TimSchoenle/actions/actions/common/readme-variables@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-common-readme-variables-v2.1.8
+  uses: TimSchoenle/actions/actions/common/readme-variables@actions-common-readme-variables-v2.1.9 # tag=actions-common-readme-variables-v2.1.9
 
 - name: Render the README
-  uses: TimSchoenle/actions/actions/common/render-template@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-common-render-template-v3.0.8
+  uses: TimSchoenle/actions/actions/common/render-template@actions-common-render-template-v3.0.9 # tag=actions-common-render-template-v3.0.9
   with:
     template: .github/templates/README.md.hbs
     output: README.md
@@ -52,7 +52,7 @@ suggestion.
 
 - name: Collect the README payload
   id: variables
-  uses: TimSchoenle/actions/actions/common/readme-variables@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-common-readme-variables-v2.1.8
+  uses: TimSchoenle/actions/actions/common/readme-variables@actions-common-readme-variables-v2.1.9 # tag=actions-common-readme-variables-v2.1.9
   with:
     extra: ${{ steps.config.outputs.json }}
 ```

@@ -9,7 +9,7 @@ outside the markers.
 
 Measures a locally loaded image, warns past a size threshold, scans it with Trivy, uploads the SARIF to code scanning and reports the result on the pull request.
 
-[actions-docker-image-check-v1.1.19](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-v1.1.19) · Composite action · needs Docker
+[actions-docker-image-check-v1.1.20](https://github.com/TimSchoenle/actions/releases/tag/actions-docker-image-check-v1.1.20) · Composite action · needs Docker
 <!-- /docs:generated header -->
 
 It replaces the four steps every service repository used to carry inline after its `docker/build-push-action` step.
@@ -34,7 +34,7 @@ steps:
   # the same way.
   - run: docker build --tag app:test .
 
-  - uses: TimSchoenle/actions/actions/docker/image-check@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-docker-image-check-v1.1.19
+  - uses: TimSchoenle/actions/actions/docker/image-check@actions-docker-image-check-v1.1.20 # tag=actions-docker-image-check-v1.1.20
     with:
       image: app:test
 ```
@@ -48,7 +48,7 @@ strategy:
   matrix:
     platform: [linux/amd64, linux/arm64]
 steps:
-  - uses: TimSchoenle/actions/actions/docker/image-check@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-docker-image-check-v1.1.19
+  - uses: TimSchoenle/actions/actions/docker/image-check@actions-docker-image-check-v1.1.20 # tag=actions-docker-image-check-v1.1.20
     with:
       image: app:test
       platform: ${{ matrix.platform }}
@@ -67,7 +67,7 @@ jobs:
         platform: [linux/amd64, linux/arm64]
     steps:
       # ... build and load ...
-      - uses: TimSchoenle/actions/actions/docker/image-check@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-docker-image-check-v1.1.19
+      - uses: TimSchoenle/actions/actions/docker/image-check@actions-docker-image-check-v1.1.20 # tag=actions-docker-image-check-v1.1.20
         with:
           image: app:test
           platform: ${{ matrix.platform }}
@@ -80,7 +80,7 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - uses: TimSchoenle/actions/actions/docker/image-check-summary@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-docker-image-check-summary-v2.0.9
+      - uses: TimSchoenle/actions/actions/docker/image-check-summary@actions-docker-image-check-summary-v2.0.10 # tag=actions-docker-image-check-summary-v2.0.10
 ```
 <!-- /docs:generated usage -->
 

@@ -9,7 +9,7 @@ outside the markers.
 
 Publishes bundles built by release/build-actions: a build commit B with the source commit tree plus the bundles, a fast-forwarded releases branch, consumer tags on B, source tags on the source commit, and GitHub Releases with checksum assets. Every step is idempotent and no repository code runs.
 
-[actions-release-publish-build-commit-v2.0.2](https://github.com/TimSchoenle/actions/releases/tag/actions-release-publish-build-commit-v2.0.2) · Composite action
+[actions-release-publish-build-commit-v2.0.3](https://github.com/TimSchoenle/actions/releases/tag/actions-release-publish-build-commit-v2.0.3) · Composite action
 <!-- /docs:generated header -->
 
 The privileged end of a build-on-release pipeline. The default branch holds sources only; this action turns a source
@@ -68,11 +68,11 @@ jobs:
 
       # Re-derived here, so the notes files exist in this job.
       - id: plan
-        uses: TimSchoenle/actions/actions/release/plan-release-please@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-release-plan-release-please-v1.1.3
+        uses: TimSchoenle/actions/actions/release/plan-release-please@actions-release-plan-release-please-v1.1.4 # tag=actions-release-plan-release-please-v1.1.4
         with:
           mode: plan
 
-      - uses: TimSchoenle/actions/actions/release/publish-build-commit@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-release-publish-build-commit-v2.0.2
+      - uses: TimSchoenle/actions/actions/release/publish-build-commit@actions-release-publish-build-commit-v2.0.3 # tag=actions-release-publish-build-commit-v2.0.3
         with:
           token: ${{ steps.token.outputs.token }}
           source-sha: ${{ github.sha }}
@@ -129,7 +129,7 @@ jobs:
           releases="$(jq -cn --arg tag "v${VERSION}" --arg notes "$notes" '[{consumerTag: $tag, releaseName: $tag, notesFile: $notes}]')"
           echo "releases=${releases}" >> "$GITHUB_OUTPUT"
 
-      - uses: TimSchoenle/actions/actions/release/publish-build-commit@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-release-publish-build-commit-v2.0.2
+      - uses: TimSchoenle/actions/actions/release/publish-build-commit@actions-release-publish-build-commit-v2.0.3 # tag=actions-release-publish-build-commit-v2.0.3
         with:
           token: ${{ steps.token.outputs.token }}
           source-sha: ${{ github.sha }}
