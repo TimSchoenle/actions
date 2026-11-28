@@ -9,7 +9,7 @@ outside the markers.
 
 Brings every file derived from the vendored configuration contracts up to date with terrace-contract sync: pulls each contract from the image its chart pins, then rewrites the value schemas and README credential references. Given a token, commits the result to the branch as a verified commit.
 
-[actions-terrace-helm-sync-v1.1.6](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-sync-v1.1.6) · Composite action
+[actions-terrace-helm-sync-v1.1.7](https://github.com/TimSchoenle/actions/releases/tag/actions-terrace-helm-sync-v1.1.7) · Composite action
 <!-- /docs:generated header -->
 
 <!-- docs:generated usage -->
@@ -47,7 +47,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: TimSchoenle/actions/actions/terrace/helm-sync@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-terrace-helm-sync-v1.1.6
+      - uses: TimSchoenle/actions/actions/terrace/helm-sync@actions-terrace-helm-sync-v1.1.7 # tag=actions-terrace-helm-sync-v1.1.7
         with:
           token: ${{ steps.token.outputs.token }}
           file_pattern: charts
@@ -59,7 +59,7 @@ jobs:
 # Only the value schemas and README references are rewritten from the contracts already vendored,
 # and with no token nothing is committed: a later step decides what to do with changed.
 - id: sync
-  uses: TimSchoenle/actions/actions/terrace/helm-sync@ded012bb09f11e42381c9b1b7c3ff0dbc09156bf # tag=actions-terrace-helm-sync-v1.1.6
+  uses: TimSchoenle/actions/actions/terrace/helm-sync@actions-terrace-helm-sync-v1.1.7 # tag=actions-terrace-helm-sync-v1.1.7
   with:
     pull: 'false'
 

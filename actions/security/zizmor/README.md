@@ -9,7 +9,7 @@ outside the markers.
 
 Runs zizmor over workflows and actions with strict collection, uploads the SARIF to code scanning under the category zizmor, and fails the job on an input zizmor cannot parse or a finding at or above a severity.
 
-[actions-security-zizmor-v2.0.9](https://github.com/TimSchoenle/actions/releases/tag/actions-security-zizmor-v2.0.9) · Composite action · Linux runners only · needs Docker
+[actions-security-zizmor-v2.0.10](https://github.com/TimSchoenle/actions/releases/tag/actions-security-zizmor-v2.0.10) · Composite action · Linux runners only · needs Docker
 <!-- /docs:generated header -->
 
 [zizmor](https://docs.zizmor.sh) audits a repository's workflows and actions. This action fails the job when zizmor
@@ -46,7 +46,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: TimSchoenle/actions/actions/security/zizmor@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-security-zizmor-v2.0.9
+      - uses: TimSchoenle/actions/actions/security/zizmor@actions-security-zizmor-v2.0.10 # tag=actions-security-zizmor-v2.0.10
 ```
 <!-- /docs:generated usage -->
 

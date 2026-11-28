@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.7](https://github.com/TimSchoenle/actions/compare/src-actions-terrace-helm-sync-v1.1.6...src-actions-terrace-helm-sync-v1.1.7) (2026-11-28)
+
+
+### Dependencies
+
+* **deps:** update internal action pins ([#2370](https://github.com/TimSchoenle/actions/issues/2370)) ([7077744](https://github.com/TimSchoenle/actions/commit/7077744cce578090672827b07697cd479a7c7a27))
+
 ## [1.1.6](https://github.com/TimSchoenle/actions/compare/src-actions-terrace-helm-sync-v1.1.5...src-actions-terrace-helm-sync-v1.1.6) (2026-11-19)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.3](https://github.com/TimSchoenle/actions/compare/src-actions-rust-test-v2.0.2...src-actions-rust-test-v2.0.3) (2026-11-28)
+
+
+### Dependencies
+
+* **deps:** update all non-major action updates ([#2361](https://github.com/TimSchoenle/actions/issues/2361)) ([9be2921](https://github.com/TimSchoenle/actions/commit/9be29219004405f38f8ee1574d114f29d308b635))
+
 ## [2.0.2](https://github.com/TimSchoenle/actions/compare/src-actions-rust-test-v2.0.1...src-actions-rust-test-v2.0.2) (2026-11-23)
 
 

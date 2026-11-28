@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.36](https://github.com/TimSchoenle/actions/compare/src-actions-common-create-pull-request-v1.0.35...src-actions-common-create-pull-request-v1.0.36) (2026-11-28)
+
+
+### Dependencies
+
+* **deps:** update internal action pins ([#2370](https://github.com/TimSchoenle/actions/issues/2370)) ([7077744](https://github.com/TimSchoenle/actions/commit/7077744cce578090672827b07697cd479a7c7a27))
+
 ## [1.0.35](https://github.com/TimSchoenle/actions/compare/src-actions-common-create-pull-request-v1.0.34...src-actions-common-create-pull-request-v1.0.35) (2026-11-23)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.7](https://github.com/TimSchoenle/actions/compare/src-actions-security-jactionlint-v1.1.6...src-actions-security-jactionlint-v1.1.7) (2026-11-28)
+
+
+### Dependencies
+
+* **deps:** update all non-major action updates ([#2361](https://github.com/TimSchoenle/actions/issues/2361)) ([9be2921](https://github.com/TimSchoenle/actions/commit/9be29219004405f38f8ee1574d114f29d308b635))
+
 ## [1.1.6](https://github.com/TimSchoenle/actions/compare/src-actions-security-jactionlint-v1.1.5...src-actions-security-jactionlint-v1.1.6) (2026-11-19)
 
 
