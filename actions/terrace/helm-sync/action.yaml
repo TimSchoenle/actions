@@ -72,7 +72,7 @@ runs:
     # does.
     - name: Install terrace-contract
       id: setup
-      uses: TimSchoenle/actions/actions/terrace/setup@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-terrace-setup-v4.0.3
+      uses: TimSchoenle/actions/actions/terrace/setup@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-terrace-setup-v4.0.4
       with:
         version: ${{ inputs.version }}
         working_directory: ${{ inputs.working_directory }}
@@ -140,7 +140,7 @@ runs:
     - name: Commit the result
       id: commit
       if: ${{ !cancelled() && inputs.token != '' && steps.sync.outputs.changed == 'true' }}
-      uses: TimSchoenle/actions/actions/common/commit-changes@54a4dc05fd351a9bf9e9638fa3ebbc572b5f2d7f # tag=actions-common-commit-changes-v3.1.2
+      uses: TimSchoenle/actions/actions/common/commit-changes@7594d1c64de290a99195e47fc6d7b5699243b951 # tag=actions-common-commit-changes-v3.1.3
       with:
         token: ${{ inputs.token }}
         commit_message: ${{ inputs.commit_message }}
