@@ -68,7 +68,7 @@
     "action-graph": "workspace:*",
     "actions-util": "workspace:*",
     "chalk": "6",
-    "inquirer": "14.3.0",
+    "inquirer": "14.3.1",
     "openpgp": "6.3.2"
   },
   "workspaces": [
